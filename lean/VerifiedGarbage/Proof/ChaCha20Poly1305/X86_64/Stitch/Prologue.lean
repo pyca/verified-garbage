@@ -10,14 +10,15 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the prologue with the last bytes' block
 
-`Stitch.prologueX`: for the lengths `xTest` picks (at least 513 bytes, 1 to
-64 past a multiple of 512, `XLen`), `twoKs` computes the one-time key's block
-and the block of the last bytes in the two lanes of `Avx2Tail`'s code for one
-set (`Avx2Tail.twoC_ok`), from the state at `ctx + 608` (counter 0) with the
-lane increments `0` and `1 + 8 ⌊len / 512⌋`, into `ctx[672, 800)`; otherwise
-the prologue calls `vg_chacha20_xor` as `prologue` does. Either way it ends as
-`prologue` does (`PostP`), and if 1 to 64 bytes are left after the whole
-chunks, their keystream is at `ctx + 736` (`TailKs`).
+`Stitch.prologueX`: past `fold` (448) bytes, `twoKs` computes the one-time
+key's block and the block of the last bytes in the two lanes of `Avx2Tail`'s
+code for one set (`Avx2Tail.twoC_ok`), from the state at `ctx + 608` (counter
+0) with the lane increments `0` and `1 + 8 ⌊len / 512⌋`, into
+`ctx[672, 800)`, or, with 65 to 192 bytes after the whole chunks (`FLen`),
+`fourKs` the key's block and their three; up to `fold` bytes the prologue
+calls `vg_chacha20_xor` as `prologue` does. Either way it ends as `prologue`
+does (`PostP`), and if 1 to 192 bytes are left after at least one whole chunk,
+their keystream is at `ctx + 736` (`TailKs`).
 
 `twoKs` is proven with its permissions narrowed to the state copy and the 320
 bytes from `ctx + 672` (`twoKsN_ok`), which `RegionModel.wp_narrow` moves to
@@ -56,53 +57,52 @@ theorem sub1and511 (x : BitVec 64) (h : 1 ≤ x.toNat) :
       show 2 ^ 64 - 1 + x.toNat = (x.toNat - 1) + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
   rw [BitVec.toNat_and, hs, show (BitVec.ofNat 64 511).toNat = 2 ^ 9 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
 
-/-- `xTest`, from `s`: `CF` set for the lengths (`r13`) `XLen` holds of,
-`rax` then `(len - 1) mod 512`, and only `rax`, `r10` and the flags written. -/
+/-- Past `fold` bytes, those with 65 to 192 bytes after the whole chunks,
+whose three blocks `fourKs` computes (`twoKs` one otherwise). -/
+abbrev FLen (L : Nat) : Prop := 64 ≤ (L - 1) % 512 ∧ (L - 1) % 512 < 192
+
+theorem xlen_of_flen {L : Nat} (hl : 449 ≤ L) (h : FLen L) : XLen L := ⟨by omega, h.2⟩
+
+/-- `xTest`, from `s`: `CF` set if the length (`r13`) is at most 448, `rax`
+then `(len - 1) mod 512`, and only `rax` and the flags written. -/
 theorem xTest_ok (s : State) :
     WP isa (.block xTest) s fun t =>
-      isa.eval .b t = some (decide (XLen (s.gpr .r13).toNat)) ∧
-      (513 ≤ (s.gpr .r13).toNat → (t.gpr .rax).toNat = ((s.gpr .r13).toNat - 1) % 512) ∧
-      (∀ r, r ≠ .rax → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      isa.eval .b t = some (decide ((s.gpr .r13).toNat < 449)) ∧
+      (1 ≤ (s.gpr .r13).toNat → (t.gpr .rax).toNat = ((s.gpr .r13).toNat - 1) % 512) ∧
+      (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.mxcsr = s.mxcsr := by
   apply WP.of_runBlock
   have x1 : BitVec.signExtend 64 (1#32) = 1#64 := by decide
   have x511 : BitVec.signExtend 64 (511#32) = 511#64 := by decide
-  have x513 : BitVec.signExtend 64 (513#32) = 513#64 := by decide
-  have x192 : BitVec.signExtend 64 (192#32) = 192#64 := by decide
-  have e192 : (192#64).toNat = 192 := rfl
-  have e513 : (513#64).toNat = 513 := rfl
+  have x449 : BitVec.signExtend 64 (449#32) = 449#64 := by decide
+  have e449 : (449#64).toNat = 449 := rfl
   rw [show xTest = [.mov .rax (.reg .r13), .alu .sub .rax (.imm (BitVec.ofNat 32 1)),
-    .alu .and .rax (.imm (BitVec.ofNat 32 511)), .mov32 .r10 (.imm (BitVec.ofNat 32 192)),
-    .alu .cmp .r13 (.imm (BitVec.ofNat 32 513)), .cmov .b .rax (.reg .r10), .alu .cmp .rax (.imm (BitVec.ofNat 32 192))]
-    from rfl]
-  by_cases h : (s.gpr .r13).toNat < 513
-  · have hc : ¬ XLen (s.gpr .r13).toNat := fun ⟨h1, _⟩ => by omega
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x1, x511, x513, x192,
-      Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, h, hc,
-      readSrc32, State.setReg32, decide_true, decide_false, Option.some.injEq, exists_eq_left', ↓reduceIte,
-      reduceCtorEq, e192, e513]
-    exact ⟨by decide, fun h' => absurd h' (by omega), fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl,
-      rfl⟩
-  · have hm := sub1and511 (s.gpr .r13) (by omega)
-    have hc : XLen (s.gpr .r13).toNat ↔ ((s.gpr .r13).toNat - 1) % 512 < 192 :=
-      ⟨fun h => h.2, fun h' => ⟨by omega, h'⟩⟩
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x1, x511, x513, x192,
-      Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, h, hc,
-      readSrc32, State.setReg32, decide_false, Bool.false_eq_true, Option.some.injEq, exists_eq_left',
-      ↓reduceIte, reduceCtorEq, e192, e513, hm]
-    exact ⟨trivial, fun _ => trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl, rfl⟩
+    .alu .and .rax (.imm (BitVec.ofNat 32 511)), .alu .cmp .r13 (.imm (BitVec.ofNat 32 449))] from rfl]
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, x1, x511, x449,
+    Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, e449,
+    Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq]
+  exact ⟨trivial, fun h => sub1and511 (s.gpr .r13) h, fun r h1 => by simp only [h1, ite_false], rfl, rfl, rfl, rfl⟩
 
-/-- `prologueX`'s second test: `CF` set if `rax` is below 64. -/
-theorem cmpRax64_ok (s : State) :
-    WP isa (.block [.alu .cmp .rax (.imm 64)]) s fun t =>
-      isa.eval .b t = some (decide ((s.gpr .rax).toNat < 64)) ∧
-      t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+theorem sub64_lt128 (x : BitVec 64) :
+    (x - BitVec.ofNat 64 64).toNat < 128 ↔ 64 ≤ x.toNat ∧ x.toNat < 192 := by
+  have hx := x.isLt
+  rw [BitVec.toNat_sub, show (BitVec.ofNat 64 64).toNat = 64 from rfl]
+  omega
+
+/-- `prologueX`'s second test (`fTest`): `CF` set if `rax` is from 64 to 191. -/
+theorem fTest_ok (s : State) :
+    WP isa (.block fTest) s fun t =>
+      isa.eval .b t = some (decide (64 ≤ (s.gpr .rax).toNat ∧ (s.gpr .rax).toNat < 192)) ∧
+      (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.mxcsr = s.mxcsr := by
   apply WP.of_runBlock
   have x64 : BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 64 := by decide
-  have e64 : (BitVec.ofNat 64 64).toNat = 64 := rfl
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, x64,
-    Option.bind_some, cf_arithFlags, eval, e64, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, rfl, rfl, rfl, rfl, rfl⟩
+  have x128 : BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 128 := by decide
+  have e128 : (BitVec.ofNat 64 128).toNat = 128 := rfl
+  simp only [fTest, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    Option.bind_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval,
+    Option.some.injEq, exists_eq_left', ↓reduceIte]
+  exact ⟨by simp only [x64, x128, e128, sub64_lt128], fun r h1 => by simp only [h1, ite_false], rfl, rfl, rfl, rfl⟩
 
 /-! ## The lane increments -/
 
@@ -484,19 +484,26 @@ abbrev XPass (pass : Nat) : Prop := pass = 0
 
 theorem XPass.ok {pass : Nat} (h : XPass pass) : PassOk 448 pass := .inl h
 
-/-- With `twoKs`, the call would have computed only the one-time key's block. -/
-theorem mOf_xlen {pass L : Nat} (h : XPass pass) (hx : XLen L) : mOf 448 pass L = 0 := by
+/-- Past `fold` bytes, the call would have computed only the one-time key's
+block. -/
+theorem mOf_gt {pass L : Nat} (h : XPass pass) (hl : 449 ≤ L) : mOf 448 pass L = 0 := by
   subst h; simp only [mOf, splitOf]; rw [ite_eq_right (by omega)]; simp
 
-/-- `twoKs`, from where the prologue would call `vg_chacha20_xor`: as after
-that call (`AfterF`), and the keystream of the last bytes at `ctx + 736`. -/
+/-- With `twoKs` or `fourKs`, the call would have computed only the one-time
+key's block. -/
+theorem mOf_xlen {pass L : Nat} (h : XPass pass) (hx : XLen L) : mOf 448 pass L = 0 :=
+  mOf_gt h (by omega)
+
+/-- `twoKs`, from where the prologue would call `vg_chacha20_xor`, past
+`fold` bytes but for 65 to 192 after the whole chunks: as after that call
+(`AfterF`), and the keystream of 1 to 64 bytes left at `ctx + 736`. -/
 theorem twoKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
     {s₀ : State} (hp : APre e s₀)
-    {s : State} (h : FArgs v.callee.fold pass s₀ s) (hx : XLen (L s₀)) (h1 : XLen1 (L s₀)) :
+    {s : State} (h : FArgs v.callee.fold pass s₀ s) (hl : 449 ≤ L s₀) (hF : ¬ FLen (L s₀)) :
     WP isa (twoKs v.callee.vl) s fun s' => AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem := by
   have hf := (avx2_of v hv).1
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have hm0 : mOf v.callee.fold pass (L s₀) = 0 := by rw [hf]; exact mOf_xlen hpass hx
+  have hm0 : mOf v.callee.fold pass (L s₀) = 0 := by rw [hf]; exact mOf_gt hpass hl
   have eA : ∀ k, bfA (cx s₀ + BitVec.ofNat 64 544) + BitVec.ofNat 64 k = off (cx s₀) (672 + k) := by
     intro k; rw [off_eq]; simp only [bfA, Offset.add_add]
   have eS : stA (cx s₀ + BitVec.ofNat 64 544) = off (cx s₀) 608 := by
@@ -555,7 +562,11 @@ theorem twoKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass
     rw [S₀, show k / 64 = 0 by omega, show k % 64 = k by omega] at this
     rw [← eA, this, VG.Proof.ChaCha20.keystream_getD _ hk, show k / 64 = 0 by omega, show k % 64 = k by omega]
     simp only [cOf, ite_true, VG.Proof.ChaCha20.ctr_zero]
-  · have := ks' (64 + k) (by omega_using [hk, h1, h₂])
+  · have h1 : XLen1 (L s₀) := by
+      rcases Nat.lt_or_ge ((L s₀ - 1) % 512) 64 with h' | h'
+      · exact h'
+      · exact absurd ⟨h', by omega_using [h₂, h₃, hl]⟩ hF
+    have := ks' (64 + k) (by omega_using [hk, h1, h₂])
     rw [S₀, show (64 + k) / 64 = 1 by omega_using [hk, h1, h₂], show (64 + k) % 64 = k by omega_using [hk, h1, h₂],
       r13] at this
     rw [show 736 + k = 672 + (64 + k) by omega, ← eA, this,
@@ -649,36 +660,40 @@ theorem fourKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
 `vg_chacha20_xor`. -/
 theorem prologueXM_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
     {s₀ : State} (hp : APre e s₀) {s : State} (h : FArgs v.callee.fold pass s₀ s) :
-    WP isa (.seq (.block xTest) (.ite .b (.seq (.block [.alu .cmp .rax (.imm 64)])
-      (.ite .b (twoKs v.callee.vl) (fourKs v.callee.vl))) (.call v.callee.name v.callee.code))) s fun s' =>
+    WP isa (.seq (.block xTest) (.ite .b (.call v.callee.name v.callee.code)
+      (.seq (.block fTest) (.ite .b (fourKs v.callee.vl) (twoKs v.callee.vl))))) s fun s' =>
       AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem := by
   refine WP.seq (WP.mono (xTest_ok s) fun s₁ ⟨cf₁, rax₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
   have h₁ : FArgs v.callee.fold pass s₀ s₁ :=
-    ⟨by rw [g₁ _ (by decide) (by decide), h.rdi], by rw [g₁ _ (by decide) (by decide), h.rsi],
-      by rw [g₁ _ (by decide) (by decide), h.rdx], by rw [g₁ _ (by decide) (by decide), h.rcx],
-      by rw [g₁ _ (by decide) (by decide), h.r15], by rw [g₁ _ (by decide) (by decide), h.r14],
-      by rw [g₁ _ (by decide) (by decide), h.r13], by rw [g₁ _ (by decide) (by decide), h.r12],
-      by rw [g₁ _ (by decide) (by decide), h.rbx], by rw [g₁ _ (by decide) (by decide), h.rbp],
-      by rw [g₁ _ (by decide) (by decide), h.rsp], by rw [rd₁, h.rd], by rw [wr₁, h.wr],
+    ⟨by rw [g₁ _ (by decide), h.rdi], by rw [g₁ _ (by decide), h.rsi],
+      by rw [g₁ _ (by decide), h.rdx], by rw [g₁ _ (by decide), h.rcx],
+      by rw [g₁ _ (by decide), h.r15], by rw [g₁ _ (by decide), h.r14],
+      by rw [g₁ _ (by decide), h.r13], by rw [g₁ _ (by decide), h.r12],
+      by rw [g₁ _ (by decide), h.rbx], by rw [g₁ _ (by decide), h.rbp],
+      by rw [g₁ _ (by decide), h.rsp], by rw [rd₁, h.rd], by rw [wr₁, h.wr],
       by rw [m₁]; exact h.saved, by rw [m₁]; exact h.fine, by rw [m₁]; exact h.st, by rw [m₁]; exact h.st',
       fun k hk => by rw [m₁]; exact h.zero k hk, fun hps => by rw [m₁]; exact h.mslot hps⟩
   have e13 : (s.gpr .r13).toNat = L s₀ := by rw [h.r13]
   rw [e13] at cf₁ rax₁
-  refine WP.ite (decide (XLen (L s₀))) cf₁ (fun hx => ?_) (fun hx => ?_)
+  refine WP.ite (decide (L s₀ < 449)) cf₁ (fun hx => ?_) (fun hx => ?_)
   · have hx' := of_decide_eq_true hx
-    refine WP.seq (WP.mono (cmpRax64_ok s₁) fun s₂ ⟨cf₂, g₂, m₂, rd₂, wr₂, _⟩ => ?_)
+    exact WP.mono (foldCall_ok v hp h₁) fun s' a => ⟨a, TailKs.of_xlen fun h' => by omega_using [hx', h'.1]⟩
+  · have hl : 449 ≤ L s₀ := by have := of_decide_eq_false hx; omega_using [this]
+    refine WP.seq (WP.mono (fTest_ok s₁) fun s₂ ⟨cf₂, g₂, m₂, rd₂, wr₂, _⟩ => ?_)
     have h₂ : FArgs v.callee.fold pass s₀ s₂ :=
-      ⟨by rw [g₂]; exact h₁.rdi, by rw [g₂]; exact h₁.rsi, by rw [g₂]; exact h₁.rdx, by rw [g₂]; exact h₁.rcx,
-        by rw [g₂]; exact h₁.r15, by rw [g₂]; exact h₁.r14, by rw [g₂]; exact h₁.r13, by rw [g₂]; exact h₁.r12,
-        by rw [g₂]; exact h₁.rbx, by rw [g₂]; exact h₁.rbp, by rw [g₂]; exact h₁.rsp, by rw [rd₂]; exact h₁.rd,
+      ⟨by rw [g₂ _ (by decide)]; exact h₁.rdi, by rw [g₂ _ (by decide)]; exact h₁.rsi,
+        by rw [g₂ _ (by decide)]; exact h₁.rdx, by rw [g₂ _ (by decide)]; exact h₁.rcx,
+        by rw [g₂ _ (by decide)]; exact h₁.r15, by rw [g₂ _ (by decide)]; exact h₁.r14,
+        by rw [g₂ _ (by decide)]; exact h₁.r13, by rw [g₂ _ (by decide)]; exact h₁.r12,
+        by rw [g₂ _ (by decide)]; exact h₁.rbx, by rw [g₂ _ (by decide)]; exact h₁.rbp,
+        by rw [g₂ _ (by decide)]; exact h₁.rsp, by rw [rd₂]; exact h₁.rd,
         by rw [wr₂]; exact h₁.wr, by rw [m₂]; exact h₁.saved, by rw [m₂]; exact h₁.fine, by rw [m₂]; exact h₁.st,
         by rw [m₂]; exact h₁.st', fun k hk => by rw [m₂]; exact h₁.zero k hk,
         fun hps => by rw [m₂]; exact h₁.mslot hps⟩
-    rw [rax₁ hx'.1] at cf₂
-    refine WP.ite (decide (XLen1 (L s₀))) cf₂ (fun h1 => ?_) (fun _ => ?_)
-    · exact twoKs_ok v hv hpass hp h₂ hx' (of_decide_eq_true h1)
-    · exact fourKs_ok v hv hpass hp h₂ hx'
-  · exact WP.mono (foldCall_ok v hp h₁) fun s' a => ⟨a, TailKs.of_xlen (of_decide_eq_false hx)⟩
+    rw [rax₁ (by omega_using [hl])] at cf₂
+    refine WP.ite (decide (FLen (L s₀))) cf₂ (fun hF => ?_) (fun hF => ?_)
+    · exact fourKs_ok v hv hpass hp h₂ (xlen_of_flen hl (of_decide_eq_true hF))
+    · exact twoKs_ok v hv hpass hp h₂ hl (of_decide_eq_false hF)
 
 /-- The prologue with the last bytes' block: as `prologue`, and their keystream
 at `ctx + 736`. -/
