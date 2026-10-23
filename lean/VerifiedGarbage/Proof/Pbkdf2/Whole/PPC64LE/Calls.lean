@@ -152,7 +152,7 @@ theorem hf_call {s : State} {inn ou o sc : Addr} (h : HfArgs F s inn ou o sc) {Q
   have hS := hF.hH.hS; have hD := hF.hH.hD; have hB := hF.hH.hB
   have hfd : F.H.finalize.fdepth ≤ 2 := by
     have := VG.Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_fdepth hF.hH
-    simp only [Hash.finalize, Code.fdepth]; omega
+    simp only [Hash.finalize, Code.fdepth, Nat.max_le]; omega
   have hpf : pushFrames F.H.finalize = true := by
     simp [Hash.finalize, pushFrames, Instr.isPush, VG.Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_pf hF.hH]
   have c3 : s.callEntry.gpr .r3 = inn := (State.callEntry_gpr _ (by decide)).trans h.h3
@@ -241,7 +241,7 @@ theorem it_call {s : State} {key u t sc : Addr} (h : ItArgs F s key u t sc) {Q :
   have hS := hF.hH.hS; have hD := hF.hH.hD; have hB := hF.hH.hB
   have hfd : (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H).fdepth ≤ 2 := by
     have := VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_fdepth hF.hH
-    simp only [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, Code.fdepth]; omega
+    simp only [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, Code.fdepth, Nat.max_le]; omega
   have hpf : pushFrames (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H) = true := by
     simp [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, pushFrames, Instr.isPush,
       VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_pf hF.hH]

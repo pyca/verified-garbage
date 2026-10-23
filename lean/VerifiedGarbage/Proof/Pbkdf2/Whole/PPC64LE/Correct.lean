@@ -88,13 +88,13 @@ theorem sdepth_main (hF : FnsOK F) : sdepth F.main ≤ hF.X + 96 := by
     simp [Hash.finalize, pushFrames, Instr.isPush, VG.Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_pf hF.hH])
   have hfd : F.H.finalize.fdepth ≤ 2 := by
     have := VG.Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_fdepth hF.hH
-    simp only [Hash.finalize, Code.fdepth]; omega
+    simp only [Hash.finalize, Code.fdepth, Nat.max_le]; omega
   have hi := sdepth_le_fdepth (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H) (by
     simp [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, pushFrames, Instr.isPush,
       VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_pf hF.hH])
   have hid : (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H).fdepth ≤ 2 := by
     have := VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_fdepth hF.hH
-    simp only [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, Code.fdepth]; omega
+    simp only [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, Code.fdepth, Nat.max_le]; omega
   have hh := hF.hiSd
   simp only [Fns.main, Fns.block, Fns.callHi, Fns.callHf, Fns.callIt, Fns.outLen, Fns.outLoop, Hash.callUpd,
     sdepth, Nat.max_le] at *
