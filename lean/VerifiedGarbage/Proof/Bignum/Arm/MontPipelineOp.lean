@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
@@ -19,7 +20,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Spec.Rsa.Mont (Operand numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
-theorem montPipelineOp_ok (round : Prog isa) (law : MontPipeline.RoundLaw round) (s : State) {base : BitVec 32} {len w o a b : Nat}
+theorem montPipelineOp_ok (round : Prog isa) (law : MontPipeline.LoopLaw round) (s : State) {base : BitVec 32} {len w o a b : Nat}
     (h : ArithmeticReady base len w s) (ho : Operand o) (ha : Operand a) (hb : Operand b) (ho0 : o ≠ 0)
     (operand : numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0) :
     WP isa (MontPipeline.op round o a b) s fun t => ArithmeticReady base len w t ∧

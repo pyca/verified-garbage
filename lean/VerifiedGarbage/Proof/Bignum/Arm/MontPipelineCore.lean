@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.Csub
 import VerifiedGarbage.Proof.Bignum.Arm.MontCore
 import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
@@ -16,7 +16,7 @@ namespace VG.Proof.Bignum.Arm.MontPipeline
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem core_ok (round : Prog isa) (law : RoundLaw round) (s : State) {base : BitVec 32} {size out tmp a b mod acc n : Nat} {inv : BitVec 32}
+theorem core_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : BitVec 32} {size out tmp a b mod acc n : Nat} {inv : BitVec 32}
     (ctx : RoundCtx s base size tmp a b mod acc n) (even : n % 2 = 0) (finish : CsubCtx s base size out acc mod tmp n)
     (hdr : RoundMeta s.mem base tmp a b mod acc n 0 inv)
     (ptr : s.gpr .r0 = base + BitVec.ofNat 32 tmp)
@@ -38,7 +38,7 @@ theorem core_ok (round : Prog isa) (law : RoundLaw round) (s : State) {base : Bi
   have tmpFits := ctx.tmpFits
   have layout := ctx.layout
   rw [VG.Impl.Bignum.Arm.MontPipeline.core, WP.seq_iff]
-  refine WP.mono (rounds_ok round law s ctx even hdr ptr hzero hB hInv) ?_
+  refine WP.mono (law s ctx even hdr ptr hzero hB hInv) ?_
   intro u loop
   have oldM := loop.outside.val32 (d := mod) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

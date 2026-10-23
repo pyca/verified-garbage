@@ -76,4 +76,8 @@ theorem pair_rounds_ct (round : Prog isa) (law : PairLaw round) (ctLaw : PairCTL
   have count := h.1.ctx.count
   exact ⟨0, by omega, by omega, h⟩
 
+theorem PairCTLaw.loop {round : Prog isa} (law : PairLaw round) (ctLaw : PairCTLaw round) :
+    LoopCTLaw round :=
+  fun even => pair_rounds_ct round law ctLaw even
+
 end VG.Proof.Bignum.Arm.MontPipeline

@@ -1,4 +1,6 @@
 module
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBase
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineOpCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
@@ -24,6 +26,7 @@ theorem montOp_ct {base : BitVec 32} {len w o a b : Nat}
       (ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0) ∧
       (ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w b < numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
       (montOp o a b) (fun _ _ => True) :=
-  montPipelineOp_ct montRound MontPipeline.baseline_law MontPipeline.baseline_ct ho ha hb fit
+  montPipelineOp_ct montRound (MontPipeline.RoundLaw.loop MontPipeline.baseline_law)
+    (MontPipeline.RoundCTLaw.loop MontPipeline.baseline_law MontPipeline.baseline_ct) ho ha hb fit
 
 end VG.Proof.Bignum.Arm

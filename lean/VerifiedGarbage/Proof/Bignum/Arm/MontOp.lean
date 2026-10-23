@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBase
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineOp
 public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
@@ -28,6 +29,6 @@ theorem montOp_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
         numAt s.mem (State.addr base) w a * numAt s.mem (State.addr base) w b % numAt s.mem (State.addr base) w 0 ∧
       Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t :=
-  montPipelineOp_ok montRound MontPipeline.baseline_law s h ho ha hb ho0 operand
+  montPipelineOp_ok montRound (MontPipeline.RoundLaw.loop MontPipeline.baseline_law) s h ho ha hb ho0 operand
 
 end VG.Proof.Bignum.Arm

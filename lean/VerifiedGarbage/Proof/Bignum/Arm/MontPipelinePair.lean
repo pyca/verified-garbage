@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Proof.Bignum.Arm.MontState
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
+public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Rounds of two rows
@@ -137,5 +138,8 @@ theorem pair_rounds_ok (round : Prog isa) (law : PairLaw round) (s : State) {bas
       simp only [val32, Nat.mul_zero, Nat.zero_mul, Nat.zero_mod]
     · rw [hzero]
       omega
+
+theorem PairLaw.loop {round : Prog isa} (law : PairLaw round) : LoopLaw round :=
+  fun s _ _ _ _ _ _ _ _ _ ctx even hdr ptr hzero hB hInv => pair_rounds_ok round law s ctx even hdr ptr hzero hB hInv
 
 end VG.Proof.Bignum.Arm.MontPipeline
