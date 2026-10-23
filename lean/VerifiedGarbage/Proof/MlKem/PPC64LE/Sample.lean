@@ -561,4 +561,88 @@ theorem blk2_ok (h5 : s.gpr .r5 = j) (h11 : s.gpr .r11 = d) :
 
 end
 
+/-! ## Accepting a candidate -/
+
+/-- `SEnv` through writes in `a`. -/
+theorem SEnv.frameA {s₀ s s' : State} (hp : Pre s₀) (h : SEnv s₀ s) (hf : Frame [polyRegion (A s₀)] s.mem s'.mem)
+    (gp : ∀ r ∈ preserved, s'.gpr r = s.gpr r) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (sp : s'.sp = s.sp) :
+    SEnv s₀ s' := by
+  have fs := hp.fs
+  have hsv : ∀ r ∈ [polyRegion (A s₀)], (⟨S s₀ + BitVec.ofNat 64 1680, 32⟩ : Region).Disjoint r := by
+    intro r hr; rw [List.mem_singleton] at hr; subst hr
+    exact (hp.a_s.sub_right (s_sub (by decide))).symm
+  have k : ∀ d, 1680 ≤ d → d + 8 ≤ 1712 →
+      s'.mem.readW (S s₀ + BitVec.ofNat 64 d) 64 = s.mem.readW (S s₀ + BitVec.ofNat 64 d) 64 :=
+    fun d h₁ h₂ => hf.readW (Offset.contains _ h₁ (by omega) (by omega)) hsv (by decide)
+  refine ⟨(gp _ (by decide)).trans h.r29, (gp _ (by decide)).trans h.r30, (gp _ (by decide)).trans h.r31,
+    rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, fun r hr a b c => (gp r hr).trans (h.cs r hr a b c),
+    (k 1680 (by omega) (by omega)).trans h.s29, (k 1688 (by omega) (by omega)).trans h.s30,
+    (k 1696 (by omega) (by omega)).trans h.s31, (k 1704 (by omega) (by omega)).trans h.slr, ?_⟩
+  rw [bytesAt_frame hf (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.seed_a) (by decide)]
+  exact h.seed
+
+theorem getD_append_single {L : List Zq} {x : Zq} {k : Nat} (hk : k < L.length + 1) :
+    (L ++ [x]).getD k 0 = if k < L.length then L.getD k 0 else x := by
+  split
+  · rename_i h
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_left h, ← List.getD_eq_getElem?_getD]
+  · rename_i h
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega), show k - L.length = 0 by omega]; rfl
+
+theorem accept_ok {s₀ s : State} (hp : Pre s₀) {L : List Zq} (h : LS s₀ L s) {d : Reg}
+    {v : BitVec 64} (hv : s.gpr d = v) (hv4 : v.toNat < 4096) (hz : s.gpr .r12 = accR v (s.gpr .r5)) :
+    WP isa (accept d) s fun t => LS s₀ (accD L v.toNat) t ∧ ∀ r, r ≠ .r4 → r ≠ .r5 → t.gpr r = s.gpr r := by
+  have hl := h.len
+  have hj : (s.gpr .r5).toNat = L.length := by
+    rw [h.r5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have hz' := accR_eq hv4 (j := s.gpr .r5) (by omega)
+  rw [← hz, hj] at hz'
+  refine WP.ite (s.gpr .r12 == 0) (eval_zero _ _) (fun e => ?_) (fun e => ?_)
+  · -- rejected
+    have hn : ¬ (v.toNat < 3329 ∧ L.length < 256) := by
+      rw [e] at hz'; intro hc; simp [hc] at hz'
+    have ea : accD L v.toNat = L := by
+      unfold accD; rw [ite_eq_right (show ¬ (v.toNat < q ∧ L.length < 256) from hn)]
+    rw [ea]
+    exact wp_nil ⟨h, fun _ _ _ => rfl⟩
+  · -- accepted
+    have hy : v.toNat < 3329 ∧ L.length < 256 := by
+      rw [e] at hz'; simpa using hz'
+    have ea : accD L v.toNat = L ++ [ofNat v.toNat] := by
+      unfold accD; rw [ite_eq_left (show v.toNat < q ∧ L.length < 256 from hy)]
+    rw [ea]
+    have cA := coeff_contains (A s₀) (i := L.length) (by rw [n_eq]; omega)
+    have iA : InRegions s.wr (A s₀ + BitVec.ofNat 64 (4 * L.length)) 4 :=
+      ⟨polyRegion (A s₀), by rw [h.env.wr, hp.wr]; simp, cA⟩
+    have hblk : WP isa (.block [.store .w d .r4 0, .addi .r4 .r4 4, .addi .r5 .r5 1]) s fun t =>
+        t.mem = s.mem.writeW (A s₀ + BitVec.ofNat 64 (4 * L.length)) (v.setWidth 32) ∧
+        t.gpr .r4 = A s₀ + BitVec.ofNat 64 (4 * L.length) + BitVec.ofNat 64 4 ∧
+        t.gpr .r5 = BitVec.ofNat 64 L.length + BitVec.ofNat 64 1 ∧
+        (∀ r, r ≠ .r4 → r ≠ .r5 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+      prun [exec_store_w, h.r4, h.r5, hv, iA]
+      refine ⟨by trivial, by trivial, by trivial, fun r h4 h5 => ?_, by trivial⟩
+      simp only [RegUpd.gpr_write, h4, h5, ite_false]
+    refine WP.mono hblk fun t ⟨m, r4, r5, rr, rd, wr, sp⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, rr⟩
+    · refine h.env.frameA hp (by rw [m]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ cA)
+        (fun r hr => rr r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr))
+        rd wr sp
+    · rw [m, bytesAt_writeW_sep _ _ _ (fun x h₁ h₂ => ?_) (by decide)]
+      · exact h.buf
+      · exact hp.a_s _ (cA.byte h₂) (s_sub (s₀ := s₀) (o := 840) (n := 840) (by decide) _
+          (by simp only [Region.Contains]; omega))
+    · rw [r4, List.length_append, List.length_singleton]; exact ptr_succ _ 4 _
+    · rw [r5, List.length_append, List.length_singleton, BitVec.ofNat_add]
+    · simp only [List.length_append, List.length_singleton]; omega
+    · intro k hk
+      simp only [List.length_append, List.length_singleton] at hk
+      rw [m, show A s₀ + BitVec.ofNat 64 (4 * L.length) = coeffAddr (A s₀) L.length from rfl,
+        coeffAt_writeW _ _ (by rw [n_eq]; omega) (by rw [n_eq]; omega), getD_append_single hk]
+      by_cases e' : L.length = k
+      · subst e'
+        rw [ite_eq_left rfl, ite_eq_right (Nat.lt_irrefl _)]
+        exact BitVec.eq_of_toNat_eq (by
+          rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, ofNat_of_lt (show v.toNat < q from hy.1)])
+      · rw [ite_eq_right e', ite_eq_left (by omega)]
+        exact h.coeff k (by omega)
+
 end VG.Proof.MlKem.PPC64LE.Sample
