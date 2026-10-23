@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Step
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Contract
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Copy
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Sha256.Stream
@@ -208,5 +209,79 @@ theorem correctMain (hp : Pre H s₀) :
   have e : nn s₀ = 0 := by simpa using hb
   rw [e] at l₀ ⊢
   exact l₀
+
+/-! ## The frame -/
+
+include hH in
+theorem iterateMain_fdepth : (VG.Impl.Pbkdf2.Stream.PPC64LE.iterateMain H).fdepth ≤ 1 := by
+  have := hH.finFd
+  have := hH.updFd
+  simp only [VG.Impl.Pbkdf2.Stream.PPC64LE.iterateMain, VG.Impl.Pbkdf2.Stream.PPC64LE.Iter.step,
+    Hash.callFin, Hash.callUpd, Code.fdepth, Nat.max_le]
+  omega
+
+include hH in
+theorem iterateMain_pf : pushFrames (VG.Impl.Pbkdf2.Stream.PPC64LE.iterateMain H) = true := by
+  simp [VG.Impl.Pbkdf2.Stream.PPC64LE.iterateMain, VG.Impl.Pbkdf2.Stream.PPC64LE.Iter.step, Hash.callFin,
+    Hash.callUpd, pushFrames, hH.finPf, hH.updPf]
+
+open VG.Proof.Hmac.Stream.PPC64LE.Init (inner inner_bytes) in
+theorem pre_inner {s₀ : State} (hp : (iterG hH.SH (bytes H) 96).pre s₀) : Pre H (inner s₀) := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hp
+  rw [hH.hS, hH.hD] at *
+  have sub : Region.Sub (below (s₀.sp - 48) 48) (below s₀.sp 96) := below_body s₀.sp 48
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, by show 48 ≤ (s₀.sp - 48).toNat; bv_omega, h9.sub_left sub,
+    h10.sub_left sub, h11.sub_left sub, h12.sub_left sub⟩
+
+open VG.Proof.Hmac.Stream.PPC64LE.Init (inner inner_bytes) in
+/-- `iterate`, with its frame. -/
+theorem correct {s₀ : State} (hp : (iterG hH.SH (bytes H) 96).pre s₀) :
+    WP isa (VG.Impl.Pbkdf2.Stream.PPC64LE.iterate H) s₀ fun s' =>
+      abiPreserved s₀ s' ∧ (iterG hH.SH (bytes H) 96).post s₀ s' := by
+  have hpi := pre_inner hH hp
+  obtain ⟨h1, h2, _, _, _, _, _, h8, h9, h10, h11, h12⟩ := hp
+  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega) (by omega)
+  have hz := sz hH
+  refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
+  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
+    fun s' ⟨hk, hsp, hpost⟩ => ?_) (by have := iterateMain_fdepth hH; omega) (iterateMain_pf hH)
+  · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
+    have hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 96) :=
+      fun a h => hsub a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a h)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl
+    · exact h11.sub_left hf
+    · exact h12.sub_left hf
+  · refine Proof.MdStream.PPC64LE.WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
+    · have h0 : r ≠ .r0 := by revert r hr; decide
+      simp only [State.write, h0, ite_false]
+      rw [hk r hr]
+      simp only [framed, State.write, h0, ite_false]
+    · simp [State.write]
+    · intro k0 hk0 hI hO
+      rw [hH.hD]
+      have hS2 : 2 * H.S < 2 ^ 64 := by have := hz.S; omega
+      have hDl : H.D < 2 ^ 64 := by have := hH.hD64; omega
+      have hu : U0 H (inner s₀) = bytesAt s₀.mem (s₀.gpr .r4) H.D := by
+        show bytesAt (inner s₀).mem (s₀.gpr .r4) H.D = _
+        exact Proof.Sha256.Stream.bytesAt_congr fun i hi =>
+          inner_bytes (R := ⟨s₀.gpr .r4, H.D⟩) (by rw [← hH.hD]; exact h10.sub_left hsub) hDl hi
+      have ht : T0 H (inner s₀) = bytesAt s₀.mem (s₀.gpr .r6) H.D := by
+        show bytesAt (inner s₀).mem (s₀.gpr .r6) H.D = _
+        exact Proof.Sha256.Stream.bytesAt_congr fun i hi =>
+          inner_bytes (R := ⟨s₀.gpr .r6, H.D⟩) (by rw [← hH.hD]; exact h11.sub_left hsub) hDl hi
+      have hI' : hH.SH.Repr (inner s₀).mem (kp (inner s₀)) (xorPad k0 ipad) := by
+        refine hH.congr s₀.mem _ _ _ (fun i hi => ?_) hI
+        exact inner_bytes (R := ⟨s₀.gpr .r3, 2 * H.S⟩) (by rw [← hH.hS]; exact h9.sub_left hsub)
+          hS2 (show i < 2 * H.S by omega)
+      have hO' : hH.SH.Repr (inner s₀).mem (kp (inner s₀) + BitVec.ofNat 64 H.S) (xorPad k0 opad) := by
+        rw [hH.hS] at hO
+        refine hH.congr s₀.mem _ _ _ (fun i hi => ?_) hO
+        have := inner_bytes (s₀ := s₀) (R := ⟨s₀.gpr .r3, 2 * H.S⟩) (by rw [← hH.hS]; exact h9.sub_left hsub)
+          hS2 (i := H.S + i) (show H.S + i < 2 * H.S by omega)
+        rwa [VG.Proof.Hmac.Stream.PPC64LE.add_off] at this
+      refine (hpost k0 ⟨by rw [hk0, hH.hB], hI', hO'⟩).trans ?_
+      rw [hu, ht]
+      rfl
 
 end VG.Proof.Pbkdf2.Stream.PPC64LE.Iter
