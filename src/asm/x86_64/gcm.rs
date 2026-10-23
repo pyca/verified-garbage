@@ -76109,7 +76109,7 @@ cmp rax, rcx
 jb 213f
 mov rax, QWORD PTR [r15+192]
 shr rax, 4
-cmp rax, 4
+cmp rax, 3
 jb 215f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
@@ -76160,212 +76160,6 @@ sub rcx, rax
 mov QWORD PTR [r15+208], rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 216f
-215:
-test rax, rax
-je 220f
-mov rsi, QWORD PTR [r15+224]
-mov rdi, QWORD PTR [r15+200]
-mov rcx, QWORD PTR [r15+192]
-mov r10d, 0
-mov r8, rcx
-shr r8, 6
-shl r8, 6
-cmp r8, 0
-je 222f
-224:
-movdqu xmm0, XMMWORD PTR [rsi+r10*1]
-movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
-movdqu xmm2, XMMWORD PTR [rsi+r10*1+32]
-movdqu xmm3, XMMWORD PTR [rsi+r10*1+48]
-movdqu XMMWORD PTR [rdi+r10*1], xmm0
-movdqu XMMWORD PTR [rdi+r10*1+16], xmm1
-movdqu XMMWORD PTR [rdi+r10*1+32], xmm2
-movdqu XMMWORD PTR [rdi+r10*1+48], xmm3
-add r10, 64
-cmp r10, r8
-jne 224b
-jmp 223f
-222:
-223:
-mov r8, rcx
-shr r8, 4
-shl r8, 4
-cmp r10, r8
-je 225f
-227:
-movdqu xmm0, XMMWORD PTR [rsi+r10*1]
-movdqu XMMWORD PTR [rdi+r10*1], xmm0
-add r10, 16
-cmp r10, r8
-jne 227b
-jmp 226f
-225:
-226:
-cmp r10, rcx
-je 228f
-cmp rcx, 16
-jb 230f
-mov r10, rcx
-sub r10, 16
-movdqu xmm0, XMMWORD PTR [rsi+r10*1]
-movdqu XMMWORD PTR [rdi+r10*1], xmm0
-jmp 231f
-230:
-232:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 232b
-231:
-jmp 229f
-228:
-229:
-mov rdi, r13
-mov rsi, QWORD PTR [r15+176]
-mov rdx, r14
-add rdx, 48
-mov rcx, QWORD PTR [r15+200]
-mov r8, QWORD PTR [r15+192]
-shr r8, 4
-mov r9, r15
-add r9, 512
-mov rbp, r8
-mov rbx, r8
-shl rbx, 4
-add rbx, rcx
-call {vg_aes_ctr32_vaes}
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm0, XMMWORD PTR [rax]
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm1, XMMWORD PTR [rax+16]
-movdqu xmm12, XMMWORD PTR [r14+16]
-pshufb xmm12, xmm0
-pxor xmm8, xmm8
-pxor xmm9, xmm9
-pxor xmm10, xmm10
-cmp rbp, 3
-jb 233f
-movdqu xmm7, XMMWORD PTR [rbx-48]
-pshufb xmm7, xmm0
-pxor xmm7, xmm12
-pxor xmm12, xmm12
-movdqu xmm6, XMMWORD PTR [r13+304]
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 16
-pxor xmm9, xmm11
-jmp 234f
-233:
-234:
-cmp rbp, 2
-jb 235f
-movdqu xmm7, XMMWORD PTR [rbx-32]
-pshufb xmm7, xmm0
-pxor xmm7, xmm12
-pxor xmm12, xmm12
-movdqu xmm6, XMMWORD PTR [r13+256]
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 16
-pxor xmm9, xmm11
-jmp 236f
-235:
-236:
-movdqu xmm7, XMMWORD PTR [rbx-16]
-pshufb xmm7, xmm0
-pxor xmm7, xmm12
-pxor xmm12, xmm12
-movdqu xmm6, XMMWORD PTR [r13+272]
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm7
-pclmulqdq xmm11, xmm6, 16
-pxor xmm9, xmm11
-movdqa xmm11, xmm9
-psrldq xmm11, 8
-pxor xmm10, xmm11
-pslldq xmm9, 8
-pxor xmm8, xmm9
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm2, xmm10
-pxor xmm2, xmm8
-pshufb xmm2, xmm0
-movdqu XMMWORD PTR [r14+16], xmm2
-mov rax, QWORD PTR [r15+192]
-mov rcx, rax
-and rcx, 15
-sub rax, rcx
-mov rcx, QWORD PTR [r15+208]
-mov QWORD PTR [r15+216], rcx
-sub rcx, rax
-mov QWORD PTR [r15+208], rcx
-add rax, QWORD PTR [r15+200]
-mov QWORD PTR [r15+200], rax
-jmp 221f
-220:
-mov rax, QWORD PTR [r15+192]
-mov rcx, rax
-and rcx, 15
-sub rax, rcx
-mov rsi, QWORD PTR [r15+224]
-add rsi, rax
-mov rdi, QWORD PTR [r15+200]
-add rdi, rax
-test rcx, rcx
-je 237f
-mov r10d, 0
-239:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 239b
-jmp 238f
-237:
-238:
-mov rax, QWORD PTR [r15+192]
-mov rcx, rax
-and rcx, 15
-sub rax, rcx
-mov rcx, QWORD PTR [r15+208]
-mov QWORD PTR [r15+216], rcx
-sub rcx, rax
-mov QWORD PTR [r15+208], rcx
-add rax, QWORD PTR [r15+200]
-mov QWORD PTR [r15+200], rax
-221:
 216:
 jmp 214f
 213:
@@ -78323,10 +78117,216 @@ mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 lea rsp, [rsp+2616]
 ret
+215:
+test rax, rax
+je 220f
+mov rsi, QWORD PTR [r15+224]
+mov rdi, QWORD PTR [r15+200]
+mov rcx, QWORD PTR [r15+192]
+mov r10d, 0
+mov r8, rcx
+shr r8, 6
+shl r8, 6
+cmp r8, 0
+je 222f
+224:
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
+movdqu xmm2, XMMWORD PTR [rsi+r10*1+32]
+movdqu xmm3, XMMWORD PTR [rsi+r10*1+48]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+movdqu XMMWORD PTR [rdi+r10*1+16], xmm1
+movdqu XMMWORD PTR [rdi+r10*1+32], xmm2
+movdqu XMMWORD PTR [rdi+r10*1+48], xmm3
+add r10, 64
+cmp r10, r8
+jne 224b
+jmp 223f
+222:
+223:
+mov r8, rcx
+shr r8, 4
+shl r8, 4
+cmp r10, r8
+je 225f
+227:
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+add r10, 16
+cmp r10, r8
+jne 227b
+jmp 226f
+225:
+226:
+cmp r10, rcx
+je 228f
+cmp rcx, 16
+jb 230f
+mov r10, rcx
+sub r10, 16
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+jmp 231f
+230:
+232:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 232b
+231:
+jmp 229f
+228:
+229:
+mov rdi, r13
+mov rsi, QWORD PTR [r15+176]
+mov rdx, r14
+add rdx, 48
+mov rcx, QWORD PTR [r15+200]
+mov r8, QWORD PTR [r15+192]
+shr r8, 4
+mov r9, r15
+add r9, 512
+mov rbp, r8
+mov rbx, r8
+shl rbx, 4
+add rbx, rcx
+call {vg_aes_ctr32_vaes}
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
+movdqu xmm12, XMMWORD PTR [r14+16]
+pshufb xmm12, xmm0
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+cmp rbp, 3
+jb 233f
+movdqu xmm7, XMMWORD PTR [rbx-48]
+pshufb xmm7, xmm0
+pxor xmm7, xmm12
+pxor xmm12, xmm12
+movdqu xmm6, XMMWORD PTR [r13+304]
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 0
+pxor xmm8, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 17
+pxor xmm10, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 1
+pxor xmm9, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 16
+pxor xmm9, xmm11
+jmp 234f
+233:
+234:
+cmp rbp, 2
+jb 235f
+movdqu xmm7, XMMWORD PTR [rbx-32]
+pshufb xmm7, xmm0
+pxor xmm7, xmm12
+pxor xmm12, xmm12
+movdqu xmm6, XMMWORD PTR [r13+256]
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 0
+pxor xmm8, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 17
+pxor xmm10, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 1
+pxor xmm9, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 16
+pxor xmm9, xmm11
+jmp 236f
+235:
+236:
+movdqu xmm7, XMMWORD PTR [rbx-16]
+pshufb xmm7, xmm0
+pxor xmm7, xmm12
+pxor xmm12, xmm12
+movdqu xmm6, XMMWORD PTR [r13+272]
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 0
+pxor xmm8, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 17
+pxor xmm10, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 1
+pxor xmm9, xmm11
+movdqa xmm11, xmm7
+pclmulqdq xmm11, xmm6, 16
+pxor xmm9, xmm11
+movdqa xmm11, xmm9
+psrldq xmm11, 8
+pxor xmm10, xmm11
+pslldq xmm9, 8
+pxor xmm8, xmm9
+movdqa xmm11, xmm8
+pclmulqdq xmm11, xmm1, 16
+pshufd xmm8, xmm8, 78
+pxor xmm8, xmm11
+movdqa xmm11, xmm8
+pclmulqdq xmm11, xmm1, 16
+pshufd xmm8, xmm8, 78
+pxor xmm8, xmm11
+movdqa xmm2, xmm10
+pxor xmm2, xmm8
+pshufb xmm2, xmm0
+movdqu XMMWORD PTR [r14+16], xmm2
+mov rax, QWORD PTR [r15+192]
+mov rcx, rax
+and rcx, 15
+sub rax, rcx
+mov rcx, QWORD PTR [r15+208]
+mov QWORD PTR [r15+216], rcx
+sub rcx, rax
+mov QWORD PTR [r15+208], rcx
+add rax, QWORD PTR [r15+200]
+mov QWORD PTR [r15+200], rax
+jmp 221f
+220:
+mov rax, QWORD PTR [r15+192]
+mov rcx, rax
+and rcx, 15
+sub rax, rcx
+mov rsi, QWORD PTR [r15+224]
+add rsi, rax
+mov rdi, QWORD PTR [r15+200]
+add rdi, rax
+test rcx, rcx
+je 237f
+mov r10d, 0
+239:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 239b
+jmp 238f
+237:
+238:
+mov rax, QWORD PTR [r15+192]
+mov rcx, rax
+and rcx, 15
+sub rax, rcx
+mov rcx, QWORD PTR [r15+208]
+mov QWORD PTR [r15+216], rcx
+sub rcx, rax
+mov QWORD PTR [r15+208], rcx
+add rax, QWORD PTR [r15+200]
+mov QWORD PTR [r15+200], rax
+221:
+jmp 216b
 .p2align 6",
         vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
