@@ -42,11 +42,11 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hs₄ := hs₃.of_keeps (m₄.keeps []) (by decide)
   have O₄ : Outside base acc (4 * N + 4) s.mem s₄.mem := by
     rw [m₄.mem, u₃.mem, u₂.mem]
-    exact (O₁.mono (Nat.le_refl _) (by omega)).trans
-      ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega) (by omega))
+    exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
   have hsum : val32 s₄.mem base acc (N + 1) =
       wordsVal s.mem base a M.n + wordsVal s.mem base b M.n := by
-    rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega_arith)).val32 (by omega) (by omega_arith),
+    rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega_arith)).val32 (by omega_arith) (by omega_arith),
       w32_write_self, u₃.gpr, u₂.gpr, u₂.other _ (by decide), hc, wordsVal_eq_val32, wordsVal_eq_val32, ← hN2, ← V₁]
     have : ((0 : BitVec 32) - cmask c).toNat = c.toNat := by cases c <;> rfl
     rw [this]
@@ -57,14 +57,14 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
         (by rw [hsum]; exact hAB))
     fun u ⟨O, V, K⟩ => ⟨?_, ?_, ?_, ?_⟩
   · refine OpKeep.of (((k₃.mono (rs' := clob) (by decide)).widen (m₄.keeps [])).widen K) (by decide) ?_
-    have O₄' : Outside base acc (accLen M) s.mem s₄.mem := O₄.mono (Nat.le_refl _) (by omega)
+    have O₄' : Outside base acc (accLen M) s.mem s₄.mem := O₄.mono (Nat.le_refl _) (by omega_arith)
     refine (Outs.of_outside O₄' (by simp)).trans ?_
-    rw [show 4 * N = 8 * M.n by omega] at O
+    rw [show 4 * N = 8 * M.n by omega_arith] at O
     exact O.mono (by simp)
   · rw [wordsVal_eq_val32, ← hN2, V, hsum]
-  · refine (Outs.of_outside (O₄.mono (o' := acc) (n' := 4 * (words M + 1)) (Nat.le_refl _) (by rw [hNw]; omega))
+  · refine (Outs.of_outside (O₄.mono (o' := acc) (n' := 4 * (words M + 1)) (Nat.le_refl _) (by rw [hNw]; omega_arith))
       (by simp [hNw])).trans ?_
-    rw [show 4 * N = 8 * M.n by omega] at O
+    rw [show 4 * N = 8 * M.n by omega_arith] at O
     exact O.mono (by simp)
   · rw [K.1 _ (by decide), m₄.gpr, k₃.1 _ (by decide)]
 
