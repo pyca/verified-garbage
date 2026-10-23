@@ -215,6 +215,73 @@ def openRest (c : XorCallee) : Prog isa :=
                     (.ite (.zero .x .x9) (padRest c 512) (cryptRest c)))))))))
       (padRest c 512))
 
+/-! ## The rest after the chunks when decrypting
+
+After the chunks (`Stitch.bulk`) and `polyOut false`, `open` has absorbed
+them all; what it still has to absorb is the rest itself, which it must
+before decrypting it in place. With 65 to 256 bytes of rest (`TailO.test`),
+it computes the rest's keystream as `seal` does (`Tail.kernel`'s four blocks,
+into `ctx[128, 384)`), while the integer units absorb the rest's whole
+blocks, up to two after each double round (`TailO.maybe`, while `x6`, the
+blocks left, is not zero; at most sixteen, of twenty places), rather than
+absorbing the rest and then calling `vg_chacha20_xor` on it. Then the
+accumulator is stored, the rest's last partial block absorbed with its
+padding (`macPad`), and the rest XORed with its keystream (`Short.xorKs`).
+Shorter rests keep the stream's single scalar block (`openRest`).
+
+The rest's address and length are kept in `x7` and `x2` through the kernel,
+and in `x24` and `x25` (free after the additional data) through `macPad`'s
+call. The branches are on the length only.
+-/
+
+namespace TailO
+
+/-- `x9 = 0` iff `65 ≤ x23 ≤ 256`: `b₂ - b₁ + 1`, with `b₁ = (x23 - 257) >> 63`
+(`x23 < 257`) and `b₂ = (x23 - 65) >> 63` (`x23 < 65`), for `x23` below
+`2^63`; then nine moves, which keep the block 64 bytes long with its branch,
+so that the code after it keeps its alignment. -/
+def test : List Instr :=
+  [.subImm .x .x9 .x23 257, .lsr .x .x9 .x9 63, .subImm .x .x10 .x23 65, .lsr .x .x10 .x10 63,
+    .sub .x .x9 .x10 .x9, .addImm .x .x9 .x9 1] ++ List.replicate 9 (.movz .x .x11 0 0)
+
+/-- Our caller's `x20` kept in `x8`, `x20` pointed at the rest (`x22`), the
+rest kept in `x7`, its whole blocks counted in `x6`, and, as before the
+chunks, the clamped key stored and the accumulator loaded (`polyIn`). -/
+def load : List Instr := [mov .x8 .x20, mov .x20 .x22, mov .x7 .x22, .lsr .x .x6 .x23 4] ++ polyIn
+
+/-- A block of the rest, if one is left. -/
+def maybe : Prog isa := .ite (.zero .x .x6) (.block []) (.block (Poly.block ++ [.subImm .x .x6 .x6 1]))
+
+/-- A double round, and up to two blocks. -/
+def round (sve : Bool) : Prog isa :=
+  .seq (.block (Tail.doubleRound sve)) (.seq maybe (.seq maybe (.block [.subImm .x .x4 .x4 1])))
+
+def rounds (sve : Bool) : Prog isa := .loop (round sve) (.nonzero .x .x4)
+
+/-- The keystream of four blocks into `x3[0, 256)`, with the rest's whole
+blocks absorbed. -/
+def kernel (sve : Bool) : Prog isa :=
+  .seq (.block VG.Impl.ChaCha20.AArch64.Neon4.setup)
+    (.seq (.block [.movz .x .x4 10 0]) (.seq (rounds sve) (.block Tail.finish)))
+
+/-- The accumulator stored, our caller's `x20` restored, `x22` and `x23` set
+to the rest's last partial block, and the rest kept in `x24`, `x25`. -/
+def out : List Instr :=
+  polyOut false ++ [mov .x22 .x20, .add .x .x23 .x7 .x2, .sub .x .x23 .x23 .x20, mov .x20 .x8,
+    mov .x24 .x7, mov .x25 .x2]
+
+/-- The rest decrypted, its whole blocks absorbed with its keystream's
+rounds, and its last partial block before it is XORed. -/
+def rest (sve : Bool) : Prog isa :=
+  .seq (.block load)
+  (.seq (kernel sve)
+  (.seq (.block out)
+  (.seq (macPad .x22 .x23)
+  (.seq (.block [mov .x22 .x24, mov .x23 .x25])
+    Short.xorKs))))
+
+end TailO
+
 /-- `seal` but for the tag, from the counter set to 1 (`counterOne`) after the
 one-time key's block (`prologue`). -/
 def sealStitchedMain (c : XorCallee) : Prog isa :=
@@ -236,8 +303,8 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (.block lengths)
   (.seq (.block counterOne)
   (.seq (cryptStitched c.sve false)
-  (.seq (macPad .x22 .x23)
-  (.seq (openRest c)
+  (.seq (.block TailO.test)
+  (.seq (.ite (.zero .x .x9) (TailO.rest c.sve) (.seq (macPad .x22 .x23) (openRest c)))
   (.seq absorbLengths
     (finalizeTo 48))))))))
 
