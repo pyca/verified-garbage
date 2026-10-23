@@ -56,14 +56,14 @@ theorem modChecks_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N 
   rw [v₁] at v₂
   -- `M`, from here on.
   refine wsa (by simp [loadNum]) (by simp [ltMask]) (WP.mono (loadK h₂ (j := aX) (by decide) (by decide)
-    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega) (by omega))
+    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega_arith) (by omega_arith))
     fun t₃ ⟨h₃, v₃, a₃⟩ => ?_)
   have M₃ : wv t₃.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := Arrays.wv_other a₃ (by decide) (by decide) hZ hn
   refine wsa (by simp [ltMask]) (by simp [loadNum]) (WP.mono (ltK h₃ (a := aX) (b := aM) (by decide) (by decide))
     fun t₄ ⟨h₄, m₄, o₄⟩ => ?_)
   rw [v₃, M₃, Arrays.mask_eq a₃ hn hZ, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₄
   have M₄ : wv t₄.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
-    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega), M₃]
+    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega_arith), M₃]
   refine wsa (by simp [loadNum]) (by simp [mulEWide]) (WP.mono (loadK h₄ (j := aX) (by decide) (by decide)
     (by decide) (show sD < 32 by decide) (show sDlen < 32 by decide) (by decide) (by decide) hpd hdl srcD hd1 hdk)
     fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
@@ -76,17 +76,17 @@ theorem modChecks_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N 
     (WP.mono (reduceTopK h₆ (sl := sXlen) (top := topD sYlen) (L := xb.length)
       (c := (L + 7) / 8 + 1) (Nx := 2 * w + 4) hsXl nXl hxl hx1 hxk
       (fun t' hg hh => topD_ok hg hZ hsYl
-        (by rw [hh _ hsYl, h₆.hdr _ hsYl nYl]; exact hyl) (by omega))
-      (by omega) (by omega) (by omega)) fun t₇ ⟨h₇, v₇, a₇⟩ => ?_)
+        (by rw [hh _ hsYl, h₆.hdr _ hsYl nYl]; exact hyl) (by omega_arith))
+      (by omega_arith) (by omega_arith) (by omega_arith)) fun t₇ ⟨h₇, v₇, a₇⟩ => ?_)
   rw [M₆, v₆, v₅] at v₇
   have M₇ : wv t₇.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
     rw [Arrays.wv_other a₇ (by decide) (by decide) hZ hn, M₆]
   refine wsa (by simp [eqOne]) (by simp [loadNum]) (WP.mono (eqOneK h₇) fun t₈ ⟨h₈, m₈, o₈⟩ => ?_)
   rw [Arrays.mask_eq a₇ hn hZ, Arrays.mask_eq a₆ hn hZ, Arrays.mask_eq a₅ hn hZ, m₄, mask_and'] at m₈
   have M₈ : wv t₈.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
-    rw [Outside.wv_arr o₈ (by decide) hZ hn (by omega), M₇]
+    rw [Outside.wv_arr o₈ (by decide) hZ hn (by omega_arith), M₇]
   refine wsa (by simp [loadNum]) (by simp [mulE]) (WP.mono (loadK h₈ (j := aX) (by decide) (by decide)
-    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega) (by omega))
+    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega_arith) (by omega_arith))
     fun t₉ ⟨h₉, v₉, a₉⟩ => ?_)
   have M₉ : wv t₉.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
     rw [Arrays.wv_other a₉ (by decide) (by decide) hZ hn, M₈]
@@ -96,32 +96,32 @@ theorem modChecks_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N 
   refine wsa (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (by simp [eqOne])
     (WP.mono (reduceTopK h₁₀ (sl := sXlen) (top := Impl.Rsa.X86_64.CheckCrtKey.topE)
       (L := xb.length) (c := 1) (Nx := w + 2) hsXl nXl hxl hx1 hxk
-      (fun t' _ _ => topE_ok t') (Nat.le_refl _) (by omega) (by omega)) fun t₁₁ ⟨h₁₁, v₁₁, a₁₁⟩ => ?_)
+      (fun t' _ _ => topE_ok t') (Nat.le_refl _) (by omega_arith) (by omega_arith)) fun t₁₁ ⟨h₁₁, v₁₁, a₁₁⟩ => ?_)
   rw [M₁₀, v₁₀, v₉] at v₁₁
   refine WP.mono (eqOneK h₁₁) fun t₁₂ ⟨h₁₂, m₁₂, _⟩ => ⟨h₁₂, wv t₂.mem B (slot w aM) w, wv t₇.mem B (slot w aR) w,
-    wv t₁₁.mem B (slot w aR) w, fun hx => by have := v₂ hx; omega, ?_, ?_, ?_⟩
+    wv t₁₁.mem B (slot w aR) w, fun hx => by have := v₂ hx; omega_arith, ?_, ?_, ?_⟩
   · intro hx hd hpq
-    have eM := v₂ (by omega)
+    have eM := v₂ (by omega_arith)
     have hM : wv t₂.mem B (slot w aM) w < 2 ^ (64 * ((xb.length + 7) / 8)) := by
       have := Proof.Rsa.lt_of_os2ip xb
       have := pow_len_le xb.length
-      omega
-    refine v₇ hM (by omega) (top_lt' ?_)
-    rw [show (L + 7) / 8 + 1 + (2 * w + 4 - ((L + 7) / 8 + 1)) = 2 * w + 4 by omega, v₆, v₅]
-    rw [show wv t₂.mem B (slot w aM) w = Spec.Rsa.os2ip xb - 1 by omega]
+      omega_arith
+    refine v₇ hM (by omega_arith) (top_lt' ?_)
+    rw [show (L + 7) / 8 + 1 + (2 * w + 4 - ((L + 7) / 8 + 1)) = 2 * w + 4 by omega_arith, v₆, v₅]
+    rw [show wv t₂.mem B (slot w aM) w = Spec.Rsa.os2ip xb - 1 by omega_arith]
     exact fullExp_bound hev hx (by rw [hpq]; exact hd) hy
   · intro hx hlt
     have eM := v₂ hx
     have hM : wv t₂.mem B (slot w aM) w < 2 ^ (64 * ((xb.length + 7) / 8)) := by
       have := Proof.Rsa.lt_of_os2ip xb
       have := pow_len_le xb.length
-      omega
-    refine v₁₁ hM (by omega) (top_lt ?_)
-    rw [show 1 + (w + 2 - 1) = w + 2 by omega, v₁₀, v₉]
+      omega_arith
+    refine v₁₁ hM (by omega_arith) (top_lt ?_)
+    rw [show 1 + (w + 2 - 1) = w + 2 by omega_arith, v₁₀, v₉]
     calc (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb
         ≤ (word s.mem B (8 * sEv)).toNat * wv t₂.mem B (slot w aM) w := Nat.mul_le_mul_left _ (Nat.le_of_lt hlt)
       _ < 2 ^ (64 * 1) * wv t₂.mem B (slot w aM) w :=
-          Nat.mul_lt_mul_of_pos_right (by omega) (by omega)
+          Nat.mul_lt_mul_of_pos_right (by omega_arith) (by omega_arith)
   · rw [m₁₂, Arrays.mask_eq a₁₁ hn hZ, Arrays.mask_eq a₁₀ hn hZ, Arrays.mask_eq a₉ hn hZ, m₈, mask_and']
 
 end VG.Proof.Rsa.X86_64.Key
