@@ -41,4 +41,7 @@ pub(crate) mod sha512;
 pub(crate) mod sm3;
 
 #[rustfmt::skip]
+pub(crate) mod x25519;
+
+#[rustfmt::skip]
 pub(crate) mod zeroize;

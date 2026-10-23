@@ -77,7 +77,12 @@ mod tests {
                 $(assert!(!$e.to_string().is_empty(), "{:?}", $e);)+
             };
         }
-        check!(crate::hmac::InvalidMac, crate::rc4::Error::InvalidKeyLength);
+        check!(
+            crate::hmac::InvalidMac,
+            crate::rc4::Error::InvalidKeyLength,
+            crate::x25519::Error::ZeroSharedSecret,
+            crate::x25519::Error::Randomness,
+        );
         #[cfg(any(
             target_arch = "x86_64",
             target_arch = "aarch64",
@@ -167,8 +172,6 @@ mod tests {
             crate::triple_des_cbc::Error::IncompleteBlock,
             crate::triple_des_ecb::Error::InvalidKeyLength,
             crate::triple_des_ecb::Error::IncompleteBlock,
-            crate::x25519::Error::ZeroSharedSecret,
-            crate::x25519::Error::Randomness,
             crate::x448::Error::ZeroSharedSecret,
             crate::x448::Error::Randomness,
         );
