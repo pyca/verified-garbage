@@ -126,6 +126,19 @@ theorem Lay.of {c st w : Addr} (cw : c.toNat + 256 ≤ 2 ^ 64) (sw : st.toNat + 
   ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)),
     sW.sub_right (Offset.sub_base _ (by decide))⟩
 
+/-- A run that satisfies `R`, and for each `i` with `P i`, `Q i`. -/
+theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop} {Q : ι → State → Prop}
+    {R : State → Prop} (h₀ : WP isa c s R) (h : ∀ i, P i → WP isa c s (Q i)) :
+    WP isa c s fun s' => R s' ∧ ∀ i, P i → Q i s' := by
+  obtain ⟨t, s', e, r⟩ := h₀
+  refine ⟨t, s', e, r, fun i hi => ?_⟩
+  obtain ⟨t', s'', e', q⟩ := h i hi
+  obtain ⟨-, rfl⟩ := Exec.det e e'
+  exact q
+
+theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
+  rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
+
 theorem ctxH_eq (m : Mem) (p : Addr) : Spec.Gcm.ctxH m p = Spec.Gcm.blockAt m (p + BitVec.ofNat 64 240) :=
   rfl
 
