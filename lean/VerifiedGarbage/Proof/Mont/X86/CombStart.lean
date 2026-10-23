@@ -43,45 +43,45 @@ theorem buildStart_ok {n context size m : Nat} {base : Addr} {s : State}
   have nw := C.scr.nowrap
   unfold VG.Impl.Mont.X86.Comb.buildStart VG.Impl.Mont.X86.Comb.seq
   simp only [List.foldr_cons, List.foldr_nil]
-  refine WP.seq (WP.mono (high_copy_ok L C (by omega) (Nat.le_refl _) (by omega) (.inr (.inr b0)))
+  refine WP.seq (WP.mono (high_copy_ok L C (by omega_arith) (Nat.le_refl _) (by omega_arith) (.inr (.inr b0)))
     fun a ⟨Ca, Pa, Oa, Ka⟩ => ?_)
   have Ra : wordsVal a.mem base (slot n 4) n = 2^(128*n) % m :=
     (high_write_low L C.scr (by decide) Oa (Nat.le_refl _)).trans r2
   have Ga := high_write_low L C.scr (i := 5) (by decide) Oa (Nat.le_refl _)
   have Onea := (high_write_low L C.scr (i := 3) (by decide) Oa (Nat.le_refl _)).trans one
   have Pa' : wordsVal a.mem base context n = m := Pa.trans C.modulus.val
-  refine WP.seq (WP.mono (high_copy_ok L Ca (by omega) (by omega) (by omega) (.inr (.inr (by omega))))
+  refine WP.seq (WP.mono (high_copy_ok L Ca (by omega_arith) (by omega_arith) (by omega_arith) (.inr (.inr (by omega_arith))))
     fun b ⟨Cb, Rb, Ob, Kb⟩ => ?_)
   have Rb' : wordsVal b.mem base (context+8*n) n = 2^(128*n) % m := Rb.trans Ra
-  have Pb : wordsVal b.mem base context n = m := (Ob.wordsVal (.inl (by omega)) (by omega)).trans Pa'
+  have Pb : wordsVal b.mem base context n = m := (Ob.wordsVal (.inl (by omega_arith)) (by omega_arith)).trans Pa'
   have Rlow : wordsVal b.mem base (slot n 4) n = 2^(128*n) % m :=
-    (high_write_low L Ca.scr (by decide) Ob (by omega)).trans Ra
-  have Glow := (high_write_low L Ca.scr (i := 5) (by decide) Ob (by omega)).trans Ga
-  have Onelow := (high_write_low L Ca.scr (i := 3) (by decide) Ob (by omega)).trans Onea
+    (high_write_low L Ca.scr (by decide) Ob (by omega_arith)).trans Ra
+  have Glow := (high_write_low L Ca.scr (i := 5) (by decide) Ob (by omega_arith)).trans Ga
+  have Onelow := (high_write_low L Ca.scr (i := 3) (by decide) Ob (by omega_arith)).trans Onea
   refine WP.seq (WP.mono (encodeBase_ok Cb Onelow Rlow) fun c ⟨Cc, Yc, Gc, Oc, Kc⟩ => ?_)
-  have Pc : wordsVal c.mem base context n = m := (encode_high L Cb.scr Oc (Nat.le_refl _) (by omega)).trans Pb
+  have Pc : wordsVal c.mem base context n = m := (encode_high L Cb.scr Oc (Nat.le_refl _) (by omega_arith)).trans Pb
   have Rc : wordsVal c.mem base (context+8*n) n = 2^(128*n) % m :=
-    (encode_high L Cb.scr Oc (by omega) (by omega)).trans Rb'
+    (encode_high L Cb.scr Oc (by omega_arith) (by omega_arith)).trans Rb'
   have Gc' : wordsVal c.mem base (slot n 5) n = wordsVal s.mem base (slot n 5) n * 2^(64*n) % m := by
     rw [Gc, Glow]
-  refine WP.seq (WP.mono (high_copy_ok L Cc (by omega) (by omega) (by omega) (.inr (.inr (by omega))))
+  refine WP.seq (WP.mono (high_copy_ok L Cc (by omega_arith) (by omega_arith) (by omega_arith) (.inr (.inr (by omega_arith))))
     fun d ⟨Cd, Yd, Od, Kd⟩ => ?_)
-  have Pd := (Od.wordsVal (d := context) (k := n) (.inl (by omega)) (by omega)).trans Pc
-  have Rd := (Od.wordsVal (d := context+8*n) (k := n) (.inl (by omega)) (by omega)).trans Rc
+  have Pd := (Od.wordsVal (d := context) (k := n) (.inl (by omega_arith)) (by omega_arith)).trans Pc
+  have Rd := (Od.wordsVal (d := context+8*n) (k := n) (.inl (by omega_arith)) (by omega_arith)).trans Rc
   have Yd' := Yd.trans Yc
-  have Gd := (high_write_low L Cc.scr (i := 5) (by decide) Od (by omega)).trans Gc'
-  have entry1 : entry n (context+16*n) 1 = context+24*n := by unfold entry; omega
+  have Gd := (high_write_low L Cc.scr (i := 5) (by decide) Od (by omega_arith)).trans Gc'
+  have entry1 : entry n (context+16*n) 1 = context+24*n := by unfold entry; omega_arith
   rw [entry1]
-  refine WP.seq (WP.mono (high_copy_ok L Cd (by omega) (by omega) (by omega) (.inr (.inr (by omega))))
+  refine WP.seq (WP.mono (high_copy_ok L Cd (by omega_arith) (by omega_arith) (by omega_arith) (.inr (.inr (by omega_arith))))
     fun t ⟨Ct, Gt, Ot, Kt⟩ => WP.block_nil ?_)
-  refine ⟨Ct, (Ot.wordsVal (.inl (by omega)) (by omega)).trans Pd,
-    (Ot.wordsVal (.inl (by omega)) (by omega)).trans Rd,
-    (Ot.wordsVal (.inl (by omega)) (by omega)).trans Yd', Gt.trans Gd,
-    (high_write_low L Cd.scr (by decide) Ot (by omega)).trans Gd, ?_, ?_⟩
-  · exact ((((start_table_frame Oa (by omega) (by omega)).trans
-      (start_table_frame Ob (by omega) (by omega))).trans
+  refine ⟨Ct, (Ot.wordsVal (.inl (by omega_arith)) (by omega_arith)).trans Pd,
+    (Ot.wordsVal (.inl (by omega_arith)) (by omega_arith)).trans Rd,
+    (Ot.wordsVal (.inl (by omega_arith)) (by omega_arith)).trans Yd', Gt.trans Gd,
+    (high_write_low L Cd.scr (by decide) Ot (by omega_arith)).trans Gd, ?_, ?_⟩
+  · exact ((((start_table_frame Oa (by omega_arith) (by omega_arith)).trans
+      (start_table_frame Ob (by omega_arith) (by omega_arith))).trans
       (Oc.mono (fun _ h => List.mem_append_left _ h))).trans
-      (start_table_frame Od (by omega) (by omega))).trans (start_table_frame Ot (by omega) (by omega))
+      (start_table_frame Od (by omega_arith) (by omega_arith))).trans (start_table_frame Ot (by omega_arith) (by omega_arith))
   · have kab : Keeps powerClob s b := (Ka.mono (by decide)).trans (Kb.mono (by decide))
     have kac : Keeps powerClob s c := kab.trans (Kc.mono (by decide))
     have kad : Keeps powerClob s d := kac.trans (Kd.mono (by decide))
