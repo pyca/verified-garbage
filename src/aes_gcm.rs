@@ -546,7 +546,7 @@ struct Fns {
     /// On AArch64, the `_with_powers` instances of `seal` and `open`, which
     /// read the powers `AesGcm::new` stores (`AesGcm::powers`).
     #[cfg(target_arch = "aarch64")]
-    powers: Option<&'static Prepared>,
+    powers: Option<Prepared>,
 }
 
 impl Backend {
@@ -697,12 +697,12 @@ static FNS_VAES_VPCLMUL_AVX512: Fns = Backend::VaesVpclmulAvx512.plain_fns();
 static FNS_AESNI_PCLMUL_AVX: Fns = Backend::AesNiPclmulAvx.plain_fns();
 #[cfg(target_arch = "aarch64")]
 static FNS_AES: Fns = Fns {
-    powers: Some(&PREPARED_AES),
+    powers: Some(PREPARED_AES),
     ..Backend::Aes.plain_fns()
 };
 #[cfg(target_arch = "aarch64")]
 static FNS_AES_SHA3: Fns = Fns {
-    powers: Some(&PREPARED_AES_SHA3),
+    powers: Some(PREPARED_AES_SHA3),
     ..Backend::AesSha3.plain_fns()
 };
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -936,13 +936,13 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
 };
 
 #[cfg(target_arch = "aarch64")]
-static PREPARED_AES: Prepared = Prepared {
+const PREPARED_AES: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
 };
 
 #[cfg(target_arch = "aarch64")]
-static PREPARED_AES_SHA3: Prepared = Prepared {
+const PREPARED_AES_SHA3: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes_sha3,
     open: vg_aes_gcm_open_with_powers_aes_sha3,
 };
@@ -1206,7 +1206,7 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         // On AArch64, the powers, through `seal_prepared`.
         #[cfg(target_arch = "aarch64")]
-        if let Some(p) = self.fns.powers {
+        if let Some(p) = &self.fns.powers {
             return Ok(self.seal_prepared(p, nonce, aad, data));
         }
         let seal = self.fns.seal;
@@ -1289,7 +1289,7 @@ impl AesGcm {
         return self.open_with(data, tag, nonce, aad);
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(target_arch = "aarch64")]
-        if let Some(p) = self.fns.powers {
+        if let Some(p) = &self.fns.powers {
             return self.open_prepared(p, nonce, aad, data, tag);
         }
         #[cfg(not(target_arch = "x86_64"))]
@@ -1392,7 +1392,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "aarch64")]
-        if let Some(p) = self.fns.powers {
+        if let Some(p) = &self.fns.powers {
             return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
