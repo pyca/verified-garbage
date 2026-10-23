@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT3
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
 
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPrepare
 import VerifiedGarbage.Proof.Rsa.RecoverTries
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT3
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPrepare
 meta import VerifiedGarbage.Proof.Rsa.RecoverTries
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -111,7 +111,7 @@ theorem setX_ct : RelCT isa (Two CG) (setWord aX .rcx) (Two CK) := by
 
 /-- `g`, `g R mod n`, its copy and `Y = R mod n`, and the exponentiation. -/
 theorem candA_ct (M : Mont) : RelCT isa (Two CA)
-    (seqs [.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop M.mm])
+    (seqs [.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, windowExp M.mm])
     fun _ _ => True := by
   have hK : ∀ p s, CK p s → Ws s p.B p.Z (wk p.k) := fun _ _ h => h.ws
   have hX : ∀ j p s, CX j p s → Ws s p.B p.Z (wk p.k) := fun _ _ _ ⟨_, _, _, _, _, hc, _⟩ => hc.ws
@@ -135,7 +135,7 @@ theorem candA_ct (M : Mont) : RelCT isa (Two CA)
       k (by decide), hlt, g_mont hc.coprime hc.hr2 hm⟩
   refine RelCT.seq (R := Two (CX aG)) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hX aXm) (by taint_decide)
     fun p s h => ?_) (RelCT.seq (R := Two EX) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hX aG) (by taint_decide)
-      fun p s h => ?_) ((expLoop_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial))
+      fun p s h => ?_) ((RecoveryWindow.exp_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial))
   · obtain ⟨minv, N, r, t, g, hc, hlt, hm⟩ := h
     have hZ16 := hc.hZ16
     refine WP.mono (copyA_ok hc.ws (o := aG) (a := aXm) (by decide) (by decide) (by decide)) fun u ⟨hv, o, k⟩ => ?_
@@ -179,7 +179,7 @@ theorem candB_ct : RelCT isa (Two CK) (seqs (eqA aY aO ++ (([.block (eqStore sC2
 /-- After the start of the squarings. -/
 theorem candBody_ct (M : Mont) : RelCT isa (Two CA) (candBody M.mm) fun _ _ => True := by
   rw [show candBody M.mm = seqs ([.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO,
-      expLoop M.mm] ++ ((eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
+      windowExp M.mm] ++ ((eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
         [.loop (sqBody M.mm) .ne, .block candNext])) by
     simp only [candBody, List.append_assoc, List.cons_append, List.nil_append]]
   refine RelCT.seqs_append (by simp) (by simp [eqA]) (RelCT.seq (R := Two fun p s => ∃ (minv : BitVec 64)
