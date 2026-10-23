@@ -41,7 +41,7 @@ open VG.Spec.ChaCha20 (keyAt restAt keystreamOf bytesAt leftAt)
 /-- x86-64 contract for `vg_chacha20_set_nonce(state = rdi, nonce = rsi)`. -/
 def setNonceX86_64 : Contract X86_64.isa where
   pre s :=
-    let state : Region := ⟨s.gpr .rdi, 768⟩
+    let state : Region := ⟨s.gpr .rdi, 136⟩
     let nonce : Region := ⟨s.gpr .rsi, 16⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [nonce] ∧ s.wr = [state] ∧ state.Disjoint nonce ∧ ret.Disjoint state
@@ -53,7 +53,7 @@ def setNonceX86_64 : Contract X86_64.isa where
 /-- x86-64 contract for `vg_chacha20_init(state = rdi, key = rsi, nonce = rdx)`. -/
 def initX86_64 : Contract X86_64.isa where
   pre s :=
-    let state : Region := ⟨s.gpr .rdi, 768⟩
+    let state : Region := ⟨s.gpr .rdi, 136⟩
     let key : Region := ⟨s.gpr .rsi, 32⟩
     let nonce : Region := ⟨s.gpr .rdx, 16⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
@@ -131,7 +131,7 @@ def nonceMem (m : Mem) (st np : Addr) : Mem :=
 structure NPre (s : State) (st np : Addr) : Prop where
   rdi : s.gpr .rdi = st
   rsi : s.gpr .rsi = np
-  w_st : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off st d) 8
+  w_st : ∀ d, d + 8 ≤ 136 → InRegions s.wr (off st d) 8
   r_n : ∀ d, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (off np d) 8
 
 set_option simprocs false in
@@ -210,8 +210,8 @@ theorem nonceMem_post (m : Mem) (st np : Addr) :
   · rw [nonceMem_left, wordLE_bytesAt _ _ (by decide), off_eq]; simp
 
 
-theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 768⟩] m (nonceMem m st np) := by
-  have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (off st d) (64 / 8) :=
+theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 136⟩] m (nonceMem m st np) := by
+  have c : ∀ d, d + 8 ≤ 136 → (⟨st, 136⟩ : Region).Contains (off st d) (64 / 8) :=
     fun d hd => contains_off hd (by omega)
   simp only [nonceMem]
   exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 48 (by decide))).writeW
@@ -255,12 +255,12 @@ def setNonceSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x2000, 16⟩]
-  wr := [⟨0x1000, 768⟩]
+  wr := [⟨0x1000, 136⟩]
 
 theorem setNonce_verified :
-    Verified X86_64.target setNonce (Spec.ChaCha20.setNonceContract X86_64.abi) :=
+    Verified X86_64.target setNonce (Spec.ChaCha20.setNonce136Contract X86_64.abi) :=
   Verified.of_correct setNonce_ok setNonce_ct (by
-    sig_implies [Spec.ChaCha20.setNonceContract, Spec.ChaCha20.setNonceSig,
+    sig_implies [Spec.ChaCha20.setNonce136Contract, Spec.ChaCha20.setNonce136Sig,
       Proof.ChaCha20.setNonceX86_64, X86_64.abi, X86_64.argRegs] [setNonceSat] using setNonceSat)
 
 /-! ## `init` -/
@@ -272,7 +272,7 @@ def keyMem (m : Mem) (st kp : Addr) : Mem :=
 
 set_option simprocs false in
 theorem key_exec {s : State} {st kp : Addr} (hrdi : s.gpr .rdi = st) (hrsi : s.gpr .rsi = kp)
-    (hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off st d) 8)
+    (hw : ∀ d, d + 8 ≤ 136 → InRegions s.wr (off st d) 8)
     (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off kp d) 8) :
     WP isa (.block keyInstrs) s fun s' => s'.mem = keyMem s.mem st kp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.gpr .rdi = st ∧ s'.gpr .rsi = s.gpr .rdx ∧
@@ -290,8 +290,8 @@ theorem key_exec {s : State} {st kp : Addr} (hrdi : s.gpr .rdi = st) (hrsi : s.g
   refine ⟨rfl, trivial, trivial, by simp, by simp, fun r h₁ h₂ h₃ h₄ h₅ => ?_⟩
   simp [h₁, h₂, h₃, h₄, h₅]
 
-theorem keyMem_frame (m : Mem) (st kp : Addr) : Frame [⟨st, 768⟩] m (keyMem m st kp) := by
-  have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (off st d) (64 / 8) :=
+theorem keyMem_frame (m : Mem) (st kp : Addr) : Frame [⟨st, 136⟩] m (keyMem m st kp) := by
+  have c : ∀ d, d + 8 ≤ 136 → (⟨st, 136⟩ : Region).Contains (off st d) (64 / 8) :=
     fun d hd => contains_off hd (by omega)
   simp only [keyMem]
   exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 16 (by decide))).writeW
@@ -322,7 +322,7 @@ theorem init_eq : init = .block (keyInstrs ++ setNonceInstrs) := rfl
 theorem init_ok (s : State) (hs : Proof.ChaCha20.initX86_64.pre s) :
     ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.initX86_64.post s s' := by
   obtain ⟨hrd, hwr, hdk, hdn, hret⟩ := hs
-  have hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off (s.gpr .rdi) d) 8 :=
+  have hw : ∀ d, d + 8 ≤ 136 → InRegions s.wr (off (s.gpr .rdi) d) 8 :=
     fun d hd => ⟨_, by rw [hwr]; exact List.mem_singleton_self _, contains_off hd (by omega)⟩
   have h₁ := key_exec (s := s) rfl rfl hw fun d hd => ⟨_, by rw [hrd]; simp,
     contains_off (base := s.gpr .rsi) (len := 32) hd (by omega)⟩
@@ -370,11 +370,11 @@ def initSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 16⟩]
-  wr := [⟨0x1000, 768⟩]
+  wr := [⟨0x1000, 136⟩]
 
-theorem init_verified : Verified X86_64.target init (Spec.ChaCha20.initContract X86_64.abi) :=
+theorem init_verified : Verified X86_64.target init (Spec.ChaCha20.init136Contract X86_64.abi) :=
   Verified.of_correct init_ok init_ct (by
-    sig_implies [Spec.ChaCha20.initContract, Spec.ChaCha20.initSig, Proof.ChaCha20.initX86_64,
+    sig_implies [Spec.ChaCha20.init136Contract, Spec.ChaCha20.init136Sig, Proof.ChaCha20.initX86_64,
       X86_64.abi, X86_64.argRegs] [initSat] using initSat)
 
 end VG.Proof.ChaCha20.X86_64.Stream

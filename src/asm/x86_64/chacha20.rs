@@ -22015,17 +22015,17 @@ ret
 
 /// Starts a ChaCha20 keystream (RFC 8439 §2.4): makes the streaming state `*state` hold the 32-byte key `*key` and the whole keystream for the 16-byte nonce `*nonce`, the initial block counter `c` (4 bytes, little-endian) followed by the 12-byte RFC 8439 nonce: the blocks for the counters `c` to 2³² − 1, 64 × (2³² − `c`) bytes.
 ///
-/// Contract: `VG.Spec.ChaCha20.initContract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
+/// Contract: `VG.Spec.ChaCha20.init136Contract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 136 bytes.
 /// * `key` must be valid for reads of 32 bytes.
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 17], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rsi]
 mov rcx, QWORD PTR [rsi+8]
@@ -22061,16 +22061,16 @@ ret
 
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
 ///
-/// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
+/// Contract: `VG.Spec.ChaCha20.setNonce136Contract`. Constant time: only the pointers may affect timing, not the key or the nonce.
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 136 bytes.
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 17], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rsi]
 mov rcx, QWORD PTR [rsi+8]
@@ -22098,34 +22098,43 @@ ret
 /// The CPU features `vg_chacha20_apply_avx2` requires (`Artifact.features`).
 pub(crate) const VG_CHACHA20_APPLY_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+/// The bytes of `scratch` that `vg_chacha20_apply_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_CHACHA20_APPLY_AVX2_SCRATCH_WRITTEN: usize = 424;
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged. `*scratch` is working space.
 ///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+/// Contract: `VG.Spec.ChaCha20.applyScratchContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
 /// This implementation XORs the whole blocks with `vg_chacha20_xor_avx2`.
 ///
+/// It writes at most the first 424 bytes of `scratch` (`VG_CHACHA20_APPLY_AVX2_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 136 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must be valid for reads and writes of 512 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 17], data: *mut u8, len: usize, scratch: *mut [u64; 64]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
-mov QWORD PTR [rdi+576], rbx
-mov QWORD PTR [rdi+584], rbp
-mov QWORD PTR [rdi+592], r12
+mov QWORD PTR [rcx+384], rbx
+mov QWORD PTR [rcx+392], rbp
+mov QWORD PTR [rcx+400], r12
+mov QWORD PTR [rcx+408], r13
 mov rbx, rdi
 mov rbp, rsi
 mov r12, rdx
+mov r13, rcx
 mov rcx, rax
 sub rcx, rdx
-mov QWORD PTR [rbx+600], rcx
+mov QWORD PTR [r13+416], rcx
 and rax, 63
 cmp rax, rdx
 jb 22f
@@ -22176,24 +22185,23 @@ mov r8, QWORD PTR [rbx+32]
 mov r9, QWORD PTR [rbx+40]
 mov r10, QWORD PTR [rbx+48]
 mov r11, QWORD PTR [rbx+56]
-mov QWORD PTR [rbx+192], rax
-mov QWORD PTR [rbx+200], rcx
-mov QWORD PTR [rbx+208], rsi
-mov QWORD PTR [rbx+216], rdi
-mov QWORD PTR [rbx+224], r8
-mov QWORD PTR [rbx+232], r9
-mov QWORD PTR [rbx+240], r10
-mov QWORD PTR [rbx+248], r11
+mov QWORD PTR [r13], rax
+mov QWORD PTR [r13+8], rcx
+mov QWORD PTR [r13+16], rsi
+mov QWORD PTR [r13+24], rdi
+mov QWORD PTR [r13+32], r8
+mov QWORD PTR [r13+40], r9
+mov QWORD PTR [r13+48], r10
+mov QWORD PTR [r13+56], r11
 mov eax, r10d
 mov rcx, rdx
 shr rcx, 6
 add eax, ecx
 mov DWORD PTR [rbx+48], eax
-mov rdi, rbx
-add rdi, 192
+mov rdi, r13
 mov rsi, rbp
-mov rcx, rbx
-add rcx, 256
+mov rcx, r13
+add rcx, 64
 add rbp, rdx
 sub r12, rdx
 call {vg_chacha20_xor_avx2}
@@ -22203,9 +22211,25 @@ jmp 211f
 test r12, r12
 je 212f
 mov rdi, rbx
-mov rsi, rbx
+mov rsi, r13
 add rsi, 64
 call {vg_chacha20_block}
+mov rax, QWORD PTR [r13+64]
+mov QWORD PTR [rbx+64], rax
+mov rax, QWORD PTR [r13+72]
+mov QWORD PTR [rbx+72], rax
+mov rax, QWORD PTR [r13+80]
+mov QWORD PTR [rbx+80], rax
+mov rax, QWORD PTR [r13+88]
+mov QWORD PTR [rbx+88], rax
+mov rax, QWORD PTR [r13+96]
+mov QWORD PTR [rbx+96], rax
+mov rax, QWORD PTR [r13+104]
+mov QWORD PTR [rbx+104], rax
+mov rax, QWORD PTR [r13+112]
+mov QWORD PTR [rbx+112], rax
+mov rax, QWORD PTR [r13+120]
+mov QWORD PTR [rbx+120], rax
 mov eax, DWORD PTR [rbx+48]
 add eax, 1
 mov DWORD PTR [rbx+48], eax
@@ -22244,11 +22268,12 @@ sub r12, rdx
 jmp 213f
 212:
 213:
-mov rax, QWORD PTR [rbx+600]
+mov rax, QWORD PTR [r13+416]
 mov QWORD PTR [rbx+128], rax
-mov rbp, QWORD PTR [rbx+584]
-mov r12, QWORD PTR [rbx+592]
-mov rbx, QWORD PTR [rbx+576]
+mov rbx, QWORD PTR [r13+384]
+mov rbp, QWORD PTR [r13+392]
+mov r12, QWORD PTR [r13+400]
+mov r13, QWORD PTR [r13+408]
 mov eax, 1
 jmp 21f
 20:
@@ -22264,34 +22289,43 @@ ret
 /// The CPU features `vg_chacha20_apply_avx512` requires (`Artifact.features`).
 pub(crate) const VG_CHACHA20_APPLY_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
 
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+/// The bytes of `scratch` that `vg_chacha20_apply_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_CHACHA20_APPLY_AVX512_SCRATCH_WRITTEN: usize = 424;
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged. `*scratch` is working space.
 ///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+/// Contract: `VG.Spec.ChaCha20.applyScratchContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
 /// This implementation XORs the whole blocks with `vg_chacha20_xor_avx512`.
 ///
+/// It writes at most the first 424 bytes of `scratch` (`VG_CHACHA20_APPLY_AVX512_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 136 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must be valid for reads and writes of 512 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 17], data: *mut u8, len: usize, scratch: *mut [u64; 64]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
-mov QWORD PTR [rdi+576], rbx
-mov QWORD PTR [rdi+584], rbp
-mov QWORD PTR [rdi+592], r12
+mov QWORD PTR [rcx+384], rbx
+mov QWORD PTR [rcx+392], rbp
+mov QWORD PTR [rcx+400], r12
+mov QWORD PTR [rcx+408], r13
 mov rbx, rdi
 mov rbp, rsi
 mov r12, rdx
+mov r13, rcx
 mov rcx, rax
 sub rcx, rdx
-mov QWORD PTR [rbx+600], rcx
+mov QWORD PTR [r13+416], rcx
 and rax, 63
 cmp rax, rdx
 jb 22f
@@ -22342,24 +22376,23 @@ mov r8, QWORD PTR [rbx+32]
 mov r9, QWORD PTR [rbx+40]
 mov r10, QWORD PTR [rbx+48]
 mov r11, QWORD PTR [rbx+56]
-mov QWORD PTR [rbx+192], rax
-mov QWORD PTR [rbx+200], rcx
-mov QWORD PTR [rbx+208], rsi
-mov QWORD PTR [rbx+216], rdi
-mov QWORD PTR [rbx+224], r8
-mov QWORD PTR [rbx+232], r9
-mov QWORD PTR [rbx+240], r10
-mov QWORD PTR [rbx+248], r11
+mov QWORD PTR [r13], rax
+mov QWORD PTR [r13+8], rcx
+mov QWORD PTR [r13+16], rsi
+mov QWORD PTR [r13+24], rdi
+mov QWORD PTR [r13+32], r8
+mov QWORD PTR [r13+40], r9
+mov QWORD PTR [r13+48], r10
+mov QWORD PTR [r13+56], r11
 mov eax, r10d
 mov rcx, rdx
 shr rcx, 6
 add eax, ecx
 mov DWORD PTR [rbx+48], eax
-mov rdi, rbx
-add rdi, 192
+mov rdi, r13
 mov rsi, rbp
-mov rcx, rbx
-add rcx, 256
+mov rcx, r13
+add rcx, 64
 add rbp, rdx
 sub r12, rdx
 call {vg_chacha20_xor_avx512}
@@ -22369,9 +22402,25 @@ jmp 211f
 test r12, r12
 je 212f
 mov rdi, rbx
-mov rsi, rbx
+mov rsi, r13
 add rsi, 64
 call {vg_chacha20_block}
+mov rax, QWORD PTR [r13+64]
+mov QWORD PTR [rbx+64], rax
+mov rax, QWORD PTR [r13+72]
+mov QWORD PTR [rbx+72], rax
+mov rax, QWORD PTR [r13+80]
+mov QWORD PTR [rbx+80], rax
+mov rax, QWORD PTR [r13+88]
+mov QWORD PTR [rbx+88], rax
+mov rax, QWORD PTR [r13+96]
+mov QWORD PTR [rbx+96], rax
+mov rax, QWORD PTR [r13+104]
+mov QWORD PTR [rbx+104], rax
+mov rax, QWORD PTR [r13+112]
+mov QWORD PTR [rbx+112], rax
+mov rax, QWORD PTR [r13+120]
+mov QWORD PTR [rbx+120], rax
 mov eax, DWORD PTR [rbx+48]
 add eax, 1
 mov DWORD PTR [rbx+48], eax
@@ -22410,11 +22459,12 @@ sub r12, rdx
 jmp 213f
 212:
 213:
-mov rax, QWORD PTR [rbx+600]
+mov rax, QWORD PTR [r13+416]
 mov QWORD PTR [rbx+128], rax
-mov rbp, QWORD PTR [rbx+584]
-mov r12, QWORD PTR [rbx+592]
-mov rbx, QWORD PTR [rbx+576]
+mov rbx, QWORD PTR [r13+384]
+mov rbp, QWORD PTR [r13+392]
+mov r12, QWORD PTR [r13+400]
+mov r13, QWORD PTR [r13+408]
 mov eax, 1
 jmp 21f
 20:
@@ -22430,34 +22480,43 @@ ret
 /// The CPU features `vg_chacha20_apply_avx512vl` requires (`Artifact.features`).
 pub(crate) const VG_CHACHA20_APPLY_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
 
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+/// The bytes of `scratch` that `vg_chacha20_apply_avx512vl` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_CHACHA20_APPLY_AVX512VL_SCRATCH_WRITTEN: usize = 424;
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged. `*scratch` is working space.
 ///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+/// Contract: `VG.Spec.ChaCha20.applyScratchContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
 /// This implementation XORs the whole blocks with `vg_chacha20_xor_avx512vl`.
 ///
+/// It writes at most the first 424 bytes of `scratch` (`VG_CHACHA20_APPLY_AVX512VL_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 136 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must be valid for reads and writes of 512 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 17], data: *mut u8, len: usize, scratch: *mut [u64; 64]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
-mov QWORD PTR [rdi+576], rbx
-mov QWORD PTR [rdi+584], rbp
-mov QWORD PTR [rdi+592], r12
+mov QWORD PTR [rcx+384], rbx
+mov QWORD PTR [rcx+392], rbp
+mov QWORD PTR [rcx+400], r12
+mov QWORD PTR [rcx+408], r13
 mov rbx, rdi
 mov rbp, rsi
 mov r12, rdx
+mov r13, rcx
 mov rcx, rax
 sub rcx, rdx
-mov QWORD PTR [rbx+600], rcx
+mov QWORD PTR [r13+416], rcx
 and rax, 63
 cmp rax, rdx
 jb 22f
@@ -22508,24 +22567,23 @@ mov r8, QWORD PTR [rbx+32]
 mov r9, QWORD PTR [rbx+40]
 mov r10, QWORD PTR [rbx+48]
 mov r11, QWORD PTR [rbx+56]
-mov QWORD PTR [rbx+192], rax
-mov QWORD PTR [rbx+200], rcx
-mov QWORD PTR [rbx+208], rsi
-mov QWORD PTR [rbx+216], rdi
-mov QWORD PTR [rbx+224], r8
-mov QWORD PTR [rbx+232], r9
-mov QWORD PTR [rbx+240], r10
-mov QWORD PTR [rbx+248], r11
+mov QWORD PTR [r13], rax
+mov QWORD PTR [r13+8], rcx
+mov QWORD PTR [r13+16], rsi
+mov QWORD PTR [r13+24], rdi
+mov QWORD PTR [r13+32], r8
+mov QWORD PTR [r13+40], r9
+mov QWORD PTR [r13+48], r10
+mov QWORD PTR [r13+56], r11
 mov eax, r10d
 mov rcx, rdx
 shr rcx, 6
 add eax, ecx
 mov DWORD PTR [rbx+48], eax
-mov rdi, rbx
-add rdi, 192
+mov rdi, r13
 mov rsi, rbp
-mov rcx, rbx
-add rcx, 256
+mov rcx, r13
+add rcx, 64
 add rbp, rdx
 sub r12, rdx
 call {vg_chacha20_xor_avx512vl}
@@ -22535,9 +22593,25 @@ jmp 211f
 test r12, r12
 je 212f
 mov rdi, rbx
-mov rsi, rbx
+mov rsi, r13
 add rsi, 64
 call {vg_chacha20_block}
+mov rax, QWORD PTR [r13+64]
+mov QWORD PTR [rbx+64], rax
+mov rax, QWORD PTR [r13+72]
+mov QWORD PTR [rbx+72], rax
+mov rax, QWORD PTR [r13+80]
+mov QWORD PTR [rbx+80], rax
+mov rax, QWORD PTR [r13+88]
+mov QWORD PTR [rbx+88], rax
+mov rax, QWORD PTR [r13+96]
+mov QWORD PTR [rbx+96], rax
+mov rax, QWORD PTR [r13+104]
+mov QWORD PTR [rbx+104], rax
+mov rax, QWORD PTR [r13+112]
+mov QWORD PTR [rbx+112], rax
+mov rax, QWORD PTR [r13+120]
+mov QWORD PTR [rbx+120], rax
 mov eax, DWORD PTR [rbx+48]
 add eax, 1
 mov DWORD PTR [rbx+48], eax
@@ -22576,11 +22650,12 @@ sub r12, rdx
 jmp 213f
 212:
 213:
-mov rax, QWORD PTR [rbx+600]
+mov rax, QWORD PTR [r13+416]
 mov QWORD PTR [rbx+128], rax
-mov rbp, QWORD PTR [rbx+584]
-mov r12, QWORD PTR [rbx+592]
-mov rbx, QWORD PTR [rbx+576]
+mov rbx, QWORD PTR [r13+384]
+mov rbp, QWORD PTR [r13+392]
+mov r12, QWORD PTR [r13+400]
+mov r13, QWORD PTR [r13+408]
 mov eax, 1
 jmp 21f
 20:
@@ -22596,34 +22671,43 @@ ret
 /// The CPU features `vg_chacha20_apply_ifma` requires (`Artifact.features`).
 pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
 
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+/// The bytes of `scratch` that `vg_chacha20_apply_ifma` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_CHACHA20_APPLY_IFMA_SCRATCH_WRITTEN: usize = 424;
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged. `*scratch` is working space.
 ///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+/// Contract: `VG.Spec.ChaCha20.applyScratchContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
 /// This implementation XORs the whole blocks with `vg_chacha20_xor_avx512`.
 ///
+/// It writes at most the first 424 bytes of `scratch` (`VG_CHACHA20_APPLY_IFMA_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 136 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must be valid for reads and writes of 512 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_ifma(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_ifma(state: *mut [u64; 17], data: *mut u8, len: usize, scratch: *mut [u64; 64]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
-mov QWORD PTR [rdi+576], rbx
-mov QWORD PTR [rdi+584], rbp
-mov QWORD PTR [rdi+592], r12
+mov QWORD PTR [rcx+384], rbx
+mov QWORD PTR [rcx+392], rbp
+mov QWORD PTR [rcx+400], r12
+mov QWORD PTR [rcx+408], r13
 mov rbx, rdi
 mov rbp, rsi
 mov r12, rdx
+mov r13, rcx
 mov rcx, rax
 sub rcx, rdx
-mov QWORD PTR [rbx+600], rcx
+mov QWORD PTR [r13+416], rcx
 and rax, 63
 cmp rax, rdx
 jb 22f
@@ -22674,24 +22758,23 @@ mov r8, QWORD PTR [rbx+32]
 mov r9, QWORD PTR [rbx+40]
 mov r10, QWORD PTR [rbx+48]
 mov r11, QWORD PTR [rbx+56]
-mov QWORD PTR [rbx+192], rax
-mov QWORD PTR [rbx+200], rcx
-mov QWORD PTR [rbx+208], rsi
-mov QWORD PTR [rbx+216], rdi
-mov QWORD PTR [rbx+224], r8
-mov QWORD PTR [rbx+232], r9
-mov QWORD PTR [rbx+240], r10
-mov QWORD PTR [rbx+248], r11
+mov QWORD PTR [r13], rax
+mov QWORD PTR [r13+8], rcx
+mov QWORD PTR [r13+16], rsi
+mov QWORD PTR [r13+24], rdi
+mov QWORD PTR [r13+32], r8
+mov QWORD PTR [r13+40], r9
+mov QWORD PTR [r13+48], r10
+mov QWORD PTR [r13+56], r11
 mov eax, r10d
 mov rcx, rdx
 shr rcx, 6
 add eax, ecx
 mov DWORD PTR [rbx+48], eax
-mov rdi, rbx
-add rdi, 192
+mov rdi, r13
 mov rsi, rbp
-mov rcx, rbx
-add rcx, 256
+mov rcx, r13
+add rcx, 64
 add rbp, rdx
 sub r12, rdx
 call {vg_chacha20_xor_avx512}
@@ -22701,9 +22784,25 @@ jmp 211f
 test r12, r12
 je 212f
 mov rdi, rbx
-mov rsi, rbx
+mov rsi, r13
 add rsi, 64
 call {vg_chacha20_block}
+mov rax, QWORD PTR [r13+64]
+mov QWORD PTR [rbx+64], rax
+mov rax, QWORD PTR [r13+72]
+mov QWORD PTR [rbx+72], rax
+mov rax, QWORD PTR [r13+80]
+mov QWORD PTR [rbx+80], rax
+mov rax, QWORD PTR [r13+88]
+mov QWORD PTR [rbx+88], rax
+mov rax, QWORD PTR [r13+96]
+mov QWORD PTR [rbx+96], rax
+mov rax, QWORD PTR [r13+104]
+mov QWORD PTR [rbx+104], rax
+mov rax, QWORD PTR [r13+112]
+mov QWORD PTR [rbx+112], rax
+mov rax, QWORD PTR [r13+120]
+mov QWORD PTR [rbx+120], rax
 mov eax, DWORD PTR [rbx+48]
 add eax, 1
 mov DWORD PTR [rbx+48], eax
@@ -22742,11 +22841,12 @@ sub r12, rdx
 jmp 213f
 212:
 213:
-mov rax, QWORD PTR [rbx+600]
+mov rax, QWORD PTR [r13+416]
 mov QWORD PTR [rbx+128], rax
-mov rbp, QWORD PTR [rbx+584]
-mov r12, QWORD PTR [rbx+592]
-mov rbx, QWORD PTR [rbx+576]
+mov rbx, QWORD PTR [r13+384]
+mov rbp, QWORD PTR [r13+392]
+mov r12, QWORD PTR [r13+400]
+mov r13, QWORD PTR [r13+408]
 mov eax, 1
 jmp 21f
 20:
@@ -22759,33 +22859,42 @@ ret
     )
 }
 
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+/// The bytes of `scratch` that `vg_chacha20_apply` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_CHACHA20_APPLY_SCRATCH_WRITTEN: usize = 424;
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged. `*scratch` is working space.
 ///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+/// Contract: `VG.Spec.ChaCha20.applyScratchContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
 /// This implementation XORs the whole blocks with `vg_chacha20_xor`.
 ///
+/// It writes at most the first 424 bytes of `scratch` (`VG_CHACHA20_APPLY_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 136 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must be valid for reads and writes of 512 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 17], data: *mut u8, len: usize, scratch: *mut [u64; 64]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
-mov QWORD PTR [rdi+576], rbx
-mov QWORD PTR [rdi+584], rbp
-mov QWORD PTR [rdi+592], r12
+mov QWORD PTR [rcx+384], rbx
+mov QWORD PTR [rcx+392], rbp
+mov QWORD PTR [rcx+400], r12
+mov QWORD PTR [rcx+408], r13
 mov rbx, rdi
 mov rbp, rsi
 mov r12, rdx
+mov r13, rcx
 mov rcx, rax
 sub rcx, rdx
-mov QWORD PTR [rbx+600], rcx
+mov QWORD PTR [r13+416], rcx
 and rax, 63
 cmp rax, rdx
 jb 22f
@@ -22836,24 +22945,23 @@ mov r8, QWORD PTR [rbx+32]
 mov r9, QWORD PTR [rbx+40]
 mov r10, QWORD PTR [rbx+48]
 mov r11, QWORD PTR [rbx+56]
-mov QWORD PTR [rbx+192], rax
-mov QWORD PTR [rbx+200], rcx
-mov QWORD PTR [rbx+208], rsi
-mov QWORD PTR [rbx+216], rdi
-mov QWORD PTR [rbx+224], r8
-mov QWORD PTR [rbx+232], r9
-mov QWORD PTR [rbx+240], r10
-mov QWORD PTR [rbx+248], r11
+mov QWORD PTR [r13], rax
+mov QWORD PTR [r13+8], rcx
+mov QWORD PTR [r13+16], rsi
+mov QWORD PTR [r13+24], rdi
+mov QWORD PTR [r13+32], r8
+mov QWORD PTR [r13+40], r9
+mov QWORD PTR [r13+48], r10
+mov QWORD PTR [r13+56], r11
 mov eax, r10d
 mov rcx, rdx
 shr rcx, 6
 add eax, ecx
 mov DWORD PTR [rbx+48], eax
-mov rdi, rbx
-add rdi, 192
+mov rdi, r13
 mov rsi, rbp
-mov rcx, rbx
-add rcx, 256
+mov rcx, r13
+add rcx, 64
 add rbp, rdx
 sub r12, rdx
 call {vg_chacha20_xor}
@@ -22863,9 +22971,25 @@ jmp 211f
 test r12, r12
 je 212f
 mov rdi, rbx
-mov rsi, rbx
+mov rsi, r13
 add rsi, 64
 call {vg_chacha20_block}
+mov rax, QWORD PTR [r13+64]
+mov QWORD PTR [rbx+64], rax
+mov rax, QWORD PTR [r13+72]
+mov QWORD PTR [rbx+72], rax
+mov rax, QWORD PTR [r13+80]
+mov QWORD PTR [rbx+80], rax
+mov rax, QWORD PTR [r13+88]
+mov QWORD PTR [rbx+88], rax
+mov rax, QWORD PTR [r13+96]
+mov QWORD PTR [rbx+96], rax
+mov rax, QWORD PTR [r13+104]
+mov QWORD PTR [rbx+104], rax
+mov rax, QWORD PTR [r13+112]
+mov QWORD PTR [rbx+112], rax
+mov rax, QWORD PTR [r13+120]
+mov QWORD PTR [rbx+120], rax
 mov eax, DWORD PTR [rbx+48]
 add eax, 1
 mov DWORD PTR [rbx+48], eax
@@ -22904,11 +23028,12 @@ sub r12, rdx
 jmp 213f
 212:
 213:
-mov rax, QWORD PTR [rbx+600]
+mov rax, QWORD PTR [r13+416]
 mov QWORD PTR [rbx+128], rax
-mov rbp, QWORD PTR [rbx+584]
-mov r12, QWORD PTR [rbx+592]
-mov rbx, QWORD PTR [rbx+576]
+mov rbx, QWORD PTR [r13+384]
+mov rbp, QWORD PTR [r13+392]
+mov r12, QWORD PTR [r13+400]
+mov r13, QWORD PTR [r13+408]
 mov eax, 1
 jmp 21f
 20:

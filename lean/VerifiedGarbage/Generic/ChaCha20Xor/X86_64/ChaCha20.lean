@@ -18,7 +18,9 @@ adds the `# Safety` items that depend on the target (`Sig.layoutDoc`), from
 `stack` and `writeArgs`, which `ofSig` checks against the contract.
 
 The stack is 24 bytes for every implementation: the return address of the
-call of `vg_chacha20_xor`, and up to 16 bytes for its own calls.
+call of `vg_chacha20_xor`, and up to 16 bytes for its own calls. Of the
+512-byte scratch, `apply` writes the first 424 bytes, which its caller wipes
+(`VG_CHACHA20_APPLY_SCRATCH_WRITTEN`).
 -/
 
 @[expose] public section
@@ -26,7 +28,7 @@ call of `vg_chacha20_xor`, and up to 16 bytes for its own calls.
 namespace VG.Generic.ChaCha20Xor.X86_64.ChaCha20
 
 def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
-  Spec.ChaCha20.applyApi.artifact X86_64.target {
+  Spec.ChaCha20.applyScratchApi.artifact X86_64.target {
     suffix := v.suffix
     notes := ["This implementation XORs the whole blocks with `" ++
       v.callee.name ++ "`."]
@@ -34,6 +36,8 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     stack := 24
     verified := Proof.ChaCha20.X86_64.Stream.apply_verified v
     spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe v
+    written := [("scratch", 424)]
+    writtenOk := Proof.ChaCha20.X86_64.Stream.apply_written v
     features := v.features }]
 
 end VG.Generic.ChaCha20Xor.X86_64.ChaCha20

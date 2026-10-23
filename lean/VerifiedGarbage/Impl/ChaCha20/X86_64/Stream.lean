@@ -7,16 +7,20 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 
 `vg_chacha20_init(state = rdi, key = rsi, nonce = rdx)`,
 `vg_chacha20_set_nonce(state = rdi, nonce = rsi)` and
-`vg_chacha20_apply(state = rdi, data = rsi, len = rdx) -> eax`, on the
-streaming state of `VG.Spec.ChaCha20.restAt` (768 bytes):
+`vg_chacha20_apply(state = rdi, data = rsi, len = rdx, scratch = rcx) -> eax`,
+on the 136-byte streaming state of `VG.Spec.ChaCha20.restAt`:
 
 * `[0, 64)`: the 16-word state, `[64, 128)`: the buffered block,
   `[128, 136)`: the number of bytes of keystream left;
-* `[192, 256)`: the copy of the 16-word state that `vg_chacha20_xor` is
-  given (it leaves its state unspecified), `[256, 576)`: its working space;
-* `[576, 600)`: our caller's `rbx, rbp, r12`; `[600, 608)`: the number of
-  bytes left after `apply`, stored there first since the block function
-  overwrites `[64, 320)`.
+
+and, in `apply`'s `scratch` (424 of its 512 bytes written):
+
+* `[0, 64)`: the copy of the 16-word state that `vg_chacha20_xor` is
+  given (it leaves its state unspecified), `[64, 384)`: its working space,
+  where `vg_chacha20_block` then computes the next block (`[64, 320)`), which
+  is copied to the buffered block;
+* `[384, 416)`: our caller's `rbx, rbp, r12, r13`; `[416, 424)`: the number
+  of bytes left after `apply`.
 
 `set_nonce` writes the constants, the nonce (words 12–15) and the number of
 bytes left, 64 × (2³² − c) for the initial block counter `c`; `init` also
@@ -27,9 +31,9 @@ XORs the bytes left in the buffered block (the last `left % 64`, as many as
 `len` asks for), then the whole blocks that follow with `vg_chacha20_xor`
 (an implementation `x` of it: `apply` is generic over them), advancing the
 counter, and finally, if bytes remain, computes the next block into the
-buffer with `vg_chacha20_block`, advances the counter and XORs its first
-bytes. `rbx` holds the state, `rbp` the data not yet processed and `r12` its
-length throughout, which the callees preserve.
+scratch with `vg_chacha20_block`, copies it to the buffered block, advances
+the counter and XORs its first bytes. `rbx` holds the state, `rbp` the data not yet processed, `r12` its
+length and `r13` the scratch throughout, which the callees preserve.
 
 The branches are on the length and the number of bytes left only, and every
 address is a pointer plus a constant, those two or a count: only the
@@ -75,9 +79,10 @@ def check : List Instr := [.mov .rax (.mem (at_ .rdi 128)), .alu .cmp .rax (.reg
 computes `rax` = the bytes left in the buffered block; `rdx` = `len`, and
 the carry is set iff `rax < len`. -/
 def start : List Instr :=
-  [.store (at_ .rdi 576) .rbx, .store (at_ .rdi 584) .rbp, .store (at_ .rdi 592) .r12,
-   .mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
-   .mov .rcx (.reg .rax), .alu .sub .rcx (.reg .rdx), .store (at_ .rbx 600) .rcx,
+  [.store (at_ .rcx 384) .rbx, .store (at_ .rcx 392) .rbp, .store (at_ .rcx 400) .r12,
+   .store (at_ .rcx 408) .r13,
+   .mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx), .mov .r13 (.reg .rcx),
+   .mov .rcx (.reg .rax), .alu .sub .rcx (.reg .rdx), .store (at_ .r13 416) .rcx,
    .alu .and .rax (.imm 63), .alu .cmp .rax (.reg .rdx)]
 
 /-- XORs the `rdx` bytes at `rsi` into the data (`rbp`), eight at a time and
@@ -103,20 +108,26 @@ def blocksArgs : List Instr :=
   [.mov .rax (.mem (at_ .rbx 0)), .mov .rcx (.mem (at_ .rbx 8)), .mov .rsi (.mem (at_ .rbx 16)),
    .mov .rdi (.mem (at_ .rbx 24)), .mov .r8 (.mem (at_ .rbx 32)), .mov .r9 (.mem (at_ .rbx 40)),
    .mov .r10 (.mem (at_ .rbx 48)), .mov .r11 (.mem (at_ .rbx 56)),
-   .store (at_ .rbx 192) .rax, .store (at_ .rbx 200) .rcx, .store (at_ .rbx 208) .rsi,
-   .store (at_ .rbx 216) .rdi, .store (at_ .rbx 224) .r8, .store (at_ .rbx 232) .r9,
-   .store (at_ .rbx 240) .r10, .store (at_ .rbx 248) .r11,
+   .store (at_ .r13 0) .rax, .store (at_ .r13 8) .rcx, .store (at_ .r13 16) .rsi,
+   .store (at_ .r13 24) .rdi, .store (at_ .r13 32) .r8, .store (at_ .r13 40) .r9,
+   .store (at_ .r13 48) .r10, .store (at_ .r13 56) .r11,
    .mov32 .rax (.reg .r10), .mov .rcx (.reg .rdx), .shift .shr .rcx 6, .alu32 .add .rax (.reg .rcx),
    .store32 (at_ .rbx 48) .rax,
-   .mov .rdi (.reg .rbx), .alu .add .rdi (.imm 192), .mov .rsi (.reg .rbp),
-   .mov .rcx (.reg .rbx), .alu .add .rcx (.imm 256),
+   .mov .rdi (.reg .r13), .mov .rsi (.reg .rbp),
+   .mov .rcx (.reg .r13), .alu .add .rcx (.imm 64),
    .alu .add .rbp (.reg .rdx), .alu .sub .r12 (.reg .rdx)]
 
 def part2 (x : Callee) : Prog isa :=
   .ite .e (.block []) (.seq (.block blocksArgs) (.call x.name x.code))
 
-/-- The arguments of the block function: the state and the buffer. -/
-def tailArgs : List Instr := [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 64)]
+/-- The arguments of the block function: the state and the scratch past
+the copy of the state. -/
+def tailArgs : List Instr := [.mov .rdi (.reg .rbx), .mov .rsi (.reg .r13), .alu .add .rsi (.imm 64)]
+
+/-- The block, from the scratch, to the buffered block. -/
+def copyBlock : List Instr :=
+  (List.range 8).flatMap fun i =>
+    [.mov .rax (.mem (at_ .r13 (64 + 8 * i))), .store (at_ .rbx (64 + 8 * i)) .rax]
 
 /-- After the block function: the counter advanced, and `r12` bytes of the
 block XORed. -/
@@ -126,18 +137,18 @@ def tailXor : Prog isa :=
     .mov .rdx (.reg .r12)])
     xorBytes
 
-/-- The last bytes, if any: the next block into the buffer, the counter
-advanced, and `r12` bytes of the block XORed. -/
+/-- The last bytes, if any: the next block into the scratch and then the
+buffered block, the counter advanced, and `r12` bytes of the block XORed. -/
 def part3 : Prog isa :=
   .seq (.block [.alu .test .r12 (.reg .r12)])
   (.ite .e (.block [])
-    (.seq (.block tailArgs) (.seq (.call "vg_chacha20_block" block) tailXor)))
+    (.seq (.block tailArgs) (.seq (.call "vg_chacha20_block" block) (.seq (.block copyBlock) tailXor))))
 
 /-- The bytes left stored, our caller's registers restored, and 1 returned. -/
 def finish : List Instr :=
-  [.mov .rax (.mem (at_ .rbx 600)), .store (at_ .rbx 128) .rax,
-   .mov .rbp (.mem (at_ .rbx 584)), .mov .r12 (.mem (at_ .rbx 592)), .mov .rbx (.mem (at_ .rbx 576)),
-   .mov32 .rax (.imm 1)]
+  [.mov .rax (.mem (at_ .r13 416)), .store (at_ .rbx 128) .rax,
+   .mov .rbx (.mem (at_ .r13 384)), .mov .rbp (.mem (at_ .r13 392)), .mov .r12 (.mem (at_ .r13 400)),
+   .mov .r13 (.mem (at_ .r13 408)), .mov32 .rax (.imm 1)]
 
 def apply (x : Callee) : Prog isa :=
   .seq (.block check)

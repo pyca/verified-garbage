@@ -56,10 +56,10 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512VL.xor_verified
     features := ["avx", "avx2", "avx512f", "avx512vl"] },
-  Spec.ChaCha20.initApi.artifact X86_64.target {
+  Spec.ChaCha20.init136Api.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Stream.init
     verified := Proof.ChaCha20.X86_64.Stream.init_verified },
-  Spec.ChaCha20.setNonceApi.artifact X86_64.target {
+  Spec.ChaCha20.setNonce136Api.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Stream.setNonce
     verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified }]
 

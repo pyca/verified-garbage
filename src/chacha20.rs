@@ -43,6 +43,14 @@
 //! (`vg_chacha20_xor_sve2`).
 //! On every target, the keystream of a partial block, which the streaming
 //! state buffers, comes from the scalar `vg_chacha20_block`.
+//!
+//! On x86-64, the streaming state is the 136 bytes of
+//! `VG.Spec.ChaCha20.restAt` alone (`VG.Spec.ChaCha20.init136Contract`,
+//! `setNonce136Contract`), and `vg_chacha20_apply`
+//! (`VG.Spec.ChaCha20.applyScratchContract`) works in a 512-byte scratch on
+//! the stack of `apply_keystream`, which wipes the bytes it writes after each
+//! call; on the other targets, the state is 768 bytes, its working space
+//! included.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -53,9 +61,12 @@
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20::{
-    VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
-    VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_IFMA_FEATURES, vg_chacha20_apply_avx2,
-    vg_chacha20_apply_avx512, vg_chacha20_apply_avx512vl, vg_chacha20_apply_ifma,
+    VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX2_SCRATCH_WRITTEN,
+    VG_CHACHA20_APPLY_AVX512_FEATURES, VG_CHACHA20_APPLY_AVX512_SCRATCH_WRITTEN,
+    VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_AVX512VL_SCRATCH_WRITTEN,
+    VG_CHACHA20_APPLY_IFMA_FEATURES, VG_CHACHA20_APPLY_IFMA_SCRATCH_WRITTEN,
+    VG_CHACHA20_APPLY_SCRATCH_WRITTEN, vg_chacha20_apply_avx2, vg_chacha20_apply_avx512,
+    vg_chacha20_apply_avx512vl, vg_chacha20_apply_ifma,
 };
 #[cfg(target_arch = "x86")]
 use crate::arch::chacha20::{VG_CHACHA20_APPLY_SSSE3_FEATURES, vg_chacha20_apply_ssse3};
@@ -184,21 +195,29 @@ impl Backend {
     }
 }
 
+/// The words of the streaming state: on x86-64, the 136 bytes of
+/// `VG.Spec.ChaCha20.restAt` alone; elsewhere, 768 bytes, the working space
+/// of `vg_chacha20_apply` included.
+#[cfg(target_arch = "x86_64")]
+const STATE_WORDS: usize = 17;
+#[cfg(not(target_arch = "x86_64"))]
+const STATE_WORDS: usize = 96;
+
 /// A ChaCha20 keystream, applied incrementally.
 ///
 /// `new` only stores the key and the nonce: `vg_chacha20_init` runs on the
 /// first `apply_keystream`, on the state in place. Were `new` to run it, on
-/// a local it then returns, the 776-byte state would be copied to the
-/// caller's object: `init` is given the local's address, so the compiler
+/// a local it then returns, the state would be copied to the caller's
+/// object: `init` is given the local's address, so the compiler
 /// cannot build it in the caller's.
 #[repr(C)]
 pub struct ChaCha20 {
     /// The streaming state of `vg_chacha20_init` and `vg_chacha20_apply`
     /// (`VG.Spec.ChaCha20.restAt`): the key, the position in the keystream
-    /// and the partly used block, then the working space of `apply`. Only
-    /// the verified functions read or write it, and they read only bytes
-    /// they have written, so it need not be initialized.
-    state: MaybeUninit<[u64; 96]>,
+    /// and the partly used block (then, but on x86-64, the working space of
+    /// `apply`). Only the verified functions read or write it, and they read
+    /// only bytes they have written, so it need not be initialized.
+    state: MaybeUninit<[u64; STATE_WORDS]>,
     /// The key and the nonce of `new` (and `reset_nonce`), which `init`
     /// reads while `pending`.
     key: [u8; 32],
@@ -241,7 +260,7 @@ impl ChaCha20 {
 
     /// Runs `vg_chacha20_init` on the key and nonce stored.
     fn start(&mut self) {
-        // SAFETY: `state` is valid for writes of 768 bytes (`init` reads none
+        // SAFETY: `state` is valid for writes of its size (`init` reads none
         // of them), `key` for reads of 32 bytes and `nonce` for reads of 16
         // bytes; they are distinct fields, so they do not overlap each other
         // or the return address, and do not wrap around the end of the
@@ -291,7 +310,7 @@ impl ChaCha20 {
             #[cfg(target_arch = "x86")]
             Backend::Ssse3 => vg_chacha20_apply_ssse3,
         };
-        // SAFETY: `state` is valid for reads and writes of 768 bytes (the
+        // SAFETY: `state` is valid for reads and writes of its size (the
         // bytes `apply` reads before writing them are those `init` and
         // `set_nonce` wrote) and `data` for reads and writes of `data.len()`
         // bytes; they are
@@ -299,7 +318,37 @@ impl ChaCha20 {
         // frame of the call (the return address) or the stack below it, and
         // do not wrap around the end of the address space. The CPU has the
         // features of the implementation selected.
+        #[cfg(not(target_arch = "x86_64"))]
         let ok = unsafe { f(self.state.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
+        #[cfg(target_arch = "x86_64")]
+        let ok = {
+            let written = match self.backend {
+                Backend::Scalar => VG_CHACHA20_APPLY_SCRATCH_WRITTEN,
+                Backend::Avx2 => VG_CHACHA20_APPLY_AVX2_SCRATCH_WRITTEN,
+                Backend::Avx512 => VG_CHACHA20_APPLY_AVX512_SCRATCH_WRITTEN,
+                Backend::Avx512Vl => VG_CHACHA20_APPLY_AVX512VL_SCRATCH_WRITTEN,
+                Backend::Ifma => VG_CHACHA20_APPLY_IFMA_SCRATCH_WRITTEN,
+            };
+            // The contract holds whatever the scratch holds, so it need not
+            // be initialized.
+            let mut scratch = MaybeUninit::<[u64; 64]>::uninit();
+            // SAFETY: as above, and `scratch`, a distinct object too, is valid
+            // for writes of 512 bytes.
+            let ok = unsafe {
+                f(
+                    self.state.as_mut_ptr(),
+                    data.as_mut_ptr(),
+                    data.len(),
+                    scratch.as_mut_ptr(),
+                )
+            };
+            // The scratch may hold keystream, in the bytes `apply` writes
+            // (`Artifact.written`).
+            // SAFETY: `written` is at most the 512 bytes of `scratch`, a
+            // distinct object, valid for writes.
+            unsafe { zeroize_raw(scratch.as_mut_ptr().cast::<u8>(), written) };
+            ok
+        };
         assert!(ok == 1, "ChaCha20 block counter would overflow");
     }
 }
