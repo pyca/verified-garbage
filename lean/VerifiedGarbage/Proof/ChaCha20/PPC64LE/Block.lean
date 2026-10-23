@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
+import Mathlib.Tactic.IntervalCases
+meta import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 import all Init.Data.Nat.Bitwise.Basic

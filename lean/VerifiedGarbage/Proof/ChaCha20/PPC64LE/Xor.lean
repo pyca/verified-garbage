@@ -435,7 +435,7 @@ theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
   · rw [u₇.wr, u₆.wr, u₅.wr, g₄.wr, u₃.wr, g₂.wr, g₁.wr]
   · rw [stateAt_frame hf (by simpa using hp.st_b), ctr_zero]
   · simp only [P, Nat.mul_zero, Nat.zero_min, Nat.not_lt_zero, ite_false]
-    exact hf.bytes (R := dR s₀) (by simpa using hp.d_b) (L_lt s₀).le hk
+    exact hf.bytes (R := dR s₀) (by simpa using hp.d_b) (Nat.le_of_lt (L_lt s₀)) hk
   · rw [hm]
     refine ⟨?_, ?_, ?_⟩
     · rw [readW64_off _ _ _ (by omega) (by omega) (by omega),
@@ -499,7 +499,7 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : OInv 
       by rw [hrd₂, h.rd], by rw [hwr₂, h.wr], by rw [hst, h.cnt], fun k hk => ?_,
       h.saved.frame hf (by simpa using savR_b256 s₀)⟩, fun t ht => ?_⟩,
       fun r hr => hcs r (by revert r; decide)⟩
-    · rw [hf.bytes (R := dR s₀) (by simpa using hp.d_b.sub_right (b256_sub s₀)) (L_lt s₀).le hk]
+    · rw [hf.bytes (R := dR s₀) (by simpa using hp.d_b.sub_right (b256_sub s₀)) (Nat.le_of_lt (L_lt s₀)) hk]
       exact h.data k hk
     · rw [← serialize_stateAt s₂.mem (bp s₀) ht, hpost]
 
@@ -697,7 +697,7 @@ theorem next_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s�
     by rw [g₃.rd, u₂.rd, u₁.rd, h.rd], by rw [g₃.wr, u₂.wr, u₁.wr, h.wr],
     by rw [hm, stateAt_writeW_counter, h.cnt, ctr_succ], fun k hk => ?_,
     h.saved.frame hfs (by simpa using (hp.st_b.sub_right (savR_sub s₀)).symm)⟩
-  rw [hfs.bytes (R := dR s₀) (by simpa using hp.st_d.symm) (L_lt s₀).le hk, h.data k hk, hP]
+  rw [hfs.bytes (R := dR s₀) (by simpa using hp.st_d.symm) (Nat.le_of_lt (L_lt s₀)) hk, h.data k hk, hP]
 
 /-- The body after the call. -/
 def rest : Prog isa :=

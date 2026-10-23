@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
+import Mathlib.Tactic.IntervalCases
+meta import Mathlib.Tactic.IntervalCases
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!
@@ -418,7 +420,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   refine WP.seq (WP.mono (rounds_ok _ (blk s₀ i) _ (scr s₀) s₁ hr4₁ hr6₁
     (by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact hp.in_slot)
     (by rw [hwr₁, hL.wr]; exact hp.out_slot)
-    (fun t ht => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact hp.in_blk hi ht) hblk hv₁ 64 le_rfl)
+    (fun t ht => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact hp.in_blk hi ht) hblk hv₁ 64 (Nat.le_refl _))
     fun s₂ hR => ?_)
   have hst : ∀ r' ∈ [winRegion (scr s₀)], (stR s₀).Disjoint r' := by
     simpa using Region.Disjoint.sub_right hp.st_scr (win_sub _)
@@ -509,7 +511,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have hs₀ : SI s₀ 0 s₀ := ⟨rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega)⟩
   have hsave : WP isa (.block save) s₀ (SI s₀ 6) := by
     unfold save
-    exact wp_range_flatMap (M := isa) (SI s₀) (fun k s hk h => save_step hp hk h) 6 le_rfl s₀ hs₀
+    exact wp_range_flatMap (M := isa) (SI s₀) (fun k s hk h => save_step hp hk h) 6 (Nat.le_refl _) s₀ hs₀
   refine WP.seq (WP.mono hsave fun s₁ h₁ => ?_)
   have hc₀ : Common s₀ 0 s₁ := by
     refine ⟨by rw [h₁.gpr], by rw [h₁.gpr], fun r _ => by rw [h₁.gpr], h₁.rd, h₁.wr,
@@ -526,7 +528,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have hr₀ : RI s₀ s₂ 0 s₂ := ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, rfl, h₂.rd, h₂.wr⟩
   unfold restore
   refine WP.mono (wp_range_flatMap (M := isa) (RI s₀ s₂)
-    (fun k s hk h => restore_step hp h₂.r6 h₂.sav hk h) 6 le_rfl s₂ hr₀) fun s' h => ⟨?_, ?_⟩
+    (fun k s hk h => restore_step hp h₂.r6 h₂.sav hk h) 6 (Nat.le_refl _) s₂ hr₀) fun s' h => ⟨?_, ?_⟩
   · intro r hr
     rcases preserved_cases r hr with ⟨i, hi, rfl⟩ | hk
     · exact h.restored i hi

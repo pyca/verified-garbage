@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.Sha512.Digest
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Nat.Bitwise.Basic
+import Mathlib.Tactic.IntervalCases
+meta import Mathlib.Tactic.IntervalCases
 
 /-!
 # Streaming SHA-512 on PPC64LE: `finalize`
