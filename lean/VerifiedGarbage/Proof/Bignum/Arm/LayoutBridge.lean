@@ -48,11 +48,11 @@ theorem layout_context {s : State} {base : BitVec 32} {size w o a b : Nat}
   have m2 := array_sep (w := w) (j := 0) (k := 2) (by decide)
   have m3 := array_sep (w := w) (j := 0) (k := 3) (by decide)
   have t2 := array_sep (w := w) (j := 2) (k := 3) (by decide)
-  refine ⟨⟨ws, by omega, ?_, by omega, by omega, by omega, by omega,
-    by omega, by omega, by omega, by omega, by omega, by omega⟩,
-    ⟨⟨ws.nowrap, by omega, by omega, by omega, by omega, by omega, ws.writable⟩,
-      by omega, by omega, by omega, by omega, by omega⟩⟩
+  refine ⟨⟨ws, by omega_arith, ?_, by omega_arith, by omega_arith, by omega_arith, by omega_arith,
+    by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩,
+    ⟨⟨ws.nowrap, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, ws.writable⟩,
+      by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩⟩
   simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
-  omega
+  omega_arith
 
 end VG.Proof.Bignum.Arm

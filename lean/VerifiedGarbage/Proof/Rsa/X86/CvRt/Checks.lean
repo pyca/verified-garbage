@@ -228,20 +228,20 @@ theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h :
       slot t2.mem g.base d = slot s.mem g.base d := fun d hd h4 hn => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     simp only [sT, sE3, sOdd, sB, sC, hdr] at hn hd
-    rw [k2.slot (by simp only [hdr]; omega) (by simp only [sT, sE3]; simp; omega),
-      k1.slot (by simp only [hdr]; omega) (by simp only [invSlots, sOdd, sB, sC]; simp; omega)]
+    rw [k2.slot (by simp only [hdr]; omega_arith) (by simp only [sT, sE3]; simp; omega_arith),
+      k1.slot (by simp only [hdr]; omega_arith) (by simp only [invSlots, sOdd, sB, sC]; simp; omega_arith)]
   rw [wp_seqs_cons (List.cons_ne_nil _ _), List.append_assoc]
   refine WP.block_append ?_
   refine WP.mono (andS_ok h2 (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide)
-    (by rw [sl _ (by decide) (by decide) (by decide), h.podd]; omega) (by rw [sl _ (by decide) (by decide) (by decide), h.e1]; split <;> omega)
+    (by rw [sl _ (by decide) (by decide) (by decide), h.podd]; omega_arith) (by rw [sl _ (by decide) (by decide) (by decide), h.e1]; split <;> omega_arith)
     ) fun t3a ⟨h3a, k3a, m3a, r3a⟩ => ?_
   refine WP.block_append ?_
   refine WP.mono (andS_ok h3a (d := sMask) (a := sMask) (b := sE2) (by decide) (by decide) (by decide)
-    (by rw [m3a]; split <;> omega) (by rw [k3a.slot (by decide) (by decide), sl _ (by decide) (by decide) (by decide), h.e2]; split <;> omega)
+    (by rw [m3a]; split <;> omega_arith) (by rw [k3a.slot (by decide) (by decide), sl _ (by decide) (by decide) (by decide), h.e2]; split <;> omega_arith)
     ) fun t3b ⟨h3b, k3b, m3b, r3b⟩ => ?_
   refine WP.mono (andS_ok h3b (d := sMask) (a := sMask) (b := sE3) (by decide) (by decide) (by decide)
-    (by rw [m3b]; split <;> omega)
-    (by rw [k3b.slot (by decide) (by decide), k3a.slot (by decide) (by decide), e2]; split <;> omega)
+    (by rw [m3b]; split <;> omega_arith)
+    (by rw [k3b.slot (by decide) (by decide), k3a.slot (by decide) (by decide), e2]; split <;> omega_arith)
     ) fun t3 ⟨h3, k3, m3, r3⟩ => ?_
   have K3 : Keep g.base (kw len) [] [sMask] t2.mem t3.mem := k3a.trans (k3b.trans k3)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -267,8 +267,8 @@ theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h :
   · rw [tr _ (by decide) (by decide), h.q]
   · rw [tr _ (by decide) (by decide), h.d]
   · rw [top6, top5,
-      k4.word (by omega) (by decide) (by simp) fDD, K3.word (by omega) (by simp) (by decide) fDD,
-      k2.word (by omega) (by decide) (by decide) fDD, k1.word (by omega) (by decide) (by decide) fDD, h.ddTop]
+      k4.word (by omega_arith) (by decide) (by simp) fDD, K3.word (by omega_arith) (by simp) (by decide) fDD,
+      k2.word (by omega_arith) (by decide) (by decide) fDD, k1.word (by omega_arith) (by decide) (by decide) fDD, h.ddTop]
   · rw [k6.num (by decide) (by simp) (fit _ (by decide)),
       k5.num (by decide) (by simp) (fit _ (by decide)), e4, K3.num (by simp) (by decide) (fit _ (by decide)),
       k2.num (by decide) (by decide) (fit _ (by decide)), k1.num (by decide) (by decide) (fit _ (by decide)), h.d]
