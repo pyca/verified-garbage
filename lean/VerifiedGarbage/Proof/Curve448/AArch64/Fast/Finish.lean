@@ -133,10 +133,10 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base) {ro : Reg} {D o : 
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, State.load,
       RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
       ite_false, n4, n5, n6, p0, p8, p32, p40,
-      ae D hal (by omega), ae (D + 8) (by omega) (by omega), ae (D + 32) (by omega) (by omega),
-      ae (D + 40) (by omega) (by omega), and_self, ite_true,
-      rd o (by omega), rd (o + 8) (by omega), rd (o + 32) (by omega),
-      rd (o + 40) (by omega), Option.map_some, Option.bind_some]; rfl, rfl⟩) fun t ht => ?_
+      ae D hal (by omega_arith), ae (D + 8) (by omega_arith) (by omega_arith), ae (D + 32) (by omega_arith) (by omega_arith),
+      ae (D + 40) (by omega_arith) (by omega_arith), and_self, ite_true,
+      rd o (by omega_arith), rd (o + 8) (by omega_arith), rd (o + 32) (by omega_arith),
+      rd (o + 40) (by omega_arith), Option.map_some, Option.bind_some]; rfl, rfl⟩) fun t ht => ?_
   subst ht
   rw [WP.block_append_iff]
   have wv : ∀ i < 8, (word s.mem base (o + 8 * i)).toNat = l i := hl
@@ -183,57 +183,57 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base) {ro : Reg} {D o : 
   have ss : ∀ t : State, t.gpr .x3 = base → t.gpr .x12 = 0x0fffffff → t.wr = u.wr → Scr t base :=
     fun t h1 h2 h3 => ⟨h1, h2, h3 ▸ us.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
-  refine WP.mono (sw u .x4 D o us (by rw [uro]; exact p0) hal (by omega) (by omega))
+  refine WP.mono (sw u .x4 D o us (by rw [uro]; exact p0) hal (by omega_arith) (by omega_arith))
     fun t1 ⟨t1w, t1o, t1g, t1r, t1wr⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (sw t1 .x5 (D + 8) (o + 8) (ss t1 (by simp only [*]) (by simp only [*]) (by simp only [*]))
-    (by rw [t1g, uro]; exact p8) (by omega) (by omega) (by omega)) fun t2 ⟨t2w, t2o, t2g, t2r, t2wr⟩ => ?_
+    (by rw [t1g, uro]; exact p8) (by omega_arith) (by omega_arith) (by omega_arith)) fun t2 ⟨t2w, t2o, t2g, t2r, t2wr⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (sw t2 .x6 (D + 32) (o + 32) (ss t2 (by simp only [*]) (by simp only [*]) (by simp only [*]))
-    (by rw [t2g, t1g, uro]; exact p32) (by omega) (by omega) (by omega)) fun t3 ⟨t3w, t3o, t3g, t3r, t3wr⟩ => ?_
+    (by rw [t2g, t1g, uro]; exact p32) (by omega_arith) (by omega_arith) (by omega_arith)) fun t3 ⟨t3w, t3o, t3g, t3r, t3wr⟩ => ?_
   refine WP.mono (sw t3 .x7 (D + 40) (o + 40) (ss t3 (by simp only [*]) (by simp only [*]) (by simp only [*]))
-    (by rw [t3g, t2g, t1g, uro]; exact p40) (by omega) (by omega) (by omega)) fun t4 ⟨t4w, t4o, t4g, t4r, t4wr⟩ => ?_
+    (by rw [t3g, t2g, t1g, uro]; exact p40) (by omega_arith) (by omega_arith) (by omega_arith)) fun t4 ⟨t4w, t4o, t4g, t4r, t4wr⟩ => ?_
   have keep : ∀ d, d + 8 ≤ 8192 → (d + 8 ≤ o ∨ o + 8 ≤ d) → (d + 8 ≤ o + 8 ∨ o + 16 ≤ d) →
       (d + 8 ≤ o + 32 ∨ o + 40 ≤ d) → (d + 8 ≤ o + 40 ∨ o + 48 ≤ d) →
       word t4.mem base d = word s.mem base d := by
     intro d hd h1 h2 h3 h4
-    rw [t4w d hd (by omega), ite_eq_right (by omega), t3w d hd (by omega), ite_eq_right (by omega),
-      t2w d hd (by omega), ite_eq_right (by omega), t1w d hd (by omega), ite_eq_right (by omega), mu]
+    rw [t4w d hd (by omega_arith), ite_eq_right (by omega_arith), t3w d hd (by omega_arith), ite_eq_right (by omega_arith),
+      t2w d hd (by omega_arith), ite_eq_right (by omega_arith), t1w d hd (by omega_arith), ite_eq_right (by omega_arith), mu]
   refine ⟨fun i hi => ?_, ?_, ?_⟩
   · obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-        i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+        i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_arith
     · change (word t4.mem base (o)).toNat = _
-      rw [t4w (o) (by omega) (by omega), ite_eq_right (by omega), t3w (o) (by omega) (by omega), ite_eq_right (by omega), t2w (o) (by omega) (by omega), ite_eq_right (by omega), t1w (o) (by omega) (by omega), ite_eq_left rfl]
+      rw [t4w (o) (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), t3w (o) (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), t2w (o) (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), t1w (o) (by omega_arith) (by omega_arith), ite_eq_left rfl]
       rw [u4]; rfl
     · change (word t4.mem base (o + 8)).toNat = _
-      rw [t4w (o + 8) (by omega) (by omega), ite_eq_right (by omega), t3w (o + 8) (by omega) (by omega), ite_eq_right (by omega), t2w (o + 8) (by omega) (by omega), ite_eq_left rfl]
+      rw [t4w (o + 8) (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), t3w (o + 8) (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), t2w (o + 8) (by omega_arith) (by omega_arith), ite_eq_left rfl]
       rw [t1g]
       rw [u5]; rfl
     · change (word t4.mem base (o + 16)).toNat = _
-      rw [keep _ (by omega) (by omega) (by omega) (by omega) (by omega)]
+      rw [keep _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
       exact hl 2 (by decide)
     · change (word t4.mem base (o + 24)).toNat = _
-      rw [keep _ (by omega) (by omega) (by omega) (by omega) (by omega)]
+      rw [keep _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
       exact hl 3 (by decide)
     · change (word t4.mem base (o + 32)).toNat = _
-      rw [t4w (o + 32) (by omega) (by omega), ite_eq_right (by omega), t3w (o + 32) (by omega) (by omega), ite_eq_left rfl]
+      rw [t4w (o + 32) (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), t3w (o + 32) (by omega_arith) (by omega_arith), ite_eq_left rfl]
       rw [t2g, t1g]
       rw [u6]; rfl
     · change (word t4.mem base (o + 40)).toNat = _
-      rw [t4w (o + 40) (by omega) (by omega), ite_eq_left rfl]
+      rw [t4w (o + 40) (by omega_arith) (by omega_arith), ite_eq_left rfl]
       rw [t3g, t2g, t1g]
       rw [u7]; rfl
     · change (word t4.mem base (o + 48)).toNat = _
-      rw [keep _ (by omega) (by omega) (by omega) (by omega) (by omega)]
+      rw [keep _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
       exact hl 6 (by decide)
     · change (word t4.mem base (o + 56)).toNat = _
-      rw [keep _ (by omega) (by omega) (by omega) (by omega) (by omega)]
+      rw [keep _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
       exact hl 7 (by decide)
   · rw [← mu]
     have w : ∀ {m m' : Mem} {d : Nat}, Outside base d 8 m m' → o ≤ d → d + 8 ≤ o + 64 →
         Outside base o 64 m m' := fun h h1 h2 => h.mono h1 h2
-    exact (w t1o (by omega) (by omega)).trans ((w t2o (by omega) (by omega)).trans
-      ((w t3o (by omega) (by omega)).trans (w t4o (by omega) (by omega))))
+    exact (w t1o (by omega_arith) (by omega_arith)).trans ((w t2o (by omega_arith) (by omega_arith)).trans
+      ((w t3o (by omega_arith) (by omega_arith)).trans (w t4o (by omega_arith) (by omega_arith))))
   · refine ⟨fun q hq => ?_, ?_, ?_⟩
     · rw [t4g, t3g, t2g, t1g, uk.1 q hq]
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq

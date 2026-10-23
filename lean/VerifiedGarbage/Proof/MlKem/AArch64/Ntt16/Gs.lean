@@ -35,14 +35,14 @@ theorem gs_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) 
       LRep ((b - a) * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329) (ofNat z * (Y - X)) 3329 := by
   obtain ⟨a1, a2, a3⟩ := ha
   obtain ⟨b1, b2, b3⟩ := hb
-  have hd : (b - a).toInt = b.toInt - a.toInt := toInt_sub16' (by omega) (by omega)
-  obtain ⟨t, ht, h1, h2, h3⟩ := mm_ok (b - a) (z := z) (by omega) hz
+  have hd : (b - a).toInt = b.toInt - a.toInt := toInt_sub16' (by omega_arith) (by omega_arith)
+  obtain ⟨t, ht, h1, h2, h3⟩ := mm_ok (b - a) (z := z) (by omega_arith) hz
   refine ⟨t, ht, ?_, ?_⟩
   · have hX := val_lt X
     have hY := val_lt Y
     have e1 : (X + Y).val = (X.val + Y.val) % 3329 := val_add' X Y
-    refine ⟨?_, ?_, ?_⟩ <;> rw [toInt_add16' (by omega) (by omega)] <;> [omega; omega; skip]
-    rw [e1]; omega
+    refine ⟨?_, ?_, ?_⟩ <;> rw [toInt_add16' (by omega_arith) (by omega_arith)] <;> [omega_arith; omega_arith; skip]
+    rw [e1]; omega_arith
   · refine ⟨h1, h2, ?_⟩
     rw [hd] at h3
     generalize (b - a) * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329 = r at h1 h2 h3 ⊢
@@ -54,13 +54,13 @@ theorem gs_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) 
     have eD : ((Y - X).val : Int) = (Y.val : Int) - X.val + 3329 * (if X.val ≤ Y.val then 0 else 1) := by
       rw [val_sub_eq]
       have hq : q = 3329 := rfl
-      by_cases h : X.val ≤ Y.val <;> simp only [h, ite_true, ite_false] <;> omega
+      by_cases h : X.val ≤ Y.val <;> simp only [h, ite_true, ite_false] <;> omega_arith
     have e2 : (ofNat z * (Y - X)).val = z * (Y - X).val % 3329 := by
       rw [val_mul, val_ofNat, Nat.mod_eq_of_lt (show z < q from hz)]
     rw [e2]
     have hm : (b.toInt - a.toInt) * z =
         (((Y - X).val : Int) * z) + 3329 * ((k1 - k2 - (if X.val ≤ Y.val then 0 else 1)) * z) := by
-      rw [eD, show b.toInt = Y.val + 3329 * k1 by omega, show a.toInt = X.val + 3329 * k2 by omega]
+      rw [eD, show b.toInt = Y.val + 3329 * k1 by omega_arith, show a.toInt = X.val + 3329 * k2 by omega_arith]
       split <;> grind
     have hW : ((z * (Y - X).val : Nat) : Int) = ((Y - X).val : Int) * z := by
       rw [Int.natCast_mul, Int.mul_comm]
@@ -68,6 +68,6 @@ theorem gs_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) 
     generalize z * (Y - X).val = W at hW ⊢
     generalize ((Y - X).val : Int) * z = Wi at hW h3
     generalize (k1 - k2 - (if X.val ≤ Y.val then 0 else 1)) * (z : Int) = K at h3
-    omega
+    omega_arith
 
 end VG.Proof.MlKem.AArch64.Ntt16
