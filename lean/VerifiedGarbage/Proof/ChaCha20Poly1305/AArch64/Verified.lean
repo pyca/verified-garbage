@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.OpenKey.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.OpenKey.Route
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.SealKey.Main
 import VerifiedGarbage.Proof.Framework.Cold
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
@@ -108,12 +109,19 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
     exact WP.mono (Pad.sealRoute_ok v hp₁ hlo h511) fun _ h => Short.MainS.agree ag h
   · split
-    · refine WP.seq (WP.mono (Short.route_ok v.callee.sve true s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
+    · refine WP.seq (WP.mono (OpenKey.routeKey_ok v.callee.sve true s₁) fun s₂ ⟨ag₂, x9₂, x10₂⟩ => ?_)
       have hp₂ := Short.APre.agree ag₂ hp₁
       refine WP.ite (decide (Short.inRoute v.callee.sve true (L s₁))) (Short.route_eval x9₂)
         (fun h => ?_) (fun _ => ?_)
       rotate_left
-      · exact WP.mono (sealStitchedMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
+      · have hL₂ : L s₂ = L s₁ := by rw [L, L, ag₂.gpr .x5 (by decide) (by decide)]
+        refine WP.iteCold_iff.mpr (WP.ite (decide (keyLo v.callee.sve true ≤ L s₁ ∧ L s₁ ≤ 704))
+          (OpenKey.key_eval x10₂) (fun hk => ?_) (fun _ => ?_))
+        · have hk' := of_decide_eq_true hk
+          have h513 : 513 ≤ keyLo v.callee.sve true := by cases v.callee.sve <;> decide
+          exact WP.mono (SealKey.sealMain_ok v hp₂ (by omega) (by omega))
+            fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
+        · exact WP.mono (sealStitchedMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
       · have hr := of_decide_eq_true h
         have hL : 512 ≤ L s₂ := by
           have hlo : 256 ≤ wideLo v.callee.sve true := by cases v.callee.sve <;> decide
@@ -142,16 +150,16 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
     exact WP.mono (OpenPad.openRoute_ok v hp₁ hlo h511) fun _ h => Short.MainO.agree ag h
   · split
-    · refine WP.seq (WP.mono (OpenKey.routeOpen_ok v.callee.sve s₁) fun s₂ ⟨ag₂, x9₂, x10₂⟩ => ?_)
+    · refine WP.seq (WP.mono (OpenKey.routeKey_ok v.callee.sve false s₁) fun s₂ ⟨ag₂, x9₂, x10₂⟩ => ?_)
       have hp₂ := Short.APre.agree ag₂ hp₁
       refine WP.ite (decide (Short.inRoute v.callee.sve false (L s₁))) (Short.route_eval x9₂)
         (fun h => ?_) (fun _ => ?_)
       rotate_left
       · have hL₂ : L s₂ = L s₁ := by rw [L, L, ag₂.gpr .x5 (by decide) (by decide)]
-        refine WP.iteCold_iff.mpr (WP.ite (decide (keyLo v.callee.sve ≤ L s₁ ∧ L s₁ ≤ 704)) (OpenKey.key_eval x10₂)
+        refine WP.iteCold_iff.mpr (WP.ite (decide (keyLo v.callee.sve false ≤ L s₁ ∧ L s₁ ≤ 704)) (OpenKey.key_eval x10₂)
           (fun hk => ?_) (fun _ => ?_))
         · have hk' := of_decide_eq_true hk
-          have h513 : 513 ≤ keyLo v.callee.sve := by cases v.callee.sve <;> decide
+          have h513 : 513 ≤ keyLo v.callee.sve false := by cases v.callee.sve <;> decide
           exact WP.mono (OpenKey.openMain_ok v hp₂ (by omega) (by omega))
             fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
         · exact WP.mono (openStitchedMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)

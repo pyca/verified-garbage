@@ -5,9 +5,10 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
-# ChaCha20-Poly1305 on AArch64: the route when decrypting
+# ChaCha20-Poly1305 on AArch64: the route to the one-time key from the stream
 
-`routeOpen`: `x10 = 0` iff the length is 513 to 704 bytes (`OpenKey.openMain`),
+`routeKey`: `x10 = 0` iff the length is `keyLo` to 704 bytes (`OpenKey.openMain`,
+`SealKey.sealMain`),
 then `route`'s `x9`, writing only `x9` and `x10` (`Short.Agree`).
 -/
 
@@ -30,7 +31,7 @@ theorem shr63_sub {x k : Nat} (hx : x < 2 ^ 64) (hk : k ≤ 1024) :
   · rw [show 2 ^ 64 - k + x = (x - k) + 2 ^ 64 by omega, Nat.add_mod_right,
       Nat.mod_eq_of_lt (by omega : x - k < 2 ^ 64)]
 
-/-- The value `routeOpen` leaves in `x10`. -/
+/-- The value `routeKey` leaves in `x10`. -/
 abbrev keyVal (lo : Nat) (x : BitVec 64) : BitVec 64 :=
   (x - BitVec.ofNat 64 lo) >>> 63 - (x - BitVec.ofNat 64 705) >>> 63 + BitVec.ofNat 64 1
 
@@ -60,27 +61,27 @@ theorem keyVal_eq {lo x : Nat} (hlo : 1 ≤ lo) (hlo' : lo ≤ 705) (hx : x < 2 
           Nat.div_eq_of_lt_le (k := 1) (m := x - lo) (by omega) (by omega)]
         omega
 
-/-- `routeOpen`: `x10` and then `route`'s `x9`. -/
-theorem routeOpen_ok (sve : Bool) (s₀ : State) :
-    WP isa (.block (routeOpen sve)) s₀ fun s₁ => Agree s₀ s₁ ∧
-      s₁.gpr .x9 = routeVal sve false (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5) := by
-  have hlo : wideLo sve false < 4096 := by cases sve <;> decide
-  have hsh : wideSh sve false < 64 := by cases sve <;> decide
-  have h : WP isa (.block (routeOpen sve)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .x9 = routeVal sve false (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5) ∧
+/-- `routeKey`: `x10` and then `route`'s `x9`. -/
+theorem routeKey_ok (sve enc : Bool) (s₀ : State) :
+    WP isa (.block (routeKey sve enc)) s₀ fun s₁ => Agree s₀ s₁ ∧
+      s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (keyLo sve enc) (s₀.gpr .x5) := by
+  have hlo : wideLo sve enc < 4096 := by cases sve <;> cases enc <;> decide
+  have hsh : wideSh sve enc < 64 := by cases sve <;> cases enc <;> decide
+  have h : WP isa (.block (routeKey sve enc)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
+      s₁.gpr .x9 = routeVal sve enc (s₀.gpr .x5) ∧ s₁.gpr .x10 = keyVal (keyLo sve enc) (s₀.gpr .x5) ∧
       s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
-    unfold routeOpen
+    unfold routeKey
     refine WP.block_append (WP.block_append ((pad_ok 4 s₀).mono fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ => ?_))
     refine wp_subImm (by decide) fun s₅ u₅ => wp_lsr (by decide) fun s₆ u₆ =>
-      wp_subImm (by cases sve <;> decide) fun s₇ u₇ => wp_lsr (by decide) fun s₈ u₈ => wp_sub fun s₉ u₉ =>
+      wp_subImm (by cases sve <;> cases enc <;> decide) fun s₇ u₇ => wp_lsr (by decide) fun s₈ u₈ => wp_sub fun s₉ u₉ =>
       wp_addImm (by decide) fun s₁₀ u₁₀ => WP.block_nil ?_
     have x5 : s₄.gpr .x5 = s₀.gpr .x5 := g₄ _ (by decide)
-    have x10₁₀ : s₁₀.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5) := by
+    have x10₁₀ : s₁₀.gpr .x10 = keyVal (keyLo sve enc) (s₀.gpr .x5) := by
       rw [u₁₀.gpr, u₉.gpr, u₈.gpr, u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), x5,
         u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.gpr, x5]
     show WP isa (.block (List.take 4 (route sve false))) s₁₀ _
-    rw [show (route sve false).take 4 = [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55,
-        .subImm .x .x9 .x9 (wideLo sve false), .lsr .x .x9 .x9 (wideSh sve false)] by simp [route]]
+    rw [show (route sve enc).take 4 = [.lsl .x .x9 .x5 55, .lsr .x .x9 .x9 55,
+        .subImm .x .x9 .x9 (wideLo sve enc), .lsr .x .x9 .x9 (wideSh sve enc)] by simp [route]]
     refine wp_lsl (by decide) fun t₁ v₁ => wp_lsr (by decide) fun t₂ v₂ =>
       wp_subImm hlo fun t₃ v₃ => wp_lsr hsh fun t₄ v₄ => WP.block_nil
         ⟨fun r h9 h10 => ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -93,14 +94,14 @@ theorem routeOpen_ok (sve : Bool) (s₀ : State) :
     · rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, m₄]
     · rw [v₄.rd, v₃.rd, v₂.rd, v₁.rd, u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, rd₄]
     · rw [v₄.wr, v₃.wr, v₂.wr, v₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, wr₄]
-  exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> lit_decide))
+  exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> cases enc <;> lit_decide))
     fun s₁ ⟨⟨⟨g, x9, x10, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9, x10⟩
 
 /-- The branch: to `OpenKey.openMain` iff the length is 513 to 704 bytes. -/
-theorem key_eval {sve : Bool} {s₀ s₁ : State} (h : s₁.gpr .x10 = keyVal (keyLo sve) (s₀.gpr .x5)) :
-    isa.eval (.zero .x .x10) s₁ = some (decide (keyLo sve ≤ L s₀ ∧ L s₀ ≤ 704)) := by
+theorem key_eval {sve enc : Bool} {s₀ s₁ : State} (h : s₁.gpr .x10 = keyVal (keyLo sve enc) (s₀.gpr .x5)) :
+    isa.eval (.zero .x .x10) s₁ = some (decide (keyLo sve enc ≤ L s₀ ∧ L s₀ ≤ 704)) := by
   have e : isa.eval (.zero .x .x10) s₁ = some (s₁.gpr .x10 == 0) := eval_zero s₁ .x10
   rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀,
-    keyVal_eq (by cases sve <;> decide) (by cases sve <;> decide) (s₀.gpr .x5).isLt]
+    keyVal_eq (by cases sve <;> cases enc <;> decide) (by cases sve <;> cases enc <;> decide) (s₀.gpr .x5).isLt]
 
 end VG.Proof.ChaCha20Poly1305.AArch64.OpenKey
