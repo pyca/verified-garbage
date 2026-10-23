@@ -50,6 +50,16 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
       (countLoop selBody)
       (fun σ s => Ctx L scr σ s ∧ ∃ m₀, X σ m₀ ∧ Frame [sR scr oSel h.N] m₀ s.mem ∧
         ∀ i < h.N, s.mem (sa scr (oSel + i)) = if c σ then m₀ (sa scr (oSt + i)) else m₀ (sa scr (oSel + i))) := by
+  have _ : oCW = 0 := rfl
+  have _ : oSt = 512 := rfl
+  have _ : oSel = 768 := rfl
+  have _ : oDig = 832 := rfl
+  have _ : oLen = 896 := rfl
+  have _ : oEm = 1024 := rfl
+  have _ : oY = 2048 := rfl
+  have _ : oRsa = 8192 := rfl
+  have _ : frameBytes = 144 := rfl
+
   have hN := h.N_le
   have hN0 : 0 < h.N := by have := h.D_pos; have := h.D_le; omega
   have fit := hg.fit
@@ -72,16 +82,16 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
   generalize hj : h.N - (n + 1) = j at hp
   have hjN : j < h.N := by omega
   have aS : VG.X86.addr (scr + BitVec.ofNat 32 (oSt + j)) 0 = sa scr (oSt + j) := by
-    rw [hg.addrD (by pomega), Nat.add_zero]
+    rw [hg.addrD (by omega_arith), Nat.add_zero]
   have aE : VG.X86.addr (scr + BitVec.ofNat 32 (oSel + j)) 0 = sa scr (oSel + j) := by
-    rw [hg.addrD (by pomega), Nat.add_zero]
-  have rS : InRegions (s.rd ++ s.wr) (sa scr (oSt + j)) 1 := hg.rd hc.st (by pomega)
-  have rE : InRegions (s.rd ++ s.wr) (sa scr (oSel + j)) 1 := hg.rd hc.st (by pomega)
-  have wE : InRegions s.wr (sa scr (oSel + j)) 1 := hg.wr hc.st (by pomega)
+    rw [hg.addrD (by omega_arith), Nat.add_zero]
+  have rS : InRegions (s.rd ++ s.wr) (sa scr (oSt + j)) 1 := hg.rd hc.st (by omega_arith)
+  have rE : InRegions (s.rd ++ s.wr) (sa scr (oSel + j)) 1 := hg.rd hc.st (by omega_arith)
+  have wE : InRegions s.wr (sa scr (oSel + j)) 1 := hg.wr hc.st (by omega_arith)
   have stj : s.mem (sa scr (oSt + j)) = m₀ (sa scr (oSt + j)) :=
     hp.fr _ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Geo.sep (scr := scr) (o := oSt + j) (n := 1) (by pomega) (by pomega) (by pomega) _ (Region.contains_self _ _)
+      exact Geo.sep (scr := scr) (o := oSt + j) (n := 1) (by omega_arith) (by omega_arith) (by omega_arith) _ (Region.contains_self _ _)
   simp only [selBody, addi, Impl.RsaPkcs1Sig.X86.at_]
   refine wp_movzx8 (a := sa scr (oSt + j)) (by rw [ea_at, hp.esi]; exact aS) rS fun t1 u1 => ?_
   refine wp_movzx8 (a := sa scr (oSel + j)) (by rw [ea_at, u1.other _ (by decide), hp.edi]; exact aE) (by rw [u1.rd, u1.wr]; exact rE)
@@ -99,9 +109,9 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
   have cx8 : t8.gpr .ecx = BitVec.ofNat 32 (h.N - j) := by
     simp (disch := decide) only [u8.other, u7.other, u6.gpr, u5.other, u4.other, u3.other, u2.other, u1.other, hp.ecx]
   have fr1 : Frame [sR scr oSel h.N] s.mem t9.mem := by
-    rw [m9]; exact frame_byte scr _ _ (by omega) (by omega) (by pomega)
+    rw [m9]; exact frame_byte scr _ _ (by omega) (by omega) (by omega_arith)
   have hc' : Ctx L scr σ t9 := hc.write fr1 (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by pomega))
+      simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega_arith))
     (by rw [u9.rd, u8.rd, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd])
     (by rw [u9.wr, u8.wr, u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr])
     (by simp (disch := decide) only [u9.other, u8.other, u7.other, u6.gpr, u5.other, u4.other, u3.other, u2.other,
@@ -119,7 +129,7 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
     · rw [u9.gpr, cx8, ofNat_pred (by omega), Nat.sub_sub]
     · simp (disch := decide) only [u9.other, u8.other, u7.other, u6.gpr, u5.other, u4.other, u3.other, u2.other,
         u1.other, hp.edx]
-    · rw [m9, sa_write scr _ _ (by pomega) (by pomega)]
+    · rw [m9, sa_write scr _ _ (by omega_arith) (by omega_arith)]
       by_cases e : i = j
       · subst e
         rw [ite_eq_left rfl, hp.sel i hi, ite_eq_right (show ¬ (i < i ∧ c σ) from fun h => absurd h.1 (Nat.lt_irrefl _))]

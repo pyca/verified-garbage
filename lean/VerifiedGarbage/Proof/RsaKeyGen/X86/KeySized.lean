@@ -67,7 +67,7 @@ theorem sized_ok {E : Environment} {s : State} (h : Input E s) :
   rw [eValue, pValueX, qValueX] at result
   have hyInput := hx.afterStage hy Ky Oy
   have Fy := stage_scratch_frame hx.ws (by simp [deriveArrays, prepareArrays, keyPartArrays]; decide) Oy
-  refine WP.mono (writeCore_ok hyInput.outputs result) fun t ⟨ht, written, Ft, Kt⟩ => ?_
+  refine WP.mono (writeCore_ok (g := E.outputs) (s := y) hyInput.outputs result) fun t ⟨ht, written, Ft, Kt⟩ => ?_
   refine ⟨ht, written, ?_, Ku.trans (Kv.trans (Kw.trans (Kx.trans (Ky.trans Kt))))⟩
   have prefixFrame : Frame E.outputs.writes s.mem y.mem := (Fsx.trans Fy).mono (by
     intro r hr
