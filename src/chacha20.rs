@@ -185,6 +185,13 @@ impl Backend {
 }
 
 /// A ChaCha20 keystream, applied incrementally.
+///
+/// `new` only stores the key and the nonce: `vg_chacha20_init` runs on the
+/// first `apply_keystream`, on the state in place. Were `new` to run it, on
+/// a local it then returns, the 776-byte state would be copied to the
+/// caller's object: `init` is given the local's address, so the compiler
+/// cannot build it in the caller's.
+#[repr(C)]
 pub struct ChaCha20 {
     /// The streaming state of `vg_chacha20_init` and `vg_chacha20_apply`
     /// (`VG.Spec.ChaCha20.restAt`): the key, the position in the keystream
@@ -192,17 +199,25 @@ pub struct ChaCha20 {
     /// the verified functions read or write it, and they read only bytes
     /// they have written, so it need not be initialized.
     state: MaybeUninit<[u64; 96]>,
+    /// The key and the nonce of `new` (and `reset_nonce`), which `init`
+    /// reads while `pending`.
+    key: [u8; 32],
+    nonce: [u8; 16],
+    /// Whether `init` has yet to run: `state` holds nothing.
+    pending: bool,
     backend: Backend,
 }
 
 impl Drop for ChaCha20 {
-    /// Wipes the state, which holds the key and keystream. All of it: the
-    /// contract lets the functions write any of it.
+    /// Wipes the whole object: the state, which holds the key and keystream
+    /// (all of it, as the contract lets the functions write any of it), and
+    /// the key.
     fn drop(&mut self) {
-        // SAFETY: `state` is valid for writes of 768 bytes; it is a distinct
+        // SAFETY: `self` is valid for writes of its size; it is a distinct
         // object, so it does not overlap the callee's stack frame or wrap
-        // around the end of the address space.
-        unsafe { zeroize_raw(self.state.as_mut_ptr().cast::<u8>(), size_of::<[u64; 96]>()) };
+        // around the end of the address space. It is not used after the
+        // drop, so its fields need not stay valid.
+        unsafe { zeroize_raw((self as *mut Self).cast::<u8>(), size_of::<Self>()) };
     }
 }
 
@@ -215,28 +230,34 @@ impl ChaCha20 {
     /// Starts the keystream for `key` and `nonce` (the initial block counter,
     /// little-endian, followed by the 12-byte RFC 8439 nonce).
     pub fn new(key: &[u8; 32], nonce: &[u8; 16]) -> Self {
-        // The fields are written one at a time: a `ChaCha20 { .. }` literal
-        // with an uninitialized `state` compiles to a fill of all 776 bytes.
-        let mut c = MaybeUninit::<ChaCha20>::uninit();
-        let p = c.as_mut_ptr();
-        // SAFETY: `p` is valid for writes of a `ChaCha20`, so its `backend`
-        // field is; `state` is valid for writes of 768 bytes (`init` reads
-        // none of them), `key` for reads of 32 bytes and `nonce` for reads of
-        // 16 bytes; they are distinct objects, so they do not overlap each
-        // other or the return address, and do not wrap around the end of the
-        // address space. Both fields are then initialized (`state` is a
-        // `MaybeUninit`), so `c` is.
-        unsafe {
-            core::ptr::addr_of_mut!((*p).backend).write(Backend::select(detected()));
-            vg_chacha20_init(core::ptr::addr_of_mut!((*p).state).cast(), key, nonce);
-            c.assume_init()
+        ChaCha20 {
+            state: MaybeUninit::uninit(),
+            key: *key,
+            nonce: *nonce,
+            pending: true,
+            backend: Backend::select(detected()),
         }
+    }
+
+    /// Runs `vg_chacha20_init` on the key and nonce stored.
+    fn start(&mut self) {
+        // SAFETY: `state` is valid for writes of 768 bytes (`init` reads none
+        // of them), `key` for reads of 32 bytes and `nonce` for reads of 16
+        // bytes; they are distinct fields, so they do not overlap each other
+        // or the return address, and do not wrap around the end of the
+        // address space.
+        unsafe { vg_chacha20_init(self.state.as_mut_ptr(), &self.key, &self.nonce) };
+        self.pending = false;
     }
 
     /// Restarts the keystream, with the same key, for `nonce`.
     pub fn reset_nonce(&mut self, nonce: &[u8; 16]) {
-        // SAFETY: as in `new`, for `state` and `nonce` (`set_nonce` reads no
-        // byte of `state` either).
+        if self.pending {
+            self.nonce = *nonce;
+            return;
+        }
+        // SAFETY: as in `start`, for `state` and `nonce` (`set_nonce` reads
+        // no byte of `state` either).
         unsafe { vg_chacha20_set_nonce(self.state.as_mut_ptr(), nonce) };
     }
 
@@ -250,6 +271,9 @@ impl ChaCha20 {
     /// have been applied since the nonce (with initial block counter `c`) was
     /// set. `data` is then left unchanged.
     pub fn apply_keystream(&mut self, data: &mut [u8]) {
+        if self.pending {
+            self.start();
+        }
         let f = match self.backend {
             Backend::Scalar => vg_chacha20_apply,
             #[cfg(target_arch = "aarch64")]
@@ -341,6 +365,18 @@ mod tests {
         let mut c = ChaCha20::new(&key(), &n1);
         let mut data = [0u8; 100];
         c.apply_keystream(&mut data);
+        c.reset_nonce(&n2);
+        let mut data = [0u8; 100];
+        c.apply_keystream(&mut data);
+        assert_eq!(data, keystream::<100>(&key(), &n2));
+    }
+
+    /// `reset_nonce` before any keystream is applied replaces the nonce of
+    /// `new`.
+    #[test]
+    fn reset_nonce_first() {
+        let (n1, n2) = (nonce(0, &[1; 12]), nonce(5, &[2; 12]));
+        let mut c = ChaCha20::new(&key(), &n1);
         c.reset_nonce(&n2);
         let mut data = [0u8; 100];
         c.apply_keystream(&mut data);
