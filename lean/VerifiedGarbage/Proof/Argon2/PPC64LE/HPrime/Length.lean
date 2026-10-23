@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
 public import VerifiedGarbage.Impl.Argon2.PPC64LE.HPrime
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # H′: selecting the first digest length -/
 

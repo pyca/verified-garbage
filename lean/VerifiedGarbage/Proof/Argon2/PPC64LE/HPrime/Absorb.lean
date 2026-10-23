@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 
 /-! # H′ on PPC64LE: absorbing the length prefix, the previous digest or the input -/
 

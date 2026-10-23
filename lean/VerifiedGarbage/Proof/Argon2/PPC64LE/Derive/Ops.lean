@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Argon2 on PPC64LE: the derivation's arithmetic and logical instructions -/
 

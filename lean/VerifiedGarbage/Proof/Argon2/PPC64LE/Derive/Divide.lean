@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.PPC64LE.Divide
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Argon2.Divide
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Ops
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # Fixed-time division on PPC64LE

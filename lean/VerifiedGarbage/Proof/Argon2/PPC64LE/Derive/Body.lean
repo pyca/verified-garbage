@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Contract
 public import VerifiedGarbage.Impl.Argon2.PPC64LE.Derive
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # Argon2 on PPC64LE: the state of the derivation's body

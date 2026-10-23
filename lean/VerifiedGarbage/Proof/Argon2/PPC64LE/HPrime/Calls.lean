@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
 public import VerifiedGarbage.Impl.Argon2.PPC64LE.HPrime
 public import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Common
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Verified
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,6 +13,10 @@ meta import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.Impl.MdStream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # H′ on PPC64LE: calling the BLAKE2b streaming functions -/
 

@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Spec
 public import VerifiedGarbage.Impl.Argon2.PPC64LE.Compress
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Argon2's modified addition and GB on PPC64LE registers -/
 
