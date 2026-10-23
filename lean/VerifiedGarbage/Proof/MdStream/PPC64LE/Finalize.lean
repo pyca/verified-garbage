@@ -266,7 +266,7 @@ theorem zero_word_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : S
     rw [u₃.gpr, u₂.other _ (by decide), g₁ _ (by decide), h.r10, sub_ofNat (by omega_arith), Nat.sub_sub]
   refine ⟨⟨by omega_arith, fun r hr => ?_, by rw [u₄.rd, u₃.rd, u₂.rd, rd₁, h.rd],
     by rw [u₄.wr, u₃.wr, u₂.wr, wr₁, h.wr], by rw [u₄.sp, u₃.sp, u₂.sp, sp₁, h.sp], ?_, ?_,
-    by rw [u₄.other _ (by decide), hx11₃], ?_⟩, by rw [u₄.gpr, hx11₃, ofNat_shr (by omega_arith)]; rfl⟩
+    by rw [u₄.other _ (by decide), hx11₃], ?_⟩, by rw [u₄.gpr, hx11₃, ofNat_shr (by omega_arith)]⟩
   · have : r ≠ .r12 ∧ r ≠ .r10 ∧ r ≠ .r30 ∧ r ≠ .r11 := by revert r; decide
     rw [u₄.other r this.1, u₃.other r this.2.1, u₂.other r this.2.2.1, g₁ r this.2.2.2, h.keep r hr]
   · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), g₁ _ (by decide), h.r8]
@@ -314,7 +314,7 @@ theorem zero_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (
   refine WP.seq (wp_lsr (by decide) fun s₁ u₁ => WP.block_nil ?_)
   have hZ₁ : Zero P s₀ sI n lim 0 s₁ := h.of_gpr u₁.other u₁.mem u₁.rd u₁.wr u₁.sp
   have h12 : s₁.gpr .r12 = BitVec.ofNat 64 ((lim - n) / 8) := by
-    rw [u₁.gpr, h.r10, Nat.sub_zero, ofNat_shr (by omega_arith)]; rfl
+    rw [u₁.gpr, h.r10, Nat.sub_zero, ofNat_shr (by omega_arith)]
   refine WP.seq (WP.mono (zero_words_ok hd hp hC hlim hn hZ₁ h12) fun s₂ hZ₂ => ?_)
   have hz : eval (.zero .d .r10) s₂ = some (decide (lim - n - 8 * ((lim - n) / 8) = 0)) := by
     rw [eval_zero, hZ₂.r10, ofNat_beq_zero (by omega_arith)]

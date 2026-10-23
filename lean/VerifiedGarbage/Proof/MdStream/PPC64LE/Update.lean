@@ -502,7 +502,7 @@ theorem copy_word_step (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} 
   have hx10 : s₇.gpr .r10 = BitVec.ofNat 64 (tt P s₀ c - (j + 8)) := by
     rw [u₇.other _ (by decide), hx11₆]
   have hx12 : s₇.gpr .r12 = BitVec.ofNat 64 ((tt P s₀ c - (j + 8)) / 8) := by
-    rw [u₇.gpr, hx11₆, ofNat_shr (by omega_using [ht, hlen])]; rfl
+    rw [u₇.gpr, hx11₆, ofNat_shr (by omega_using [ht, hlen])]
   refine ⟨⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hx10, ?_, ?_⟩, hx12⟩
   · rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, rd₃, u₁.rd, h.rd]
   · rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, wr₃, u₁.wr, h.wr]
@@ -564,7 +564,7 @@ theorem copy_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} {sI : S
   refine WP.seq (wp_lsr (by decide) fun s₁ u₁ => WP.block_nil ?_)
   have hC₁ : Copy P s₀ c sI.mem 0 s₁ := h.of_gpr u₁.other u₁.mem u₁.rd u₁.wr u₁.sp
   have h12 : s₁.gpr .r12 = BitVec.ofNat 64 (tt P s₀ c / 8) := by
-    rw [u₁.gpr, h.r10, Nat.sub_zero, ofNat_shr (by omega_arith)]; rfl
+    rw [u₁.gpr, h.r10, Nat.sub_zero, ofNat_shr (by omega_arith)]
   refine WP.seq (WP.mono (copy_words_ok hd hp hI hC₁ h12) fun s₂ hC₂ => ?_)
   have hz : eval (.zero .d .r10) s₂ = some (decide (tt P s₀ c - 8 * (tt P s₀ c / 8) = 0)) := by
     rw [eval_zero, hC₂.r10, ofNat_beq_zero (by omega_arith)]

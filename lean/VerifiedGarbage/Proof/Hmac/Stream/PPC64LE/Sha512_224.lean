@@ -1,0 +1,94 @@
+module
+
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
+meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
+
+/-!
+# HMAC-SHA-512/224 on PPC64LE
+
+SHA-512/224's streaming functions (`Sha512Family.hash`), as HMAC's code over any
+streaming hash function calls them; the constant time of HMAC's code for
+them, which the kernel checks; and the functions against the shared contracts
+of `Spec.Hmac.sha512_224I`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Hmac.Stream.PPC64LE.Sha512_224
+
+open VG.PPC64LE
+open VG.Impl.Hmac.Stream.PPC64LE (Hash)
+
+/-- SHA-512/224's streaming functions. -/
+def hash : Hash :=
+  Sha512Family.hash Spec.Sha512.H0_512_224 28 Spec.Sha512.init512_224Api.name Spec.Hmac.sha512_224I.initScratchApi.name
+
+/-- What the proofs need of them. -/
+def ok : HashOK hash :=
+  Sha512Family.ok Spec.Sha512.H0_512_224 28 _ _ Spec.Hmac.sha512_224 rfl ⟨by decide, by decide, by decide⟩
+    (fun _ => rfl)
+
+/-! ## Constant time -/
+
+theorem init_ct : ConstantTime isa (initG ok.SH (hash.W + 48) 96).pre (initG ok.SH (hash.W + 48) 96).pub
+    hash.init :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+
+theorem fin_ct : ConstantTime isa (finG ok.SH (hash.W + 48 + hash.FD) 96).pre
+    (finG ok.SH (hash.W + 48 + hash.FD) 96).pub hash.finalize :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+
+theorem long_ct : ConstantTime isa (longG ok.SH hash.lbytes 144).pre (longG ok.SH hash.lbytes 144).pub
+    hash.initLong :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+
+/-! ## The shared contracts -/
+
+theorem initScratch : Verified PPC64LE.target hash.init (Spec.Hmac.sha512_224I.initScratchContract PPC64LE.abi 96) :=
+  Shared.initScratch ok rfl (by decide) init_ct (by
+    inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig,
+      Spec.Hmac.initPre, Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, PPC64LE.abi, PPC64LE.argRegs]
+      using initSat 192 1872)
+
+theorem finalizeScratch :
+    Verified PPC64LE.target hash.finalize (Spec.Hmac.sha512_224I.finalizeScratchContract PPC64LE.abi 96) :=
+  Shared.finalizeScratch ok rfl (by decide) fin_ct (by
+    inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
+      Spec.Hmac.finalizeScratchSig, Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, PPC64LE.abi,
+      PPC64LE.argRegs]
+      using finSat 192 28 1872)
+
+theorem longScratch : Verified PPC64LE.target hash.initLong (Shared.longScratchContract ok.SH (hash.lbytes / 8)) :=
+  Shared.longScratch ok (by decide) long_ct (by
+    inst_sat [Shared.longScratchContract, Shared.longPre, Spec.Hmac.initScratchSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224,
+      PPC64LE.abi, PPC64LE.argRegs]
+      using longSat 192 576)
+
+theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.sha512_224I 7)
+    (Spec.Hmac.sha512_224I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512_224I)) :=
+  Shared.initAny (b := 7) (.inr rfl) rfl (by decide)
+    (Shared.initFrame initScratch (by decide) (by
+      inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
+        Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
+        using initSat 192 0))
+    (Shared.longFrame longScratch (by decide) Proof.Hmac.sha512_224_local (by decide) (by
+      inst_sat [Shared.longContract, Shared.longPre, Spec.Hmac.initSig, Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S,
+        Spec.Hmac.sha512_224, longFrame, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
+        using longSat 192 0))
+    (by
+      inst_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
+        Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
+        using initSat 192 0)
+
+theorem finalize : Verified PPC64LE.target
+    (Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha512_224I) .r7 hash.finalize)
+    (Spec.Hmac.sha512_224I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512_224I)) :=
+  Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.sha512_224_local (by decide) (by
+    inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+      Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
+      using finSat 192 28 0)
+
+end VG.Proof.Hmac.Stream.PPC64LE.Sha512_224
