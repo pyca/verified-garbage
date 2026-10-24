@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Verified
+public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Safety
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeVerified
@@ -23,13 +24,15 @@ open VG
 
 def artifacts : List Artifact := [
   Spec.Ffdh.checkDomainApi.artifact X86.target {
-    notes := ["Runs on private CRT RSA's operations at a run-time width, at p's width, reading \
+    consts := Impl.Ffdh.X86.VettedValidation.tableConsts
+    notes := ["An exact full-domain comparison recognizes the ten certified MODP/FFDHE groups first. \
+      Every miss retains the complete validator, which runs on private CRT RSA's operations at p's width, reading \
       their arguments from a frame of synthetic arguments; every Montgomery multiplication calls \
       `vg_rsa_mont_mul_at`. The subgroup check is a fixed four-bit-window power. The domain's \
       bytes choose the branches. Callee-saved registers reside in scratch."]
-    code := Impl.Ffdh.X86.CheckDomain.code
-    verified := Proof.Ffdh.X86.CheckDomain.verified
-    spSafe := Proof.Ffdh.X86.Shape.checkDomain_spSafe
+    code := Impl.Ffdh.X86.VettedValidation.code
+    verified := Proof.Ffdh.X86.VettedValidation.verified
+    spSafe := Proof.Ffdh.X86.VettedValidation.spSafe
     stack := 172 },
   Spec.Ffdh.checkPublicApi.artifact X86.target {
     notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
