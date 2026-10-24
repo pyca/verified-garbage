@@ -189,7 +189,7 @@ def ltU (d a b : Reg) : List Instr :=
 carry into `r8`), `r7` shifted; then `r3 − e` kept if that carried or did
 not borrow. -/
 def modBit : List Instr :=
-  [.lsr .d .r8 .r3 63, .lsr .d .r9 .r7 63, .lsl .r3 .r3 1, .logic .or .r3 .r3 .r9, .lsl .r7 .r7 1] ++
+  [.lsr .d .r8 .r3 63, .lsr .d .r9 .r7 63, .lsl .r3 .r3 1, .add .r3 .r3 .r9, .lsl .r7 .r7 1] ++
   ltU .r9 .r3 .r21 ++
   [.li .r0 1, .logic .xor .r9 .r9 .r0, .logic .or .r9 .r9 .r8, .li .r0 0, .sub .r9 .r0 .r9,
     .sub .r4 .r3 .r21, .logic .xor .r4 .r4 .r3, .logic .and .r4 .r4 .r9, .logic .xor .r3 .r3 .r4]
