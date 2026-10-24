@@ -63,7 +63,7 @@ structure Dims (p : PP) : Prop where
   g : p.g = 2 ∨ p.g = 5
   n : 16 * p.L + 32 ≤ p.n
   n' : 8 * p.n ≤ 2 ^ 64
-  rl : p.r.length < 2 ^ 63
+  rl : p.r.length < 2 ^ 64
 
 /-- The header words holding the arguments. -/
 structure Args (m : Mem) (p : PP) : Prop where
