@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Inverse
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.S
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd

@@ -46,7 +46,7 @@ def midL (v : VD) : List (Reg × BitVec 64) :=
 /-- After the load of `out`. -/
 def Mid : VD → State → Prop := Ph VD.qb fun v s => FixL (midL v) s ∧ True
 
-theorem pins_Mid : Pins Mid (coreRegs ++ [.r12, .r6, .r10, .r29]) := pins_fixL _ _ fun _ => rfl
+theorem pins_Mid : Pins Mid (coreRegs ++ ([.r12, .r6, .r10, .r29] : List Reg)) := pins_fixL _ _ fun _ => rfl
 
 /-- What the checks of the key leave: `checkKey_ok`'s `Checked` and `KeyOk`. -/
 theorem k9_checked {v : VD} {s : State} (h : K9 v s) :
@@ -88,7 +88,7 @@ theorem k9_mid {v : VD} {s : State} (h : K9 v s ∧ SG v) : WP isa spre s (Mid v
     have := B.hdr o ho
     rw [← this, B.hOut sg]
   · simp only [FixL, midL, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]
-    exact ⟨t12.trans (B.hOut sg), t6, Qt.inq.env.h10, Qt.inq.env.h29⟩
+    exact ⟨t12, t6, Qt.inq.env.h10, Qt.inq.env.h29⟩
 
 /-- The body starts in the P space the checks of the key leave. -/
 theorem pins_K9 : Pins (fun v s => K9 v s ∧ SG v) (coreRegs ++ envRegs') := by
@@ -129,7 +129,8 @@ theorem pins_r21 {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → Base v s)
   rw [(h v _ h₁).regs.r21, (h v _ h₂).regs.r21]
 
 theorem zfront_ok {v : VD} {s : State} (h : Base v s) (sg : SG v) :
-    WP isa (.block ([.load .d .r16 .r21 hOut] ++ getQ .r17 ++ [.add .r17 .r17 .r17, .li .r0 0])) s
+    WP isa (.block (([.load .d .r16 .r21 hOut] : List Instr) ++ getQ .r17 ++
+        ([.add .r17 .r17 .r17, .li .r0 0] : List Instr))) s
       fun t => FixL (zL v) t := by
   have hZ := h.ok.z256
   rw [WP.block_append_iff, WP.block_append_iff]
@@ -140,7 +141,8 @@ theorem zfront_ok {v : VD} {s : State} (h : Base v s) (sg : SG v) :
   refine WP.mono (getQ_ok (h.regs.keep k1) .r17) fun s₂ ⟨⟨a17, _⟩, k2⟩ => ?_
   refine WP.mono (WP.keep [.r0, .r17] (Q := fun u => u.gpr .r16 = v.o ∧
       u.gpr .r17 = BitVec.ofNat 64 (2 * v.L.ql)) (by
-      prun [a17, (k2.gpr .r16 (by decide)).trans a16]) (by decide)) fun t ⟨⟨b16, b17⟩, k3⟩ => ?_
+      prun [a17, (k2.gpr .r16 (by decide)).trans a16]
+      rw [BitVec.ofNat_add_ofNat, Nat.two_mul]) (by decide)) fun t ⟨⟨b16, b17⟩, k3⟩ => ?_
   simp only [FixL, zL, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]
   exact ⟨b16, b17, (((k1.trans k2).trans k3).gpr .r21 (by decide)).trans h.regs.r21⟩
 
