@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainVerified
+public import VerifiedGarbage.Proof.Ffdh.Arm.VettedValidation.Verified
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeVerified
@@ -12,8 +12,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeVerified
 namespace VG.Proof.Variants.Ffdh.Arm.Base
 
 def variant : VG.Proof.Ffdh.Arm.Backend where
-  checkDomain := VG.Impl.Ffdh.Arm.Domain.CheckDomain.code
-  checkDomain_verified := VG.Proof.Ffdh.Arm.domain_verified
+  checkDomain := VG.Impl.Ffdh.Arm.VettedValidation.code
+  checkDomain_verified := VG.Proof.Ffdh.Arm.VettedValidation.verified
   checkPublic := VG.Impl.Ffdh.Arm.Domain.CheckPublic.code
   checkPublic_verified := VG.Proof.Ffdh.Arm.checkPublic_verified
   checkPrivate := VG.Impl.Ffdh.Arm.Domain.CheckPrivate.code

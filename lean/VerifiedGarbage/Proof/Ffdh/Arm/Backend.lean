@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -13,7 +14,7 @@ open VG VG.Arm
 
 structure Backend where
   checkDomain : Prog isa
-  checkDomain_verified : Verified target checkDomain (Spec.Ffdh.checkDomainContract abi 128)
+  checkDomain_verified : Verified target checkDomain (Spec.Ffdh.checkDomainContract (abi.withConsts VG.Impl.Ffdh.Arm.VettedGroups.tableConsts) 128)
   checkPublic : Prog isa
   checkPublic_verified : Verified target checkPublic (Spec.Ffdh.checkPublicContract abi 128)
   checkPrivate : Prog isa
