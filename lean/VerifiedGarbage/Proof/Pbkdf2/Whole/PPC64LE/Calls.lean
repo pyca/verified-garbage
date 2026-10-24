@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Iterate
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: the calls

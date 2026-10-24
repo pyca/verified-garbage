@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Recover
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
 # Ed25519 on PPC64LE: the sign and the checks of a decoding

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # AES-CCM on PPC64LE: instructions and bytes

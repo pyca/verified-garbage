@@ -27,6 +27,10 @@ public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Init
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Save
 public import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Poly1305 on PPC64LE: `update`

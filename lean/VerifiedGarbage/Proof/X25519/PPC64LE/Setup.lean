@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
 import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X25519 on PPC64LE: the setup
