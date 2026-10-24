@@ -46,8 +46,8 @@ def sigS (q x k z r : Nat) : Nat := k ^ (q - 2) % q * ((z % q + x * r % q) % q) 
 def SignOk (p q g y x k z : Nat) : Prop :=
   (0 < x ∧ x < q) ∧ (0 < k ∧ k < q) ∧ g ^ x % p = y ∧ sigR p q g k ≠ 0 ∧ sigS q x k z (sigR p q g k) ≠ 0
 
-instance (p q g y x k z : Nat) : Decidable (SignOk p q g y x k z) := by
-  unfold SignOk; infer_instance
+instance (p q g y x k z : Nat) : Decidable (SignOk p q g y x k z) :=
+  inferInstanceAs (Decidable (_ ∧ _))
 
 /-- A change past `scratch`'s header keeps its word `hOut`. -/
 theorem Body.hOut {L : Lay} {m m' : Mem} (h : Body L m m') : word m' L.S hOut = word m L.S hOut :=
@@ -109,6 +109,7 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
   have hw16 := hL.wp_ge
   have hw8 := hL.wp_eq
   have hbe := hL.buf_end
+  have hq28 : L.qOff = slot L.wp 28 := rfl
   have hqZ : slot L.wp 28 + 1600 ≤ L.Z := by simp only [Lay.bOff, Lay.qOff] at hbe; omega
   have e8 := Lay.slot_eq L.wp 8; have e28 := Lay.slot_eq L.wp 28
   obtain ⟨ip, scr, regs, p0, -, p8, q0, -, r2⟩ := hc
@@ -227,12 +228,13 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
   refine WP.mono (output_ok hL Q₇ ((Body.hOut B₃₇).trans hout₃) ((Body.hMask B₃₇).trans m₃)
       (ho.congr k₁₇.wr) (hos.keep k₁₇.rd k₁₇.wr) (by rw [r9₇]; omega) (by rw [s6₇']; omega))
     fun t ⟨⟨o1, o2, t3, mo, qo, oo⟩, kt⟩ => ?_
-  rw [r9₇, s6₇'] at o1 o2
-  rw [s6₇'] at t3
+  rw [r9₇, s6₇'] at o1
+  rw [s6₇'] at o2 t3
   have hcb : (decide (g ^ X % p = y) && decide ((0 < K ∧ K < q) ∧ (0 < X ∧ X < q) ∧ g ^ K % p % q ≠ 0) &&
       decide (sigS q X K Z (sigR p q g K) ≠ 0)) = decide (SignOk p q g y X K Z) := by
     rw [Bool.eq_iff_iff]
-    simp only [Bool.and_eq_true, decide_eq_true_eq, SignOk, sigR]
+    simp only [Bool.and_eq_true, decide_eq_true_eq]
+    unfold SignOk sigR
     constructor
     · rintro ⟨⟨h1, h2, h3, h4⟩, h5⟩; exact ⟨h3, h2, h1, h4, h5⟩
     · rintro ⟨h1, h2, h3, h4, h5⟩; exact ⟨⟨h3, h2, h1, h4⟩, h5⟩
@@ -246,8 +248,8 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
     · simp only [hc, decide_true, ite_true] at o1 o2 ⊢
       exact out_bytes (h256 _ hrq) (h256 _ hsq) o1 o2
     · simp only [hc, decide_false, Bool.false_eq_true, ite_false] at o1 o2 ⊢
-      rw [out_bytes (Nat.pos_pow_of_pos _ (by decide)) (Nat.pos_pow_of_pos _ (by decide)) o1 o2, encodeBE_zero,
-        ← List.replicate_add, Nat.two_mul]
+      rw [out_bytes (Nat.pow_pos (by decide : 0 < 256)) (Nat.pow_pos (by decide : 0 < 256)) o1 o2, encodeBE_zero,
+        List.replicate_append_replicate, Nat.two_mul]
   · rw [t3]
     simp only [decide_eq_true_eq]
 

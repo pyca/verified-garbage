@@ -29,7 +29,8 @@ open VG.Impl.Bignum VG.Impl.Dsa.PPC64LE
 /-- A call's public data. -/
 def vdOf (s : State) : VD :=
   ⟨layOf s, s.gpr .r3, s.gpr .r7, s.gpr .r9, (s.gpr .r10).toNat,
-    Spec.Rsa.bytesAt s.mem (s.gpr .r3) (3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat)⟩
+    Spec.Rsa.bytesAt s.mem (s.gpr .r3) (3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat),
+    3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat, 2 * (s.gpr .r6).toNat, none⟩
 
 /-- On entry. -/
 def C0 (v : VD) (s : State) : Prop := vContract.pre s ∧ vdOf s = v
@@ -104,7 +105,7 @@ theorem front_S0 {v : VD} {s : State} (h : C0 v s) : WP isa (.block Verify.entry
       (by simp only [layOf]; omega) k.rd k.wr,
     pre_src (A := s.gpr .r9) (k := min (s.gpr .r10).toNat 64) (by rw [hrd]; simp) dDS (s.gpr .r10).isLt
       (Nat.min_le_left _ _) k.rd k.wr,
-    (hK rfl rfl).kept Out⟩, r2, fixL_nil t, trivial⟩
+    (hK rfl rfl).kept Out, hK k.rd k.wr, (fun _ h => nomatch h), (fun h => nomatch h)⟩, r2, fixL_nil t, trivial⟩
 
 theorem entry_rel : RelCT isa (Two C0) (.block Verify.entry) (Two S0) := by
   refine two_post ?_ fun _ _ h => front_S0 h

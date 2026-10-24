@@ -35,12 +35,14 @@ theorem qb_le {v : VD} {s : State} (h : Base v s) : v.qb ≤ v.L.ql := by
 
 /-- `Base` after `r2` gets q's octets. -/
 theorem Base.step2 {v : VD} {s t : State} {rs : List Reg} {qb : Nat} (h : Base v s) (k : Keep rs s t)
-    (ho : Outside v.L.S 0 v.L.Z s.mem t.mem) (h2 : t.gpr .r2 = pack v.L.pl v.L.ql qb v.d) (hqb : qb < 2 ^ 16)
+    (ho : Body v.L s.mem t.mem) (h2 : t.gpr .r2 = pack v.L.pl v.L.ql qb v.d) (hqb : qb < 2 ^ 16)
     (hr : ∀ r ∈ ([.r21, .r26, .r27, .r28] : List Reg), r ∉ rs := by decide) : Base v t :=
   ⟨h.ok, Regs.of_pack h.ok ((k.gpr .r21 (hr _ (by decide))).trans h.regs.r21)
       ((k.gpr .r27 (hr _ (by decide))).trans h.regs.r27) ((k.gpr .r28 (hr _ (by decide))).trans h.regs.r28)
       ((k.gpr .r26 (hr _ (by decide))).trans h.regs.r26) h2 hqb (by simp only [VD.d]; omega),
-    h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr, h.hdg.keep k.rd k.wr, (h.hk.kept ho).trans h.kb⟩
+    h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr, h.hdg.keep k.rd k.wr,
+    (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb, h.hx.keep k.rd k.wr,
+    h.hdr_body ho, h.sgn⟩
 
 /-- p's octets into `r24`. -/
 theorem w_a24 {v : VD} {s : State} (h : S1 v s ∧ s.gpr .r0 = 0) :

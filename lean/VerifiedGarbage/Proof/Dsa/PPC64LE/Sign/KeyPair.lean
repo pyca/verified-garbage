@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Pow
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Pow
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Comb.Pow
 
 /-!
 # DSA signing on PPC64LE: the key pair

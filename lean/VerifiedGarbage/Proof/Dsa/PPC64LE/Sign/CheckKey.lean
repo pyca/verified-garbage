@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
+import VerifiedGarbage.Proof.Dsa.DomainShape
+import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -9,9 +11,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # DSA signing on PPC64LE: the check of the key, within the body
 
-`checkKeyB_ok`: `checkKey_ok` (`CheckKey.lean`) with the finer frame its
+`checkKeyB_ok`: `checkKey_ok` (`CheckKey.lean`) with the finer facts its
 proof finds: memory changes only past `scratch`'s header (`Body`), which
-keeps the header's word `hOut`, where signing keeps `out`.
+keeps the header's word `hOut`, where signing keeps `out`; and `fail` runs
+with the lengths still in `r2` (`Regs`, `sizesR_ok`), which signing's
+`zeroOut` reads.
 -/
 
 @[expose] public section
@@ -20,14 +24,97 @@ namespace VG.Proof.Dsa.PPC64LE
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.MillerRabin.PPC64LE
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE
+open VG.Proof.Dsa (significant)
 open VG.Proof.Bignum (slot)
+
+/-- `sizes_ok`, with `Regs` for `fail`. -/
+theorem sizesR_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State → Prop} {rest fail : Prog isa}
+    (hL : L.Ok) (hr : Regs s L key sig dig) (h2 : s.gpr .r2 = pack L.pl L.ql 0 d)
+    (hk : Src s L key (3 * L.pl + L.ql)) (hd : d < 2 ^ 16)
+    (hrest : ∀ t, SizesOk s.mem L key → t.mem = s.mem →
+      t.gpr .r2 = pack L.pl L.ql (Spec.Dsa.bitLength (qOf s.mem L key) / 8) d →
+      Keep sizesRegs s t → WP isa rest t Q)
+    (hfail : ∀ t, ¬ SizesOk s.mem L key → t.mem = s.mem → Keep sizesRegs s t → Regs t L key sig dig →
+      WP isa fail t Q) :
+    WP isa (sizes rest fail) s Q := by
+  have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega
+  have hql := hL.ql
+  have hnw := hL.nowrap
+  have fp := significant_fits (Spec.Rsa.bytesAt s.mem key L.pl)
+  have fq := significant_fits (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)
+  rw [bytesAt_length] at fp fq
+  have hSz : SizesOk s.mem L key ↔
+      128 ≤ (significant (Spec.Rsa.bytesAt s.mem key L.pl)).2.toNat ∧
+        128 ≤ (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).2.toNat ∧
+        Spec.Dsa.supportedSizes (8 * (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1)
+          (8 * (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1) :=
+    Proof.Dsa.supported_scans _ _
+  unfold sizes andThen
+  -- p's octets
+  refine WP.seq (WP.seq (WP.mono (ptrP_ok hr) fun t₁ ⟨⟨a12, a6, am⟩, k1⟩ =>
+    WP.mono (bytesBits_ok a12 a6 (by omega) (by omega) fun i hi => by
+      rw [k1.rd, k1.wr]; exact hk.rd i (by omega)) fun t₂ ⟨⟨b16, b0, bm⟩, k2⟩ => ?_))
+  rw [am] at b16 b0
+  have m2 : t₂.mem = s.mem := by rw [bm, am]
+  refine WP.ite _ (eval_zero _ _) (fun hz => ?ok) (fun hz => ?bad)
+  case bad =>
+    refine hfail t₂ (fun h => ?_) m2 (k1.trans k2).mono (hr.keep (k1.trans k2))
+    rw [b0.mpr (hSz.mp h).1] at hz
+    exact absurd hz (by decide)
+  have hp := b0.mp (beq_iff_eq.mp hz)
+  refine WP.seq (WP.mono (WP.keep [.r24] (Q := fun t =>
+    t.gpr .r24 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1 ∧ t.mem = t₂.mem)
+    (by prun [b16, BitVec.add_zero]) (by decide)) fun t₃ ⟨⟨c24, cm⟩, k3⟩ => ?_)
+  have kA := (k1.trans k2).trans k3
+  have hr₃ : Regs t₃ L key sig dig := hr.keep kA
+  -- q's octets
+  refine WP.seq (WP.seq (WP.mono (ptrQ_ok hr₃) fun t₄ ⟨⟨d12, d6, dm⟩, k4⟩ =>
+    WP.mono (bytesBits_ok d12 d6 (by omega) (by omega) fun i hi => by
+      rw [k4.rd, k4.wr, kA.rd, kA.wr]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega)).rd i hi)
+      fun t₅ ⟨⟨e16, e0, em⟩, k5⟩ => ?_))
+  rw [dm, cm, m2] at e16 e0
+  have m5 : t₅.mem = s.mem := by rw [em, dm, cm, m2]
+  have kB := (kA.trans k4).trans k5
+  refine WP.ite _ (eval_zero _ _) (fun hz' => ?ok2) (fun hz' => ?bad2)
+  case bad2 =>
+    refine hfail t₅ (fun h => ?_) m5 kB.mono (hr.keep kB)
+    rw [e0.mpr (hSz.mp h).2.1] at hz'
+    exact absurd hz' (by decide)
+  have hq := e0.mp (beq_iff_eq.mp hz')
+  have hqb : (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 < 2 ^ 16 := by
+    simp only [Nat.reducePow]; omega
+  have h2₅ : t₅.gpr .r2 = pack L.pl L.ql 0 d := (kB.gpr _ (by decide)).trans h2
+  refine WP.seq (WP.mono (WP.keep [.r25, .r0, .r2] (Q := fun t =>
+    t.gpr .r25 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 ∧
+      t.gpr .r2 = pack L.pl L.ql (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 d ∧
+      t.mem = s.mem)
+    (by prun [e16, h2₅, m5, BitVec.add_zero, pack_add hqb]) (by decide)) fun t₆ ⟨⟨f25, f2, fm⟩, k6⟩ => ?_)
+  -- the pair
+  have g24 : t₆.gpr .r24 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1 :=
+    (((k4.trans k5).trans k6).gpr _ (by decide)).trans c24
+  refine WP.seq (WP.mono (pairs_ok g24 f25 (by omega) (by omega)) fun t₇ ⟨⟨g0, gm⟩, k7⟩ => ?_)
+  have kC := (kB.trans k6).trans k7
+  have m7 := gm.trans fm
+  refine WP.ite _ (eval_zero _ _) (fun hz'' => ?_) (fun hz'' => ?_)
+  · have hok : SizesOk s.mem L key := hSz.mpr ⟨hp, hq, g0.mp (beq_iff_eq.mp hz'')⟩
+    have hb : Spec.Dsa.bitLength (qOf s.mem L key) / 8 =
+        (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 := by
+      rw [show qOf s.mem L key = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql) from rfl,
+        Proof.Dsa.subgroup_scan_width (p := Spec.Rsa.bytesAt s.mem key L.pl) hok]
+      omega
+    exact hrest t₇ hok m7 (by rw [k7.gpr _ (by decide), f2, hb]) kC.mono
+  · refine hfail t₇ (fun h => ?_) m7 kC.mono (Regs.of_pack hL ((kC.gpr _ (by decide)).trans hr.r21)
+      ((kC.gpr _ (by decide)).trans hr.r27) ((kC.gpr _ (by decide)).trans hr.r28)
+      ((kC.gpr _ (by decide)).trans hr.r26) ((k7.gpr _ (by decide)).trans f2) hqb hd)
+    rw [g0.mpr (hSz.mp h).2.2] at hz''
+    exact absurd hz'' (by decide)
 
 theorem checkKeyB_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State → Prop}
     {rest fail : Prog isa} (hL : L.Ok) (hs : ScrL s L) (hr : Regs s L key sig dig)
     (h2 : s.gpr .r2 = pack L.pl L.ql 0 d) (hd : d < 2 ^ 16) (hk : Src s L key (3 * L.pl + L.ql))
     (hrest : ∀ t, KeyOk s.mem L key → Checked s t L key sig dig d → Body L s.mem t.mem → Keep ckRegs s t →
       WP isa rest t Q)
-    (hfail : ∀ t, ¬ KeyOk s.mem L key → Body L s.mem t.mem → t.gpr .r21 = L.S → ScrL t L →
+    (hfail : ∀ t, ¬ KeyOk s.mem L key → Body L s.mem t.mem → Regs t L key sig dig → ScrL t L →
       Keep ckRegs s t → WP isa fail t Q) :
     WP isa (checkKey rest fail) s Q := by
   have hZ := hL.z256
@@ -45,8 +132,8 @@ theorem checkKeyB_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : S
   have hKey : KeyOk s.mem L key ↔ VG.Proof.Dsa.shapeValid p q ∧ VG.Proof.Dsa.publicChecks p q g y := by
     rw [KeyOk, hP, hQ', hG, hY]
   unfold checkKey
-  refine sizes_ok hL hr h2 hk (fun t₁ hSz m₁ r2₁ k₁ => ?_) (fun t₁ hn m₁ k₁ =>
-    hfail t₁ (fun hK => hn hK.1.1) (by rw [m₁]; exact Body.refl _ _) ((k₁.gpr .r21 (by decide)).trans hr.r21)
+  refine sizesR_ok hL hr h2 hk hd (fun t₁ hSz m₁ r2₁ k₁ => ?_) (fun t₁ hn m₁ k₁ hr₁ =>
+    hfail t₁ (fun hK => hn hK.1.1) (by rw [m₁]; exact Body.refl _ _) hr₁
       (hs.congr k₁.wr) (k₁.mono (by decide)))
   simp only [SizesOk] at hSz
   rw [hP, hQ'] at hSz
@@ -62,7 +149,7 @@ theorem checkKeyB_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : S
     (fun t₂ hn m₂ k₂ => hfail t₂ (fun hK => hn (by
         obtain ⟨ep, eq, -, -⟩ := vals K₁
         rw [ep, eq]; have := (hKey.mp hK).1; exact ⟨this.2.2, this.2.1⟩))
-      (by rw [m₂]; exact K₁) ((k₂.gpr .r21 (by decide)).trans hr₁.r21) (hs₁.congr k₂.wr)
+      (by rw [m₂]; exact K₁) (hr₁.keep k₂) (hs₁.congr k₂.wr)
       ((k₁.trans k₂).mono (by decide)))
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := vals K₁
   rw [ep₁] at hpo
@@ -87,7 +174,7 @@ theorem checkKeyB_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : S
   refine WP.ite (t₃.gpr .r0 == 0) (eval_zero _ _) (fun hb₃ => ?_) (fun hb₃ => hfail t₃ (fun hK => by
       have := (hKey.mp hK).2.2.1
       rw [pmod_iff (by omega) (by omega)] at this
-      exact absurd (r0₃.mpr this) (by simpa using hb₃)) K₃ h21₃ hs₃ (k₁₃.mono (by decide)))
+      exact absurd (r0₃.mpr this) (by simpa using hb₃)) K₃ hr₃ hs₃ (k₁₃.mono (by decide)))
   have pm : p % q = 1 := r0₃.mp (by simpa using hb₃)
   -- The P space.
   refine WP.seq (WP.mono (setupP_ok hL hs₃ hr₃ (hk.keep k₁₃.rd k₁₃.wr)
@@ -117,7 +204,7 @@ theorem checkKeyB_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : S
   have hr₆ := hr₅.keep k₆
   refine WP.ite (t₆.gpr .r0 == 0) (eval_zero _ _) (fun hb₆ => ?_) (fun hb₆ => hfail t₆ (fun hK => by
       have H := (hKey.mp hK).2
-      exact absurd (r0₆.mpr ⟨H.1.1.1, H.1.1.2, H.2.2.1⟩) (by simpa using hb₆)) K₆ ip₆.h21 hs₆
+      exact absurd (r0₆.mpr ⟨H.1.1.1, H.1.1.2, H.2.2.1⟩) (by simpa using hb₆)) K₆ hr₆ hs₆
       (k₁₆.mono (by decide)))
   have hg := r0₆.mp (by simpa using hb₆)
   -- y.
@@ -137,7 +224,7 @@ theorem checkKeyB_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : S
   have k₁₈ := (k₁₆.trans k₇).trans k₈
   refine WP.ite (t₈.gpr .r0 == 0) (eval_zero _ _) (fun hb₈ => ?_) (fun hb₈ => hfail t₈ (fun hK => by
       have H := (hKey.mp hK).2
-      exact absurd (r0₈.mpr ⟨H.1.2.1, H.1.2.2, H.2.2.2⟩) (by simpa using hb₈)) K₈ ip₈.h21
+      exact absurd (r0₈.mpr ⟨H.1.2.1, H.1.2.2, H.2.2.2⟩) (by simpa using hb₈)) K₈ (hr₇.keep k₈)
       (hs.congr k₁₈.wr) (k₁₈.mono (by decide)))
   have hy := r0₈.mp (by simpa using hb₈)
   -- `rest`.

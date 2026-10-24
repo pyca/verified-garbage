@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -21,6 +22,10 @@ from those bytes; at each such branch both runs satisfy the same predicate,
 which fixes the branch's condition (`rel_ite_zero`), and between branches the
 taint analysis checks the code from the registers each predicate fixes
 (`pins_ph`).
+
+Signing shares the checks: its public data also name the key's whole length
+(with x), the nonce's and `out`, which the header's word `hOut` keeps
+(`VD.out`).
 -/
 
 @[expose] public section
@@ -38,6 +43,12 @@ structure VD where
   dig : Addr
   dl : Nat
   kb : List Byte
+  /-- The key's octets the call may read (x's too, when signing). -/
+  kl : Nat
+  /-- The signature's octets, or the nonce's when signing. -/
+  sl : Nat
+  /-- When signing, `out`, which the header's word `hOut` keeps. -/
+  out : Option Addr
 
 /-- The digest's length the code uses: at most 64 octets. -/
 abbrev VD.d (v : VD) : Nat := min v.dl 64
@@ -48,14 +59,24 @@ structure Base (v : VD) (s : State) : Prop where
   regs : Regs s v.L v.key v.sig v.dig
   scr : ScrL s v.L
   hk : Src s v.L v.key (3 * v.L.pl + v.L.ql)
-  hsg : Src s v.L v.sig (2 * v.L.ql)
+  hsg : Src s v.L v.sig v.sl
   hdg : Src s v.L v.dig v.d
   kb : Spec.Rsa.bytesAt s.mem v.key (3 * v.L.pl + v.L.ql) = v.kb
+  hx : Src s v.L v.key v.kl
+  hdr : ∀ o ∈ v.out, word s.mem v.L.S Impl.Dsa.PPC64LE.Sign.hOut = o
+  sgn : v.out.isSome → v.kl = 3 * v.L.pl + 2 * v.L.ql ∧ v.sl = v.L.ql
+
+/-- A change past the header keeps its word `hOut`. -/
+theorem Base.hdr_body {v : VD} {s t : State} (h : Base v s) (ho : Body v.L s.mem t.mem) :
+    ∀ o ∈ v.out, word t.mem v.L.S Impl.Dsa.PPC64LE.Sign.hOut = o := fun o hm =>
+  (Outside.word ho (Or.inl (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega))
+    (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega)).trans (h.hdr o hm)
 
 theorem Base.step {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Keep rs s t)
-    (ho : Outside v.L.S 0 v.L.Z s.mem t.mem) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Base v t :=
+    (ho : Body v.L s.mem t.mem) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Base v t :=
   ⟨h.ok, h.regs.keep k hr, h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr,
-    h.hdg.keep k.rd k.wr, (h.hk.kept ho).trans h.kb⟩
+    h.hdg.keep k.rd k.wr, (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb,
+    h.hx.keep k.rd k.wr, h.hdr_body ho, h.sgn⟩
 
 /-- The key's octets from `o`, `k` of them. -/
 def VD.at (v : VD) (o k : Nat) : List Byte := (v.kb.drop o).take k

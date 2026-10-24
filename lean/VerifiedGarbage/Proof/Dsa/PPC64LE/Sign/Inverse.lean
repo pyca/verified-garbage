@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Gk
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyInv
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
