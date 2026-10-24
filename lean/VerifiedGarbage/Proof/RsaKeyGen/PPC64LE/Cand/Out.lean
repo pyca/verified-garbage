@@ -52,6 +52,14 @@ theorem frame_writeW {rs : List Region} {r : Region} (hr : r ∈ rs) (m : Mem) {
     (ha : r.Contains a 8) : Frame rs m (m.writeW a v) :=
   (Frame.refl rs m).writeW hr v ha
 
+/-- Octets survive what keeps their bytes. -/
+theorem bytes_keep {rs : List Region} {m m' : Mem} (f : Frame rs m m') {Ra : Addr} {rl : Nat} (hrl : rl < 2 ^ 64)
+    (hd : ∀ ρ ∈ rs, (⟨Ra, rl⟩ : Region).Disjoint ρ) : Spec.Rsa.bytesAt m' Ra rl = Spec.Rsa.bytesAt m Ra rl := by
+  unfold Spec.Rsa.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  simp only [List.mem_range] at hi
+  exact f _ fun ρ hρ => hd ρ hρ _ (Offset.contains_base Ra (by omega) (by omega))
+
 /-- `zeroOut`: the `L` bytes at `O` (`r23`, `L` in `r24`) := 0. -/
 theorem zeroOut_ok {s : State} {O : Addr} {L : Nat} (h23 : s.gpr .r23 = O)
     (h24 : s.gpr .r24 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 32)

@@ -36,7 +36,10 @@ abbrev cF (s : State) : Region := below s.sp 400
 structure CIn (s : State) : Prop where
   spLo : 400 ≤ s.sp.toNat
   spHi : s.sp.toNat + 32 + 8 * 11 ≤ 2 ^ 64
-  rd : s.rd = [cE s, cP s, cR s, cA s]
+  rE : cE s ∈ s.rd
+  rP : cP s ∈ s.rd
+  rR : cR s ∈ s.rd
+  rA : cA s ∈ s.rd
   wr : s.wr = [cO s, cU s, cS s]
   oU : (cO s).Disjoint (cU s)
   oE : (cO s).Disjoint (cE s)
@@ -83,7 +86,7 @@ theorem cin_of_pre (s : State) (h : (Spec.RsaKeyGen.candidateContract abi 400).p
     List.append_eq] at h
   obtain ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
     fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩ := h
-  exact ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
+  exact ⟨spLo, spHi, by rw [rd]; simp, by rw [rd]; simp, by rw [rd]; simp, by rw [rd]; simp, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
     fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

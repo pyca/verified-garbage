@@ -186,7 +186,7 @@ theorem entry_ok {s0 s : State} (h : St0 s0 s) :
   have fA : (cA s0).Disjoint (cF s0) := hp.FA.symm
   have hA : cA s0 = ⟨off (cB s0) 496, 24⟩ := by rw [cA, argAddr, Nat.mul_zero, Nat.add_zero]
   have ra : ∀ i < 3, InRegions (t.rd ++ t.wr) (off (cB s0) (496 + 8 * i)) 8 := fun i hi =>
-    ⟨cA s0, List.mem_append_left _ (by rw [hrd, hp.rd]; simp),
+    ⟨cA s0, List.mem_append_left _ (by rw [hrd]; exact hp.rA),
       by rw [hA]; exact Offset.contains _ (by omega) (by omega) (by omega)⟩
   have va : ∀ i < 3, t.mem.readW (off (cB s0) (496 + 8 * i)) 64 = PPC64LE.stackArg s0 i := fun i hi => by
     rw [m, saveMem_rd s0 s.mem (by omega) (by omega) 18 (by decide), PPC64LE.stackArg, argAddr]

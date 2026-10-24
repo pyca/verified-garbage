@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MrIter
 public import VerifiedGarbage.Proof.RsaKeyGen.Generate
 import VerifiedGarbage.Proof.RsaKeyGen.MrLoopAt
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
+import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Out
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.WLoad
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.Framework.Block
@@ -44,14 +45,6 @@ theorem not_mem_of_sub {xs ys : List Reg} (h : ∀ r ∈ xs, r ∈ ys) {r : Reg}
 
 /-- The header words the loop changes, as numbers of words. -/
 def lpWords : List Nat := [23, 26, 29, 30, 1, 20, 22, 19, 2]
-
-/-- The octets of the tape survive what keeps their bytes. -/
-theorem bytes_keep {rs : List Region} {m m' : Mem} (f : Frame rs m m') {Ra : Addr} {rl : Nat} (hrl : rl < 2 ^ 64)
-    (hd : ∀ ρ ∈ rs, (⟨Ra, rl⟩ : Region).Disjoint ρ) : Spec.Rsa.bytesAt m' Ra rl = Spec.Rsa.bytesAt m Ra rl := by
-  unfold Spec.Rsa.bytesAt
-  refine List.map_congr_left fun i hi => ?_
-  simp only [List.mem_range] at hi
-  exact f _ fun ρ hρ => hd ρ hρ _ (Offset.contains_base Ra (by omega) (by omega))
 
 /-- What the loop keeps of its start `s`: the header words but the ones it
 counts in, the memory but the working space and the stack below, the
