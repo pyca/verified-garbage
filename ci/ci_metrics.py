@@ -76,6 +76,9 @@ LINE = re.compile(r"^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?)Z (.*)$", re.M)
 PLAN = re.compile(r"(\d+) modules to build, about (\d+) s; shards' estimated times: \[([^\]]*)\]")
 RESTORED = re.compile(r"Cache restored from key: (lean-build-\S+)")
 MANIFEST = re.compile(r"Cache restored from key: lean-manifest-(\S+)")
+# The build a plan is for, when lean_reuse.py chose it (it may be another
+# run's base's), after the plans it compared.
+BUILDS_ON = re.compile(r"The plan builds on (lean-build-\S+)\.")
 # The restore's own key (the sources' exact build), as its inputs print it.
 EXACT = re.compile(r"Z\s+key: (lean-build-\S+)")
 
@@ -141,17 +144,21 @@ def built_by_step(log, steps, *, facets=False):
 
 
 def plan_of(log):
-    """The plan its job's log states, and the build it is for (the one
-    saved with the manifest it restored)."""
-    m = PLAN.search(log)
-    if not m:
+    """The plan its job's log states (the last: lean_reuse.py states the
+    one it chose after those it compared), and the build it is for (the
+    one it states, or the one saved with the manifest it restored)."""
+    plans = list(PLAN.finditer(log))
+    if not plans:
         return None
+    m = plans[-1]
+    builds_on = BUILDS_ON.search(log)
     manifest = MANIFEST.search(log)
     return {
         "stale": int(m.group(1)),
         "work": int(m.group(2)),
         "estimates": [int(x) for x in m.group(3).split(",") if x.strip()],
-        "build": f"lean-build-{manifest.group(1)}" if manifest else None,
+        "build": (builds_on.group(1) if builds_on
+                  else f"lean-build-{manifest.group(1)}" if manifest else None),
     }
 
 
@@ -160,7 +167,7 @@ def phases(j):
     names = {"prepare_s": "Run ./.github/actions/lean-prepare",
              "proof_s": SHARD_BUILD, "unpack_s": "Unpack the rest of the build",
              "assemble_s": "Run ./.github/actions/lean-assemble",
-             "planning_s": "Run python3 ci/lean_shards.py plan "}
+             "planning_s": ("Run python3 ci/lean_shards.py plan ", "Run python3 ci/lean_reuse.py select ")}
     out = {"queued_s": j["queued_s"]}
     for key, prefix in names.items():
         durations = [s["duration_s"] for s in j["steps"] if s["name"].startswith(prefix)

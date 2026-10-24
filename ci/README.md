@@ -197,3 +197,19 @@ dependencies. The latter uses the sharder trace rules, including private IR
 behind meta imports, and counts added/removed dependency-reader pairs within
 the verification scope. It excludes native-library dependencies and does not
 estimate wall time or the rebuilds caused by applying the import edit itself.
+
+## Reused base runs
+
+A run can build on the Lean outputs of the merge queue's run of its base
+commit (`ci/lean_reuse.py`): a push to main on its own commit's, a pull
+request on main's, a merge queue entry on the entry's ahead of it. The plan
+the `lean` job chose then compares the sources with the base commit's, not
+with main's last saved build, and `lean.planning.plan.diagnostics.base`
+records the choice: `used`, the `reason`, the base `commit` and `run`, the
+module work and finish estimates without (`work_without`,
+`finish_without_s`) and with (`work_with`, `finish_with_s`) the base run,
+and `waited_s` when a merge queue entry waited for it. Merge queue runs
+upload `lean-base` (the key of the manifest of main's build under their
+outputs, and the runs whose outputs they added to it) for the runs that
+reuse theirs. The plan job's log states the chosen plan last, and the build
+it is for (`The plan builds on …`), which `plan_of` reads.

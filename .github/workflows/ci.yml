@@ -22,16 +22,19 @@ env:
 
 jobs:
   # Plans the Lean build: when it needs shards (see ci/lean_shards.py), it
-  # stops there, and they build in parallel; otherwise (or when a push to
-  # main reuses the merge queue's outputs) it builds on this runner, rather
-  # than queue for another.
+  # stops there, and they build in parallel; otherwise it builds on this
+  # runner, rather than queue for another. Either builds on top of the
+  # outputs of the merge queue's run of the base commit, when that saves
+  # work (ci/lean_reuse.py): a push to main on its own commit's, which
+  # leaves nothing to build.
   lean:
     name: "Lean: plan and build"
     # More independent files, with two compiler threads per file (lakefile.toml).
     env:
       LEAN_NUM_THREADS: "6"
     runs-on: ubuntu-26.04
-    # To find the merge queue's run of this commit, and download its outputs.
+    # To find the merge queue's run of the base commit, and download its
+    # outputs.
     permissions:
       actions: read
       contents: read
@@ -39,7 +42,9 @@ jobs:
       count: ${{ steps.plan.outputs.count }}
       shards: ${{ steps.plan.outputs.shards }}
       build-key: ${{ steps.plan.outputs.build-key }}
-      reuse: ${{ steps.reuse.outputs.run-id }}
+      # The runs whose outputs the build reuses, in order (a JSON list), or
+      # nothing.
+      base: ${{ steps.plan.outputs.base }}
       # The caches' keys, for every job that restores them.
       build-cache: ${{ steps.keys.outputs.build-cache }}
       build-cache-prefix: ${{ steps.keys.outputs.build-cache-prefix }}
@@ -49,31 +54,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The base commit (a pull request's or merge queue entry's first
+          # parent), whose sources the plan against its build reads.
+          fetch-depth: 2
       - uses: ./.github/actions/runner-info
       # The keys of the caches of the build and of its manifest.
       - uses: ./.github/actions/lean-keys
         id: keys
-      # GitHub moves main to exactly the commit its merge queue tested, with
-      # this workflow, restoring only main's caches (and its own new
-      # branch's, which start empty): that run's Lean outputs are what a push
-      # to main would build. So the push reuses them instead of running the
-      # shards, if that run succeeded and they're still there.
-      # Never a pull request's run: only the merge queue's branches for main.
-      - id: reuse
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          id=$(gh run list --workflow ci.yml --event merge_group --commit "$GITHUB_SHA" --status success \
-            --json databaseId,headBranch \
-            --jq '[.[] | select(.headBranch | startswith("gh-readonly-queue/main/"))][0].databaseId // empty' || true)
-          # Its final outputs are named after the job that assembled them.
-          if [ -n "$id" ] && [ -n "$(gh api --paginate "repos/$GH_REPO/actions/runs/$id/artifacts?per_page=100" \
-              --jq '.artifacts[] | select((.name | startswith("lean-build-final-")) and (.expired | not)) | .name' || true)" ]; then
-            echo "Reusing the Lean outputs of run $id."
-            echo "run-id=$id" >> "$GITHUB_OUTPUT"
-          fi
       # The hashes of the sources of `main`'s last build, and how long each
       # module took to build.
       - name: Restore the manifest of the last build
@@ -83,30 +70,42 @@ jobs:
           path: .lean-manifest
           key: ${{ steps.keys.outputs.manifest-cache }}
           restore-keys: ${{ steps.keys.outputs.manifest-cache-prefix }}
+      # The plan against that build, or against the merge queue's run of the
+      # base commit (which in the merge queue may mean waiting for it), and
+      # the build under it (`build-key`).
       - id: plan
         env:
+          EVENT: ${{ github.event_name }}
           MATCHED: ${{ steps.manifest.outputs.cache-matched-key }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          python3 ci/lean_shards.py plan .lean-manifest/manifest.json "$RUNNER_TEMP/lean-plan.json" >> "$GITHUB_OUTPUT"
-          # The build saved with the manifest, which the plan is for.
-          if [ -n "$MATCHED" ]; then
-            echo "build-key=lean-build-${MATCHED#lean-manifest-}" >> "$GITHUB_OUTPUT"
-          fi
+          python3 ci/lean_reuse.py select .lean-manifest/manifest.json "$RUNNER_TEMP/lean-plan.json" \
+            "$RUNNER_TEMP/lean-base.json" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/upload-artifact
         with:
           name: lean-plan
           path: ${{ runner.temp }}/lean-plan.json
           retention-days: 1
           if-no-files-found: error
+      # In the merge queue, the build this run builds on, for the runs that
+      # reuse its outputs: as soon as it is planned, since the entries
+      # behind it may be waiting for it.
+      - if: ${{ github.event_name == 'merge_group' }}
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: lean-base
+          path: ${{ runner.temp }}/lean-base.json
+          retention-days: 1
+          if-no-files-found: ignore
       # The rest builds here: with shards, it is skipped, so that they start
       # as soon as the plan is done.
       - name: Decide whether to build here
         id: here
         env:
           COUNT: ${{ steps.plan.outputs.count }}
-          REUSE: ${{ steps.reuse.outputs.run-id }}
         run: |
-          if [ "$COUNT" = 0 ] || [ -n "$REUSE" ]; then
+          if [ "$COUNT" = 0 ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"
           else
             echo "$COUNT shards build the proofs."
@@ -119,17 +118,17 @@ jobs:
           restore-keys: |
             ${{ steps.plan.outputs.build-key }}
             ${{ steps.keys.outputs.build-cache-prefix }}
-      # On a push to main, the merge queue run's outputs of this commit: its
-      # shards' and its final ones (`lean-build-final-*`, extracted last).
-      # Lake rebuilds whatever doesn't match the sources.
-      - uses: ./.github/actions/download-artifact
-        if: ${{ steps.here.outputs.build == 'true' && steps.reuse.outputs.run-id != '' }}
-        with:
-          pattern: lean-build-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/lean-build
-          run-id: ${{ steps.reuse.outputs.run-id }}
-          github-token: ${{ github.token }}
+      # The outputs of the runs the plan builds on, over the build they
+      # built on. Lake rebuilds whatever doesn't match the sources.
+      - name: Add the reused runs' outputs to the build
+        if: ${{ steps.here.outputs.build == 'true' && steps.plan.outputs.base != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BASE: ${{ steps.plan.outputs.base }}
+        run: |
+          python3 ci/lean_reuse.py fetch "$BASE" "$RUNNER_TEMP/lean-reused"
+          python3 ci/lean_reuse.py extract "$RUNNER_TEMP/lean-reused" lean/.lake/build
       - uses: ./.github/actions/lean-assemble
         if: ${{ steps.here.outputs.build == 'true' }}
         with:
@@ -158,7 +157,7 @@ jobs:
     permissions:
       actions: read
       contents: read
-    if: ${{ needs.lean.outputs.count != '0' && needs.lean.outputs.reuse == '' }}
+    if: ${{ needs.lean.outputs.count != '0' }}
     strategy:
       # One failed shard cancels the others: without its outputs nothing
       # assembles the build, so theirs would go unused (their times reach
@@ -200,6 +199,17 @@ jobs:
             ${{ needs.lean.outputs.build-key }}
             ${{ needs.lean.outputs.build-cache-prefix }}
           modules: ${{ runner.temp }}/lean-modules
+      # The outputs of the runs the plan builds on (`lean`'s `base`), of the
+      # modules the shard needs.
+      - name: Add the reused runs' outputs of the shard's modules
+        if: ${{ needs.lean.outputs.base != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BASE: ${{ needs.lean.outputs.base }}
+        run: |
+          python3 ../ci/lean_reuse.py fetch "$BASE" "$RUNNER_TEMP/lean-reused"
+          python3 ../ci/lean_reuse.py extract "$RUNNER_TEMP/lean-reused" .lake/build --modules "$RUNNER_TEMP/lean-modules"
       - name: Check the shard's proofs (and the axiom audit)
         env:
           SHARD: ${{ matrix.shard }}
@@ -274,6 +284,10 @@ jobs:
       - name: Unpack the rest of the build
         if: ${{ steps.all-uploaded.outputs.all == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
         run: python3 ../ci/lean_cache.py restore . --except "$RUNNER_TEMP/lean-modules"
+      # And the reused runs' outputs of the rest, over it.
+      - name: Add the reused runs' outputs of the rest of the build
+        if: ${{ steps.all-uploaded.outputs.all == 'true' && needs.lean.outputs.base != '' }}
+        run: python3 ../ci/lean_reuse.py extract "$RUNNER_TEMP/lean-reused" .lake/build --except "$RUNNER_TEMP/lean-modules"
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: ./.github/actions/lean-assemble
         with:
@@ -325,11 +339,12 @@ jobs:
   # `src/asm/<target>/`, or the shared code, which is every architecture's.
   # Each architecture's tests cover every line it builds (`coverage`), so
   # those that run are checked alone. The merge queue runs every job, so that
-  # everything is checked before anything lands. A push to main is the commit the
-  # merge queue tested (see the `lean` job's `reuse`): its Rust jobs only
-  # build (each entry's `tests`, the jobs' `TESTS`), for main's caches, which
-  # only main saves, and so run once per cache: every `rust` and `thumb` job,
-  # but one `rust-cpu-features` job per runner architecture and container.
+  # everything is checked before anything lands. A push to main is the commit
+  # the merge queue tested (whose Lean outputs the `lean` job reuses): its
+  # Rust jobs only build (each entry's `tests`, the jobs' `TESTS`), for
+  # main's caches, which only main saves, and so run once per cache: every
+  # `rust` and `thumb` job, but one `rust-cpu-features` job per runner
+  # architecture and container.
   rust-arches:
     name: "Rust: architectures to test"
     runs-on: ubuntu-26.04
@@ -849,7 +864,7 @@ jobs:
           key: cpu-features-times-${{ github.run_id }}
           restore-keys: cpu-features-times-
       # This push ran no tests: the times are those of the merge queue's run
-      # of this commit, as in the `lean` job's `reuse`.
+      # of this commit, whose Lean outputs the `lean` job reuses too.
       - id: queue
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1009,6 +1024,15 @@ jobs:
           restore-keys: |
             ${{ needs.lean.outputs.build-key }}
             ${{ needs.lean.outputs.build-cache-prefix }}
+      - name: Add the reused runs' outputs to the build
+        if: ${{ steps.check.outputs.assemble == 'true' && needs.lean.outputs.base != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BASE: ${{ needs.lean.outputs.base }}
+        run: |
+          python3 ci/lean_reuse.py fetch "$BASE" "$RUNNER_TEMP/lean-reused"
+          python3 ci/lean_reuse.py extract "$RUNNER_TEMP/lean-reused" lean/.lake/build
       - uses: ./.github/actions/download-artifact
         if: ${{ steps.check.outputs.assemble == 'true' }}
         with:

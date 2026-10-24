@@ -3,10 +3,10 @@ description: >
   After `lean-setup` and `lean-mathlib`, with the shards' outputs (if any)
   downloaded to `$RUNNER_TEMP/lean-build`: adds them to `lean/.lake/build`,
   checks every proof (and the axiom audit), and that the generated Rust is up
-  to date. In the merge queue it uploads what it built, for the push to main
-  to reuse; on main it saves the build and its manifest. Several jobs may run
-  it in one run (see `lean-shard` in ci.yml): everything it does is
-  idempotent, and its artifacts are named after `id`.
+  to date. In the merge queue it uploads what it built, for later runs to
+  reuse (ci/lean_reuse.py); on main it saves the build and its manifest.
+  Several jobs may run it in one run (see `lean-shard` in ci.yml):
+  everything it does is idempotent, and its artifacts are named after `id`.
 
 inputs:
   id:
@@ -49,7 +49,7 @@ runs:
         # Warnings and errors only: not the profile every module records
         # (lean/lakefile.toml), which Lake replays for each one it finds built.
         lake build --log-level=warning 2>&1 | tee "$RUNNER_TEMP/assembly.log"
-    # In the merge queue, what this build built, for the push to main to reuse.
+    # In the merge queue, what this build built, for later runs to reuse.
     - name: Collect the outputs of this build
       if: ${{ github.event_name == 'merge_group' }}
       shell: bash
@@ -93,7 +93,10 @@ runs:
         KEY: ${{ inputs.cache-key }}
       run: |
         python3 ../ci/lean_shards.py times --observations < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/lean-times.json"
+        # With the times of the reused runs (ci/lean_reuse.py fetch), which
+        # built the rest.
         python3 ../ci/lean_shards.py manifest ../.lean-manifest/manifest.json \
+          "$RUNNER_TEMP"/lean-reused/*/*/lean-times-*.json \
           "$RUNNER_TEMP"/lean-build/lean-times-*.json "$RUNNER_TEMP/lean-times.json" > "$RUNNER_TEMP/manifest.json"
         mkdir -p ../.lean-manifest
         mv "$RUNNER_TEMP/manifest.json" ../.lean-manifest/manifest.json

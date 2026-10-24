@@ -36,6 +36,17 @@ SHARD_BUILD = "Check the shard's proofs (and the axiom audit)"
 ASSEMBLE = "Run ./.github/actions/lean-assemble"
 
 
+class PlanOf(unittest.TestCase):
+    def test_the_plan_lean_reuse_chose(self):
+        log = (PLAN_LOG + line("00:32", "12 modules to build, about 36 s; shards' estimated times: []")
+               + line("00:32", "The plan builds on lean-build-Linux-X64-a-c."))
+        self.assertEqual(ci_metrics.plan_of(log), {"stale": 12, "work": 36, "estimates": [],
+                                                   "build": "lean-build-Linux-X64-a-c"})
+
+    def test_a_plan_of_lean_shards(self):
+        self.assertEqual(ci_metrics.plan_of(PLAN_LOG)["build"], KEY)
+
+
 class Collect(unittest.TestCase):
     jobs = [
         api_job("Lean: plan and build", "00:10", "00:40"),
