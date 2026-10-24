@@ -11,9 +11,7 @@ import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on PPC64LE: decapsulation, correctness
@@ -214,6 +212,7 @@ theorem oAcc_le_oNtt : K.oAcc + 1024 ≤ K.oNtt := by offs
 theorem oP3_le_oAcc : oPoly (3 * K.k) + 1024 ≤ K.oAcc := by offs
 theorem oP3_le_cin : oPoly (3 * K.k) + 1024 ≤ oCin := by offs
 theorem oMsg_le_oP3 : oMsg + 32 ≤ oPoly (3 * K.k) := by offs
+theorem oCt_lt : K.oCt < 32768 := by offs
 
 theorem vIn_fit : oCin + K.uLen * K.k + 32 * K.dv ≤ 32768 := by
   have h := hK.cin
@@ -750,5 +749,442 @@ theorem decrypt_ok {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (h₁ : DD
   refine WP.mono (dM2_ok hp h₁₃ e3 e4 e5 e6) fun s ⟨h, m⟩ => ⟨h, m.trans ?_⟩
   show _ = kpkeDecrypt K.p (VG.Proof.MlKem.KPke.dkPke K.p (DK K s₀)) (CT K s₀)
   rw [VG.Proof.MlKem.KPke.kpkeDecrypt_eq]
+
+/-! ## The hashes -/
+
+theorem pieceD {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DD K s₀ s) {p : Piece} {w : Bool}
+    (hb : p.base = .r30 ∨ p.base = .r31) (hw : w = true → p.base = .r31)
+    (hoe : p.off < 32768) (hle : p.len < 32768) (hpos : 0 < p.len)
+    (hsep : sepAll (dSz K) (didx p.base, p.off, p.len) kRegs = true) :
+    PieceOk (lay s₀ K) didx s w p := by
+  obtain ⟨w0, -, w2, -, -⟩ := buf_wr hp
+  rw [← h.env.wr] at w0
+  rw [← h.env.wr, ← h.env.rd] at w2
+  refine ⟨?_, ?_, hoe, hle, hpos, hsep, ?_⟩
+  · rcases hb with e | e <;> rw [e] <;> decide
+  · rcases hb with e | e <;> rw [e]
+    · exact h.r30
+    · exact h.env.ctx.r31
+  · cases w
+    · simp only [Bool.false_eq_true, ite_false]
+      rcases hb with e | e <;> rw [e]
+      · exact w2
+      · exact mem_rd_wr w0
+    · simp only [ite_true]
+      rw [hw rfl]; exact w0
+
+section
+variable (K : KemLay) (s₀ : State)
+
+/-- `h`, `z` and `ek` of `dk`. -/
+abbrev hH : List Byte := VG.Proof.MlKem.KPke.dkH K.p (DK K s₀)
+abbrev zZ : List Byte := VG.Proof.MlKem.KPke.dkZ K.p (DK K s₀)
+abbrev eK : List Byte := VG.Proof.MlKem.KPke.dkEk K.p (DK K s₀)
+
+/-- `K'` and `r'`, the outputs of `G(m' ‖ h)`, and `K̄ = J(z ‖ c)`. -/
+abbrev K1 : List Byte := (G (MM K s₀ ++ hH K s₀)).1
+abbrev R1 : List Byte := (G (MM K s₀ ++ hH K s₀)).2
+abbrev KB : List Byte := J (zZ K s₀ ++ CT K s₀)
+
+end
+
+theorem dk_slice {K : KemLay} {s₀ s : State} (h : DD K s₀ s) {k : Nat} (hk : k + 32 ≤ K.dkLen) :
+    bytesAt s.mem ((lay s₀ K).A 2 k) 32 = ((DK K s₀).drop k).take 32 := by
+  have dk : bytesAt s.mem ((lay s₀ K).A 2 0) K.dkLen = DK K s₀ := h.env.dk
+  rw [← dk, bytesAt_slice _ _ hk, ptr_add, Nat.zero_add]
+
+/-- The pieces of the hashes, and the regions they change. -/
+abbrev HashF (K : KemLay) (sz : List Nat) : Prop :=
+  sepAll sz (0, oMsg, 32) kRegs = true ∧ sepAll sz (2, 768 * K.k + 32, 32) kRegs = true ∧
+  sepAll sz (0, oG, 64) kRegs = true ∧ sepAll sz (2, 768 * K.k + 64, 32) kRegs = true ∧
+  sepAll sz (0, oCin, 8192) kRegs = true ∧ sepAll sz (0, oKbar, 32) kRegs = true ∧
+  (kRegs ++ [((0 : Nat), oG, (64 : Nat))]).all (okDm K sz) = true ∧
+  (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]).all (okDm K sz) = true ∧
+  sepAll sz (0, oMsg, 32) (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]) = true ∧
+  sepAll sz (0, oMsg, 32) (kRegs ++ [((0 : Nat), oG, (64 : Nat))]) = true ∧
+  sepAll sz (0, oG, 32) (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]) = true ∧
+  sepAll sz (0, oSigma, 32) (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]) = true ∧
+  sepB sz (0, oG, 32) (3, 0, 32) = true ∧ sepB sz (0, oKbar, 32) (3, 0, 32) = true ∧
+  [((3 : Nat), (0 : Nat), (32 : Nat))].all (okWm K sz) = true
+
+theorem hash_f {K : KemLay} (hK : K.WF) :
+    sepAll (dSz K) (0, oMsg, 32) kRegs = true ∧ sepAll (dSz K) (2, 768 * K.k + 32, 32) kRegs = true ∧
+    sepAll (dSz K) (0, oG, 64) kRegs = true ∧ sepAll (dSz K) (2, 768 * K.k + 64, 32) kRegs = true ∧
+    sepAll (dSz K) (0, oCin, K.ctLen) kRegs = true ∧ sepAll (dSz K) (0, oKbar, 32) kRegs = true ∧
+    (kRegs ++ [((0 : Nat), oG, (64 : Nat))]).all (okD K) = true ∧
+    (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]).all (okD K) = true ∧
+    sepAll (dSz K) (0, oMsg, 32) (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]) = true ∧
+    sepAll (dSz K) (0, oMsg, 32) (kRegs ++ [((0 : Nat), oG, (64 : Nat))]) = true ∧
+    sepAll (dSz K) (0, oG, 32) (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]) = true ∧
+    sepAll (dSz K) (0, oSigma, 32) (kRegs ++ [((0 : Nat), oKbar, (32 : Nat))]) = true ∧
+    sepB (dSz K) (0, oG, 32) (3, 0, 32) = true ∧ sepB (dSz K) (0, oKbar, 32) (3, 0, 32) = true ∧
+    [((3 : Nat), (0 : Nat), (32 : Nat))].all (okW K) = true := by
+  have sc := hK.scr
+  obtain ⟨f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15⟩ :=
+    (by decide : ∀ k < 5, HashF (kOf k) (dSz (kOf k))) K.k (by have := hK.k4; omega)
+  exact ⟨sepAll_scr f1 sc, sepAll_scr f2 sc, sepAll_scr f3 sc, sepAll_scr f4 sc,
+    sepAll_left (sepAll_scr f5 sc) (inB_len (ct_le hK)), sepAll_scr f6 sc, allOkD_of hK f7,
+    allOkD_of hK f8, sepAll_scr f9 sc, sepAll_scr f10 sc, sepAll_scr f11 sc, sepAll_scr f12 sc,
+    sepB_scr f13 sc, sepB_scr f14 sc, allOkW_of hK f15⟩
+
+theorem hashG_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DD K s₀ s)
+    (hm : bytesAt s.mem ((lay s₀ K).A 0 oMsg) 32 = MM K s₀) :
+    WP isa (hash 72 0x06 [⟨.r31, oMsg, 32⟩, ⟨.r30, 768 * K.k + 32, 32⟩] [⟨.r31, oG, 64⟩]) s
+      fun s' => DD K s₀ s' ∧ Frame ((lay s₀ K).RL (kRegs ++ [(0, oG, 64)])) s.mem s'.mem ∧
+      bytesAt s'.mem ((lay s₀ K).A 0 oG) 32 = K1 K s₀ ∧
+      bytesAt s'.mem ((lay s₀ K).A 0 oSigma) 32 = R1 K s₀ := by
+  have hK := hp.wf
+  have hk4 := hK.k4
+  obtain ⟨p1, p2, p3, -, -, -, w7, -, -, -, -, -, -, -, -⟩ := hash_f hK
+  have hin : ∀ p ∈ [(⟨.r31, oMsg, 32⟩ : Piece), ⟨.r30, 768 * K.k + 32, 32⟩],
+      PieceOk (lay s₀ K) didx s false p := by
+    intro p hp'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl
+    · exact pieceD hp h (.inr rfl) (by simp) (by show oMsg < 32768; decide)
+        (by show (32 : Nat) < 32768; decide) (by show 0 < (32 : Nat); decide) p1
+    · exact pieceD hp h (.inl rfl) (by simp) (by show 768 * K.k + 32 < 32768; omega)
+        (by show (32 : Nat) < 32768; decide) (by show 0 < (32 : Nat); decide) p2
+  have hout : ∀ p ∈ [(⟨.r31, oG, 64⟩ : Piece)], PieceOk (lay s₀ K) didx s true p := by
+    intro p hp'; rw [List.mem_singleton] at hp'; subst hp'
+    exact pieceD hp h (.inr rfl) (fun _ => rfl) (by show oG < 32768; decide)
+      (by show (64 : Nat) < 32768; decide) (by show 0 < (64 : Nat); decide) p3
+  have hin' : (List.map ((lay s₀ K).pb didx s.mem) [⟨.r31, oMsg, 32⟩, ⟨.r30, 768 * K.k + 32, 32⟩]).flatten =
+      MM K s₀ ++ hH K s₀ := by
+    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil]
+    show bytesAt s.mem ((lay s₀ K).A 0 oMsg) 32 ++ bytesAt s.mem ((lay s₀ K).A 2 (768 * K.k + 32)) 32 = _
+    rw [hm, dk_slice h (by simp only [KemLay.dkLen]; omega)]; rfl
+  refine WP.mono (hash_ok (idx := didx) VG.Proof.MlKem.rate72 (by decide) h.env.ctx
+    (List.cons_ne_nil _ _) hin hout (List.pairwise_singleton _ _)) fun s' ⟨k', o'⟩ =>
+    ⟨h.keep hp (k'.x []) (by simp) w7, k'.frame, ?_⟩
+  have e1 := o'.1
+  rw [hin'] at e1
+  have e2 : bytesAt s'.mem ((lay s₀ K).A 0 oG) 64 =
+      (G (MM K s₀ ++ hH K s₀)).1 ++ (G (MM K s₀ ++ hH K s₀)).2 := e1.trans (G_split _)
+  rw [show (64 : Nat) = 32 + 32 from rfl, bytesAt_add] at e2
+  have l1 : (bytesAt s'.mem ((lay s₀ K).A 0 oG) 32).length = (G (MM K s₀ ++ hH K s₀)).1.length := by
+    rw [bytesAt_length, VG.Proof.MlKem.G_fst_length]
+  obtain ⟨r1, r2⟩ := List.append_inj e2 l1
+  refine ⟨r1, ?_⟩
+  show bytesAt s'.mem ((lay s₀ K).ptr 0 + BitVec.ofNat 64 (920 + 32)) 32 = _
+  rw [← ptr_add]; exact r2
+
+theorem hashJ_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DD K s₀ s) :
+    WP isa (hash 136 0x1f [⟨.r30, 768 * K.k + 64, 32⟩, ⟨.r31, oCin, K.ctLen⟩] [⟨.r31, oKbar, 32⟩]) s
+      fun s' => DD K s₀ s' ∧ Frame ((lay s₀ K).RL (kRegs ++ [(0, oKbar, 32)])) s.mem s'.mem ∧
+      bytesAt s'.mem ((lay s₀ K).A 0 oKbar) 32 = KB K s₀ := by
+  have hK := hp.wf
+  have hk4 := hK.k4
+  obtain ⟨-, -, -, p4, p5, p6, -, w8, -, -, -, -, -, -, -⟩ := hash_f hK
+  have hin : ∀ p ∈ [(⟨.r30, 768 * K.k + 64, 32⟩ : Piece), ⟨.r31, oCin, K.ctLen⟩],
+      PieceOk (lay s₀ K) didx s false p := by
+    intro p hp'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl
+    · exact pieceD hp h (.inl rfl) (by simp) (by show 768 * K.k + 64 < 32768; omega)
+        (by show (32 : Nat) < 32768; decide) (by show 0 < (32 : Nat); decide) p4
+    · exact pieceD hp h (.inr rfl) (by simp) (by show oCin < 32768; decide)
+        (by show K.ctLen < 32768; have := ct_le hK; omega) (by show 0 < K.ctLen; exact ct_pos hK) p5
+  have hout : ∀ p ∈ [(⟨.r31, oKbar, 32⟩ : Piece)], PieceOk (lay s₀ K) didx s true p := by
+    intro p hp'; rw [List.mem_singleton] at hp'; subst hp'
+    exact pieceD hp h (.inr rfl) (fun _ => rfl) (by show oKbar < 32768; decide)
+      (by show (32 : Nat) < 32768; decide) (by show 0 < (32 : Nat); decide) p6
+  have hin' : (List.map ((lay s₀ K).pb didx s.mem)
+      [⟨.r30, 768 * K.k + 64, 32⟩, ⟨.r31, oCin, K.ctLen⟩]).flatten = zZ K s₀ ++ CT K s₀ := by
+    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil]
+    show bytesAt s.mem ((lay s₀ K).A 2 (768 * K.k + 64)) 32 ++
+      bytesAt s.mem ((lay s₀ K).A 0 oCin) K.ctLen = _
+    rw [dk_slice h (by simp only [KemLay.dkLen]; omega), h.c]; rfl
+  refine WP.mono (hash_ok (idx := didx) VG.Proof.MlKem.rate136 (by decide) h.env.ctx
+    (List.cons_ne_nil _ _) hin hout (List.pairwise_singleton _ _)) fun s' ⟨k', o'⟩ =>
+    ⟨h.keep hp (k'.x []) (by simp) w8, k'.frame, ?_⟩
+  have e1 := o'.1
+  rw [hin'] at e1
+  refine e1.trans ?_
+  show _ = J (zZ K s₀ ++ CT K s₀)
+  rw [VG.Proof.MlKem.J_eq]; rfl
+
+/-! ## The re-encryption -/
+
+theorem ptrs_ok {K : KemLay} (hK : K.WF) {s : State} :
+    WP isa (.block [.addi .r30 .r30 (384 * K.k), .addi .r29 .r31 oMsg, .addi .r27 .r31 K.oCt]) s
+      fun s' => KeptX [.r30, .r29, .r27] [] s s' ∧
+      s'.gpr .r30 = s.gpr .r30 + BitVec.ofNat 64 (384 * K.k) ∧
+      s'.gpr .r29 = s.gpr .r31 + BitVec.ofNat 64 oMsg ∧
+      s'.gpr .r27 = s.gpr .r31 + BitVec.ofNat 64 K.oCt ∧ s'.mem = s.mem := by
+  have e1 : 384 * K.k < 32768 := by have := hK.k4; omega
+  have e2 : oMsg < 32768 := by decide
+  have e3 : K.oCt < 32768 := oCt_lt hK
+  prun [e1, e2, e3]
+  refine ⟨⟨fun r _ hx => ?_, rfl, rfl, rfl, Frame.refl _ _⟩, trivial⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
+  obtain ⟨a30, a29, a27⟩ := hx
+  simp only [RegUpd.gpr_write_of_ne _ _ a27, RegUpd.gpr_write_of_ne _ _ a29,
+    RegUpd.gpr_write_of_ne _ _ a30]
+
+/-- Before the re-encryption. -/
+structure DP (K : KemLay) (s₀ s : State) : Prop where
+  env : DEnv K s₀ s
+  r30 : s.gpr .r30 = (lay s₀ K).A 2 (384 * K.k)
+  r29 : s.gpr .r29 = (lay s₀ K).A 0 oMsg
+  r28 : s.gpr .r28 = (lay s₀ K).A 0 oCin
+  r27 : s.gpr .r27 = (lay s₀ K).A 0 K.oCt
+  c : bytesAt s.mem ((lay s₀ K).A 0 oCin) K.ctLen = CT K s₀
+  m : bytesAt s.mem ((lay s₀ K).A 0 oMsg) 32 = MM K s₀
+  k1 : bytesAt s.mem ((lay s₀ K).A 0 oG) 32 = K1 K s₀
+  r1 : bytesAt s.mem ((lay s₀ K).A 0 oSigma) 32 = R1 K s₀
+  kb : bytesAt s.mem ((lay s₀ K).A 0 oKbar) 32 = KB K s₀
+
+theorem ptrs_dp {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DD K s₀ s)
+    (hm : bytesAt s.mem ((lay s₀ K).A 0 oMsg) 32 = MM K s₀)
+    (hk : bytesAt s.mem ((lay s₀ K).A 0 oG) 32 = K1 K s₀)
+    (hr : bytesAt s.mem ((lay s₀ K).A 0 oSigma) 32 = R1 K s₀)
+    (hb : bytesAt s.mem ((lay s₀ K).A 0 oKbar) 32 = KB K s₀) :
+    WP isa (.block [.addi .r30 .r30 (384 * K.k), .addi .r29 .r31 oMsg, .addi .r27 .r31 K.oCt]) s
+      (DP K s₀) :=
+  WP.mono (ptrs_ok hp.wf) fun _ ⟨k, g30, g29, g27, m⟩ =>
+    ⟨h.env.keep hp (W := []) k (by decide) rfl, by rw [g30, h.r30]; rfl, by rw [g29, h.env.ctx.r31],
+      by rw [k.cs .r28 (by decide) (by decide), h.r28], by rw [g27, h.env.ctx.r31],
+      by rw [m]; exact h.c, by rw [m]; exact hm, by rw [m]; exact hk, by rw [m]; exact hr,
+      by rw [m]; exact hb⟩
+
+/-- The buffers of `encrypt`: `ek` in `dk`, `m'` and `c'` in `scratch`. -/
+abbrev db (K : KemLay) : EB := ⟨2, 384 * K.k, 0, oMsg, 0, K.oCt⟩
+
+/-- The facts on the buffers of the re-encryption, with the sizes `sz` and the longest `c'`. -/
+abbrev EncF (K : KemLay) (sz : List Nat) : Prop :=
+  (encW0 K ++ [((0 : Nat), K.oCt, oCin - K.oCt)]).all (okWm K sz) = true ∧
+  [((0 : Nat), oCin, (8192 : Nat)), (0, oG, 32), (0, oKbar, 32)].all
+    (fun w => sepAll sz w (encW0 K ++ [((0 : Nat), K.oCt, oCin - K.oCt)])) = true ∧
+  sepAll sz (2, 384 * K.k, K.ekLen) (encW0 K) = true ∧ sepAll sz (0, oMsg, 32) (encW0 K) = true ∧
+  sepAll sz (0, K.oCt, oCin - K.oCt) (encW0 K) = true
+
+theorem enc_f {K : KemLay} (hK : K.WF) : (encW K (db K)).all (okW K) = true ∧
+    [((0 : Nat), oCin, (K.ctLen : Nat)), (0, oG, 32), (0, oKbar, 32)].all
+      (fun w => sepAll (dSz K) w (encW K (db K))) = true ∧
+    sepAll (dSz K) (2, 384 * K.k, K.ekLen) (encW0 K) = true ∧
+    sepAll (dSz K) (0, oMsg, 32) (encW0 K) = true ∧
+    sepAll (dSz K) (0, K.oCt, K.ctLen) (encW0 K) = true := by
+  have sc := hK.scr
+  have hct : K.ctLen ≤ oCin - K.oCt := Nat.le_sub_of_add_le' hK.ct
+  obtain ⟨e1, e2, e3, e4, e5⟩ :=
+    (by decide : ∀ k < 5, EncF (kOf k) (dSz (kOf k))) K.k (by have := hK.k4; omega)
+  have hW : (encW0 K ++ [((0 : Nat), K.oCt, K.ctLen)]).all
+      (fun x => (encW0 K ++ [((0 : Nat), K.oCt, oCin - K.oCt)]).any (inB x)) = true := by
+    rw [List.all_append, Bool.and_eq_true]
+    refine ⟨List.all_eq_true.mpr fun x hx =>
+      List.any_eq_true.mpr ⟨x, List.mem_append_left _ hx, inB_refl x⟩, ?_⟩
+    rw [List.all_cons, List.all_nil, Bool.and_true]
+    exact List.any_eq_true.mpr ⟨_, List.mem_append_right _ (List.mem_singleton_self _), inB_len hct⟩
+  refine ⟨?_, ?_, sepAll_scr e3 sc, sepAll_scr e4 sc, sepAll_left (sepAll_scr e5 sc) (inB_len hct)⟩
+  · show (encW0 K ++ [((0 : Nat), K.oCt, K.ctLen)]).all (okW K) = true
+    rw [List.all_append, Bool.and_eq_true] at e1 ⊢
+    refine ⟨allOkW_of hK e1.1, ?_⟩
+    have e := e1.2
+    rw [List.all_cons, List.all_nil, Bool.and_true] at e ⊢
+    simp only [okWm, okW, Bool.and_eq_true] at e ⊢
+    exact ⟨sepB_mono (sepB_scr e.1 sc) (inB_refl _) (inB_len hct),
+      sepB_mono (sepB_scr e.2.1 sc) (inB_refl _) (inB_len hct),
+      sepB_mono (sepB_scr e.2.2 sc) (inB_refl _) (inB_len hct)⟩
+  · simp only [List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true] at e2 ⊢
+    exact ⟨sepAll_mono (sepAll_scr e2.1 sc) (inB_len (ct_le hK)) hW,
+      sepAll_mono (sepAll_scr e2.2.1 sc) (inB_refl _) hW,
+      sepAll_mono (sepAll_scr e2.2.2 sc) (inB_refl _) hW⟩
+
+theorem encPre {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DP K s₀ s) :
+    EncPre K (lay s₀ K) (db K) s := by
+  have hK := hp.wf
+  obtain ⟨w0, -, w2, -, -⟩ := buf_wr hp
+  obtain ⟨-, -, f3, f4, f5⟩ := enc_f hK
+  exact ⟨hK, hp.calls, h.env.ctx, h.r30, h.r29, h.r27, f3, f4, f5,
+    by rw [h.env.rd, h.env.wr]; exact w2, by rw [h.env.rd, h.env.wr]; exact mem_rd_wr w0,
+    by rw [h.env.wr]; exact w0⟩
+
+/-- `ρ` of `dk`. -/
+abbrev ρD (K : KemLay) (s₀ : State) : List Byte := ekRho K.p (eK K s₀)
+
+/-- `c'`. -/
+abbrev C2 (K : KemLay) (s₀ : State) : List Byte :=
+  VG.Proof.MlKem.KPke.ct K.p (aEnc (ρD K s₀) (R1 K s₀)) (eK K s₀) (MM K s₀) (R1 K s₀)
+
+/-- After the re-encryption. -/
+structure DQ (K : KemLay) (s₀ s : State) : Prop where
+  env : DEnv K s₀ s
+  r28 : s.gpr .r28 = (lay s₀ K).A 0 oCin
+  r24 : s.gpr .r24 = if okEnc K.k (ρD K s₀) K.k then 1 else 0
+  c : bytesAt s.mem ((lay s₀ K).A 0 oCin) K.ctLen = CT K s₀
+  c2 : bytesAt s.mem ((lay s₀ K).A 0 K.oCt) K.ctLen = C2 K s₀
+  k1 : bytesAt s.mem ((lay s₀ K).A 0 oG) 32 = K1 K s₀
+  kb : bytesAt s.mem ((lay s₀ K).A 0 oKbar) 32 = KB K s₀
+
+theorem ek_of {K : KemLay} {s₀ s : State} (hK : K.WF) (h : DP K s₀ s) :
+    bytesAt s.mem ((lay s₀ K).A 2 (384 * K.k)) K.ekLen = eK K s₀ := by
+  have hk4 := hK.k4
+  have dk : bytesAt s.mem ((lay s₀ K).A 2 0) K.dkLen = DK K s₀ := h.env.dk
+  rw [show (lay s₀ K).A 2 (384 * K.k) = (lay s₀ K).A 2 0 + BitVec.ofNat 64 (384 * K.k) by
+      rw [ptr_add, Nat.zero_add],
+    ← bytesAt_slice _ _ (by simp only [KemLay.ekLen, KemLay.dkLen]; omega :
+      384 * K.k + K.ekLen ≤ K.dkLen), dk]
+  rfl
+
+theorem reenc_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DP K s₀ s) :
+    WP isa K.encrypt s (DQ K s₀) := by
+  have hL := lay_ok hp
+  have hK := hp.wf
+  have e1 : ekB K (lay s₀ K) (db K) s = eK K s₀ := ek_of hK h
+  have eρ : ρE K (lay s₀ K) (db K) s = ρD K s₀ := congrArg (ekRho K.p) e1
+  have e2 : mB (lay s₀ K) (db K) s = MM K s₀ := h.m
+  have er : rB (lay s₀ K) s = R1 K s₀ := h.r1
+  obtain ⟨c1, c2, -, -, -⟩ := enc_f hK
+  have sep : ∀ {o l : Nat},
+      ((0 : Nat), o, l) ∈ [((0 : Nat), oCin, (K.ctLen : Nat)), (0, oG, 32), (0, oKbar, 32)] →
+      sepAll (lay s₀ K).sizes (0, o, l) (encW K (db K)) = true := fun hm =>
+    List.all_eq_true.mp c2 _ hm
+  refine WP.mono (encrypt_ok (encPre hp h)) fun s' ⟨kp, r24, ct⟩ =>
+    ⟨h.env.keep hp kp (by decide) c1, by rw [kp.cs .r28 (by decide) (by decide), h.r28], ?_,
+      (Lay.bytes_keep hL kp.frame (sep (by simp)) (by have := ct_le hK; omega)).trans h.c, ?_,
+      (Lay.bytes_keep hL kp.frame (sep (by simp)) (by decide)).trans h.k1,
+      (Lay.bytes_keep hL kp.frame (sep (by simp)) (by decide)).trans h.kb⟩
+  · rw [r24]
+    show (if okEnc K.k (ρE K (lay s₀ K) (db K) s) K.k = true then _ else _) = _
+    rw [eρ]
+  · rw [e1, e2] at ct
+    show _ = VG.Proof.MlKem.KPke.ct K.p (aEnc (ρD K s₀) (R1 K s₀)) (eK K s₀) (MM K s₀) (R1 K s₀)
+    rw [← eρ, ← er]; exact ct
+
+/-! ## The comparison and the selection -/
+
+theorem covers2 {L : Lay} {s : State} (hc : Ctx L s) {o o' l l' : Nat} (h : o + l ≤ 32768)
+    (h' : o' + l' ≤ 32768) : Covers [L.R 0 o l, L.R 0 o' l'] (s.rd ++ s.wr) :=
+  fun a n ⟨r, hr, hcn⟩ => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact mem_rd_wr' (hc.cs h _ _ ⟨_, List.mem_singleton_self _, hcn⟩)
+    · exact mem_rd_wr' (hc.cs h' _ _ ⟨_, List.mem_singleton_self _, hcn⟩)
+
+/-- After the comparison. -/
+structure DR (K : KemLay) (s₀ s : State) : Prop where
+  q : DQ K s₀ s
+  lt : (s.gpr .r12).toNat < 256
+  eq : s.gpr .r12 = 0 ↔ CT K s₀ = C2 K s₀
+
+theorem kept_of {s s' : State} {x : Reg} {W : List Region}
+    (cs : ∀ r ∈ preserved, r ≠ x → s'.gpr r = s.gpr r) (sp : s'.sp = s.sp) (rd : s'.rd = s.rd)
+    (wr : s'.wr = s.wr) (fr : Frame W s.mem s'.mem) : KeptX [x] W s s' :=
+  ⟨fun r hr hx => cs r hr fun e => hx (by rw [e]; exact List.mem_singleton_self _), sp, rd, wr, fr⟩
+
+theorem cmp_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DQ K s₀ s) :
+    WP isa K.compare s (DR K s₀) := by
+  have hc := h.env.ctx
+  have hK := hp.wf
+  have hct : K.oCt + K.ctLen ≤ 32768 := Nat.le_trans hK.ct (by decide)
+  have hcin : oCin + K.ctLen ≤ 32768 := hK.cin
+  refine WP.mono (compare_ok hK (P := (lay s₀ K).ptr 0) hc.r31 h.r28
+    (covers2 hc hcin hct)) fun s' ⟨cs, m, rd, wr, sp, lt, eq⟩ => ?_
+  have k : KeptX [.r26] ((lay s₀ K).RL []) s s' :=
+    kept_of cs sp rd wr (by rw [m]; exact Frame.refl _ _)
+  refine ⟨⟨h.env.keep hp k (by decide) rfl, by rw [cs .r28 (by decide) (by decide), h.r28],
+    by rw [cs .r24 (by decide) (by decide), h.r24], by rw [m]; exact h.c, by rw [m]; exact h.c2,
+    by rw [m]; exact h.k1, by rw [m]; exact h.kb⟩, lt, ?_⟩
+  rw [eq]
+  show bytesAt s.mem ((lay s₀ K).A 0 oCin) K.ctLen = bytesAt s.mem ((lay s₀ K).A 0 K.oCt) K.ctLen ↔ _
+  rw [h.c, h.c2]
+
+/-- After the mask. -/
+structure DS (K : KemLay) (s₀ s : State) : Prop where
+  q : DQ K s₀ s
+  r3 : s.gpr .r3 = (lay s₀ K).A 0 oG
+  r4 : s.gpr .r4 = (lay s₀ K).A 0 oKbar
+  r5 : s.gpr .r5 = pKey s₀
+  r26 : s.gpr .r26 = BitVec.ofNat 64 32
+  r12 : s.gpr .r12 = if decide (CT K s₀ = C2 K s₀) then BitVec.allOnes 64 else 0
+
+theorem mask_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DR K s₀ s) :
+    WP isa (.block selSetup) s (DS K s₀) := by
+  have hc := h.q.env.ctx
+  refine WP.mono (selSetup_ok (P := (lay s₀ K).ptr 0) (KP := pKey s₀) hc.r31 h.lt h.q.env.key
+    (mem_rd_wr' (hc.cs (o := oExtra) (l := 8) (by decide) _ _
+      ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)))
+    fun s' ⟨g12, g3, g4, g5, g26, cs, m, rd, wr, sp⟩ => ?_
+  have k : KeptX [.r26] ((lay s₀ K).RL []) s s' :=
+    kept_of cs sp rd wr (by rw [m]; exact Frame.refl _ _)
+  refine ⟨⟨h.q.env.keep hp k (by decide) rfl, by rw [cs .r28 (by decide) (by decide), h.q.r28],
+    by rw [cs .r24 (by decide) (by decide), h.q.r24], by rw [m]; exact h.q.c,
+    by rw [m]; exact h.q.c2, by rw [m]; exact h.q.k1, by rw [m]; exact h.q.kb⟩, g3, g4, g5, g26, ?_⟩
+  rw [g12]
+  simp only [h.eq, decide_eq_true_eq]
+
+theorem sel_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DS K s₀ s) :
+    WP isa (.loop (.block selBody) (.nonzero .d .r26)) s fun s' => DEnv K s₀ s' ∧
+      s'.gpr .r24 = (if okEnc K.k (ρD K s₀) K.k then 1 else 0) ∧
+      bytesAt s'.mem (pKey s₀) 32 = if CT K s₀ = C2 K s₀ then K1 K s₀ else KB K s₀ := by
+  have hL := lay_ok hp
+  have hK := hp.wf
+  have hc := h.q.env.ctx
+  obtain ⟨-, w3, -, -, -⟩ := buf_wr hp
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, d1, d2, wk⟩ := hash_f hK
+  have eZ : (⟨pKey s₀, 32⟩ : Region) = (lay s₀ K).R 3 0 32 := by
+    simp only [Lay.R, BitVec.add_zero]; rfl
+  refine WP.mono (select_ok (e := decide (CT K s₀ = C2 K s₀))
+    (by rw [eZ]; exact Lay.disj hL d1) (by rw [eZ]; exact Lay.disj hL d2)
+    (covers2 hc (by decide) (by decide))
+    (by rw [eZ, h.q.env.wr]; exact Lay.covers w3 (Nat.le_refl 32))
+    h.r3 h.r4 h.r5 h.r26 h.r12) fun s' ⟨cs, rd, wr, sp, fr, b⟩ => ⟨?_, ?_, ?_⟩
+  · have eRL : (lay s₀ K).RL [(3, 0, 32)] = [(⟨pKey s₀, 32⟩ : Region)] := by rw [eZ]; rfl
+    have k : KeptX [.r26] ((lay s₀ K).RL [(3, 0, 32)]) s s' :=
+      kept_of cs sp rd wr (by rw [eRL]; exact fr)
+    exact h.q.env.keep hp k (by decide) wk
+  · rw [cs .r24 (by decide) (by decide), h.q.r24]
+  · rw [b, h.q.k1, h.q.kb]
+    by_cases e : CT K s₀ = C2 K s₀ <;> simp [e]
+
+/-! ## The whole function -/
+
+theorem end_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DEnv K s₀ s) :
+    WP isa (.block topEnd) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.lr = s₀.lr ∧
+      s'.gpr .r3 = s.gpr .r24 ∧ s'.mem = s.mem ∧ s'.sp = s₀.sp := by
+  obtain ⟨w0, -, -, -, -⟩ := buf_wr hp
+  have hK := hp.wf
+  refine WP.mono (topEnd_ok h.ctx.r31 h.sav (fun o h₁ h₂ => ?_) h.cs)
+    fun s' ⟨pr, lr, r3, m, sp, _, _⟩ => ⟨pr, lr, r3, m, sp.trans h.sp⟩
+  rw [h.rd, h.wr]
+  have scr := hK.scr
+  have hb : o + 8 ≤ (lay s₀ K).size 0 := by simp only [lay, Lay.size, List.getD_cons_zero]; omega
+  exact mem_rd_wr' (Lay.covers w0 hb _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+
+theorem dd_of {K : KemLay} {s₀ s₂ s₃ : State} (hp : Pre K s₀) (h₂ : DEnv K s₀ s₂)
+    (g30 : s₂.gpr .r30 = pDk s₀)
+    (c₂ : bytesAt s₂.mem ((lay s₀ K).A 0 oCin) K.ctLen = CT K s₀)
+    (h₃ : KeptX [.r28] [] s₂ s₃ ∧ s₃.gpr .r28 = s₂.gpr .r31 + BitVec.ofNat 64 oCin ∧
+      s₃.mem = s₂.mem) : DD K s₀ s₃ :=
+  ⟨h₂.keep hp (W := []) h₃.1 (by decide) rfl,
+    by rw [h₃.1.cs .r30 (by decide) (by decide), g30], by rw [h₃.2.1, h₂.ctx.r31],
+    by rw [h₃.2.2]; exact c₂⟩
+
+theorem correct {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
+    WP isa K.decaps s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧
+      s.lr = s₀.lr ∧ s.gpr .r3 = (if okEnc K.k (ρD K s₀) K.k then 1 else 0) ∧
+      bytesAt s.mem (pKey s₀) 32 = if CT K s₀ = C2 K s₀ then K1 K s₀ else KB K s₀ := by
+  have hL := lay_ok hp
+  have hK := hp.wf
+  obtain ⟨-, -, -, -, -, -, -, -, m1, m2, k2, r2, -, -, -⟩ := hash_f hK
+  refine WP.seq (WP.mono (setup_ok hp) fun s₁ ⟨h₁, g30, g28, c₁⟩ => ?_)
+  refine WP.seq (WP.mono (copyC_ok hp h₁ g28 c₁) fun s₂ ⟨h₂, g30₂, c₂⟩ => ?_)
+  refine WP.seq (WP.mono ptr28_ok fun s₃ h₃ => ?_)
+  have d₃ := dd_of hp h₂ (by rw [g30₂, g30]) c₂ h₃
+  refine WP.seq (WP.mono (decrypt_ok hp d₃) fun s₄ ⟨d₄, m₄⟩ => ?_)
+  refine WP.seq (WP.mono (hashG_ok hp d₄ m₄) fun s₅ ⟨d₅, f₅, k₅, r₅⟩ => ?_)
+  refine WP.seq (WP.mono (hashJ_ok hp d₅) fun s₆ ⟨d₆, f₆, kb₆⟩ => ?_)
+  have m₆ := (Lay.bytes_keep hL f₆ m1 (by decide)).trans
+    ((Lay.bytes_keep hL f₅ m2 (by decide)).trans m₄)
+  have k₆ := (Lay.bytes_keep hL f₆ k2 (by decide)).trans k₅
+  have r₆ := (Lay.bytes_keep hL f₆ r2 (by decide)).trans r₅
+  refine WP.seq (WP.mono (ptrs_dp hp d₆ m₆ k₆ r₆ kb₆) fun s₇ h₇ => ?_)
+  refine WP.seq (WP.mono (reenc_ok hp h₇) fun s₈ h₈ => ?_)
+  refine WP.seq (WP.mono (cmp_ok hp h₈) fun s₉ h₉ => ?_)
+  refine WP.seq (WP.mono (mask_ok hp h₉) fun s₁₀ h₁₀ => ?_)
+  refine WP.seq (WP.mono (sel_ok hp h₁₀) fun s₁₁ ⟨h₁₁, r24, key⟩ => ?_)
+  exact WP.mono (end_ok hp h₁₁) fun s ⟨pr, lr, r3, m', sp'⟩ =>
+    ⟨pr, sp', lr, by rw [r3, r24], by rw [m']; exact key⟩
 
 end VG.Proof.MlKem.PPC64LE.Decaps
