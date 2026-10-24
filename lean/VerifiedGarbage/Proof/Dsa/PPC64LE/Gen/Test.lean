@@ -146,20 +146,23 @@ theorem primeCall_vp {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {name
   have bytes : ∀ σ s, SS G 176 σ c s →
       Spec.Rsa.bytesAt s.mem (G.sa (wB G.pLen) + BitVec.ofNat 64 L.candidate) (L.bits / 8) = cb := fun σ s h => by
     have := h.sb _ hcb; rw [hcbl, ← GP.sa_add] at this; exact this
-  refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s ⟨⟨h, x⟩, regs⟩ => ?_
-  · refine (RelCT.call ok.verified.1 ok.verified.2.1 (tRd G u) (tWr G) fun s₁ s₂ ⟨⟨⟨h₁, _⟩, g₁⟩, ⟨⟨h₂, _⟩, g₂⟩⟩ =>
-      ?_).mono (fun _ _ h => h) fun _ _ _ => trivial
-    have p₁ := pre_of_pin (h₁.tEntry_pin g₁ hu hsize (bytes _ _ h₁) hodd hbl)
-    have p₂ := pre_of_pin (h₂.tEntry_pin g₂ hu hsize (bytes _ _ h₂) hodd hbl)
+  refine VP.of_ct' (fun σ₁ σ₂ => ?_) fun σ s ⟨⟨h, x⟩, regs⟩ hy => ?_
+  · refine (RelCT.call ok.verified.1 ok.verified.2.1 (tRdK G u) (tWr G)
+      fun s₁ s₂ ⟨⟨⟨⟨h₁, _⟩, g₁⟩, y₁⟩, ⟨⟨⟨h₂, _⟩, g₂⟩, y₂⟩⟩ => ?_).mono (fun _ _ h => h) fun _ _ _ => trivial
+    have p₁ := h₁.tPre y₁ g₁ hu hsize (bytes _ _ h₁) hodd hbl
+    have p₂ := h₂.tPre y₂ g₂ hu hsize (bytes _ _ h₂) hodd hbl
     obtain ⟨cr₁, cw₁⟩ := h₁.tCovers hu
     obtain ⟨cr₂, cw₂⟩ := h₂.tCovers hu
     have eg : ∀ {s : State}, ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], (tEntry G u s).gpr r = s.gpr r := fun r hr => by
       rw [State.withRegions_gpr, State.callEntry_gpr _ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
+    have et : ∀ {σ s : State} {c : Cfg}, SS G 176 σ c s → s.syms = σ.syms →
+        s.syms Impl.RsaKeyGen.TrialTable32.symbol = G.tab := fun h y => by rw [y, ← h.gi.hG]; rfl
     obtain ⟨a3, a4, a5, a6, a7⟩ := g₁
     obtain ⟨b3, b4, b5, b6, b7⟩ := g₂
-    refine ⟨p₁, p₂, pub_of ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_, Covers.append cr₁ cw₁, cw₁, Covers.append cr₂ cw₂, cw₂⟩
+    refine ⟨p₁, p₂, pubK_tEntry (pub_of ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) ((et h₁ y₁).trans (et h₂ y₂).symm),
+      Covers.append cr₁ cw₁, cw₁, Covers.append cr₂ cw₂, cw₂⟩
     · have e₁ : s₁.sp = G.sp := by rw [h₁.gi.sp, ← h₁.gi.hG]; rfl
       have e₂ : s₂.sp = G.sp := by rw [h₂.gi.sp, ← h₂.gi.hG]; rfl
       show s₁.sp = s₂.sp
@@ -178,7 +181,7 @@ theorem primeCall_vp {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {name
       rw [eg _ (by simp), eg _ (by simp), eg _ (by simp), eg _ (by simp), a5, a6, b5, b6, e6, h₁.gi.randBytes hu,
         h₂.gi.randBytes hu]
   have hU' : ∀ o ∈ c.LS, fUsedOut + 8 ≤ o ∨ o + 8 ≤ fUsedOut := hU
-  refine h.primeCall_ok (name := name) ok regs hu hsize hL (bytes _ _ h) hodd hbl
+  refine h.primeCall_ok (name := name) ok hy regs hu hsize hL (bytes _ _ h) hodd hbl
     fun t g rd wr sp f st used => ⟨⟨?_, x⟩, st⟩
   have big := h.gi.wBig
   have kb := h.gi.kBig

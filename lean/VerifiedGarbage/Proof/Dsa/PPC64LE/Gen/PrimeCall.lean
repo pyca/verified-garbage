@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchConsts
+import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 
 /-! # DSA parameter generation on PPC64LE: calling the probable-prime test
 
@@ -24,9 +26,10 @@ namespace VG.Proof.Dsa.PPC64LE.Gen
 open VG VG.PPC64LE
 open VG.Impl.Dsa.PPC64LE.Generation
 
-/-- A verified test of layout `L`, with the stack it uses. -/
+/-- A verified test of layout `L`, which reads the table of small primes,
+with the stack it uses. -/
 structure PrimeOk (L : Spec.Dsa.ProbablePrime.Layout) (code : Prog isa) : Prop where
-  verified : Verified target code (Spec.Dsa.ProbablePrime.contract L abi 176)
+  verified : Verified target code (Spec.Dsa.ProbablePrime.contract L (abi.withConsts kT) 176)
   stack : sdepth code ≤ 176
 
 /-- A region's writes and a working space's kept bytes: what changed is the
@@ -117,8 +120,12 @@ end
 
 /-! ## The test's contract, as facts -/
 
+/-- The test's contract under `abi`, without the table. -/
+abbrev primeK0 (L : Spec.Dsa.ProbablePrime.Layout) : Contract isa := Spec.Dsa.ProbablePrime.contract L abi 176
+
 /-- The test's contract. -/
-abbrev primeK (L : Spec.Dsa.ProbablePrime.Layout) : Contract isa := Spec.Dsa.ProbablePrime.contract L abi 176
+abbrev primeK (L : Spec.Dsa.ProbablePrime.Layout) : Contract isa :=
+  Spec.Dsa.ProbablePrime.contract L (abi.withConsts kT) 176
 
 /-- The candidate at `ws`. -/
 abbrev candOf (L : Spec.Dsa.ProbablePrime.Layout) (s : State) : Nat :=
@@ -142,8 +149,8 @@ structure PIn (L : Spec.Dsa.ProbablePrime.Layout) (s : State) : Prop where
   odd : candOf L s % 2 = 1
   bl : Spec.Dsa.bitLength (candOf L s) = L.bits
 
-theorem pre_of_pin {L : Spec.Dsa.ProbablePrime.Layout} {s : State} (h : PIn L s) : (primeK L).pre s := by
-  sig_pre [primeK, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+theorem pre_of_pin {L : Spec.Dsa.ProbablePrime.Layout} {s : State} (h : PIn L s) : (primeK0 L).pre s := by
+  sig_pre [primeK0, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
   exact ⟨h.spLo, h.rd, h.wr, h.wR, h.wU, h.rU, h.bW, h.bR, h.bU, h.fw, h.fr, h.fu, h.size, h.odd, h.bl⟩
 
 /-- The test's result. -/
@@ -158,7 +165,9 @@ def PPost (L : Spec.Dsa.ProbablePrime.Layout) (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .r7) 1 = [BitVec.ofNat 64 ((s.gpr .r6).toNat - rest.length)]
 
 theorem ppost_of_post {L : Spec.Dsa.ProbablePrime.Layout} {s t : State} (h : (primeK L).post s t) : PPost L s t := by
-  sig_post [primeK, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs] at h
+  replace h : (primeK0 L).post s t := post_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol,
+    Impl.RsaKeyGen.TrialTable32.packed)) (cs := []) |>.mp h
+  sig_post [primeK0, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs] at h
   exact h
 
 /-- Two calls with the same public arguments, candidate and tape. -/
@@ -166,8 +175,8 @@ theorem pub_of {L : Spec.Dsa.ProbablePrime.Layout} {s t : State} (sp : s.sp = t.
     (p3 : s.gpr .r3 = t.gpr .r3) (p4 : s.gpr .r4 = t.gpr .r4) (p5 : s.gpr .r5 = t.gpr .r5)
     (p6 : s.gpr .r6 = t.gpr .r6) (p7 : s.gpr .r7 = t.gpr .r7) (hc : candOf L s = candOf L t)
     (hr : Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat = Spec.Rsa.bytesAt t.mem (t.gpr .r5) (t.gpr .r6).toNat) :
-    (primeK L).pub s t := by
-  sig_pub [primeK, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+    (primeK0 L).pub s t := by
+  sig_pub [primeK0, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
   exact ⟨sp, by simp only [candOf] at hc; rw [hc, hr], p3, p4, p5, p6, p7⟩
 
 /-! ## The call -/
@@ -182,8 +191,16 @@ abbrev tRd (G : GP) (u : Nat) : List Region := [⟨G.randP u, (BitVec.ofNat 64 (
 abbrev tWr (G : GP) : List Region :=
   [⟨G.sa (wB G.pLen), (BitVec.ofNat 64 (wWords G.pLen)).toNat * 8⟩, ⟨G.sa fUsedOut, 8⟩]
 
-/-- The test's entry. -/
+/-- The test's entry, without the table. -/
 abbrev tEntry (G : GP) (u : Nat) (s : State) : State := s.callEntry.withRegions (tRd G u) (tWr G)
+
+/-- The regions the test reads, the table among them. -/
+abbrev tRdK (G : GP) (u : Nat) : List Region := tRd G u ++ [G.rTab]
+
+/-- The test's entry. -/
+abbrev tEntryK (G : GP) (u : Nat) (s : State) : State := s.callEntry.withRegions (tRdK G u) (tWr G)
+
+theorem strip_tEntryK (G : GP) (u : Nat) (s : State) : stripConsts kT (tEntryK G u s) = tEntry G u s := rfl
 
 section
 variable {G : GP} {σ s : State} {c : Cfg}
@@ -258,7 +275,7 @@ theorem SS.tEntry_pin (h : SS G 176 σ c s) {L : Spec.Dsa.ProbablePrime.Layout} 
 
 /-- The test's regions are the search's. -/
 theorem SS.tCovers (h : SS G 176 σ c s) {u : Nat} (hu : u ≤ G.witLen) :
-    Covers (tRd G u) s.rd ∧ Covers (tWr G) s.wr := by
+    Covers (tRdK G u) s.rd ∧ Covers (tWr G) s.wr := by
   have gi := h.gi
   have big := gi.wBig
   have wl := gi.witLt
@@ -268,7 +285,7 @@ theorem SS.tCovers (h : SS G 176 σ c s) {u : Nat} (hu : u ≤ G.witLen) :
   have e6 : (BitVec.ofNat 64 (G.witLen - u)).toNat = G.witLen - u := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [fUsedOut]; have := gi.hEnd_le; simp only [hEnd] at this; omega
-  refine ⟨?_, ?_⟩
+  refine ⟨Covers.append_left ?_ (Covers.of_mem fun r hr => ?_), ?_⟩
   · rw [gi.rd, gi.pre.rd, gi.hG]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
@@ -283,12 +300,86 @@ theorem SS.tCovers (h : SS G 176 σ c s) {u : Nat} (hu : u ≤ G.witLen) :
         rw [GP.randP, ite_eq_left (by omega)]; simp
       · show 0 + (BitVec.ofNat 64 (G.witLen - u)).toNat ≤ G.witLen
         rw [e6]; omega
+  · simp only [List.mem_singleton] at hr; subst hr
+    rw [gi.rd, gi.pre.rd, gi.hG]; simp
   · rw [gi.wr, gi.pre.wr, gi.hG]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨G.rScr, by simp, wB G.pLen, rfl, by show wB G.pLen + (BitVec.ofNat 64 (wWords G.pLen)).toNat * 8 ≤ G.scrLen * 8; rw [e4]; omega⟩
     · exact ⟨G.rScr, by simp, fUsedOut, rfl, hfU⟩
+
+/-- The table, at the test's entry, under `abi.withConsts`. -/
+theorem SS.tConsts (h : SS G 176 σ c s) (hy : s.syms = σ.syms) (u : Nat) : ConstsOk kT 176 (tEntryK G u s) := by
+  have gi := h.gi
+  have fit := gi.scrFit
+  have tf : G.tab.toNat + 8192 ≤ 2 ^ 64 := by have := gi.pre.tFit; rw [gi.hG] at this; exact this
+  have et : (mkG (tEntryK G u s)).rTab = G.rTab := by
+    show (⟨s.syms Impl.RsaKeyGen.TrialTable32.symbol, 8192⟩ : Region) = ⟨G.tab, 8192⟩
+    rw [hy, ← gi.hG]; rfl
+  have hC : G.rTab.Disjoint G.rScr := by have := gi.pre.tC; rw [gi.hG] at this; exact this
+  have hB : G.rTab.Disjoint (rBelow σ 176) := by have := gi.pre.tB; rw [gi.hG] at this; exact this
+  have big := gi.wBig
+  have kb := gi.kBig
+  have lens := gi.lens3
+  have e4 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wWords_lt lens; omega)]
+  have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [fUsedOut]; have := gi.hEnd_le; simp only [hEnd] at this; omega
+  refine ⟨?_, ?_, ?_⟩
+  · rw [constRegs_kT, et]; rfl
+  · intro k hk i hi
+    simp only [kT, Impl.RsaKeyGen.TrialTable32.consts, List.mem_cons, List.not_mem_nil, or_false] at hk
+    subst hk
+    have held := gi.pre.held _ List.mem_cons_self i hi
+    dsimp only at hi held
+    have hi' : i < 1024 := by rw [VG.Proof.RsaKeyGen.TrialTable32.packed_length] at hi; exact hi
+    dsimp only
+    rw [show (tEntryK G u s).mem = s.mem from rfl, show (tEntryK G u s).syms = s.syms from rfl]
+    have eg : σ.syms Impl.RsaKeyGen.TrialTable32.symbol = G.tab := by rw [← gi.hG]; rfl
+    rw [← held, hy, eg]
+    refine gi.frame.readW (r := G.rTab) (Offset.contains_base _ (show 8 * i + 64 / 8 ≤ 8192 by omega) (by omega)) (fun r hr => ?_) (by decide)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hC
+    · exact hB
+  · intro t ht
+    rw [constRegs_kT, et, List.mem_singleton] at ht
+    subst ht
+    refine ⟨tf, fun r hr => ?_, fun r hr => ?_⟩
+    · simp only [tEntryK, State.withRegions_wr, tWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [e4]; exact hC.sub_right (sw G (by omega))
+      · exact hC.sub_right (sw G hfU)
+    · have : abi.reserved 176 (tEntryK G u s) = [rBelow σ 176] := by
+        show stackBelow s.sp 176 = _
+        rw [gi.sp]; rfl
+      rw [this, List.mem_singleton] at hr
+      subst hr; exact hB
+
+/-- The test's arguments meet its precondition. -/
+theorem SS.tPre (h : SS G 176 σ c s) (hy : s.syms = σ.syms) {L : Spec.Dsa.ProbablePrime.Layout} {u : Nat}
+    (regs : TArgs G u s) (hu : u ≤ G.witLen) (hsize : L.size ≤ 8 * wWords G.pLen) {cb : List Byte}
+    (hcb : Spec.Rsa.bytesAt s.mem (G.sa (wB G.pLen) + BitVec.ofNat 64 L.candidate) (L.bits / 8) = cb)
+    (hodd : Spec.Dsa.decodeBE cb % 2 = 1) (hbl : Spec.Dsa.bitLength (Spec.Dsa.decodeBE cb) = L.bits) :
+    (primeK L).pre (tEntryK G u s) :=
+  (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)) (cs := [])).mpr
+    ⟨pre_of_pin (h.tEntry_pin regs hu hsize hcb hodd hbl), h.tConsts hy u⟩
+
+/-- Two calls with the same public arguments, candidate and tape, and the
+same table. -/
+theorem pubK_of {L : Spec.Dsa.ProbablePrime.Layout} {s t : State} (h : (primeK0 L).pub (stripConsts kT s) (stripConsts kT t))
+    (hy : s.syms Impl.RsaKeyGen.TrialTable32.symbol = t.syms Impl.RsaKeyGen.TrialTable32.symbol) :
+    (primeK L).pub s t := by
+  refine (pub_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
+    (cs := [])).mpr ⟨(pub_stripConsts (K := kT)).mp h, fun k hk => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
+  subst hk; exact hy
+
+theorem pubK_tEntry {L : Spec.Dsa.ProbablePrime.Layout} {G : GP} {u : Nat} {s t : State}
+    (h : (primeK0 L).pub (tEntry G u s) (tEntry G u t))
+    (hy : s.syms Impl.RsaKeyGen.TrialTable32.symbol = t.syms Impl.RsaKeyGen.TrialTable32.symbol) :
+    (primeK L).pub (tEntryK G u s) (tEntryK G u t) :=
+  pubK_of h hy
 
 /-- The test's result on the candidate `cb` with the witnesses from `u` on. -/
 abbrev tRes (G : GP) (cb : List Byte) (u : Nat) : Option (Bool × Spec.RsaKeyGen.Rand) :=
@@ -298,7 +389,7 @@ abbrev tRes (G : GP) (cb : List Byte) (u : Nat) : Option (Bool × Spec.RsaKeyGen
 at `fUsedOut` when the tape sufficed, and memory changed only in the test's
 ranges of its working space, the count's word and the stack. -/
 theorem SS.primeCall_ok {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {name : String}
-    (ok : PrimeOk L code) (h : SS G 176 σ c s) {u : Nat} (regs : TArgs G u s)
+    (ok : PrimeOk L code) (h : SS G 176 σ c s) (hy : s.syms = σ.syms) {u : Nat} (regs : TArgs G u s)
     (hu : u ≤ G.witLen) (hsize : L.size ≤ 8 * wWords G.pLen) (hL : ∀ r ∈ L.scratch, r.1 + r.2 ≤ 8 * wWords G.pLen)
     {cb : List Byte}
     (hcb : Spec.Rsa.bytesAt s.mem (G.sa (wB G.pLen) + BitVec.ofNat 64 L.candidate) (L.bits / 8) = cb)
@@ -317,7 +408,7 @@ theorem SS.primeCall_ok {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {n
   have wl := gi.witLt
   have lens := gi.lens3
   have wBl : wB G.pLen < 2 ^ 15 := by rcases lens with e | e | e <;> rw [e] <;> decide
-  have pin := h.tEntry_pin regs hu hsize hcb hodd hbl
+  have pin := h.tPre hy regs hu hsize hcb hodd hbl
   obtain ⟨r3, r4, r5, r6, r7⟩ := regs
   have e4 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wWords_lt lens; omega)]
@@ -332,15 +423,15 @@ theorem SS.primeCall_ok {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {n
       Nat.mod_eq_of_lt (by omega)]
     omega
   obtain ⟨hcovR, hcovW⟩ := h.tCovers hu
-  refine WP.callAny ok.verified.1 (pre_of_pin pin) (Covers.append hcovR hcovW)
+  refine WP.callAny ok.verified.1 pin (Covers.append hcovR hcovW)
     hcovW (fun t rd wr sp f g post => ?_) (by have := ok.stack; omega)
   have pp := ppost_of_post post
   obtain ⟨st, keeps, used⟩ := pp
-  have eg : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], (tEntry G u s).gpr r = s.gpr r := fun r hr => by
+  have eg : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], (tEntryK G u s).gpr r = s.gpr r := fun r hr => by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
-  have hres : resOf L (tEntry G u s) = tRes G cb u := by
+  have hres : resOf L (tEntryK G u s) = tRes G cb u := by
     simp only [resOf, candOf, Spec.Dsa.ProbablePrime.candidateAt, State.withRegions_mem, State.callEntry_mem]
     rw [eg .r3 (by simp), eg .r5 (by simp), eg .r6 (by simp), r3, hcb, r5, r6, e6, gi.randBytes hu]
   refine k t g rd wr sp ?_ ?_ ?_
