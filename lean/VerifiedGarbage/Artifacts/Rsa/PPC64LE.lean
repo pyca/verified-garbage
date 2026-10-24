@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVerified
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvVerified
@@ -45,6 +46,18 @@ def artifacts : List Artifact := [
         working space's header."]
     code := Impl.Bignum.PPC64LE.Crt.crt
     verified := Proof.Bignum.PPC64LE.Crt.crt_verified },
+  Spec.Rsa.privateCheckedApi.artifact PPC64LE.target {
+    notes := ["This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, \
+        then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, \
+        which also checks `e`. It compares that with the input in constant time, and copies `m` to \
+        `out` under a mask, which is clear unless the CRT and the public operation succeeded and the \
+        two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it \
+        overwrites the frame's copy of `m` with zeros. Its frame of 3328 bytes holds `m`, the \
+        precomputed values of `n`, the statuses, the registers kept across the calls and the stack \
+        arguments of the calls, whose callees use no stack."]
+    code := Impl.Rsa.PPC64LE.Priv.code
+    stack := Impl.Rsa.PPC64LE.Priv.frameBytes
+    verified := Proof.Rsa.PPC64LE.Priv.priv_verified },
   Spec.Rsa.crtValuesApi.artifact PPC64LE.target {
     notes := ["`n` is checked as `vg_rsa_public_precompute` checks it; then the checks (`p q = n`, \
         as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p | 1) = 1`) give a mask, the \
