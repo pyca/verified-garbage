@@ -5,6 +5,10 @@ meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Common
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 
 /-!
 # Streaming SHA-256 on PPC64LE: `finalize`
