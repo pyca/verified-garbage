@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 
 /-!
 # DSA verification on PPC64LE: `g^u1 y^u2 mod p`

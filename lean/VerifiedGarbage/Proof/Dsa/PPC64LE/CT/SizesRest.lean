@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
 
 /-!
 # DSA on PPC64LE: constant time of the check of the sizes, after p's scan

@@ -4,11 +4,8 @@ public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.ReverseEncoding
 import VerifiedGarbage.Proof.Bignum.ByteWords
-import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

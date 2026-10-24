@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Sizes
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Sizes
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
@@ -9,7 +9,9 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem.Check
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 
 /-!
 # DSA on PPC64LE: constant time of the checks of the key after the sizes

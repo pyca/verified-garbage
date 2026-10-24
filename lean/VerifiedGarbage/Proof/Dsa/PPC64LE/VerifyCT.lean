@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Entry
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
+import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Entry
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyBody
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Sizes
 
 /-!
 # DSA verification on PPC64LE: constant time

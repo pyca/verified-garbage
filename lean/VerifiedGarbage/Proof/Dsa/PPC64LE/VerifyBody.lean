@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyProd
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyComb
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyEnd
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyInv
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyProd
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyComb
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyEnd
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyInv
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyQ
 
 /-!
 # DSA verification on PPC64LE: after the check of the key

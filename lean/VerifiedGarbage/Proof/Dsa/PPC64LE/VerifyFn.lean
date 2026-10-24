@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Save
 
 /-!
 # DSA verification on PPC64LE: the function

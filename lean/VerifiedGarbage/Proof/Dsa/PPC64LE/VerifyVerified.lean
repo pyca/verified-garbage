@@ -2,9 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFn
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFront
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFront
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyImplies
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # `vg_dsa_verify` on PPC64LE: verified against the shared contract

@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
-import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 
 /-!
 # DSA verification on PPC64LE: `R² mod q`, `q − 2` and `w = s^(q − 2) mod q`

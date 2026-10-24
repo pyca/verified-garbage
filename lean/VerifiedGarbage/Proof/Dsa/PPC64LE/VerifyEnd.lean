@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyQ
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyInv
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 
 /-!
 # DSA verification on PPC64LE: the comparison

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyQ
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 
 /-!
 # DSA verification on PPC64LE: `u1` and `u2`

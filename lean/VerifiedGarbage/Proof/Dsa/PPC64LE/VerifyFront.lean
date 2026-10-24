@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Save
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Save
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.FrameOutside
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubSave
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 
 /-!
 # DSA verification on PPC64LE: the contract on the registers, and the entry

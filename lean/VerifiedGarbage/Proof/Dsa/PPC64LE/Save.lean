@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
-public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # DSA on PPC64LE: saving and restoring the nonvolatile registers

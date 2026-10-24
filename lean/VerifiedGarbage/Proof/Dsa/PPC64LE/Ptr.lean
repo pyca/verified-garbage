@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
 /-!
 # DSA on PPC64LE: the pointers

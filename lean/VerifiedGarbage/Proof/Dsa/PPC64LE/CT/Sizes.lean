@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Base
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Base
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
 meta import VerifiedGarbage.Proof.Dsa.DomainShape
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
-import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 
 /-!
 # DSA on PPC64LE: constant time of the check of the sizes

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubFn
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

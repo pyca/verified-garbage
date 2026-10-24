@@ -101,6 +101,9 @@ pub(crate) mod cmac_triple_des;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod dsa;
+
+#[rustfmt::skip]
 pub(crate) mod ec_brainpoolp256r1;
 
 #[rustfmt::skip]

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
 public import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
-import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 

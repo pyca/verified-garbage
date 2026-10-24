@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

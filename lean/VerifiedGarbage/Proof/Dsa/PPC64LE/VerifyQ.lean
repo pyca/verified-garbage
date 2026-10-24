@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Range
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 
 /-!
 # DSA verification on PPC64LE: the ranges of r and s
