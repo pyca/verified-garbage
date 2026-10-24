@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.Sha512.Digest
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.IntervalCases
 meta import Mathlib.Tactic.IntervalCases
 
@@ -275,7 +277,7 @@ theorem compress_buf {s₀ : State} (hp : Pre D s₀) {s : State} (hC : Common s
       · exact (hp.st_scr.symm.sub_left (saved_sub hp')).sub_right e32
       · simp only [Impl.Sha512.PPC64LE.Stream.saved, List.mem_cons, List.not_mem_nil, or_false] at hp'
         rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        · intro a h₁ h₂; simp only [Region.Contains] at h₁ h₂; bv_omega
+        exact Offset.disjoint_base _ (by decide) (by decide)
 
 theorem times8 (x : BitVec 64) : x + x + (x + x) + (x + x + (x + x)) = BitVec.ofNat 64 (8 * x.toNat) := by
   bv_omega
@@ -472,7 +474,7 @@ theorem body_ok {s₀ : State} (hp : Pre D s₀) {k n : Nat} {s : State} (h : LI
     · rw [u₁₃.gpr, u₁₂.other _ (by decide), h24₁₁]; rfl
     · rw [h.hash iv m hm]
       simp only [ite_true, show ¬ (0 = 1) by decide, ite_false, Fin1, Fin0, hst iv m hm]
-      simp [bytesAt]
+      rw [show bytesAt s₁₃.mem (st s₀ + 64) 0 = [] from rfl, List.nil_append, Nat.sub_zero]
   · have hk0 : k = 0 := by omega
     subst hk0
     refine ⟨.inl ⟨by rw [hz]; simp, hC₁₃, fun iv m hm => ?_⟩, nv₁₃⟩
@@ -565,7 +567,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre D s₀) :
     have e := bytesAt_writeBytes s₇.mem (st s₀ + 64) (cnt s₀ % 128) [0x80] (by simp; omega)
     simp only [List.length_singleton] at e
     rw [hm₁₃, hm₁₀, e, hm₇]
-    congr 1
+    refine congrArg (· ++ [0x80]) ?_
     rw [hm.length]
     refine (bytesAt_congr ?_).trans hm.1.2
     intro i hi
@@ -878,13 +880,46 @@ theorem satD_pre (hD64 : D ≤ 64) : (Proof.Sha512.finalizeDPPC64LE D).pre (satD
     simp only [Region.Contains, satD, sat] at h₁ h₂
     bv_omega
 
+/-- `untouched.all fun r => o != some r` as one `match`, which the kernel
+evaluates several times faster on the inlined compression function. -/
+def keepsU : Option Reg → Bool
+  | some .r2 | some .r20 | some .r21 | some .r22 | some .r23 | some .r24 | some .r25 => false
+  | _ => true
+
+theorem keepsU_all (l : List Instr) (h : (l.all fun i => keepsU (dstOf i)) = true) :
+    (l.all fun i => untouched.all fun r => dstOf i != some r) = true := by
+  refine List.all_eq_true.mpr fun i hi => ?_
+  have h := List.all_eq_true.mp h i hi
+  generalize dstOf i = o at h ⊢
+  rcases o with _ | d
+  · rfl
+  · cases d <;> revert h <;> decide
+
+/-- A property of every instruction of `finalizeWith o`: of those of
+`finalizeWith []`, checked once, and of `o`'s. -/
+theorem all_finalizeWith (p : Instr → Bool) (o : List Instr) :
+    (instrs (finalizeWith o)).all p = ((instrs (finalizeWith [])).all p && o.all p) := by
+  simp only [finalizeWith, instrs, List.all_append, List.nil_append]
+  cases o.all p <;> simp only [Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and]
+
+theorem untouched_fixed :
+    ((instrs (finalizeWith [])).all fun i => untouched.all fun r => dstOf i != some r) = true :=
+  keepsU_all _ (by rw [← Code.allInstrs_eq]; decide +kernel)
+
+theorem lr_fixed : (instrs (finalizeWith [])).all (fun i => !i.writesLr) = true := by
+  rw [← Code.allInstrs_eq]; decide +kernel
+
+theorem noCalls_finalizeWith (o : List Instr) : (finalizeWith o).noCalls = true := by
+  have h : (finalizeWith []).noCalls = true := by decide +kernel
+  exact h
+
 theorem finalize64_verified : Verified PPC64LE.target finalize (Proof.Sha512.finalizeDPPC64LE 64) := by
   refine ⟨fun s hs => ?_, ?_, ⟨satD 64, satD_pre (by decide)⟩⟩
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
-      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => words_ok (pre_of hs) (by decide) (n := 8) rfl hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
-      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
+      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 
@@ -901,10 +936,10 @@ theorem finalize_verified : Verified PPC64LE.target finalize Proof.Sha512.finali
 theorem finalize384_verified : Verified PPC64LE.target finalize384 (Proof.Sha512.finalizeDPPC64LE 48) := by
   refine ⟨fun s hs => ?_, ?_, ⟨satD 48, satD_pre (by decide)⟩⟩
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
-      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => words_ok (pre_of hs) (by decide) (n := 6) rfl hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
-      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
+      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 
@@ -912,10 +947,10 @@ theorem finalize512_256_verified :
     Verified PPC64LE.target finalize512_256 (Proof.Sha512.finalizeDPPC64LE 32) := by
   refine ⟨fun s hs => ?_, ?_, ⟨satD 32, satD_pre (by decide)⟩⟩
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
-      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => words_ok (pre_of hs) (by decide) (n := 4) rfl hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
-      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
+      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 
@@ -923,10 +958,10 @@ theorem finalize512_224_verified :
     Verified PPC64LE.target finalize512_224 (Proof.Sha512.finalizeDPPC64LE 28) := by
   refine ⟨fun s hs => ?_, ?_, ⟨satD 28, satD_pre (by decide)⟩⟩
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
-      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => out224_ok (pre_of hs) hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
-      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
+      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 

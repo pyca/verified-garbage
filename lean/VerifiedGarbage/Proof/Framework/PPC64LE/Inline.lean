@@ -67,7 +67,7 @@ register). -/
 def dstOf : Instr → Option Reg
   | .add d .. | .sub d .. | .mul d .. | .mulhu d .. | .addi d .. | .subi d .. | .li d _ | .lis d _ | .ori d .. | .oris d ..
   | .logic _ d .. | .rotr _ d .. | .lsr _ d .. | .lsl d .. | .load _ d .. | .lbz d .. | .loadRev _ d ..
-  | .mflr d | .pop d | .addSp d _ => some d
+  | .mflr d | .pop d | .addSp d _ | .adrSym d _ => some d
   | .store .. | .stb .. | .storeRev .. | .mtlr _ | .push _ | .alloc _ | .free _ => none
 
 section
@@ -191,6 +191,11 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
       exact hw _ _ _ fun e => hi (by simp [dstOf, e])
   | mtlr r' =>
     simp only [exec, Option.some.injEq] at h; subst h; rfl
+  | adrSym d name =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h; subst h
+    exact hw s d _ fun e => hi (by simp [dstOf, e])
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
   | _ =>
     simp only [exec] at h

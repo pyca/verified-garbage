@@ -19,7 +19,7 @@ namespace VG.Proof.Rsa.X86.RtShape
 open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
 
  theorem recover_all : Impl.Rsa.X86.RecoverRt.code.allInstrs noSp=true := by
-  rsa_stack_shape
+  rsa_stack_shape [VG.Proof.Rsa.X86.BatchShape.gcd_body_noSp]
 
  theorem privateCrt_all : (Impl.Bignum.X86.CrtRt.code).allInstrs noSp=true := by
   rsa_stack_shape
@@ -31,7 +31,7 @@ open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
   rsa_stack_shape
 
  theorem crtValues_all : (Impl.Rsa.X86.CrtValuesRt.code).allInstrs noSp=true := by
-  rsa_stack_shape [VG.Proof.Rsa.X86.InvBatch.body64_noSp,VG.Proof.Rsa.X86.InvBatch.body96_noSp,VG.Proof.Rsa.X86.InvBatch.body128_noSp]
+  rsa_stack_shape [VG.Proof.Rsa.X86.BatchShape.inv_body_noSp]
 
  theorem check_all (full : Bool) : (Impl.Rsa.X86.KeyCheckRt.code full).allInstrs noSp=true := by
   cases full <;> rsa_stack_shape

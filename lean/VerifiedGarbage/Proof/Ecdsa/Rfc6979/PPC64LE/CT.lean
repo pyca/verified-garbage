@@ -344,8 +344,8 @@ structure Blks (K : Kit) (c : Cfg) : Prop where
   a₃V : TaintOk [] (Cfg.hmacArgs₃ K.H.B K.H.D fV)
   a₃F : TaintOk [] (Cfg.hmacArgs₃ K.H.B (K.H.D + 2 * c.len + 1) fK)
   a₃R : TaintOk [] (Cfg.hmacArgs₃ K.H.B (K.H.D + 1) fK)
-  m₀ : TaintOk [.r9, .r10, .r11] (Cfg.msg c.len K.H.D 0 true)
-  m₁ : TaintOk [.r9, .r10, .r11] (Cfg.msg c.len K.H.D 1 true)
+  m₀ : TaintOk [.r9, .r10, .r11] (Cfg.msg c.len K.H.D 0 true c.fHo)
+  m₁ : TaintOk [.r9, .r10, .r11] (Cfg.msg c.len K.H.D 1 true c.fHo)
   mR : TaintOk [.r9, .r10, .r11] (Cfg.msg c.len K.H.D 0 false)
   red : TaintOk [.r9, .r11] (c.reduce.drop 2 ++ Cfg.initKV)
   cnt : TaintOk [] c.initCnt
@@ -355,7 +355,10 @@ theorem coreArgs_blk : TaintOk [] Cfg.coreArgs := ⟨_, by taint_decide⟩
 theorem goOn_blk : TaintOk [] Cfg.goOn := ⟨_, by taint_decide⟩
 theorem again_blk : TaintOk [] Cfg.again := ⟨_, by taint_decide⟩
 theorem stop_blk : TaintOk [] Cfg.stop := ⟨_, by taint_decide⟩
-theorem wipe_blk : TaintOk [] Cfg.wipe := ⟨_, by taint_decide⟩
+theorem wipe_blk (b : Bool) : TaintOk [] (Cfg.wipe b) := by
+  cases b
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
 theorem saveArgs_blk : TaintOk [] Cfg.saveArgs := ⟨_, by taint_decide⟩
 theorem redPre_blk : TaintOk [] [.addSp .r11 0, .load .d .r9 .r11 fDigest] := ⟨_, by taint_decide⟩
 
@@ -422,22 +425,25 @@ theorem msgPtrs_two (L : Lay P.I.hashLen) {g lr m₀} {t : State} (hL : L.Ok) (h
     · exact h11⟩
 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
-theorem rekey_gen_ct (B : Blks P.K P.c) {Φ : Pred P} {b : Nat} (hb : b < 2) {full : Bool} {len : Nat}
+theorem rekey_gen_ct (B : Blks P.K P.c) {Φ : Pred P} {b : Nat} (hb : b < 2) {full : Bool} {len ho : Nat}
     (hlen : len = if full then P.K.H.D + 2 * P.c.len + 1 else P.K.H.D + 1)
-    (tm : TaintOk [.r9, .r10, .r11] (Cfg.msg P.c.len P.K.H.D b full))
+    (hho : ∀ L : Lay P.I.hashLen, L.q = P.c.len → 64 ≤ ho ∧ ho + L.q ≤ 256 + L.e)
+    (tm : TaintOk [.r9, .r10, .r11] (Cfg.msg P.c.len P.K.H.D b full ho))
     (t₂ : TaintOk [] (Cfg.hmacArgs₂ P.K.H.B [.addi .r5 .r12 sMsg] len))
     (t₃ : TaintOk [] (Cfg.hmacArgs₃ P.K.H.B len fK)) :
-    RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs ++ Cfg.msg P.c.len P.K.H.D b full))
+    RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs ++ Cfg.msg P.c.len P.K.H.D b full ho))
       (.seq (P.c.hmac [.addi .r5 .r12 sMsg] len fK) P.c.hmacV)) fun _ _ => True := by
   have hD := P.K.hH.hD64
   have hD4 := P.K.hH.hD4
   have hB : P.K.H.B ≤ 128 := by rcases P.K.hH.dims.B with h | h <;> omega
-  have hq := P.hk; have hk := P.hk12
-  have hlen' : len ≤ 161 := by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> omega
+  have hq := P.hk; have hk := P.hk16
+  have hlen' : len ≤ 193 := by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> omega
   refine (two_wp (Ψ := fun _ _ _ _ _ => True) (two_split (Φ := Φ) [.r9, .r10, .r11] msgP msgPtrs_blk
     (fun L _ _ _ _ hL hc => msgPtrs_two L hL hc) tm) fun L _ _ _ _ hL hLq hc _ => ?_).seq ?_
   · rw [← hLq]
-    exact WP.mono (msg_ok hL hc full hD4 hD (by rw [hLq]; omega) (by rw [hLq]; omega) (by omega))
+    have ⟨h₁, h₂⟩ := hho L hLq
+    exact WP.mono (msg_ok hL hc full ho hD4 hD (by rw [hLq]; omega) (by rw [hLq]; omega) h₁ (by rw [hLq] at h₂ ⊢; exact h₂)
+      (by omega))
       fun _ h => ⟨h.1, trivial⟩
   · exact (two_wp (Ψ := fun _ _ _ _ _ => True)
       (hmac_ct (da := fun L => L.scr + BitVec.ofNat 64 2256) (len := len) (dst := 32)
@@ -451,13 +457,19 @@ theorem rekey_gen_ct (B : Blks P.K P.c) {Φ : Pred P} {b : Nat} (hb : b < 2) {fu
 theorem rekeyFull_ct (B : Blks P.K P.c) {Φ : Pred P} (b : Nat) (hb : b < 2) :
     RelCT isa (Two P Φ) (P.c.rekeyFull b) fun _ _ => True := by
   rw [Cfg.rekeyFull, P.hcH]
+  have hho : ∀ L : Lay P.I.hashLen, L.q = P.c.len → 64 ≤ P.c.fHo ∧ P.c.fHo + L.q ≤ 256 + L.e := fun L hq => by
+    have ⟨h₁, h₂⟩ := lq_ok hq
+    rw [L.fHo_eq hq.symm]; omega
   obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
-  · exact rekey_gen_ct B hb (full := true) (len := P.K.H.D + 2 * P.c.len + 1) rfl B.m₀ B.a₂F B.a₃F
-  · exact rekey_gen_ct B hb (full := true) (len := P.K.H.D + 2 * P.c.len + 1) rfl B.m₁ B.a₂F B.a₃F
+  · exact rekey_gen_ct B hb (full := true) (len := P.K.H.D + 2 * P.c.len + 1) rfl hho B.m₀ B.a₂F B.a₃F
+  · exact rekey_gen_ct B hb (full := true) (len := P.K.H.D + 2 * P.c.len + 1) rfl hho B.m₁ B.a₂F B.a₃F
 
 theorem rekey_ct (B : Blks P.K P.c) {Φ : Pred P} : RelCT isa (Two P Φ) P.c.rekey fun _ _ => True := by
   rw [Cfg.rekey, P.hcH]
-  exact rekey_gen_ct B (b := 0) (by decide) (full := false) (len := P.K.H.D + 1) rfl B.mR B.a₂R B.a₃R
+  have hho : ∀ L : Lay P.I.hashLen, L.q = P.c.len → 64 ≤ fH ∧ fH + L.q ≤ 256 + L.e := fun L hq => by
+    have ⟨h₁, h₂⟩ := lq_ok hq
+    simp only [fH]; omega
+  exact rekey_gen_ct B (b := 0) (by decide) (full := false) (len := P.K.H.D + 1) rfl hho B.mR B.a₂R B.a₃R
 
 /-! ## One candidate -/
 
@@ -534,7 +546,7 @@ theorem tryOne_ct (B : Blks P.K P.c) {i : Nat} :
       rw [go_iff h.q h.f₁.lt h.f₁.fails, go_iff h.q h.f₂.lt h.f₂.fails, h.x]
     · refine RelCT.mono (P := Two P fun L _ _ m₀ u => Mid P L m₀ i u) ?_ (fun _ _ h => h.1) fun _ _ h => h
       exact (two_wp (Ψ := fun _ _ _ _ _ => True) (rekey_ct B) fun L g lr m₀ t hL hq hc _ =>
-        WP.mono (rekey_ok P.K P.hcH hq.symm hL (lq_le hq) (by rw [hq, P.hk]; omega) hc)
+        WP.mono (rekey_ok P.K P.hcH hq.symm hL (lq_ok hq) (by rw [hq, P.hk]; omega) hc)
           fun _ h => ⟨h.ctx, trivial⟩).seq (two_blk again_blk)
     · exact RelCT.mono (two_blk stop_blk) (fun _ _ h => h.1) fun _ _ h => h
   · rcases h with ⟨he, hx⟩ | ⟨he, hx⟩
@@ -618,7 +630,7 @@ theorem reduce_split (c : Cfg) :
 theorem rest_ct (B : Blks P.K P.c) :
     RelCT isa (Two P fun _ _ _ _ _ => True)
       (.seq (.block (P.c.reduce ++ Cfg.initKV)) (.seq (P.c.rekeyFull 0) (.seq (P.c.rekeyFull 1)
-        (.seq (.block P.c.initCnt) (.seq (.loop P.c.tryOne (.nonzero .d .r12)) (.block Cfg.wipe))))))
+        (.seq (.block P.c.initCnt) (.seq (.loop P.c.tryOne (.nonzero .d .r12)) (.block (Cfg.wipe P.c.hHigh)))))))
       fun _ _ => True := by
   refine (two_wp (Ψ := fun L _ _ m₀ u => QA P L m₀ u) (by
       rw [reduce_split]
@@ -630,16 +642,18 @@ theorem rest_ct (B : Blks P.K P.c) :
     (rekeyFull_ct B 1 (by decide)) fun L g lr m₀ t hL hq hc hb => stageC_ok hL hq hc hb).seq ?_
   refine (two_wp (Ψ := fun L _ _ m₀ u => LoopInv P L m₀ 0 u) (two_blk B.cnt)
     fun L g lr m₀ t hL _ hc hb => stageD_ok hL hc hb).seq ?_
-  exact (loop_ct B).seq (two_blk wipe_blk)
+  exact (loop_ct B).seq (two_blk (wipe_blk _))
 
 /-! ## The whole function -/
 
 /-- Two runs whose public data agree, as the contract says. -/
 def Pre2 (P : Rfc) (s₁ s₂ : State) : Prop :=
-  (rfcPPC P.I 400).pre s₁ ∧ (rfcPPC P.I 400).pre s₂ ∧ (rfcPPC P.I 400).pub s₁ s₂
+  (rfcPPC P.I (400 + extra P.c.hHigh)).pre s₁ ∧ (rfcPPC P.I (400 + extra P.c.hHigh)).pre s₂ ∧
+    (rfcPPC P.I (400 + extra P.c.hHigh)).pub s₁ s₂
 
 /-- In the inner frame's body. -/
-def Entered (P : Rfc) (a b : State) : Prop := ∃ σ₁ σ₂, Pre2 P σ₁ σ₂ ∧ a = entered σ₁ ∧ b = entered σ₂
+def Entered (P : Rfc) (a b : State) : Prop :=
+  ∃ σ₁ σ₂, Pre2 P σ₁ σ₂ ∧ a = entered (extra P.c.hHigh) σ₁ ∧ b = entered (extra P.c.hHigh) σ₂
 
 theorem lay_eq {σ₁ σ₂ : State} (h : Pre2 P σ₁ σ₂) :
     lay P.I.hashLen P.I.ecdsa.curve.len σ₁ = lay P.I.hashLen P.I.ecdsa.curve.len σ₂ := by
@@ -655,15 +669,18 @@ theorem block_two {is : List Instr} {R : State → State → Prop} (hsp : ∀ a 
 theorem save_ct : RelCT isa (Entered P) (.block Cfg.saveArgs) (Two P fun _ _ _ _ _ => True) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨ht, -⟩ := block_two (R := Entered P) (fun a b ⟨σ₁, σ₂, h, ea, eb⟩ => by
-      rw [ea, eb]; show σ₁.sp - 48 - BitVec.ofNat 64 256 = σ₂.sp - 48 - BitVec.ofNat 64 256; rw [h.2.2.1])
+      rw [ea, eb]; show σ₁.sp - 48 - BitVec.ofNat 64 (256 + extra P.c.hHigh) =
+        σ₂.sp - 48 - BitVec.ofNat 64 (256 + extra P.c.hHigh); rw [h.2.2.1])
     saveArgs_blk _ _ _ _ _ _ hp e₁ e₂
   obtain ⟨σ₁, σ₂, h, rfl, rfl⟩ := hp
-  obtain ⟨_, u₁, x₁, y₁⟩ := entry_ok h.1
-  obtain ⟨_, u₂, x₂, y₂⟩ := entry_ok h.2.1
+  obtain ⟨_, u₁, x₁, y₁⟩ := entry_ok (pre_conv h.1)
+  obtain ⟨_, u₂, x₂, y₂⟩ := entry_ok (pre_conv h.2.1)
+  rw [← e_eq (lay_q P σ₁)] at x₁
+  rw [← e_eq (lay_q P σ₂)] at x₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
   rw [← lay_eq h] at y₂
-  refine ⟨ht, _, _, _, _, _, _, _, lay_ok h.1, lay_q P σ₁, ?_, y₁, y₂, trivial, trivial⟩
+  refine ⟨ht, _, _, _, _, _, _, _, lay_ok (pre_conv h.1), lay_q P σ₁, ?_, y₁, y₂, trivial, trivial⟩
   obtain ⟨-, -, h4, h5, -, hr⟩ := h.2.2
   have e : (result P.I σ₁.mem (σ₁.gpr .r4) (σ₁.gpr .r5)).2 = (result P.I σ₂.mem (σ₁.gpr .r4) (σ₁.gpr .r5)).2 := by
     rw [hr, h4, h5]
@@ -672,7 +689,8 @@ theorem save_ct : RelCT isa (Entered P) (.block Cfg.saveArgs) (Two P fun _ _ _ _
 
 /-- Constant time: only the pointers and the number of candidates RFC 6979
 tries affect it. -/
-theorem sign_ct (B : Blks P.K P.c) : ConstantTime isa (rfcPPC P.I 400).pre (rfcPPC P.I 400).pub P.c.sign := by
+theorem sign_ct (B : Blks P.K P.c) :
+    ConstantTime isa (rfcPPC P.I (400 + extra P.c.hHigh)).pre (rfcPPC P.I (400 + extra P.c.hHigh)).pub P.c.sign := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   rw [Cfg.sign]
   refine RelCT.seq (R := fun a b => ∃ σ₁ σ₂, Pre2 P σ₁ σ₂ ∧ a = lrSaved σ₁ ∧ b = lrSaved σ₂) ?_ ?_

@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 public import VerifiedGarbage.Spec.MlKem.Kpke16
 
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR101
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc16
@@ -47,8 +48,8 @@ theorem nttOBY_correct (s : State) (hs : nttOK.pre s) :
     unfold nttOBY
     exact WP.mono (NttR.nttR_ok NttR.check_r10 (.inr rfl) hw hrf hwt hs.2.2.1 hs.2.2.2.1 hs.2.2.2.2.2.2)
       fun s' ⟨hP, hf, _⟩ => ⟨hP, hf⟩
-  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rdi, .r8, .r9] hW (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he
+  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rdi, .r8, .r9] hW (by lit_decide)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he
     (gprPreserved_of hk (by decide) hf (by simpa using ⟨hs.2.2.2.2.1, hs.2.2.2.2.2.1⟩)), hP⟩
 
 /-- `nttOK` of the polynomial of `u16`s at `rdi` (512 bytes). -/
@@ -71,8 +72,8 @@ theorem nttOBY16_correct (s : State) (hs : nttO16K.pre s) :
       Frame [pR (s.gpr .r10), pR (s.gpr .rsi)] s.mem s'.mem :=
     WP.mono (NttR.nttR16_ok NttR.check_r10 (.inr rfl) hw hrf hwt hs.2.2.1 hs.2.2.2.1 hs.2.2.2.2.2.2)
       fun s' ⟨hP, hf, _⟩ => ⟨hP, hf⟩
-  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rdi, .r8, .r9] hW (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he
+  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rdi, .r8, .r9] hW (by lit_decide)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he
     (gprPreserved_of hk (by decide) hf (by simpa using ⟨hs.2.2.2.2.1, hs.2.2.2.2.2.1⟩)), hP⟩
 
 theorem BodiesOk.avx2 : BodiesOk .avx2 accY tabY :=

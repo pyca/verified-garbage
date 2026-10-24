@@ -1,4 +1,5 @@
 import VerifiedGarbageTest.Ec.Common
+import VerifiedGarbageTest.Memo
 import VerifiedGarbage.Spec.Ecdsa.Verify
 import VerifiedGarbage.Spec.Sha1
 import VerifiedGarbage.Spec.Sha256
@@ -64,6 +65,37 @@ def parse (name : String) (count : Nat) (text : String) : Except String (List Ca
   unless vs.size == count do throw s!"expected {count} vectors, got {vs.size}"
   return vs.toList
 
+/-- `verifyWith`, with the multiples of `G` and of `Q` that it adds given by
+`mG` and `mQ`: `verifyWith C Q` when they are `mul` (`verify_eq`), so that
+the checks of a vector compute each multiple once (`Test.memo`). -/
+def verifyWithM (C : Curve) (mG mQ : Nat → Point C) (e r s : Nat) : Bool :=
+  if 1 ≤ r ∧ r < C.n ∧ 1 ≤ s ∧ s < C.n then
+    let w : Scalar C := pow (Fin.ofNat C.n s) (C.n - 2)
+    let u : Scalar C := Fin.ofNat C.n e * w
+    let v : Scalar C := Fin.ofNat C.n r * w
+    match add (mG u.val) (mQ v.val) with
+    | .infinity => false
+    | .affine x _ => x.val % C.n == r
+  else false
+
+/-- `verify`, with `verifyWithM` (`mQ (Q, v)` for `mul v Q`). -/
+def verifyM (C : Curve) (mG : Nat → Point C) (mQ : Point C × Nat → Point C)
+    (pub : List Byte) (e : Nat) (sig : List Byte) : Bool :=
+  match Spec.EcKey.decodePublicKey C pub with
+  | some Q => verifyWithM C mG (fun v => mQ (Q, v)) e (ofBytes (sig.take C.len))
+      (ofBytes (sig.drop C.len))
+  | none => false
+
+theorem verify_eq (C : Curve) (pub : List Byte) (e : Nat) (sig : List Byte) :
+    verify C pub e sig = verifyM C (mul · (G C)) (fun Qv => mul Qv.2 Qv.1) pub e sig :=
+  rfl
+
+/-- The scalars `u` and `v` of `G` and `Q` in `verifyWith` (for `r` and `s`
+in range). -/
+def scalars (C : Curve) (e r s : Nat) : Nat × Nat :=
+  let w : Scalar C := pow (Fin.ofNat C.n s) (C.n - 2)
+  ((Fin.ofNat C.n e * w).val, (Fin.ofNat C.n r * w).val)
+
 def checkVector (C : Curve) (v : Case) : Except String Unit := do
   let pt := point C.len
   let bytes := toBytes C.len
@@ -71,7 +103,16 @@ def checkVector (C : Curve) (v : Case) : Except String Unit := do
   let digest := H v.msg
   let e := hashToInt C digest
   let sig := bytes v.r ++ bytes v.s
-  unless verify C (pt v.qx v.qy) e sig == v.valid do
+  -- A valid vector's checks compute `uG` and `vQ` once, as `verify` with
+  -- them looked up is `verify` (`verify_eq`, `Test.memo_tableOf`).
+  let (u, w) := scalars C e v.r v.s
+  let mulG := (mul · (G C))
+  let mulQ := fun (Qv : Point C × Nat) => mul Qv.2 Qv.1
+  let Q : Point C := .affine (Fin.ofNat C.p v.qx) (Fin.ofNat C.p v.qy)
+  let tableG := if v.valid then Test.tableOf mulG [u] else []
+  let tableQ := if v.valid then Test.tableOf mulQ [(Q, w)] else []
+  let verify' := verifyM C (Test.memo tableG mulG) (Test.memo tableQ mulQ)
+  unless verify' (pt v.qx v.qy) e sig == v.valid do
     throw s!"{v.hash}, R = {v.r}: expected {v.valid}"
   -- The contract's hash argument (`Ecdsa.Instance.digestDoc`): the leftmost
   -- `len` octets, or `e` shifted left by the bits `hashToInt` drops (none
@@ -82,17 +123,17 @@ def checkVector (C : Curve) (v : Case) : Except String Unit := do
   if v.valid then
     -- Another hash, or a signature with `r` and `s` exchanged or out of
     -- range, is not valid.
-    if verify C (pt v.qx v.qy) (e + 1) sig then throw "accepted another hash"
-    if verify C (pt v.qx v.qy) e (bytes v.s ++ bytes v.r) then
+    if verify' (pt v.qx v.qy) (e + 1) sig then throw "accepted another hash"
+    if verify' (pt v.qx v.qy) e (bytes v.s ++ bytes v.r) then
       throw "accepted r and s exchanged"
     for (r, s) in [(0, v.s), (v.r, 0), (v.r + C.n, v.s), (v.r, v.s + C.n)] do
       if r < 2 ^ (8 * C.len) ∧ s < 2 ^ (8 * C.len) then
-        if verify C (pt v.qx v.qy) e (bytes r ++ bytes s) then
+        if verify' (pt v.qx v.qy) e (bytes r ++ bytes s) then
           throw s!"accepted r = {r}, s = {s}"
     -- The key must be uncompressed, below `p` and on the curve.
     for pub in [0x02 :: (pt v.qx v.qy).tail, 0x00 :: (pt v.qx v.qy).tail,
         pt v.qx (v.qy + 1), pt (v.qx + C.p) v.qy, pt v.qx (C.p - v.qy)] do
-      if verify C pub e sig then throw s!"accepted the key {pub}"
+      if verify' pub e sig then throw s!"accepted the key {pub}"
     -- `(x, p - y)` is `-Q`: on the curve, so only the signature fails.
     unless (Spec.EcKey.decodePublicKey C (pt v.qx (C.p - v.qy))).isSome do throw "-Q rejected"
 

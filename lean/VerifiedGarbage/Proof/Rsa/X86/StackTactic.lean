@@ -10,8 +10,10 @@ public meta import Lean.Elab.Tactic
 
 /-! # Compositional stack checks for RSA callers of the large square schedules
 
-Each structured node is proved from its children. The Montgomery callee
-reuses its checked theorem; only straight-line blocks are evaluated.
+Each structured node is proved from its children, and a code that occurs
+again by the proof of its first occurrence. The Montgomery callee and the
+given theorems (`rsa_stack_shape [h, …]`, for any arguments of their code)
+are reused; only straight-line blocks are evaluated.
 -/
 
 @[expose] public section
@@ -43,7 +45,13 @@ public meta section
 namespace VG.Proof.Rsa.X86.StackShape
 open Lean Meta Elab Tactic
 
-partial def proveNode (g : MVarId) (leaves : Array Expr) : TacticM Unit := do
+mutual
+
+/-- Proves `code.allInstrs noSp = true` from its children. A code that occurs
+again (callees' loops, selection blocks) takes the goal proved first:
+`memo` maps each closed code proved so far to its goal. -/
+partial def proveNode (g : MVarId) (leaves : Array Expr) (memo : IO.Ref (Std.HashMap Expr MVarId)) :
+    TacticM Unit := do
   setGoals [g]
   let ty ← instantiateMVars (← g.getType)
   let some (_,lhs,_) := ty.eq? | throwError "rsa_stack_shape: expected a Boolean equality"
@@ -51,12 +59,25 @@ partial def proveNode (g : MVarId) (leaves : Array Expr) : TacticM Unit := do
     evalTactic (← `(tactic| lit_decide))
     return
   let code := lhs.getAppArgs.back!
+  let closed := !code.hasFVar && !code.hasMVar
+  if closed then
+    if let some g' := (← memo.get)[code]? then
+      g.assign (mkMVar g')
+      setGoals []
+      return
+  proveNode' g code leaves memo
+  if closed then memo.modify (·.insert code g)
+
+/-- `proveNode` for a code not proved before. -/
+partial def proveNode' (g : MVarId) (code : Expr) (leaves : Array Expr)
+    (memo : IO.Ref (Std.HashMap Expr MVarId)) : TacticM Unit := do
   if code.isConstOf ``VG.Impl.Mont.X86.Sse2.atBody then
     evalTactic (← `(tactic| exact VG.Proof.Mont.X86.Sse2.atBody_allNoSp))
     return
-  if code.getAppFn.constName? == some ("VG.Impl.Rsa.X86.InvBatch.body".toName) then
+  -- A given theorem about code with the same head, for any of its arguments.
+  if code.getAppFn.isConst then
     for leaf in leaves do
-      let leafTy ← inferType leaf
+      let (mvs,_,leafTy) ← forallMetaTelescopeReducing (← inferType leaf)
       if let some (_,leafLhs,_) := leafTy.eq? then
         let leafCode := leafLhs.getAppArgs.back!
         if leafCode.getAppFn == code.getAppFn && leafCode.getAppArgs.size == code.getAppArgs.size then
@@ -64,7 +85,7 @@ partial def proveNode (g : MVarId) (leaves : Array Expr) : TacticM Unit := do
           for (a,b) in leafCode.getAppArgs.zip code.getAppArgs do
             unless ← isDefEq a b do matching := false
           if matching then
-            g.assign leaf
+            g.assign (← instantiateMVars (mkAppN leaf mvs))
             setGoals []
             return
   let node ← whnf code
@@ -75,11 +96,15 @@ partial def proveNode (g : MVarId) (leaves : Array Expr) : TacticM Unit := do
   | some ``VG.Code.call => evalTactic (← `(tactic| apply call_all))
   | some ``VG.Code.frame => evalTactic (← `(tactic| apply frame_all))
   | some ``VG.Code.block =>
-    evalTactic (← `(tactic| lit_decide))
+    -- No code these callers check has a literal: `lit_decide`'s search
+    -- for one would cost more than the kernel's check of the block.
+    evalTactic (← `(tactic| decide +kernel))
     return
   | _ => throwError "rsa_stack_shape: unexpected code node {node}"
   let children ← getGoals
-  for child in children do proveNode child leaves
+  for child in children do proveNode child leaves memo
+
+end
 
 partial def stackProof (code : Expr) : MetaM (Nat × Expr) := do
   if code.isConstOf ``VG.Impl.Mont.X86.Sse2.atBody then
@@ -134,14 +159,14 @@ elab "rsa_stack_use" : tactic => do
 elab "rsa_stack_shape" : tactic => do
   let goals ← getGoals
   let some main := goals.head? | throwNoGoalsToBeSolved
-  proveNode main #[]
+  proveNode main #[] (← IO.mkRef {})
   setGoals goals.tail!
 
 elab "rsa_stack_shape" "[" hs:term,* "]" : tactic => do
   let goals ← getGoals
   let some main := goals.head? | throwNoGoalsToBeSolved
   let leaves ← hs.getElems.mapM fun h => Elab.Term.elabTerm h none
-  proveNode main leaves
+  proveNode main leaves (← IO.mkRef {})
   setGoals goals.tail!
 
 end VG.Proof.Rsa.X86.StackShape

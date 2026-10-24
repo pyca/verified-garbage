@@ -20,8 +20,8 @@ As `Lit.lean`, for the feedback modes.
 
 namespace VG.Proof.Sm4.AArch64
 
-materialize_flat_code ofbCode := Impl.Sm4.AArch64.ofb
-materialize_flat_code cfbEncryptCode := Impl.Sm4.AArch64.cfbEncrypt
-materialize_flat_code cfbDecryptCode := Impl.Sm4.AArch64.cfbDecrypt
+materialize_code ofbCode := Impl.Sm4.AArch64.ofb
+materialize_code cfbEncryptCode := Impl.Sm4.AArch64.cfbEncrypt
+materialize_code cfbDecryptCode := Impl.Sm4.AArch64.cfbDecrypt
 
 end VG.Proof.Sm4.AArch64

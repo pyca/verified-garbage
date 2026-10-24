@@ -59,6 +59,15 @@ mod cmac_triple_des;
 mod dsa;
 mod dsa_parameters;
 mod ec_compressed;
+mod ec_compressed_brainpoolp256r1;
+mod ec_compressed_brainpoolp384r1;
+mod ec_compressed_brainpoolp512r1;
+mod ec_compressed_p192;
+mod ec_compressed_p224;
+mod ec_compressed_p256;
+mod ec_compressed_p384;
+mod ec_compressed_p521;
+mod ec_compressed_secp256k1;
 mod ecdh_brainpoolp256r1;
 mod ecdh_brainpoolp384r1;
 mod ecdh_brainpoolp512r1;
@@ -665,7 +674,15 @@ benches! {
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
     (ed448::USES, ed448::bench),
-    (ec_compressed::USES, ec_compressed::bench),
+    (ec_compressed_p192::USES, ec_compressed_p192::bench),
+    (ec_compressed_p224::USES, ec_compressed_p224::bench),
+    (ec_compressed_p256::USES, ec_compressed_p256::bench),
+    (ec_compressed_p384::USES, ec_compressed_p384::bench),
+    (ec_compressed_p521::USES, ec_compressed_p521::bench),
+    (ec_compressed_secp256k1::USES, ec_compressed_secp256k1::bench),
+    (ec_compressed_brainpoolp256r1::USES, ec_compressed_brainpoolp256r1::bench),
+    (ec_compressed_brainpoolp384r1::USES, ec_compressed_brainpoolp384r1::bench),
+    (ec_compressed_brainpoolp512r1::USES, ec_compressed_brainpoolp512r1::bench),
         (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),

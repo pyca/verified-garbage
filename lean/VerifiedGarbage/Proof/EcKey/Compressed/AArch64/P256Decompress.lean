@@ -26,6 +26,10 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64
 
 abbrev code : Prog isa := Impl.EcKey.Compressed.AArch64.decompress p256
 
+materialize_template mulT := Impl.Mont.AArch64.mul p256.MP'
+materialize_template addT := Impl.Mont.AArch64.add p256.MP'
+materialize_template subT := Impl.Mont.AArch64.sub p256.MP'
+
 materialize_shared baseline := code
 
  theorem ct : ConstantTime isa (decompressContract Spec.P256.curve Impl.EcKey.Compressed.rootThreeModFour).pre

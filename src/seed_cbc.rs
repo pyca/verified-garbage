@@ -12,15 +12,17 @@
 //! Both are the modes' generic CBC over `vg_seed_ecb_encrypt` and
 //! `vg_seed_ecb_decrypt`: on x86-64 and AArch64 over their batch of sixteen
 //! blocks, decryption deciphering sixteen blocks at a time and encryption
-//! one; on ARMv7 and x86 calling them once per block (a batch of eight, so
-//! about eight times ECB's cost). This module checks the lengths and holds
+//! one; on PPC64LE over the same batch, one block at a time in both
+//! directions; on ARMv7 and x86 calling them once per block (a batch of
+//! eight, so about eight times ECB's cost). This module checks the lengths and holds
 //! the key schedule.
 
 #![cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::seed::vg_seed_expand_key;

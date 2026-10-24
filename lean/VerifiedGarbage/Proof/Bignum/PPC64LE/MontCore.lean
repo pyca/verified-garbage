@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontMul
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -21,12 +22,12 @@ theorem idx_shift {x : BitVec 64} {o : Nat} (h : x.setWidth 32 = BitVec.ofNat 32
   rw [BitVec.ushiftRight_zero, h]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem shl1_ofNat (w : Nat) : BitVec.ofNat 64 w <<< 1 = BitVec.ofNat 64 (2 * w) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 /-- `args`: the addresses of the header words of `o`, `a` and `b`, less 64. -/
 theorem args_ok {s : State} {B : Addr} (h3 : s.gpr .r3 = B) {o a b : Nat} (ho : o < 8) (ha : a < 8)
@@ -60,10 +61,10 @@ theorem loads_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (h3 : s.gpr
   have h88 : s.mem.readW (off B 88) 64 = off B (slot w 3) := harr 3 (by decide)
   have h64 : s.mem.readW (off B 64) 64 = off B (slot w 0) := harr 0 (by decide)
   unfold loads
-  prun [h3, h5, h6, h7, hs.ld (show 8 * o + 64 + 8 ≤ Z by omega),
-    hs.ld (show 8 * a + 64 + 8 ≤ Z by omega), hs.ld (show 8 * b + 64 + 8 ≤ Z by omega), sArr, sW, sMinv,
-    Nat.reduceMul, Nat.reduceAdd, hs.ld (show 80 + 8 ≤ Z by omega), hs.ld (show 88 + 8 ≤ Z by omega),
-    hs.ld (show 64 + 8 ≤ Z by omega), hs.ld (show 48 + 8 ≤ Z by omega), hs.ld (show 56 + 4 ≤ Z by omega),
+  prun [h3, h5, h6, h7, hs.ld (show 8 * o + 64 + 8 ≤ Z by omega_arith),
+    hs.ld (show 8 * a + 64 + 8 ≤ Z by omega_arith), hs.ld (show 8 * b + 64 + 8 ≤ Z by omega_arith), sArr, sW, sMinv,
+    Nat.reduceMul, Nat.reduceAdd, hs.ld (show 80 + 8 ≤ Z by omega_arith), hs.ld (show 88 + 8 ≤ Z by omega_arith),
+    hs.ld (show 64 + 8 ≤ Z by omega_arith), hs.ld (show 48 + 8 ≤ Z by omega_arith), hs.ld (show 56 + 4 ≤ Z by omega_arith),
     harr o ho, harr a ha, harr b hb, h80, h88, h64, hw, shl1_ofNat w, BitVec.add_zero, toNat_ext32]
 
 /-- The registers the arithmetic writes: all the volatile ones but `r21`,
@@ -99,7 +100,7 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
-  have hdr56 : 56 + 4 ≤ slot w 2 := by have := hdr_lt_slot w 2 (i := 7) (by decide); omega
+  have hdr56 : 56 + 4 ≤ slot w 2 := by have := hdr_lt_slot w 2 (i := 7) (by decide); omega_arith
   have s0 := sl 0 (by decide)
   have s2 := sl 2 (by decide)
   have s3 := sl 3 (by decide)
@@ -115,21 +116,21 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have p3o := sp (Ne.symm ho3)
   unfold tail
   -- The accumulator := 0.
-  refine WP.seq (WP.mono (zeroAcc_ok hs i8 i11 hw' (by omega)) fun s₂ ⟨hz, out₂, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAcc_ok hs i8 i11 hw' (by omega_arith)) fun s₂ ⟨hz, out₂, k₂⟩ => ?_)
   have hs₂ := hs.congr k₂.wr
   have g₂ : ∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], s₂.gpr r = s.gpr r := fun r hr =>
     k₂.gpr r (by revert r hr; decide)
   have v₂ : ∀ {j}, j < 8 → j ≠ 2 → val32 s₂.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
-    fun hj hne => out₂.val32 (by have := sp hne; omega) (by have := sl _ hj; omega)
-  have w0₂ : w32 s₂.mem B (slot w 0) = w32 s.mem B (slot w 0) := out₂.w32 (by omega) (by omega)
+    fun hj hne => out₂.val32 (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
+  have w0₂ : w32 s₂.mem B (slot w 0) = w32 s.mem B (slot w 0) := out₂.w32 (by omega_arith) (by omega_arith)
   -- The rounds.
   refine WP.seq (WP.mono (rounds_ok (n := 2 * w) (da := slot w a) (dA := slot w 2) (dB := slot w b) (dM := slot w 0) hs₂ (by rw [g₂ .r6 (by decide), i6])
     (by rw [g₂ .r8 (by decide), i8]) (by rw [g₂ .r7 (by decide), i7]) (by rw [g₂ .r10 (by decide), i10])
     (by rw [g₂ .r11 (by decide), i11]) (by rw [g₂ .r4 (by decide), i4])
     (by rw [g₂ .r12 (by decide)]; exact i12)
-    (by rw [g₂ .r12 (by decide), w0₂]; exact hinv) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega)
-    (val32_zero fun j hj => hz j (by omega))
+    (by rw [g₂ .r12 (by decide), w0₂]; exact hinv) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (val32_zero fun j hj => hz j (by omega_arith))
     (by rw [v₂ hb hb2, v₂ (by decide) (by decide)]; exact hB))
     fun s₃ ⟨⟨tlt, teq, out₃⟩, k₃⟩ => ?_)
   rw [v₂ (by decide) (by decide)] at tlt teq
@@ -138,45 +139,45 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have g₃ : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₃.gpr r = s.gpr r := fun r hr => by
     rw [k₃.gpr r (by revert r hr; decide), g₂ r (by revert r hr; decide)]
   have v₃ : ∀ {j}, j < 8 → j ≠ 2 → val32 s₃.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
-    fun hj hne => (out₃.val32 (by have := sp hne; omega) (by have := sl _ hj; omega)).trans (v₂ hj hne)
+    fun hj hne => (out₃.val32 (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans (v₂ hj hne)
   -- `T - m`.
   refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 2) (dT := slot w 3) (dM := slot w 0) hs₃ (by rw [g₃ .r8 (by decide), i8])
     (by rw [g₃ .r9 (by decide), i9]) (by rw [g₃ .r10 (by decide), i10]) (by rw [g₃ .r11 (by decide), i11])
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega))
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₄ ⟨⟨c, hc, hD, h20⟩, out₄, k₄⟩ => ?_)
   rw [v₃ (by decide) (by decide)] at hD
   have hs₄ := hs₃.congr k₄.wr
   have g₄ : ∀ r ∈ [Reg.r5, .r8, .r9, .r11], s₄.gpr r = s.gpr r := fun r hr => by
     rw [k₄.gpr r (by revert r hr; decide), g₃ r (by revert r hr; decide)]
   have accA : val32 s₄.mem B (slot w 2) (2 * w) = val32 s₃.mem B (slot w 2) (2 * w) :=
-    out₄.val32 (by omega) (by omega)
+    out₄.val32 (by omega_arith) (by omega_arith)
   -- The selection.
   refine WP.mono (selectAcc_ok (n := 2 * w) (dA := slot w 2) (dT := slot w 3) (dO := slot w o) (b := decide (w32 s₃.mem B (slot w 2 + 4 * (2 * w)) < c)) hs₄
     (by rw [g₄ .r8 (by decide), i8]) (by rw [g₄ .r9 (by decide), i9]) (by rw [g₄ .r5 (by decide), i5])
     (by rw [g₄ .r11 (by decide), i11]) (by rw [h20]; simp only [decide_eq_true_eq])
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega))
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨hv, out₅, k₅⟩ => ?_
   rw [accA] at hv
   have hM := val32_lt s.mem B (slot w 0) (2 * w)
-  have hM0 : 0 < val32 s.mem B (slot w 0) (2 * w) := by omega
+  have hM0 : 0 < val32 s.mem B (slot w 0) (2 * w) := by omega_arith
   have pw : 2 ^ (32 * (2 * w)) = 2 ^ (64 * w) := by rw [← Nat.mul_assoc]
   rw [val32_succ] at tlt teq
   have hres : val32 t.mem B (slot w o) (2 * w) =
       (val32 s₃.mem B (slot w 2) (2 * w) + 2 ^ (32 * (2 * w)) * (w32 s₃.mem B (slot w 2 + 4 * (2 * w)) +
         2 ^ 64 * 0)) % val32 s.mem B (slot w 0) (2 * w) := by
-    rw [hv, ← VG.Proof.Bignum.csub_result hM (val32_lt _ _ _ _) hc (val32_lt _ _ _ _) (by omega) hD]
+    rw [hv, ← VG.Proof.Bignum.csub_result hM (val32_lt _ _ _ _) hc (val32_lt _ _ _ _) (by omega_arith) hD]
     by_cases h : w32 s₃.mem B (slot w 2 + 4 * (2 * w)) < c <;> simp [h]
   rw [Nat.mul_zero, Nat.add_zero] at hres
   refine ⟨⟨?_, ?_, ?_⟩, ?_⟩
   · rw [hres]; exact Nat.mod_lt _ hM0
   · rw [hres, ← pw, Nat.mod_mul_mod, Nat.mul_comm, teq]
   · refine Outs.trans (Outs.of_outside (o := slot w 2) (n := 8 * (w + 2))
-      (out₂.mono (Nat.le_refl _) (by omega)) (by simp)) ?_
+      (out₂.mono (Nat.le_refl _) (by omega_arith)) (by simp)) ?_
     refine Outs.trans (Outs.of_outside (o := slot w 2) (n := 8 * (w + 2))
-      (out₃.mono (Nat.le_refl _) (by omega)) (by simp)) ?_
+      (out₃.mono (Nat.le_refl _) (by omega_arith)) (by simp)) ?_
     refine Outs.trans (Outs.of_outside (o := slot w 3) (n := 8 * (w + 2))
-      (out₄.mono (Nat.le_refl _) (by omega)) (by simp)) ?_
-    exact Outs.of_outside (o := slot w o) (n := 8 * (w + 2)) (out₅.mono (Nat.le_refl _) (by omega)) (by simp)
+      (out₄.mono (Nat.le_refl _) (by omega_arith)) (by simp)) ?_
+    exact Outs.of_outside (o := slot w o) (n := 8 * (w + 2)) (out₅.mono (Nat.le_refl _) (by omega_arith)) (by simp)
   · exact (((k₂.trans k₃).trans k₄).trans k₅).mono
 
 end VG.Proof.Bignum.PPC64LE

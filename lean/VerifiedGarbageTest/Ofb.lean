@@ -1,4 +1,5 @@
 import VerifiedGarbageTest.Cbc
+import VerifiedGarbageTest.Memo
 import VerifiedGarbage.Spec.Ofb
 
 /-!
@@ -22,6 +23,34 @@ Each vector is also checked:
 namespace VG.Test.Ofb
 
 open Lean Elab Command Test.Aes Spec.Ofb
+open Spec.Cbc (Cipher)
+
+/-- `aesOfb` with the block cipher given: `aesOfb key` is `aesOfbWith` of
+AES under `key` (`aesOfb_eq`). -/
+def aesOfbWith (ciph : Cipher) (iv x : List Byte) : List Byte :=
+  List.zipWith (· ^^^ ·) x (outputs ciph iv ((x.length + 15) / 16)).flatten
+
+theorem aesOfb_eq (key iv x : List Byte) :
+    aesOfb key iv x = aesOfbWith
+      (Spec.Cbc.aesWith (Spec.Aes.rounds (key.length / 4)) (Spec.Aes.expandKey key)) iv x :=
+  rfl
+
+/-- The `n` blocks the output blocks from `x` are computed from, each with
+its output block. -/
+def chain (ciph : Cipher) : List Byte → Nat → List (List Byte × List Byte)
+  | _, 0 => []
+  | x, n + 1 => let y := ciph x; (x, y) :: chain ciph y n
+
+theorem chain_ok (ciph : Cipher) (x : List Byte) (n : Nat) :
+    ∀ p ∈ chain ciph x n, p.2 = ciph p.1 := by
+  induction n generalizing x with
+  | zero => intro p hp; cases hp
+  | succ n ih =>
+    intro p hp
+    simp only [chain, List.mem_cons] at hp
+    rcases hp with rfl | hp
+    · rfl
+    · exact ih _ p hp
 
 run_cmd do
   let mut n : Nat := 0
@@ -44,15 +73,19 @@ run_cmd do
         let (input, output) := if dir == "ENCRYPT" then (pt, ct) else (ct, pt)
         unless aesOfb key iv input == output do
           throwError "{name}, COUNT = {count}: AES-OFB {dir} is wrong"
-        -- In two pieces, the second from the block the first leaves.
+        -- The other checks encrypt the same blocks again: each is computed
+        -- once, in `ciph'`, which is `ciph` (`memo_eq`, `chain_ok`).
         let bs := Spec.Cbc.blocks input
-        let iv' := next ciph iv 1
-        unless (crypt ciph iv (bs.take 1) ++ crypt ciph iv' (bs.drop 1)).flatten == output do
+        let ciph' := Test.memo (chain ciph iv bs.length) ciph
+        -- In two pieces, the second from the block the first leaves.
+        let iv' := next ciph' iv 1
+        unless (crypt ciph' iv (bs.take 1) ++ crypt ciph' iv' (bs.drop 1)).flatten == output do
           throwError "{name}, COUNT = {count}: AES-OFB {dir} in two pieces is wrong"
         -- With a partial last block.
         for k in List.range 15 do
           let len := input.length - 15 + k
-          unless aesOfb key iv (input.take len) == output.take len do
+          -- `aesOfb key iv (input.take len)` (`aesOfb_eq`).
+          unless aesOfbWith ciph' iv (input.take len) == output.take len do
             throwError "{name}, COUNT = {count}: AES-OFB {dir} of {len} bytes is wrong"
         n := n + 1
   unless n == 60 do throwError "expected 60 vectors, checked {n}"

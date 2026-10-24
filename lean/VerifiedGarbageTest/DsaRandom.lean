@@ -24,12 +24,15 @@ open Lean Elab Command Spec.Dsa
 
 -- Exhaustive small-domain check: every accepted scalar has the same number
 -- of one-byte preimages. This is a regression, not a general uniformity proof.
+-- Each byte is sampled once, and `counts[k]` is the number of bytes giving `k`.
 #guard (List.range 254).all fun i =>
   let q := i + 2
-  let counts := (List.range (q - 1)).map fun j =>
-    ((List.range 256).filter fun b =>
-      (Random.sample q 1 [BitVec.ofNat 8 b]).scalar == some (j + 1)).length
-  counts.all (· == 256 / 2 ^ bitLength q)
+  let counts := (List.range 256).foldl (fun (counts : Array Nat) b =>
+      match (Random.sample q 1 [BitVec.ofNat 8 b]).scalar with
+      | some k => if k < q then counts.modify k (· + 1) else counts
+      | none => counts)
+    (Array.replicate q 0)
+  (List.range (q - 1)).all fun j => counts[j + 1]! == 256 / 2 ^ bitLength q
 
 #assert_standard_axioms Spec.Dsa.randomSignContract
 #assert_no_compiler_overrides Spec.Dsa.randomSignApi

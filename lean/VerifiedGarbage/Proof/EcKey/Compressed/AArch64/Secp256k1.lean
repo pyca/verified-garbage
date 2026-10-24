@@ -4,9 +4,11 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Main
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.CheckVerified
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64

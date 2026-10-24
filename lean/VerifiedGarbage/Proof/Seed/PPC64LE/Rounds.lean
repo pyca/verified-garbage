@@ -54,7 +54,7 @@ structure RoundsInv (d : Spec.Seed.Direction) (s₀ : State) (m : Nat) (s : Stat
   sp : s.sp = s₀.sp
   r3 : s.gpr .r3 = kp d (s₀.gpr .r3) (16 - m)
   r7 : s.gpr .r7 = BitVec.ofNat 64 m
-  regs : ∀ r ∈ [Reg.r4, .r5, .r8], s.gpr r = s₀.gpr r
+  regs : ∀ r ∈ [Reg.r2, .r4, .r5, .r6, .r8], s.gpr r = s₀.gpr r
   frame : Frame [workR s₀] s₀.mem s.mem
 
 theorem contains_prefix {a : Addr} {k n : Nat} (h : k ≤ n) : (⟨a, n⟩ : Region).Contains a k := by
@@ -70,7 +70,7 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
     WP isa (rounds d) s (fun s' =>
       (∀ b < 16, quad s' b = roundsN (keysAt d s.mem (s.gpr .r3)) 16 (quad s b)) ∧
       Room s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ r ∈ [Reg.r3, .r4, .r5, .r8], s'.gpr r = s.gpr r) ∧
+      (∀ r ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r8], s'.gpr r = s.gpr r) ∧
       Frame [workR s] s.mem s'.mem) := by
   let s1 := s.write .r7 (BitVec.ofNat 64 16)
   have e1 : runBlock isa [.li .r7 16] s = some s1 := by
@@ -84,7 +84,7 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
     obtain ⟨hk0, hk1, hdis⟩ := hk (16 - m) hi
     have hk0' : InRegions (t.rd ++ t.wr) (t.gpr .r3) 4 := by rw [inv.rd, inv.wr, inv.r3]; exact hk0
     have hk1' : InRegions (t.rd ++ t.wr) (t.gpr .r3 + 4) 4 := by rw [inv.rd, inv.wr, inv.r3]; exact hk1
-    obtain ⟨t', ht', hq, hroom, hrd, hwr, hsp, hr3, hr7, hx1, hx2, hx5, hfr⟩ :=
+    obtain ⟨t', ht', hq, hroom, hrd, hwr, hsp, hr3, hr7, hx1, hx2, hx0, hx6, hx5, hfr⟩ :=
       round_ok d inv.room hk0' hk1'
     -- The key, from the original memory.
     have hkey : (t.mem.readW (t.gpr .r3) 32, t.mem.readW (t.gpr .r3 + 4) 32) =
@@ -105,12 +105,14 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
         roundsN_succ]
     have hr7' : t'.gpr .r7 = BitVec.ofNat 64 (m - 1) := by
       rw [hr7, inv.r7, r7_sub m inv.le.1 inv.le.2]
-    have hregs : ∀ r ∈ [Reg.r4, .r5, .r8], t'.gpr r = s.gpr r := by
+    have hregs : ∀ r ∈ [Reg.r2, .r4, .r5, .r6, .r8], t'.gpr r = s.gpr r := by
       intro r hr
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · rw [hx0]; exact inv.regs _ (by simp)
       · rw [hx1]; exact inv.regs _ (by simp)
       · rw [hx2]; exact inv.regs _ (by simp)
+      · rw [hx6]; exact inv.regs _ (by simp)
       · rw [hx5]; exact inv.regs _ (by simp)
     have hframe : Frame [workR s] s.mem t'.mem := by
       refine inv.frame.trans ?_
@@ -130,10 +132,11 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
       · have : quad u b = quad t' b := by simp only [quad, u, lv_write _ _ (show ¬ Reg.r8 = .r3 by decide)]
         rw [this, hquads b hb]
       · simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
-        rcases hr with rfl | hr
+        rcases hr with rfl | rfl | hr
+        · rw [gpr_write_of_ne _ _ (by decide)]; exact hregs _ (by simp)
         · rw [gpr_write_self, hr3, inv.r3, kp_succ, kp_back]
-        · rw [gpr_write_of_ne _ _ (by rcases hr with rfl | rfl | rfl <;> decide)]
-          exact hregs _ (by simpa using hr)
+        · rw [gpr_write_of_ne _ _ (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]
+          exact hregs _ (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; exact .inr hr)
     · right
       refine ⟨?_, m - 1, by omega, ⟨by have := inv.le; omega, hquads, hroom, by rw [hrd, inv.rd],
         by rw [hwr, inv.wr], by rw [hsp, inv.sp], ?_, hr7', hregs, hframe⟩⟩
@@ -151,6 +154,6 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
   · refine ⟨by omega, fun b _ => by rw [q1]; rfl, room_congr h rfl rfl, rfl, rfl, rfl,
       by simp [s1, kp, gpr_write], rfl, fun r hr => ?_, Frame.refl _ _⟩
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 end VG.Proof.Seed.PPC64LE

@@ -434,20 +434,35 @@ def preS (x : ChaCha20.X86_64.Callee) : Prog isa :=
 
 /-! ### `open`'s prologue
 
-With at least one whole chunk and 1 to 64 bytes after the whole chunks (the
-length 1 to 64 bytes past a multiple of 512, from 513 on), `open`'s prologue
-computes the one-time key's block with the block of those bytes (`twoKs`), as
-two lanes of `Avx2Tail`'s code for one set of two blocks, whose rounds take
-about as long as the one block `vg_chacha20_xor` would compute; `decRest`
-then decrypts those bytes from it. (`seal` gains nothing from it: its tail's
-rounds, `tailS`, run while the last chunk is absorbed.) -/
+With more than `fold` (448) bytes of data, `open`'s prologue computes the
+one-time key's block with the block of the last bytes in the two lanes of
+`Avx2Tail`'s code for one set of two blocks (`twoKs`), or with the three
+blocks of 65 to 192 bytes after the whole chunks in two sets (`fourKs`),
+rather than calling `vg_chacha20_xor` for the key's block alone, which on a
+Zen 3 (EPYC 7763) costs about 20 ns more: its AVX2 code passes one block to
+the scalar code, which calls `vg_chacha20_block`. `decRest` decrypts 1 to 192
+bytes after the whole chunks from those blocks; for other lengths `twoKs`'s
+second block goes unused. An implementation of `vg_chacha20_xor` that keeps
+short data in `ymm` registers (`vl`) computes the key's block fast, and is
+called but from 513 bytes on with 1 to 192 bytes after the whole chunks
+(`xselV`). (`seal` gains nothing from it: its tail's rounds, `tailS`, run
+while the last chunk is absorbed.) -/
 
-/-- `CF` set if the data's length (`r13`) is at least 513 and 1 to 64 bytes
-past a multiple of 512: `rax` is `(len - 1) mod 512`, or 64 below 513, and is
-compared with 64; `r10` is scratch. -/
-def xTest : List Instr :=
+/-- `CF` set if the data's length (`r13`) is at least 513 and 1 to 192 bytes
+past a multiple of 512: `rax` is `(len - 1) mod 512`, or 192 below 513, and
+is compared with 192; `r10` is scratch. -/
+def xTestV : List Instr :=
   [.mov .rax (.reg .r13), .alu .sub .rax (.imm 1), .alu .and .rax (.imm 511), .mov32 .r10 (.imm 192),
    .alu .cmp .r13 (.imm 513), .cmov .b .rax (.reg .r10), .alu .cmp .rax (.imm 192)]
+
+/-- `CF` set if the data's length (`r13`) is at most `fold` (448), for which
+the prologue calls `vg_chacha20_xor`; `rax` is `(len - 1) mod 512`. -/
+def xTest : List Instr :=
+  [.mov .rax (.reg .r13), .alu .sub .rax (.imm 1), .alu .and .rax (.imm 511), .alu .cmp .r13 (.imm 449)]
+
+/-- `CF` set if `rax` is from 64 to 191 (`rax - 64 < 128`, unsigned): 65 to
+192 bytes after the whole chunks, whose three blocks `fourKs` computes. -/
+def fTest : List Instr := [.alu .sub .rax (.imm 64), .alu .cmp .rax (.imm 128)]
 
 /-- The constants of `twoKs`, at `rcx` (`ctx + 672`): the masks
 (`Avx2.consts`), and the first set's lane increments, `0` and the counter of
@@ -470,11 +485,18 @@ def fourConsts : List Instr :=
 bytes into `ctx[672, 800)`, from the state at `rdi` (`ctx + 608`, counter 0),
 with `buf` for `Avx2Tail`'s code at `ctx + 672` (its constants past the
 keystream); then `rsi` at `buf`, as the call of `vg_chacha20_xor` leaves it. -/
-def twoKs (vl : Bool) : Prog isa :=
+def twoKsB (vl : Bool) : Prog isa :=
   .seq (.block (ptr .rcx .r15 672 ++ twoConsts ++ ([.mov .r9 (.reg .rcx)] : List Instr)))
   (.seq (.seq (.block ChaCha20.X86_64.Avx2Tail.setup1) (.seq (ChaCha20.X86_64.Avx2Tail.roundsS vl 1 10)
       (.block (ChaCha20.X86_64.Avx2Tail.addIn1 ++ ChaCha20.X86_64.Avx2Tail.storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))))
     (.block (([.vop .vzeroupper] : List Instr) ++ ptr .rsi .r15 128)))
+
+/-- `twoKsB`, padded to keep the code after the prologue at its offset
+modulo 64 before `twoKs` replaced the call past 448 bytes (Zen 3 ran `open`'s
+code for 16 to 448 bytes, and the tail of 193 to 256 bytes, up to 2% slower
+when it moved by 9 bytes). -/
+def twoKs (vl : Bool) : Prog isa :=
+  .seq (twoKsB vl) (.block (padIns .rax 9))
 
 /-- As `twoKs` with two sets: the one-time key's block and the three blocks
 of the last 65 to 192 bytes into `ctx[672, 928)`. -/
@@ -485,13 +507,31 @@ def fourKs (vl : Bool) : Prog isa :=
         ChaCha20.X86_64.Avx2Tail.storeSet .xmm4 .xmm5 .xmm6 .xmm7 128))))
     (.block (([.vop .vzeroupper] : List Instr) ++ ptr .rsi .r15 128)))
 
-/-- `prologue`, by `twoKs` instead of the call of `vg_chacha20_xor` for the
-lengths `xTest` picks. -/
+/-- The choice of an implementation that keeps short data in `ymm`
+registers (`vl`): `twoKsB` or `fourKs` for the lengths `xTestV` picks, from
+513 bytes on, otherwise the call, whose code computes the key's block in
+`ymm` registers too (a Zen 5, EPYC 9V45, ran 449 to 513 bytes up to 20%
+slower with `twoKs`). -/
+def xselV (x : ChaCha20.X86_64.Callee) : Prog isa :=
+  .seq (.block xTestV) (.ite .b
+    (.seq (.block [.alu .cmp .rax (.imm 64)]) (.ite .b (twoKsB x.vl) (fourKs x.vl)))
+    (.call x.name x.code))
+
+/-- The choice of the others: the call up to `fold` bytes, otherwise `twoKs`
+or `fourKs`. -/
+def xselA (x : ChaCha20.X86_64.Callee) : Prog isa :=
+  .seq (.block xTest) (.ite .b (.call x.name x.code)
+    (.seq (.block fTest) (.ite .b (fourKs x.vl) (twoKs x.vl))))
+
+/-- The prologue's choice: the one-time key's block alone (the call) or with
+the tail's block (`twoKs`) or three (`fourKs`). -/
+def xsel (x : ChaCha20.X86_64.Callee) : Prog isa :=
+  if x.vl then xselV x else xselA x
+
+/-- `prologue`, by `twoKs` or `fourKs` instead of the call of
+`vg_chacha20_xor` for the lengths `xsel` picks. -/
 def prologueX (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (prologueA x.fold x.pass x.wide)
-  (.seq (.seq (.block xTest) (.ite .b
-    (.seq (.block [.alu .cmp .rax (.imm 64)]) (.ite .b (twoKs x.vl) (fourKs x.vl)))
-    (.call x.name x.code))) prologueB)
+  .seq (prologueA x.fold x.pass x.wide) (.seq (xsel x) prologueB)
 
 /-- `crypt`, with `rbx`, `rbp` set to the ciphertext not yet absorbed: the
 whole chunks are encrypted and absorbed by `bigS` or `preS`, with the rest if

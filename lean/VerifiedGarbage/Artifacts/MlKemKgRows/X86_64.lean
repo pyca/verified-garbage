@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgNttV
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgRowV
 public import VerifiedGarbage.Proof.Framework.Registration

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCode
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Precomputed RSA public operation: with AVX512_IFMA: the variant's code and proofs
@@ -26,9 +28,9 @@ def variant : PublicImpl where
   code := Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm
   ok := Ifma.Pub.checked_correct _ (by decide +kernel)
   ct := Ifma.Pub.checked_ct _ FoldedPublic.adx_final_ct
-  nosp := noSp_of (by decide +kernel)
-  depth := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  nosp := noSp_of (by lit_decide)
+  depth := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 

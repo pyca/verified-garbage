@@ -76,6 +76,11 @@ inductive SymPart
   labels `2` and `3` reads (ARMv7's `adrSym`), closing the parenthesis the
   text opened: `<sym> - (2f + 2 * (3f - 2f)))`. -/
   | armPcRel
+  /-- PPC64LE's distance from the local label `2` (the `mflr` after
+  `adrSym`'s `bcl`), adjusted high half or low half, closing the
+  parenthesis the text opened: `<sym> - 2b)@ha` or `<sym> - 2b)@l`. -/
+  | ppcHa
+  | ppcLo
   deriving DecidableEq, Repr
 
 /-- A line of assembly: text, a call instruction of the function it names,

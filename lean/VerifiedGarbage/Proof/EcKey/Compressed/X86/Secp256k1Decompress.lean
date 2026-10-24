@@ -5,8 +5,17 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.LitAlias
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitAlias
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
@@ -23,15 +32,20 @@ open VG.Proof.Ecdsa.X86.Secp256k1
 
 abbrev code : Prog isa := Impl.EcKey.Compressed.X86.decompress secp256k1
 
+materialize_aliases fns := code
 materialize_shared baseline := code
 
 theorem sp : SpOk code 28 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
+taint_summary mulCodecSum : taint (codecMulT (2 * Spec.Secp256k1.curve.len + 1))
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.secp256k1p.k Spec.Weierstrass.Mont.secp256k1p.m)
+
 theorem ct : ConstantTime isa (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pre
     (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pub code := by
-  apply VG.Taint.constantTime (A := taint) (codecT (2 * Spec.Secp256k1.curve.len + 1))
-  · exact fun _ _ hs ht hp => codec_agree hs ht hp
-  · taint_decide
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (codecT (2 * Spec.Secp256k1.curve.len + 1)) code h).isSome = true := by
+    native_taint_decide_sum [mulCodecSum]
+  exact VG.Taint.constantTime (A := taint) (codecT (2 * Spec.Secp256k1.curve.len + 1))
+    (fun _ _ hs ht hp => codec_agree hs ht hp) hc
 
 theorem sat : ∃ s, (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 28).pre s := by
   have a0 : arg (satState 33 65) 0 = 0x1000 := by decide

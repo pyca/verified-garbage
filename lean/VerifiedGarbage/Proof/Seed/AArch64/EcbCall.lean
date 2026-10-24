@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Seed.AArch64.Lit
+meta import VerifiedGarbage.Proof.Seed.AArch64.Lit
 
 /-!
 # SEED ECB on AArch64: calls of the blocks functions

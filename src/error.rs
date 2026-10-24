@@ -90,6 +90,10 @@ mod tests {
             crate::triple_des_cbc::Error::IncompleteBlock,
             crate::idea_cbc::Error::InvalidKeyLength,
             crate::idea_cbc::Error::IncompleteBlock,
+            crate::seed_cbc::Error::InvalidKeyLength,
+            crate::seed_cbc::Error::IncompleteBlock,
+            crate::camellia_cbc::Error::InvalidKeyLength,
+            crate::camellia_cbc::Error::IncompleteBlock,
             crate::aes_xts::Error::InvalidKeyLength,
             crate::aes_xts::Error::EqualKeyHalves,
             crate::aes_xts::Error::DataUnitTooShort,
@@ -98,10 +102,20 @@ mod tests {
             crate::blowfish_cbc::Error::IncompleteBlock,
         );
         check!(
+            crate::aes_ocb::Error::InvalidKeyLength,
+            crate::aes_ocb::Error::InvalidNonceLength,
+            crate::aes_ocb::Error::TagMismatch,
+        );
+        check!(
             crate::aes_gcm_siv::Error::InvalidKeyLength,
             crate::aes_gcm_siv::Error::InvalidTextLength,
             crate::aes_gcm_siv::Error::InvalidAadLength,
             crate::aes_gcm_siv::Error::TagMismatch,
+        );
+        check!(
+            crate::aes_siv::Error::InvalidKeyLength,
+            crate::aes_siv::Error::TooManyComponents,
+            crate::aes_siv::Error::TagMismatch,
         );
         check!(
             crate::aes_ccm::Error::InvalidKeyLength,
@@ -124,14 +138,6 @@ mod tests {
             crate::aes_gcm::Error::AadAfterText,
             crate::aes_gcm::Error::InvalidOutputLength,
             crate::aes_gcm::Error::TooManyPieces,
-            crate::aes_ocb::Error::InvalidKeyLength,
-            crate::aes_ocb::Error::InvalidNonceLength,
-            crate::aes_ocb::Error::TagMismatch,
-            crate::aes_siv::Error::InvalidKeyLength,
-            crate::aes_siv::Error::TooManyComponents,
-            crate::aes_siv::Error::TagMismatch,
-            crate::camellia_cbc::Error::InvalidKeyLength,
-            crate::camellia_cbc::Error::IncompleteBlock,
             crate::cast5_ecb::Error::InvalidKeyLength,
             crate::cast5_ecb::Error::IncompleteBlock,
             crate::chacha20poly1305::Error::InvalidTextLength,
@@ -156,8 +162,6 @@ mod tests {
             crate::mlkem_common::Error::SampleBound,
             crate::mlkem_common::Error::InvalidKey,
             crate::mlkem_common::Error::Randomness,
-            crate::seed_cbc::Error::InvalidKeyLength,
-            crate::seed_cbc::Error::IncompleteBlock,
             crate::sm4_ecb::Error::IncompleteBlock,
             crate::triple_des_cbc::Error::InvalidKeyLength,
             crate::triple_des_cbc::Error::IncompleteBlock,
