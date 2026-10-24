@@ -228,7 +228,7 @@ r6)`. `x0 … xF` and `z0 … zF` are kept in the working space at `xOff` and
 `zOff` (`Impl.Cast5.off`), a byte each; a group's four extra lookups at
 `extraOff`. Each half of §2.4 is 40 steps: for each of its eight groups of
 lines, the group's extra lookups, then its four lines. The step's number is
-in `stp`, the halves left in `halves`, and the next half's subkeys at
+in `stp`, the halves left in `hlv`, and the next half's subkeys at
 `out`. -/
 
 abbrev key : Reg := .r3
@@ -237,7 +237,7 @@ abbrev out : Reg := .r5
 abbrev wkK : Reg := .r6
 abbrev dst : Reg := .r7
 abbrev stp : Reg := .r11
-abbrev halves : Reg := .r12
+abbrev hlv : Reg := .r12
 
 /-- Where a group's extra lookups are kept: `S8, S7, S6, S5` of its extra bytes. -/
 def extraOff : Nat := 48
@@ -308,7 +308,7 @@ def step : Prog isa :=
 /-- A half: its 40 steps, then `out` on 64 bytes and the halves left down. -/
 def half : Prog isa :=
   .seq (.block [.li stp 0]) (.seq (.loop step (.nonzero .d tmp))
-    (.block [.addi out out 64, .subi halves halves 1]))
+    (.block [.addi out out 64, .subi hlv hlv 1]))
 
 /-- Copy a key byte to `x`: `key` at the next key byte, `dst` at its place in
 `x`, `klen` the count left. -/
@@ -321,6 +321,6 @@ def expandKey : Prog isa :=
   .seq (.block (prologue wkK s5678Sym ++
       ([.store .d zero wkK xOff, .store .d zero wkK (xOff + 8), .addi dst wkK xOff] : List Instr)))
     (.seq (.loop (.block copyStep) (.nonzero .d klen))
-      (.seq (.block [.li halves 2]) (.seq (.loop half (.nonzero .d halves)) (.block (epilogue wkK)))))
+      (.seq (.block [.li hlv 2]) (.seq (.loop half (.nonzero .d hlv)) (.block (epilogue wkK)))))
 
 end VG.Impl.Cast5.PPC64LE

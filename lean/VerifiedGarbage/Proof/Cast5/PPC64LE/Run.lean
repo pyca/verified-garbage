@@ -56,7 +56,7 @@ macro_rules
   | `(tactic| c5run [$ls,*]) => `(tactic|
       crun [List.cons_append, List.nil_append, ↓read_one, ↓read_four, ↓read_eight, write_eight,
         write_four, false_implies, zero, tbl, c255, num, ep, tmp, wd, vI, vKr, msk, mov, sch, rnd, dat,
-        cnt, wkE, xL, xR, km, left, typ, key, klen, out, wkK, dst, stp, halves, accReg_0, accReg_1, accReg_2, accReg_3,
+        cnt, wkE, xL, xR, km, left, typ, key, klen, out, wkK, dst, stp, hlv, accReg_0, accReg_1, accReg_2, accReg_3,
         idxReg_0, idxReg_1, idxReg_2, idxReg_3, BitVec.or_self, addrX, $ls,*])
 
 /-! ## Low words -/
