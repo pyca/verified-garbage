@@ -4,6 +4,10 @@ public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
 public import VerifiedGarbage.Impl.MdStream.PPC64LE
+public import VerifiedGarbage.Impl.Sha1.PPC64LE
+public import VerifiedGarbage.Impl.Sha256.PPC64LE
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Sha256
 
 /-!
 # DSA parameter generation on PPC64LE
@@ -176,6 +180,12 @@ structure Hash where
   iv : List (BitVec 32)
   name : String
   code : Prog isa
+
+/-- SHA-1. -/
+def sha1 : Hash := ⟨5, Spec.Sha1.H0.toList, "vg_sha1_compress", VG.Impl.Sha1.PPC64LE.compress⟩
+
+/-- SHA-256. -/
+def sha256 : Hash := ⟨8, Spec.Sha256.H0.toList, "vg_sha256_compress", VG.Impl.Sha256.PPC64LE.compress⟩
 
 /-- `r ← v`, for `v < 2³²`: `lis` of the high half and `ori` of the low one. -/
 def loadImm (r : Reg) (v : Nat) : List Instr :=
