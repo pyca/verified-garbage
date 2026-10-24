@@ -292,6 +292,48 @@ theorem testTail_vp {cl' : Claims} {u cand : Nat} (hU : fUsed ∈ c.LS) (hUv : c
     have e : st0 = BitVec.ofNat 64 (if b then 1 else 2) := by cases b <;> rfl
     simp only [upd, n88, ite_false, e]
 
+/-! ## The test -/
+
+/-- The stage after copying the candidate `cb` from `src` to byte `cand` of
+the working space of the functions we call. -/
+abbrev candCfg (G : GP) (c : Cfg) (cand : Nat) (cb : List Byte) : Cfg :=
+  { c with cl := (wB G.pLen + cand, cb) :: c.cl.filter fun x => decide (Apart (wB G.pLen + cand) cb.length x) }
+
+/-- The test of the candidate at `src` (`cb`), copied to the test's working
+space, with the tape from `fUsed`: its result in `fRes` and the witnesses it
+read in `fUsed`. -/
+theorem test_vp {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {name : String} {u src : Nat}
+    {cb : List Byte} {cl' : Claims} (ok : PrimeOk L code) (hu : u ≤ G.witLen) (hU : fUsed ∈ c.LS)
+    (hUv : c.V fUsed = BitVec.ofNat 64 u) (hwl : G.witB.length = G.witLen)
+    (hsize : L.size ≤ 8 * wWords G.pLen) (hL : ∀ r ∈ L.scratch, r.1 + r.2 ≤ 8 * wWords G.pLen)
+    (hcand : L.candidate + L.bits / 8 ≤ 8 * wWords G.pLen) (hcand15 : wB G.pLen + L.candidate < 2 ^ 15)
+    (hsrc : (src, cb) ∈ c.cl) (hsrcK : src + cb.length ≤ kB G.pLen) (hcbl : cb.length = L.bits / 8) (hn0 : 0 < cb.length) (hn15 : cb.length < 2 ^ 15)
+    (hs15 : src < 2 ^ 15) (hodd : Spec.Dsa.decodeBE cb % 2 = 1)
+    (hbl : Spec.Dsa.bitLength (Spec.Dsa.decodeBE cb) = L.bits)
+    (hU' : ∀ o ∈ c.LS, fUsedOut + 8 ≤ o ∨ o + 8 ≤ fUsedOut) (hU88 : fUsedOut ∉ c.LS)
+    (hcl : ∀ x ∈ cl', x ∈ (candCfg G c L.candidate cb).cl ∧ ∀ r ∈ L.scratch, Apart (wB G.pLen + r.1) r.2 x) :
+    VP (St G c X) (test G.pLen L.candidate src cb.length name code)
+      (St G (testCfg c cl' G.witLen (tRes G cb u)) X) := by
+  have hc0 : ∀ σ s, St G c X σ s → wB G.pLen + L.candidate + cb.length ≤ G.scrLen * 8 := fun σ s ⟨h, _⟩ => by
+    have := h.gi.wBig; omega
+  refine VP.seq (G := St G (candCfg G c L.candidate cb) X)
+    (copyS_vp (c := fun _ => c) (fun σ s h => h.1) hn0 hn15 hcand15 hs15
+      (fun σ s h => ⟨by have := h.1.gi.kBig; simp only [hEnd, wB, kB, pB, fSave] at this ⊢; omega, by
+        simp only [List.length_replicate]; exact .inr (by omega), by simp only [List.length_replicate]; exact hc0 σ s h⟩)
+      (fun σ s h => by have := (h.1.clOk _ hsrc).2.2; exact this)
+      (.inr (by have := (show kB G.pLen ≤ wB G.pLen by simp only [wB]; omega); omega))
+      fun σ s t ⟨h, x⟩ h' _ b => ⟨?_, x⟩) ?_
+  · refine ⟨h'.gi, h'.sb.cons (by rw [b]; have := h.sb _ hsrc; rw [this]), fun y hy => ?_, h'.arrs, h'.liveOk,
+      h'.ksl, h'.kslOk⟩
+    rcases List.mem_cons.mp hy with rfl | hy
+    · exact ⟨by have := h.gi.kBig; simp only [hEnd, wB, kB, pB, fSave] at this ⊢; omega, .inr (by omega),
+        hc0 σ s ⟨h, x⟩⟩
+    · exact h'.clOk y hy
+  refine VP.assoc (VP.seq (targs_vp (c := candCfg G c L.candidate cb) hu hU hUv)
+    (VP.seq (primeCall_vp (c := candCfg G c L.candidate cb) (cl' := cl') (name := name) ok hu hsize hL
+      List.mem_cons_self hcbl hodd hbl hU' hcl)
+      (VP.seq testRes_vp (testTail_vp (c := candCfg G c L.candidate cb) hU hUv hU88 hwl hu))))
+
 end
 
 end VG.Proof.Dsa.PPC64LE.Gen
