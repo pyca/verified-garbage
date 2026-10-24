@@ -168,7 +168,6 @@ codec!(
     vg_ec_brainpoolp384r1_decompress_public_key,
     []
 );
-#[cfg(not(all(target_arch = "powerpc64", target_endian = "little")))]
 codec!(
     BrainpoolP512r1,
     64,
@@ -255,6 +254,5 @@ mod tests {
     cases!(secp256k1, Secp256k1, 32);
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
     cases!(brainpoolp384r1, BrainpoolP384r1, 48);
-    #[cfg(not(all(target_arch = "powerpc64", target_endian = "little")))]
     cases!(brainpoolp512r1, BrainpoolP512r1, 64);
 }
