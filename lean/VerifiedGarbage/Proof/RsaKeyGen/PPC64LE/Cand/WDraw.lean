@@ -190,7 +190,7 @@ theorem roundS (R : RoundImpl) {sD s : State} {B Ra : Addr} {L w c u I U ch : Na
   have hnw := e.hs.nowrap
   have hZ := e.hZ
   rw [slot_lin] at hZ
-  refine WP.mono (round_ok R h.prep h.a4 h.ac h.wr h.sp h.stk h.idx h.uni h.chk hD.bI
+  refine WP.mono (round_ok R h.prep h.a4 h.ac h.sp h.stk h.idx h.uni h.chk hD.bI
     (by have := hD.bU; split <;> omega) hD.bch) fun t ht => ?_
   have hd' : ∀ d, d + 8 ≤ 256 → (∀ k ∈ [23, 26, 29, 30, 1, 20, 22], d + 8 ≤ 8 * k ∨ 8 * k + 8 ≤ d) →
       word t.mem B d = word s.mem B d := ht.hdr

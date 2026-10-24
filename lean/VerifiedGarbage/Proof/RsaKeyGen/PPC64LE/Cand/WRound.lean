@@ -115,7 +115,7 @@ structure RdPost (s : State) (B : Addr) (L w c a I U ch : Nat) (t : State) : Pro
   cs : ∀ r ∈ preserved, r ∉ Pub.montRegs → r ∉ psRegs → t.gpr r = s.gpr r
 
 theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (h : Prep s B L w c)
-    (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
+    (ha : arr s.mem B w 4 = a) (hac : a < c)
     (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩)
     (hI : word s.mem B (8 * hIdx) = BitVec.ofNat 64 I) (hU : word s.mem B (8 * hUni) = BitVec.ofNat 64 U)
     (hch : word s.mem B (8 * hChecks) = BitVec.ofNat 64 ch) (hI' : I + 1 < 2 ^ 63) (hU' : U < 2 ^ 63)
@@ -125,7 +125,7 @@ theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (
   have hZ := e.hZ
   rw [slot_lin] at hZ
   unfold VG.Impl.RsaKeyGen.PPC64LE.Witness.round
-  refine WP.seq (WP.mono (roundCall_ok R h ha hac hwr hsp hstk) fun u hu => ?_)
+  refine WP.seq (WP.mono (roundCall_ok R h ha hac hsp hstk) fun u hu => ?_)
   have kw : ∀ d, d + 8 ≤ 256 → (∀ k ∈ [23, 26, 29, 30, 1], d + 8 ≤ 8 * k ∨ 8 * k + 8 ≤ d) →
       word u.mem B d = word s.mem B d := fun d hd hk => keeps_word hu.keeps (by omega) (kept_hdr hd hk)
   have hsu := e.hs.congr hu.wr

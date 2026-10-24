@@ -10,8 +10,9 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 # A candidate on PPC64LE: what trial division must do
 
 `vg_rsa_keygen_candidate` takes its trial division as a parameter (`trial`,
-the shared `Trial.trial hTrial` of the DSA's and RSA's searches, proven on
-its own). `DivOk trial` is what the candidate's proofs need of it:
+the shared `Trial.trial hTrial` of the DSA's and RSA's searches, which meets
+`DivOk` by `TrialOk.lean`). `DivOk trial` is what the candidate's proofs need
+of it:
 
 * from the candidate in array 0 of the Montgomery working space at `B`
   (`Env`), the number `n` of the table's entries to try in header word

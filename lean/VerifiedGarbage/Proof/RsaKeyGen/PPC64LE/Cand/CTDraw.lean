@@ -184,7 +184,7 @@ theorem round_ct (R : RoundImpl) {n : Nat} :
     RelCT isa (Two (LR n)) (VG.Impl.RsaKeyGen.PPC64LE.Witness.round R.name R.code) fun _ _ => True := by
   unfold VG.Impl.RsaKeyGen.PPC64LE.Witness.round
   refine RelCT.seq (two_post (Ψ := LP n) (roundCall_ct R) fun ⟨a, k⟩ s ⟨s0, q, sD, h, p⟩ =>
-    WP.mono (VG.Proof.MillerRabin.PPC64LE.Search.roundCall_ok R p.prep p.a4 p.ac p.wr p.sp p.stk) fun t ht =>
+    WP.mono (VG.Proof.MillerRabin.PPC64LE.Search.roundCall_ok R p.prep p.a4 p.ac p.sp p.stk) fun t ht =>
       ⟨s0, q, sD, s, h, ht⟩) (two_ite pass_eval ?_ ?_)
   · exact two_taint _ (pins_and pins_LP) (by taint_decide)
   · exact two_taint _ (pins_and pins_LP) (by taint_decide)
