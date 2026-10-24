@@ -73,7 +73,7 @@ theorem setup_ok {s0 s : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K
     prun [VG.Impl.Rsa.PPC64LE.Keys.stride, h15, e3, CrtValues.ofNat_stride, ofNat_digits24 _ hw, nArr]
   refine WP.mono hb fun u ⟨⟨u29, u30, u8, um⟩, ku⟩ => ?_
   have hu : Ws u B Z (kw K) nArr :=
-    ⟨hs.congr ku.wr, fits, by omega, hw, u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩
+    ⟨hs.congr ku.wr, fits, by omega, by omega, u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩
   have hn : 160 + 4 * (nArr * (kw K + 2)) ≤ Z := by
     simp only [arr, S, nArr, VG.Proof.Rsa.KeyWorkspace.hdr] at fits ⊢; omega
   refine WP.mono (zeroArrays_ok hu u8 (by simp only [nArr]; omega) (by simp only [nArr]; omega) hn)

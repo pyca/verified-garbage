@@ -27,7 +27,7 @@
 mod arithmetic;
 mod domain;
 mod generation;
-#[cfg(target_arch = "arm")]
+#[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
 mod precomputed;
 #[cfg(test)]
 mod vetted_tests;
@@ -104,7 +104,7 @@ impl Parameters {
     /// with q, also odd 2<q<p-1, q|(p-1) and g^q mod p=1. Does not
     /// primality-test imported parameters.
     ///
-    /// On ARM, this also initializes reusable public key-generation data
+    /// On ARMv7 and AArch64, this also initializes reusable public key-generation data
     /// (about 34 times p's byte length). Clones share that allocation.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
         let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
@@ -136,7 +136,7 @@ impl Parameters {
     }
 
     /// Generate a private key, rejecting degenerate public values and retrying.
-    /// On ARM, exact RFC 3526/7919 safe-prime groups with generator 2 use
+    /// On ARMv7 and AArch64, exact RFC 3526/7919 safe-prime groups with generator 2 use
     /// the RFC 7919 shorter-exponent bounds. Other domains and architectures
     /// sample uniformly in 1..q, or 1..p-1 when q is absent.
     pub fn generate_private_key(&self) -> Result<PrivateKey, Error> {
@@ -152,9 +152,9 @@ impl Parameters {
         fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     ) -> Result<PrivateKey, Error> {
         let len = self.p.len();
-        #[cfg(target_arch = "arm")]
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
         let exponent_len = self.domain.exponent_len();
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
         let exponent_len = self.q.as_ref().map_or(len, Vec::len);
         let mut x = alloc::vec![0; len];
         let mut y = alloc::vec![0; len];
