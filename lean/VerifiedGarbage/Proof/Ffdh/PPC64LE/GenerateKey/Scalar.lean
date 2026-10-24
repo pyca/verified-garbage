@@ -110,4 +110,19 @@ theorem scalar_ok {s : State} {B D X R : Addr} {Z w k L : Nat} (h : Env s B Z w)
   · rw [hm4] at tb tout
     exact ⟨⟨tb, tout⟩, (k14.trans kt).mono (by decide)⟩
 
+/-- `zeroX`: zeros at x's `k` octets (the header's word 8). -/
+theorem zeroX_ok {s : State} {B X : Addr} {Z k : Nat} (hs : Scr s B Z) (hZ : 72 ≤ Z) (h23 : s.gpr .r23 = B)
+    (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hX : s.mem.readW (off B 64) 64 = off X 0) (hk1 : 1 ≤ k)
+    (hk : k < 2 ^ 32) (hx : Scr s X k) :
+    WP isa zeroX s fun t =>
+      (Spec.Rsa.bytesAt t.mem X k = List.replicate k 0 ∧ Outside X 0 k s.mem t.mem) ∧ Keep [.r0, .r6, .r25] s t := by
+  unfold zeroX
+  refine WP.seq (WP.mono (WP.keep [.r0, .r6, .r25] (Q := fun t => t.gpr .r25 = off X 0 ∧ t.gpr .r0 = 0#64 ∧
+      t.gpr .r6 = BitVec.ofNat 64 k ∧ t.mem = s.mem) (by
+    prun [h23, h28, hs.ld (d := 64) (n := 8) (by omega), hX, BitVec.add_zero]) (by decide))
+    fun u ⟨⟨u25, u0, u6, um⟩, ku⟩ => ?_)
+  refine WP.mono (zeros_ok hk1 hk (hx.congr ku.wr) u25 u0 u6) fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
+  rw [um] at tout
+  exact ⟨⟨tb, tout⟩, (ku.trans kt).mono (by decide)⟩
+
 end VG.Proof.Ffdh.PPC64LE.GenerateKey
