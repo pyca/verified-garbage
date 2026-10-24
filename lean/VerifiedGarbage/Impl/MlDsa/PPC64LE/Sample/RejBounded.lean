@@ -67,7 +67,7 @@ def rbLoop (η : Nat) : Prog isa :=
     (.loop (rbBody η) (.nonzero .d .r6))
 
 def rejBounded : Prog isa :=
-  .seq (.block (pro .r6 .r5 .r3 [.li .r28 66] [mov .r27 .r4]))
+  .seq (.block (pro .r6 .r5 .r3 [.li .r28 66] (zext32 .r27 .r4)))
     (.seq (sponge 136 544)
       (.seq (.seq (.block [.subi .r12 .r27 2]) (.ite (.zero .d .r12) (rbLoop 2) (rbLoop 4)))
         (.block (retJ ++ epi))))

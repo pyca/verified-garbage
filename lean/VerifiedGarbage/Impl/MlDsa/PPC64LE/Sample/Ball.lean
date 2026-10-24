@@ -57,7 +57,7 @@ def bBody : Prog isa :=
 def bLoop : Prog isa := .seq (.block bSetup) (.loop bBody (.nonzero .d .r6))
 
 def sampleInBall : Prog isa :=
-  .seq (.block (pro .r7 .r6 .r3 [mov .r28 .r4] [mov .r27 .r5]))
+  .seq (.block (pro .r7 .r6 .r3 [mov .r28 .r4] (zext32 .r27 .r5)))
     (.seq (sponge 136 272) (.seq bZero (.seq bLoop (.block (retJ ++ epi)))))
 
 end VG.Impl.MlDsa.PPC64LE.Sample

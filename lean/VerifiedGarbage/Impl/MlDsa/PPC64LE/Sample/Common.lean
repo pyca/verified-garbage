@@ -15,7 +15,7 @@ They share a layout and a prologue. Each saves its caller's `r27`–`r31` and
 its return address in `scratch[2000..2048)` (`pro`) and restores them at the
 end (`epi`); from the prologue on, `r31` is `scratch` (2048 bytes), `r30` its
 output polynomial, `r29` the message hashed, `r28` its length and `r27` its
-parameter (`eta`, `gamma1` or `tau`), which the functions it calls preserve.
+parameter (`eta`, `gamma1` or `tau`, zero-extended: `zext32`), which the functions it calls preserve.
 `scratch` holds, from byte 0, the Keccak state (200 bytes), the working space
 of the sponge functions (640 bytes) and, from byte 840, the XOF output (at
 most 1008 bytes). The functions have no stack frame of their own; the sponge
@@ -79,6 +79,10 @@ last). -/
 def epi : List Instr :=
   [.load .d .r0 .r31 2040, .mtlr .r0, .load .d .r27 .r31 2000, .load .d .r28 .r31 2008,
     .load .d .r29 .r31 2016, .load .d .r30 .r31 2024, .load .d .r31 .r31 2032]
+
+/-- `d ←` the low 32 bits of `s`, zero-extended: a `u32` argument, whose
+register's upper bits the ABI leaves unspecified. -/
+def zext32 (d s : Reg) : List Instr := [.lsl d s 32, .lsr .d d d 32]
 
 /-- `r3 ← r5 >> 8`: 1 if `j` = `r5` is 256, 0 if it is less. -/
 def retJ : List Instr := [.lsr .d .r3 .r5 8]
