@@ -231,22 +231,20 @@ theorem hashLoop_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
     exact ⟨ev.trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega,
       j + min 8 (a.length / 16 - j), rfl, by omega, H'⟩
 
-/-- After the whole blocks: the rest, if any. -/
-theorem hashTail_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph : Cipher} {l : Block}
+/-- After the whole blocks: the length of the rest to `r25`. -/
+theorem tailHead_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph : Cipher} {l : Block}
     {A : Addr} {a : List Byte} {s₀ : State} (C : HCtx (V .r29) (V .r31) D n R ciph l A a s₀)
-    (h28 : V .r28 = BitVec.ofNat 64 R) (h22 : V .r22 = BitVec.ofNat 64 a.length) {t : State}
-    (H : HInv V sp ciph l A a s₀ t (a.length / 16)) :
-    WP isa (.seq (.block [.li .r0 15, .logic .and .r25 .r22 .r0]) (.ite (.zero .d .r25) (.block []) hashRest)) t
-      (HashOut V sp ciph l a s₀) := by
+    (h22 : V .r22 = BitVec.ofNat 64 a.length) {t : State} (H : HInv V sp ciph l A a s₀ t (a.length / 16)) :
+    WP isa (.block [.li .r0 15, .logic .and .r25 .r22 .r0]) t fun t₂ =>
+      HInv V sp ciph l A a s₀ t₂ (a.length / 16) ∧ t₂.gpr .r25 = BitVec.ofNat 64 (a.length % 16) := by
   have hs := C.short
-  refine WP.seq (cwp_li (by decide) fun t₁ u₁ => cwp_and fun t₂ u₂ => WP.block_nil ?_)
+  refine cwp_li (by decide) fun t₁ u₁ => cwp_and fun t₂ u₂ => WP.block_nil ?_
   have h25 : t₂.gpr .r25 = BitVec.ofNat 64 (a.length % 16) := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), H.env.r22, h22, and15, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hs]
   have g₂ : ∀ r, r ∉ [.r0, .r25] → t₂.gpr r = t.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u₂.other _ hr.2, u₁.other _ hr.1]
-  have H₁ : HInv V sp ciph l A a s₀ t₂ (a.length / 16) :=
-    { H with
+  exact ⟨{ H with
       env := H.env.others g₂ (by rw [u₂.sp, u₁.sp]) (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
       frame := by rw [u₂.mem, u₁.mem]; exact H.frame
       rd := by rw [u₂.rd, u₁.rd, H.rd]
@@ -257,7 +255,17 @@ theorem hashTail_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
       r26 := by rw [g₂ _ (by decide), H.r26]
       r3 := by rw [g₂ _ (by decide), H.r3]
       hl := by rw [u₂.mem, u₁.mem, H.hl]
-      l0 := by rw [u₂.mem, u₁.mem, H.l0] }
+      l0 := by rw [u₂.mem, u₁.mem, H.l0] }, h25⟩
+
+/-- After the whole blocks: the rest, if any. -/
+theorem hashTail_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph : Cipher} {l : Block}
+    {A : Addr} {a : List Byte} {s₀ : State} (C : HCtx (V .r29) (V .r31) D n R ciph l A a s₀)
+    (h28 : V .r28 = BitVec.ofNat 64 R) (h22 : V .r22 = BitVec.ofNat 64 a.length) {t : State}
+    (H : HInv V sp ciph l A a s₀ t (a.length / 16)) :
+    WP isa (.seq (.block [.li .r0 15, .logic .and .r25 .r22 .r0]) (.ite (.zero .d .r25) (.block []) hashRest)) t
+      (HashOut V sp ciph l a s₀) := by
+  have hs := C.short
+  refine WP.seq (WP.mono (tailHead_ok C h22 H) fun t₂ ⟨H₁, h25⟩ => ?_)
   refine WP.ite (decide (a.length % 16 = 0)) (eval_zero h25 (by omega)) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have h0 : a.length % 16 = 0 := of_decide_eq_true hb
     refine ⟨H₁.env, H₁.frame, ?_, H₁.rd, H₁.wr⟩
@@ -265,6 +273,17 @@ theorem hashTail_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
     have hlen : (a.drop (16 * (a.length / 16))).length = 0 := by simp; omega
     simp [hlen]
   · exact hashRest_ok C h28 H₁ (by have := of_decide_eq_false hb; omega) h25
+
+/-- The whole blocks of the associated data, if any. -/
+theorem hashBody_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph : Cipher} {l : Block}
+    {A : Addr} {a : List Byte} {s₀ : State} (C : HCtx (V .r29) (V .r31) D n R ciph l A a s₀)
+    (h28 : V .r28 = BitVec.ofNat 64 R) {t : State} (H₀ : HInv V sp ciph l A a s₀ t 0) :
+    WP isa (.ite (.zero .d .r3) (.block []) (.loop hashChunk (.nonzero .d .r3))) t
+      fun u => HInv V sp ciph l A a s₀ u (a.length / 16) := by
+  have hs := C.short
+  refine WP.ite (decide (a.length / 16 = 0)) (eval_zero H₀.r3 (by omega)) (fun hb => WP.block_nil ?_)
+    (fun hb => hashLoop_ok C h28 H₀ (Nat.pos_of_ne_zero (of_decide_eq_false hb)))
+  exact (of_decide_eq_true hb) ▸ H₀
 
 /-- `HASH(K, A)` to `W + sumO`, with `aad` and `aad_len` in `r21` and `r22`. -/
 theorem hash_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph : Cipher} {l : Block}
@@ -275,10 +294,6 @@ theorem hash_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph
   have hs := C.short
   unfold Impl.AesOcb.PPC64LE.hash
   refine WP.seq (WP.mono (hashHead_ok C E h21 h22 hl0) fun s₃ H₀ => ?_)
-  refine WP.seq (WP.mono (?_ : WP isa (.ite (.zero .d .r3) (.block []) (.loop hashChunk (.nonzero .d .r3))) s₃
-    fun u => HInv V sp ciph l A a s₀ u (a.length / 16)) fun u H => hashTail_ok C h28 h22 H)
-  refine WP.ite (decide (a.length / 16 = 0)) (eval_zero H₀.r3 (by omega)) (fun hb => WP.block_nil ?_)
-    (fun hb => hashLoop_ok C h28 H₀ (Nat.pos_of_ne_zero (of_decide_eq_false hb)))
-  exact (of_decide_eq_true hb) ▸ H₀
+  exact WP.seq (WP.mono (hashBody_ok C h28 H₀) fun u H => hashTail_ok C h28 h22 H)
 
 end VG.Proof.AesOcb.PPC64LE
