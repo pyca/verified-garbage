@@ -228,4 +228,126 @@ theorem output_ok {σ : State} {κ : Nat} {s : State} (h : OI p STK σ κ s)
 
 end
 
+/-! ## Two runs -/
+
+/-- A relational step from each run's correctness and the leaks' equality. -/
+theorem liftG {P Q₀ Q : State → State → Prop} {c : Prog isa}
+    (hw : ∀ x y, P x y → ∃ A B : State → Prop, WP isa c x A ∧ WP isa c y B ∧ ∀ x' y', A x' → B y' → Q₀ x' y' → Q x' y')
+    (ht : RelCT isa P c Q₀) : RelCT isa P c Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
+  obtain ⟨ht', hq⟩ := ht _ _ _ _ _ _ hr e₁ e₂
+  obtain ⟨A, B, ⟨_, u₁, f₁, a₁⟩, ⟨_, u₂, f₂, b₂⟩, hQ⟩ := hw _ _ hr
+  obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
+  exact ⟨ht', hQ _ _ a₁ b₂ hq⟩
+
+theorem coeff_hint {m : Mem} {a : Addr} {i j : Nat} :
+    coeffAt m a (256 * i + j) = coeffAt m (a + BitVec.ofNat 64 (1024 * i)) j := by
+  simp only [coeffAt]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega]
+
+/-- Two memories holding the same hint have the same coefficients. -/
+theorem coeffs_eq {mx my : Mem} {a : Addr} {k : Nat} {F : Nat → Vector Bool n}
+    (hx : ∀ i < k, HintIs mx (a + BitVec.ofNat 64 (1024 * i)) 1 [F i])
+    (hy : ∀ i < k, HintIs my (a + BitVec.ofNat 64 (1024 * i)) 1 [F i]) :
+    (List.range (256 * k)).map (fun c => (coeffAt mx a c).toNat) =
+      (List.range (256 * k)).map (fun c => (coeffAt my a c).toNat) := by
+  refine List.map_congr_left fun c hc => ?_
+  rw [List.mem_range] at hc
+  have hi : c / 256 < k := by omega
+  have hj : c % 256 < 256 := Nat.mod_lt _ (by decide)
+  have e : c = 256 * (c / 256) + c % 256 := (Nat.div_add_mod c 256).symm
+  rw [e, coeff_hint, coeff_hint]
+  have ex := (hx _ hi).2 0 (by decide) _ hj
+  have ey := (hy _ hi).2 0 (by decide) _ hj
+  simp only [Nat.mul_zero, Nat.zero_add] at ex ey
+  rw [ex, ey]
+
+/-- Two runs that passed, agreeing on the hint. -/
+def OR (p : Params) (STK : Nat) (r : Nat) (x y : State) : Prop :=
+  ∃ σ₁ σ₂ κ₁ κ₂, SPre p STK σ₁ ∧ SPre p STK σ₂ ∧ sPub p σ₁ σ₂ ∧ OS p STK σ₁ κ₁ r x ∧ OS p STK σ₂ κ₂ r y ∧
+    ∀ i < p.k, Hv p σ₁ κ₁ i = Hv p σ₂ κ₂ i
+
+/-- The taint check of the copy of `c̃` to `sig` does not depend on `λ`. -/
+theorem copyCt_taint (l : Nat) : (VG.PPC64LE.taint.check (Taint.ofRegs [.r28, .r29, .r30, .r31])
+    (copy .r31 oCT .r28 0 l)
+    (VG.Taint.hintOf VG.PPC64LE.taint (Taint.ofRegs [.r28, .r29, .r30, .r31]) (copy .r31 oCT .r28 0 32))).isSome =
+      true := rfl
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+omit hP hS in
+theorem outCopy_tr :
+    RelCT isa (fun x y => ∃ σ₁ σ₂ κ₁ κ₂, SPre p STK σ₁ ∧ SPre p STK σ₂ ∧ sPub p σ₁ σ₂ ∧
+      (OI p STK σ₁ κ₁ x ∧ bytesAt x.mem ((slay2 p STK σ₁).A 0 oCT) (cLen p) = CTv p σ₁ κ₁) ∧
+      (OI p STK σ₂ κ₂ y ∧ bytesAt y.mem ((slay2 p STK σ₂).A 0 oCT) (cLen p) = CTv p σ₂ κ₂) ∧
+      ∀ i < p.k, Hv p σ₁ κ₁ i = Hv p σ₂ κ₂ i) (copy .r31 oCT .r28 0 (cLen p)) (OR p STK 0) := by
+  refine liftG (Q₀ := fun _ _ => True) (fun x y ⟨σ₁, σ₂, κ₁, κ₂, p₁, p₂, pub, h₁, h₂, he⟩ => ⟨_, _, outCopy_ok hF h₁.1 h₁.2,
+    outCopy_ok hF h₂.1 h₂.2, fun x' y' a b _ => ⟨σ₁, σ₂, κ₁, κ₂, p₁, p₂, pub, a, b, he⟩⟩) ?_
+  exact RelCT.mono (srel2p (I := fun σ s => ∃ κ, OI p STK σ κ s) (fun σ s ⟨_, h⟩ => h.k.sc)
+    (copyCt_taint (cLen p))) (fun x y ⟨σ₁, σ₂, κ₁, κ₂, p₁, p₂, pub, h₁, h₂, _⟩ =>
+      ⟨σ₁, σ₂, p₁, p₂, pub, ⟨κ₁, h₁.1⟩, ⟨κ₂, h₂.1⟩⟩) fun _ _ h => h
+
+theorem packZ_tr {r : Nat} (hr : r < p.ℓ) : RelCT isa (OR p STK r) (packZ P p r) (OR p STK (r + 1)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  have hsh : sigH p = cLen p + zLen p * p.ℓ := rfl
+  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega) hl.2
+  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hz := hF.lz; have hsg := hF.sig
+  have m : ∀ σ, KeyGen.BpOk (slay2 p STK σ) sWb2 (yP p r) (p.γ₁ - 1) p.γ₁ (.r28, sigZ p r) (zLen p) := fun σ =>
+    have hm : zLen p * r + zLen p ≤ zLen p * p.ℓ := by
+      have := Nat.mul_le_mul_left (zLen p) (show r + 1 ≤ p.ℓ from hr); rwa [Nat.mul_succ] at this
+    ⟨⟨sptr_ok rfl (by clt hF), by osep hF⟩, ⟨sptr_ok rfl (by clt hF), by osep hF⟩,
+      show ix Reg.r28 ∈ sWb2 by decide, by osep hF, hF.zbp, hF.zl⟩
+  have hrng : ∀ {σ κ x}, OS p STK σ κ r x → Reduced x.mem (lpa (slay2 p STK σ) (yP p r)) ∧
+      ∀ i < n, -((p.γ₁ - 1 : Nat) : Int) ≤ modPm (coeffAt x.mem (lpa (slay2 p STK σ) (yP p r)) i).toNat q ∧
+        modPm (coeffAt x.mem (lpa (slay2 p STK σ) (yP p r)) i).toNat q ≤ (p.γ₁ : Int) := fun h =>
+    ⟨(h.o.z r hr).1, zrange_of_norm (h.o.z r hr) (h.o.pass.1 r hr) (Nat.sub_le _ _)⟩
+  refine liftG (Q₀ := fun _ _ => True) (fun x y ⟨σ₁, σ₂, κ₁, κ₂, p₁, p₂, pub, h₁, h₂, he⟩ => ⟨_, _, packZ_ok hP hF hS hr h₁,
+    packZ_ok hP hF hS hr h₂, fun x' y' a b _ => ⟨σ₁, σ₂, κ₁, κ₂, p₁, p₂, pub, a, b, he⟩⟩) ?_
+  unfold packZ bitPackAt
+  refine RelCT.mono (RelCT.exists_ fun σ => KeyGen.bp_tr hP.bitPack hS (m σ)
+    (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      (Reduced x.mem (lpa (slay2 p STK σ) (yP p r)) ∧
+        ∀ i < n, -((p.γ₁ - 1 : Nat) : Int) ≤ modPm (coeffAt x.mem (lpa (slay2 p STK σ) (yP p r)) i).toNat q ∧
+          modPm (coeffAt x.mem (lpa (slay2 p STK σ) (yP p r)) i).toNat q ≤ (p.γ₁ : Int)) ∧
+      (Reduced y.mem (lpa (slay2 p STK σ) (yP p r)) ∧
+        ∀ i < n, -((p.γ₁ - 1 : Nat) : Int) ≤ modPm (coeffAt y.mem (lpa (slay2 p STK σ) (yP p r)) i).toNat q ∧
+          modPm (coeffAt y.mem (lpa (slay2 p STK σ) (yP p r)) i).toNat q ≤ (p.γ₁ : Int)))
+    fun x y ⟨T, hx, hy⟩ => ⟨T.1, T.2.1, T.2.2, hx.1, hy.1, hx.2, hy.2⟩)
+    (fun x y ⟨σ₁, σ₂, κ₁, κ₂, p₁, p₂, pub, h₁, h₂, _⟩ => ⟨σ₁, sc2_twoL pub h₁.o.k.sc h₂.o.k.sc, hrng h₁,
+      by rw [slay2_pub pub]; exact hrng h₂⟩) fun _ _ h => h
+
+
+theorem hpack_tr :
+    RelCT isa (OR p STK p.ℓ) (hintBitPackAt P (Impl.MlDsa.PPC64LE.Sign.hP 0) (256 * p.k) p.ω (.r28, sigH p) (p.ω + p.k))
+      fun _ _ => True := by
+  unfold hintBitPackAt
+  refine RelCT.mono (RelCT.exists_ fun σ => KeyGen.hbp_tr hP.hintBitPack hS (hbp_m hF (σ := σ))
+    (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      hintOnes (hintAt x.mem (SL p STK σ 5) p.k) ≤ p.ω ∧ hintOnes (hintAt y.mem (SL p STK σ 5) p.k) ≤ p.ω ∧
+      (List.range (256 * p.k)).map (fun c => (coeffAt x.mem (SL p STK σ 5) c).toNat) =
+        (List.range (256 * p.k)).map (fun c => (coeffAt y.mem (SL p STK σ 5) c).toNat))
+    fun x y ⟨T, ox, oy, e⟩ => ⟨T.1, T.2.1, T.2.2, by rw [Nat.add_sub_cancel_left]; exact ox,
+      by rw [Nat.add_sub_cancel_left]; exact oy, e⟩) ?_ fun _ _ h => h
+  rintro x y ⟨σ₁, σ₂, κ₁, κ₂, p₁, p₂, pub, h₁, h₂, he⟩
+  refine ⟨σ₁, sc2_twoL pub h₁.o.k.sc h₂.o.k.sc, hones_ok h₁.o, by rw [SL_pub pub]; exact hones_ok h₂.o,
+    coeffs_eq (F := Hv p σ₁ κ₁) (fun i hi => by have := h₁.o.h i hi; rwa [SL_hint] at this) fun i hi => ?_⟩
+  have := h₂.o.h i hi
+  rw [SL_hint, ← SL_pub pub, ← he i hi] at this
+  exact this
+
+/-- Two runs that passed, and agree on the hint, leak the same. -/
+theorem output_tr :
+    RelCT isa (fun x y => ∃ σ₁ σ₂ κ₁ κ₂, SPre p STK σ₁ ∧ SPre p STK σ₂ ∧ sPub p σ₁ σ₂ ∧
+      (OI p STK σ₁ κ₁ x ∧ bytesAt x.mem ((slay2 p STK σ₁).A 0 oCT) (cLen p) = CTv p σ₁ κ₁) ∧
+      (OI p STK σ₂ κ₂ y ∧ bytesAt y.mem ((slay2 p STK σ₂).A 0 oCT) (cLen p) = CTv p σ₂ κ₂) ∧
+      ∀ i < p.k, Hv p σ₁ κ₁ i = Hv p σ₂ κ₂ i) (output P p) fun _ _ => True := by
+  unfold output
+  refine RelCT.seq (outCopy_tr hF) (RelCT.seq ?_ (hpack_tr hP hF hS))
+  simpa using rr_seqR (R := fun r => OR p STK r) p.ℓ 0 fun r _ hr => packZ_tr hP hF hS (by omega)
+end
+
 end VG.Proof.MlDsa.PPC64LE.Sign
