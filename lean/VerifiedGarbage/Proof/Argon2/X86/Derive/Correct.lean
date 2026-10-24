@@ -36,6 +36,7 @@ import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
 
 @[expose] public section
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-DSA (FIPS 204) key generation on x86 (32-bit)
