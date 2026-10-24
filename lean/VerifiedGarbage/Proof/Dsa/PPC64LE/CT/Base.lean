@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -21,6 +22,10 @@ from those bytes; at each such branch both runs satisfy the same predicate,
 which fixes the branch's condition (`rel_ite_zero`), and between branches the
 taint analysis checks the code from the registers each predicate fixes
 (`pins_ph`).
+
+Signing shares the checks: its public data also name the key's whole length
+(with x), the nonce's and `out`, which the header's word `hOut` keeps
+(`VD.out`).
 -/
 
 @[expose] public section
@@ -38,6 +43,12 @@ structure VD where
   dig : Addr
   dl : Nat
   kb : List Byte
+  /-- The key's octets the call may read (x's too, when signing). -/
+  kl : Nat
+  /-- The signature's octets, or the nonce's when signing. -/
+  sl : Nat
+  /-- When signing, `out`, which the header's word `hOut` keeps. -/
+  out : Option Addr
 
 /-- The digest's length the code uses: at most 64 octets. -/
 abbrev VD.d (v : VD) : Nat := min v.dl 64
@@ -48,14 +59,24 @@ structure Base (v : VD) (s : State) : Prop where
   regs : Regs s v.L v.key v.sig v.dig
   scr : ScrL s v.L
   hk : Src s v.L v.key (3 * v.L.pl + v.L.ql)
-  hsg : Src s v.L v.sig (2 * v.L.ql)
+  hsg : Src s v.L v.sig v.sl
   hdg : Src s v.L v.dig v.d
   kb : Spec.Rsa.bytesAt s.mem v.key (3 * v.L.pl + v.L.ql) = v.kb
+  hx : Src s v.L v.key v.kl
+  hdr : ∀ o ∈ v.out, word s.mem v.L.S Impl.Dsa.PPC64LE.Sign.hOut = o
+  sgn : v.out.isSome → v.kl = 3 * v.L.pl + 2 * v.L.ql ∧ v.sl = v.L.ql
+
+/-- A change past the header keeps its word `hOut`. -/
+theorem Base.hdr_body {v : VD} {s t : State} (h : Base v s) (ho : Body v.L s.mem t.mem) :
+    ∀ o ∈ v.out, word t.mem v.L.S Impl.Dsa.PPC64LE.Sign.hOut = o := fun o hm =>
+  (Outside.word ho (Or.inl (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega))
+    (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega)).trans (h.hdr o hm)
 
 theorem Base.step {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Keep rs s t)
-    (ho : Outside v.L.S 0 v.L.Z s.mem t.mem) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Base v t :=
+    (ho : Body v.L s.mem t.mem) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Base v t :=
   ⟨h.ok, h.regs.keep k hr, h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr,
-    h.hdg.keep k.rd k.wr, (h.hk.kept ho).trans h.kb⟩
+    h.hdg.keep k.rd k.wr, (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb,
+    h.hx.keep k.rd k.wr, h.hdr_body ho, h.sgn⟩
 
 /-- The key's octets from `o`, `k` of them. -/
 def VD.at (v : VD) (o k : Nat) : List Byte := (v.kb.drop o).take k
@@ -150,6 +171,26 @@ theorem rel_ite_zero {α : Type} {Φ : α → State → Prop} {r : Reg} {t e : P
     exact ⟨a, ⟨h₁, fun e => by rw [e] at hc; exact absurd hc (by decide)⟩,
       ⟨h₂, fun e => by rw [e] at hc₂; exact absurd hc₂ (by decide)⟩, hsp⟩
 
+/-- A phase step that keeps a fact `G` of the public data, which the taint
+analysis and the step need not know (`G` restricts the public data a caller
+relates, e.g. to signing's). -/
+theorem two_postG {α : Type} {Φ Ψ : α → State → Prop} {G : α → Prop} {c : Prog isa}
+    (hct : RelCT isa (Two Φ) c fun _ _ => True) (hw : ∀ a s, Φ a s → WP isa c s (Ψ a)) :
+    RelCT isa (Two fun a s => Φ a s ∧ G a) c (Two fun a s => Ψ a s ∧ G a) :=
+  two_post (hct.mono (fun _ _ => two_mono fun _ _ h => h.1) fun _ _ h => h) fun a s h =>
+    (hw a s h.1).mono fun _ x => ⟨x, h.2⟩
+
+/-- `rel_ite_zero`, keeping a fact `G` of the public data. -/
+theorem rel_ite_zeroG {α : Type} {Φ : α → State → Prop} {G : α → Prop} {r : Reg} {t e : Prog isa}
+    {Q : State → State → Prop}
+    (hz : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → (s₁.gpr r == 0) = (s₂.gpr r == 0))
+    (ht : RelCT isa (Two fun a s => (Φ a s ∧ s.gpr r = 0) ∧ G a) t Q)
+    (he : RelCT isa (Two fun a s => (Φ a s ∧ s.gpr r ≠ 0) ∧ G a) e Q) :
+    RelCT isa (Two fun a s => Φ a s ∧ G a) (.ite (.zero .d r) t e) Q :=
+  rel_ite_zero (fun a s₁ s₂ h₁ h₂ => hz a s₁ s₂ h₁.1 h₂.1)
+    (ht.mono (fun _ _ => two_mono fun _ _ ⟨⟨h, g⟩, z⟩ => ⟨⟨h, z⟩, g⟩) fun _ _ h => h)
+    (he.mono (fun _ _ => two_mono fun _ _ ⟨⟨h, g⟩, z⟩ => ⟨⟨h, z⟩, g⟩) fun _ _ h => h)
+
 /-- Both runs agree whether `r` is zero when the predicate says exactly when. -/
 theorem zero_iff_agree {α : Type} {Φ : α → State → Prop} {r : Reg} (C : α → Prop)
     (h : ∀ a s, Φ a s → (s.gpr r = 0 ↔ C a)) :
@@ -179,5 +220,19 @@ theorem rel_end {Φ : VD → State → Prop} {c : Prog isa} (h : RelCT isa (Two 
     simpa using this
   exact ⟨ht, v, (Exec.gpr hc e₁ (.inl hn)).trans (h21 v _ h₁), (Exec.gpr hc e₂ (.inl hn)).trans (h21 v _ h₂),
     by rw [Exec.sp e₁, Exec.sp e₂, hsp]⟩
+
+theorem pins_End : Pins End [.r21] := by
+  intro v s₁ s₂ h₁ h₂ r hr
+  simp only [List.mem_singleton] at hr
+  subst hr
+  rw [h₁, h₂]
+
+theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.map (·.toNat) → l₁ = l₂
+  | [], [], _ => rfl
+  | [], _ :: _, h => by simp at h
+  | _ :: _, [], h => by simp at h
+  | a :: l₁, b :: l₂, h => by
+    simp only [List.map_cons, List.cons.injEq] at h
+    rw [BitVec.eq_of_toNat_eq h.1, map_toNat_inj h.2]
 
 end VG.Proof.Dsa.PPC64LE

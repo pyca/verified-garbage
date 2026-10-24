@@ -130,8 +130,9 @@ theorem ite16_rel : RelCT isa (Two S0a) (.ite (.zero .d .r16) (.block [.li .r0 1
   rel_ite_zero (fun v s₁ s₂ h₁ h₂ => by rw [pins_S0a v s₁ s₂ h₁ h₂ .r16 (by decide)])
     (rel_weaken (two_taint _ pins_S0a (by taint_decide))) (rel_weaken (two_taint _ pins_S0a (by taint_decide)))
 
-theorem bitsP_rel : RelCT isa (Two S0) (.seq (.block ptrP) bytesBits) (Two S1) :=
-  two_post (RelCT.assoc (RelCT.seq (two_post (two_taint _ pins_S0 (by taint_decide)) fun _ _ h => w_scanP h)
+theorem bitsP_rel {G : VD → Prop} :
+    RelCT isa (Two fun v s => S0 v s ∧ G v) (.seq (.block ptrP) bytesBits) (Two fun v s => S1 v s ∧ G v) :=
+  two_postG (RelCT.assoc (RelCT.seq (two_post (two_taint _ pins_S0 (by taint_decide)) fun _ _ h => w_scanP h)
     ite16_rel)) fun _ _ h => w_bitsP h
 
 end VG.Proof.Dsa.PPC64LE
