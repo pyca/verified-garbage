@@ -34,10 +34,10 @@ def KeyOk (m : Mem) (L : Lay) (key : Addr) : Prop :=
   VG.Proof.Dsa.shapeValid (pOf m L key) (qOf m L key) ∧
     VG.Proof.Dsa.publicChecks (pOf m L key) (qOf m L key) (gOf m L key) (yOf m L key)
 
-/-- Memory changed only in `scratch`, past the header's word 9, and apart
+/-- Memory changed only in `scratch`, past the header's word 7, and apart
 from the saved registers. -/
 structure Kept (L : Lay) (m m' : Mem) : Prop where
-  out : Outside L.S 72 (L.Z - 72) m m'
+  out : Outside L.S 56 (L.Z - 56) m m'
   sav : ∀ i < 18, word m' L.S (saveOff i) = word m L.S (saveOff i)
 
 theorem Kept.refl (L : Lay) (m : Mem) : Kept L m m := ⟨Outside.refl _ _ _ _, fun _ _ => rfl⟩
@@ -59,7 +59,7 @@ theorem Kept.ofQb {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.S hQb 8 m m'
 /-- The header's entry values, kept. -/
 theorem Hdr.kept {L : Lay} {m m' : Mem} {key sig dig : Addr} (h : Hdr m L key sig dig) (hk : Kept L m m')
     (hL : L.Ok) : Hdr m' L key sig dig := by
-  have w := fun {d : Nat} (hd : d + 8 ≤ 72) =>
+  have w := fun {d : Nat} (hd : d + 8 ≤ 56) =>
     Outside.word hk.out (Or.inl hd) (by have := hL.nowrap; have := hL.z256; omega)
   exact ⟨(w (by decide)).trans h.key, (w (by decide)).trans h.pl, (w (by decide)).trans h.ql,
     (w (by decide)).trans h.qws, (w (by decide)).trans h.buf, (w (by decide)).trans h.sig,
@@ -140,6 +140,7 @@ structure Checked (s t : State) (L : Lay) (key sig dig : Addr) : Prop where
   q0 : arrQ t.mem L 0 = qOf s.mem L key
   qtop : word t.mem L.Q (slot 4 0 + 32) = 0
   qb : word t.mem L.S hQb = BitVec.ofNat 64 (Spec.Dsa.bitLength (qOf s.mem L key) / 8)
+  dl : word t.mem L.S hDlen = word s.mem L.S hDlen
 
 /-- The registers `checkKey` writes. -/
 def ckRegs : List Reg := sizesRegs ++ pModQRegs ++ setupPRegs ++ elemRegs
@@ -262,11 +263,14 @@ theorem checkKey_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Pr
     ⟨⟨hg.1, hg.2.1⟩, hy.1, hy.2.1⟩, (pmod_iff (by omega) (by omega)).mpr pm, hg.2.2, hy.2.2⟩
   have pb₆₈ : PBody L t₄.mem t₈.mem := by rw [m₅] at pb₆; rw [m₇] at pb₈; exact (pb₆.trans pb₈)
   have B₂₈ : Body L t₂.mem t₈.mem := B₃.trans (B₄.trans (pb₆₈.body hL))
-  refine hrest t₈ hok ⟨ip₈, hs.congr k₁₈.wr, hh.kept K₈ hL, ?_, ptop₈, ?_, ?_, ?_, ?_⟩ K₈ (k₁₈.mono (by decide))
+  refine hrest t₈ hok ⟨ip₈, hs.congr k₁₈.wr, hh.kept K₈ hL, ?_, ptop₈, ?_, ?_, ?_, ?_, ?_⟩ K₈ (k₁₈.mono (by decide))
   · rw [hP]; exact p0₈
   · rw [p8₈, m₇, p8₆, m₅, hP]; exact p8₄
   · rw [hQ', (pb₄.trans pb₆₈).arrQ hL 0 (by decide)]; exact q0₃
   · rw [(pb₄.trans pb₆₈).qtop hL]; exact qtop₃
   · rw [hQ', Outside.word B₂₈ (Or.inl (by decide)) (by have := hL.nowrap; simp only [hQb]; omega), m₂]; exact qbw
+  · rw [Outside.word B₂₈ (Or.inl (by decide)) (by have := hL.nowrap; simp only [hDlen]; omega), m₂, m₁]
+    exact Outside.word (writeW_outside s.mem L.S (d := hQb) _ (by have := hL.nowrap; simp only [hQb]; omega))
+      (Or.inl (by decide)) (by have := hL.nowrap; simp only [hDlen]; omega)
 
 end VG.Proof.Dsa.PPC64LE
