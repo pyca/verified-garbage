@@ -279,28 +279,28 @@ def winRanges (w : Nat) : List (Nat × Nat) :=
 /-- The registers a window writes. -/
 def winRegs : List Reg := tabRegs ++ [.r23, .r24, .r28]
 
-/-- What the windows keep, from `s₀`. -/
-structure WSt (s₀ t : State) (B : Addr) (Z w c b : Nat) : Prop where
+/-- What the windows keep, from `s₀`, writing only the registers `rs`. -/
+structure WSt (rs : List Reg) (s₀ t : State) (B : Addr) (Z w c b : Nat) : Prop where
   ctx : MCtx t B Z w
   consts : Consts t.mem B w c
   tab : TabOK t.mem B w c b
   outs : Outs B (winRanges w) s₀.mem t.mem
-  keep : Keep winRegs s₀ t
+  keep : Keep rs s₀ t
+  hm : ∀ r ∈ mctxRegs, r ∉ rs
+  hw : ∀ r ∈ winRegs, r ∈ rs
 
 theorem winRanges_mut {B : Addr} {w : Nat} {m m' : Mem} (h : Outs B (winRanges w) m m') : Mut B w m m' :=
   Outs.widen h fun r hr => ⟨r, by
     simp only [winRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> simp [roundRanges], by omega, by omega⟩
 
-theorem WSt.step {s₀ s t : State} {B : Addr} {Z w c b : Nat} {rs : List Reg} (h : WSt s₀ s B Z w c b)
-    (hout : Outs B (winRanges w) s.mem t.mem) (k : Keep rs s t) (hrs : ∀ r ∈ rs, r ∈ winRegs := by decide)
-    (h0 : w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0)) : WSt s₀ t B Z w c b := by
+theorem WSt.step {s₀ s t : State} {B : Addr} {Z w c b : Nat} {rs rs' : List Reg} (h : WSt rs s₀ s B Z w c b)
+    (hout : Outs B (winRanges w) s.mem t.mem) (k : Keep rs' s t) (hrs : ∀ r ∈ rs', r ∈ rs)
+    (h0 : w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0)) : WSt rs s₀ t B Z w c b := by
   have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega
-  refine ⟨h.ctx.keep k (fun r hr hr' => ?_) h0, h.consts.of_mut (winRanges_mut hout) hn, fun i hi => ?_,
-    Outs.trans h.outs hout, (h.keep.trans k).mono fun r hr => ?_⟩
-  · have := hrs r hr'
-    simp only [mctxRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> revert this <;> decide
+  refine ⟨h.ctx.keep k (fun r hr hr' => h.hm r hr (hrs r hr')) h0,
+    h.consts.of_mut (winRanges_mut hout) hn, fun i hi => ?_,
+    Outs.trans h.outs hout, (h.keep.trans k).mono fun r hr => ?_, h.hm, h.hw⟩
   · rw [Outs.arrEq hout (by omega) (fun r hr => by
       simp only [winRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact slot_sep (by omega)) hn]
@@ -308,6 +308,12 @@ theorem WSt.step {s₀ s t : State} {B : Addr} {Z w c b : Nat} {rs : List Reg} (
   · rcases List.mem_append.mp hr with hr | hr
     · exact hr
     · exact hrs r hr
+
+/-- A step that writes only registers a window writes. -/
+theorem WSt.stepW {s₀ s t : State} {B : Addr} {Z w c b : Nat} {rs rs' : List Reg} (h : WSt rs s₀ s B Z w c b)
+    (hout : Outs B (winRanges w) s.mem t.mem) (k : Keep rs' s t) (hrs : ∀ r ∈ rs', r ∈ winRegs := by decide)
+    (h0 : w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0)) : WSt rs s₀ t B Z w c b :=
+  h.step hout k (fun r hr => h.hw r (hrs r hr)) h0
 
 theorem montRanges_win {B : Addr} {w o : Nat} {m m' : Mem} (h : Outs B (montRanges w o) m m') (ho : o = 5 ∨ o = 6) :
     Outs B (winRanges w) m m' :=
@@ -321,21 +327,22 @@ theorem selectRanges_win {B : Addr} {w : Nat} {m m' : Mem} (h : Outs B (selectRa
     simp only [selectRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp [winRanges], by omega, by omega⟩
 
-theorem square_step {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool} (h : WSt s₀ s B Z w c b)
+theorem square_step {rs : List Reg} {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool}
+    (h : WSt rs s₀ s B Z w c b)
     (hc3 : 3 ≤ c) (hodd : c % 2 = 1) (hy : arr s.mem B w aY = Y * 2 ^ (64 * w) % c)
     (h23 : s.gpr .r23 = mask P) :
-    WP isa square s fun t => WSt s₀ t B Z w c b ∧
+    WP isa square s fun t => WSt rs s₀ t B Z w c b ∧
       arr t.mem B w aY = (wSq c true (Y, P)).1 * 2 ^ (64 * w) % c ∧ (wSq c true (Y, P)).1 < c ∧
       t.gpr .r23 = mask (wSq c true (Y, P)).2 ∧ t.gpr .r24 = s.gpr .r24 :=
   WP.mono (square_ok h.ctx h.consts hc3 hodd hy h23) fun t ⟨⟨ty, tlt, t23, tout, t0⟩, kt⟩ =>
-    ⟨h.step (montRanges_win tout (by simp)) kt (by simp [sqRegs, Pub.montRegs, tailRegs, eqRegs, winRegs, tabRegs])
+    ⟨h.stepW (montRanges_win tout (by simp)) kt (by simp [sqRegs, Pub.montRegs, tailRegs, eqRegs, winRegs, tabRegs])
       t0, ty, tlt, t23, kt.gpr .r24 (by simp [sqRegs, Pub.montRegs, tailRegs, eqRegs])⟩
 
 /-- A window: `RsaKeyGen.wWin` for the digit at the top of `r24`. -/
-theorem window_ok {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool} {V : BitVec 64}
-    (h : WSt s₀ s B Z w c b) (hc3 : 3 ≤ c) (hodd : c % 2 = 1)
+theorem window_ok {rs : List Reg} {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool} {V : BitVec 64}
+    (h : WSt rs s₀ s B Z w c b) (hc3 : 3 ≤ c) (hodd : c % 2 = 1)
     (hy : arr s.mem B w aY = Y * 2 ^ (64 * w) % c) (h23 : s.gpr .r23 = mask P) (h24 : s.gpr .r24 = V) :
-    WP isa window s fun t => WSt s₀ t B Z w c b ∧
+    WP isa window s fun t => WSt rs s₀ t B Z w c b ∧
       arr t.mem B w aY = (wWin c b (V >>> 60).toNat (Y, P)).1 * 2 ^ (64 * w) % c ∧
       (wWin c b (V >>> 60).toNat (Y, P)).1 < c ∧
       t.gpr .r23 = mask (wWin c b (V >>> 60).toNat (Y, P)).2 ∧ t.gpr .r24 = V <<< 4 := by
@@ -356,9 +363,9 @@ theorem window_ok {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool} {V : 
     refine WP.keep _ ?_ (by decide)
     prun [h4, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine WP.seq (WP.mono hdig fun u ⟨⟨u28, um⟩, ku⟩ => ?_)
-  have fu := f4.step (by rw [um]; exact Outs.refl _ _ _) ku (by decide) (by rw [um])
+  have fu := f4.stepW (by rw [um]; exact Outs.refl _ _ _) ku (by decide) (by rw [um])
   refine WP.seq (WP.mono (select_ok fu.ctx.toEnv u28 hdl) fun v ⟨⟨v5, vout⟩, kv⟩ => ?_)
-  have fv := fu.step (selectRanges_win vout) kv (by decide) (Outs.w32_0 vout (fun r hr => by
+  have fv := fu.stepW (selectRanges_win vout) kv (by decide) (Outs.w32_0 vout (fun r hr => by
       simp only [selectRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact slot_lt (by decide)
@@ -373,7 +380,7 @@ theorem window_ok {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool} {V : 
   have vc := fv.consts.cand
   refine WP.seq (WP.mono (mont_ok fv.ctx (o := 6) (a := 6) (b := 5) (by simp) (by simp) (by simp)
     (by rw [vd, vc]; exact Nat.mod_lt _ (by omega))) fun x ⟨⟨xlt, xeq, xout, x0⟩, kx⟩ => ?_)
-  have fx := fv.step (montRanges_win xout (by simp)) kx (by simp [Pub.montRegs, tailRegs, winRegs, tabRegs]) x0
+  have fx := fv.stepW (montRanges_win xout (by simp)) kx (by simp [Pub.montRegs, tailRegs, winRegs, tabRegs]) x0
   rw [vc] at xlt xeq
   have xy : arr x.mem B w aY = (wWin c b (V >>> 60).toNat (Y, P)).1 * 2 ^ (64 * w) % c := by
     simp only [wWin, VG.Proof.Bignum.powMod_eq]
@@ -386,7 +393,7 @@ theorem window_ok {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool} {V : 
     rw [kx.gpr .r28 (by simp [Pub.montRegs, tailRegs]), kv.gpr .r28 (by decide), u28]
   refine WP.seq (WP.mono (update_ok fx.ctx.toEnv fx.consts hc3 hodd xy xl x23 x28 hdl)
     fun y ⟨⟨y23, ym⟩, ky⟩ => ?_)
-  have fy := fx.step (by rw [ym]; exact Outs.refl _ _ _) ky (by decide) (by rw [ym])
+  have fy := fx.stepW (by rw [ym]; exact Outs.refl _ _ _) ky (by decide) (by rw [ym])
   have y24 : y.gpr .r24 = V := by
     rw [ky.gpr .r24 (by decide), kx.gpr .r24 (by simp [Pub.montRegs, tailRegs]), kv.gpr .r24 (by decide),
       ku.gpr .r24 (by decide), h4]
@@ -394,7 +401,7 @@ theorem window_ok {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P : Bool} {V : 
       (z.gpr .r24 = V <<< 4 ∧ z.mem = y.mem) ∧ Keep [.r24] y z := by
     refine WP.keep _ ?_ (by decide)
     prun [y24]
-  refine WP.mono hsh fun z ⟨⟨z24, zm⟩, kz⟩ => ⟨fy.step (by rw [zm]; exact Outs.refl _ _ _) kz (by decide)
+  refine WP.mono hsh fun z ⟨⟨z24, zm⟩, kz⟩ => ⟨fy.stepW (by rw [zm]; exact Outs.refl _ _ _) kz (by decide)
     (by rw [zm]), by rw [zm, ym, xy], xl, ?_, z24⟩
   rw [kz.gpr .r23 (by decide), y23]
   rfl
