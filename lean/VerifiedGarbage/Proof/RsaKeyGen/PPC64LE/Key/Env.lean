@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 divisor's array `aDv` is 0. The key routines, restated on `KS`: each
 updates `V` or `F` (`Function.update`) and keeps the frame of the body
 (`KK`: memory but the arrays and the slots) and the registers but
-`bodyRegs`.
+`opsRegs`.
 -/
 
 @[expose] public section
@@ -35,7 +35,10 @@ abbrev allSlots : List Nat := [X0, X1, X2, X3, X4, X5, X6, X7, X8, sOdd, sB, sC]
 /-- The arrays. -/
 abbrev allArrs : List Nat := List.range nArr
 
-/-- The registers the body changes, but for the entry's. -/
+/-- The registers the key routines change. -/
+abbrev opsRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]
+
+/-- The registers the body changes, but for the entry's: also the loops' count. -/
 abbrev bodyRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
 
 /-- The frame of the body: memory but the arrays and the slots. -/
@@ -150,7 +153,7 @@ theorem fit_of (h : Ws s B Z w nArr) : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 :=
 theorem copyE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o a : Nat} (ho : o < nArr := by decide)
     (ha : a < nArr := by decide) (hoa : o ≠ a := by decide) :
     WP isa (copy o a) s fun t => Ws t B Z w nArr ∧ KS t.mem B w (upd V o (V a)) F ∧
-      KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
+      KK B w s.mem t.mem ∧ Keep opsRegs s t := by
   refine WP.mono (copy_ok h ho ha nArr_le hoa) fun t ⟨ht, kt, v, kr, top⟩ => ⟨ht, ?_, KK.of kt
     (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq, allArrs, List.mem_range]; exact ho)
     (by simp), kr.mono⟩
@@ -169,7 +172,7 @@ theorem sub3E (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o a b : Nat} (ho : 
     (hob : o ≠ b := by decide) (hodv : o ≠ aDv := by decide) :
     WP isa (sub3 o a b) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V o (subW w (V a) (V b))) F ∧
-      (t.gpr .r9).toNat = (if V a < V b then 1 else 0) ∧ KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
+      (t.gpr .r9).toNat = (if V a < V b then 1 else 0) ∧ KK B w s.mem t.mem ∧ Keep opsRegs s t := by
   refine WP.mono (sub3_ok h ho ha hb nArr_le hoa hob) fun t ⟨ht, kt, v, b9, kr⟩ => ?_
   rw [ks.arrs a ha, ks.arrs b hb] at v
   obtain ⟨e1, e2⟩ := sub_val v b9 (val32_lt _ _ _ _) (ks.lt ha) (ks.lt hb)
@@ -188,7 +191,7 @@ theorem sub3SelfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o b : Nat} (ho 
     (hb : b < nArr := by decide) (hob : o ≠ b := by decide) (hodv : o ≠ aDv := by decide) :
     WP isa (sub3 o o b) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V o (subW w (V o) (V b))) F ∧ KK B w s.mem t.mem ∧
-      Keep bodyRegs s t := by
+      Keep opsRegs s t := by
   refine WP.mono (sub3_self_ok h ho hb nArr_le hob) fun t ⟨ht, kt, v, b9, kr⟩ => ?_
   rw [ks.arrs o ho, ks.arrs b hb] at v
   obtain ⟨e1, -⟩ := sub_val v b9 (val32_lt _ _ _ _) (ks.lt ho) (ks.lt hb)
@@ -209,7 +212,7 @@ theorem selE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o a b sl : Nat} (ho 
     (bit : F sl ≤ 1) :
     WP isa (sel o a b sl) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V o (if F sl = 0 then V a else V b)) F ∧ KK B w s.mem t.mem ∧
-      Keep bodyRegs s t := by
+      Keep opsRegs s t := by
   have hsl' : sl + 4 ≤ KeyWorkspace.hdr := flag_hdr sl hsl
   rw [← ks.flg sl hsl] at bit ⊢
   refine WP.mono (sel_ok h ho ha hb nArr_le hoa hob hsl' bit) fun t ⟨ht, kt, v, kr⟩ => ?_
@@ -229,7 +232,7 @@ theorem selSelfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o b sl : Nat} (h
     (hsl : sl ∈ flags := by decide) (bit : F sl ≤ 1) :
     WP isa (sel o o b sl) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V o (if F sl = 0 then V o else V b)) F ∧ KK B w s.mem t.mem ∧
-      Keep bodyRegs s t := by
+      Keep opsRegs s t := by
   have hsl' : sl + 4 ≤ KeyWorkspace.hdr := flag_hdr sl hsl
   rw [← ks.flg sl hsl] at bit ⊢
   refine WP.mono (sel_self_ok h ho hb nArr_le hob hsl' bit) fun t ⟨ht, kt, v, kr⟩ => ?_
@@ -248,7 +251,7 @@ theorem halfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j c : Nat} (hj : j 
     (hjdv : j ≠ aDv := by decide) (h9 : (s.gpr .r9).toNat = c) (hc : c ≤ 1) :
     WP isa (half j) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V j ((V j + 2 ^ (32 * w) * c) / 2)) F ∧ KK B w s.mem t.mem ∧
-      Keep bodyRegs s t := by
+      Keep opsRegs s t := by
   refine WP.mono (half_ok h hj nArr_le (by omega)) fun t ⟨ht, kt, v, kr⟩ => ?_
   refine ⟨ht, ?_, KK.of kt (arr_mem hj) (by simp), kr.mono⟩
   refine ks.step kt (fit_of h) (fun i hi hn => ?_) (fun i hi => ?_) (fun _ _ _ => rfl)
@@ -265,7 +268,7 @@ theorem eqSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a b : Nat} (ha : a
     (hb : b < nArr := by decide) (hd : d ∈ flags := by decide) :
     WP isa (eqS d a b) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w V (upd F d (if V a = V b then 1 else 0)) ∧ KK B w s.mem t.mem ∧
-      Keep bodyRegs s t := by
+      Keep opsRegs s t := by
   have hd' : d + 4 ≤ 160 := flag_hdr d hd
   refine WP.mono (eqS_ok h ha hb nArr_le hd') fun t ⟨ht, kt, v, kr⟩ => ?_
   refine ⟨ht, ?_, KK.of kt (by simp) (by simpa using flag_slot d hd), kr.mono⟩

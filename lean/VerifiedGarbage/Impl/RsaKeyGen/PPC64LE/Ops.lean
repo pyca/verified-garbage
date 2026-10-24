@@ -44,13 +44,13 @@ def selS (d a b c : Nat) : List Instr :=
 def setDigit (j x : Nat) : List Instr := ptr .r5 j ++ [.add .r5 .r5 .r6, .li .r0 x, .store .w .r0 .r5 0]
 
 /-- `[o] := [o] + [a]` modulo `2^(32 w)`, through `n`: `[o] - (0 - [a])`. -/
-def addTo (o a n z : Nat) : List (Prog isa) := [sub3 n z a, sub3 o o n]
+def addTo (o a n z : Nat) : Prog isa := .seq (sub3 n z a) (sub3 o o n)
 
 /-- One step of `mul`: the bit of `[b]` into `sl`, `[m] := bit ? [a] : 0`,
 `[o] += [m]`, `[a] += [a]`, `[b] /= 2`, and one step less. -/
 def mulStep (o a b m n z sl : Nat) : Prog isa := seqs ([
   .block (bitOf sl b),
-  sel m z a sl] ++ addTo o m n z ++ addTo a a n z ++ [
+  sel m z a sl, addTo o m n z, addTo a a n z,
   .block [.li .r9 0],
   half b,
   .block [.subi .r11 .r11 1]])

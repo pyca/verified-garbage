@@ -221,8 +221,8 @@ def eFlags : Prog isa := seqs ([.block (bitOf X3 aE), eqS X4 aE aOne] ++ ltS X5 
 `X6` := `L ≥ 2` and `gcd(R, mE) = 1`. -/
 def dOdd : Prog isa := seqs ([.block (andNotS X0 X5 X3), sel aME aThree aE X0, copy aQd aL, copy aDv aME,
   div aQd aR aDv aDt, invOf aR aME, eqS X1 1 aOne, sub3 aTt aME 3,
-  mulTo aQt aQd aTt [.li .r11 64], mulTo aRt aR aTt [.li .r11 64]] ++ addTo aRt aOne aNc aZero ++
-  [div aRt aDr aDv aDt] ++ [copy aDo aQt] ++ addTo aDo aRt aNc aZero ++ ltS X2 aL aTwo ++
+  mulTo aQt aQd aTt [.li .r11 64], mulTo aRt aR aTt [.li .r11 64], addTo aRt aOne aNc aZero,
+  div aRt aDr aDv aDt, copy aDo aQt, addTo aDo aRt aNc aZero] ++ ltS X2 aL aTwo ++
   [.block (andNotS X6 X2 X1)])
 
 /-- `e = 1`: `X7` := `L ≠ 1`; `X6` and `[aS]` the odd case's or `e = 1`'s. -/

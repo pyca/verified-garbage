@@ -41,7 +41,7 @@ theorem invOfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {a m : Nat} (ha : a
     WP isa (invOf a m) s fun u => Ws u B Z w nArr ∧
       (∃ V', KS u.mem B w V' F ∧ (∀ j < nArr, j ∉ invOfArrs → V' j = V j) ∧
         V' 1 = Nat.gcd (V a) (V m) ∧ ((V m : Nat) : Int) ∣ (V' 3 : Int) * V a - V' 1 ∧ V' 3 < V m) ∧
-      KK B w s.mem u.mem ∧ Keep bodyRegs s u := by
+      KK B w s.mem u.mem ∧ Keep opsRegs s u := by
   have ham : a ≠ aM := fun e => hma (by rw [e]; decide)
   have ha0 : a ≠ 0 := fun e => hma (by rw [e]; decide)
   rw [invOf_eq]
@@ -105,7 +105,7 @@ theorem loadE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j : Nat} (hj : j < 
     (hz : V j = 0) :
     WP isa (load j) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V j (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P L))) F ∧ KK B w s.mem t.mem ∧
-      Keep bodyRegs s t := by
+      Keep opsRegs s t := by
   have hv : val32 s.mem B (arr w j) w = 0 := by rw [← hz, ← ks.arrs j hj]
   refine WP.mono (load_ok h hj nArr_le h6 h8 hL hLw hP hsep
     (fun p hp => by rw [← off_add]; exact byte_zero_of_val32 hv hp)) fun t ⟨ht, kt, v, kr, _⟩ =>

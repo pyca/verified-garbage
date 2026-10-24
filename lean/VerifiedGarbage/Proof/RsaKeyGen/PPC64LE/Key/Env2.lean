@@ -60,7 +60,7 @@ theorem flag_kk {d : Nat} (hd : d ∈ flags) : ∀ x ∈ [d], x ∈ allSlots := 
 theorem bitOfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d j : Nat} (hj : j < nArr := by decide)
     (hd : d ∈ flags := by decide) {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, Ws t B Z w nArr → KS t.mem B w V (upd F d (V j % 2)) → KK B w s.mem t.mem →
-      Keep bodyRegs s t → WP isa (.block rest) t Q) :
+      Keep opsRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (bitOf d j ++ rest)) s Q :=
   bitOf_ok h hj nArr_le (flag_hdr d hd) fun t ht kt v kr =>
     k t ht (ks.flag kt hd (by rw [v, ks.arrs j hj]) (fit_of h)) (KK.of kt (by simp) (flag_kk hd)) kr.mono
@@ -70,7 +70,7 @@ theorem andSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a b : Nat} (hd : 
     (ha : a ∈ flags := by decide) (hb : b ∈ flags := by decide) (ba : F a ≤ 1) (bb : F b ≤ 1)
     {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, Ws t B Z w nArr → KS t.mem B w V (upd F d (if F a = 1 ∧ F b = 1 then 1 else 0)) →
-      KK B w s.mem t.mem → Keep bodyRegs s t → WP isa (.block rest) t Q) :
+      KK B w s.mem t.mem → Keep opsRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (andS d a b ++ rest)) s Q := by
   rw [← ks.flg a ha] at ba k
   rw [← ks.flg b hb] at bb k
@@ -81,7 +81,7 @@ theorem andSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a b : Nat} (hd : 
 theorem notSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a : Nat} (hd : d ∈ flags := by decide)
     (ha : a ∈ flags := by decide) (ba : F a ≤ 1) {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, Ws t B Z w nArr → KS t.mem B w V (upd F d (1 - F a)) → KK B w s.mem t.mem →
-      Keep bodyRegs s t → WP isa (.block rest) t Q) :
+      Keep opsRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (notS d a ++ rest)) s Q := by
   rw [← ks.flg a ha] at ba k
   exact notS_ok h (flag_hdr d hd) (flag_hdr a ha) ba fun t ht kt v kr =>
@@ -92,7 +92,7 @@ theorem andNotSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a b : Nat} (hd
     (ha : a ∈ flags := by decide) (hb : b ∈ flags := by decide) (ba : F a ≤ 1) (bb : F b ≤ 1)
     {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, Ws t B Z w nArr → KS t.mem B w V (upd F d (if F a = 0 ∧ F b = 1 then 1 else 0)) →
-      KK B w s.mem t.mem → Keep bodyRegs s t → WP isa (.block rest) t Q) :
+      KK B w s.mem t.mem → Keep opsRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (andNotS d a b ++ rest)) s Q := by
   rw [← ks.flg a ha] at ba k
   rw [← ks.flg b hb] at bb k
@@ -104,7 +104,7 @@ theorem selSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a b c : Nat} (hd 
     (ha : a ∈ flags := by decide) (hb : b ∈ flags := by decide) (hc : c ∈ flags := by decide)
     (ba : F a ≤ 1) (bb : F b ≤ 1) (bc : F c ≤ 1) {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, Ws t B Z w nArr → KS t.mem B w V (upd F d (if F c = 1 then F b else F a)) →
-      KK B w s.mem t.mem → Keep bodyRegs s t → WP isa (.block rest) t Q) :
+      KK B w s.mem t.mem → Keep opsRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (selS d a b c ++ rest)) s Q := by
   rw [← ks.flg a ha] at ba k
   rw [← ks.flg b hb] at bb k
@@ -127,7 +127,7 @@ theorem setDigitE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j x k : Nat} (h
     (hjdv : j ≠ aDv := by decide) (hx : x < 2 ^ 15) (hk : k < w) (h6 : s.gpr .r6 = BitVec.ofNat 64 (4 * k))
     (hv : V j < 2 ^ (32 * k)) {rest : List Instr} {Q : State → Prop}
     (kk : ∀ t, Ws t B Z w nArr → KS t.mem B w (upd V j (V j + 2 ^ (32 * k) * x)) F →
-      KK B w s.mem t.mem → Keep bodyRegs s t → WP isa (.block rest) t Q) :
+      KK B w s.mem t.mem → Keep opsRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (setDigit j x ++ rest)) s Q := by
   refine setDigit_ok h hj nArr_le hx hk h6 fun t ht kt v kr _ => kk t ht ?_ (KK.of kt (arr_mem hj) (by simp))
     kr.mono
@@ -149,7 +149,7 @@ theorem ltSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a b : Nat} (ha : a
     (hd : d ∈ flags := by decide) :
     WP isa (seqs (ltS d a b)) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V aT (subW w (V a) (V b))) (upd F d (if V a < V b then 1 else 0)) ∧
-      KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
+      KK B w s.mem t.mem ∧ Keep opsRegs s t := by
   change WP isa (.seq (sub3 aT a b) (.block (stBorrow d))) s _
   rw [WP.seq_iff]
   refine WP.mono (sub3E h ks (o := aT) (a := a) (b := b) (by decide) ha hb haT hbT (by decide)) fun t ⟨ht, kt, b9, kk, kr⟩ => ?_
@@ -163,11 +163,10 @@ theorem addToE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o a n z : Nat} (ho
     (ha : a < nArr := by decide) (hn : n < nArr := by decide) (hz : z < nArr := by decide)
     (hon : o ≠ n := by decide) (hna : n ≠ a := by decide) (hnz : n ≠ z := by decide)
     (hodv : o ≠ aDv := by decide) (hndv : n ≠ aDv := by decide) (z0 : V z = 0) :
-    WP isa (seqs (addTo o a n z)) s fun t => Ws t B Z w nArr ∧
+    WP isa (addTo o a n z) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd (upd V n (subW w 0 (V a))) o ((V o + V a) % 2 ^ (32 * w))) F ∧
-      KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
-  change WP isa (.seq (sub3 n z a) (sub3 o o n)) s _
-  rw [WP.seq_iff]
+      KK B w s.mem t.mem ∧ Keep opsRegs s t := by
+  rw [addTo, WP.seq_iff]
   refine WP.mono (sub3E h ks (o := n) (a := z) (b := a) hn hz ha hnz hna hndv) fun t ⟨ht, kt, _, kk, kr⟩ => ?_
   refine WP.mono (sub3SelfE ht kt (o := o) (b := n) ho hn hon hodv) fun u ⟨hu, ku, kk', kr'⟩ =>
     ⟨hu, ?_, kk.trans kk', kr.trans' kr'⟩
@@ -187,7 +186,7 @@ theorem divE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {q r t : Nat} (hq : q
     WP isa (div q r aDv t) s fun u => Ws u B Z w nArr ∧
       (∃ V', KS u.mem B w V' F ∧ (∀ j < nArr, j ≠ q → j ≠ r → j ≠ t → V' j = V j) ∧
         (0 < V aDv → V' q = V q / V aDv ∧ V' r = V q % V aDv)) ∧
-      KK B w s.mem u.mem ∧ Keep bodyRegs s u := by
+      KK B w s.mem u.mem ∧ Keep opsRegs s u := by
   refine WP.mono (div_ok h hq hr (by decide) ht nArr_le hqr hqd hqt hrd hrt (Ne.symm htd) ks.dv)
     fun u ⟨hu, ku, kr, v⟩ => ⟨hu, ⟨fun j => num u.mem B w j, ?_, fun j hj a b c => ?_, fun hd => ?_⟩,
       KK.of ku (by intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
