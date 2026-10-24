@@ -288,7 +288,8 @@ theorem pre_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : A
   exact ⟨by rw [g₂ _ (by decide) (by decide)]; exact hI.b,
     fun r hr => g₂ r (kept_ne r hr).1 (kept_ne r hr).2,
     by rw [rd₂, hI.rd], by rw [wr₂, hI.wr],
-    cs.ready_frame hI.ready (g₂ _ (by decide) (by decide)) rd₂ wr₂ f₂ hR.areasW hR.areasCore, a₂,
+    cs.ready_frame hI.ready (fun r hr _ _ _ => g₂ r (kept_ne r hr).1 (kept_ne r hr).2) rd₂ wr₂ f₂
+      hR.areasW hR.areasCore, a₂,
     f₂.sub hR.areasFine⟩
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
@@ -406,7 +407,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   · rw [u₇.other _ (by decide), u₆.gpr, r31₅, VG.Offset.add_add, hM, Nat.mul_succ]
   · rw [u₇.gpr, u₆.other _ (by decide), r30₅, ofNat_pred64 (by omega_using [hj])]
     congr 1
-  · exact cs.ready_frame hm.ready (by rw [g₇ _ (by decide) (by decide) (by decide) (by decide)])
+  · exact cs.ready_frame hm.ready (fun r hr _ h30 h31 => g₇ r (kept_ne r hr).1 (kept_ne r hr).2 h30 h31)
       (by rw [u₇.rd, u₆.rd, rd₅]) (by rw [u₇.wr, u₆.wr, wr₅]) (by rw [m₇]; exact f₅)
       hR.areasW hR.areasCore
   · rw [m₇, chunksAt_set (j := j) (fun i hi hout => ?_), hI.data, out₅, run_set F c0 (by omega_using [hxs, hj])]

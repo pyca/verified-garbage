@@ -151,8 +151,8 @@ def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
   Ready := Ready
   cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher, dirCore]
   layout := layout d
-  keyArgs_congr h e r w f := keyArgs_congr h e r w f
-  ready_frame h e r w f hs _ := ready_frame h e r w f hs
+  keyArgs_congr h e r w f := keyArgs_congr h e.r3 r w f
+  ready_frame h e r w f hs _ := ready_frame h e.r3 r w f hs
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
 

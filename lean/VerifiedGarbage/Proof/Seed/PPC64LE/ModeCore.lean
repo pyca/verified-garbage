@@ -407,8 +407,8 @@ def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
   Ready := Ready
   cipher_len _ _ := by cases d <;> simp [Proof.Seed.dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, dirCore]
   layout := layout d
-  keyArgs_congr h e r _ f := keyArgs_congr h e r f
-  ready_frame h e r _ f hs _ := ready_frame h e r f hs
+  keyArgs_congr h e r _ f := keyArgs_congr h e.r3 r f
+  ready_frame h e r _ f hs _ := ready_frame h e.r3 r f hs
   prepare_wp := prepare_wp d
   crypt_wp {s B ws k} hB hS hR := by
     refine WP.mono (crypt_ok d hB hS hR.2 hR.1.2.1) fun s' ⟨h5, hk, hf, hb, hrd, hwr⟩ => ?_

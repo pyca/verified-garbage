@@ -71,6 +71,15 @@ pub(crate) mod brainpoolp512r1_mont;
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
+pub(crate) mod camellia_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod camellia_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod camellia_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
