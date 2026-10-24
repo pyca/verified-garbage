@@ -1881,6 +1881,1056 @@ blr",
     )
 }
 
+/// `SimpleBitPack(f, b)` (FIPS 204 Algorithm 16): writes the 256 coefficients of `*f` to `out` as `bitlen b`-bit little-endian fields.
+///
+/// Contract: `VG.Spec.MlDsa.simpleBitPackContract`. Constant time: only the pointers, `b` and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of `len` bytes.
+/// * `b` must be 1023, 43 or 15, and `len` must be `32 * bitlen b` (320, 192 or 128).
+/// * Each of the 256 `u32`s of `f` must be at most `b`.
+/// * `out` must not overlap `f` (distinct Rust objects never do).
+/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"addi %r10, %r3, 0
+addi %r11, %r5, 0
+li %r9, 15
+subf %r9, %r9, %r4
+cmplwi %cr0, %r9, 0
+beq %cr0, 20f
+li %r9, 43
+subf %r9, %r9, %r4
+cmplwi %cr0, %r9, 0
+beq %cr0, 22f
+li %r12, 64
+24:
+li %r8, 0
+lwz %r9, 0(%r10)
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 4(%r10)
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+stb %r8, 1(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 8(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+stb %r8, 2(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 12(%r10)
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+stb %r8, 3(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 4(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 16
+addi %r11, %r11, 5
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 24b
+b 23f
+22:
+li %r12, 64
+25:
+li %r8, 0
+lwz %r9, 0(%r10)
+add %r8, %r8, %r9
+lwz %r9, 4(%r10)
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 8(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+stb %r8, 1(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 12(%r10)
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+stb %r8, 2(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 16
+addi %r11, %r11, 3
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 25b
+23:
+b 21f
+20:
+li %r12, 128
+26:
+li %r8, 0
+lwz %r9, 0(%r10)
+add %r8, %r8, %r9
+lwz %r9, 4(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 8
+addi %r11, %r11, 1
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 26b
+21:
+blr",
+    )
+}
+
+/// `BitPack(f mod± q, a, b)` (FIPS 204 Algorithm 17): writes `b - (fᵢ mod± q)` for the 256 coefficients `fᵢ` of `*f` to `out` as `bitlen (a + b)`-bit little-endian fields.
+///
+/// Contract: `VG.Spec.MlDsa.bitPackContract`. Constant time: only the pointers, `a`, `b` and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of `len` bytes.
+/// * `(a, b)` must be `(2, 2)`, `(4, 4)`, `(4095, 4096)`, `(2^17 - 1, 2^17)` or `(2^19 - 1, 2^19)`, and `len` must be `32 * bitlen (a + b)`.
+/// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
+/// * Each coefficient `fᵢ mod± q` of `f` (the one of `fᵢ` and `fᵢ - q` whose absolute value is less than `q/2`) must be in `[-a, b]`.
+/// * `out` must not overlap `f` (distinct Rust objects never do).
+/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"addi %r10, %r3, 0
+addi %r11, %r6, 0
+lis %r7, 127
+ori %r7, %r7, 57345
+li %r9, 2
+subf %r9, %r9, %r5
+cmplwi %cr0, %r9, 0
+beq %cr0, 20f
+li %r9, 4
+subf %r9, %r9, %r5
+cmplwi %cr0, %r9, 0
+beq %cr0, 22f
+li %r9, 4096
+subf %r9, %r9, %r5
+cmplwi %cr0, %r9, 0
+beq %cr0, 24f
+lis %r9, 2
+subf %r9, %r9, %r5
+cmplwi %cr0, %r9, 0
+beq %cr0, 26f
+lis %r4, 8
+li %r12, 128
+28:
+li %r8, 0
+lwz %r9, 0(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 1(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 4(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+stb %r8, 2(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 3(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 4(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 8
+addi %r11, %r11, 5
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 28b
+b 27f
+26:
+lis %r4, 2
+li %r12, 64
+29:
+li %r8, 0
+lwz %r9, 0(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 1(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 4(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+stb %r8, 2(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 3(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 8(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+stb %r8, 4(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 5(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 12(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+stb %r8, 6(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 7(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 8(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 16
+addi %r11, %r11, 9
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 29b
+27:
+b 25f
+24:
+li %r4, 4096
+li %r12, 32
+210:
+li %r8, 0
+lwz %r9, 0(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 4(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 5, 58
+add %r8, %r8, %r9
+stb %r8, 1(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 2(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 8(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+stb %r8, 3(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 12(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 7, 56
+add %r8, %r8, %r9
+stb %r8, 4(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 5(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 16(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+stb %r8, 6(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 7(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 20(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 1, 62
+add %r8, %r8, %r9
+stb %r8, 8(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 24(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+stb %r8, 9(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 10(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 28(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 3, 60
+add %r8, %r8, %r9
+stb %r8, 11(%r11)
+rldicl %r8, %r8, 56, 8
+stb %r8, 12(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 32
+addi %r11, %r11, 13
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 210b
+25:
+b 23f
+22:
+li %r4, 4
+li %r12, 128
+211:
+li %r8, 0
+lwz %r9, 0(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+add %r8, %r8, %r9
+lwz %r9, 4(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 8
+addi %r11, %r11, 1
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 211b
+23:
+b 21f
+20:
+li %r4, 2
+li %r12, 32
+212:
+li %r8, 0
+lwz %r9, 0(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+add %r8, %r8, %r9
+lwz %r9, 4(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 3, 60
+add %r8, %r8, %r9
+lwz %r9, 8(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+stb %r8, 0(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 12(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 1, 62
+add %r8, %r8, %r9
+lwz %r9, 16(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+lwz %r9, 20(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 7, 56
+add %r8, %r8, %r9
+stb %r8, 1(%r11)
+rldicl %r8, %r8, 56, 8
+lwz %r9, 24(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+lwz %r9, 28(%r10)
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+rldicr %r9, %r9, 5, 58
+add %r8, %r8, %r9
+stb %r8, 2(%r11)
+rldicl %r8, %r8, 56, 8
+addi %r10, %r10, 32
+addi %r11, %r11, 3
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 212b
+21:
+blr",
+    )
+}
+
+/// `BitUnpack(v, a, b)` (FIPS 204 Algorithm 19): writes `b - x` for the 256 `bitlen (a + b)`-bit little-endian fields `x` of the `len` bytes at `v`, modulo `q` = 8380417, to `*f`.
+///
+/// Contract: `VG.Spec.MlDsa.bitUnpackContract`. Constant time: only the pointers, `len`, `a` and `b` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `v` must be valid for reads of `len` bytes.
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `(a, b)` must be `(2, 2)`, `(4, 4)`, `(4095, 4096)`, `(2^17 - 1, 2^17)` or `(2^19 - 1, 2^19)`, and `len` must be `32 * bitlen (a + b)`.
+/// * `f` must not overlap `v` (distinct Rust objects never do).
+/// * Neither `v` nor `f` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"addi %r10, %r3, 0
+addi %r11, %r7, 0
+lis %r7, 127
+ori %r7, %r7, 57345
+li %r9, 2
+subf %r9, %r9, %r6
+cmplwi %cr0, %r9, 0
+beq %cr0, 20f
+li %r9, 4
+subf %r9, %r9, %r6
+cmplwi %cr0, %r9, 0
+beq %cr0, 22f
+li %r9, 4096
+subf %r9, %r9, %r6
+cmplwi %cr0, %r9, 0
+beq %cr0, 24f
+lis %r9, 2
+subf %r9, %r9, %r6
+cmplwi %cr0, %r9, 0
+beq %cr0, 26f
+lis %r4, 8
+li %r12, 128
+28:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+lbz %r9, 1(%r10)
+rldicr %r9, %r9, 8, 55
+add %r8, %r8, %r9
+lbz %r9, 2(%r10)
+rldicr %r9, %r9, 16, 47
+add %r8, %r8, %r9
+rldicr %r9, %r8, 44, 19
+rldicl %r9, %r9, 20, 44
+rldicl %r8, %r8, 44, 20
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 0(%r11)
+lbz %r9, 3(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+lbz %r9, 4(%r10)
+rldicr %r9, %r9, 12, 51
+add %r8, %r8, %r9
+rldicr %r9, %r8, 44, 19
+rldicl %r9, %r9, 20, 44
+rldicl %r8, %r8, 44, 20
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 4(%r11)
+addi %r10, %r10, 5
+addi %r11, %r11, 8
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 28b
+b 27f
+26:
+lis %r4, 2
+li %r12, 64
+29:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+lbz %r9, 1(%r10)
+rldicr %r9, %r9, 8, 55
+add %r8, %r8, %r9
+lbz %r9, 2(%r10)
+rldicr %r9, %r9, 16, 47
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 0(%r11)
+lbz %r9, 3(%r10)
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+lbz %r9, 4(%r10)
+rldicr %r9, %r9, 14, 49
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 4(%r11)
+lbz %r9, 5(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+lbz %r9, 6(%r10)
+rldicr %r9, %r9, 12, 51
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 8(%r11)
+lbz %r9, 7(%r10)
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+lbz %r9, 8(%r10)
+rldicr %r9, %r9, 10, 53
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 12(%r11)
+addi %r10, %r10, 9
+addi %r11, %r11, 16
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 29b
+27:
+b 25f
+24:
+li %r4, 4096
+li %r12, 32
+210:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+lbz %r9, 1(%r10)
+rldicr %r9, %r9, 8, 55
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 0(%r11)
+lbz %r9, 2(%r10)
+rldicr %r9, %r9, 3, 60
+add %r8, %r8, %r9
+lbz %r9, 3(%r10)
+rldicr %r9, %r9, 11, 52
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 4(%r11)
+lbz %r9, 4(%r10)
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 8(%r11)
+lbz %r9, 5(%r10)
+rldicr %r9, %r9, 1, 62
+add %r8, %r8, %r9
+lbz %r9, 6(%r10)
+rldicr %r9, %r9, 9, 54
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 12(%r11)
+lbz %r9, 7(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+lbz %r9, 8(%r10)
+rldicr %r9, %r9, 12, 51
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 16(%r11)
+lbz %r9, 9(%r10)
+rldicr %r9, %r9, 7, 56
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 20(%r11)
+lbz %r9, 10(%r10)
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+lbz %r9, 11(%r10)
+rldicr %r9, %r9, 10, 53
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 24(%r11)
+lbz %r9, 12(%r10)
+rldicr %r9, %r9, 5, 58
+add %r8, %r8, %r9
+rldicr %r9, %r8, 51, 12
+rldicl %r9, %r9, 13, 51
+rldicl %r8, %r8, 51, 13
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 28(%r11)
+addi %r10, %r10, 13
+addi %r11, %r11, 32
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 210b
+25:
+b 23f
+22:
+li %r4, 4
+li %r12, 128
+211:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+rldicr %r9, %r8, 60, 3
+rldicl %r9, %r9, 4, 60
+rldicl %r8, %r8, 60, 4
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 0(%r11)
+rldicr %r9, %r8, 60, 3
+rldicl %r9, %r9, 4, 60
+rldicl %r8, %r8, 60, 4
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 4(%r11)
+addi %r10, %r10, 1
+addi %r11, %r11, 8
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 211b
+23:
+b 21f
+20:
+li %r4, 2
+li %r12, 32
+212:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 0(%r11)
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 4(%r11)
+lbz %r9, 1(%r10)
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 8(%r11)
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 12(%r11)
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 16(%r11)
+lbz %r9, 2(%r10)
+rldicr %r9, %r9, 1, 62
+add %r8, %r8, %r9
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 20(%r11)
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 24(%r11)
+rldicr %r9, %r8, 61, 2
+rldicl %r9, %r9, 3, 61
+rldicl %r8, %r8, 61, 3
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 28(%r11)
+addi %r10, %r10, 3
+addi %r11, %r11, 32
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 212b
+21:
+blr",
+    )
+}
+
+/// The polynomial `t1 · 2^13` of a public key (FIPS 204 Algorithm 23 and line 9 of Algorithm 8): writes the 256 10-bit little-endian fields of the 320 bytes `*v`, each multiplied by 2^13, to `*f`.
+///
+/// Contract: `VG.Spec.MlDsa.unpackT1Contract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `v` must be valid for reads of 320 bytes.
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `f` must not overlap `v` (distinct Rust objects never do).
+/// * Neither `v` nor `f` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"addi %r10, %r3, 0
+addi %r11, %r4, 0
+li %r12, 64
+20:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+lbz %r9, 1(%r10)
+rldicr %r9, %r9, 8, 55
+add %r8, %r8, %r9
+rldicr %r9, %r8, 54, 9
+rldicl %r9, %r9, 10, 54
+rldicl %r8, %r8, 54, 10
+rldicr %r9, %r9, 13, 50
+stw %r9, 0(%r11)
+lbz %r9, 2(%r10)
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+rldicr %r9, %r8, 54, 9
+rldicl %r9, %r9, 10, 54
+rldicl %r8, %r8, 54, 10
+rldicr %r9, %r9, 13, 50
+stw %r9, 4(%r11)
+lbz %r9, 3(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+rldicr %r9, %r8, 54, 9
+rldicl %r9, %r9, 10, 54
+rldicl %r8, %r8, 54, 10
+rldicr %r9, %r9, 13, 50
+stw %r9, 8(%r11)
+lbz %r9, 4(%r10)
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+rldicr %r9, %r8, 54, 9
+rldicl %r9, %r9, 10, 54
+rldicl %r8, %r8, 54, 10
+rldicr %r9, %r9, 13, 50
+stw %r9, 12(%r11)
+addi %r10, %r10, 5
+addi %r11, %r11, 16
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 20b
+blr",
+    )
+}
+
+/// `HintBitPack` (FIPS 204 Algorithm 20): writes the encoding of the hint of `k = len - omega` polynomials of 256 coefficients at `h` (a coefficient is 1 if it is not 0) to the `len = omega + k` bytes at `y`.
+///
+/// Contract: `VG.Spec.MlDsa.hintBitPackContract`. Not constant time in the hint: timing may depend on the pointers, `hlen`, `omega`, `len` and the hint at `h` (which the signature it encodes reveals), but not on anything else.
+///
+/// # Safety
+///
+/// * `h` must be valid for reads of `4 * hlen` bytes.
+/// * `y` must be valid for reads and writes of `len` bytes.
+/// * `(omega, len - omega)` must be `(80, 4)`, `(55, 6)` or `(75, 8)`, and `hlen` must be `256 * (len - omega)`.
+/// * The hint at `h` must have at most `omega` coefficients that are not 0.
+/// * `y` must not overlap `h` (distinct Rust objects never do).
+/// * Neither `h` nor `y` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"rldicr %r5, %r5, 32, 31
+rldicl %r5, %r5, 32, 32
+subf %r4, %r5, %r7
+addi %r9, %r7, 0
+li %r0, 0
+addi %r10, %r6, 0
+20:
+stb %r0, 0(%r10)
+addi %r10, %r10, 1
+addi %r9, %r9, -1
+cmpldi %cr0, %r9, 0
+bne %cr0, 20b
+addi %r9, %r4, 0
+add %r10, %r6, %r5
+li %r11, 0
+21:
+li %r12, 0
+22:
+lwz %r8, 0(%r3)
+cmplwi %cr0, %r8, 0
+beq %cr0, 23f
+add %r8, %r6, %r11
+stb %r12, 0(%r8)
+addi %r11, %r11, 1
+b 24f
+23:
+24:
+addi %r3, %r3, 4
+addi %r12, %r12, 1
+addi %r8, %r12, -256
+cmpldi %cr0, %r8, 0
+bne %cr0, 22b
+stb %r11, 0(%r10)
+addi %r10, %r10, 1
+addi %r9, %r9, -1
+cmpldi %cr0, %r9, 0
+bne %cr0, 21b
+blr",
+    )
+}
+
+/// `HintBitUnpack` (FIPS 204 Algorithm 21): if the `len = omega + k` bytes at `y` encode a hint of `k` polynomials, writes it to `h` as `k` polynomials of 256 coefficients 0 or 1 and returns 1; if they are malformed (`⊥`), returns 0, and `h` is unspecified.
+///
+/// Contract: `VG.Spec.MlDsa.hintBitUnpackContract`. Not constant time in the encoding: timing may depend on the pointers, `len`, `omega`, `hlen` and the bytes at `y` (part of a signature), but not on anything else.
+///
+/// # Safety
+///
+/// * `y` must be valid for reads of `len` bytes.
+/// * `h` must be valid for reads and writes of `4 * hlen` bytes.
+/// * `(omega, len - omega)` must be `(80, 4)`, `(55, 6)` or `(75, 8)`, and `hlen` must be `256 * (len - omega)`.
+/// * `h` must not overlap `y` (distinct Rust objects never do).
+/// * Neither `y` nor `h` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"rldicr %r5, %r5, 32, 31
+rldicl %r5, %r5, 32, 32
+subf %r12, %r5, %r4
+addi %r9, %r7, 0
+li %r0, 0
+addi %r10, %r6, 0
+20:
+stw %r0, 0(%r10)
+addi %r10, %r10, 4
+addi %r9, %r9, -1
+cmpldi %cr0, %r9, 0
+bne %cr0, 20b
+li %r11, 0
+add %r10, %r3, %r5
+21:
+subf %r0, %r11, %r5
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+beq %cr0, 22f
+b 23f
+22:
+lbz %r8, 0(%r10)
+subf %r0, %r11, %r8
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+beq %cr0, 24f
+li %r11, 256
+b 25f
+24:
+subf %r0, %r8, %r5
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+beq %cr0, 26f
+li %r11, 256
+b 27f
+26:
+subf %r0, %r8, %r11
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+beq %cr0, 28f
+add %r9, %r3, %r11
+lbz %r9, 0(%r9)
+rldicr %r9, %r9, 2, 61
+add %r9, %r6, %r9
+li %r0, 1
+stw %r0, 0(%r9)
+addi %r11, %r11, 1
+subf %r0, %r8, %r11
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+beq %cr0, 210f
+212:
+add %r9, %r3, %r11
+lbz %r0, 0(%r9)
+addi %r9, %r9, -1
+lbz %r9, 0(%r9)
+subf %r0, %r0, %r9
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+beq %cr0, 213f
+add %r9, %r3, %r11
+lbz %r9, 0(%r9)
+rldicr %r9, %r9, 2, 61
+add %r9, %r6, %r9
+li %r0, 1
+stw %r0, 0(%r9)
+addi %r11, %r11, 1
+b 214f
+213:
+li %r11, 256
+214:
+subf %r0, %r8, %r11
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+bne %cr0, 212b
+b 211f
+210:
+211:
+b 29f
+28:
+29:
+27:
+25:
+23:
+addi %r10, %r10, 1
+addi %r6, %r6, 1024
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 21b
+subf %r0, %r5, %r11
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+beq %cr0, 215f
+217:
+add %r9, %r3, %r11
+lbz %r9, 0(%r9)
+cmpldi %cr0, %r9, 0
+beq %cr0, 218f
+li %r11, 256
+b 219f
+218:
+addi %r11, %r11, 1
+219:
+subf %r0, %r5, %r11
+rldicl %r0, %r0, 1, 63
+cmpldi %cr0, %r0, 0
+bne %cr0, 217b
+b 216f
+215:
+216:
+subf %r0, %r11, %r5
+rldicl %r0, %r0, 1, 63
+li %r3, 1
+subf %r3, %r0, %r3
+blr",
+    )
+}
+
 /// `Power2Round` (FIPS 204 Algorithm 35) of each coefficient of `*t`: writes the `r1`s to `*t1` and the `r0`s, modulo `q` = 8380417, to `*t0`.
 ///
 /// Contract: `VG.Spec.MlDsa.power2RoundContract`. Constant time: only the pointers may affect timing, not the data.
