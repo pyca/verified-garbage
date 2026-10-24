@@ -103,7 +103,7 @@ def satMem : Mem := fun a =>
   else 0
 
 theorem verified : Verified X86.target Impl.MlKem.X86.encaps (encapsContract X86.abi 88) := by
-  refine Piece.verified (((piece (L := L768) (by decide) (NoSp.of_all (by decide +kernel))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
+  refine Piece.verified (((piece (L := L768) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
     (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩

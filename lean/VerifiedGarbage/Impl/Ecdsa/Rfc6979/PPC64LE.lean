@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Impl.Mont.PPC64LE
+public import VerifiedGarbage.Impl.Weierstrass.PPC64LE
 
 /-!
 # Deterministic ECDSA (RFC 6979) on PPC64LE
@@ -68,18 +69,22 @@ def fScratch : Nat := 216
 def fDigest : Nat := 224
 def fD : Nat := 232
 def fOut : Nat := 240
-/-- If `hHigh`: `h` in 64 bytes, at the frame's top. -/
+/-- If `hHigh`: `h` in 64 bytes, at the frame's top; if `wide`, the digest
+for `core` (72 bytes), then the candidate (`fKb`, 72 bytes). -/
 def fX : Nat := 256
-/-- The bytes above `fX`: 64 if `hHigh`. -/
-def extra (hHigh : Bool) : Nat := if hHigh then 64 else 0
+def fKb : Nat := 328
+/-- The bytes above `fX`: 144 if `wide`, 64 if `hHigh`. -/
+def extra (hHigh : Bool) (wide : Bool := false) : Nat := if wide then 144 else if hHigh then 64 else 0
 /-- The frame's size, a multiple of 16. -/
-def frameBytes (hHigh : Bool := false) : Nat := 256 + extra hHigh
+def frameBytes (hHigh : Bool := false) (wide : Bool := false) : Nat := 256 + extra hHigh wide
 
 /-! Where things are in `scratch`. -/
 def sInner : Nat := 0
 def sOuter : Nat := 192
 def sWork : Nat := 384
 def sMsg : Nat := 2256
+/-- The words of a conversion, if `wide`. -/
+def sSlot : Nat := 2560
 
 /-- HMAC over a hash function, as the code calls it: the block size `B`,
 the digest size `D`, HMAC's `init` and `finalize` with their working space
@@ -112,9 +117,19 @@ namespace Cfg
 
 variable (c : Cfg)
 
+/-- Whether the hash is shorter than the scalars, so that two `V`s make a
+candidate (P-521's 66 bytes with SHA-512's 64). -/
+abbrev wide : Bool := decide (c.H.D < c.len)
+
 /-- Whether `h` is at the frame's top: scalars of more than 48 bytes
-(brainpoolP512r1's 64). -/
-abbrev hHigh : Bool := decide (48 < c.len)
+(brainpoolP512r1's 64), unless `wide`. -/
+abbrev hHigh : Bool := !c.wide && decide (48 < c.len)
+
+/-- The bits of `Q` bytes that are not the order's, `8 Q - qlen` (P-521's 7). -/
+def sh : Nat := 8 * c.len - (c.n.log2 + 1)
+
+/-- The 64-bit words of `Q` bytes. -/
+def w : Nat := (c.len + 7) / 8
 
 /-- Where `h` is. -/
 def fHo : Nat := if c.hHigh then fX else fH
@@ -162,20 +177,37 @@ def copyW (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
   (List.range k).flatMap (cpw src so dst d)
 
 /-- The pointers the messages need: the frame in `r11`, `scratch` in `r9`,
-`d` in `r10`. -/
-def msgPtrs : List Instr := [.addSp .r11 0, .load .d .r9 .r11 fScratch, .load .d .r10 .r11 fD]
+`d` in `r10`, and, if `wide`, `digest` in `r7`. -/
+def msgPtrs (wide : Bool := false) : List Instr :=
+  [.addSp .r11 0, .load .d .r9 .r11 fScratch, .load .d .r10 .r11 fD] ++
+    (if wide then [.load .d .r7 .r11 fDigest] else [])
+
+/-- Copying byte `k` from `so(src)` to `d(dst)`, through `r8`. -/
+def cpb (src : Reg) (so : Nat) (dst : Reg) (d k : Nat) : List Instr :=
+  [.lbz .r8 src (so + k), .stb .r8 dst (d + k)]
+
+/-- The `n` bytes at `so(src)` to `d(dst)`: 32-bit words, then the last
+`n % 4` bytes one at a time. -/
+def copyN (n : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
+  copyW (n / 4) src so dst d ++ (List.range (n % 4)).flatMap fun k => cpb src so dst d (4 * (n / 4) + k)
 
 /-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each, `h` at
 the frame's `ho`) at `scratch + sMsg`, for `V` of `D` bytes, with the frame
-in `r11`, `scratch` in `r9` and `d` in `r10`, a 32-bit word at a time. -/
-def msg (Q D b : Nat) (full : Bool) (ho : Nat := fH) : List Instr :=
+in `r11`, `scratch` in `r9` and `d` in `r10`, a 32-bit word at a time; if
+`wide`, `h` is `Q - D` zero bytes then the digest (from `r7`). -/
+def msg (Q D b : Nat) (full : Bool) (ho : Nat := fH) (wide : Bool := false) : List Instr :=
   copyW (D / 4) .r11 fV .r9 sMsg ++ ([.li .r8 b, .stb .r8 .r9 (sMsg + D)] : List Instr) ++
-    (if full then copyW (Q / 4) .r10 0 .r9 (sMsg + D + 1) ++ copyW (Q / 4) .r11 ho .r9 (sMsg + D + 1 + Q)
+    (if full then
+      if wide then
+        copyN Q .r10 0 .r9 (sMsg + D + 1) ++ ([.li .r8 0] : List Instr) ++
+          (List.range (Q - D)).map (fun k => .stb .r8 .r9 (sMsg + D + 1 + Q + k)) ++
+          copyW (D / 4) .r7 0 .r9 (sMsg + 1 + 2 * Q)
+      else copyW (Q / 4) .r10 0 .r9 (sMsg + D + 1) ++ copyW (Q / 4) .r11 ho .r9 (sMsg + D + 1 + Q)
     else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block (msgPtrs ++ msg c.len c.H.D b true c.fHo))
+  .seq (.block (msgPtrs c.wide ++ msg c.len c.H.D b true c.fHo c.wide))
     (.seq (c.hmac [.addi .r5 .r12 sMsg] (c.H.D + 2 * c.len + 1) fK) c.hmacV)
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
@@ -221,10 +253,47 @@ def initKV : List Instr :=
 /-- The candidates left. -/
 def initCnt : List Instr := [.li .r9 c.tries, .addSp .r11 0, .store .d .r9 .r11 fCnt]
 
-/-- `core(out, d, digest, k, scratch)`, with `k = V`. -/
-def coreArgs : List Instr :=
-  [.addSp .r11 0, .load .d .r3 .r11 fOut, .load .d .r4 .r11 fD, .load .d .r5 .r11 fDigest,
-    .addSp .r6 fV, .load .d .r7 .r11 fScratch]
+/-- `core(out, d, digest, k, scratch)`, with `k = V`, or, if `wide`, the
+digest and the candidate at the frame's top. -/
+def coreArgs (wide : Bool := false) : List Instr :=
+  [.addSp .r11 0, .load .d .r3 .r11 fOut, .load .d .r4 .r11 fD] ++
+    (if wide then [.addSp .r5 fX, .addSp .r6 fKb] else [.load .d .r5 .r11 fDigest, .addSp .r6 fV]) ++
+    [.load .d .r7 .r11 fScratch]
+
+/-- A conversion's block, after `scratch`'s load into `r3` (as `loadBytes`,
+`shrWords` and `storeBytes` take their working space): the frame's `o` in
+`r7`, and the mask `r10` all ones. -/
+def convBody (o s : Nat) : List Instr :=
+  .addSp .r7 o :: Impl.Weierstrass.PPC64LE.loadBytes c.len c.w sSlot .r7 ++
+    Impl.Weierstrass.PPC64LE.shrWords c.w sSlot s ++ ([.li .r10 0, .subi .r10 .r10 1] : List Instr) ++
+    Impl.Weierstrass.PPC64LE.storeBytes c.len c.w .r7 0 sSlot
+
+/-- The `Q` bytes at the frame's `o`, as a big-endian number, shifted right by
+`s` bits in place (`0 < s < 64`), through the words at `scratch + sSlot`. -/
+def conv (o s : Nat) : Prog isa :=
+  .seq (.block [.addSp .r11 0, .load .d .r3 .r11 fScratch]) (.block (c.convBody o s))
+
+/-- If `wide`: the digest for `core`, the digest then `Q - D` zero bytes,
+shifted right by `8 (Q - D) - sh` bits: the digest's integer shifted left by
+`sh` bits. -/
+def coreDigest : Prog isa :=
+  .seq (.block (([.addSp .r11 0, .load .d .r9 .r11 fDigest, .li .r8 0, .store .d .r8 .r11 (fX + c.H.D)] :
+      List Instr) ++ copyW (c.H.D / 4) .r9 0 .r11 fX))
+    (c.conv fX (8 * (c.len - c.H.D) - c.sh))
+
+/-- If `wide`: `V`'s first `D` bytes to the candidate's place. -/
+def keepV : List Instr := .addSp .r11 0 :: copyW (c.H.D / 4) .r11 fV .r11 fKb
+
+/-- If `wide`: the next eight bytes of the candidate from `V`, then the
+candidate's `Q` bytes shifted right by `sh` bits. -/
+def candTop : Prog isa :=
+  .seq (.block [.addSp .r11 0, .load .d .r8 .r11 fV, .store .d .r8 .r11 (fKb + c.H.D)]) (c.conv fKb c.sh)
+
+/-- The candidate: `V = HMAC_K(V)`, which is `k`; or, if `wide`, the
+leftmost `Q` bytes of `V = HMAC_K(V)` then `V = HMAC_K(V)` again, shifted
+right by `sh` bits. -/
+def cand : Prog isa :=
+  if c.wide then .seq c.hmacV (.seq (.block c.keepV) (.seq c.hmacV c.candTop)) else c.hmacV
 
 /-- One candidate fewer, and `r12 ≠ 0` iff the signature failed (the low bit
 of `r3` is 0) and candidates are left: `r12 = ((r3 & 1) - 1) & (count - 1)`. -/
@@ -238,40 +307,43 @@ def again : List Instr := [.li .r12 1]
 /-- Stop. -/
 def stop : List Instr := [.li .r12 0]
 
-/-- One candidate: `V = HMAC_K(V)`, `core` with it, then, if it failed and
+/-- One candidate: `cand`, `core` with it, then, if it failed and
 candidates are left, step h.3. -/
 def tryOne : Prog isa :=
-  .seq c.hmacV
-  (.seq (.block coreArgs)
+  .seq c.cand
+  (.seq (.block (coreArgs c.wide))
   (.seq (.call c.coreN c.coreC)
   (.seq (.block goOn)
     (.ite (.nonzero .d .r12) (.seq c.rekey (.block again)) (.block stop)))))
 
 /-- `K`, `V` and `h` cleared, and the bytes above `fX` (`r3`, the result,
 kept). -/
-def wipe (hHigh : Bool := false) : List Instr :=
+def wipe (hHigh : Bool := false) (wide : Bool := false) : List Instr :=
   ([.addSp .r11 0, .li .r12 0] : List Instr) ++ (List.range 22).map (fun j => .store .d .r12 .r11 (fK + 8 * j)) ++
-    (List.range (extra hHigh / 8)).map fun j => .store .d .r12 .r11 (fX + 8 * j)
+    (List.range (extra hHigh wide / 8)).map fun j => .store .d .r12 .r11 (fX + 8 * j)
 
 /-- `out`, `d`, `digest` and `scratch` into the frame. -/
 def saveArgs : List Instr :=
   [.addSp .r11 0, .store .d .r3 .r11 fOut, .store .d .r4 .r11 fD, .store .d .r5 .r11 fDigest,
     .store .d .r6 .r11 fScratch]
 
+/-- `h`, or, if `wide`, the digest for `core`; and the initial `K` and `V`. -/
+def start : Prog isa := if c.wide then .seq c.coreDigest (.block initKV) else .block (c.reduce ++ initKV)
+
 /-- The frame's body. -/
 def body : Prog isa :=
   .seq (.block saveArgs)
-  (.seq (.block (c.reduce ++ initKV))
+  (.seq c.start
   (.seq (c.rekeyFull 0)
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne (.nonzero .d .r12))
-    (.block (wipe c.hHigh)))))))
+    (.block (wipe c.hHigh c.wide)))))))
 
 /-- `vg_ecdsa_<curve>_<hash>_sign`. -/
 def sign : Prog isa :=
   .seq (.block [.mflr .r0])
-    (.seq (.frame (.push .r0) (.frame (.alloc (frameBytes c.hHigh)) c.body (.free (frameBytes c.hHigh))) (.pop .r0))
+    (.seq (.frame (.push .r0) (.frame (.alloc (frameBytes c.hHigh c.wide)) c.body (.free (frameBytes c.hHigh c.wide))) (.pop .r0))
       (.block [.mtlr .r0]))
 
 end Cfg

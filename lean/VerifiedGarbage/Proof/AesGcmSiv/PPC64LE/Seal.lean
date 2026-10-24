@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Keys
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Crypt
@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Entry
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 
 /-!
 # AES-GCM-SIV on PPC64LE: `vg_aes_gcm_siv_seal`

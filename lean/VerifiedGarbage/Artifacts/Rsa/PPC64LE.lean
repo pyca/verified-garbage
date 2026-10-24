@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVerified
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on PPC64LE -/
@@ -41,6 +42,17 @@ def artifacts : List Artifact := [
         `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the \
         working space's header."]
     code := Impl.Bignum.PPC64LE.Crt.crt
-    verified := Proof.Bignum.PPC64LE.Crt.crt_verified }]
+    verified := Proof.Bignum.PPC64LE.Crt.crt_verified },
+  Spec.Rsa.crtValuesApi.artifact PPC64LE.target {
+    notes := ["`n` is checked as `vg_rsa_public_precompute` checks it; then the checks (`p q = n`, \
+        as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p | 1) = 1`) give a mask, the \
+        arithmetic is the same whatever the key, and the results are stored masked. The model has \
+        no carry bit, so numbers are 32-bit digits. The remainders and quotients are computed by \
+        bit-serial division, `32 w` steps for `w`-digit numbers, and `qInv` by `64 w` steps of the \
+        binary extended Euclidean algorithm modulo `p | 1`, each step's swaps and subtractions \
+        under masks. The pointers and lengths stay in nonvolatile registers, saved with the \
+        others it uses in the working space's header."]
+    code := Impl.Rsa.PPC64LE.CrtValues.code
+    verified := Proof.Rsa.PPC64LE.CrtValues.cv_verified }]
 
 end VG.Artifacts.Rsa.PPC64LE

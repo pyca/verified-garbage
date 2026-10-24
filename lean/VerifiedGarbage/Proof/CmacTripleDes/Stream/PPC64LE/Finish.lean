@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Calls
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Copy
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Calls
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Copy
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -16,6 +15,12 @@ import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Common
 public import VerifiedGarbage.Proof.Cmac.Mem
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # Streaming TDEA-CMAC on PPC64LE: `finish`
