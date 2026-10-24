@@ -85,9 +85,9 @@ theorem adv_vp {d : Cfg} (hH : fH ∈ d.LS) (hL : fHLeft ∈ d.LS) :
     (ld_vp (c := fun _ => d) (fun σ s h => h.1) (by decide) (by decide) (by decide)
       (fun σ s h => h.1.gi.slotV hH) fun σ s t ⟨_, x⟩ h' u => ⟨⟨h', x⟩, u.gpr⟩) ?_
   refine VP.block_append (G := fun σ s => St G d X σ s ∧ s.gpr .r3 = d.V fH + BitVec.ofNat 64 G.pLen)
-    (r3op_vp (c := fun _ => d) (fun σ s h => h.1.1) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-      (Taint.ofRegs [.r28, .r3]) (.block [.addi .r3 .r3 G.pLen]), rfl⟩ (fun s => exec_addi (by decide) l)
-      (fun σ s h => h.2) fun σ s t ⟨_, x⟩ h' e => ⟨⟨h', x⟩, e⟩) ?_
+    (r3op_vp (c := fun _ => d) (f := (· + BitVec.ofNat 64 G.pLen)) (fun σ s h => h.1.1) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
+      (Taint.ofRegs [.r28, .r3]) (.block [.addi .r3 .r3 G.pLen]), rfl⟩ (fun s => exec_addi (d := .r3) (n := .r3) (by decide) l)
+      (fun σ s h => h.2) fun σ s t ⟨⟨_, x⟩, _⟩ h' e => ⟨⟨h', x⟩, e⟩) ?_
   have hHL : fHLeft ∈ (d.setV fH (d.V fH + BitVec.ofNat 64 G.pLen)).LS := List.mem_cons_of_mem _ hL
   refine VP.block_append (G := St G (d.setV fH (d.V fH + BitVec.ofNat 64 G.pLen)) X)
     (st_vp (c := fun _ => d) (fun σ s h => h.1.1) (varOk_of (by decide))
@@ -99,9 +99,11 @@ theorem adv_vp {d : Cfg} (hH : fH ∈ d.LS) (hL : fHLeft ∈ d.LS) :
       fun σ s t ⟨_, x⟩ h' u => ⟨⟨h', x⟩, u.gpr⟩) ?_
   refine VP.block_append (G := fun σ s => St G (d.setV fH (d.V fH + BitVec.ofNat 64 G.pLen)) X σ s ∧
       s.gpr .r3 = d.V fHLeft - BitVec.ofNat 64 G.pLen)
-    (r3op_vp (c := fun _ => d.setV fH (d.V fH + BitVec.ofNat 64 G.pLen)) (fun σ s h => h.1.1)
+    (r3op_vp (c := fun _ => d.setV fH (d.V fH + BitVec.ofNat 64 G.pLen)) (f := (· - BitVec.ofNat 64 G.pLen))
+      (fun σ s h => h.1.1)
       ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r3]) (.block [.subi .r3 .r3 G.pLen]), rfl⟩
-      (fun s => exec_subi (by decide) (Nat.le_of_lt l)) (fun σ s h => h.2) fun σ s t ⟨_, x⟩ h' e => ⟨⟨h', x⟩, e⟩) ?_
+      (fun s => exec_subi (d := .r3) (n := .r3) (by decide) (Nat.le_of_lt l)) (fun σ s h => h.2)
+      fun σ s t ⟨⟨_, x⟩, _⟩ h' e => ⟨⟨h', x⟩, e⟩) ?_
   exact st_vp (c := fun _ => d.setV fH (d.V fH + BitVec.ofNat 64 G.pLen)) (fun σ s h => h.1.1)
     (varOk_of (by decide)) fun σ s t ⟨⟨_, x⟩, r3⟩ h' _ => ⟨by rw [r3] at h'; exact h', x⟩
 
@@ -264,7 +266,8 @@ theorem gPart_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
   unfold Geo.gPart
   rw [show ([ld .r3 fHs, st .r3 fH, ld .r3 fHsLen, st .r3 fHLeft] : List Instr) =
     [ld .r3 fHs] ++ ([st .r3 fH] ++ ([ld .r3 fHsLen] ++ [st .r3 fHLeft])) from rfl]
-  refine VP.seq (VP.block_append (G := fun σ s => St G c X σ s ∧ s.gpr .r3 = G.hs)
+  refine VP.seq (G := St G ((c.setV fH G.hs).setV fHLeft (BitVec.ofNat 64 G.hsLen)) X)
+    (VP.block_append (G := fun σ s => St G c X σ s ∧ s.gpr .r3 = G.hs)
     (ld_vp (c := fun _ => c) (fun σ s h => h.1) (by decide) (by decide) (by decide)
       (fun σ s h => h.1.gi.fixedV (by simp [fixedWords])) fun σ s t ⟨_, x⟩ h' u => ⟨⟨h', x⟩, u.gpr⟩) ?_) ?_
   · refine VP.block_append (G := St G (c.setV fH G.hs) X)
