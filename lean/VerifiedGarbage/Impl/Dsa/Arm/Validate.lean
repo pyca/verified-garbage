@@ -58,6 +58,13 @@ def subgroup (pLen qLen : Nat) : Prog isa := Core.sequence [
 def publicKey (pLen qLen : Nat) : Prog isa :=
   .seq (domain pLen qLen) (subgroup pLen qLen)
 
+/-- A signer checks g^x = y separately, so g's subgroup check implies y's. -/
+def signingSubgroup (pLen qLen : Nat) : Prog isa :=
+  .seq (Core.power pLen qLen .p (.input .g) (.input .q) t) (isOne pLen (.local t))
+
+def signingKey (pLen qLen : Nat) : Prog isa :=
+  .seq (domain pLen qLen) (signingSubgroup pLen qLen)
+
 def privateKey (pLen qLen : Nat) : Prog isa := Core.sequence [
   .seq (range qLen .q (.input .x)) (range qLen .q (.input .nonce)),
   Core.power pLen qLen .p (.input .g) (.input .x) t,

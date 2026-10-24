@@ -27,6 +27,7 @@ def artifacts : List Artifact := [
       Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`; \
       exponentiation uses fixed-iteration square-and-multiply with a masked selection. \
       The digest's prefix, clamped to q's actual byte width, is reduced byte by byte. \
+      The generator's subgroup check and g^x=y imply the public value's subgroup check. \
       Validation accumulates a mask; every failure zeros the entire output. Callee-saved \
       registers reside in `scratch`."]
     code := Impl.Dsa.Arm.Entry.operation true
