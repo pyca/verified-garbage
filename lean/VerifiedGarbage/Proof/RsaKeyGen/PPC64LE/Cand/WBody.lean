@@ -94,7 +94,7 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
   · have hav : 8 * w * (k + 1) + 8 * w ≤ r.length := by
       simp only [decide_eq_false_iff_not] at hz
       split at hz <;> first | omega | exact absurd rfl hz
-    have hk1 : k + 1 ≤ 8 * w * (k + 1) := Nat.le_mul_of_pos_left _ hL
+    have hk1 : 32 * (k + 1) ≤ 8 * w * (k + 1) := Nat.mul_le_mul_right _ (by omega)
     have hsn := mrS_snd c (8 * w) r k
     have hwd : ∀ d, d < 31 → d ∉ lpWords → word t.mem B (8 * d) = word s.mem B (8 * d) := fun d h1 h2 =>
       hi.hdr _ (by omega) (fun j hj => by

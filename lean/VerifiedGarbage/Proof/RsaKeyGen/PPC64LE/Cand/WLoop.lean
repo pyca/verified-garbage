@@ -90,7 +90,7 @@ structure LIn (s : State) (B Ra : Addr) (L w c rl ch : Nat) (r : Spec.RsaKeyGen.
   rlen : word s.mem B (8 * hRandLen) = BitVec.ofNat 64 rl
   kk : word s.mem B (8 * hK) = BitVec.ofNat 64 (8 * w)
   chk : word s.mem B (8 * hChecks) = BitVec.ofNat 64 ch
-  hrl : rl < 2 ^ 62
+  hrl : rl < 2 ^ 64
   tape : Spec.Rsa.bytesAt s.mem Ra rl = r
   rN : ∀ i < rl, InRegions (s.rd ++ s.wr) (off Ra i) 1
   rD : ∀ ρ ∈ [(⟨B, 8 * L⟩ : Region), below s.sp 176], (⟨Ra, rl⟩ : Region).Disjoint ρ
