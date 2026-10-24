@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Ctr32
 public import VerifiedGarbage.Proof.Aes.PPC64LE.ExpandKey
@@ -8,6 +8,12 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Aes.PPC64LE.ExpandKey
+public import VerifiedGarbage.Impl.Gcm.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Aes
 
 /-!
 # AES-GCM on PPC64LE: the calls

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Shift
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Words
 import VerifiedGarbage.Proof.RsaKeyGen.X86.NearScalar
 import VerifiedGarbage.Proof.Mont.X86.Instr
 

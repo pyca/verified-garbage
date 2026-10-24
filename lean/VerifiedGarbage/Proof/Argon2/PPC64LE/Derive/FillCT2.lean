@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillPtr
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCache
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
+meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 
 /-!
 # Argon2 on PPC64LE: a block of the filling loops, in two runs

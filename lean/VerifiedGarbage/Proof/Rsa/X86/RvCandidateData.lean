@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowLoop
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
 
 /-! # A recovery candidate's public context and the stages of its search
 

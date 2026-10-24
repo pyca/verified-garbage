@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: one instruction at a time

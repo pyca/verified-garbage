@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyFinal
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyConstantTiming
-import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
 
 /-! # Final validity checks never branch on secret key values -/
 

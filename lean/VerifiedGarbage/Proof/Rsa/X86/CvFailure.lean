@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86.CvClear
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.TCB.X86.Target
 
 /-! # Invalid moduli clear all CRT outputs while preserving inputs and the ABI save area -/
 

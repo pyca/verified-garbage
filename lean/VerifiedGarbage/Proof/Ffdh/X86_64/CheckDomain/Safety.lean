@@ -47,7 +47,8 @@ private theorem template_instrs (p : Instr → Bool) (mul : Nat → Nat → Nat 
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.withQ VG.Impl.Ffdh.X86_64.Domain.CheckDomain.divides
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.subgroup VG.Impl.Ffdh.X86_64.Domain.CheckDomain.qRange
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1 Crt.redc pow Crt.expLoop Crt.expLoopS Crt.expWin
-    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old at hp ⊢
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next at hp ⊢
   repeat' first
     | rw [all_seqs] at *
     | rw [i_seq] at *
@@ -74,7 +75,8 @@ private theorem template_inlineOk (mul : Nat → Nat → Nat → Prog isa)
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.withQ VG.Impl.Ffdh.X86_64.Domain.CheckDomain.divides
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.subgroup VG.Impl.Ffdh.X86_64.Domain.CheckDomain.qRange
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1 Crt.redc pow Crt.expLoop Crt.expLoopS Crt.expWin
-    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old at hp ⊢
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next at hp ⊢
   repeat' first
     | rw [inlineOk_seqs] at *
     | rw [k_seq] at *
@@ -94,7 +96,8 @@ private theorem template_inline (mul : Nat → Nat → Nat → Prog isa) :
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.withQ VG.Impl.Ffdh.X86_64.Domain.CheckDomain.divides
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.subgroup VG.Impl.Ffdh.X86_64.Domain.CheckDomain.qRange
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1 Crt.redc pow Crt.expLoop Crt.expLoopS Crt.expWin
-    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
   simp only [Code.inline, inline_seqs, List.map_append, List.map_cons, List.map_nil]
   simp (disch := decide) only [inline_of_noCalls, map_inline_of_noCalls]
 

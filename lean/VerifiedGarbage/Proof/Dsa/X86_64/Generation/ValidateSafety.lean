@@ -20,6 +20,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
 open VG.Impl.Rsa.X86_64
 
+
+variable {checkName : String}
+
 theorem checkParameters_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
     (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) :
     generationSafe (Generate.checkParameters sq mul) := by
@@ -30,7 +33,8 @@ theorem checkParameters_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog
     PublicPower.encodedPower PublicPower.expLoop PublicPower.byte PublicPower.window
     PublicPower.squares PublicPower.squaresInit PublicPower.squaresNext
     PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
-    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
   repeat' first
     | rw [generation_instrs_seqs]
     | rw [Code.allInstrs]
@@ -41,10 +45,10 @@ theorem checkParameters_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog
 
 theorem validate_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
     (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (pLen qLen : Nat) :
-    generationSafe (validate sq mul pLen qLen) := by
+    generationSafe (validate (checkName := checkName) sq mul pLen qLen) := by
   unfold validate
   repeat' first
-    | exact checkParameters_safe sq mul hs hm
+    | exact (checkParameters_safe sq mul hs hm).call checkName
     | apply generationSafe.seq
   all_goals rfl
 

@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedBit
 import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
 import VerifiedGarbage.Proof.Rsa.X86.RvCount
-import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
+import VerifiedGarbage.Proof.Mont.X86.WindowWords
 
 /-! Four fused bits per public-width exponent window. -/
 @[expose] public section

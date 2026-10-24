@@ -7,9 +7,13 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Sig
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass.Point
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Calling checked public RSA retains every immutable verification input -/
 

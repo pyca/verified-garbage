@@ -19,12 +19,15 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 open VG.Proof.MillerRabin.X86_64
 
+
+variable {checkName : String}
+
 theorem seedAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr)
     {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
-    WP isa (Impl.Dsa.X86_64.Generation.seedAttempt H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) s
+    WP isa (Impl.Dsa.X86_64.Generation.seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) s
       (SeedFinished p W (VG.Proof.Dsa.Generation.seedResult (8 * p.geo.pLen) (8 * p.geo.qLen) seed.bytes
         ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used)) s) := by
   unfold Impl.Dsa.X86_64.Generation.seedAttempt
@@ -77,7 +80,7 @@ theorem seedAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kerne
         have seedv := seedu.frame (p := p) (by rw [hm]; exact Frame.refl _ _) kv.2.1 kv.2.2
         have qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen =
             Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ bqu
-        have call := seedPrimeFinish_ok H M Sq K mv seed hlen seedv u1 qv u16 huu
+        have call := seedPrimeFinish_ok (checkName := checkName) H M Sq K mv seed hlen seedv u1 qv u16 huu
         have expected : VG.Proof.Dsa.Generation.seedResult (8 * p.geo.pLen) (8 * p.geo.qLen) seed.bytes
             ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used) =
             VG.Proof.Dsa.Generation.primeResult (8 * p.geo.pLen) (8 * p.geo.qLen)

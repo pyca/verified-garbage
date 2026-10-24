@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_stream_verify`

@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvABI
-public import VerifiedGarbage.Proof.Rsa.X86.RvBody
+import VerifiedGarbage.Proof.Rsa.X86.RvBody
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Framework.Offset
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
+public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
+public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 
 /-! # The shared scratch allowance covers the native-word recovery arrays -/
 

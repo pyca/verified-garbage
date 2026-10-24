@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The attempt's precondition (x86)
 

@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillBlock
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTBase
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the filling loops, in two runs

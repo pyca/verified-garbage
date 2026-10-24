@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.Lookup
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # RC2 on PPC64LE: the table scan

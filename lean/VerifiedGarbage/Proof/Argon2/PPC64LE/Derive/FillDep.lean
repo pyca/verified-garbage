@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the filling state, and data-dependent addressing

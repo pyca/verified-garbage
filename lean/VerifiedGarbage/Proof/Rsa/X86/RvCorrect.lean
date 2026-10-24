@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Rsa.X86.RvBody
 
 /-! # Functional correctness and cdecl preservation of i686 RSA prime recovery -/
 

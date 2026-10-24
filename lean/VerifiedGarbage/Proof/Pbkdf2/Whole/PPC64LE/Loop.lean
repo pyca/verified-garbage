@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common

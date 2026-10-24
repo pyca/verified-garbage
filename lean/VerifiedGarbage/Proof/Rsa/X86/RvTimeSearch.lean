@@ -6,11 +6,12 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCandidate
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquareInit
-import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 import VerifiedGarbage.Proof.Rsa.RecoverTries
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 
 /-! # The candidate search leaks only public data
 

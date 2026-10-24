@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
 public import VerifiedGarbage.Spec.X448.Contract
 
-import VerifiedGarbage.Proof.X448.PPC64LE.Setup
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes

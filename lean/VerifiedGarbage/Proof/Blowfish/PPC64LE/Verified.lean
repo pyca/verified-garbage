@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Blowfish on PPC64LE meets its contracts

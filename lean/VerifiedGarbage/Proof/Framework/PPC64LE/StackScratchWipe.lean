@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # A scratch buffer on the stack, wiped after use (PPC64LE)

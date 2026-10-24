@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Loop
+import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Loop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
 import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Iterate
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Block
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: correctness

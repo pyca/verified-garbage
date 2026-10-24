@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Correct
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: the shared contracts

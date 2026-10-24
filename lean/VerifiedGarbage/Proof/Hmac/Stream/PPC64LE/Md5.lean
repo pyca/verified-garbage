@@ -10,6 +10,10 @@ meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 meta import VerifiedGarbage.Spec.Md5.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.Reloc
+meta import VerifiedGarbage.Proof.Hmac.Scratch
+meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
+public import VerifiedGarbage.Proof.Hmac.Scratch
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 
 /-!
 # HMAC-MD5 on PPC64LE

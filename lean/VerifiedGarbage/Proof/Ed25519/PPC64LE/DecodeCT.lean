@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverSign
 public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverCand
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverCand
 
 /-!
 # Ed25519 on PPC64LE: a decoding leaks only its encoding

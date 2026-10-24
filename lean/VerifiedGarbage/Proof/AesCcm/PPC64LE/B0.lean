@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.Words
 import VerifiedGarbage.Proof.AesCcm.Rev64
@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Absorb
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # AES-CCM on PPC64LE: `B₀` (`b0 y`) and the counter blocks (`ctrAt`)

@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFront
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateEntry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateMemory
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateResultSpec

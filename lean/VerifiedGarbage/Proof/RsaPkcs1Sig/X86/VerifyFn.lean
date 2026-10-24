@@ -10,9 +10,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEntryCache
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Dsa.X86.RandomBody
 import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
-import VerifiedGarbage.Proof.Mont.X86.Chain
 
 /-! # Callable PKCS #1 signing restores the i686 calling convention -/
 

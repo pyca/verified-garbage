@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Squares
 
 /-!
 # `R² mod m` by word steps (x86-64)
@@ -153,7 +153,7 @@ def fast : Prog isa := seqs [
   recip,
   .block [.mov .rcx (.mem (hdr sW)), .shift .shr .rcx 2],
   steps,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2]
+  R2Squares.run mul 1]
 
 /-- `vg_rsa_public`'s computation of `R² mod m`: `2^(b - 1)` for the bit
 length `b` of `m`, doubled `64 - j + w` times (for the top bit `j` of its top
@@ -165,7 +165,7 @@ def old : List (Prog isa) := [
   setWord aR2 .rcx,
   .block [.mov .rcx (.mem (hdr sCnt)), .alu .add .rcx (.mem (hdr sW))],
   doubles aN aAcc aTmp aR2 sCnt,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2]
+  R2Squares.run mul 5]
 
 /-- ZF set iff the top bit of `m`'s top word is set and `w` (`r12`) is a
 multiple of 4, for `m` at `r10`. -/

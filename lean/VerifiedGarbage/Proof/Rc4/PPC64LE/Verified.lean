@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.PPC64LE.Apply
-public import VerifiedGarbage.Proof.Rc4.PPC64LE.Init
+import VerifiedGarbage.Proof.Rc4.PPC64LE.Apply
+import VerifiedGarbage.Proof.Rc4.PPC64LE.Init
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Spec.Rc4.Contract
@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.Rc4.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Impl.Rc4.PPC64LE
+public import VerifiedGarbage.Proof.Rc4.PPC64LE.Lookup
+public import VerifiedGarbage.Spec.Rc4
+public import VerifiedGarbage.TCB.Artifact
 
 /-! # RC4 on PPC64LE: verified against the shared contracts -/
 

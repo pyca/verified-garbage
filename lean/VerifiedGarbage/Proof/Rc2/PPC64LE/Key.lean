@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.KeyLoop
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.KeyInit
+import VerifiedGarbage.Proof.Rc2.PPC64LE.KeyInit
 import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.ExpandKey
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # RC2 on PPC64LE: key expansion

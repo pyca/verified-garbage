@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Bignum.X86_64.R2Squares
+
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
@@ -258,7 +260,7 @@ theorem fast_eq (mul : Nat → Nat → Nat → Prog isa) : fast mul = .seq (.blo
       .mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aTmp))),
       .mov32 .rbp (.imm 0)])
     (.seq (wordLoop 0 negBody) (.seq recip (.seq (.block [.mov .rcx (.mem (hdr sW)), .shift .shr .rcx 2])
-      (.seq steps (.seq (mul aR2 aR2 aR2) (mul aR2 aR2 aR2)))))) := rfl
+      (.seq steps (R2Squares.run mul 1))))) := rfl
 
 /-- `fast`: `R² mod m`, for the odd `m` of `w` words (a multiple of 4), its
 top word at least `2^63`; with `r2_ok`'s result. -/
@@ -357,7 +359,7 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have hinv₄ : ((word t₄.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [hw₄, hm₃, o₂'.word (by omega_using [sMV]) (by omega_using [hn', hsv, sMV]),
         ho₂.word (by omega_using [sXV, sMV]) (by omega_using [hn', hsv, sMV]), hm₁]; exact hinv
-  have hsq := sqs_ok M 1 hg₄ hZ hw hw' hR (E := 16 * w) hn₄ hinv₄ (by rw [hx₄]; exact Nat.mod_lt _ hN0)
+  have hsq := rolled_sqs_ok M (n := 1) hg₄ hZ hw hw' (by decide) hR (E := 16 * w) hn₄ hinv₄ (by rw [hx₄]; exact Nat.mod_lt _ hN0)
     (by rw [hx₄, Nat.mod_mod, Nat.mul_comm])
   refine WP.mono hsq fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, ?_, ?_, ?_⟩
   · rw [h3, show 2 ^ (1 + 1) * (16 * w) = 64 * w by omega_using []]
@@ -368,7 +370,7 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Frm.of_arrays1 (Arrays.of_outside (j := aTmp) (List.mem_singleton_self _) o₂' (Nat.le_refl _) (by omega_using []))
         (by simp [r2Ranges])
     exact (((f₂.trans f₂').trans (by rw [hm₃]; exact Frm.refl _ _ _)).trans hf₄).trans
-      (Frm.of_arrays h4' (by simp [r2Ranges]))
+      h4'
   · exact (((((k₁.trans k₂).trans k₂').trans k₃).trans k₄).trans h5).mono (by decide)
 
 /-! ## The choice -/
@@ -405,7 +407,7 @@ theorem fastFlag (T : BitVec 64) {w : Nat} (hw : w < 2 ^ 64) :
     have ey : y = 0 := BitVec.eq_of_toNat_eq (by rw [h3, hQ]; rfl)
     rw [ex, ey]; rfl
 
-theorem old_eq (M : Mont) : seqs (old M.mm) = seqs (r2Steps M) := rfl
+theorem old_eq (M : Mont) : seqs (old M.mm) = seqs (r2StepsWith (R2Squares.run M.mm 5)) := rfl
 
 /-- `choice`: `R² mod m` for the odd `m` of `w ≥ 2` words, its top word not
 zero, by word steps when `m`'s top bit is set and `w` is a multiple of 4 and
@@ -439,7 +441,7 @@ theorem choice_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 6
     refine WP.mono (fast_ok M hg₁ hZ hw hw30 hn₁ hinv₁ hodd (by rw [hm₁]; exact hT) h4)
       fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, h3, by rw [← hm₁]; exact h4', (k₁.trans h5).mono (by decide)⟩
   · rw [old_eq]
-    refine WP.mono (r2_ok M hg₁ hZ hw hw30 hn₁ hinv₁ ((k₁.gpr (by decide)).trans h12)
+    refine WP.mono (r2_ok_with _ (rolled_sqs_spec M 5 (by decide)) hg₁ hZ hw hw30 hn₁ hinv₁ ((k₁.gpr (by decide)).trans h12)
       ((k₁.gpr (by decide)).trans h10) hodd hlo)
       fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, h3, by rw [← hm₁]; exact h4', (k₁.trans h5).mono (by decide)⟩
 

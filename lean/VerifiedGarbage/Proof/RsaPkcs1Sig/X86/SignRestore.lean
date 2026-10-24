@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 import VerifiedGarbage.Proof.Rsa.X86.PrivRestore
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86.State

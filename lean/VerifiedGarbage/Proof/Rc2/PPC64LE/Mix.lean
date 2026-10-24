@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Lookup
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Lookup
 public import VerifiedGarbage.Impl.Rc2.PPC64LE.Block
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.Word
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+public import VerifiedGarbage.Spec.Rc2
 
 /-!
 # RC2 on PPC64LE: mixing and mashing

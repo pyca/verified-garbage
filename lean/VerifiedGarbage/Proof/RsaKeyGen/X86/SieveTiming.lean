@@ -1,9 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveSetupTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SievePattern
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoopTiming

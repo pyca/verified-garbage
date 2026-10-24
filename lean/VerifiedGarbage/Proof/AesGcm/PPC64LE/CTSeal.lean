@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_seal` is constant time

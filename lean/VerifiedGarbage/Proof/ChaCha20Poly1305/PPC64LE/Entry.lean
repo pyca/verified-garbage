@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Calls
-import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Contract
