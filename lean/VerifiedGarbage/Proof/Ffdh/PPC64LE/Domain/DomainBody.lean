@@ -317,4 +317,66 @@ theorem withQ_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 :
       · rw [ite_eq_left hc, ite_eq_left ⟨hb, hb', hc⟩]
       · rw [ite_eq_right hc, ite_eq_right fun h' => hc h'.2.2]
 
+/-- `withoutQ`: `r3 := 1` if `1 < g < p − 1`, else 0. -/
+theorem withoutQ_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+    (h21 : s.gpr .r21 = D) (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hrd : ∀ i < 2 * k, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < 2 * k, ∀ x, ofs B x < Z → off D i ≠ x) (hp : 1 ≤ arr s.mem B w 0) :
+    WP isa withoutQ s fun t =>
+      (t.gpr .r3 = BitVec.ofNat 64 (if 1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k) ∧
+          Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k) < arr s.mem B w 0 - 1 then 1 else 0) ∧
+        Body B w s.mem t.mem) ∧ Keep (rangeRegs ++ ([.r3, .r26] : List Reg)) s t := by
+  unfold withoutQ
+  refine WP.seq (WP.mono (checkG_ok h h23 h21 h28 hk hkw (fun i hi => by rw [off_off']; exact hrd _ (by omega))
+    (fun i hi => by rw [off_off']; exact hsep _ (by omega)) hp) fun s₁ ⟨⟨_, _, r26, b1, _⟩, k1⟩ => ?_)
+  refine WP.ite (s₁.gpr .r26 == 0) (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
+  · rw [r26, mask_beq_zero, Bool.not_eq_true', decide_eq_false_iff_not] at hb
+    refine WP.mono (li_ok s₁ 0 (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ =>
+      ⟨⟨by rw [t3, ite_eq_right hb], by rw [tm]; exact b1⟩, (k1.trans kt).mono (by decide)⟩
+  · rw [r26, mask_beq_zero, Bool.not_eq_false', decide_eq_true_eq] at hb
+    refine WP.mono (li_ok s₁ 1 (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ =>
+      ⟨⟨by rw [t3, ite_eq_left hb], by rw [tm]; exact b1⟩, (k1.trans kt).mono (by decide)⟩
+
+/-- The registers `domainBody` writes. -/
+def domainBodyRegs : List Reg := withQRegs ++ ([.r0] : List Reg)
+
+/-- The condition `domainBody` checks after p's: q's and g's with q, else g's. -/
+def bodyCond (L k p q g : Nat) : Prop := if L = 3 * k then qConds p q g else 1 < g ∧ g < p - 1
+
+instance (L k p q g : Nat) : Decidable (bodyCond L k p q g) := by unfold bodyCond; infer_instance
+
+/-- `domainBody`: `r3 := 1` if `bodyCond`, else 0. -/
+theorem domainBody_ok {s : State} {B D : Addr} {Z w k L : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+    (h21 : s.gpr .r21 = D) (h27 : s.gpr .r27 = BitVec.ofNat 64 L) (h28 : s.gpr .r28 = BitVec.ofNat 64 k)
+    (hk : 1 ≤ k) (hkw : k ≤ 8 * w) (hk' : k ≤ 1024) (hL : L = 2 * k ∨ L = 3 * k)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x)
+    (hP : arr s.mem B w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k)) (hp2 : 2 ≤ arr s.mem B w 0)
+    (hodd : arr s.mem B w 0 % 2 = 1) :
+    WP isa domainBody s fun t =>
+      (t.gpr .r3 = BitVec.ofNat 64 (if bodyCond L k (arr s.mem B w 0)
+          (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k))
+          (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k)) then 1 else 0) ∧
+        Body B w s.mem t.mem) ∧ Keep domainBodyRegs s t := by
+  unfold domainBody
+  refine WP.seq (WP.mono (WP.keep [.r0] (Q := fun t => (t.gpr .r0 == 0) = decide (L = 3 * k) ∧ t.mem = s.mem) (by
+      unfold hasQ
+      prun [h27, h28]
+      exact sub_3k_zero (by omega) (by omega)) (by decide)) fun s₁ ⟨⟨a0, m1⟩, k1⟩ => ?_)
+  have e1 := h.keep k1 (by decide)
+  refine WP.ite (s₁.gpr .r0 == 0) (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
+  · rw [a0, decide_eq_true_eq] at hb
+    subst hb
+    refine WP.mono (withQ_ok e1 ((k1.gpr .r23 (by decide)).trans h23) ((k1.gpr .r21 (by decide)).trans h21)
+      ((k1.gpr .r28 (by decide)).trans h28) hk hkw hk' (by rw [k1.rd, k1.wr]; exact hrd) hsep
+      (by rw [m1]; exact hP) (by rw [m1]; exact hp2) (by rw [m1]; exact hodd)) fun t ⟨⟨t3, bt⟩, kt⟩ =>
+        ⟨⟨by rw [t3, m1]; simp only [bodyCond, ↓reduceIte], by rw [← m1]; exact bt⟩, (k1.trans kt).mono (by decide)⟩
+  · rw [a0, decide_eq_false_iff_not] at hb
+    have h2 : L = 2 * k := by omega
+    subst h2
+    refine WP.mono (withoutQ_ok e1 ((k1.gpr .r23 (by decide)).trans h23) ((k1.gpr .r21 (by decide)).trans h21)
+      ((k1.gpr .r28 (by decide)).trans h28) hk hkw (by rw [k1.rd, k1.wr]; exact hrd) hsep
+      (by rw [m1]; omega)) fun t ⟨⟨t3, bt⟩, kt⟩ =>
+        ⟨⟨by rw [t3, m1]; simp only [bodyCond, hb, ↓reduceIte], by rw [← m1]; exact bt⟩, (k1.trans kt).mono (by decide)⟩
+
 end VG.Proof.Ffdh.PPC64LE.Domain
