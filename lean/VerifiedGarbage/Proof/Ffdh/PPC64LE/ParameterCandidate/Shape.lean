@@ -33,6 +33,15 @@ open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 /-- The registers `shapeP` writes. -/
 def shRegs : List Reg := [.r0, .r4, .r5, .r6, .r12, .r14, .r15, .r16, .r17]
 
+/-- `shapeP`'s first block: the tape's address and `out_len`. -/
+theorem shapeHead_ok {p : PP} {s : State} (h : St p s) :
+    WP isa (.block [ldh .r12 hRand, ldh .r6 hLen]) s fun u => (u.gpr .r12 = off p.rp 0 ∧
+      u.gpr .r6 = BitVec.ofNat 64 p.L ∧ u.mem = s.mem) ∧ Keep [.r6, .r12] s u := by
+  refine WP.keep [.r6, .r12] ?_ (by decide)
+  simp only [ldh, hRand, hLen]
+  prun [h.r31, h.ld (d := 136) (by decide), h.ld (d := 24) (by decide), h.args.rand', h.args.len',
+    BitVec.add_zero]
+
 theorem shapeP_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) (hrl : p.L ≤ p.r.length) :
     WP isa shapeP s fun t =>
       (wv t.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) =
@@ -52,11 +61,7 @@ theorem shapeP_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) (hrl : 
   have hZ : slot w 0 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega
   have hL1 : 1 ≤ p.L := by simp only [PP.L]; omega
   unfold shapeP
-  refine WP.seq (WP.mono (WP.keep [.r6, .r12] (Q := fun u => u.gpr .r12 = off p.rp 0 ∧
-      u.gpr .r6 = BitVec.ofNat 64 p.L ∧ u.mem = s.mem) ?_ (by decide)) fun u ⟨⟨u12, u6, um⟩, ku⟩ => ?_)
-  · simp only [ldh, hRand, hLen]
-    prun [h.r31, h.ld (d := 136) (by decide), h.ld (d := 24) (by decide), h.args.rand', h.args.len',
-      BitVec.add_zero]
+  refine WP.seq (WP.mono (shapeHead_ok h) fun u ⟨⟨u12, u6, um⟩, ku⟩ => ?_)
   have hrd : ∀ i < p.L, InRegions (u.rd ++ u.wr) (off p.rp i) 1 := fun i hi => by
     rw [ku.rd, ku.wr]; exact h.bufs.rdR i (by omega)
   refine WP.seq (WP.mono (loadN_ok (h.scr.congr ku.wr) ((ku.gpr .r10 (by decide)).trans h10) u12 u6
