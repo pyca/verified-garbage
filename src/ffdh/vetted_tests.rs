@@ -189,3 +189,42 @@ fn vetted_generation_preserves_entropy_refills_and_uncapped_fallback() {
     assert_eq!(params.domain.generate_key(&draw, &mut x, &mut y), 1);
     assert_eq!(x, draw);
 }
+
+#[cfg(target_arch = "aarch64")]
+#[test]
+fn vetted_domain_validation_checks_complete_components() {
+    for p in modp_groups().into_iter().chain(ffdhe_groups()) {
+        // The subgroup order is derived from the published safe prime.
+        let mut q = p.clone();
+        *q.last_mut().unwrap() -= 1;
+        let mut carry = 0;
+        for byte in &mut q {
+            let low = *byte & 1;
+            *byte = (*byte >> 1) | (carry << 7);
+            carry = low;
+        }
+        for order in [None, Some(q.as_slice())] {
+            let params = Parameters::from_components(&p, &[2], order).unwrap();
+            assert_eq!(params.components(), (p.as_slice(), &[2][..], order));
+        }
+        let mut even_order = q.clone();
+        *even_order.last_mut().unwrap() ^= 1;
+        assert_eq!(
+            Parameters::from_components(&p, &[2], Some(&even_order)).unwrap_err(),
+            Error::InvalidParameters
+        );
+        let mut different_prime = p.clone();
+        *different_prime.last_mut().unwrap() -= 2;
+        assert_eq!(
+            Parameters::from_components(&different_prime, &[2], Some(&q)).unwrap_err(),
+            Error::InvalidParameters
+        );
+        assert_eq!(
+            Parameters::from_components(&p, &[1], Some(&q)).unwrap_err(),
+            Error::InvalidParameters
+        );
+        // A nonmatching but valid generator must reach the general validator.
+        // Squaring the published generator keeps it in the same subgroup.
+        assert!(Parameters::from_components(&p, &[4], Some(&q)).is_ok());
+    }
+}
