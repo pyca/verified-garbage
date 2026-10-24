@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
 public import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Spec.X448.Contract
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's verification on PPC64LE: the negated point

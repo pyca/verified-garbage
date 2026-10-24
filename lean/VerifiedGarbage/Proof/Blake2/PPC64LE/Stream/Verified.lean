@@ -8,7 +8,6 @@ public import VerifiedGarbage.Spec.Blake2.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Blake2.Scratch
 public import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Common
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE

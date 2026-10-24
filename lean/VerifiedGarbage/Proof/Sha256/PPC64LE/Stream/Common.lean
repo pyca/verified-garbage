@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Streaming SHA-256 on PPC64LE: common lemmas

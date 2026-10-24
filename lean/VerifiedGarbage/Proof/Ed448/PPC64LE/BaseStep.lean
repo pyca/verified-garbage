@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.ScalarBase
 public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448 on PPC64LE: one iteration of base-point multiplication

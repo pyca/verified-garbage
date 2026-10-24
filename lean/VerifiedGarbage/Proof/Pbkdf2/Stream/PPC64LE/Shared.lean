@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: the shared contract

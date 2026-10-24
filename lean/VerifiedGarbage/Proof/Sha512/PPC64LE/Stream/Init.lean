@@ -1,10 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.PPC64LE.TaintErase
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintErase
+public import Mathlib.Data.List.Nodup
+public import VerifiedGarbage.Impl.Sha512.PPC64LE.Stream
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
+public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Rounds
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Rounds
 
 /-!
 # Streaming SHA-512 on PPC64LE: `init`
