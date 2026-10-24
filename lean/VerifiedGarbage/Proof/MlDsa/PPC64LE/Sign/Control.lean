@@ -69,18 +69,21 @@ structure SPrimsOk (P : Prims) (S : Nat) : Prop where
   bitPack : Callee P.bitPack (fun stk => bitPackContract PPC64LE.abi stk) S
   bitUnpack : Callee P.bitUnpack (fun stk => bitUnpackContract PPC64LE.abi stk) S
   hintBitPack : Callee P.hintBitPack (fun stk => hintBitPackContract PPC64LE.abi stk) S
-  /-- `vg_mldsa_rej_ntt_poly`'s result depends only on its public data (its seed). -/
-  rejRet : ∀ stk, RetPub (rejNTTContract PPC64LE.abi stk) P.rejNTT
-  /-- `vg_mldsa_rej_ntt_poly` succeeds only if `RejNTTPoly` finishes within `maxBounds`. -/
-  rejMax : ∀ stk s t s', (rejNTTContract PPC64LE.abi stk).pre s → Exec isa P.rejNTT s t s' →
-    (s'.gpr .r3).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (s.gpr .r3) 34)).isSome
-  /-- `vg_mldsa_sample_in_ball`'s result depends only on its public data (`c̃`). -/
-  ballRet : ∀ stk, RetPub (sampleInBallContract PPC64LE.abi stk) P.ball
-  /-- `vg_mldsa_sample_in_ball` succeeds only if `SampleInBall` finishes within `maxBounds`. -/
-  ballMax : ∀ stk s t s', (sampleInBallContract PPC64LE.abi stk).pre s → Exec isa P.ball s t s' →
-    (s'.gpr .r3).setWidth 32 = 1 →
-    (sampleInBall ((s.gpr .r5).setWidth 32).toNat maxBounds.ball
-      (bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat)).isSome
+  /-- With some stack (at most `S`) it is verified with, `vg_mldsa_rej_ntt_poly`'s result depends
+  only on its public data (its seed), and it succeeds only if `RejNTTPoly` finishes within
+  `maxBounds`. -/
+  rejX : ∃ stk, stk ≤ S ∧ Verified PPC64LE.target P.rejNTT (rejNTTContract PPC64LE.abi stk) ∧
+    RetPub (rejNTTContract PPC64LE.abi stk) P.rejNTT ∧
+    ∀ s t s', (rejNTTContract PPC64LE.abi stk).pre s → Exec isa P.rejNTT s t s' →
+      (s'.gpr .r3).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (s.gpr .r3) 34)).isSome
+  /-- Likewise, `vg_mldsa_sample_in_ball`'s result depends only on its public data (`c̃`), and it
+  succeeds only if `SampleInBall` finishes within `maxBounds`. -/
+  ballX : ∃ stk, stk ≤ S ∧ Verified PPC64LE.target P.ball (sampleInBallContract PPC64LE.abi stk) ∧
+    RetPub (sampleInBallContract PPC64LE.abi stk) P.ball ∧
+    ∀ s t s', (sampleInBallContract PPC64LE.abi stk).pre s → Exec isa P.ball s t s' →
+      (s'.gpr .r3).setWidth 32 = 1 →
+      (sampleInBall ((s.gpr .r5).setWidth 32).toNat maxBounds.ball
+        (bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat)).isSome
 
 /-! ## Calls whose results are public -/
 
@@ -160,14 +163,14 @@ theorem rn_okX {s : State} (hs : Site L Wb STK s) (hS : S ≤ STK) {name : Strin
         (polyAt s'.mem (lpa L a)) →
       ((s'.gpr .r3).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (lpa L sd) 34)).isSome) → Q s') :
     WP isa (callAt name P.rejNTT (KeyGen.rnArgs sd a w)) s Q := by
-  obtain ⟨stk, hstk, hver⟩ := hP.rejNTT.verified
+  obtain ⟨stk, hstk, hver, -, hmax⟩ := hP.rejX
   obtain ⟨c1, c2⟩ := KeyGen.rn_cov hs m
   have hv : ∀ s₀, (rejNTTContract PPC64LE.abi stk).pre s₀ → ∃ t s', Exec isa P.rejNTT s₀ t s' ∧
       abiPreserved s₀ s' ∧ ((rejNTTContract PPC64LE.abi stk).post s₀ s' ∧
         ((s'.gpr .r3).setWidth 32 = 1 →
           (rejNTTPoly maxBounds.rejNTT (bytesAt s₀.mem (s₀.gpr .r3) 34)).isSome)) := fun s₀ h₀ => by
     obtain ⟨t, s', e, ha, hp⟩ := hver.1 s₀ h₀
-    exact ⟨t, s', e, ha, hp, hP.rejMax stk s₀ t s' h₀ e⟩
+    exact ⟨t, s', e, ha, hp, hmax s₀ t s' h₀ e⟩
   refine KeyGen.callV (k := { rejNTTContract PPC64LE.abi stk with
       post := fun s₀ s' => (rejNTTContract PPC64LE.abi stk).post s₀ s' ∧
         ((s'.gpr .r3).setWidth 32 = 1 →
@@ -192,7 +195,7 @@ theorem ball_okX {s : State} (hs : Site L Wb STK s) (hS : S ≤ STK) {name : Str
       ((s'.gpr .r3).setWidth 32 = 1 → (sampleInBall tau maxBounds.ball (bytesAt s.mem (lpa L ct) len)).isSome) →
       Q s') :
     WP isa (callAt name P.ball (KeyGen.ballArgs ct len tau c w)) s Q := by
-  obtain ⟨stk, hstk, hver⟩ := hP.ball.verified
+  obtain ⟨stk, hstk, hver, -, hmax⟩ := hP.ballX
   obtain ⟨c1, c2⟩ := KeyGen.ball_cov hs m
   obtain ⟨l0, ll, lt⟩ := m.lt
   have hv : ∀ s₀, (sampleInBallContract PPC64LE.abi stk).pre s₀ → ∃ t s', Exec isa P.ball s₀ t s' ∧
@@ -200,7 +203,7 @@ theorem ball_okX {s : State} (hs : Site L Wb STK s) (hS : S ≤ STK) {name : Str
         ((s'.gpr .r3).setWidth 32 = 1 → (sampleInBall ((s₀.gpr .r5).setWidth 32).toNat maxBounds.ball
           (bytesAt s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat)).isSome)) := fun s₀ h₀ => by
     obtain ⟨t, s', e, ha, hp⟩ := hver.1 s₀ h₀
-    exact ⟨t, s', e, ha, hp, hP.ballMax stk s₀ t s' h₀ e⟩
+    exact ⟨t, s', e, ha, hp, hmax s₀ t s' h₀ e⟩
   refine KeyGen.callV (k := { sampleInBallContract PPC64LE.abi stk with
       post := fun s₀ s' => (sampleInBallContract PPC64LE.abi stk).post s₀ s' ∧
         ((s'.gpr .r3).setWidth 32 = 1 → (sampleInBall ((s₀.gpr .r5).setWidth 32).toNat maxBounds.ball
@@ -222,8 +225,8 @@ theorem rn_trRet (hS : S ≤ STK) {name : String} {sd a w : Impl.MlDsa.PPC64LE.K
       bytesAt x.mem (lpa L sd) 34 = bytesAt y.mem (lpa L sd) 34) :
     RelCT isa Q (callAt name P.rejNTT (KeyGen.rnArgs sd a w))
       fun x y => (x.gpr .r3).setWidth 32 = (y.gpr .r3).setWidth 32 := by
-  obtain ⟨stk, hstk, hver⟩ := hP.rejNTT.verified
-  refine callVRet_tr hver.1 (hP.rejRet stk) m.hg fun x y hxy => ?_
+  obtain ⟨stk, hstk, hver, hret, -⟩ := hP.rejX
+  refine callVRet_tr hver.1 hret m.hg fun x y hxy => ?_
   obtain ⟨hx, hy, hsp, hl⟩ := hQ x y hxy
   obtain ⟨gx3, gx4, gx5⟩ := KeyGen.rn_vg hx m (KeyGen.rnRd L sd) (KeyGen.rnWr L a w)
   obtain ⟨gy3, gy4, gy5⟩ := KeyGen.rn_vg hy m (KeyGen.rnRd L sd) (KeyGen.rnWr L a w)
@@ -241,9 +244,9 @@ theorem ball_trRet (hS : S ≤ STK) {name : String} {ct c w : Impl.MlDsa.PPC64LE
       bytesAt x.mem (lpa L ct) len = bytesAt y.mem (lpa L ct) len) :
     RelCT isa Q (callAt name P.ball (KeyGen.ballArgs ct len tau c w))
       fun x y => (x.gpr .r3).setWidth 32 = (y.gpr .r3).setWidth 32 := by
-  obtain ⟨stk, hstk, hver⟩ := hP.ball.verified
+  obtain ⟨stk, hstk, hver, hret, -⟩ := hP.ballX
   obtain ⟨l0, ll, lt⟩ := m.lt
-  refine callVRet_tr hver.1 (hP.ballRet stk) m.hg fun x y hxy => ?_
+  refine callVRet_tr hver.1 hret m.hg fun x y hxy => ?_
   obtain ⟨hx, hy, hsp, hl⟩ := hQ x y hxy
   obtain ⟨gx3, gx4, gx5, gx6, gx7⟩ := KeyGen.ball_vg hx m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
   obtain ⟨gy3, gy4, gy5, gy6, gy7⟩ := KeyGen.ball_vg hy m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
