@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Exits
+import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The key search's loop (x86)
 

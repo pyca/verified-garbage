@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
 import VerifiedGarbage.Proof.Mont.X86.Compact.Length
-import VerifiedGarbage.Proof.Mont.X86.Compact.TimingKernels
 
 /-! # Republish pointer and width values fixed by the prepared metadata -/
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedABI
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 import VerifiedGarbage.Proof.Mont.X86.ArgWs
-import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 import VerifiedGarbage.Proof.Mont.X86.Compact.Layout
 import VerifiedGarbage.Proof.Mont.X86.Compact.Satisfiable

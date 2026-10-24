@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Words
 public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Mont.X86
+public import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Zeros at an output (x86)
 

@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.Stages
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
+meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
 
 /-!
 # The FFDH candidate on i686: the timing of p's checks

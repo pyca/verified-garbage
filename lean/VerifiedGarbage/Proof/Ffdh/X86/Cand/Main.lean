@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Halve
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
 
 /-!
 # The FFDH candidate on i686: p's checks and tests
