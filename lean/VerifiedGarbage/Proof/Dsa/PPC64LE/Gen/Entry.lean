@@ -122,11 +122,6 @@ theorem argLoad_ok {STK : Nat} {σ s : State} (pre : CIn STK σ) (sp : s.sp = σ
   rw [exec_load_d hr ⟨by decide, by decide⟩ (by rw [ea']; exact hin), ea', write_write]
   rfl
 
-/-- A run keeps the stack pointer. -/
-theorem WP.sp_eq {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s fun t => t.sp = s.sp → Q t) :
-    WP isa c s Q := by
-  obtain ⟨tr, s', he, hq⟩ := h; exact ⟨tr, s', he, hq (Exec.sp he)⟩
-
 theorem entrySaved_ne : ∀ i < 19, saved.getD i .r14 ∉ [Reg.r0, .r4, .r6, .r11, .r12] := by decide
 
 /-- The words `entry` sets: the witnesses read and the status, both 0. -/

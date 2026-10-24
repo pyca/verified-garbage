@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Base
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
@@ -62,6 +63,11 @@ structure GI (G : GP) (STK : Nat) (σ : State) (V : Nat → BitVec 64) (LS : Lis
   slots : ∀ o ∈ LS, fw s.mem G o = V o
   ls : ∀ o ∈ LS, VarOk G o
   frame : Frame [G.rScr, rBelow σ STK] σ.mem s.mem
+
+/-- A run keeps the stack pointer. -/
+theorem WP.sp_eq {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s fun t => t.sp = s.sp → Q t) :
+    WP isa c s Q := by
+  obtain ⟨tr, s', he, hq⟩ := h; exact ⟨tr, s', he, hq (Exec.sp he)⟩
 
 /-- `std t, off(n)`, with the stack pointer and the link register kept. -/
 theorem wp_std' {s : State} {is : List Instr} {Q : State → Prop} {t n : Reg} {off : Nat} {a : Addr}
