@@ -159,7 +159,7 @@ theorem open_head {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
   have he₄ := one_env h4 hC hW
   have L := L₀.v h4.r29 h4.r30 h4.r31
   have X₀ := oneX fX dcX
-  have X : XOk (s₄.gpr .r29) (s₄.gpr .r30) (s₄.gpr .r31) := by rw [h4.r29, h4.r30, h4.r31]; exact X₀
+  have X : XOk (s₄.gpr .r29) (s₄.gpr .r30) (s₄.gpr .r31) (s₄.gpr .r28) := by rw [h4.r29, h4.r30, h4.r31]; exact X₀
   have hk₄ := h4.en.keeps
   have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
   have dcF : ∀ r ∈ [(⟨stackArg s₀ 1, scrBytes⟩ : Region)], (⟨s₀.gpr .r3, 256⟩ : Region).Disjoint r := by
@@ -334,7 +334,7 @@ theorem open_tail {s₀ s₄ s₉ : State} (h : openPre s₀) (h4 : SO1 (stackAr
         rw [e _ (by decide) (by decide), e _ (by decide) (by decide), e _ (by decide) (by decide),
           e _ (by decide) (by decide), e _ (by decide) (by decide)]
         exact hd₄.of_eq rd₉ wr₉
-      have X₉ : XOk (s₉.gpr .r29) (s₉.gpr .r30) (s₉.gpr .r31) := by
+      have X₉ : XOk (s₉.gpr .r29) (s₉.gpr .r30) (s₉.gpr .r31) (s₉.gpr .r28) := by
         rw [e _ (by decide) (by decide), e _ (by decide) (by decide), e _ (by decide) (by decide), h4.r29, h4.r30,
           h4.r31]
         exact X₀

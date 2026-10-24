@@ -33,16 +33,16 @@ open VG.Spec.Gcm (Block blockAt ghashInput ghash ghashFrom blocks zeros padLen t
 open VG.Proof.Gcm (Absorbed lensBlock padded)
 
 /-- `tFrame` is within `tagFrame`. -/
-theorem tFrame_sub {st w : Addr} {o : Nat} :
-    ∀ r ∈ tFrame st w 16, ∃ r' ∈ tagFrame st w o, Region.Sub r r' := fun r hr => by
+theorem tFrame_sub {st w x : Addr} {o : Nat} :
+    ∀ r ∈ tFrame st w 16, ∃ r' ∈ tagFrame st w x o, Region.Sub r r' := fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base st (show 16 + 16 ≤ 32 by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
   · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
-theorem t_tagFrame {st w : Addr} {o : Nat} {m m' : Mem} (h : Frame (tFrame st w 16) m m') :
-    Frame (tagFrame st w o) m m' := h.sub tFrame_sub
+theorem t_tagFrame {st w x : Addr} {o : Nat} {m m' : Mem} (h : Frame (tFrame st w 16) m m') :
+    Frame (tagFrame st w x o) m m' := h.sub tFrame_sub
 
 /-- After `finTag o`, from `m₀`. -/
 structure FinOut (V : Reg → BitVec 64) (sp : Addr) (o : Nat) (H : Block) (a ct : List Byte) (m₀ : Mem)
@@ -52,15 +52,15 @@ structure FinOut (V : Reg → BitVec 64) (sp : Addr) (o : Nat) (H : Block) (a ct
     bytesAt s.mem (V .r31 + BitVec.ofNat 64 o) 16 =
       toBytes (ghashFrom H (ghash H (blocks (padded a ct))) [ofBytes (lensBlock (V .r22).toNat ct.length)]
         ^^^ ciphOf m₀ (V .r29) (blockAt m₀ (V .r30)))
-  frame : Frame (tagFrame (V .r30) (V .r31) o) m₀ s.mem
+  frame : Frame (tagFrame (V .r30) (V .r31) (V .r28) o) m₀ s.mem
 
 section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31))
-  (X : XOk (V .r29) (V .r30) (V .r31))
+  (X : XOk (V .r29) (V .r30) (V .r31) (V .r28))
 include L X
 
 theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte} {s : State}
-    (he : Env V sp s) (hxw : Covers [xR (V .r31)] s.wr)
+    (he : Env V sp s) (hxw : Covers [xR (V .r28)] s.wr)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H)
     (ha : a.length % 16 = (V .r22).toNat % 16) (hP : (V .r23).toNat = ct.length) :
     WP isa (finTag o) s (FinOut V sp o H a ct s.mem) := by

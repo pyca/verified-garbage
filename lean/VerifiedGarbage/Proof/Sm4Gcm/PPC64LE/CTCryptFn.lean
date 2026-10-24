@@ -44,8 +44,8 @@ after `aad_len` (`A`) bytes of additional data and `text_len` (`T`) of
 text. -/
 def DI (c st w sp D : Addr) (N A T : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r20 = D ∧ V .r19 = N ∧ V .r22 = A ∧
-    V .r23 = T ∧ Env V sp s ∧ DataW c st w s D N.toNat ∧ Covers [xR w] s.wr ∧
-    (⟨D, N.toNat⟩ : Region).Disjoint (xR w)
+    V .r23 = T ∧ Env V sp s ∧ DataW c st w s D N.toNat ∧ Covers [xR x] s.wr ∧
+    (⟨D, N.toNat⟩ : Region).Disjoint (xR x)
 
 /-- Before `crypt`, with the arguments kept. -/
 def CI (c st w sp D : Addr) (N A T : BitVec 64) (s : State) : Prop :=
@@ -97,7 +97,7 @@ theorem di_textArgs {s : State} (h : DI c st w sp D N A T s) :
     by rw [h26, he.fr _ (by decide), h23], by rw [h29, h30, h31]; exact hd.of_eq hk.rd hk.wr,
     by rw [h31, hk.wr]; exact hx, by rw [h31]; exact hdx⟩
 
-variable (L : Lay c st w) (X : XOk c st w)
+variable (L : Lay c st w) (X : XOk c st w x)
 include L
 
 include X in

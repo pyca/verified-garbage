@@ -173,7 +173,7 @@ theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.leng
       · exact dsw.sub_right (VG.Offset.sub_base _ (by decide))
     have hH₄ : blockAt s₄.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
       rw [h1.r29]; exact ctxH_keep f₀₄ dc₀₄
-    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
     refine WP.seq (WP.mono (WP.with_rdwr (finTag_ok L X (o := 0) (.inl rfl) (a := a) (ct := ct) he₄
       (by rw [h1.r31, k₄.wr, k₃.wr, h1.en.keeps.wr]; exact ver_X h) hH₄ (by rw [h1.r22]; exact ha)
       (by rw [h1.r23]; exact hP))) fun s₅ ⟨fo, rd₅, wr₅, _⟩ => ?_)

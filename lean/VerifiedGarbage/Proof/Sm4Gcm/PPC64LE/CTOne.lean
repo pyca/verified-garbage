@@ -56,10 +56,10 @@ open VG.Proof.Gcm (Absorbed)
 space past `w`'s first 2560 bytes, which is writable. -/
 structure DataX (c st w : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
   dw : DataW c st w s D n
-  xw : Covers [xR w] s.wr
-  dx : (⟨D, n⟩ : Region).Disjoint (xR w)
+  xw : Covers [xR x] s.wr
+  dx : (⟨D, n⟩ : Region).Disjoint (xR x)
 
-theorem DataX.of_eq {c st w : Addr} {s s' : State} {D : Addr} {n : Nat}
+theorem DataX.of_eq {c st w x : Addr} {s s' : State} {D : Addr} {n : Nat}
     (h : DataX c st w s D n) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataX c st w s' D n :=
   ⟨h.dw.of_eq hrd hwr, by rw [hwr]; exact h.xw, h.dx⟩
 

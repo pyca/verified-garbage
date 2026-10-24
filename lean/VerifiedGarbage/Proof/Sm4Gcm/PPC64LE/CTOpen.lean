@@ -145,7 +145,7 @@ theorem openGood_ct : CT (fun s => (OneO c W sp Np n Ad A D Ln T TL s ∧ s.gpr 
   refine CT.seqG (J := OneO c W sp Np n Ad A D Ln T TL) ((oneTag_ct L X (.inr rfl)).mono fun s ⟨hT, _⟩ => hT.1)
     (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
   · obtain ⟨V, a, b, d, f, g, i, j, k, he, hN, hA, hD⟩ := hT.1
-    have X' : XOk (V .r29) (V .r30) (V .r31) := by rw [a, b, d]; exact X
+    have X' : XOk (V .r29) (V .r30) (V .r31) (V .r28) := by rw [a, b, d]; exact X
     exact WP.mono (WP.with_rdwr (oneTag_ok (L.v a b d) X' (o := 112) (.inr rfl) (H := H) (a := x) he
       (by rw [d]; exact hD.xw) (by rw [a]; exact hH) (by rw [i]; exact hl) (by rw [b]; exact hab)
       (by rw [b, d, j, k]; exact hD.dw.ok)))
@@ -196,7 +196,7 @@ theorem openGood_ct : CT (fun s => (OneO c W sp Np n Ad A D Ln T TL s ∧ s.gpr 
     (CT.ite _ ev (fun _ => CT.skip) (fun _ => (oneCrypt_ct L X).mono fun s h => h.1)) (fun s h => ?_) ?_
   · obtain ⟨V, a, b', d, f, g, i, j, k, he, hN, hA, hD⟩ := h.1
     refine WP.ite _ (ev s h) (fun _ => WP.block_nil_iff.mpr ⟨by rw [he.r31, d], he.sp⟩) (fun _ => ?_)
-    have X' : XOk (V .r29) (V .r30) (V .r31) := by rw [a, b', d]; exact X
+    have X' : XOk (V .r29) (V .r30) (V .r31) (V .r28) := by rw [a, b', d]; exact X
     exact WP.mono (oneCrypt_ok (L.v a b' d) X' he (by rw [a, b', d, j, k]; exact hD.dw) (by rw [d]; exact hD.xw)
       (by rw [j, k, d]; exact hD.dx) rfl)
       fun s' oc => ⟨by rw [oc.env.r31, d], oc.env.sp⟩

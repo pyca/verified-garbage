@@ -21,8 +21,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 Untrusted: everything here is checked by Lean. AES-GCM's `crypt`
 (`Proof/AesGcm/PPC64LE/Crypt.lean`, `CryptOk.lean`) with SM4's counter mode
 inlined (`CtrCall`), from the schedule in the context, with its working
-space `X` at `W + 2560`, 3264 bytes after AES-GCM's 2560: `XOk` says it fits
-and lies apart from the context and the state, and the pieces cover it with
+space `X` of 3264 bytes at `r28`: `XOk` says it fits and lies apart from
+the context, the state and `W`, and the pieces cover it with
 the permission to write it (`xw`) and keep the data apart from it (`dx`).
 -/
 
@@ -42,14 +42,16 @@ open VG.Proof.Gcm (Ctr xorKs)
 
 /-! ## SM4's working space -/
 
-/-- SM4's working space, after AES-GCM's in `W`. -/
-abbrev xR (w : Addr) : Region := ⟨w + BitVec.ofNat 64 sO, sBytes⟩
+/-- SM4's working space, at `x` (held in `r28`). -/
+abbrev xR (x : Addr) : Region := ⟨x, sBytes⟩
 
-/-- SM4's working space fits, and is apart from the context and the state. -/
-structure XOk (c st w : Addr) : Prop where
-  fit : w.toNat + wBytes ≤ 2 ^ 64
-  cx : (⟨c, 256⟩ : Region).Disjoint (xR w)
-  sx : (⟨st, 80⟩ : Region).Disjoint (xR w)
+/-- SM4's working space fits, and is apart from the context, the state and
+AES-GCM's working space `W`. -/
+structure XOk (c st w x : Addr) : Prop where
+  fit : x.toNat + sBytes ≤ 2 ^ 64
+  cx : (⟨c, 256⟩ : Region).Disjoint (xR x)
+  sx : (⟨st, 80⟩ : Region).Disjoint (xR x)
+  wx : (⟨w, 2560⟩ : Region).Disjoint (xR x)
 
 /-- The cipher of the key schedule at `C`. -/
 abbrev ciphOf (m : Mem) (C : Addr) : Block → Block :=
@@ -61,8 +63,8 @@ theorem ciph_frame {c : Addr} {rs : List Region} {m m' : Mem} (hf : Frame rs m m
   rw [Proof.Sm4.scheduleAt_frame hf fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide))]
 
 /-- The regions `crypt` writes. -/
-abbrev crFrame (st w D : Addr) (n : Nat) : List Region :=
-  [⟨D, n⟩, ⟨st + BitVec.ofNat 64 48, 32⟩, xR w]
+abbrev crFrame (st x D : Addr) (n : Nat) : List Region :=
+  [⟨D, n⟩, ⟨st + BitVec.ofNat 64 48, 32⟩, xR x]
 
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go. -/
 structure CrIn (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat)
@@ -72,8 +74,8 @@ structure CrIn (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D : 
   r25 : s.gpr .r25 = BitVec.ofNat 64 n
   r26 : s.gpr .r26 = BitVec.ofNat 64 (P % 16)
   data : DataW (V .r29) (V .r30) (V .r31) s D n
-  xw : Covers [xR (V .r31)] s.wr
-  dx : (⟨D, n⟩ : Region).Disjoint (xR (V .r31))
+  xw : Covers [xR (V .r28)] s.wr
+  dx : (⟨D, n⟩ : Region).Disjoint (xR (V .r28))
 
 /-- Part of the way: `j` bytes done, from `m₀`. -/
 structure CrMid (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat)
@@ -83,15 +85,15 @@ structure CrMid (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D :
   r24 : s.gpr .r24 = D + BitVec.ofNat 64 j
   r25 : s.gpr .r25 = BitVec.ofNat 64 (n - j)
   data : DataW (V .r29) (V .r30) (V .r31) s D n
-  xw : Covers [xR (V .r31)] s.wr
-  dx : (⟨D, n⟩ : Region).Disjoint (xR (V .r31))
+  xw : Covers [xR (V .r28)] s.wr
+  dx : (⟨D, n⟩ : Region).Disjoint (xR (V .r28))
   ctr : Ctr m₀ (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64) (ciphOf m₀ (V .r29)) icb P →
     Ctr s.mem (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64) (ciphOf m₀ (V .r29)) icb (P + j)
   done : Ctr m₀ (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64) (ciphOf m₀ (V .r29)) icb P →
     bytesAt s.mem D j = xorKs (ciphOf m₀ (V .r29)) icb P (bytesAt m₀ D j)
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
-  frame : Frame (crFrame (V .r30) (V .r31) D n) m₀ s.mem
+  frame : Frame (crFrame (V .r30) (V .r28) D n) m₀ s.mem
 
 /-- After `crypt`. -/
 structure CrOut (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat)
@@ -101,11 +103,11 @@ structure CrOut (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D :
     Ctr s.mem (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64) (ciphOf m₀ (V .r29)) icb (P + n)
   out : Ctr m₀ (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64) (ciphOf m₀ (V .r29)) icb P →
     bytesAt s.mem D n = xorKs (ciphOf m₀ (V .r29)) icb P (bytesAt m₀ D n)
-  frame : Frame (crFrame (V .r30) (V .r31) D n) m₀ s.mem
+  frame : Frame (crFrame (V .r30) (V .r28) D n) m₀ s.mem
 
 section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31))
-  (X : XOk (V .r29) (V .r30) (V .r31))
+  (X : XOk (V .r29) (V .r30) (V .r31) (V .r28))
 include L X
 
 omit L X in
@@ -187,32 +189,32 @@ omit L X in
 /-- The arguments of SM4's counter mode but the data and their number. -/
 theorem ctrArgs_ok {s : State} (he : Env V sp s) :
     WP isa (.block (ctrArgs 48)) s fun s' =>
-      s'.gpr .r3 = V .r29 ∧ s'.gpr .r4 = V .r30 + BitVec.ofNat 64 48 ∧ s'.gpr .r7 = V .r31 + BitVec.ofNat 64 sO ∧
+      s'.gpr .r3 = V .r29 ∧ s'.gpr .r4 = V .r30 + BitVec.ofNat 64 48 ∧ s'.gpr .r7 = V .r28 ∧
       (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r7 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
-  have h29 := he.r29; have h30 := he.r30; have h31 := he.r31
+  have h29 := he.r29; have h30 := he.r30; have h28 := he.fr .r28 (by decide)
   simp only [ctrArgs]
-  crun [sO, h29, h30, h31, mov, BitVec.or_self]
+  crun [h29, h30, h28, mov, BitVec.or_self]
   exact ⟨fun r a b c => by simp [a, b, c], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 omit L in
 /-- Parts of the state are apart from SM4's working space. -/
 theorem st_x {a k : Nat} (ha : a + k ≤ 80) :
-    (⟨V .r30 + BitVec.ofNat 64 a, k⟩ : Region).Disjoint (xR (V .r31)) :=
+    (⟨V .r30 + BitVec.ofNat 64 a, k⟩ : Region).Disjoint (xR (V .r28)) :=
   X.sx.sub_left (Lay.stSub ha)
 
 omit L in
 /-- The schedule is apart from SM4's working space. -/
-theorem ctx_x : (⟨V .r29, 128⟩ : Region).Disjoint (xR (V .r31)) :=
+theorem ctx_x : (⟨V .r29, 128⟩ : Region).Disjoint (xR (V .r28)) :=
   X.cx.sub_left (Region.sub_prefix (by decide))
 
 /-- The arguments of SM4's counter mode on `nb` whole blocks at `D + j`. -/
 theorem ctrWhole_mk {D : Addr} {j nb : Nat} {s : State} (he : Env V sp s)
     (h3 : s.gpr .r3 = V .r29) (h4 : s.gpr .r4 = V .r30 + BitVec.ofNat 64 48)
     (h5 : s.gpr .r5 = D + BitVec.ofNat 64 j) (h6 : s.gpr .r6 = BitVec.ofNat 64 nb)
-    (h7 : s.gpr .r7 = V .r31 + BitVec.ofNat 64 sO) (hnb : nb < 2 ^ 64)
+    (h7 : s.gpr .r7 = V .r28) (hnb : nb < 2 ^ 64)
     (hdj : DataW (V .r29) (V .r30) (V .r31) s (D + BitVec.ofNat 64 j) (16 * nb))
-    (hxw : Covers [xR (V .r31)] s.wr) (hdx : (⟨D + BitVec.ofNat 64 j, 16 * nb⟩ : Region).Disjoint (xR (V .r31))) :
-    CtrCall s (V .r29) (V .r30 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) (V .r31 + BitVec.ofNat 64 sO) nb := by
+    (hxw : Covers [xR (V .r28)] s.wr) (hdx : (⟨D + BitVec.ofNat 64 j, 16 * nb⟩ : Region).Disjoint (xR (V .r28))) :
+    CtrCall s (V .r29) (V .r30 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) (V .r28) nb := by
   have hfx := X.fit
   refine ⟨h3, h4, h5, h6, h7, hnb, ?_, ?_, ctx_x X, ?_, st_x X (by decide), hdx, ?_, ?_, hdj.ok.fit, ?_,
     ?_, ?_⟩
@@ -223,17 +225,14 @@ theorem ctrWhole_mk {D : Addr} {j nb : Nat} {s : State} (he : Env V sp s)
   · have := L.sw
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 48) (by decide),
       Nat.mod_eq_of_lt (by omega)]; omega
-  · have hf : (V .r31).toNat + 5824 ≤ 2 ^ 64 := hfx
-    simp only [sO, sBytes]
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2560) (by decide),
-      Nat.mod_eq_of_lt (by omega)]; omega
+  · exact hfx
   · exact Covers.cons (covers_prefix he.perm.ctx (by decide)) (Covers.cons
       (covers_left (he.perm.stC (by decide))) (Covers.cons (covers_left hdj.wr)
         (Covers.cons (covers_left hxw) Covers.nil)))
   · exact Covers.cons (he.perm.stC (by decide)) (Covers.cons hdj.wr (Covers.cons hxw Covers.nil))
 
 theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW (V .r29) (V .r30) (V .r31) s D n) :
-    ∀ r ∈ crFrame (V .r30) (V .r31) D n, (⟨V .r29, 256⟩ : Region).Disjoint r := by
+    ∀ r ∈ crFrame (V .r30) (V .r28) D n, (⟨V .r29, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -260,7 +259,7 @@ theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
     (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
     (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr
   have hd₁ := h.data.of_eq hk₁.rd hk₁.wr
-  have hx₁ : Covers [xR (V .r31)] s₁.wr := by rw [hk₁.wr]; exact h.xw
+  have hx₁ : Covers [xR (V .r28)] s₁.wr := by rw [hk₁.wr]; exact h.xw
   refine WP.ite (decide (nb = 0)) (eval_zero h6 (by omega)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : nb = 0 := by simpa using ht
     subst h0
@@ -270,7 +269,7 @@ theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
   · have h0 : nb ≠ 0 := by simpa using hf
     have hw : (P + j) % 16 = 0 := h.whole.resolve_left (by omega)
     have hdj := h.data.sub (j := j) (k := 16 * nb) (by omega) (by omega)
-    have hdxj : (⟨D + BitVec.ofNat 64 j, 16 * nb⟩ : Region).Disjoint (xR (V .r31)) :=
+    have hdxj : (⟨D + BitVec.ofNat 64 j, 16 * nb⟩ : Region).Disjoint (xR (V .r28)) :=
       h.dx.sub_left (Offset.sub_base _ (by omega))
     refine WP.seq (WP.mono (ctrArgs_ok he₁) fun s₂ ⟨a3, a4, a7, hg₂, hk₂⟩ => ?_)
     have he₂ : Env V sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
@@ -306,7 +305,7 @@ theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
         · exact h.dx.sub_left (Region.sub_prefix h.le)) (by omega)
       exact done_append (hjd.trans (h.done hc₀)) hj16
     · have hdis : ∀ r ∈ [⟨V .r30 + BitVec.ofNat 64 48, 16⟩, ⟨D + BitVec.ofNat 64 j, 16 * nb⟩,
-          xR (V .r31)],
+          xR (V .r28)],
           (⟨D + BitVec.ofNat 64 (j + 16 * nb), n - (j + 16 * nb)⟩ : Region).Disjoint r := by
         have hst := h.data.ok.st
         have hs : Region.Sub ⟨D + BitVec.ofNat 64 (j + 16 * nb), n - (j + 16 * nb)⟩ ⟨D, n⟩ :=
@@ -342,14 +341,14 @@ theorem tailArgs_ok {s : State} (he : Env V sp s) :
         (V .r30 + BitVec.ofNat 64 64 + BitVec.ofNat 64 8) (0 : BitVec 64) ∧
       s'.gpr .r3 = V .r29 ∧ s'.gpr .r4 = V .r30 + BitVec.ofNat 64 48 ∧
       s'.gpr .r5 = V .r30 + BitVec.ofNat 64 64 ∧ s'.gpr .r6 = BitVec.ofNat 64 1 ∧
-      s'.gpr .r7 = V .r31 + BitVec.ofNat 64 sO ∧
+      s'.gpr .r7 = V .r28 ∧
       (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → s'.gpr r = s.gpr r) ∧
       Keeps' s s' := by
-  have h29 := he.r29; have h30 := he.r30; have h31 := he.r31
+  have h29 := he.r29; have h30 := he.r30; have h28 := he.fr .r28 (by decide)
   have w₀ := he.perm.stW (show 64 + 8 ≤ 80 by decide)
   have w₁ := he.perm.stW (show 72 + 8 ≤ 80 by decide)
   simp only [tailArgs, ctrArgs, List.cons_append, List.nil_append]
-  crun [sO, h29, h30, h31, w₀, w₁, mov, BitVec.or_self, write_8]
+  crun [h29, h30, h28, w₀, w₁, mov, BitVec.or_self, write_8]
   exact ⟨by simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.reduceAdd],
     fun r a b c d e f => by simp [a, b, c, d, e, f], ⟨rfl, rfl, rfl, rfl⟩⟩
 
@@ -357,9 +356,9 @@ theorem tailArgs_ok {s : State} (he : Env V sp s) :
 theorem ctrTail_mk {s : State} (he : Env V sp s)
     (h3 : s.gpr .r3 = V .r29) (h4 : s.gpr .r4 = V .r30 + BitVec.ofNat 64 48)
     (h5 : s.gpr .r5 = V .r30 + BitVec.ofNat 64 64) (h6 : s.gpr .r6 = BitVec.ofNat 64 1)
-    (h7 : s.gpr .r7 = V .r31 + BitVec.ofNat 64 sO) (hxw : Covers [xR (V .r31)] s.wr) :
+    (h7 : s.gpr .r7 = V .r28) (hxw : Covers [xR (V .r28)] s.wr) :
     CtrCall s (V .r29) (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64)
-      (V .r31 + BitVec.ofNat 64 sO) 1 := by
+      (V .r28) 1 := by
   have hfx := X.fit
   have hsw := L.sw
   refine ⟨h3, h4, h5, h6, h7, by decide, ?_, ?_, ctx_x X, ?_, st_x X (by decide), st_x X (by decide),
@@ -372,10 +371,7 @@ theorem ctrTail_mk {s : State} (he : Env V sp s)
       Nat.mod_eq_of_lt (by omega)]; omega
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide),
       Nat.mod_eq_of_lt (by omega)]; omega
-  · have hf : (V .r31).toNat + 5824 ≤ 2 ^ 64 := hfx
-    simp only [sO, sBytes]
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2560) (by decide),
-      Nat.mod_eq_of_lt (by omega)]; omega
+  · exact hfx
   · exact Covers.cons (covers_prefix he.perm.ctx (by decide)) (Covers.cons
       (covers_left (he.perm.stC (by decide))) (Covers.cons (covers_left (he.perm.stC (by decide)))
         (Covers.cons (covers_left hxw) Covers.nil)))
@@ -393,7 +389,7 @@ structure TailKs (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D 
     ciphOf m₀ (V .r29) (blockAt s₀.mem (V .r30 + BitVec.ofNat 64 48))
   cb : blockAt s.mem (V .r30 + BitVec.ofNat 64 48) =
     Spec.Gcm.inc32 (blockAt s₀.mem (V .r30 + BitVec.ofNat 64 48))
-  frame : Frame [⟨V .r30 + BitVec.ofNat 64 48, 32⟩, xR (V .r31)] s₀.mem s.mem
+  frame : Frame [⟨V .r30 + BitVec.ofNat 64 48, 32⟩, xR (V .r28)] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -467,7 +463,7 @@ theorem tailXor_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j 
   have fw : Frame [⟨D + BitVec.ofNat 64 j, n - j⟩] s.mem s₅.mem := by
     rw [hm₅]; exact writeBytes_frame' _ hxl
   have dst := hdj.ok.st
-  have dx : (⟨D + BitVec.ofNat 64 j, n - j⟩ : Region).Disjoint (xR (V .r31)) :=
+  have dx : (⟨D + BitVec.ofNat 64 j, n - j⟩ : Region).Disjoint (xR (V .r28)) :=
     hm.dx.sub_left (Offset.sub_base _ (by omega))
   have hd₃ : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j) := by
     rw [← hm.rest, bytesAt_frame h.frame (fun r hr => ?_) (by omega)]

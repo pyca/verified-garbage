@@ -48,10 +48,10 @@ theorem oneX {c W : Addr} (fW : W.toNat + scrBytes ≤ 2 ^ 64) (dcW : (⟨c, 256
     VG.Offset.disjoint _ (.inl (by decide)) (by decide) (by simp only [sO, sBytes, scrBytes] at fW ⊢; omega)⟩
 
 section
-variable {c st w : Addr} (L : Lay c st w) (X : XOk c st w)
+variable {c st w x : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
-theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st w o, (savedR w).Disjoint r := by
+theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st w x o, (savedR w).Disjoint r := by
   have hf : w.toNat + 5824 ≤ 2 ^ 64 := X.fit
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -86,7 +86,7 @@ theorem seal_wp {s₀ : State} (h : sealPPC64LE.pre s₀) :
     (args_in hA (by decide) (i := 0) (by decide)) rfl) fun s₁ h1 => ?_)
   have he₁ := one_env h1 hC hW
   have L := L₀.v h1.r29 h1.r30 h1.r31
-  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
   have f₁ := h1.en.frame
   have hk₁ := h1.en.keeps
   -- `oneAad`

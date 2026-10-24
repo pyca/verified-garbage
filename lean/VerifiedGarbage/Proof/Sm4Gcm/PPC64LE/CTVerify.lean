@@ -54,14 +54,14 @@ apart from `W`, which the state may read. -/
 def VerI (c st w sp : Addr) (A T Tp : BitVec 64) (tl : Nat) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r22 = A ∧
     V .r23 = T ∧ V .r20 = Tp ∧ V .r19 = BitVec.ofNat 64 tl ∧ Env V sp s ∧ Covers [⟨Tp, tl⟩] (s.rd ++ s.wr) ∧
-    (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 2560⟩ ∧ Covers [xR w] s.wr
+    (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 2560⟩ ∧ Covers [xR x] s.wr
 
 theorem verEntry_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9]) (.block verEntry) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
 section
-variable {c st w sp : Addr} (L : Lay c st w) (X : XOk c st w) {A T Tp : BitVec 64}
+variable {c st w x sp : Addr} (L : Lay c st w) (X : XOk c st w x) {A T Tp : BitVec 64}
   {tl : Nat}
 include L X
 

@@ -139,7 +139,7 @@ theorem sealBody_ct : CT (fun s => OneT c W sp Np n Ad A D Ln T s ∧ s.gpr .r24
     ((oneCrypt_ct L X).mono fun s ⟨hT, _⟩ => hT.1) (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
   · obtain ⟨V, a, b, d, f, g, i, j, k, he, hN, hA, hD⟩ := hT.1
     have L' := L.v a b d
-    have X' : XOk (V .r29) (V .r30) (V .r31) := by rw [a, b, d]; exact X
+    have X' : XOk (V .r29) (V .r30) (V .r31) (V .r28) := by rw [a, b, d]; exact X
     have hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat := by rw [a, b, d, j, k]; exact hD.dw
     refine WP.mono (WP.with_rdwr (oneCrypt_ok L' X' he hd (by rw [d]; exact hD.xw) (by rw [j, k, d]; exact hD.dx)
       rfl)) fun s' ⟨oc, rd, wr, _⟩ =>
@@ -155,7 +155,7 @@ theorem sealBody_ct : CT (fun s => OneT c W sp Np n Ad A D Ln T s ∧ s.gpr .r24
     Covers [⟨T, 16⟩] s.wr) ((oneTag_ct L X (.inl rfl)).mono fun s ⟨hT, _⟩ => hT.1)
     (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
   · obtain ⟨V, a, b, d, f, g, i, j, k, he, hN, hA, hD⟩ := hT.1
-    have X' : XOk (V .r29) (V .r30) (V .r31) := by rw [a, b, d]; exact X
+    have X' : XOk (V .r29) (V .r30) (V .r31) (V .r28) := by rw [a, b, d]; exact X
     refine WP.mono (WP.with_rdwr (oneTag_ok (L.v a b d) X' (o := 0) (.inl rfl) (H := H) (a := x) he
       (by rw [d]; exact hD.xw) (by rw [a]; exact hH)
       (by rw [i]; exact hl) (by rw [b]; exact hab) (by rw [b, d, j, k]; exact hD.dw.ok)))

@@ -108,12 +108,12 @@ theorem sc_dx : (⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩ : Region).Disjoint (xR
 end
 
 section
-variable {c st w : Addr} (L : Lay c st w) (X : XOk c st w)
+variable {c st w x : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
 omit L in
 theorem stp_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) {d k : Nat} (h1 : d + k ≤ 48) :
-    ∀ r ∈ crFrame st w D n, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+    ∀ r ∈ crFrame st x D n, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -122,7 +122,7 @@ theorem stp_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) {
   · exact X.sx.sub_left (Lay.stSub (by omega))
 
 theorem ctx_crFrame' {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) :
-    ∀ r ∈ crFrame st w D n, (⟨c, 256⟩ : Region).Disjoint r := by
+    ∀ r ∈ crFrame st x D n, (⟨c, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -131,7 +131,7 @@ theorem ctx_crFrame' {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) 
   · exact X.cx
 
 theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) :
-    ∀ r ∈ crFrame st w D n, (savedR w).Disjoint r := by
+    ∀ r ∈ crFrame st x D n, (savedR w).Disjoint r := by
   have hf : w.toNat + 5824 ≤ 2 ^ 64 := X.fit
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -175,7 +175,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   refine WP.seq (WP.block_append (WP.mono (sc1_wp (sc_W h)) fun s₁ h1 => ?_))
   have he₁ := sc_env h h1
   have L := L₀.v h1.r29 h1.r30 h1.r31
-  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
   refine WP.mono textArgs_ok fun s₂ ⟨h24, h25, h26, hg₂, hk₂⟩ => ?_
   have he₂ : Env s₁.gpr s₀.sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
@@ -254,7 +254,7 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   refine WP.seq (WP.mono (sc1_wp (sc_W h)) fun s₁ h1 => ?_)
   have he₁ := sc_env h h1
   have L := L₀.v h1.r29 h1.r30 h1.r31
-  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
   have f₁ : Frame [savedR (s₀.gpr .r9)] s₀.mem s₁.mem := h1.en.frame
   have hd₁₀ := sc_dataW h (s := s₁) h1.en.keeps.wr
   have hd₁ : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by

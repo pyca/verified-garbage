@@ -49,15 +49,15 @@ theorem pinK {V₁ V₂ : Reg → BitVec 64} {sp : Addr} {s₁ s₂ : State} (e�
   · rw [e₁.r31, e₂.r31, h31]
 
 section
-variable {c st w sp : Addr} (L : Lay c st w) (X : XOk c st w)
+variable {c st w x sp : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
 theorem cryptWhole_ct {D : Addr} {n q j : Nat} :
     CT (CrM c st w sp D n q j) cryptWhole := by
   obtain ⟨nb, hnb⟩ : ∃ nb, nb = (n - j) / 16 := ⟨_, rfl⟩
   let J₁ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
-    Env V sp s ∧ DataW (V .r29) (V .r30) (V .r31) s D n ∧ j ≤ n ∧ Covers [xR (V .r31)] s.wr ∧
-    (⟨D, n⟩ : Region).Disjoint (xR (V .r31)) ∧
+    Env V sp s ∧ DataW (V .r29) (V .r30) (V .r31) s D n ∧ j ≤ n ∧ Covers [xR (V .r28)] s.wr ∧
+    (⟨D, n⟩ : Region).Disjoint (xR (V .r28)) ∧
     s.gpr .r5 = D + BitVec.ofNat 64 j ∧ s.gpr .r6 = BitVec.ofNat 64 nb
   refine CT.seq (J := J₁) ?_ (fun s ⟨V, icb, P, m₀, h29, h30, h31, hP, hs⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25]) (.block splitWhole)
@@ -77,11 +77,11 @@ theorem cryptWhole_ct {D : Addr} {n q j : Nat} :
       eval_zero h6 (by have := hd.ok.lt; omega)) (fun _ => CT.skip) fun hb => ?_
     have h0 : nb ≠ 0 := by simpa using hb
     let J₂ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
-      Env V sp s ∧ DataW (V .r29) (V .r30) (V .r31) s D n ∧ j ≤ n ∧ Covers [xR (V .r31)] s.wr ∧
-      (⟨D, n⟩ : Region).Disjoint (xR (V .r31)) ∧
+      Env V sp s ∧ DataW (V .r29) (V .r30) (V .r31) s D n ∧ j ≤ n ∧ Covers [xR (V .r28)] s.wr ∧
+      (⟨D, n⟩ : Region).Disjoint (xR (V .r28)) ∧
       s.gpr .r3 = V .r29 ∧ s.gpr .r4 = V .r30 + BitVec.ofNat 64 48 ∧
       s.gpr .r5 = D + BitVec.ofNat 64 j ∧ s.gpr .r6 = BitVec.ofNat 64 nb ∧
-      s.gpr .r7 = V .r31 + BitVec.ofNat 64 sO
+      s.gpr .r7 = V .r28
     refine CT.seq (J := J₂) ?_ (fun s ⟨V, h29, h30, h31, he, hd, hj, hxw, hdx, h5, h6⟩ => ?_) ?_
     · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r29, .r30, .r31])
           (.block (ctrArgs 48)) h).isSome = true := ⟨_, by taint_decide⟩
@@ -109,9 +109,9 @@ theorem cryptTail_ct {D : Addr} {n q j : Nat} :
   refine CT.ite (decide (n - j = 0)) (fun s ⟨_, _, _, _, _, _, _, _, hs⟩ =>
     eval_zero hs.r25 (by have := hs.data.ok.lt; omega)) (fun _ => CT.skip) fun _ => ?_
   let J₁ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
-    Env V sp s ∧ Covers [xR (V .r31)] s.wr ∧ s.gpr .r3 = V .r29 ∧
+    Env V sp s ∧ Covers [xR (V .r28)] s.wr ∧ s.gpr .r3 = V .r29 ∧
     s.gpr .r4 = V .r30 + BitVec.ofNat 64 48 ∧ s.gpr .r5 = V .r30 + BitVec.ofNat 64 64 ∧
-    s.gpr .r6 = BitVec.ofNat 64 1 ∧ s.gpr .r7 = V .r31 + BitVec.ofNat 64 sO
+    s.gpr .r6 = BitVec.ofNat 64 1 ∧ s.gpr .r7 = V .r28
   let J₂ : State → Prop := fun s => ∃ V icb P m₀ s₀, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     TailKs V sp icb P D n m₀ j s₀ s
   refine CT.seq (J := J₂) (CT.seq (J := J₁) ?_ (fun s ⟨V, icb, P, m₀, h29, h30, h31, hP, hs⟩ => ?_) ?_)

@@ -55,20 +55,20 @@ open VG.Spec.Gcm (Block blockAt)
 
 /-- An environment that may write SM4's working space. -/
 def EnvX (c st w sp : Addr) (s : State) : Prop :=
-  ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ Env V sp s ∧ Covers [xR w] s.wr
+  ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ Env V sp s ∧ Covers [xR x] s.wr
 
 /-- Before `finTag`: also `aad_len` (`A`) and `text_len` (`T`) in `r22` and `r23`. -/
 def FTI (c st w sp : Addr) (A T : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r22 = A ∧
-    V .r23 = T ∧ Env V sp s ∧ Covers [xR w] s.wr
+    V .r23 = T ∧ Env V sp s ∧ Covers [xR x] s.wr
 
-theorem FTI.r {c st w sp : Addr} {A T : BitVec 64} {s : State} (h : FTI c st w sp A T s) :
+theorem FTI.r {c st w x sp : Addr} {A T : BitVec 64} {s : State} (h : FTI c st w sp A T s) :
     EnvX c st w sp s :=
   let ⟨V, a, b, d, _, _, he, hx⟩ := h
   ⟨V, a, b, d, he, hx⟩
 
 section
-variable {c st w sp : Addr} (L : Lay c st w) (X : XOk c st w)
+variable {c st w x sp : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
 theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
@@ -78,9 +78,9 @@ theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
     (fun s ⟨V, a, b, d, he, hx⟩ => WP.mono (WP.with_rdwr (lens_ok (L.v a b d) (.inr rfl) he rfl))
       fun s' ⟨h, _, wr, _⟩ => ⟨V, a, b, d, h.1, by rw [wr]; exact hx⟩) ?_
   let J : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
-    Env V sp s ∧ Covers [xR w] s.wr ∧ s.gpr .r3 = V .r29 ∧ s.gpr .r4 = V .r30 ∧
+    Env V sp s ∧ Covers [xR x] s.wr ∧ s.gpr .r3 = V .r29 ∧ s.gpr .r4 = V .r30 ∧
     s.gpr .r5 = V .r31 + BitVec.ofNat 64 o ∧ s.gpr .r6 = BitVec.ofNat 64 1 ∧
-    s.gpr .r7 = V .r31 + BitVec.ofNat 64 sO
+    s.gpr .r7 = V .r28
   refine CT.seq (J := J) ?_ (fun s ⟨V, a, b, d, he, hx⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r29, .r30, .r31])
         (.block (tagArgs o)) h).isSome = true := by rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
@@ -168,7 +168,7 @@ end
 the state may write. -/
 def FinI (c st w sp : Addr) (A T Tp : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r22 = A ∧
-    V .r23 = T ∧ V .r20 = Tp ∧ Env V sp s ∧ Covers [⟨Tp, 16⟩] s.wr ∧ Covers [xR w] s.wr
+    V .r23 = T ∧ V .r20 = Tp ∧ Env V sp s ∧ Covers [⟨Tp, 16⟩] s.wr ∧ Covers [xR x] s.wr
 
 theorem finEntry_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) (.block finEntry) h).isSome = true :=

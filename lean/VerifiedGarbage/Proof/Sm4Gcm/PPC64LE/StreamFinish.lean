@@ -94,10 +94,10 @@ theorem fin_env {s₀ s₁ : State} (h : finPre s₀) (h1 : SF1 s₀ s₁) : Env
   exact ⟨fun _ _ => rfl, h1.en.keeps.sp, by rw [h1.r29, h1.r30, h1.r31]; exact perm⟩
 
 section
-variable {c st w : Addr} (L : Lay c st w) (X : XOk c st w)
+variable {c st w x : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
-theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame st w o, (savedR w).Disjoint r := by
+theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame st w x o, (savedR w).Disjoint r := by
   have hf : w.toNat + 5824 ≤ 2 ^ 64 := X.fit
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -157,7 +157,7 @@ theorem streamFinish_wp {s₀ : State} (h : streamFinishPPC64LE.pre s₀) :
     have L := L₀.v h1.r29 h1.r30 h1.r31
     have hH₁ : blockAt s₁.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
       rw [h1.r29]; exact ctxH_keep h1.en.frame (ctx_saved L₀)
-    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
     refine WP.seq (WP.mono (WP.with_rdwr (finTag_ok L X (o := 0) (.inl rfl) (a := a) (ct := ct) he₁
       (by rw [h1.r31, h1.en.keeps.wr]; exact fin_X h') hH₁ (by rw [h1.r22]; exact ha)
       (by rw [h1.r23]; exact hP))) fun s₂ ⟨hf, rd₂, wr₂, _⟩ => ?_)

@@ -43,18 +43,18 @@ structure OC (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (m₀ : Mem) (s :
   env : Env V sp s
   out : bytesAt s.mem (V .r27) (V .r23).toNat =
     gctr (ciphOf m₀ (V .r29)) icb (bytesAt m₀ (V .r27) (V .r23).toNat)
-  frame : Frame (crFrame (V .r30) (V .r31) (V .r27) (V .r23).toNat) m₀ s.mem
+  frame : Frame (crFrame (V .r30) (V .r28) (V .r27) (V .r23).toNat) m₀ s.mem
 
 section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31))
-  (X : XOk (V .r29) (V .r30) (V .r31))
+  (X : XOk (V .r29) (V .r30) (V .r31) (V .r28))
 include L X
 
 /-- `oneCrypt`: counter mode over the data (`len`, `r23`, bytes at `r27`) from
 the counter block `icb`. -/
 theorem oneCrypt_ok {s : State} (he : Env V sp s)
-    (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) (hxw : Covers [xR (V .r31)] s.wr)
-    (hdx : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint (xR (V .r31)))
+    (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) (hxw : Covers [xR (V .r28)] s.wr)
+    (hdx : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint (xR (V .r28)))
     {icb : Block} (hcb : blockAt s.mem (V .r30 + BitVec.ofNat 64 48) = icb) :
     WP isa oneCrypt s (OC V sp icb s.mem) := by
   refine WP.seq (WP.mono (dataArgs_ok he) fun s₁ ⟨a24, a25, a26, g₁, k₁⟩ => ?_)
@@ -71,9 +71,9 @@ end
 
 /-- The regions `oneTag o` writes. -/
 abbrev otFrame (st w : Addr) (o : Nat) : List Region :=
-  [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩, xR w]
+  [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩, xR x]
 
-theorem abs_otSub {st w : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' ∈ otFrame st w o, Region.Sub r r' :=
+theorem abs_otSub {st w : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -81,7 +81,7 @@ theorem abs_otSub {st w : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' �
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
-theorem t_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ otFrame st w o, Region.Sub r r' :=
+theorem t_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -89,7 +89,7 @@ theorem t_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ o
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
-theorem tag_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tagFrame st w o, ∃ r' ∈ otFrame st w o, Region.Sub r r' :=
+theorem tag_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tagFrame st w x o, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -107,20 +107,20 @@ structure OT (V : Reg → BitVec 64) (sp : Addr) (o : Nat) (H : Block) (a : List
   out : bytesAt s.mem (V .r31 + BitVec.ofNat 64 o) 16 =
     toBytes (ghashFrom H (ghash H (blocks (padded a (bytesAt m₀ (V .r27) (V .r23).toNat))))
       [ofBytes (lensBlock a.length (bytesAt m₀ (V .r27) (V .r23).toNat).length)] ^^^ ciphOf m₀ (V .r29) J)
-  frame : Frame (otFrame (V .r30) (V .r31) o) m₀ s.mem
+  frame : Frame (otFrame (V .r30) (V .r31) (V .r28) o) m₀ s.mem
 
 section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31))
-  (X : XOk (V .r29) (V .r30) (V .r31))
+  (X : XOk (V .r29) (V .r30) (V .r31) (V .r28))
 include L X
 
 theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {s : State} (he : Env V sp s)
-    (hxw : Covers [xR (V .r31)] s.wr)
+    (hxw : Covers [xR (V .r28)] s.wr)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (hl : (V .r22).toNat = a.length)
     (hab : Absorbed s.mem (V .r30 + BitVec.ofNat 64 16) (V .r30 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))
     (hd : DataOk (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :
     WP isa (oneTag o) s (OT V sp o H a (blockAt s.mem (V .r30)) s.mem) := by
-  have dC : ∀ r ∈ otFrame (V .r30) (V .r31) o, (⟨V .r29, 256⟩ : Region).Disjoint r := by
+  have dC : ∀ r ∈ otFrame (V .r30) (V .r31) (V .r28) o, (⟨V .r29, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
