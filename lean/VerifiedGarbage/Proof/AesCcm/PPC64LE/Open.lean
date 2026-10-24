@@ -1,11 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Seal
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Cmp
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Seal
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Cmp
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Impl.AesCcm.PPC64LE
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Entry
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Spec.Cmac
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Chunk
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Ctrs
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Exit
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
 
 /-!
 # AES-CCM on PPC64LE: `vg_aes_ccm_open`

@@ -1,12 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 public import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Spec.Gcm
 
 /-!
 # AES-GCM on PPC64LE: GHASH absorbing a piece (`absorb`)

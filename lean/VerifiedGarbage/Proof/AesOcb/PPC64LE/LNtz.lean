@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-OCB on PPC64LE: `L_{ntz(i)}` (`lNtz`)

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Ecb.Loop
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Ecb.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Ecb.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 import VerifiedGarbage.Proof.TripleDes.EcbMemory
 import VerifiedGarbage.Proof.TripleDes.Schedule
@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Ecb
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
 
 /-! # Triple DES ECB on PPC64LE, verified with its working space as an argument -/
 
