@@ -46,8 +46,8 @@ def entry : List Instr :=
 current pointer: its stack arguments at offset 96 of the frame. -/
 def arguments : List Instr :=
   [ldf .r3 5, ldf .r4 2, ldf .r5 6, ldf .r6 2, ldf .r7 7, ldf .r8 8, ldf .r9 2, ldf .r10 9,
-    .addSp .r11 96, .store .d .r4 .r11 0, ldf .r12 12, .store .d .r12 .r11 8, ldf .r12 13,
-    .store .d .r12 .r11 16]
+    ldf .r12 12, ldf .r0 13, .addSp .r11 96, .store .d .r4 .r11 0, .store .d .r12 .r11 8,
+    .store .d .r0 .r11 16]
 
 /-- Zero the budgets and the request and finish with `status`. -/
 def terminal (status : Nat) : List Instr :=
