@@ -57,12 +57,12 @@ variable {s : State} (hp : SignPre s)
 include hp
 
 theorem ctxPiece {t : State} (h : SInv s t) :
-    PieceOk (s.gpr .r10) t ⟨.r23, 0, .reg .r24⟩ ∧ Piece.bytes t.mem t.gpr ⟨.r23, 0, .reg .r24⟩ = ctxB s := by
-  have g23 : t.gpr .r23 = s.gpr .r6 := h.regs _ (by decide)
-  have g24 : t.gpr .r24 = s.gpr .r7 := h.regs _ (by decide)
-  have e : Piece.R t.gpr ⟨.r23, 0, .reg .r24⟩ = cxR s := by
+    PieceOk (s.gpr .r10) t ⟨.r25, 0, .reg .r28⟩ ∧ Piece.bytes t.mem t.gpr ⟨.r25, 0, .reg .r28⟩ = ctxB s := by
+  have g23 : t.gpr .r25 = s.gpr .r6 := h.regs _ (by decide)
+  have g24 : t.gpr .r28 = s.gpr .r7 := h.regs _ (by decide)
+  have e : Piece.R t.gpr ⟨.r25, 0, .reg .r28⟩ = cxR s := by
     simp only [Piece.R, Piece.addr, Len.val, g23, g24, BitVec.add_zero]
-  refine ⟨pieceOk_of e (by decide) (by decide) (show Reg.r24 ∈ preserved by decide)
+  refine ⟨pieceOk_of e (by decide) (by decide) (show Reg.r28 ∈ preserved by decide)
     (by rw [h.rd, hp.rd]; exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; simp, hc⟩)
     hp.cX.symm (by rw [h.sp]; exact hp.bX), ?_⟩
   have := sign_keep hp h (R := cxR s) (.inr (.inr (.inl rfl)))
@@ -70,12 +70,12 @@ theorem ctxPiece {t : State} (h : SInv s t) :
   exact this
 
 theorem msgPiece {t : State} (h : SInv s t) :
-    PieceOk (s.gpr .r10) t ⟨.r25, 0, .reg .r28⟩ ∧ Piece.bytes t.mem t.gpr ⟨.r25, 0, .reg .r28⟩ = msgB s := by
-  have g25 : t.gpr .r25 = s.gpr .r8 := h.regs _ (by decide)
-  have g28 : t.gpr .r28 = s.gpr .r9 := h.regs _ (by decide)
-  have e : Piece.R t.gpr ⟨.r25, 0, .reg .r28⟩ = msR s := by
+    PieceOk (s.gpr .r10) t ⟨.r29, 0, .reg .r30⟩ ∧ Piece.bytes t.mem t.gpr ⟨.r29, 0, .reg .r30⟩ = msgB s := by
+  have g25 : t.gpr .r29 = s.gpr .r8 := h.regs _ (by decide)
+  have g28 : t.gpr .r30 = s.gpr .r9 := h.regs _ (by decide)
+  have e : Piece.R t.gpr ⟨.r29, 0, .reg .r30⟩ = msR s := by
     simp only [Piece.R, Piece.addr, Len.val, g25, g28, BitVec.add_zero]
-  refine ⟨pieceOk_of e (by decide) (by decide) (show Reg.r28 ∈ preserved by decide)
+  refine ⟨pieceOk_of e (by decide) (by decide) (show Reg.r30 ∈ preserved by decide)
     (by rw [h.rd, hp.rd]; exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; simp, hc⟩)
     hp.cM.symm (by rw [h.sp]; exact hp.bM), ?_⟩
   have := sign_keep hp h (R := msR s) (.inr (.inr (.inr rfl)))
@@ -84,18 +84,18 @@ theorem msgPiece {t : State} (h : SInv s t) :
 
 /-- A piece of `F`. -/
 theorem fPiece {t : State} (h : SInv s t) {d n : Nat} (hd : d < 2 ^ 15) (hn : n < 2 ^ 15) (hdn : d + n ≤ 464) :
-    PieceOk (s.gpr .r10) t ⟨.r30, d, .imm n⟩ ∧
-      Piece.bytes t.mem t.gpr ⟨.r30, d, .imm n⟩ = bytesAt t.mem (sF s + BitVec.ofNat 64 d) n := by
-  have g30 : t.gpr .r30 = sF s := h.regs _ (by decide)
-  have e : Piece.R t.gpr ⟨.r30, d, .imm n⟩ = ⟨sF s + BitVec.ofNat 64 d, n⟩ := by
+    PieceOk (s.gpr .r10) t ⟨.r21, d, .imm n⟩ ∧
+      Piece.bytes t.mem t.gpr ⟨.r21, d, .imm n⟩ = bytesAt t.mem (sF s + BitVec.ofNat 64 d) n := by
+  have g30 : t.gpr .r21 = sF s := h.regs _ (by decide)
+  have e : Piece.R t.gpr ⟨.r21, d, .imm n⟩ = ⟨sF s + BitVec.ofNat 64 d, n⟩ := by
     simp only [Piece.R, Piece.addr, Len.val, g30]
-  refine ⟨pieceOk_of e (show Reg.r30 ∈ preserved by decide) hd hn (cov_right (cov_in (fF hp h) hdn)) (fsc hp hdn)
+  refine ⟨pieceOk_of e (show Reg.r21 ∈ preserved by decide) hd hn (cov_right (cov_in (fF hp h) hdn)) (fsc hp hdn)
     (by rw [h.sp]; exact fbelow hp hdn), ?_⟩
   simp only [Piece.bytes, Piece.addr, Len.val, g30]; rfl
 
 theorem fPiece0 {t : State} (h : SInv s t) :
-    PieceOk (s.gpr .r10) t ⟨.r30, 0, .imm 10⟩ ∧
-      Piece.bytes t.mem t.gpr ⟨.r30, 0, .imm 10⟩ = bytesAt t.mem (sF s) 10 := by
+    PieceOk (s.gpr .r10) t ⟨.r21, 0, .imm 10⟩ ∧
+      Piece.bytes t.mem t.gpr ⟨.r21, 0, .imm 10⟩ = bytesAt t.mem (sF s) 10 := by
   have := fPiece hp h (d := 0) (n := 10) (by decide) (by decide) (by decide)
   rwa [BitVec.add_zero] at this
 
@@ -106,10 +106,10 @@ theorem reduceF_ok {t : State} (h : SInv s t) {o : Nat} (ho : o + 57 ≤ 384) (h
       Frame [⟨sF s + BitVec.ofNat 64 o, 57⟩, scR s] t.mem t'.mem →
       bytesAt t'.mem (sF s + BitVec.ofNat 64 o) 57 =
         Spec.Ed448.scalarReduce (bytesAt t.mem (sF s + BitVec.ofNat 64 16) 114) → WP isa rest t' Q) :
-    WP isa (.seq (.block [.addi .r3 .r30 o, .addi .r4 .r30 16, mov .r5 .r29])
+    WP isa (.seq (.block [.addi .r3 .r21 o, .addi .r4 .r21 16, mov .r5 .r22])
       (.seq (.call "vg_ed448_scalar_reduce" Impl.Ed448.PPC64LE.scalarReduce) rest)) t Q := by
-  have g29 : t.gpr .r29 = s.gpr .r10 := h.regs _ (by decide)
-  have g30 : t.gpr .r30 = sF s := h.regs _ (by decide)
+  have g29 : t.gpr .r22 = s.gpr .r10 := h.regs _ (by decide)
+  have g30 : t.gpr .r21 = sF s := h.regs _ (by decide)
   unfold mov
   refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by omega) (by decide) (by decide) (by decide)
     (by decide) (by decide) fun u hu a3 a4 a5 => ?_)
@@ -144,11 +144,11 @@ theorem nonce_ok (hl : Proof.Ed448.BaseLadder2Ok) {s t : State} (hp : SignPre s)
   obtain ⟨mP, mB⟩ := msgPiece hp h.inv
   obtain ⟨hP, hB⟩ := fPiece0 hp h.inv
   obtain ⟨pP, pB⟩ := fPiece hp h.inv (d := 193) (n := 57) (by decide) (by decide) (by decide)
-  have g29 : t.gpr .r29 = s.gpr .r10 := h.inv.regs _ (by decide)
-  have g30 : t.gpr .r30 = sF s := h.inv.regs _ (by decide)
+  have g29 : t.gpr .r22 = s.gpr .r10 := h.inv.regs _ (by decide)
+  have g30 : t.gpr .r21 = sF s := h.inv.regs _ (by decide)
   unfold signNonce
   simp only [dom4Pieces, List.cons_append, List.nil_append]
-  refine WP.seq (WP.mono (hash_ok (sc := .r29) (f := .r30) (o := 16) (out := sF s + BitVec.ofNat 64 16)
+  refine WP.seq (WP.mono (hash_ok (sc := .r22) (f := .r21) (o := 16) (out := sF s + BitVec.ofNat 64 16)
     (by decide) (by decide) (by decide) g29 (by rw [g30]) (kenv hp h.inv) (by simp) (fun p hp' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
       rcases hp' with rfl | rfl | rfl | rfl
@@ -169,8 +169,8 @@ theorem nonce_ok (hl : Proof.Ed448.BaseLadder2Ok) {s t : State} (hp : SignPre s)
   rw [hh] at r₃
   -- `R`.
   have g20 : t₃.gpr .r20 = s.gpr .r3 := h₃.regs _ (by decide)
-  have g29' : t₃.gpr .r29 = s.gpr .r10 := h₃.regs _ (by decide)
-  have g30' : t₃.gpr .r30 = sF s := h₃.regs _ (by decide)
+  have g29' : t₃.gpr .r22 = s.gpr .r10 := h₃.regs _ (by decide)
+  have g30' : t₃.gpr .r21 = sF s := h₃.regs _ (by decide)
   unfold mov
   refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) fun u hu a3 a4 a5 => ?_)

@@ -17,8 +17,10 @@ The contract by register (`SignPre`): `out` in `r3`, `seed` in `r4`, `pk`
 in `r5`, the context in `r6` (`ctxlen` in `r7`), the message in `r8` (`len`
 in `r9`), `scratch` in `r10`, and the frame `F` (464 bytes) the stack
 argument at `sp + 96`. `F` is read into `r12` (`frame_ok`), the registers
-saved at `384(F)`, the arguments moved to `r20`–`r25` and `r28`–`r30`, and
-the first ten bytes of `dom4(0, C)` written at `F` (`setup_ok'`, `hdr_ok`):
+saved at `384(F)`, the arguments moved to `r20`–`r25` and `r28`–`r30` (`out`,
+`F` and `scratch`, which the steps after the hashes use, to `r20`–`r22`, which
+no function called saves and restores), and
+the first ten bytes of `dom4(0, C)` written at `F` (`signSetup_ok`, `hdr_ok`):
 the invariant `Inv` holds from the entry state on (`SInv`).
 -/
 
@@ -84,8 +86,8 @@ abbrev signW (s : State) : List Region := [oR s, scR s, fR s, below s.sp 48]
 
 /-- The values in the registers. -/
 def signV (s : State) : Reg → BitVec 64
-  | .r20 => s.gpr .r3 | .r21 => s.gpr .r4 | .r22 => s.gpr .r5 | .r23 => s.gpr .r6 | .r24 => s.gpr .r7
-  | .r25 => s.gpr .r8 | .r28 => s.gpr .r9 | .r29 => s.gpr .r10 | .r30 => stackArg s 0 | _ => 0
+  | .r20 => s.gpr .r3 | .r23 => s.gpr .r4 | .r24 => s.gpr .r5 | .r25 => s.gpr .r6 | .r28 => s.gpr .r7
+  | .r29 => s.gpr .r8 | .r30 => s.gpr .r9 | .r22 => s.gpr .r10 | .r21 => stackArg s 0 | _ => 0
 
 abbrev SInv (s : State) : State → Prop := Inv s (sF s) 384 signRegs (signV s) (signW s)
 
@@ -264,8 +266,8 @@ theorem signSetup_ok {s u : State} (hp : SignPre s) (hu : Upd s u .r12 (sF s)) (
   have hFw : (fR s) ∈ u.wr := by rw [hu.wr, hp.wr]; simp
   unfold signSetup
   refine (show WP isa (.block (saveRegs .r12 384 signRegs ++
-      ([(.r20, .r3), (.r21, .r4), (.r22, .r5), (.r23, .r6), (.r24, .r7), (.r25, .r8), (.r28, .r9), (.r29, .r10),
-        (.r30, .r12)] : List (Reg × Reg)).map (fun p => mov p.1 p.2) ++ hdr .r30 .r24)) u (S1 s) from ?_)
+      ([(.r20, .r3), (.r22, .r10), (.r23, .r4), (.r24, .r5), (.r25, .r6), (.r28, .r7), (.r29, .r8), (.r30, .r9),
+        (.r21, .r12)] : List (Reg × Reg)).map (fun p => mov p.1 p.2) ++ hdr .r21 .r28)) u (S1 s) from ?_)
   refine setup_ok (v := signV s) (W := signW s) (by decide) (by decide) (by decide)
     (fun p hp' => by rw [hu.gpr]; exact in_base hFw (by revert p; decide) (by revert p; decide))
     ⟨fR s, by simp, by rw [hu.gpr]; exact slot_sub _⟩ rfl (by decide) (by decide) (fun p hp' => by
@@ -275,8 +277,8 @@ theorem signSetup_ok {s u : State} (hp : SignPre s) (hu : Upd s u .r12 (sF s)) (
   rw [hu.gpr] at h₁
   have h₁' : SInv s t₁ := h₁.rebase signRegs_pres hu.rd hu.wr hu.sp hlr
     (fun r hr => hu.other r fun e => by revert hr; rw [e]; decide) hu.mem
-  have g30 : t₁.gpr .r30 = sF s := h₁'.regs _ (by decide)
-  have g24 : t₁.gpr .r24 = s.gpr .r7 := h₁'.regs _ (by decide)
+  have g30 : t₁.gpr .r21 = sF s := h₁'.regs _ (by decide)
+  have g24 : t₁.gpr .r28 = s.gpr .r7 := h₁'.regs _ (by decide)
   have hFw₁ : (fR s) ∈ t₁.wr := by rw [h₁'.wr, hp.wr]; simp
   refine hdr_ok (F := sF s) (cl := (s.gpr .r7).toNat) (by decide) (by decide) g30
     (by rw [g24, ofNat_toNat]) (fun j hj => in_base hFw₁ (by omega) (by omega))

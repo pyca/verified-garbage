@@ -120,16 +120,16 @@ structure S2 (s t : State) : Prop where
   pre : bytesAt t.mem (sF s + BitVec.ofNat 64 193) 57 = (Spec.Sha3.shake256 (bytesAt s.mem (s.gpr .r4) 57) 114).drop 57
 
 theorem expand_ok {s t : State} (hp : SignPre s) (h : S1 s t) : WP isa signExpand t (S2 s) := by
-  have g21 : t.gpr .r21 = s.gpr .r4 := h.inv.regs _ (by decide)
-  have g29 : t.gpr .r29 = s.gpr .r10 := h.inv.regs _ (by decide)
-  have g30 : t.gpr .r30 = sF s := h.inv.regs _ (by decide)
-  have pk : PieceOk (s.gpr .r10) t ⟨.r21, 0, .imm 57⟩ :=
+  have g21 : t.gpr .r23 = s.gpr .r4 := h.inv.regs _ (by decide)
+  have g29 : t.gpr .r22 = s.gpr .r10 := h.inv.regs _ (by decide)
+  have g30 : t.gpr .r21 = sF s := h.inv.regs _ (by decide)
+  have pk : PieceOk (s.gpr .r10) t ⟨.r23, 0, .imm 57⟩ :=
     pieceOk_of (R := sdR s) (by simp only [Piece.R, Piece.addr, Len.val, g21, BitVec.add_zero]) (by decide)
       (by decide) (show 57 < 2 ^ 15 by decide)
       (by rw [h.inv.rd, hp.rd]; exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; simp, hc⟩)
       hp.cS.symm (by rw [h.inv.sp]; exact hp.bS)
   unfold signExpand
-  refine WP.seq (WP.mono (hash_ok (sc := .r29) (f := .r30) (o := 136) (out := sF s + BitVec.ofNat 64 136)
+  refine WP.seq (WP.mono (hash_ok (sc := .r22) (f := .r21) (o := 136) (out := sF s + BitVec.ofNat 64 136)
     (by decide) (by decide) (by decide) g29 (by rw [g30]) (kenv hp h.inv) (by simp)
     (fun p hp' => by rw [List.mem_singleton.mp hp']; exact pk) (cov_in (fF hp h.inv) (by decide))
     (fsc hp (by decide)) (by rw [h.inv.sp]; exact fbelow hp (by decide))) fun t₂ ⟨k₂, d₂⟩ => ?_)
@@ -139,7 +139,7 @@ theorem expand_ok {s t : State} (hp : SignPre s) (h : S1 s t) : WP isa signExpan
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Piece.bytes,
       Piece.addr, Len.val, g21, BitVec.add_zero, bytesAt_sha3] at d₂ e
     rw [d₂]; exact congrArg (Spec.Sha3.shake256 · 114) e
-  refine prune_ok (f := .r30) (o := 136) (q := sF s + BitVec.ofNat 64 136) (is := []) (by decide) (by decide)
+  refine prune_ok (f := .r21) (o := 136) (q := sF s + BitVec.ofNat 64 136) (is := []) (by decide) (by decide)
     (by decide) (by rw [h₂.regs _ (by decide)]; rfl)
     (fun j hj => by
       rw [h₂.wr, hp.wr, Offset.add_add]; exact in_base (P := sF s) (len := 464) (d := 136 + j) (by simp) (by omega) (by omega))

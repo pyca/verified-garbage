@@ -119,7 +119,7 @@ len = r9, scratch = r10)`, `F` at `96(r1)`
 place, then the nonce's prefix at 193), the nonce `r` at 256, the challenge `k` at 320, the saves at
 384. -/
 
-def signRegs : List Reg := [.r20, .r21, .r22, .r23, .r24, .r25, .r28, .r29, .r30]
+def signRegs : List Reg := [.r20, .r22, .r23, .r24, .r25, .r28, .r29, .r30, .r21]
 
 /-- `F`, the stack argument, read into `r12`. -/
 def signFrame : List Instr := [.addSp .r12 0, .load .d .r12 .r12 96]
@@ -127,36 +127,36 @@ def signFrame : List Instr := [.addSp .r12 0, .load .d .r12 .r12 96]
 /-- The setup: the registers saved, the arguments moved, the header written. -/
 def signSetup : List Instr :=
   saveRegs .r12 384 signRegs ++
-    [mov .r20 .r3, mov .r21 .r4, mov .r22 .r5, mov .r23 .r6, mov .r24 .r7, mov .r25 .r8, mov .r28 .r9,
-      mov .r29 .r10, mov .r30 .r12] ++ hdr .r30 .r24
+    [mov .r20 .r3, mov .r22 .r10, mov .r23 .r4, mov .r24 .r5, mov .r25 .r6, mov .r28 .r7, mov .r29 .r8,
+      mov .r30 .r9, mov .r21 .r12] ++ hdr .r21 .r28
 
 /-- `dom4(0, C)`: the header and the context. -/
 def dom4Pieces (f ctx ctxlen : Reg) : List Piece := [⟨f, 0, .imm 10⟩, ⟨ctx, 0, .reg ctxlen⟩]
 
 /-- `s` and the nonce's prefix. -/
 def signExpand : Prog isa :=
-  .seq (hash .r29 [⟨.r21, 0, .imm 57⟩] .r30 136) (.block (prune .r30 136))
+  .seq (hash .r22 [⟨.r23, 0, .imm 57⟩] .r21 136) (.block (prune .r21 136))
 
 /-- The nonce, and `R` into the first half of `out`. -/
 def signNonce : Prog isa :=
-  .seq (hash .r29 (dom4Pieces .r30 .r23 .r24 ++ [⟨.r30, 193, .imm 57⟩, ⟨.r25, 0, .reg .r28⟩]) .r30 16) <|
-  .seq (.block [.addi .r3 .r30 256, .addi .r4 .r30 16, mov .r5 .r29]) <|
+  .seq (hash .r22 (dom4Pieces .r21 .r25 .r28 ++ [⟨.r21, 193, .imm 57⟩, ⟨.r29, 0, .reg .r30⟩]) .r21 16) <|
+  .seq (.block [.addi .r3 .r21 256, .addi .r4 .r21 16, mov .r5 .r22]) <|
   .seq (.call "vg_ed448_scalar_reduce" scalarReduce) <|
-  .seq (.block [mov .r3 .r20, .addi .r4 .r30 256, mov .r5 .r29]) <|
+  .seq (.block [mov .r3 .r20, .addi .r4 .r21 256, mov .r5 .r22]) <|
   .call "vg_ed448_scalar_base" scalarBase
 
 /-- The challenge, and `S` into the second half of `out`. -/
 def signChallenge : Prog isa :=
-  .seq (hash .r29 (dom4Pieces .r30 .r23 .r24 ++ [⟨.r20, 0, .imm 57⟩, ⟨.r22, 0, .imm 57⟩, ⟨.r25, 0, .reg .r28⟩])
-    .r30 16) <|
-  .seq (.block [.addi .r3 .r30 320, .addi .r4 .r30 16, mov .r5 .r29]) <|
+  .seq (hash .r22 (dom4Pieces .r21 .r25 .r28 ++ [⟨.r20, 0, .imm 57⟩, ⟨.r24, 0, .imm 57⟩, ⟨.r29, 0, .reg .r30⟩])
+    .r21 16) <|
+  .seq (.block [.addi .r3 .r21 320, .addi .r4 .r21 16, mov .r5 .r22]) <|
   .seq (.call "vg_ed448_scalar_reduce" scalarReduce) <|
-  .seq (.block [.addi .r3 .r20 57, .addi .r4 .r30 256, .addi .r5 .r30 320, .addi .r6 .r30 136, mov .r7 .r29]) <|
+  .seq (.block [.addi .r3 .r20 57, .addi .r4 .r21 256, .addi .r5 .r21 320, .addi .r6 .r21 136, mov .r7 .r22]) <|
   .call "vg_ed448_scalar_mul_add" scalarMulAdd
 
 def signCached : Prog isa :=
   .seq (.block signFrame) <| .seq (.block signSetup) <| .seq signExpand <| .seq signNonce <| .seq signChallenge <|
-  .block (wipe .r30 16 46 ++ restoreRegs .r30 384 signRegs)
+  .block (wipe .r21 16 46 ++ restoreRegs .r21 384 signRegs)
 
 /-! ## `vg_ed448_verify(pk = r3, context = r4, ctxlen = r5, message = r6, len = r7, signature = r8,
 scratch = r9) -> r3`, `F` in `r10`

@@ -39,9 +39,9 @@ theorem challenge_ok {s t : State} (hp : SignPre s) (h : S3 s t) : WP isa signCh
   obtain ⟨mP, mB⟩ := msgPiece hp h.inv
   obtain ⟨hP, hB⟩ := fPiece0 hp h.inv
   have g20 : t.gpr .r20 = s.gpr .r3 := h.inv.regs _ (by decide)
-  have g22 : t.gpr .r22 = s.gpr .r5 := h.inv.regs _ (by decide)
-  have g29 : t.gpr .r29 = s.gpr .r10 := h.inv.regs _ (by decide)
-  have g30 : t.gpr .r30 = sF s := h.inv.regs _ (by decide)
+  have g22 : t.gpr .r24 = s.gpr .r5 := h.inv.regs _ (by decide)
+  have g29 : t.gpr .r22 = s.gpr .r10 := h.inv.regs _ (by decide)
+  have g30 : t.gpr .r21 = sF s := h.inv.regs _ (by decide)
   have hO57 : Region.Sub ⟨s.gpr .r3, 57⟩ (oR s) := Region.sub_prefix (by decide)
   have oP : PieceOk (s.gpr .r10) t ⟨.r20, 0, .imm 57⟩ :=
     pieceOk_of (R := ⟨s.gpr .r3, 57⟩) (by simp only [Piece.R, Piece.addr, Len.val, g20, BitVec.add_zero])
@@ -49,17 +49,17 @@ theorem challenge_ok {s t : State} (hp : SignPre s) (h : S3 s t) : WP isa signCh
       (hp.oC.sub_left hO57) (by rw [h.inv.sp]; exact hp.bO.sub_right hO57)
   have oB : Piece.bytes t.mem t.gpr ⟨.r20, 0, .imm 57⟩ = RB s := by
     simp only [Piece.bytes, Piece.addr, Len.val, g20, BitVec.add_zero]; exact h.R
-  have pP : PieceOk (s.gpr .r10) t ⟨.r22, 0, .imm 57⟩ :=
+  have pP : PieceOk (s.gpr .r10) t ⟨.r24, 0, .imm 57⟩ :=
     pieceOk_of (R := pkR s) (by simp only [Piece.R, Piece.addr, Len.val, g22, BitVec.add_zero])
       (by decide) (by decide) (show 57 < 2 ^ 15 by decide)
       (by rw [h.inv.rd, hp.rd]; exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; simp, hc⟩)
       hp.cP.symm (by rw [h.inv.sp]; exact hp.bP)
-  have pB : Piece.bytes t.mem t.gpr ⟨.r22, 0, .imm 57⟩ = pkB s := by
+  have pB : Piece.bytes t.mem t.gpr ⟨.r24, 0, .imm 57⟩ = pkB s := by
     have := sign_keep hp h.inv (R := pkR s) (.inr (.inl rfl))
     simp only [Piece.bytes, Piece.addr, Len.val, g22, BitVec.add_zero]; exact this
   unfold signChallenge
   simp only [dom4Pieces, List.cons_append, List.nil_append]
-  refine WP.seq (WP.mono (hash_ok (sc := .r29) (f := .r30) (o := 16) (out := sF s + BitVec.ofNat 64 16)
+  refine WP.seq (WP.mono (hash_ok (sc := .r22) (f := .r21) (o := 16) (out := sF s + BitVec.ofNat 64 16)
     (by decide) (by decide) (by decide) g29 (by rw [g30]) (kenv hp h.inv) (by simp) (fun p hp' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
       rcases hp' with rfl | rfl | rfl | rfl | rfl
@@ -81,8 +81,8 @@ theorem challenge_ok {s t : State} (hp : SignPre s) (h : S3 s t) : WP isa signCh
   rw [hh] at r₃
   -- `S`.
   have g20' : t₃.gpr .r20 = s.gpr .r3 := h₃.regs _ (by decide)
-  have g29' : t₃.gpr .r29 = s.gpr .r10 := h₃.regs _ (by decide)
-  have g30' : t₃.gpr .r30 = sF s := h₃.regs _ (by decide)
+  have g29' : t₃.gpr .r22 = s.gpr .r10 := h₃.regs _ (by decide)
+  have g30' : t₃.gpr .r21 = sF s := h₃.regs _ (by decide)
   unfold mov
   refine WP.seq (args5_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) fun u hu a3 a4 a5 a6 a7 => ?_)

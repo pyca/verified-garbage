@@ -70,9 +70,9 @@ theorem signCached_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : SignPre
   refine WP.seq (WP.mono (nonce_ok hl hp h₂) fun t₃ h₃ => ?_)
   refine WP.seq (WP.mono (challenge_ok hp h₃) fun t₄ h₄ => ?_)
   obtain ⟨σ, hσ, hS⟩ := h₄.S
-  have g30 : t₄.gpr .r30 = sF s := h₄.inv.regs _ (by decide)
+  have g30 : t₄.gpr .r21 = sF s := h₄.inv.regs _ (by decide)
   have hFw : (fR s) ∈ t₄.wr := fF hp h₄.inv
-  refine wipe_ok (f := .r30) (o := 16) (n := 46) (by decide) (by decide) g30 (by decide) (by decide)
+  refine wipe_ok (f := .r21) (o := 16) (n := 46) (by decide) (by decide) g30 (by decide) (by decide)
     (fun k hk => in_base hFw (by omega) (by omega)) fun u uf urd uwr usp ug => ?_
   have h₅ : SInv s u := h₄.inv.step signRegs_pres urd uwr usp (fun r hr => ug r fun e => by revert hr; rw [e]; decide)
     uf (fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨fR s, by simp, fsub (by decide)⟩)
