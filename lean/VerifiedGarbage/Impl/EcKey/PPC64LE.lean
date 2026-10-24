@@ -56,12 +56,15 @@ def upToPow : Prog isa :=
   .seq (Point.ladderP c.ladderCfg c.SP) <|
   .seq (pow c.powP c.SP) (.block [])
 
-/-- `04 ‖ x ‖ y` (or zeros) to `out` (in `r14`), the flag's low bit to `r3`,
-and the callee-saved registers restored. -/
-def finish : List Instr :=
+/-- `04 ‖ x ‖ y` (or zeros), from the slots `x` and `y`, to `out` (in `r14`),
+the flag's low bit to `r3`, and the callee-saved registers restored. -/
+def finishWith (x y : Nat) : List Instr :=
   ([.load .d .r10 wb (c.sl FLAG), .li .r4 4, .logic .and .r4 .r4 .r10, .stb .r4 .r14 0] : List Instr) ++
-  storeBytes c.C.len c.n .r14 1 (c.sl X) ++ storeBytes c.C.len c.n .r14 (1 + c.C.len) (c.sl Y) ++
+  storeBytes c.C.len c.n .r14 1 (c.sl x) ++ storeBytes c.C.len c.n .r14 (1 + c.C.len) (c.sl y) ++
   ([.li .r4 1, .logic .and .r4 .r10 .r4] : List Instr) ++ Impl.Ecdsa.PPC64LE.Cfg.restore ++ [mov .r3 .r4]
+
+/-- `04 ‖ x ‖ y` (or zeros) to `out`, from `X` and `Y`. -/
+def finish : List Instr := finishWith c X Y
 
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/
