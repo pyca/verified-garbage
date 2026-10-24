@@ -140,6 +140,9 @@ pub(crate) mod ec_p384_compressed;
 pub(crate) mod ec_p521;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p521_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_secp256k1;
 
 #[rustfmt::skip]
