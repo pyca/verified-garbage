@@ -107,6 +107,9 @@ pub(crate) mod consts;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod dsa;
+
+#[rustfmt::skip]
 pub(crate) mod ec_brainpoolp256r1;
 
 #[rustfmt::skip]
