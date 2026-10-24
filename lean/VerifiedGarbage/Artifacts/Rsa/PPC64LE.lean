@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVerified
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on PPC64LE -/
@@ -41,6 +42,18 @@ def artifacts : List Artifact := [
         `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the \
         working space's header."]
     code := Impl.Bignum.PPC64LE.Crt.crt
-    verified := Proof.Bignum.PPC64LE.Crt.crt_verified }]
+    verified := Proof.Bignum.PPC64LE.Crt.crt_verified },
+  Spec.Rsa.privateCheckedApi.artifact PPC64LE.target {
+    notes := ["This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, \
+        then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, \
+        which also checks `e`. It compares that with the input in constant time, and copies `m` to \
+        `out` under a mask, which is clear unless the CRT and the public operation succeeded and the \
+        two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it \
+        overwrites the frame's copy of `m` with zeros. Its frame of 3328 bytes holds `m`, the \
+        precomputed values of `n`, the statuses, the registers kept across the calls and the stack \
+        arguments of the calls, whose callees use no stack."]
+    code := Impl.Rsa.PPC64LE.Priv.code
+    stack := Impl.Rsa.PPC64LE.Priv.frameBytes
+    verified := Proof.Rsa.PPC64LE.Priv.priv_verified }]
 
 end VG.Artifacts.Rsa.PPC64LE

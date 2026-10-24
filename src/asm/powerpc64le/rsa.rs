@@ -4653,3 +4653,168 @@ ld %r23, 248(%r23)
 blr",
     )
 }
+
+/// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
+///
+/// This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros. Its frame of 3328 bytes holds `m`, the precomputed values of `n`, the statuses, the registers kept across the calls and the stack arguments of the calls, whose callees use no stack.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"stdu %r1, -3328(%r1)
+addi %r12, %r1, 0
+std %r24, 176(%r12)
+std %r25, 184(%r12)
+std %r26, 192(%r12)
+std %r27, 200(%r12)
+std %r28, 208(%r12)
+std %r29, 216(%r12)
+mflr %r0
+std %r0, 224(%r12)
+or %r24, %r3, %r3
+or %r25, %r5, %r5
+or %r26, %r6, %r6
+or %r27, %r7, %r7
+or %r28, %r8, %r8
+or %r29, %r9, %r9
+addi %r3, %r12, 248
+or %r4, %r26, %r26
+or %r7, %r29, %r29
+or %r8, %r26, %r26
+ld %r9, 3424(%r12)
+ld %r10, 3432(%r12)
+ld %r0, 3440(%r12)
+std %r0, 96(%r12)
+ld %r0, 3448(%r12)
+std %r0, 104(%r12)
+ld %r0, 3456(%r12)
+std %r0, 112(%r12)
+ld %r0, 3464(%r12)
+std %r0, 120(%r12)
+ld %r0, 3472(%r12)
+std %r0, 128(%r12)
+ld %r0, 3480(%r12)
+std %r0, 136(%r12)
+ld %r0, 3488(%r12)
+std %r0, 144(%r12)
+ld %r0, 3496(%r12)
+std %r0, 152(%r12)
+ld %r0, 3504(%r12)
+std %r0, 160(%r12)
+ld %r0, 3512(%r12)
+std %r0, 168(%r12)
+bl {vg_rsa_private_crt}
+addi %r12, %r1, 0
+std %r3, 232(%r12)
+addi %r3, %r12, 1272
+addi %r4, %r26, 7
+rldicl %r4, %r4, 61, 3
+rldicr %r4, %r4, 1, 62
+or %r5, %r25, %r25
+or %r6, %r26, %r26
+ld %r7, 3504(%r12)
+ld %r8, 3512(%r12)
+bl {vg_rsa_public_precompute}
+addi %r12, %r1, 0
+or %r3, %r24, %r24
+or %r4, %r26, %r26
+addi %r5, %r12, 1272
+addi %r4, %r26, 7
+rldicl %r4, %r4, 61, 3
+rldicr %r4, %r4, 1, 62
+addi %r6, %r4, 0
+or %r4, %r26, %r26
+or %r7, %r27, %r27
+or %r8, %r28, %r28
+addi %r9, %r12, 248
+or %r10, %r26, %r26
+ld %r0, 3504(%r12)
+std %r0, 96(%r12)
+ld %r0, 3512(%r12)
+std %r0, 104(%r12)
+bl {vg_rsa_public_precomputed_checked}
+addi %r12, %r1, 0
+std %r3, 240(%r12)
+or %r3, %r24, %r24
+or %r4, %r29, %r29
+li %r5, 0
+or %r6, %r26, %r26
+20:
+lbz %r7, 0(%r3)
+lbz %r8, 0(%r4)
+xor %r7, %r7, %r8
+or %r5, %r5, %r7
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 20b
+addi %r12, %r1, 0
+ld %r3, 232(%r12)
+ld %r4, 240(%r12)
+and %r3, %r3, %r4
+li %r4, 1
+and %r3, %r3, %r4
+addi %r5, %r5, -1
+rldicl %r5, %r5, 1, 63
+li %r4, 2
+subf %r4, %r5, %r4
+and %r5, %r5, %r3
+li %r9, 0
+subf %r9, %r5, %r9
+li %r7, 0
+subf %r3, %r3, %r7
+and %r3, %r3, %r4
+or %r6, %r26, %r26
+or %r7, %r24, %r24
+addi %r8, %r12, 248
+21:
+lbz %r0, 0(%r8)
+and %r0, %r0, %r9
+stb %r0, 0(%r7)
+li %r0, 0
+stb %r0, 0(%r8)
+addi %r7, %r7, 1
+addi %r8, %r8, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 21b
+addi %r12, %r1, 0
+ld %r0, 224(%r12)
+mtlr %r0
+ld %r24, 176(%r12)
+ld %r25, 184(%r12)
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+addi %r1, %r1, 3328
+blr",
+        vg_rsa_private_crt = sym super::rsa::vg_rsa_private_crt,
+        vg_rsa_public_precompute = sym super::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+    )
+}
