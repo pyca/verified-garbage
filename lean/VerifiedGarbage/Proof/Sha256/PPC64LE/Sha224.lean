@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
 public import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Shared
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
 
 /-!
 # SHA-224 on PPC64LE: the shared contracts

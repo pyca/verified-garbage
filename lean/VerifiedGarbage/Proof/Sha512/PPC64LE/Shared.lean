@@ -5,12 +5,17 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Finalize
-public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Update
-public import VerifiedGarbage.Proof.Sha512.Scratch
+import VerifiedGarbage.Proof.Sha512.Scratch
 public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Spec.Sha512.Contract
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Impl.Sha512.PPC64LE.Stream
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Sha512 on PPC64LE: the shared contracts

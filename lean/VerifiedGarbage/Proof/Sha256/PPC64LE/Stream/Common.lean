@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Stream
 import all Init.Data.Nat.Bitwise.Basic
+public import Mathlib.Data.List.Nodup
+public import VerifiedGarbage.Impl.Sha256.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
 
 /-!
 # Streaming SHA-256 on PPC64LE: common lemmas

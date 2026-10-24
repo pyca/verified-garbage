@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.PPC64LE.ApplyStep
+import VerifiedGarbage.Proof.Rc4.PPC64LE.ApplyStep
 public import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rc4.Table
+public import VerifiedGarbage.Impl.Rc4.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rc4.PPC64LE.Lookup
+public import VerifiedGarbage.Spec.Rc4
+import VerifiedGarbage.Proof.Rc4.PPC64LE.Schedule
 
 /-! # RC4 on PPC64LE: the stream function -/
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sha256
-public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.TCB.PPC64LE.Target
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # SHA-256: the PPC64LE contract
