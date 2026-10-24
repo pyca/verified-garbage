@@ -26,6 +26,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 
+
+variable {checkName : String}
+
 theorem finishDomain_ok (M : Mont) (Sq : MontS)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (a : Spec.Dsa.Params)
@@ -33,7 +36,7 @@ theorem finishDomain_ok (M : Mont) (Sq : MontS)
     (bp : Spec.Rsa.bytesAt s.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen a.p)
     (bq : Spec.Rsa.bytesAt s.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen a.q)
     (bg : Spec.Rsa.bytesAt s.mem (off p.geo.B g) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen a.g) :
-    WP isa (Impl.Dsa.X86_64.Generation.finishDomain Sq.mm M.mm p.geo.pLen p.geo.qLen) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.finishDomain (checkName := checkName) Sq.mm M.mm p.geo.pLen p.geo.qLen) s fun t =>
       GenerationMemory p (upd W 19 (BitVec.ofNat 64 (if Spec.Dsa.parametersValid a then 1 else 3))) t ∧
       Spec.Rsa.bytesAt t.mem (off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) = Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a ∧
       Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
@@ -42,7 +45,7 @@ theorem finishDomain_ok (M : Mont) (Sq : MontS)
     (VG.Proof.Dsa.encodeBE_length _ _) (VG.Proof.Dsa.encodeBE_length _ _) bp bq bg)
     fun u ⟨hu, bytes, fu, ru, wu⟩ => ?_)
   have check := VG.Proof.Dsa.Generation.check_encodedParams p.geo.validLengths hp hq hg
-  have call := seedValidate_ok M Sq hu (Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a)
+  have call := seedValidate_ok (checkName := checkName) M Sq hu (Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a)
     (VG.Proof.Dsa.Generation.encodeParams_length _ _ _) bytes
   rw [check] at call
   simp only [decide_eq_true_eq] at call

@@ -21,6 +21,9 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Dsa.Generation.Layout VG.Impl.Dsa.X86_64.Generation
 
+
+variable {checkName : String}
+
 structure ValidatePublic where
   input : ParametersInput
   B : Addr
@@ -29,6 +32,8 @@ structure ValidatePublic where
   base : input.base = off B domainCheck
   frame : (⟨F, frameBytes⟩ : Region).Disjoint ⟨input.base, Impl.Dsa.Layout.usedBytes⟩
   hash : (⟨S, oRsa⟩ : Region).Disjoint ⟨input.base, Impl.Dsa.Layout.usedBytes⟩
+  stack : (below F 8).Disjoint ⟨input.base, Impl.Dsa.Layout.usedBytes⟩
+  paramsStack : (below F 8).Disjoint ⟨off B packed, input.params.length⟩
 
 def ValidatePublic.call (p : ValidatePublic) : DomainCallPublic := ⟨p.input, off p.B packed⟩
 
@@ -40,15 +45,19 @@ def ValidateBefore (pLen qLen : Nat) (p : ValidatePublic) (s : State) : Prop :=
 
 theorem validateArgs_ready {pLen qLen : Nat} {p : ValidatePublic} {s : State}
     (hp : pLen < 2 ^ 32) (hq : qLen < 2 ^ 32) (h : ValidateBefore pLen qLen p s) :
-    WP isa (.block (validateArgs pLen qLen)) s (DomainCallBefore p.call) := by
+    WP isa (.block (validateArgs pLen qLen)) s (DomainCalledBefore (p.call, p.F)) := by
   obtain ⟨L, ⟨V, W, R, hb⟩, hs, src, heP, heQ⟩ := h
   refine WP.mono (validateArgs_ok L R hp hq) fun t ⟨hd, h8, hdx, hcx, hm, hk⟩ => ?_
   have hd' : t.gpr .rdi = off p.B packed := hb ▸ hd
-  refine ⟨⟨hs.congr hk.2.2, (hb ▸ h8).trans p.base.symm,
-    by change t.gpr .rdx = BitVec.ofNat 64 p.input.pLen; rw [heP]; exact hdx,
-    by change t.gpr .rcx = BitVec.ofNat 64 p.input.qLen; rw [heQ]; exact hcx, ?_⟩, hd'⟩
-  rw [hd']
-  exact src.congrK (fun _ _ => by rw [hm]) hk
+  have hrsp : t.gpr .rsp = p.F := (hk.gpr (by decide)).trans L.rsp
+  have before : DomainCallBefore p.call t := by
+    refine ⟨⟨hs.congr hk.2.2, (hb ▸ h8).trans p.base.symm,
+      by change t.gpr .rdx = BitVec.ofNat 64 p.input.pLen; rw [heP]; exact hdx,
+      by change t.gpr .rcx = BitVec.ofNat 64 p.input.qLen; rw [heQ]; exact hcx, ?_⟩, hd'⟩
+    rw [hd']
+    exact src.congrK (fun _ _ => by rw [hm]) hk
+  exact ⟨before, hrsp, by simpa only [domainReturn, hrsp, ValidatePublic.call] using p.stack,
+    by simpa only [domainReturn, hrsp, hd', ValidatePublic.call] using p.paramsStack⟩
 
 def ValidateResult (p : ValidatePublic) (s : State) : Prop :=
   s.gpr .rsp = p.F ∧ s.gpr .rax = BitVec.ofNat 64
@@ -56,11 +65,11 @@ def ValidateResult (p : ValidatePublic) (s : State) : Prop :=
 
 theorem validateCore_result (M : Mont) (Sq : MontS) {pLen qLen : Nat} {p : ValidatePublic} {s : State}
     (hp : pLen < 2 ^ 32) (hq : qLen < 2 ^ 32) (h : ValidateBefore pLen qLen p s) :
-    WP isa (.seq (.block (validateArgs pLen qLen)) (Impl.Dsa.X86_64.Generate.checkParameters Sq.mm M.mm))
+    WP isa (.seq (.block (validateArgs pLen qLen)) (.call checkName (Impl.Dsa.X86_64.Generate.checkParameters Sq.mm M.mm)))
       s (ValidateResult p) := by
   obtain ⟨L, ⟨V, W, R, hb⟩, hs, src, heP, heQ⟩ := h
-  have step := validateCore_ok M Sq p.input L R (by rw [hb]; exact p.base)
-    (by rw [heP]; exact hp) (by rw [heQ]; exact hq) hs (hb ▸ src) p.frame p.hash
+  have step := validateCore_ok (checkName := checkName) M Sq p.input L R (by rw [hb]; exact p.base)
+    (by rw [heP]; exact hp) (by rw [heQ]; exact hq) hs (hb ▸ src) p.frame p.hash p.stack (by simpa only [hb] using p.paramsStack)
   rw [heP, heQ] at step
   exact WP.mono step fun t ⟨hr, Lt, _, _, _⟩ =>
     ⟨Lt.rsp, by simpa only [heP, heQ] using hr⟩
@@ -69,14 +78,14 @@ theorem validate_ct_of (M : Mont) (Sq : MontS) (pLen qLen : Nat)
     (hp : pLen < 2 ^ 32) (hq : qLen < 2 ^ 32)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rsp]) (.block (validateArgs pLen qLen)) hc).isSome = true) :
-    RelCT isa (Two (ValidateBefore pLen qLen)) (validate Sq.mm M.mm pLen qLen) (fun _ _ => True) := by
+    RelCT isa (Two (ValidateBefore pLen qLen)) (validate (checkName := checkName) Sq.mm M.mm pLen qLen) (fun _ _ => True) := by
   have core : RelCT isa (Two (ValidateBefore pLen qLen))
-      (.seq (.block (validateArgs pLen qLen)) (Impl.Dsa.X86_64.Generate.checkParameters Sq.mm M.mm))
+      (.seq (.block (validateArgs pLen qLen)) (.call checkName (Impl.Dsa.X86_64.Generate.checkParameters Sq.mm M.mm)))
       (Two ValidateResult) := by
     refine two_post (RelCT.seq (two_piece [.rsp] ?_ ht
       (fun _ _ h => validateArgs_ready hp hq h))
-      (two_map ValidatePublic.call (fun _ _ h => h) (domainCall_ct M Sq)))
-      (fun _ _ h => validateCore_result M Sq hp hq h)
+      (two_map (fun p : ValidatePublic => (p.call, p.F)) (fun _ _ h => h) (domainCall_called_ct M Sq checkName)))
+      (fun _ _ h => validateCore_result (checkName := checkName) M Sq hp hq h)
     intro p s t hs ht r hr
     obtain rfl := List.mem_singleton.mp hr
     exact hs.1.rsp.trans ht.1.rsp.symm
@@ -97,8 +106,8 @@ theorem validate_ct_of (M : Mont) (Sq : MontS) (pLen qLen : Nat)
 
 theorem validate_ct (M : Mont) (Sq : MontS) (pLen qLen : Nat)
     (sizes : (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ qLen = 32) ∨ (pLen = 384 ∧ qLen = 32)) :
-    RelCT isa (Two (ValidateBefore pLen qLen)) (validate Sq.mm M.mm pLen qLen) (fun _ _ => True) := by
+    RelCT isa (Two (ValidateBefore pLen qLen)) (validate (checkName := checkName) Sq.mm M.mm pLen qLen) (fun _ _ => True) := by
   rcases sizes with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  all_goals exact validate_ct_of M Sq _ _ (by decide) (by decide) (by taint_decide)
+  all_goals exact validate_ct_of (checkName := checkName) M Sq _ _ (by decide) (by decide) (by taint_decide)
 
 end VG.Proof.Dsa.X86_64.Generation

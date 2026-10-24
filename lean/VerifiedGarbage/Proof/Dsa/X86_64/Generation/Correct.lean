@@ -18,16 +18,19 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MillerRabin.X86_64
 
+
+variable {checkName : String}
+
 theorem generation_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
-    (sp : (Impl.Dsa.X86_64.Generation.code H.sha1 H.sha256 Sq.mm M.mm K.run).all
+    (sp : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run).all
       (fun i => !isa.writesSp i) = true)
-    (depth : (Impl.Dsa.X86_64.Generation.code H.sha1 H.sha256 Sq.mm M.mm K.run).x86_64Depth ≤ 472)
-    (ctl : ctlOk (Impl.Dsa.X86_64.Generation.code H.sha1 H.sha256 Sq.mm M.mm K.run) = true)
+    (depth : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run).x86_64Depth ≤ 472)
+    (ctl : ctlOk (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) = true)
     (s : State) (pre : (Spec.Dsa.generateParametersContract abi 472).pre s) :
-    ∃ trace t, Exec isa (Impl.Dsa.X86_64.Generation.code H.sha1 H.sha256 Sq.mm M.mm K.run) s trace t ∧
+    ∃ trace t, Exec isa (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) s trace t ∧
       abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 472).post s t := by
   have h := generationABI_of pre
-  obtain ⟨trace, t, he, result, callee, _, _⟩ := entryRun_ok H M Sq K h
+  obtain ⟨trace, t, he, result, callee, _, _⟩ := entryRun_ok (checkName := checkName) H M Sq K h
   refine ⟨trace, t, he, ⟨callee, ?_, VG.X86_64.Exec.ctl ctl he⟩, entry_shared_post result⟩
   have hf := Exec.stackFrame (SpSafe.of_all sp) he (by omega)
   have hfb := VG.X86_64.Frame.below_mono hf depth (by decide)

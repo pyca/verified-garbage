@@ -17,6 +17,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Dsa.Generation.Layout
 
+
+variable {checkName : String}
+
 structure DomainFinishPublic where
   context : GenerationContext
   params : Spec.Dsa.Params
@@ -50,11 +53,11 @@ theorem domainFinish_pack {pLen qLen : Nat} {p : DomainFinishPublic} {s : State}
 theorem finishDomain_ct (M : Mont) (Sq : MontS) (pLen qLen : Nat)
     (sizes : (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ qLen = 32) ∨ (pLen = 384 ∧ qLen = 32)) :
     RelCT isa (Two (DomainFinishBefore pLen qLen))
-      (Impl.Dsa.X86_64.Generation.finishDomain Sq.mm M.mm pLen qLen) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.finishDomain (checkName := checkName) Sq.mm M.mm pLen qLen) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.finishDomain
   refine RelCT.seq (two_post
     ((two_map DomainFinishPublic.context (fun _ _ h => h.1) (pack_ct pLen qLen sizes)).mono
       (fun _ _ h => h) (fun _ _ _ => True.intro)) (fun _ _ h => domainFinish_pack h)) ?_
-  exact two_map DomainFinishPublic.validation (fun _ _ h => h) (seedValidate_ct M Sq pLen qLen sizes)
+  exact two_map DomainFinishPublic.validation (fun _ _ h => h) (seedValidate_ct (checkName := checkName) M Sq pLen qLen sizes)
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -23,6 +23,9 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Dsa.X86_64.Generation VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Proof.MillerRabin.X86_64
 
+
+variable {checkName : String}
+
 def ParameterStart (n pLen qLen : Nat) (p : ParameterPublic) (s : State) : Prop :=
   (∃ W, GenerationMemory p.context W s ∧ W 16 = BitVec.ofNat 64 p.randUsed) ∧
   FrV n p.context.geo.F p.ws s ∧ s.wr = p.wr ∧ p.context.geo.pLen = pLen ∧ p.context.geo.qLen = qLen
@@ -58,13 +61,13 @@ theorem parameter_reset {n pLen qLen : Nat} {p : ParameterPublic} {s : State}
 theorem nativeParameters_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterStart n pLen qLen))
-      (parameterSearch H.sha1 H.sha256 Sq.mm M.mm K.run pLen qLen) (fun _ _ => True) := by
+      (parameterSearch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run pLen qLen) (fun _ _ => True) := by
   unfold parameterSearch tapeLoop
   refine RelCT.seq (two_piece [.rsp] ?_ (by taint_decide)
     (fun _ _ h => parameter_reset h)) ?_
   · intro p s t ⟨⟨Ws, hs, _⟩, _⟩ ⟨⟨Wt, ht, _⟩, _⟩ r hr
     obtain rfl := List.mem_singleton.mp hr
     exact hs.layout.rsp.trans ht.layout.rsp.symm
-  · exact two_map ParameterPublic.start (fun _ _ h => h) (parameterLoop_ct H M Sq K n hn pLen qLen sizes)
+  · exact two_map ParameterPublic.start (fun _ _ h => h) (parameterLoop_ct (checkName := checkName) H M Sq K n hn pLen qLen sizes)
 
 end VG.Proof.Dsa.X86_64.Generation
