@@ -34,13 +34,13 @@ and length and the octets consumed; `scratch` and `scratch_len`; the status;
 def ldf (t : Reg) (j : Nat) : Instr := .load .d t .r31 (8 * j)
 def stf (t : Reg) (j : Nat) : Instr := .store .d t .r31 (8 * j)
 
-/-- The state's address from the stack, the caller's `r31` saved, then the
-arguments stored. -/
+/-- The state's address and the stack arguments loaded, the caller's `r31`
+saved, then the arguments stored. -/
 def entry : List Instr :=
-  [.addSp .r11 96, .load .d .r12 .r11 32, .store .d .r31 .r12 32, .addi .r31 .r12 0,
+  [.addSp .r11 96, .load .d .r12 .r11 32, .load .d .r0 .r11 0, .load .d .r4 .r11 8,
+    .load .d .r6 .r11 16, .load .d .r10 .r11 24, .store .d .r31 .r12 32, .addi .r31 .r12 0,
     stf .r3 5, stf .r5 6, stf .r8 7, stf .r9 8, stf .r7 15,
-    .load .d .r3 .r11 0, .load .d .r4 .r11 8, .load .d .r5 .r11 16, .load .d .r6 .r11 24,
-    stf .r3 9, stf .r4 10, .li .r0 0, stf .r0 11, stf .r5 12, stf .r6 13]
+    stf .r0 9, stf .r4 10, .li .r11 0, stf .r11 11, stf .r6 12, stf .r10 13]
 
 /-- `vg_ffdh_generate_key`'s arguments, for `p_len` octets at the tape's
 current pointer: its stack arguments at offset 96 of the frame. -/
