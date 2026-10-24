@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
-import VerifiedGarbage.Proof.Mont.RangeCover
 public import VerifiedGarbage.TCB.Mem
 
 /-! # Preparing one and minus one preserves R², c-1 and the exponent -/

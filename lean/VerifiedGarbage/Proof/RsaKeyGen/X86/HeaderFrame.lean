@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Header
 public import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Mont.RangeCover
 
 /-! # Public header initialization preserves arguments, the inverse and all arrays -/
 
