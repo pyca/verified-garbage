@@ -177,4 +177,59 @@ theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w)
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [slot_eq] <;> omega)
   · exact (k7.gpr .r10 (by decide)).trans g10
 
+/-- The registers `exOut` writes. -/
+def exOutRegs : List Reg := zRegs ++ ([.r0, .r3, .r15, .r16, .r17, .r27, .r31] : List Reg)
+
+/-- `exOut`: z (array 4, below p) to the `k` octets at `O` (the header's word
+10) if `1 < z < p − 1`, else zeros; `r3 := 1` or 0. -/
+theorem exOut_ok {s : State} {B O : Addr} {Z w k : Nat} (hs : Scr s B Z) (ho : Scr s O k)
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h23 : s.gpr .r23 = B) (h28 : s.gpr .r28 = BitVec.ofNat 64 k)
+    (hw : 4 ≤ w) (hw' : w ≤ 128) (hZ : slot w 28 ≤ Z) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hO : s.mem.readW (off B 80) 64 = off O 0) (hsep : ∀ x, ofs O x < k → Z ≤ ofs B x)
+    (hp : 1 ≤ arr s.mem B w 0) (hzp : arr s.mem B w 4 < arr s.mem B w 0) (hpk : arr s.mem B w 0 < 256 ^ k) :
+    WP isa exOut s fun t =>
+      (Spec.Rsa.bytesAt t.mem O k = (if 1 < arr s.mem B w 4 ∧ arr s.mem B w 4 < arr s.mem B w 0 - 1 then
+          Spec.Rsa.i2osp (arr s.mem B w 4) k else List.replicate k 0) ∧
+        t.gpr .r3 = BitVec.ofNat 64 (if 1 < arr s.mem B w 4 ∧ arr s.mem B w 4 < arr s.mem B w 0 - 1 then 1 else 0) ∧
+        ∃ m, Body B w s.mem m ∧ Outside O 0 k m t.mem) ∧ Keep exOutRegs s t := by
+  have hnw := hs.nowrap
+  have e0 := slot_eq w 0; have e4 := slot_eq w 4; have e5 := slot_eq w 5; have e8 := slot_eq w 8
+  have e28 := slot_eq w 28
+  generalize hz : arr s.mem B w 4 = z at hzp
+  generalize hP : arr s.mem B w 0 = p at hp hzp hpk
+  unfold exOut
+  refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = B ∧ t.mem = s.mem) (by
+      prun [h23, BitVec.add_zero]) (by decide)) fun s₁ ⟨⟨a31, m1⟩, k1⟩ => ?_)
+  have e1 : Env s₁ B Z w := ⟨hs.congr k1.wr, (k1.gpr .r10 (by decide)).trans h10,
+    (k1.gpr .r29 (by decide)).trans h29, (k1.gpr .r11 (by decide)).trans h11, a31, hw, hw', hZ⟩
+  refine WP.seq (WP.mono (zMask_ok e1 ((k1.gpr .r23 (by decide)).trans h23) (by rw [m1, hP]; exact hp))
+    fun s₂ ⟨⟨a26, z2, p2, o2, a10⟩, k2⟩ => ?_)
+  rw [m1, hz, hP] at a26
+  rw [m1, hz] at z2
+  rw [m1, hP] at p2
+  have k12 := k1.trans k2
+  have hb : (decide (z ≠ 0 ∧ z ≠ 1 ∧ z ≠ p - 1)) = decide (1 < z ∧ z < p - 1) := by
+    apply decide_eq_decide.mpr; omega
+  rw [hb] at a26
+  have hw80 : s₂.mem.readW (off B 80) 64 = off O 0 := by
+    show Mont.word s₂.mem B 80 = _
+    rw [Outside.word o2 (Or.inl (by omega)) (by omega), m1]; exact hO
+  refine WP.seq (WP.mono (WP.keep [.r27] (Q := fun t => t.gpr .r27 = off O 0 ∧ t.mem = s₂.mem) (by
+      prun [(k12.gpr .r23 (by decide)).trans h23, (hs.congr k12.wr).ld (d := 80) (n := 8) (by omega), hw80])
+    (by decide)) fun s₃ ⟨⟨a27, m3⟩, k3⟩ => ?_)
+  have k13 := k12.trans k3
+  refine WP.mono (Pub.output_ok (b := decide (1 < z ∧ z < p - 1)) (hs.congr k13.wr) (ho.congr k13.wr)
+    ((k3.gpr .r10 (by decide)).trans a10) ((k13.gpr .r29 (by decide)).trans h29)
+    ((k13.gpr .r28 (by decide)).trans h28) a27 ((k3.gpr .r26 (by decide)).trans a26) hk hkw (by omega) hsep)
+    fun t ⟨⟨ob, ot, t3⟩, kt⟩ => ⟨⟨?_, ?_, s₂.mem, ?_, by rw [← m3]; exact ot⟩, (k13.trans kt).mono (by decide)⟩
+  · by_cases hc : 1 < z ∧ z < p - 1
+    · rw [ite_eq_left hc]
+      exact Pub.out_bytes hkw (by rw [← m3] at z2; exact z2) (by omega) fun i hi => by
+        rw [ob i hi, m3, ite_eq_left (decide_eq_true hc)]
+    · rw [ite_eq_right hc]
+      exact Pub.zero_bytes fun i hi => by rw [ob i hi, ite_eq_right (by simpa using hc)]
+  · rw [t3]; simp only [decide_eq_true_eq]
+  · rw [← m1]; exact Body.of o2 (by omega) (by omega)
+
 end VG.Proof.Ffdh.PPC64LE.Domain
