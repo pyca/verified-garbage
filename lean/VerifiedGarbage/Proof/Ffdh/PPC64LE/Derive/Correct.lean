@@ -94,7 +94,7 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
       have hf := modulus_facts hv
       refine WP.mono (dpBody_ok (O := (dxOf s).O) hb2.env hb2.r23 hb2.r21 hb2.r27 hb2.r28 rfl hk hk' hLk
         he2.xl1 he2.xlk he2.wX he2.wXL he2.wO hb2.rdD hb2.sepD he2.rdX he2.sepX he2.scrO he2.sepO sepSO p2 hf.1
-        hf.2 hpk hxv hgv hbv) fun t ⟨⟨tb, t3, tw⟩, kt⟩ => ⟨fun _ => ⟨tb, t3⟩, tw, kt.mono (by decide)⟩
+        hf.2 hpk hxv hgv hbv) fun t ⟨⟨tb, t3, tw, _⟩, kt⟩ => ⟨fun _ => ⟨tb, t3⟩, tw, kt.mono (by decide)⟩
     · refine WP.mono (li_ok s₂ 0 (by decide)) fun t ⟨⟨_, tm⟩, kt⟩ =>
         ⟨fun hv => absurd (c2.mpr hv) (by simpa using hz), fun i hi => by rw [tm], kt.mono (by decide)⟩
   refine WP.seq (WP.mono hite fun t₅ ⟨tpost, tw, k5⟩ => ?_)
