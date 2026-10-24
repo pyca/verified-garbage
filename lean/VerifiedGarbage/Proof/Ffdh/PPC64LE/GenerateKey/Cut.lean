@@ -103,14 +103,15 @@ def cutRegs : List Reg := [.r0, .r4, .r6, .r16, .r17, .r18, .r19, .r20, .r24, .r
 def CutInv (s : State) (R X : Addr) (k ld : Nat) (tb : Byte) (j : Nat) (t : State) : Prop :=
   t.gpr .r24 = off R j ∧ t.gpr .r25 = off X j ∧ t.gpr .r4 = BitVec.ofNat 64 j ∧ t.gpr .r22 = BitVec.ofNat 64 ld ∧
     t.gpr .r14 = tb.setWidth 64 ∧ Outside X 0 j s.mem t.mem ∧
-    (∀ i < j, t.mem (off X i) = (cut (Spec.Rsa.bytesAt s.mem R k) ld tb).getD i 0) ∧ Keep cutRegs s t
+    (∀ i < j, t.mem (off X i) = (cut (Spec.Rsa.bytesAt s.mem R k) ld tb).getD i 0) ∧ (0 < j → t.gpr .r0 = 0#64) ∧
+    Keep cutRegs s t
 
 theorem cutBody_ok {s t : State} {R X : Addr} {k ld j : Nat} {tb : Byte} (hj : j < k) (hk : k < 2 ^ 32)
     (hld : ld < k) (hx : Scr s X k) (hrd : InRegions (s.rd ++ s.wr) (off R j) 1)
     (hsep : ∀ y, ofs X y < k → off R j ≠ y) (h : CutInv s R X k ld tb j t) :
     WP isa (.block (cutBody ++ ([.subi .r6 .r6 1] : List Instr))) t fun u =>
       CutInv s R X k ld tb (j + 1) u ∧ u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1 := by
-  obtain ⟨t24, t25, t4, t9, t14, tout, tx, tk⟩ := h
+  obtain ⟨t24, t25, t4, t9, t14, tout, tx, -, tk⟩ := h
   have hb : t.mem (off R j) = s.mem (off R j) := by
     refine tout _ (Or.inr ?_)
     by_contra hc
@@ -120,10 +121,11 @@ theorem cutBody_ok {s t : State} {R X : Addr} {k ld j : Nat} {tb : Byte} (hj : j
   have hnw := hx.nowrap
   unfold cutBody
   refine WP.mono (WP.keep cutRegs (Q := fun u => u.gpr .r24 = off R (j + 1) ∧ u.gpr .r25 = off X (j + 1) ∧
-      u.gpr .r4 = BitVec.ofNat 64 (j + 1) ∧ u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1 ∧
+      u.gpr .r4 = BitVec.ofNat 64 (j + 1) ∧ u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1 ∧ u.gpr .r0 = 0#64 ∧
       u.mem = t.mem.write (off X j) 1 (((s.mem (off R j)).setWidth 64 &&&
         (if decide (j < ld) then 0 else if decide (j = ld) then tb.setWidth 64 else 255#64)).setWidth 8)) ?_ (by decide))
-    fun u ⟨⟨u24, u25, u4, u6, um⟩, ku⟩ => ⟨⟨u24, u25, u4, ?_, ?_, ?_, ?_, (tk.trans ku).mono (by decide)⟩, u6⟩
+    fun u ⟨⟨u24, u25, u4, u6, u0, um⟩, ku⟩ =>
+      ⟨⟨u24, u25, u4, ?_, ?_, ?_, ?_, fun _ => u0, (tk.trans ku).mono (by decide)⟩, u6⟩
   · prun [t24, t25, t4, t9, t14, exec_lbz' (show Reg.r24 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hrd',
       exec_stb (show Reg.r25 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hst, BitVec.add_zero, Pub.read1_setWidth,
       hb, lt_mask (show j < 2 ^ 32 by omega) (show ld < 2 ^ 32 by omega),
@@ -157,12 +159,13 @@ theorem cut_ok {s : State} {R X : Addr} {k ld : Nat} {tb : Byte} (hk1 : 1 ≤ k)
     (h4 : s.gpr .r4 = BitVec.ofNat 64 0) (h22 : s.gpr .r22 = BitVec.ofNat 64 ld) (h14 : s.gpr .r14 = tb.setWidth 64)
     (h6 : s.gpr .r6 = BitVec.ofNat 64 k) :
     WP isa (countLoop .r6 cutBody) s fun t =>
-      (Spec.Rsa.bytesAt t.mem X k = cut (Spec.Rsa.bytesAt s.mem R k) ld tb ∧ Outside X 0 k s.mem t.mem) ∧
-        Keep cutRegs s t := by
+      (Spec.Rsa.bytesAt t.mem X k = cut (Spec.Rsa.bytesAt s.mem R k) ld tb ∧ Outside X 0 k s.mem t.mem ∧
+        t.gpr .r0 = 0#64) ∧ Keep cutRegs s t := by
   refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega) (by omega) (CutInv s R X k ld tb)
     (fun j hj t ht _ => cutBody_ok hj hk hld hx (hrd j hj) (hsep j hj) ht)
-    ⟨h24, h25, h4, h22, h14, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), Keep.refl _ _⟩ h6)
-    fun t ⟨_, _, _, _, _, tout, tx, kt⟩ => ⟨⟨?_, tout⟩, kt⟩
+    ⟨h24, h25, h4, h22, h14, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), fun h => absurd h (by omega),
+      Keep.refl _ _⟩ h6)
+    fun t ⟨_, _, _, _, _, tout, tx, t0, kt⟩ => ⟨⟨?_, tout, t0 (by omega)⟩, kt⟩
   have hl : (Spec.Rsa.bytesAt s.mem R k).length = k := by simp [Spec.Rsa.bytesAt]
   apply List.ext_getElem (by rw [cut_length tb (by omega), hl]; simp [Spec.Rsa.bytesAt])
   intro i h1 h2

@@ -76,7 +76,7 @@ theorem scalarRest_ok {s : State} {D X R : Addr} {k L : Nat}
     WP isa scalarRest s fun t =>
       (Spec.Rsa.bytesAt t.mem X k = cut (Spec.Rsa.bytesAt s.mem R k)
           (lead (Spec.Rsa.bytesAt s.mem (bptr D k L) k)) (smeared (Spec.Rsa.bytesAt s.mem (bptr D k L) k)) ∧
-        Outside X 0 k s.mem t.mem) ∧ Keep scalarRegs s t := by
+        Outside X 0 k s.mem t.mem ∧ t.gpr .r0 = 0#64) ∧ Keep scalarRegs s t := by
   have hrdP : ∀ i < k, InRegions (s.rd ++ s.wr) (off (bptr D k L) i) 1 := fun i hi => by
     unfold bptr
     split
@@ -102,7 +102,7 @@ theorem scalarRest_ok {s : State} {D X R : Addr} {k L : Nat}
   refine WP.mono (cut_ok (R := R) (X := X) (k := k) (ld := lead (Spec.Rsa.bytesAt s.mem (bptr D k L) k))
     (tb := smeared (Spec.Rsa.bytesAt s.mem (bptr D k L) k)) (by omega) (by omega) ?_ (hx.congr k14.wr)
     (by rw [k14.rd, k14.wr]; exact hrdR) hsepR ((k14.gpr .r24 (by decide)).trans h24)
-    ((k14.gpr .r25 (by decide)).trans h25) c4 ?_ ?_ c6) fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
+    ((k14.gpr .r25 (by decide)).trans h25) c4 ?_ ?_ c6) fun t ⟨⟨tb, tout, t0⟩, kt⟩ => ?_
   · have hl : (Spec.Rsa.bytesAt s.mem (bptr D k L) k).length = k := by simp [Spec.Rsa.bytesAt]
     have hne : Spec.Rsa.bytesAt s.mem (bptr D k L) k ≠ [] := fun he => by rw [he] at hl; simp at hl; omega
     have := Proof.Ffdh.lead_lt hne
@@ -110,7 +110,7 @@ theorem scalarRest_ok {s : State} {D X R : Addr} {k L : Nat}
   · rw [k4.gpr .r22 (by decide), k3.gpr .r22 (by decide), a22]
   · rw [k4.gpr .r14 (by decide), b14]; rfl
   · rw [hm4] at tb tout
-    exact ⟨⟨tb, tout⟩, (k14.trans kt).mono (by decide)⟩
+    exact ⟨⟨tb, tout, t0⟩, (k14.trans kt).mono (by decide)⟩
 
 /-- `ptrs`: `rand`'s and x's addresses from the header's words 11 and 8. -/
 theorem ptrs_ok {s : State} {B X R : Addr} {Z : Nat} (hs : Scr s B Z) (hZ : 96 ≤ Z) (h23 : s.gpr .r23 = B)
@@ -139,7 +139,7 @@ theorem scalar_ok {s : State} {B D X R : Addr} {Z w k L : Nat} (h : Env s B Z w)
   refine WP.seq (WP.mono (ptrs_ok h.hs (by omega) h23 hX hR) fun s₁ ⟨⟨a24, a25, m1⟩, k1⟩ => ?_)
   refine WP.mono (scalarRest_ok ((k1.gpr .r21 (by decide)).trans h21) ((k1.gpr .r27 (by decide)).trans h27)
     ((k1.gpr .r28 (by decide)).trans h28) hk hk' hL a24 a25 (by rw [k1.rd, k1.wr]; exact hrdD)
-    (by rw [k1.rd, k1.wr]; exact hrdR) (hx.congr k1.wr) hsepR) fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
+    (by rw [k1.rd, k1.wr]; exact hrdR) (hx.congr k1.wr) hsepR) fun t ⟨⟨tb, tout, _⟩, kt⟩ => ?_
   rw [m1] at tb tout
   exact ⟨⟨tb, tout⟩, (k1.trans kt).mono (by decide)⟩
 

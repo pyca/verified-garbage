@@ -207,4 +207,76 @@ theorem front_kb {s : State} (h : gkContract.pre s) : WP isa (.block gkFront) s 
     rw [e]
     exact decide_eq_true_iff.symm
 
+/-! ## Pins -/
+
+theorem pins_gx {Φ : GD → State → Prop} (h : ∀ g s, Φ g s → XB g.d.x s) :
+    Pins Φ (baseRegs ++ ([.r9] : List Reg)) := fun g s₁ s₂ h₁ h₂ =>
+  pins_XB (Φ := XB) (fun _ _ h => h) g.d.x s₁ s₂ (h _ _ h₁) (h _ _ h₂)
+
+theorem pins_K0 : Pins K0 ([] : List Reg) := fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil
+
+theorem pins_KL1 : Pins KL1 [.r11] := by
+  rintro g s₁ s₂ ⟨⟨a, ⟨-, ha⟩, h1⟩, -⟩ ⟨⟨b, ⟨-, hb⟩, h2⟩, -⟩ r hr
+  rw [List.mem_singleton] at hr; subst hr
+  rw [h1, h2]
+  exact (congrArg (fun g : GD => g.d.x.c.S) ha).trans (congrArg (fun g : GD => g.d.x.c.S) hb).symm
+
+theorem pins_gCF : Pins (fun (g : GD) s => CF g.d.x.c s) [.r23] := fun g s₁ s₂ h₁ h₂ =>
+  pins_XCF g.d.x s₁ s₂ h₁ h₂
+
+/-! ## The front and p's check -/
+
+theorem KL1_of {g : GD} {s : State} (h : K0 g s) :
+    WP isa (.block ([.addSp .r11 104, .load .d .r11 .r11 0] : List Instr)) s (KL1 g) := by
+  obtain ⟨hpre, rfl⟩ := h
+  have hA1 : InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 8 := by
+    refine ⟨gkStack s, List.mem_append_left _ (by rw [hpre.2.1]; simp), ?_⟩
+    show (⟨s.sp + BitVec.ofNat 64 96, 24⟩ : Region).Contains (s.sp + BitVec.ofNat 64 104) 8
+    rw [show s.sp + BitVec.ofNat 64 104 = s.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by rw [Offset.add_add]]
+    exact Offset.contains_base _ (by omega) (by omega)
+  have hf := front_kb hpre
+  rw [gkFront_eq, WP.block_append_iff] at hf
+  exact WP.mono (WP.and (loadS1_ok s hA1) hf) fun t ⟨⟨⟨a11, _⟩, _⟩, hw⟩ => ⟨⟨s, ⟨hpre, rfl⟩, a11⟩, hw⟩
+
+def K1a (g : GD) (s : State) : Prop := X1a g.d.x s ∧ WP isa (.seq Precompute.loadN Precompute.check) s (K4 g)
+
+def K2 (g : GD) (s : State) : Prop := X2 g.d.x s ∧ WP isa Precompute.check s (K4 g)
+
+def K3 (g : GD) (s : State) : Prop := X3 g.d.x s ∧ WP isa Precompute.check2 s (K4 g)
+
+/-- p's load and check, from `KB`, by correctness. -/
+theorem KB_loadP {g : GD} {s : State} (h : KB g s) : WP isa loadP s (K4 g) := by
+  obtain ⟨⟨hb, he⟩, hi⟩ := h
+  have hk := hb.k64
+  refine WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hb.k1024 (fun i hi => hb.rdD i (by have := hb.kL; omega))
+    (fun i hi => hb.sepD i (by have := hb.kL; omega))) fun t ⟨⟨pt, ct, bt⟩, kt⟩ => ?_
+  have ep : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem g.d.x.c.D g.d.x.c.k) = g.d.x.c.p := by
+    rw [← Proof.Ffdh.take_bytesAt _ _ hb.kL, hb.bD]
+  rw [ep] at pt ct
+  exact ⟨⟨⟨hb.keep kt bt, he.keep kt bt⟩, pt, ct⟩, hi.keep hb kt bt⟩
+
+theorem KF1 {g : GD} {s : State} (h : KB g s) :
+    WP isa (.block [.addi .r12 .r21 0, .addi .r6 .r28 0]) s (K1a g) :=
+  wp_split (XA h.1) (KB_loadP h)
+
+theorem KF2 {g : GD} {s : State} (h : K1a g s) : WP isa Precompute.loadN s (K2 g) := wp_split (XL h.1) h.2
+
+theorem KF3 {g : GD} {s : State} (h : K2 g s) : WP isa (.block Precompute.check1) s (K3 g) :=
+  wp_split (XC1 h.1) h.2
+
+theorem KF4 {g : GD} {s : State} (h : K3 g s) : WP isa Precompute.check2 s (K4 g) := h.2
+
+theorem KK0 {g : GD} {s : State} (h : K4 g s ∧ s.gpr .r0 ≠ 0) :
+    WP isa (.block [.li .r3 0]) s (fun t => CF g.d.x.c t) :=
+  TK0 (Φ := fun d s => Base d s) (fun _ _ h => h) h.1.1.1.1
+
+theorem pins_K1a : Pins K1a (baseRegs ++ ([.r12, .r6] : List Reg)) := fun g s₁ s₂ h₁ h₂ =>
+  pins_X1a (Φ := X1a) (fun _ _ h => h) g.d.x s₁ s₂ h₁.1 h₂.1
+
+theorem pins_K2 : Pins K2 (baseRegs ++ ([.r12, .r6] : List Reg)) := fun g s₁ s₂ h₁ h₂ =>
+  pins_X1a (Φ := X1a) (fun _ _ h => h) g.d.x s₁ s₂ h₁.1.1 h₂.1.1
+
+theorem pins_K3 : Pins K3 (baseRegs ++ ([.r6, .r15, .r18] : List Reg)) := fun g s₁ s₂ h₁ h₂ =>
+  pins_X3 g.d.x s₁ s₂ h₁.1 h₂.1
+
 end VG.Proof.Ffdh.PPC64LE.GenerateKey
