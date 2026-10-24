@@ -31,7 +31,7 @@ structure Ws (s : State) (B : Addr) (Z w N : Nat) : Prop where
   scr : Scr s B Z
   fits : arr w N ≤ Z
   wpos : 0 < w
-  wle : w ≤ 256
+  wle : w ≤ 1024
   r29 : s.gpr .r29 = BitVec.ofNat 64 w
   r30 : s.gpr .r30 = BitVec.ofNat 64 (S w)
   r31 : s.gpr .r31 = B
