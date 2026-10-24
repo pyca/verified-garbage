@@ -102,8 +102,8 @@ theorem rel_seqE {c₁ c₂ : Prog isa} {σ₁ σ₂ : State} {F₁ F₂ : State
 
 /-- The registers that hold public values throughout: the nonce's length,
 the tag and its length, the associated data and its length, the data and its
-length, the rounds, the key context and `W` (and `W + 16`). -/
-abbrev pubR : List Reg := [.r18, .r19, .r20, .r21, .r22, .r23, .r27, .r28, .r29, .r30, .r31]
+length, the rounds, the key context and `W`. -/
+abbrev pubR : List Reg := [.r18, .r19, .r20, .r21, .r22, .r23, .r27, .r28, .r29, .r31]
 
 /-- The values the environments of two runs fix agree on the public registers. -/
 def Agree (V₁ V₂ : Reg → BitVec 64) : Prop := ∀ r ∈ pubR, V₁ r = V₂ r
