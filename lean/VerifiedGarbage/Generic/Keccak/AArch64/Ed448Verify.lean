@@ -60,7 +60,7 @@ sponge functions with an implementation `v` of the Keccak permutation
 (`Variants/Keccak/AArch64/`), so it is emitted once for each implementation,
 named with its suffix, and needs its CPU features. The signature and
 documentation come from the reviewed Ed448 API. The correctness of
-`vg_ed448_verify_equation` (`Proof/Ed448/AArch64/VerifyVerified.lean`), given
+`vg_ed448_verify_equation` (`Proof/Ed448/AArch64/Sparse/Verified.lean`), given
 decoding's agreement with the specification (`Proof/Ed448/Facts.lean`), is
 passed to the proof here, so that only registration and generic files import
 its algebra.
