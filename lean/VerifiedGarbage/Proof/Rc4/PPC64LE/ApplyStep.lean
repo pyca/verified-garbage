@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.PPC64LE.Schedule
+import VerifiedGarbage.Proof.Rc4.PPC64LE.Schedule
 import VerifiedGarbage.Proof.Rc4.Memory
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Impl.Rc4.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rc4.PPC64LE.Lookup
+public import VerifiedGarbage.Spec.Rc4
+import VerifiedGarbage.Proof.Rc4.PPC64LE.Replace
 
 /-! # RC4 on PPC64LE: one PRGA step -/
 

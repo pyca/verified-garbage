@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.PPC64LE.Replace
+import VerifiedGarbage.Proof.Rc4.PPC64LE.Replace
 public import VerifiedGarbage.Proof.Rc4.Identity
 public import VerifiedGarbage.Proof.Rc4.Schedule
-import VerifiedGarbage.Proof.Rc4.Qword
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Impl.Rc4.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rc4.PPC64LE.Lookup
 
 /-! # RC4 on PPC64LE: key scheduling -/
 

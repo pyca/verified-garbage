@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Round
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-!
 # The Miller–Rabin round on PPC64LE: the arrays, copies and selections

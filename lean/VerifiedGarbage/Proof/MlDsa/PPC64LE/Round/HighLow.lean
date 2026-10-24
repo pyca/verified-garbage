@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Bits
-import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
