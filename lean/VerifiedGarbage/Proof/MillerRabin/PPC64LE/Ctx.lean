@@ -106,6 +106,15 @@ theorem Outside.w32_0 {B : Addr} {w o : Nat} {m m' : Mem} (h : Outside B (slot w
   have := slot_lt (w := w) (show 0 < 28 by decide)
   exact h.w32 (by omega) (by omega)
 
+/-- The low digit of the candidate, below every range that changed. -/
+theorem Outs.w32_0 {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m')
+    (hd : ∀ r ∈ rs, slot w 0 + 8 * (w + 2) ≤ r.1) (hn : slot w 28 ≤ 2 ^ 64) :
+    w32 m' B (slot w 0) = w32 m B (slot w 0) := by
+  have := slot_lt (w := w) (show 0 < 28 by decide)
+  exact congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ fun r hr => by
+    have := hd r hr
+    rw [ofs_off B (by omega)]; omega)
+
 /-- An array the round does not write keeps its value. -/
 theorem Mut.arr {B : Addr} {w : Nat} {m m' : Mem} (h : Mut B w m m') {j : Nat}
     (hj : j = 0 ∨ j = 1 ∨ j = 4 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 27)
