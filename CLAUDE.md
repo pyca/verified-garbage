@@ -175,7 +175,8 @@ instructions in an ISA model) go in their own PR before either.
    from `verified`'s type, and must be the `Api`'s on the target for
    `consts` and `stack` (`ofApi`, by `rfl`): give `contract` only when
    `verified`'s type does not determine it. `of_sig` proves `ofSig`, and
-   `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7 and AArch64,
+   `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7, AArch64 and
+   PPC64LE,
    which evaluates nothing, and by `Code.all_of_allInstrs (by lit_decide)`
    on x86 and x86-64 (see "Code the kernel evaluates" below), falling back
    to `decide +kernel` where `lit_decide` exceeds the recursion limit, and

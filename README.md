@@ -15,11 +15,12 @@ Its aims are, in order:
 2. Correctness
 3. Performance
 
-It targets x86 (i686 with SSE2), x86-64, ARMv7 and ARM64; PPC64le is not
-started yet.
+It targets x86 (i686 with SSE2), x86-64, ARMv7, ARM64 and PPC64LE
+(little-endian 64-bit PowerPC, `powerpc64le-unknown-linux-gnu`'s baseline,
+POWER8).
 
 The crate refuses to build for configurations its ISA models do not
-describe: big-endian ARM and ARM64, x32, x86 or x86-64 without SSE2 (e.g.
+describe: big-endian ARM, ARM64 and PowerPC, x32, x86 or x86-64 without SSE2 (e.g.
 `i586-*`, `x86_64-unknown-none`, the UEFI targets), ARM64 without NEON
 (`aarch64-unknown-none-softfloat`), and Apple's 32-bit ARM targets, which do
 not use AAPCS. Rust has no `cfg` for some other assumptions, so they are
@@ -2464,7 +2465,7 @@ The tables are generated from the code by `ci/algorithms_table.py`.
 
 * **Spec landed**: the algorithm's specification, transcribed from its
   standard, is in `lean/VerifiedGarbage/Spec/`.
-* **x86-64**, **ARM64**, **ARMv7**, **x86**: ✅ when verified assembly and a
+* **x86-64**, **ARM64**, **ARMv7**, **x86**, **PPC64LE**: ✅ when verified assembly and a
   public Rust API exist on that architecture, followed by how it has been
   optimized, if it has (e.g. with SHA-NI or NEON). Where an optimization
   needs CPU features beyond the architecture's baseline, the features are
@@ -2517,6 +2518,13 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   Linux reports as `HWCAP_DIT` and macOS as `hw.optional.arm.FEAT_DIT`),
   restoring the previous value afterwards. On CPUs without `FEAT_DIT`, Arm
   makes no timing statement at all.
+* **PPC64LE's multiplies are constant time only on the cores surveyed.** The
+  Power ISA makes no architectural promise about the timing of any
+  instruction. The model has no division and only the 64-bit multiplies
+  `mulld` and `mulhdu`, which T. Pornin's
+  [survey](https://www.bearssl.org/ctmul.html) found to be constant time
+  on POWER8 and POWER9; it does not cover POWER10 or later
+  (`lean/VerifiedGarbage/TCB/PPC64LE/Isa.lean`).
 * **Some leaks are hashes of secrets.** A constant-time theorem says that the
   code's secret-dependent behaviour (branches and memory addresses) is a
   function of what its contract says it may leak. For most functions that
