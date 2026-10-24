@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejBoundedRun
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejBoundedRun
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
@@ -15,6 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejBoundedBody
 
 /-!
 # ML-DSA on PPC64LE: the loop of `vg_mldsa_rej_bounded_poly`, constant time

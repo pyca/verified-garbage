@@ -23,6 +23,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejBoundedRun
+meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejBoundedRun
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_rej_bounded_poly`, constant time and `Verified`
