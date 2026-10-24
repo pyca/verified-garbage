@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.CTBase
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Round
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCallCT
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCallCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.CTBase
 meta import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Round

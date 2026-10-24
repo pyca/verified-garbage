@@ -104,6 +104,9 @@ theorem BS.env {n : Nat} {a : BD × Nat} {s : State} (h : BS n a s) :
   obtain ⟨σ, hl, sp⟩ := h
   exact ⟨hl.ctx.prep.env, hl.sp.trans sp⟩
 
+/-- The working space's address in `r31`, and the stack pointer. -/
+def R3 (a : BD × Nat) (s : State) : Prop := s.gpr .r31 = a.1.B ∧ s.sp = a.1.sp
+
 theorem pins_R3 : Pins R3 [.r31] := by
   intro a s₁ s₂ ⟨a31, asp⟩ ⟨b31, bsp⟩
   refine ⟨asp.trans bsp.symm, fun r hr => ?_⟩
