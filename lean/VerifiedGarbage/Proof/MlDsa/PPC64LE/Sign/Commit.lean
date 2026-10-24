@@ -248,4 +248,110 @@ theorem setKappa_ok {σ s : State} {t ny nyh nw nh r : Nat} (h : IC p STK σ t n
 
 end
 
+/-! ## Taint checks for any offsets -/
+
+/-- The taint check of a copy within `scratch` does not depend on its offsets. -/
+theorem copy_taint (so dO len : Nat) : (VG.PPC64LE.taint.check (Taint.ofRegs [.r31]) (copy .r31 so .r31 dO len)
+    (VG.Taint.hintOf VG.PPC64LE.taint (Taint.ofRegs [.r31]) (copy .r31 0 .r31 0 1))).isSome = true := rfl
+
+theorem setKappa_taint (r : Nat) : (VG.PPC64LE.taint.check (Taint.ofRegs [.r31]) (.block (setKappa r))
+    (VG.Taint.hintOf VG.PPC64LE.taint (Taint.ofRegs [.r31]) (.block (setKappa 0)))).isSome = true := rfl
+
+/-! ## `y` and `ŷ` -/
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+/-- `κ + r` written. -/
+abbrev M1 (p : Params) (STK t r : Nat) (σ s : State) : Prop :=
+  IC p STK σ t r r 0 0 s ∧ bytesAt s.mem ((slay2 p STK σ).A 0 (oMS + 64)) 2 = integerToBytes (p.ℓ * t + r) 2
+
+/-- `y[r]` copied to `ŷ[r]`. -/
+abbrev M3 (p : Params) (STK t r : Nat) (σ s : State) : Prop :=
+  IC p STK σ t (r + 1) r 0 0 s ∧ PolyIs s.mem ((slay2 p STK σ).A 0 (oP (yhBase p + r))) (Yv p σ (p.ℓ * t) r)
+
+omit hP hS in
+theorem em_m {σ : State} {r : Nat} (hr : r < p.ℓ) :
+    KeyGen.RbOk (slay2 p STK σ) sWb2 (sc oMS) (yP p r) (sc oPS) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  exact ⟨⟨sptr_ok rfl (by decide), by ssep hF⟩, ⟨sptr_ok rfl (by slt hF), by ssep hF⟩,
+    ⟨sptr_ok rfl (by decide), by ssep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide,
+    by ssep hF, by ssep hF, by ssep hF⟩
+
+omit hP hS in
+theorem nty_m {σ : State} {r : Nat} (hr : r < p.ℓ) : KeyGen.IpOk (slay2 p STK σ) sWb2 (yhP p r) (sc oPS) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  exact ⟨⟨sptr_ok rfl (by slt hF), by ssep hF⟩, ⟨sptr_ok rfl (by decide), by ssep hF⟩,
+    show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by ssep hF⟩
+
+omit hP hS in
+theorem kappa_piece {t r : Nat} (hr : r < p.ℓ) :
+    SPiece p STK (fun σ s => IC p STK σ t r r 0 0 s) (M1 p STK t r) (.block (setKappa r)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  exact ⟨fun σ s _ h => setKappa_ok hF h hr (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec]),
+    srel2 (fun σ s h => h.l.k.sc) (setKappa_taint r)⟩
+
+theorem mask_piece {t r : Nat} (hr : r < p.ℓ) :
+    SPiece p STK (M1 p STK t r) (fun σ s => IC p STK σ t (r + 1) r 0 0 s) (maskAt P p.γ₁ (yP p r)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  refine ⟨fun σ s _ ⟨h, hb⟩ => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.em_tr hP.expandMask hS
+    (em_m hF (σ := σ) hr) hF.g1 fun _ _ h => ⟨h.1, h.2.1, h.2.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.1.l.k.sc h₂.1.l.k.sc⟩⟩
+  unfold maskAt
+  refine KeyGen.em_ok hP.expandMask h.l.k.sc.site hS (em_m hF hr) hF.g1 fun s' k' hq => ?_
+  have I := h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+    (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide))
+  have hms : bytesAt s.mem (lpa (slay2 p STK σ) (sc oMS)) 66 = rppOf p σ ++ integerToBytes (p.ℓ * t + r) 2 := by
+    have e2 : bytesAt s.mem ((slay2 p STK σ).A 0 oMS + BitVec.ofNat 64 64) 2 = integerToBytes (p.ℓ * t + r) 2 := by
+      simp only [Lay.A, BitVec.add_assoc, ← BitVec.ofNat_add] at hb ⊢; exact hb
+    show bytesAt s.mem ((slay2 p STK σ).A 0 oMS) (64 + 2) = _
+    rw [Proof.MlKem.bytesAt_add, h.l.k.rpp, e2]
+  rw [hms] at hq
+  refine ⟨I.l, fun r' hr' => ?_, I.yh, I.w, I.w1, I.w1b⟩
+  rcases (by omega : r' < r ∨ r' = r) with h' | rfl
+  exacts [I.y r' h', hq]
+
+omit hP hS in
+theorem copyY_piece {t r : Nat} (hr : r < p.ℓ) :
+    SPiece p STK (fun σ s => IC p STK σ t (r + 1) r 0 0 s) (M3 p STK t r)
+      (copy .r31 (oP (5 + p.k + r)) .r31 (oP (5 + p.k + p.ℓ + r)) 1024) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  refine ⟨fun σ s _ h => ?_, srel2 (fun σ s h => h.l.k.sc) (copy_taint _ _ _)⟩
+  refine WP.mono (copyS h.l.k.sc.site (sb := .r31) (so := oP (5 + p.k + r)) (db := .r31)
+    (dO := oP (5 + p.k + p.ℓ + r)) (len := 1024) ⟨sptr_ok rfl (by slt hF), by ssep hF⟩
+    ⟨sptr_ok rfl (by slt hF), by ssep hF⟩ (by decide) (by slt hF) (by slt hF) (by decide) (by decide) (by ssep hF))
+    fun s' ⟨k', b'⟩ => ⟨h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+      (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide)), ?_⟩
+  exact Proof.MlDsa.Sign.polyIs_of_bytes b' (h.y r (by omega))
+
+theorem nttY_piece {t r : Nat} (hr : r < p.ℓ) :
+    SPiece p STK (M3 p STK t r) (fun σ s => IC p STK σ t (r + 1) (r + 1) 0 0 s) (nttAt P (yhP p r)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  refine ⟨fun σ s _ ⟨h, hy⟩ => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.ip_tr (t := ntt) hP.ntt hS
+    (nty_m hF (σ := σ) hr) (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (yhBase p + r))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (yhBase p + r))))
+      fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2.1, h.2.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.1.l.k.sc h₂.1.l.k.sc, h₁.2.1, by
+      rw [slay2_pub pub]; exact h₂.2.1⟩⟩
+  unfold nttAt
+  refine KeyGen.ip_ok (t := ntt) hP.ntt h.l.k.sc.site hS (nty_m hF hr) hy.1 fun s' k' hq => ?_
+  have I := h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+    (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide))
+  refine ⟨I.l, I.y, fun r' hr' => ?_, I.w, I.w1, I.w1b⟩
+  rcases (by omega : r' < r ∨ r' = r) with h' | rfl
+  · exact I.yh r' h'
+  · have e : polyAt s.mem (lpa (slay2 p STK σ) (yhP p r')) = Yv p σ (p.ℓ * t) r' := hy.2
+    rw [e] at hq
+    exact hq
+
+theorem maskR_piece {t r : Nat} (hr : r < p.ℓ) :
+    SPiece p STK (fun σ s => IC p STK σ t r r 0 0 s) (fun σ s => IC p STK σ t (r + 1) (r + 1) 0 0 s)
+      (maskR P p r) :=
+  (kappa_piece hF hr).seq ((mask_piece hP hF hS hr).seq ((copyY_piece hF hr).seq (nttY_piece hP hF hS hr)))
+
+end
+
 end VG.Proof.MlDsa.PPC64LE.Sign
+
