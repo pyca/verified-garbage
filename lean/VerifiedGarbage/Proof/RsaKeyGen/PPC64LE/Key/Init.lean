@@ -106,6 +106,11 @@ theorem ofNat_digits60 (w : Nat) (hw : w ≤ 256) :
     Nat.mod_eq_of_lt (show 60 * (w + 2) < 2 ^ 64 by omega)]
   omega
 
+theorem zero_bounds {w Z : Nat} (f : arr w nArr ≤ Z) (hw : w ≤ 256) :
+    160 + 4 * (nArr * (w + 2)) ≤ Z ∧ 1 ≤ nArr * (w + 2) ∧ nArr * (w + 2) < 2 ^ 32 := by
+  simp only [arr, S, nArr, VG.Proof.Rsa.KeyWorkspace.hdr] at f ⊢
+  omega
+
 /-- `setup`: `w` and the stride, and every array 0: the environment of zeros. -/
 theorem setup_ok {s0 s : State} (h : Base s0 s) (h22 : s.gpr .r22 = s0.gpr .r8) :
     WP isa setup s fun t => Base s0 t ∧ Ws t (kB s0) (kZ s0) (kW s0) nArr ∧
@@ -126,13 +131,7 @@ theorem setup_ok {s0 s : State} (h : Base s0 s) (h22 : s.gpr .r22 = s0.gpr .r8) 
   refine WP.mono hb fun u ⟨⟨u29, u30, u8, um⟩, ku⟩ => ?_
   have hu : Ws u (kB s0) (kZ s0) (kW s0) nArr :=
     ⟨hs.congr ku.wr, fits, by omega, hw, u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩
-  have hn : 160 + 4 * (nArr * (kW s0 + 2)) ≤ kZ s0 := by
-    have f := fits
-    simp only [arr, S, VG.Proof.Rsa.KeyWorkspace.hdr] at f
-    rw [show nArr = 60 from rfl] at f ⊢
-    omega
-  have hn1 : 1 ≤ 60 * (kW s0 + 2) := by omega
-  have hn2 : 60 * (kW s0 + 2) < 2 ^ 32 := by omega
+  obtain ⟨hn, hn1, hn2⟩ := zero_bounds fits hw
   refine WP.mono (zeroArrays_ok hu u8 hn1 hn2 hn)
     fun t ⟨ht, z, out, kt⟩ => ⟨?_, ht, ?_, (ku.trans kt).mono⟩
   · have kk := ku.trans kt
@@ -299,7 +298,7 @@ theorem consts_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (kB
   have f7 : KK (kB s0) (kW s0) s.mem (t6.write .r9 (BitVec.ofNat 64 1)).mem :=
     ((((f1.trans f2).trans f3).trans f4).trans f5).trans f6
   have b7 : Base s0 (t6.write .r9 (BitVec.ofNat 64 1)) := h.of_phase f7 K7
-  refine WP.mono (halfE (h6.of_keep g7) k6 (j := aTop) (c := 1) (by simp [State.write]) (by decide))
+  refine WP.mono (halfE (h6.of_keep g7) k6 (j := aTop) (c := 1) (h9 := by simp [State.write]) (hc := by decide))
     fun t ⟨ht, kt, ft, rt⟩ => ⟨b7.of_phase ft rt, ht, ?_, (K7.trans rt).mono⟩
   obtain ⟨V7, kt, e7, o7⟩ := kt.vx
   have c : ∀ j, j ≠ aOne → j ≠ aTwo → j ≠ aThree → j ≠ aC → j ≠ aC33 → V6 j = V j := fun j a b c d e => by
@@ -307,9 +306,9 @@ theorem consts_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (kB
   refine ⟨V7, kt, fun j a b c' d e f => by rw [o7 j f, c j a b c' d e], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), o4 _ (by decide), o3 _ (by decide),
       o2 _ (by decide), e1, z1]
-  · rw [o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), o4 _ (by decide), o3 _ (by decide), e2, z2]
-  · rw [o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), o4 _ (by decide), e3, z3]
-  · rw [o7 _ (by decide), o6 _ (by decide), e5, v4, Nat.mul_one, ← Nat.pow_mul,
+  · rw [o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), o4 _ (by decide), o3 _ (by decide), e2, o1 _ (by decide), z2]
+  · rw [o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), o4 _ (by decide), e3, o2 _ (by decide), o1 _ (by decide), z3]
+  · rw [o7 _ (by decide), o6 _ (by decide), e5, v4, Nat.mul_one,
       show 32 * (kL s0 / 4) = 8 * kL s0 by omega, Nat.add_comm]
   · rw [o7 _ (by decide), e6, o5 _ (by decide), o4 _ (by decide), o3 _ (by decide), o2 _ (by decide),
       o1 _ (by decide), z5]
