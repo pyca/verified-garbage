@@ -218,11 +218,14 @@ theorem absorb_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m :
 
 /-! ## The lengths, and the tag input -/
 
-/-- `lensBlock` and its chunk: the lengths block absorbed. -/
-theorem lens_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
-    WP isa lens t (AbsPost c [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * c.al) ++ Spec.GcmSiv.le64 (8 * c.n))] t) := by
-  unfold lens lensBlock
-  refine WP.seq (wp_lsl (by decide) fun t₁ u₁ => ?_)
+/-- `lensBlock`: the lengths block at `W + 240`, as the bytes to absorb. -/
+theorem lensBlk_wp {c : Cx} {t : State} (E : Env c t) :
+    WP isa (.block lensBlock) t fun t₆ => PK t t₆ ∧ t₆.mem =
+      (t.mem.writeW (c.W + BitVec.ofNat 64 240) (BitVec.ofNat 64 (8 * c.al))).writeW
+        (c.W + BitVec.ofNat 64 240 + BitVec.ofNat 64 8) (BitVec.ofNat 64 (8 * c.n)) ∧
+      t₆.gpr .r23 = c.W + BitVec.ofNat 64 240 ∧ t₆.gpr .r24 = BitVec.ofNat 64 16 := by
+  unfold lensBlock
+  refine wp_lsl (by decide) fun t₁ u₁ => ?_
   refine wp_std (a := c.W + BitVec.ofNat 64 240) (by decide) (by decide) (by rw [u₁.other _ (by decide), E.r14] <;> rfl)
     (by rw [u₁.wr]; exact E.perm.wW (by decide)) fun t₂ u₂ => ?_
   refine wp_lsl (by decide) fun t₃ u₃ => ?_
@@ -230,16 +233,20 @@ theorem lens_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
     (by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), E.r14, Offset.add_add] <;> rfl)
     (by rw [u₃.wr, u₂.wr, u₁.wr, Offset.add_add]; exact E.perm.wW (by decide)) fun t₄ u₄ => ?_
   refine wp_addi (by decide) (by decide) fun t₅ u₅ => wp_li (by decide) fun t₆ u₆ => WP.block_nil ?_
-  have pk₆ : PK t t₆ := (PK.ofUpd u₁).trans ((PK.ofMupd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofMupd u₄).trans
-    ((PK.ofUpd u₅).trans (PK.ofUpd u₆)))))
-  have hm₆ : t₆.mem = (t.mem.writeW (c.W + BitVec.ofNat 64 240) (BitVec.ofNat 64 (8 * c.al))).writeW
-      (c.W + BitVec.ofNat 64 240 + BitVec.ofNat 64 8) (BitVec.ofNat 64 (8 * c.n)) := by
-    rw [u₆.mem, u₅.mem, u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.mem, u₁.gpr, u₁.other .r21 (by decide), u₁.mem,
+  refine ⟨(PK.ofUpd u₁).trans ((PK.ofMupd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofMupd u₄).trans
+    ((PK.ofUpd u₅).trans (PK.ofUpd u₆))))), ?_, ?_, u₆.gpr⟩
+  · rw [u₆.mem, u₅.mem, u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.mem, u₁.gpr, u₁.other .r21 (by decide), u₁.mem,
       E.r19, E.r21, ofNat_shl, ofNat_shl]
+  · rw [u₆.other _ (by decide), u₅.gpr, u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide),
+      E.r14] <;> rfl
+
+/-- `lensBlock` and its chunk: the lengths block absorbed. -/
+theorem lens_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
+    WP isa lens t (AbsPost c [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * c.al) ++ Spec.GcmSiv.le64 (8 * c.n))] t) := by
+  unfold lens
+  refine WP.seq (WP.mono (lensBlk_wp E) fun t₆ ⟨pk₆, hm₆, r23₆, r24₆⟩ => ?_)
   have f₆ : Frame [⟨c.W + BitVec.ofNat 64 240, 16⟩] t.mem t₆.mem := by rw [hm₆]; exact Proof.Cmac.frame_store2 _ _ _
-  refine WP.mono (chunkB_wp L (E.of_pk pk₆)
-    (by rw [u₆.other _ (by decide), u₅.gpr, u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide),
-      E.r14] <;> rfl) u₆.gpr) fun t₇ C => ?_
+  refine WP.mono (chunkB_wp L (E.of_pk pk₆) r23₆ r24₆) fun t₇ C => ?_
   have hb : bytesAt t₆.mem (c.W + BitVec.ofNat 64 240) 16 =
       Spec.GcmSiv.le64 (8 * c.al) ++ Spec.GcmSiv.le64 (8 * c.n) := by
     rw [hm₆, Proof.Cmac.bytesAt_store2, GcmSiv.le64_le8, GcmSiv.le64_le8]
