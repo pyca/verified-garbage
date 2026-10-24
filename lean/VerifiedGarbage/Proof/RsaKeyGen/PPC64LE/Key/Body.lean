@@ -127,8 +127,8 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   rw [p3, q3] at vP vQ
   rw [vP] at vPm
   rw [vQ] at vQm
-  have hP : kP s0 < 2 ^ (8 * kL s0) := by simp only [kP]; split <;> assumption
-  have hQ : kQ s0 < 2 ^ (8 * kL s0) := by simp only [kQ]; split <;> assumption
+  have hP : kP s0 < 2 ^ (8 * kL s0) := by simp only [kP]; split <;> with_reducible assumption
+  have hQ : kQ s0 < 2 ^ (8 * kL s0) := by simp only [kQ]; split <;> with_reducible assumption
   -- `L`.
   have h22 : t4.gpr .r22 = BitVec.ofNat 64 (kL s0) := by
     rw [a4.r22]; exact VG.Proof.Rsa.PPC64LE.CrtValues.ofNat_toNat64 _

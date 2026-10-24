@@ -38,7 +38,8 @@ theorem flag_zero (c : Prop) [Decidable c] : ((if c then 1 else 0 : Nat) = 0) â†
 section
 variable {s : State} {B : Addr} {Z w : Nat} {V F : Nat â†’ Nat}
 
-theorem smallPart_eq : smallPart = seqs (ltS X0 aD aC ++ [.block (andS X7 X0 X6 ++ [])]) := rfl
+theorem smallPart_eq : smallPart = seqs (ltS X0 aD aC ++
+    ([.block (andS X7 X0 X6 ++ ([] : List Instr))] : List (Prog isa))) := rfl
 
 /-- `X7` := `X6` and `d < 2^(8 p_len) + 1`. -/
 theorem smallPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (b6 : F X6 â‰¤ 1) :
@@ -61,8 +62,9 @@ theorem smallPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (b6 : F X6 â‰
 /-- The arrays `qinvPart` writes. -/
 abbrev qinvArrs : List Nat := [aT, aMq, aQi] ++ invOfArrs
 
-theorem qinvPart_eq : qinvPart = seqs ([.block (bitOf X0 aP ++ [])] ++ (ltS X1 aP aThree ++
-    [.block (andNotS X2 X1 X0 ++ []), sel aMq aThree aP X2, invOf aQ aMq, eqS X1 1 aOne, copy aQi 3])) := rfl
+theorem qinvPart_eq : qinvPart = seqs (([.block (bitOf X0 aP ++ ([] : List Instr))] : List (Prog isa)) ++
+    (ltS X1 aP aThree ++ ([.block (andNotS X2 X1 X0 ++ ([] : List Instr)), sel aMq aThree aP X2, invOf aQ aMq,
+      eqS X1 1 aOne, copy aQi 3] : List (Prog isa)))) := rfl
 
 /-- `qInv` modulo `mL p`, `X0` `p` odd, `X1` `gcd(q, mL p) = 1`. -/
 theorem qinvPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (three : V aThree = 3)
@@ -199,9 +201,10 @@ theorem nPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
     exact Nat.mul_lt_mul'' hp hq
   rw [et, Nat.mod_eq_of_lt hq, Nat.mod_eq_of_lt hpq]
 
-theorem maskPart_eq : maskPart = seqs (ltS X2 aN aTop ++ ([.block (andNotS X8 X2 X6 ++ (andS X8 X8 X1 ++
-    (andS X8 X8 X0 ++ (bitOf X2 aQ ++ (andS X8 X8 X2 ++ (andS X8 X8 X3 ++ []))))))] ++
-    (ltS X2 aE aC33 ++ [.block (andNotS X4 X5 X2 ++ (andS X8 X8 X4 ++ (andNotS X8 X7 X8 ++ [])))]))) := rfl
+theorem maskPart_eq : maskPart = seqs (ltS X2 aN aTop ++ (([.block (andNotS X8 X2 X6 ++ (andS X8 X8 X1 ++
+    (andS X8 X8 X0 ++ (bitOf X2 aQ ++ (andS X8 X8 X2 ++ (andS X8 X8 X3 ++ ([] : List Instr)))))))] : List (Prog isa)) ++
+    (ltS X2 aE aC33 ++ ([.block (andNotS X4 X5 X2 ++ (andS X8 X8 X4 ++ (andNotS X8 X7 X8 ++ ([] : List Instr))))] :
+      List (Prog isa))))) := rfl
 
 /-- `X8` := not small, and `n â‰¥ 2^(16 p_len - 1)`, `d` exists, `gcd(q, mL p) = 1`,
 `p` and `q` odd, `e` odd, at least 3 and below `2^33`. -/

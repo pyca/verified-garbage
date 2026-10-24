@@ -65,9 +65,9 @@ theorem halfSelE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j : Nat} (hj : j
   · rw [e4, o3 j hjT, o1 j hjT, e3, e1]
     simp
 
-theorem halfStep_eq : halfStep = seqs ([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X0 aU ++
-    (VG.Impl.Rsa.PPC64LE.Keys.bitOf X1 aV ++ (notS X1 X1 ++ andNotS X2 X0 X1)))] ++
-    (halfSel aU ++ (halfSel aV ++ (halfSel aF ++ [.block [.subi .r11 .r11 1]])))) := by
+theorem halfStep_eq : halfStep = seqs (([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X0 aU ++
+    (VG.Impl.Rsa.PPC64LE.Keys.bitOf X1 aV ++ (notS X1 X1 ++ andNotS X2 X0 X1)))] : List (Prog isa)) ++
+    (halfSel aU ++ (halfSel aV ++ (halfSel aF ++ ([.block [.subi .r11 .r11 1]] : List (Prog isa)))))) := by
   simp only [halfStep, List.append_assoc]
 
 /-- The arrays and flags the halving writes. -/
@@ -186,9 +186,9 @@ theorem halving_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
 /-- The arrays `gcdUV` writes. -/
 abbrev gcdArrs : List Nat := [aU2, aV2, aT, aS, aG] ++ invOfArrs
 
-theorem gcdUV_eq : gcdUV = seqs ([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X0 aV ++ notS X0 X0),
-    sel aU2 aU aV X0, sel aV2 aV aU X0] ++ (ltS X1 aV2 aTwo ++ [sel aS aV2 aThree X1, invOf aU2 aS,
-      sel aG 1 aOne X1])) := rfl
+theorem gcdUV_eq : gcdUV = seqs (([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X0 aV ++ notS X0 X0),
+    sel aU2 aU aV X0, sel aV2 aV aU X0] : List (Prog isa)) ++ (ltS X1 aV2 aTwo ++ ([sel aS aV2 aThree X1, invOf aU2 aS,
+      sel aG 1 aOne X1] : List (Prog isa)))) := rfl
 
 /-- `gcdUV`: `v` odd by a swap (if it is even), and `[aG] := gcd(u, v)`, 1 for `v < 2`. -/
 theorem gcdUV_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (two : V aTwo = 2)

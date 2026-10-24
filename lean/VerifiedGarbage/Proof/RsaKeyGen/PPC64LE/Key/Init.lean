@@ -237,7 +237,7 @@ theorem reg_step {u : State} {i : Instr} {r : Reg} {v : BitVec 64} (he : exec i 
 
 theorem consts_eq : seqs consts = .seq (.block (.li .r6 0 :: (setDigit aOne 1 ++ (setDigit aTwo 2 ++
     (setDigit aThree 3 ++ (setDigit aC 1 ++ (.addi .r6 .r22 0 :: (setDigit aC 1 ++ (.li .r6 4 ::
-      (setDigit aC33 2 ++ [.li .r9 1])))))))))) (half aTop) := rfl
+      (setDigit aC33 2 ++ ([.li .r9 1] : List Instr))))))))))) (half aTop) := rfl
 
 /-- The six constants, into zero arrays. -/
 theorem consts_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (kB s0) (kZ s0) (kW s0) nArr)

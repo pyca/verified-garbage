@@ -26,7 +26,7 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 section
 variable {s : State} {B : Addr} {Z w : Nat} {V F : Nat → Nat}
 
-theorem dOne_eq : dOne = seqs [eqS X0 aL aOne, .block (notS X7 X0 ++ (selS X6 X6 X7 X4 ++ [])),
+theorem dOne_eq : dOne = seqs [eqS X0 aL aOne, .block (notS X7 X0 ++ (selS X6 X6 X7 X4 ++ ([] : List Instr))),
     sel aS aDo aOne X4] := rfl
 
 /-- `e = 1`: `X7` := `L ≠ 1`, and `X6`, `[aS]` the odd case's or `e = 1`'s. -/
@@ -62,9 +62,9 @@ theorem dOne_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1)
 /-- The arrays `dEven` writes. -/
 abbrev dEvenArrs : List Nat := [aT, aMl, aD] ++ invOfArrs
 
-theorem dEven_eq : dEven = seqs ([.block (bitOf X0 aL ++ [])] ++ (ltS X1 aL aThree ++
-    [.block (andNotS X2 X1 X0 ++ []), sel aMl aThree aL X2, invOf aE aMl, eqS X0 1 aOne,
-      .block (andS X1 X2 X0 ++ (selS X6 X1 X6 X3 ++ [])), sel aD 3 aS X3])) := rfl
+theorem dEven_eq : dEven = seqs (([.block (bitOf X0 aL ++ ([] : List Instr))] : List (Prog isa)) ++ (ltS X1 aL aThree ++
+    ([.block (andNotS X2 X1 X0 ++ ([] : List Instr)), sel aMl aThree aL X2, invOf aE aMl, eqS X0 1 aOne,
+      .block (andS X1 X2 X0 ++ (selS X6 X1 X6 X3 ++ ([] : List Instr))), sel aD 3 aS X3] : List (Prog isa)))) := rfl
 
 /-- `e` even: `x = e⁻¹ mod mL`; `[aD]` and `X6` by whether `e` is odd. -/
 theorem dEven_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (three : V aThree = 3)

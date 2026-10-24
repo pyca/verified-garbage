@@ -30,8 +30,8 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 section
 variable {s : State} {B : Addr} {Z w : Nat} {V F : Nat → Nat}
 
-theorem eFlags_eq : eFlags = seqs ([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X3 aE), eqS X4 aE aOne] ++
-    ltS X5 aE aThree) := rfl
+theorem eFlags_eq : eFlags = seqs (([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X3 aE), eqS X4 aE aOne] :
+    List (Prog isa)) ++ ltS X5 aE aThree) := rfl
 
 /-- The flags of `e`. -/
 theorem eFlags_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (three : V aThree = 3) :
@@ -57,10 +57,10 @@ theorem eFlags_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 
 /-- The arrays `dOdd` writes. -/
 abbrev dOddArrs : List Nat := [aME, aQd, aDv, aR, aDr, aDt, aTt, aQt, aRt, aNc, aDo, aT] ++ invOfArrs ++ mulArrs
 
-theorem dOdd_eq : dOdd = seqs ([.block (andNotS X0 X5 X3), sel aME aThree aE X0, copy aQd aL, copy aDv aME,
+theorem dOdd_eq : dOdd = seqs (([.block (andNotS X0 X5 X3), sel aME aThree aE X0, copy aQd aL, copy aDv aME,
     div aQd aR aDv aDt, invOf aR aME, eqS X1 1 aOne, sub3 aTt aME 3, mulTo aQt aQd aTt [.li .r11 64],
     mulTo aRt aR aTt [.li .r11 64], addTo aRt aOne aNc aZero, div aRt aDr aDv aDt, copy aDo aQt,
-    addTo aDo aRt aNc aZero] ++ (ltS X2 aL aTwo ++ [.block (andNotS X6 X2 X1)])) := rfl
+    addTo aDo aRt aNc aZero] : List (Prog isa)) ++ (ltS X2 aL aTwo ++ ([.block (andNotS X6 X2 X1)] : List (Prog isa)))) := rfl
 
 theorem li64_ok (u : State) : WP isa (.block [.li .r11 64]) u fun u' =>
     (u'.gpr .r11 = BitVec.ofNat 64 64 ∧ u'.mem = u.mem) ∧ Keep [.r11] u u' := by

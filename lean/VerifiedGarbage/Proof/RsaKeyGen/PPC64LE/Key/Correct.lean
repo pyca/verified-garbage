@@ -63,9 +63,9 @@ theorem post_of {s0 t : State} (h : keyP.pre s0) (bp : BodyPost s0 t) : keyP.pos
   · have hs : ¬ kSmall s0 D := hm.1
     obtain ⟨-, top, -, g, pp, qq, -, -, -⟩ := id hm
     have hP : kP s0 < 2 ^ (8 * kL s0) := by
-      have := hpl_of s0; have := hql_of s0; simp only [kP]; split <;> assumption
+      have := hpl_of s0; have := hql_of s0; simp only [kP]; split <;> with_reducible assumption
     have hQ : kQ s0 < 2 ^ (8 * kL s0) := by
-      have := hpl_of s0; have := hql_of s0; simp only [kQ]; split <;> assumption
+      have := hpl_of s0; have := hql_of s0; simp only [kQ]; split <;> with_reducible assumption
     simp only [hm, hs, ↓reduceIte]
     refine ⟨rfl, ?_⟩
     simp only [hm, decide_true] at outs

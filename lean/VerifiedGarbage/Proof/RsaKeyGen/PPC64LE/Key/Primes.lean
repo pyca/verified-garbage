@@ -88,11 +88,11 @@ theorem primes_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 
     obtain ⟨n1, n2, n3, n4, n5⟩ := hn
     rw [o7 j n5, o6 j n1, o5 j n4, o4 j n1, o3 j n3, o2 j n2, o1 j n1]
   · rw [p6 d hd, p4 d hd, p1 d hd]
-  · have hP : (if V aP0 < V aQ0 then V aQ0 else V aP0) < 2 ^ (32 * w) := by split <;> assumption
+  · have hP : (if V aP0 < V aQ0 then V aQ0 else V aP0) < 2 ^ (32 * w) := by split <;> with_reducible assumption
     rw [vP]
     vsimp [o7, o6, o5, o4, o3, o2, o1, e7, e6, e5, e4, e3, e2, e1, g6, g4, g1, zero, one, sel_flag]
     exact pred_sel hP
-  · have hQ : (if V aP0 < V aQ0 then V aP0 else V aQ0) < 2 ^ (32 * w) := by split <;> assumption
+  · have hQ : (if V aP0 < V aQ0 then V aP0 else V aQ0) < 2 ^ (32 * w) := by split <;> with_reducible assumption
     rw [vQ]
     vsimp [o7, o6, o5, o4, o3, o2, o1, e7, e6, e5, e4, e3, e2, e1, g6, g4, g1, zero, one, sel_flag]
     exact pred_sel hQ
