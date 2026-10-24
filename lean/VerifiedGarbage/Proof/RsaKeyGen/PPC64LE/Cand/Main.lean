@@ -71,8 +71,6 @@ theorem in_bytes {s0 s : State} (hb : Bx s0 s) {ρ : Region}
     Spec.Rsa.bytesAt s.mem ρ.base k = Spec.Rsa.bytesAt s0.mem ρ.base k :=
   bytes_bx hb hk' fun r hr => (hd r hr).sub_left (Region.sub_prefix hk)
 
-theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by
-  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 /-- The body's state once `rand` has the candidate's octets. -/
 structure MIn (s0 s : State) : Prop where
@@ -114,33 +112,6 @@ theorem scr_fit {s0 : State} (hp : CIn s0) : slot (cw s0) nArr ≤ 8 * sL s0 := 
   have := cw_facts hp
   simp only [nArr, slot_lin, sL, oL] at this hscr ⊢
   omega
-
-theorem hR_dj {s0 : State} (hp : CIn s0) : ∀ r ∈ [cO s0, cU s0, cS s0, cF s0], (cR s0).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact hp.oR.symm
-  · exact hp.uR.symm
-  · exact hp.rS
-  · exact hp.Fr.symm
-
-theorem hP_dj {s0 : State} (hp : CIn s0) : ∀ r ∈ [cO s0, cU s0, cS s0, cF s0], (cP s0).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact hp.oP.symm
-  · exact hp.uP.symm
-  · exact hp.pS
-  · exact hp.Fp.symm
-
-theorem hE_dj {s0 : State} (hp : CIn s0) : ∀ r ∈ [cO s0, cU s0, cS s0, cF s0], (cE s0).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact hp.oE.symm
-  · exact hp.uE.symm
-  · exact hp.eS
-  · exact hp.Fe.symm
 
 /-- After `setup`. -/
 structure M1 (s0 s : State) : Prop where

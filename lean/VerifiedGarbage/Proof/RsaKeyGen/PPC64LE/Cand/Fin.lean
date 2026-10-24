@@ -36,6 +36,9 @@ abbrev pB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r8) (s0.g
 /-- `rand`'s octets. -/
 abbrev rB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r10) (rL s0)
 
+theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
 /-- What the call computes. -/
 def cOp (s0 : State) : Option (Spec.RsaKeyGen.Candidate × Spec.RsaKeyGen.Rand) :=
   Spec.RsaKeyGen.candidateOp (oL s0) (Spec.Rsa.bytesAt s0.mem (s0.gpr .r6) (s0.gpr .r7).toNat)
