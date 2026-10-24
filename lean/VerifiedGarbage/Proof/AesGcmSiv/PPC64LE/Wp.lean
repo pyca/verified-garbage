@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
@@ -44,9 +46,25 @@ theorem ofNat_sub {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
 theorem ofNat_add (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) :=
   (BitVec.ofNat_add a b).symm
 
+/-- What code keeps that writes none of the registers the pieces keep. -/
+theorem PK.ofKeep {rs : List Reg} {s s' : State} (h : Keep rs s s') (hsp : s'.sp = s.sp)
+    (hd : ∀ r ∈ keepRegs, r ∉ rs := by decide) : PK s s' :=
+  ⟨h.2.1, h.2.2, hsp, fun r hr => h.gpr (hd r hr)⟩
+
+/-- Two writes of the same register. -/
+theorem upd2 {s t u : State} {d : Reg} {v w w' : BitVec 64} (u₁ : Proof.ChaCha20Poly1305.PPC64LE.Upd s t d v)
+    (u₂ : Proof.ChaCha20Poly1305.PPC64LE.Upd t u d w) (h : w = w') : Proof.ChaCha20Poly1305.PPC64LE.Upd s u d w' :=
+  ⟨u₂.gpr.trans h, fun r hr => (u₂.other r hr).trans (u₁.other r hr), u₂.mem.trans u₁.mem, u₂.rd.trans u₁.rd,
+    u₂.wr.trans u₁.wr, u₂.sp.trans u₁.sp, u₂.lr.trans u₁.lr⟩
+
 theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 16⟩ : Region).Disjoint r) : Spec.Gcm.blockAt m' p = Spec.Gcm.blockAt m p := by
   rw [Spec.Gcm.blockAt, Spec.Gcm.blockAt, Proof.Cmac.bytesAt_frame16 hf hd]
+
+theorem blocksAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, (⟨p, 16 * n⟩ : Region).Disjoint r) (hn : 16 * n ≤ 2 ^ 64) :
+    Spec.Gcm.blocksAt m' p n = Spec.Gcm.blocksAt m p n := by
+  rw [Proof.Gcm.blocksAt_eq, Proof.Gcm.blocksAt_eq, Proof.Cmac.bytesAt_frame hf hd hn]
 
 theorem setWidth_32_64 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
