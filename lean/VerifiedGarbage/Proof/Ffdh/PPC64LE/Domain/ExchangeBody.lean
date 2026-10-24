@@ -85,20 +85,28 @@ theorem zMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (h23 : s.g
 def exPowRegs : List Reg := ModExp.powSRegs ++ ([.r0, .r3, .r4, .r5, .r6, .r8, .r9, .r10, .r12, .r14, .r15, .r16,
   .r17, .r20, .r30, .r31] : List Reg)
 
-/-- `exPower`: y's `k` octets (at `r9`) into array 4, then `y^x mod p` there,
-for x's `xl` octets at `X`, whose address and length are in the header's
-words 8 and 9. -/
-theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+/-- What `exPower` leaves from `s`: `y^x mod p` in array 4, p in array 0. -/
+def exPowPost (B Y X : Addr) (w k xl : Nat) (s t : State) : Prop :=
+  arr t.mem B w 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem X xl) %
+      arr s.mem B w 0 ∧ arr t.mem B w 0 = arr s.mem B w 0 ∧ Body B w s.mem t.mem ∧
+    t.gpr .r10 = off B (slot w 0)
+
+/-- `exPre`, with the registers it leaves for the power, and then the power:
+y's `k` octets (at `r9`) into array 4, then `y^x mod p` there, for x's `xl`
+octets at `X`, whose address and length are in the header's words 8 and 9. -/
+theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
     (h9 : s.gpr .r9 = Y) (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
     (hxl : 1 ≤ xl) (hxl' : xl ≤ 1024)
     (hrdY : ∀ i < k, InRegions (s.rd ++ s.wr) (off Y i) 1) (hsepY : ∀ i < k, ∀ x, ofs B x < Z → off Y i ≠ x)
     (hrdX : ∀ i < xl, InRegions (s.rd ++ s.wr) (off X i) 1) (hsepX : ∀ i < xl, ∀ x, ofs B x < Z → off X i ≠ x)
     (hX : s.mem.readW (off B 64) 64 = off X 0) (hXL : s.mem.readW (off B 72) 64 = BitVec.ofNat 64 xl)
     (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1) :
-    WP isa exPower s fun t =>
-      (arr t.mem B w 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem X xl) %
-          arr s.mem B w 0 ∧ arr t.mem B w 0 = arr s.mem B w 0 ∧ Body B w s.mem t.mem ∧
-        t.gpr .r10 = off B (slot w 0)) ∧ Keep exPowRegs s t := by
+    WP isa exPre s fun s₆ =>
+      (s₆.gpr .r30 = off X 0 ∧ s₆.gpr .r31 = BitVec.ofNat 64 xl ∧ s₆.gpr .r10 = off B (slot w 0) ∧
+        s₆.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) ∧ s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) ∧ s₆.gpr .r23 = B ∧
+        s₆.gpr .r28 = BitVec.ofNat 64 k) ∧
+      WP isa ModExp.powSecret s₆ fun t => exPowPost B Y X w k xl s t ∧ Keep exPowRegs s t := by
+  unfold exPowPost
   have hs := h.hs
   have hnw := hs.nowrap
   have hZ := h.hZ
@@ -107,7 +115,7 @@ theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w)
   have e0 := slot_eq w 0; have e1 := slot_eq w 1; have e4 := slot_eq w 4; have e8 := slot_eq w 8
   have e28 := slot_eq w 28
   generalize hP : arr s.mem B w 0 = p at hp2 hodd
-  unfold exPower
+  unfold exPre
   refine WP.seq (WP.mono (Pub.loadX_ok hs h23 h9 h28 h.h10 h.h29 h.h11 hk hkw (by omega) (by omega) hrdY hsepY)
     fun s₀ ⟨⟨y0, _, o0, a10⟩, k0⟩ => ?_)
   have e0' : Env s₀ B Z w := ⟨hs.congr k0.wr, a10, (k0.gpr .r29 (by decide)).trans h.h29,
@@ -139,7 +147,6 @@ theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w)
         w32 s₄.mem B (slot w 0) + 2 ^ 32 * val32 s₄.mem B (slot w 0 + 4) (2 * w - 1) := rfl
     rw [Nat.sub_add_cancel (by omega : 1 ≤ 2 * w), p4] at h2
     omega
-  refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (Pub.minv_ok e4'.hs e4'.h10 (by omega) hlow) fun s₅ ⟨⟨r12lt, r12inv, m5⟩, k5⟩ => ?_
   have hw64 : s₅.mem.readW (off B 64) 64 = off X 0 := by
@@ -160,6 +167,7 @@ theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w)
   have g11 : s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) := (k6.gpr .r11 (by decide)).trans e5'.h11
   rw [← m5, ← m6] at hr2 p4 y4
   have b6 : Body B w s.mem s₆.mem := by rw [m6, m5]; exact b4
+  refine ⟨⟨a30, a31, g10, g29, g11, (k16.gpr .r23 (by decide)).trans h23, (k16.gpr .r28 (by decide)).trans h28⟩, ?_⟩
   refine WP.mono (ModExp.powSecret_ok (D := X) (L := xl) (hs.congr k16.wr) (by omega)
     (by omega) (by omega) g10 g29 g11
     (by rw [(k6.gpr .r12 (by decide))]; exact r12lt)
@@ -177,28 +185,50 @@ theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w)
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [slot_eq] <;> omega)
   · exact (k7.gpr .r10 (by decide)).trans g10
 
+/-- `exPower`: y's `k` octets (at `r9`) into array 4, then `y^x mod p` there,
+for x's `xl` octets at `X`, whose address and length are in the header's
+words 8 and 9. -/
+theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+    (h9 : s.gpr .r9 = Y) (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hxl : 1 ≤ xl) (hxl' : xl ≤ 1024)
+    (hrdY : ∀ i < k, InRegions (s.rd ++ s.wr) (off Y i) 1) (hsepY : ∀ i < k, ∀ x, ofs B x < Z → off Y i ≠ x)
+    (hrdX : ∀ i < xl, InRegions (s.rd ++ s.wr) (off X i) 1) (hsepX : ∀ i < xl, ∀ x, ofs B x < Z → off X i ≠ x)
+    (hX : s.mem.readW (off B 64) 64 = off X 0) (hXL : s.mem.readW (off B 72) 64 = BitVec.ofNat 64 xl)
+    (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1) :
+    WP isa exPower s fun t => exPowPost B Y X w k xl s t ∧ Keep exPowRegs s t :=
+  WP.seq (WP.mono (exPower_split h h23 h9 h28 hk hkw hxl hxl' hrdY hsepY hrdX hsepX hX hXL hp2 hodd)
+    fun _ h => h.2)
+
 /-- The registers `exOut` writes. -/
 def exOutRegs : List Reg := zRegs ++ ([.r0, .r3, .r15, .r16, .r17, .r27, .r31] : List Reg)
 
-/-- `exOut`: z (array 4, below p) to the `k` octets at `O` (the header's word
-10) if `1 < z < p − 1`, else zeros; `r3 := 1` or 0. -/
-theorem exOut_ok {s : State} {B O : Addr} {Z w k : Nat} (hs : Scr s B Z) (ho : Scr s O k)
+/-- What `exOut` leaves from `s`: z's octets or zeros at `O`, and the status. -/
+def exOutPost (B O : Addr) (w k : Nat) (s t : State) : Prop :=
+  Spec.Rsa.bytesAt t.mem O k = (if 1 < arr s.mem B w 4 ∧ arr s.mem B w 4 < arr s.mem B w 0 - 1 then
+      Spec.Rsa.i2osp (arr s.mem B w 4) k else List.replicate k 0) ∧
+    t.gpr .r3 = BitVec.ofNat 64 (if 1 < arr s.mem B w 4 ∧ arr s.mem B w 4 < arr s.mem B w 0 - 1 then 1 else 0) ∧
+    ∃ m, Body B w s.mem m ∧ Outside O 0 k m t.mem
+
+/-- `exOutPre`, with the registers it leaves for the output, and then the
+output: z (array 4, below p) to the `k` octets at `O` (the header's word 10)
+if `1 < z < p − 1`, else zeros; `r3 := 1` or 0. -/
+theorem exOut_split {s : State} {B O : Addr} {Z w k : Nat} (hs : Scr s B Z) (ho : Scr s O k)
     (h10 : s.gpr .r10 = off B (slot w 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h23 : s.gpr .r23 = B) (h28 : s.gpr .r28 = BitVec.ofNat 64 k)
     (hw : 4 ≤ w) (hw' : w ≤ 128) (hZ : slot w 28 ≤ Z) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
     (hO : s.mem.readW (off B 80) 64 = off O 0) (hsep : ∀ x, ofs O x < k → Z ≤ ofs B x)
     (hp : 1 ≤ arr s.mem B w 0) (hzp : arr s.mem B w 4 < arr s.mem B w 0) (hpk : arr s.mem B w 0 < 256 ^ k) :
-    WP isa exOut s fun t =>
-      (Spec.Rsa.bytesAt t.mem O k = (if 1 < arr s.mem B w 4 ∧ arr s.mem B w 4 < arr s.mem B w 0 - 1 then
-          Spec.Rsa.i2osp (arr s.mem B w 4) k else List.replicate k 0) ∧
-        t.gpr .r3 = BitVec.ofNat 64 (if 1 < arr s.mem B w 4 ∧ arr s.mem B w 4 < arr s.mem B w 0 - 1 then 1 else 0) ∧
-        ∃ m, Body B w s.mem m ∧ Outside O 0 k m t.mem) ∧ Keep exOutRegs s t := by
+    WP isa exOutPre s fun s₃ =>
+      (s₃.gpr .r27 = off O 0 ∧ s₃.gpr .r10 = off B (slot w 0) ∧ s₃.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) ∧
+        s₃.gpr .r28 = BitVec.ofNat 64 k ∧ s₃.gpr .r23 = B ∧ s₃.gpr .r11 = BitVec.ofNat 64 (2 * w)) ∧
+      WP isa PublicChecked.output s₃ fun t => exOutPost B O w k s t ∧ Keep exOutRegs s t := by
+  unfold exOutPost
   have hnw := hs.nowrap
   have e0 := slot_eq w 0; have e4 := slot_eq w 4; have e5 := slot_eq w 5; have e8 := slot_eq w 8
   have e28 := slot_eq w 28
   generalize hz : arr s.mem B w 4 = z at hzp
   generalize hP : arr s.mem B w 0 = p at hp hzp hpk
-  unfold exOut
+  unfold exOutPre
   refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = B ∧ t.mem = s.mem) (by
       prun [h23, BitVec.add_zero]) (by decide)) fun s₁ ⟨⟨a31, m1⟩, k1⟩ => ?_)
   have e1 : Env s₁ B Z w := ⟨hs.congr k1.wr, (k1.gpr .r10 (by decide)).trans h10,
@@ -215,10 +245,13 @@ theorem exOut_ok {s : State} {B O : Addr} {Z w k : Nat} (hs : Scr s B Z) (ho : S
   have hw80 : s₂.mem.readW (off B 80) 64 = off O 0 := by
     show Mont.word s₂.mem B 80 = _
     rw [Outside.word o2 (Or.inl (by omega)) (by omega), m1]; exact hO
-  refine WP.seq (WP.mono (WP.keep [.r27] (Q := fun t => t.gpr .r27 = off O 0 ∧ t.mem = s₂.mem) (by
+  refine WP.mono (WP.keep [.r27] (Q := fun t => t.gpr .r27 = off O 0 ∧ t.mem = s₂.mem) (by
       prun [(k12.gpr .r23 (by decide)).trans h23, (hs.congr k12.wr).ld (d := 80) (n := 8) (by omega), hw80])
-    (by decide)) fun s₃ ⟨⟨a27, m3⟩, k3⟩ => ?_)
+    (by decide)) fun s₃ ⟨⟨a27, m3⟩, k3⟩ => ?_
   have k13 := k12.trans k3
+  refine ⟨⟨a27, (k3.gpr .r10 (by decide)).trans a10, (k13.gpr .r29 (by decide)).trans h29,
+    (k13.gpr .r28 (by decide)).trans h28, (k13.gpr .r23 (by decide)).trans h23,
+    (k13.gpr .r11 (by decide)).trans h11⟩, ?_⟩
   refine WP.mono (Pub.output_ok (b := decide (1 < z ∧ z < p - 1)) (hs.congr k13.wr) (ho.congr k13.wr)
     ((k3.gpr .r10 (by decide)).trans a10) ((k13.gpr .r29 (by decide)).trans h29)
     ((k13.gpr .r28 (by decide)).trans h28) a27 ((k3.gpr .r26 (by decide)).trans a26) hk hkw (by omega) hsep)
@@ -231,5 +264,16 @@ theorem exOut_ok {s : State} {B O : Addr} {Z w k : Nat} (hs : Scr s B Z) (ho : S
       exact Pub.zero_bytes fun i hi => by rw [ob i hi, ite_eq_right (by simpa using hc)]
   · rw [t3]; simp only [decide_eq_true_eq]
   · rw [← m1]; exact Body.of o2 (by omega) (by omega)
+
+/-- `exOut`: z (array 4, below p) to the `k` octets at `O` (the header's word
+10) if `1 < z < p − 1`, else zeros; `r3 := 1` or 0. -/
+theorem exOut_ok {s : State} {B O : Addr} {Z w k : Nat} (hs : Scr s B Z) (ho : Scr s O k)
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h23 : s.gpr .r23 = B) (h28 : s.gpr .r28 = BitVec.ofNat 64 k)
+    (hw : 4 ≤ w) (hw' : w ≤ 128) (hZ : slot w 28 ≤ Z) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hO : s.mem.readW (off B 80) 64 = off O 0) (hsep : ∀ x, ofs O x < k → Z ≤ ofs B x)
+    (hp : 1 ≤ arr s.mem B w 0) (hzp : arr s.mem B w 4 < arr s.mem B w 0) (hpk : arr s.mem B w 0 < 256 ^ k) :
+    WP isa exOut s fun t => exOutPost B O w k s t ∧ Keep exOutRegs s t :=
+  WP.seq (WP.mono (exOut_split hs ho h10 h29 h11 h23 h28 hw hw' hZ hk hkw hO hsep hp hzp hpk) fun _ h => h.2)
 
 end VG.Proof.Ffdh.PPC64LE.Domain

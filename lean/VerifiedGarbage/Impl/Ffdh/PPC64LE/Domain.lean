@@ -174,15 +174,23 @@ def exFront : List Instr :=
     [.store .d .r8 .r23 64, .store .d .r9 .r23 72, .store .d .r3 .r23 80, .addi .r9 .r10 0, .addi .r3 .r5 0,
       .addi .r4 .r6 0, .addi .r5 .r7 0] ++ setup
 
-/-- `z = y^x mod p` into array 4: y (at `r9`) into array 4, `R² mod p`,
-`-p⁻¹`, the power by x's `x_len` octets. -/
-def exPower : Prog isa :=
+/-- y (at `r9`) into array 4, `R² mod p`, `-p⁻¹`, and x's address and
+length back from the header into `r30` and `r31`. -/
+def exPre : Prog isa :=
   .seq PublicChecked.loadX (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
-    (.seq (.block (PublicChecked.minv ++ [.load .d .r30 .r23 64, .load .d .r31 .r23 72])) ModExp.powSecret)))
+    (.block (PublicChecked.minv ++ [.load .d .r30 .r23 64, .load .d .r31 .r23 72]))))
+
+/-- `z = y^x mod p` into array 4: `exPre`, then the power by x's `x_len`
+octets. -/
+def exPower : Prog isa := .seq exPre ModExp.powSecret
+
+/-- The mask of `1 < z < p − 1` into `r26`, and `out` back from the header
+into `r27`. -/
+def exOutPre : Prog isa :=
+  .seq (.block [.addi .r31 .r23 0]) (.seq zMask (.block [.load .d .r27 .r23 80]))
 
 /-- z's octets to `out`, masked by `1 < z < p − 1`; `r3 :=` 1 or 0. -/
-def exOut : Prog isa :=
-  .seq (.block [.addi .r31 .r23 0]) (.seq zMask (.seq (.block [.load .d .r27 .r23 80]) PublicChecked.output))
+def exOut : Prog isa := .seq exOutPre PublicChecked.output
 
 /-- `vg_ffdh_exchange(out, out_len, domain, domain_len, p_len, x, x_len,
 peer, peer_len, scratch, scratch_len)`, the last three on the stack. -/
