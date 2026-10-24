@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Rc2.CbcList
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Call
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Cipher
 
 /-! # RC2-CBC on PPC64LE: an iteration of the loop -/
 

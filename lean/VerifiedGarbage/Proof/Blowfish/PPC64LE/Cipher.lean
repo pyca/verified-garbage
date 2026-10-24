@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Lookup
 public import VerifiedGarbage.Proof.Blowfish.Feistel
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Blowfish.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Blowfish on PPC64LE: F and the block function

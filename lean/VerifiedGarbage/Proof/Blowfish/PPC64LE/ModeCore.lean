@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Blowfish's core for the modes on PPC64LE

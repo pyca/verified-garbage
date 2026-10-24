@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Streaming RC2-CBC on PPC64LE: `init` -/

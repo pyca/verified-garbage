@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rc2.PPC64LE.Scan
 public import VerifiedGarbage.Proof.Rc2.Table
 public import VerifiedGarbage.Impl.Rc2.PPC64LE.ExpandKey
 import VerifiedGarbage.Proof.Rc2.PPC64LE.Lookup
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RC2 on PPC64LE: the steps of key expansion

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Body
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Body
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Framework.Block
@@ -28,6 +28,10 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Lit
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.Cbc
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 
 /-! # Verified RC2-CBC on PPC64LE -/
 

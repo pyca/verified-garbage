@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rc2.PPC64LE.KeySteps
 public import VerifiedGarbage.Proof.Rc2.Expansion
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub

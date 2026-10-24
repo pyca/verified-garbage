@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rc2.PPC64LE.Stream
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
-import VerifiedGarbage.Proof.Rc2.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
