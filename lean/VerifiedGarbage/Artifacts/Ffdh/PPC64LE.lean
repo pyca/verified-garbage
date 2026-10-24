@@ -6,7 +6,9 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Verified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
@@ -64,6 +66,17 @@ def artifacts : List Artifact := [
         length, are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.Derive.derivePublic
     verified := Proof.Ffdh.PPC64LE.Derive.dp_verified },
+  Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target {
+    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
+        working space of `w = ⌈p_len / 8⌉` words; x's range is checked as `vg_ffdh_derive_public` checks \
+        it, and the only branch on x is on its range. `g^x mod p` is computed as `vg_ffdh_exchange` \
+        computes the shared value, over all `x_len` octets of x, and compared with 0, 1, p − 1 and y by \
+        equality masks over all the words: for x in range, y is valid and `y = g^x mod p` exactly when \
+        `g^x mod p` is in `2..p − 2` and equals y, since powers of a checked generator remain in its q \
+        subgroup. The nonvolatile registers, and x's and y's addresses and x's length, are saved in the \
+        working space's header."]
+    code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
+    verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified },
   Spec.Ffdh.generateKeyApi.artifact PPC64LE.target {
     notes := ["x is `rand`'s `p_len` octets cut, without a branch, at the first nonzero octet of q (of p \
         without q, whose bit length is `p − 1`'s), found by a scan of all its octets: zeros before it, \
@@ -72,6 +85,16 @@ def artifacts : List Artifact := [
         masked by the status being 1, without a branch. The nonvolatile registers, and x's, `y`'s and \
         `rand`'s addresses and x's length, are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.GenerateKey.generateKey
-    verified := Proof.Ffdh.PPC64LE.GenerateKey.gk_verified }]
+    verified := Proof.Ffdh.PPC64LE.GenerateKey.gk_verified },
+  Spec.Ffdh.keySearchApi.artifact PPC64LE.target {
+    stack := 176
+    notes := ["The whole key search runs in verified code: both rejection budgets, the octets each \
+        attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in \
+        a frame of 128 bytes holding its stack arguments at offset 96, within a frame saving the link \
+        register. The model has no carry bit: the tape is short when `len − p_len` is negative and \
+        `len` is below `2^63`. Timing depends on the domain, the controller's public words and the \
+        attempts' statuses."]
+    code := Proof.Ffdh.PPC64LE.KeyGeneration.keyCode
+    verified := Proof.Ffdh.PPC64LE.KeyGeneration.key_verified }]
 
 end VG.Artifacts.Ffdh.PPC64LE

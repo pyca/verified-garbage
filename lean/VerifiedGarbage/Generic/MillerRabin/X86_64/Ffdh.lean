@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Verified
+public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Safety
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Backend
@@ -69,14 +70,15 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     spSafe := Proof.Ffdh.X86_64.GenerateKey.generateCode_sp v
     features := v.features },
   Spec.Ffdh.checkDomainApi.artifact X86_64.target {
+    consts := Impl.Ffdh.X86_64.VettedValidation.tableConsts
     suffix := v.suffix
     stack := 8
-    notes := ["The modulus, generator, optional subgroup range, divisibility, and subgroup \
-        relation are checked in verified code. Divisibility uses RSA's arbitrary-width \
+    notes := ["Exact recognition certifies the ten standard MODP/FFDHE domains. Other inputs \
+        retain the verified modulus, generator, subgroup range, divisibility and subgroup checks. Divisibility uses RSA's arbitrary-width \
         Montgomery reduction; fixed four-bit exponentiation uses the selected backend."]
-    code := Proof.Ffdh.X86_64.CheckDomain.domainCode v
-    verified := Proof.Ffdh.X86_64.CheckDomain.domainCode_verified v
-    spSafe := Proof.Ffdh.X86_64.CheckDomain.domainCode_sp v
+    code := Proof.Ffdh.X86_64.VettedValidation.emittedCode v
+    verified := Proof.Ffdh.X86_64.VettedValidation.verified v
+    spSafe := Proof.Ffdh.X86_64.VettedValidation.sp_safe v
     features := v.features },
   Spec.Ffdh.parameterSearchApi.artifact X86_64.target {
     suffix := v.suffix
