@@ -23,11 +23,11 @@ open VG.Impl.Dsa.PPC64LE.Generation
 
 /-- A verified domain check, with the stack it uses. -/
 structure CheckOk (code : Prog isa) : Prop where
-  verified : Verified target code (Spec.Dsa.checkParametersContract abi 176)
+  verified : Verified target code (Spec.Dsa.checkParametersContract abi)
   stack : sdepth code ≤ 176
 
 /-- The check's contract. -/
-abbrev checkK : Contract isa := Spec.Dsa.checkParametersContract abi 176
+abbrev checkK : Contract isa := Spec.Dsa.checkParametersContract abi
 
 /-- The precondition, as facts. -/
 structure CkIn (s : State) : Prop where
@@ -45,7 +45,7 @@ structure CkIn (s : State) : Prop where
 
 theorem pre_of_ckin {s : State} (h : CkIn s) : checkK.pre s := by
   sig_pre [checkK, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs]
-  exact ⟨h.spLo, h.rd, h.wr, h.rW, h.bR, h.bW, h.fr, h.fw, h.lens, h.len, h.words⟩
+  exact ⟨h.rd, h.wr, h.rW, h.fr, h.fw, h.lens, h.len, h.words⟩
 
 /-- The verdict on the parameters at `r3`. -/
 abbrev ckRes (s : State) : Bool :=
