@@ -154,7 +154,7 @@ theorem MSt.round {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N s)
   obtain ⟨u, hu, tm, kt⟩ := hR
   obtain ⟨hw2, -, hZ⟩ := h.w
   have stu : St p u := h.st.call hu.keeps (by have := hu.frame; rw [h.st.sp] at this; exact this) hu.rd hu.wr
-    hu.sp hu.prep.env.h31
+    hu.sp hu.prep.env.h31 hZ
   have phu : Ph p mb u := h.ph.keep (hu.prep.env.h10.trans h.ph.r10.symm) (hu.prep.env.h11.trans h.ph.r11.symm)
     (hu.prep.env.h29.trans h.ph.r29.symm) fun d hd => keeps_word hu.keeps (by
       have := hd.le; simp only [PP.Z, saveBytes] at hZ; omega) hd.kept

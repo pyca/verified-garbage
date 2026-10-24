@@ -33,7 +33,7 @@ theorem keeps_hdr {m m' : Mem} {B : Addr} {n w i : Nat}
 theorem St.call {p : PP} {s t : State} {w : Nat} (h : St p s)
     (hk : Spec.MillerRabin.Keeps Spec.MillerRabin.compact p.B p.n w s.mem t.mem)
     (hf : Frame [⟨p.B, p.Z⟩, below p.sp 176] s.mem t.mem) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
-    (hsp : t.sp = s.sp) (h31 : t.gpr .r31 = p.B) : St p t := by
+    (hsp : t.sp = s.sp) (h31 : t.gpr .r31 = p.B) (hw : slot w 28 + saveBytes ≤ p.Z) : St p t := by
   have hn := h.dims.n
   have e : ∀ {i : Nat}, i < 32 → i ≠ 1 ∧ i ≠ 23 ∧ i ≠ 26 ∧ i ≠ 29 ∧ i ≠ 30 →
       word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun hi hk' =>
@@ -41,7 +41,7 @@ theorem St.call {p : PP} {s t : State} {w : Nat} (h : St p s)
   have ha := h.args
   refine ⟨h.scr.congr hwr, h31, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨?_, h.bufs.sepR, ?_, ?_, h.bufs.scrO.congr hwr,
     h.bufs.sepO, h.bufs.scrU.congr hwr, h.bufs.sepU, h.bufs.stkR, h.bufs.stkO, h.bufs.stkU⟩, h.dims,
-    by rw [hwr]; exact h.ws, hsp.trans h.sp, h.stk, h.stkB⟩
+    by rw [hwr]; exact h.ws, hsp.trans h.sp, h.stk, h.stkB, fun i hi => ?_⟩
   · rw [e (by decide) (by decide)]; exact ha.wsLen
   · rw [e (by decide) (by decide)]; exact ha.out
   · rw [e (by decide) (by decide)]; exact ha.len
@@ -81,5 +81,13 @@ theorem St.call {p : PP} {s t : State} {w : Nat} (h : St p s)
       have := h.bufs.sepO _ (by rw [ho]; exact hi')
       simp only [Region.Contains, ofs] at hc' this; omega
     · exact fun hc' => h.bufs.stkO _ hc' hc
+
+  · have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+    have := es 2; have := es 3; have := es 5; have := es 6; have := es 8; have := es 11; have := es 27
+    have := es 28
+    simp only [PP.Z, saveBytes] at hw
+    refine (keeps_word hk (by simp only [saveBytes]; omega) fun j h1 h2 => ?_).trans (h.save i hi)
+    simp only [Kept, saveBytes, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h1 ⊢
+    and_intros <;> omega
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
