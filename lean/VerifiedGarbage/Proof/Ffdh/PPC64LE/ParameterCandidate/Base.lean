@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
@@ -162,6 +163,11 @@ theorem St.ld {p : PP} {s : State} (h : St p s) {d : Nat} (hd : d + 8 ≤ 256) :
 theorem St.st {p : PP} {s : State} (h : St p s) {d : Nat} (hd : d + 8 ≤ 256) :
     InRegions s.wr (p.B + BitVec.ofNat 64 d) 8 :=
   h.scr.st (d := d) (by have := h.dims.n; simp only [PP.Z]; omega)
+
+/-- The tape's first `k` bytes in memory. -/
+theorem St.take_bytes {p : PP} {s : State} (h : St p s) {k : Nat} (hk : k ≤ p.r.length) :
+    Spec.Rsa.bytesAt s.mem p.rp k = p.r.take k := by
+  rw [← h.bufs.bR, Proof.Ffdh.take_bytesAt _ _ hk]
 
 /-! ## The arguments, at their literal offsets -/
 
