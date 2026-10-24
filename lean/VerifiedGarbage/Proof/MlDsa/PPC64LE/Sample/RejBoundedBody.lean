@@ -285,7 +285,7 @@ theorem lo_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State}
 /-- The load of the byte and the block of its low half-byte. -/
 theorem loHalf_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq}
     {s : State} (h : Base σ X t L s) :
-    WP isa (.block ([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] ++ rbHalf η)) s
+    WP isa (.block (([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] : List Instr) ++ rbHalf η)) s
       (H1 η σ X t L ((zAt X t).toNat % 16) ((zAt X t).setWidth 64)) := by
   rw [WP.block_append_iff]
   exact WP.mono (lo_ok hp ht h) fun s1 ⟨b1, e8, e9⟩ => e8 ▸ half_ok hp hη b1 e9
@@ -311,7 +311,7 @@ theorem hiHalf_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat}
 theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq}
     {s : State} (h : Base σ X t L s) {rest : Prog isa} {Q : State → Prop}
     (hr : ∀ s', Base σ X t (rbStep η L (zAt X t)) s' → WP isa rest s' Q) :
-    WP isa (.seq (.block ([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] ++ rbHalf η))
+    WP isa (.seq (.block (([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] : List Instr) ++ rbHalf η))
       (.seq (accept .r10) (.seq (.block (.lsr .d .r9 .r8 4 :: rbHalf η)) (.seq (accept .r10) rest)))) s Q := by
   rw [rbStep_tryJ] at hr
   refine WP.seq (WP.mono (loHalf_ok hp hη ht h) fun s2 h2 => ?_)

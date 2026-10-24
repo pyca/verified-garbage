@@ -48,7 +48,7 @@ open VG.Spec.MlDsa (Zq halfByteOk)
 /-- The load of the byte and the block of its low half-byte. -/
 theorem load_ct {η : Nat} (hη : η = 2 ∨ η = 4) {R : State → State → Prop} (hsp : ∀ a b, R a b → a.sp = b.sp)
     (h3 : ∀ a b, R a b → a.gpr .r3 = b.gpr .r3) :
-    RelCT isa R (.block ([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] ++ rbHalf η)) fun _ _ => True := by
+    RelCT isa R (.block (([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] : List Instr) ++ rbHalf η)) fun _ _ => True := by
   rcases hη with rfl | rfl <;>
   exact taint_block [.r3] hsp (fun a b hab r hr => by rw [List.mem_singleton] at hr; subst hr; exact h3 a b hab)
     (by taint_decide)
@@ -133,11 +133,7 @@ theorem body_ct {t : Nat} (ht : t < 544) :
       H1 η σ₁ X₁ t (Lf η X₁ t) ((zAt X₁ t).toNat % 16) ((zAt X₁ t).setWidth 64) a ∧
       H1 η σ₂ X₂ t (Lf η X₂ t) ((zAt X₂ t).toNat % 16) ((zAt X₂ t).setWidth 64) b)
     (relct_wp (load_ct hη (fun a b hab => base_sp hab.1 hab.2 hsp) fun a b hab => by
-      rw [hab.1.r3, hab.2.r3, h6]) fun a b hab => ⟨?_, ?_⟩) ?_
-  · rw [WP.block_append_iff]
-    exact WP.mono (lo_ok hp₁ ht hab.1) fun s1 ⟨b1, e8, e9⟩ => e8 ▸ half_ok hp₁ hη b1 e9
-  · rw [WP.block_append_iff]
-    exact WP.mono (lo_ok hp₂ ht hab.2) fun s1 ⟨b1, e8, e9⟩ => e8 ▸ half_ok hp₂ hη b1 e9
+      rw [hab.1.r3, hab.2.r3, h6]) fun a b hab => ⟨loHalf_ok hp₁ hη ht hab.1, loHalf_ok hp₂ hη ht hab.2⟩) ?_
   -- its try
   refine RelCT.seq (try_ct hp₁ hp₂ hsp h5 hη hl hlo₁ hlo₂ hok.1) ?_
   -- the high half-byte
@@ -145,21 +141,7 @@ theorem body_ct {t : Nat} (ht : t < 544) :
   refine RelCT.seq (R := fun a b =>
       H1 η σ₁ X₁ t (tryJ η (Lf η X₁ t) ((zAt X₁ t).toNat % 16)) ((zAt X₁ t).toNat / 16) ((zAt X₁ t).setWidth 64) a ∧
       H1 η σ₂ X₂ t (tryJ η (Lf η X₂ t) ((zAt X₂ t).toNat % 16)) ((zAt X₂ t).toNat / 16) ((zAt X₂ t).setWidth 64) b)
-    (relct_wp (hi_ct hη) fun a b hab => ⟨?_, ?_⟩) ?_
-  · rw [← List.singleton_append, WP.block_append_iff]
-    exact WP.mono (Q := fun s4 => s4 = a.write .r9 (a.gpr .r8 >>> 4)) (by prun []) fun s4 e4 => by
-      subst e4
-      have h9 : (a.write .r9 (a.gpr .r8 >>> 4)).gpr .r9 = BitVec.ofNat 64 ((zAt X₁ t).toNat / 16) := by
-        rw [RegUpd.gpr_write_self, hab.1.2, hi_eq]
-      have := half_ok hp₁ hη (hab.1.1.keep hp₁ rfl (fun r _ a _ _ _ => RegUpd.gpr_write_of_ne _ _ a) rfl rfl rfl) h9
-      rwa [RegUpd.gpr_write_of_ne _ _ (by decide), hab.1.2] at this
-  · rw [← List.singleton_append, WP.block_append_iff]
-    exact WP.mono (Q := fun s4 => s4 = b.write .r9 (b.gpr .r8 >>> 4)) (by prun []) fun s4 e4 => by
-      subst e4
-      have h9 : (b.write .r9 (b.gpr .r8 >>> 4)).gpr .r9 = BitVec.ofNat 64 ((zAt X₂ t).toNat / 16) := by
-        rw [RegUpd.gpr_write_self, hab.2.2, hi_eq]
-      have := half_ok hp₂ hη (hab.2.1.keep hp₂ rfl (fun r _ a _ _ _ => RegUpd.gpr_write_of_ne _ _ a) rfl rfl rfl) h9
-      rwa [RegUpd.gpr_write_of_ne _ _ (by decide), hab.2.2] at this
+    (relct_wp (hi_ct hη) fun a b hab => ⟨hiHalf_ok hp₁ hη hab.1.1 hab.1.2, hiHalf_ok hp₂ hη hab.2.1 hab.2.2⟩) ?_
   -- its try, and the step
   exact RelCT.seq (try_ct hp₁ hp₂ hsp h5 hη hl' hhi₁ hhi₂ hok.2) (relct_noMem rfl)
 
