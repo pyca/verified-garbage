@@ -111,23 +111,27 @@ theorem KB.regs2 {p : Params} {STK : Nat} {σ : State} {t : Nat} {s s' : State} 
   ⟨h.l.regs2 r, by rw [r.mem]; exact h.ct, by rw [r.mem]; exact h.c, h.some⟩
 
 theorem SC2.of_eq {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s)
-    (hg : ∀ r, r ≠ .r3 → r ≠ .r26 → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
+    (hg : ∀ r, r ≠ .r3 → r ≠ .r24 → r ≠ .r26 → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) : SC2 p STK σ s' := by
   have hs := h.site
   refine ⟨⟨hs.ok, hs.len, hs.w0, hs.w1, hs.sz0, hs.sz1, by rw [hsp]; exact hs.p1, hs.s48, by rw [hsp]; exact hs.spk,
-    by rw [hg .r31 (by decide) (by decide)]; exact hs.r31, by rw [hg .r30 (by decide) (by decide)]; exact hs.r30,
-    by rw [hg .r29 (by decide) (by decide)]; exact hs.r29, by rw [hg .r28 (by decide) (by decide)]; exact hs.r28,
+    by rw [hg .r31 (by decide) (by decide) (by decide)]; exact hs.r31,
+    by rw [hg .r30 (by decide) (by decide) (by decide)]; exact hs.r30,
+    by rw [hg .r29 (by decide) (by decide) (by decide)]; exact hs.r29,
+    by rw [hg .r28 (by decide) (by decide) (by decide)]; exact hs.r28,
     by rw [hwr]; exact hs.cw, by rw [hwr, hrd]; exact hs.cr⟩, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
     fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu⟩
-  have : r ≠ .r3 ∧ r ≠ .r26 := ⟨fun e => by subst e; simp [preserved] at hr, fun e => by subst e; simp [savedTop] at hs'⟩
-  rw [hg r this.1 this.2]; exact h.pres r hr hs'
+  have : r ≠ .r3 ∧ r ≠ .r24 ∧ r ≠ .r26 := ⟨fun e => by subst e; simp [preserved] at hr,
+    fun e => by subst e; simp [savedTop] at hs', fun e => by subst e; simp [savedTop] at hs'⟩
+  rw [hg r this.1 this.2.1 this.2.2]; exact h.pres r hr hs'
 
 theorem KB.of_eq {p : Params} {STK : Nat} {σ : State} {t : Nat} {s s' : State} (h : KB p STK σ t s)
-    (hg : ∀ r, r ≠ .r3 → r ≠ .r26 → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
+    (hg : ∀ r, r ≠ .r3 → r ≠ .r24 → r ≠ .r26 → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) : KB p STK σ t s' :=
   ⟨⟨⟨h.l.k.sc.of_eq hg hm hrd hwr hsp, h.l.k.ok, by rw [hm]; exact h.l.k.A, by rw [hm]; exact h.l.k.rpp,
     by rw [hm]; exact h.l.k.s1, by rw [hm]; exact h.l.k.s2, by rw [hm]; exact h.l.k.t0⟩,
-    by rw [hg .r27 (by decide) (by decide)]; exact h.l.r27, by rw [hg .r25 (by decide) (by decide)]; exact h.l.r25,
+    by rw [hg .r27 (by decide) (by decide) (by decide)]; exact h.l.r27,
+    by rw [hg .r25 (by decide) (by decide) (by decide)]; exact h.l.r25,
     h.l.t_lt, h.l.rej⟩, by rw [hm]; exact h.ct, by rw [hm]; exact h.c, h.some⟩
 
 /-! ## `z` -/
@@ -578,7 +582,7 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
       apply BitVec.eq_of_toNat_eq
       rw [← he]
       simp only [zx, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    have hk : KB p STK σ t s' := h.b.of_eq g m rd wr sp
+    have hk : KB p STK σ t s' := h.b.of_eq (fun r a _ b => g r a b) m rd wr sp
     refine ⟨hk, fun j hj => by rw [m]; exact h.z j hj, fun j hj => by
         rw [m]
         rcases (by omega : j < i ∨ j = i) with h' | rfl
@@ -594,6 +598,122 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
     ((Piece.mono p8 (fun _ _ _ h => h) fun σ s _ h => ⟨⟨h.1.1.1, h.2⟩, h.1.2⟩).seq (p9'.seq p9))))))))
     (fun σ s _ h => h.weak hi) fun _ _ _ h => h
 
+end
+
+/-! ## The checks, assembled -/
+
+/-- Iteration `t` after `SampleInBall` succeeded. -/
+abbrev KA (p : Params) (STK t : Nat) (σ s : State) : Prop :=
+  ICd p STK t σ s ∧ PolyIs s.mem (SL p STK σ 0) (toRq (cV p σ (p.ℓ * t))) ∧
+    (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome
+
+/-- `ĉ = NTT(c)`. -/
+abbrev KN (p : Params) (STK t : Nat) (σ s : State) : Prop :=
+  (ICd p STK t σ s ∧ (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome) ∧
+    PolyIs s.mem (SL p STK σ 0) (chF (cV p σ (p.ℓ * t)))
+
+/-- The checks done: whether the iteration passes in `r24`. -/
+structure KO (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
+  b : KB p STK σ t s
+  z : ∀ r < p.ℓ, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)
+  h : ∀ i < p.k, HintIs s.mem (SL p STK σ (5 + i)) 1 [Hv p σ (p.ℓ * t) i]
+  r24 : s.gpr .r24 = bit (PassV p σ (p.ℓ * t))
+
+theorem sign_bit {S w : Nat} (hS : S < 2 ^ 62) (hw : w < 2 ^ 62) :
+    (BitVec.ofNat 64 S - BitVec.ofNat 64 w) >>> 63 = if S < w then 1 else 0 := by
+  by_cases h : S < w
+  · rw [VG.Proof.MlDsa.KeyGen.ifp h]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    rw [Nat.shiftRight_eq_div_pow, show (1 : BitVec 64).toNat = 1 from rfl]
+    omega
+  · rw [VG.Proof.MlDsa.KeyGen.ifn h]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    rw [Nat.shiftRight_eq_div_pow, show (0 : BitVec 64).toNat = 0 from rfl]
+    omega
+
+theorem bit_and' {a b : Prop} [Decidable a] [Decidable b] : bit a &&& (if b then 1 else 0) = bit (a ∧ b) := by
+  by_cases ha : a <;> by_cases hb : b <;> simp only [bit, ha, hb, ite_true, ite_false, and_true, and_false] <;> decide
+
+theorem passV_iff {p : Params} {σ : State} {κ : Nat} :
+    (((ZOk p σ κ ∧ R0Ok p σ κ) ∧ ∀ j < p.k, normRq [CT0v p σ κ j] < p.γ₂) ∧ onesSum (Hv p σ κ) p.k < p.ω + 1) ↔
+      PassV p σ κ :=
+  ⟨fun ⟨⟨⟨a, b⟩, c⟩, d⟩ => ⟨a, b, c, Nat.le_of_lt_succ d⟩, fun ⟨a, b, c, d⟩ => ⟨⟨⟨a, b⟩, c⟩, Nat.lt_succ_of_le d⟩⟩
+
+theorem onesOk_run (p : Params) (hω : p.ω + 1 ≤ 2 ^ 15) (s : State) :
+    WP isa (.block (onesOk p)) s fun s' =>
+      s'.gpr .r24 = s.gpr .r24 &&& ((s.gpr .r26 - BitVec.ofNat 64 (p.ω + 1)) >>> 63) ∧ Regs2 s s' := by
+  unfold onesOk
+  crun [hω]
+  refine ⟨fun r h3 h24 => ?_, rfl, rfl, rfl, rfl⟩
+  simp [h3, h24]
+
+/-- The taint check of `onesOk` does not depend on `ω`. -/
+theorem onesOk_taint (p : Params) : (VG.PPC64LE.taint.check (Taint.ofRegs [.r31]) (.block (onesOk p))
+    (VG.Taint.hintOf VG.PPC64LE.taint (Taint.ofRegs [.r31]) (.block (onesOk mlDsa44)))).isSome = true := rfl
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+theorem cntt_piece {t : Nat} : SPiece p STK (KA p STK t) (KN p STK t) (nttAt P cP) := by
+  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have p1 := ipP_piece hS (I := fun σ s => ICd p STK t σ s ∧ (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome)
+    (fun _ _ h => h.1.1.l.k.sc) (t := ntt) hP.ntt (x := 0) (name := "vg_mldsa_ntt")
+    (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
+      show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
+    (F := fun σ => toRq (cV p σ (p.ℓ * t)))
+    (fun σ s s' h k => by
+      have := h.1.1.w1b
+      exact ⟨⟨h.1.1.keep k (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+        (k.cs .r25 (by decide)) (k.cs .r27 (by decide)), by
+          have := h.1.2
+          rw [bytes_keepW h.1.1.l.k.sc.site.ok k.frame (by csep hF) (by decide) (by omega)]; exact this⟩, h.2⟩)
+  exact Piece.mono p1 (fun σ s _ h => ⟨⟨h.1, h.2.2⟩, h.2.1⟩) fun _ _ _ h => h
+
+omit hP hF hS in
+theorem kinit_piece {t : Nat} :
+    SPiece p STK (KN p STK t) (fun σ s => IZ p STK σ t 0 0 s) (.block [.li .r24 1, .li .r26 0]) := by
+  refine ⟨fun σ s _ h => ?_, srel2 (fun σ s h => h.1.1.1.l.k.sc) (by taint_decide)⟩
+  have hrun : WP isa (.block [.li .r24 1, .li .r26 0]) s fun s' => s'.gpr .r24 = 1 ∧ s'.gpr .r26 = 0 ∧
+      (∀ r, r ≠ .r3 → r ≠ .r26 → r ≠ .r24 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp := by
+    crun []
+    intro r _ h26 h24
+    simp [h26, h24]
+  refine WP.mono hrun fun s' ⟨e24, e26, g, m, rd, wr, sp⟩ => ?_
+  exact ⟨KB.of_eq ⟨h.1.1.1.l, h.1.1.2, h.2, h.1.2⟩ (fun r h3 h24 h26 => g r h3 h26 h24) m rd wr sp,
+    fun _ h => absurd h (Nat.not_lt_zero _), fun r _ hr => by rw [m]; exact h.1.1.1.y r hr,
+    fun i hi => by rw [m]; exact h.1.1.1.w i hi, e26,
+    by rw [e24]; exact (VG.Proof.MlDsa.KeyGen.ifp (fun _ h => absurd h (Nat.not_lt_zero _)) _ _).symm⟩
+
+
+omit hP hS in
+theorem onesOk_piece {t : Nat} : SPiece p STK (fun σ s => IH p STK σ t p.k p.k p.k s) (KO p STK · t) (.block (onesOk p)) := by
+  have hk' := hF.k
+  refine ⟨fun σ s _ h => WP.mono (onesOk_run p (by have := hF.om; omega) s) fun s' ⟨e24, r2⟩ => ?_,
+    srel2 (fun σ s h => h.b.l.k.sc) (onesOk_taint p)⟩
+  have hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
+  have hom := hF.om
+  refine ⟨h.b.regs2 r2, fun j hj => by rw [r2.mem]; exact h.z j hj, fun j hj => by rw [r2.mem]; exact h.h j hj, ?_⟩
+  rw [e24, h.r26, h.r24, sign_bit (by omega) (by omega), bit_and']
+  exact bit_congr passV_iff
+
+/-- The checks of iteration `t`, up to the branch on their result. -/
+theorem checks0_piece {t : Nat} :
+    SPiece p STK (KA p STK t) (KO p STK · t)
+      (.seq (nttAt P cP) (.seq (.block [.li .r24 1, .li .r26 0]) (.seq (seqR (zR P p) 0 p.ℓ)
+        (.seq (seqR (r0R P p) 0 p.k) (.seq (seqR (hR P p) 0 p.k) (.block (onesOk p))))))) :=
+  (cntt_piece hP hF hS).seq ((kinit_piece).seq
+    ((Piece.mono (Piece.seqR (I := fun r σ s => IZ p STK σ t r r s) p.ℓ 0
+      fun r _ hr => zR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.iq).seq
+    ((Piece.mono (Piece.seqR (I := fun i σ s => IQ p STK σ t i i s) p.k 0
+      fun i _ hi => r0R_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.ih).seq
+    ((Piece.mono (Piece.seqR (I := fun i σ s => IH p STK σ t i i i s) p.k 0
+      fun i _ hi => hR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+      (onesOk_piece hF)))))
 end
 
 end VG.Proof.MlDsa.PPC64LE.Sign
