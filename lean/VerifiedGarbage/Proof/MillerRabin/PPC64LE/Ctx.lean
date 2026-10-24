@@ -66,17 +66,50 @@ theorem Mut.of_entry {B : Addr} {w j : Nat} {m m' : Mem} (h : Outside B (slot w 
       have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 16 by omega) <;> rw [Nat.add_mul] at this <;>
       omega
 
-theorem Mut.of_mont {B : Addr} {w o : Nat} {m m' : Mem}
-    (h : Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))] m m')
+/-- What a Montgomery multiplication into array `o` writes. -/
+def montRanges (w o : Nat) : List (Nat × Nat) :=
+  [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))]
+
+theorem Mut.of_mont {B : Addr} {w o : Nat} {m m' : Mem} (h : Outs B (montRanges w o) m m')
     (ho : o = 5 ∨ o = 6) : Mut B w m m' :=
   Outs.widen h fun r hr => ⟨r, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [montRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases ho with rfl | rfl <;> rcases hr with rfl | rfl | rfl <;> simp [roundRanges], by omega, by omega⟩
+
+/-- An array apart from the ranges that changed keeps its value. -/
+theorem Outs.arrEq {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m') {j : Nat}
+    (hj : j < 28) (hd : ∀ r ∈ rs, slot w j + 8 * (w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot w j)
+    (hn : slot w 28 ≤ 2 ^ 64) : arr m' B w j = arr m B w j :=
+  h.val32 (fun r hr => by have := hd r hr; omega) (by have := slot_lt (w := w) hj; omega)
+
+/-- An array apart from those of a Montgomery multiplication keeps its value. -/
+theorem Outs.arrEq_mont {B : Addr} {w o : Nat} {m m' : Mem} (h : Outs B (montRanges w o) m m') {j : Nat}
+    (hj : j < 28) (h2 : j ≠ 2) (h3 : j ≠ 3) (ho : j ≠ o) (hn : slot w 28 ≤ 2 ^ 64) :
+    arr m' B w j = arr m B w j :=
+  Outs.arrEq h hj (fun r hr => by
+    simp only [montRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact slot_sep h2
+    · exact slot_sep h3
+    · exact slot_sep ho) hn
+
+/-- An array apart from one that changed keeps its value. -/
+theorem Outside.arrEq {B : Addr} {w o : Nat} {m m' : Mem} (h : Outside B (slot w o) (8 * (w + 2)) m m') {j : Nat}
+    (hj : j < 28) (ho : j ≠ o) (hn : slot w 28 ≤ 2 ^ 64) : arr m' B w j = arr m B w j :=
+  Outs.arrEq (Outs.of_outside h (List.mem_singleton_self _)) hj (fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact slot_sep ho) hn
+
+/-- The low digit of the candidate, apart from an array that changed. -/
+theorem Outside.w32_0 {B : Addr} {w o : Nat} {m m' : Mem} (h : Outside B (slot w o) (8 * (w + 2)) m m')
+    (ho : o ≠ 0) (hn : slot w 28 ≤ 2 ^ 64) : w32 m' B (slot w 0) = w32 m B (slot w 0) := by
+  have := slot_sep (w := w) ho
+  have := slot_lt (w := w) (show 0 < 28 by decide)
+  exact h.w32 (by omega) (by omega)
 
 /-- An array the round does not write keeps its value. -/
 theorem Mut.arr {B : Addr} {w : Nat} {m m' : Mem} (h : Mut B w m m') {j : Nat}
     (hj : j = 0 ∨ j = 1 ∨ j = 4 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 27)
-    (hn : slot w 28 < 2 ^ 64) : arr m' B w j = arr m B w j := by
+    (hn : slot w 28 ≤ 2 ^ 64) : arr m' B w j = arr m B w j := by
   refine h.val32 (fun r hr => ?_) (by
     have := slot_lt (w := w) (show j < 28 by omega); omega)
   simp only [roundRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -94,7 +127,7 @@ structure Consts (m : Mem) (B : Addr) (w c : Nat) : Prop where
   l : (m.readW (off B (slot w aE + 8 * w)) 64) = BitVec.twoPow 64 (mrA c % 64)
 
 theorem Consts.of_mut {m m' : Mem} {B : Addr} {w c : Nat} (h : Consts m B w c) (hm : Mut B w m m')
-    (hn : slot w 28 < 2 ^ 64) : Consts m' B w c := by
+    (hn : slot w 28 ≤ 2 ^ 64) : Consts m' B w c := by
   refine ⟨by rw [hm.arr (by simp) hn]; exact h.cand, by rw [hm.arr (by simp [aOne]) hn]; exact h.one,
     by rw [hm.arr (by simp [aMinus]) hn]; exact h.minus, by rw [hm.arr (by simp [aE]) hn]; exact h.e, ?_⟩
   rw [← h.l]
@@ -120,14 +153,15 @@ theorem mont_ok {s : State} {B : Addr} {Z w : Nat} (h : MCtx s B Z w) {o a b : N
     WP isa (PublicChecked.montOp o a b) s fun t =>
       (arr t.mem B w o < arr s.mem B w 0 ∧
         arr t.mem B w o * 2 ^ (64 * w) % arr s.mem B w 0 = arr s.mem B w a * arr s.mem B w b % arr s.mem B w 0 ∧
-        Mut B w s.mem t.mem ∧ w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0)) ∧ Keep Pub.montRegs s t := by
+        Outs B (montRanges w o) s.mem t.mem ∧ w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0)) ∧
+      Keep Pub.montRegs s t := by
   have hw := h.hw
   have hw' := h.hw'
   have h8 := slot_lt (w := w) (show 8 < 28 by decide)
   have hZ := h.hZ
   refine WP.mono (Pub.montOp_ok h.hs (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
     (by omega) (by omega) (by omega) h.h10 h.h29 h.h11 h.h12 h.inv hB) fun t ⟨⟨hlt, heq, hout⟩, k⟩ =>
-    ⟨⟨hlt, heq, Mut.of_mont hout ho, ?_⟩, k⟩
+    ⟨⟨hlt, heq, hout, ?_⟩, k⟩
   refine congrArg BitVec.toNat (Mem.readW_congr fun i hi => hout _ fun r hr => ?_)
   have := h.hs.nowrap
   have h0 := slot_lt (w := w) (show 0 < 28 by decide)
