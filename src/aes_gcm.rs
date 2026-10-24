@@ -97,7 +97,8 @@
 //! `vg_ghash_with_powers_aes` loads `H¹` to `H⁸` from a 128-byte buffer of
 //! the key's own, next to the key context of `vg_aes_gcm_init`, instead of
 //! computing them, which `AesGcm::new` fills with `vg_ghash_store_powers_aes`.
-//! Every message of more than `PLAIN_MAX` (16) bytes uses them:
+//! Every message uses them (which hash a message of one block or less
+//! with `vg_ghash_aes`, needing no powers):
 //! `vg_ghash_with_powers_aes` loads `H · x⁻¹` rather than computing it, and
 //! `encrypt` copies its pieces to its output with `memcpy` and seals them
 //! there, rather than taking `vg_aes_gcm_seal_gather`'s 16-byte steps and
@@ -545,7 +546,7 @@ struct Fns {
     /// On AArch64, the `_with_powers` instances of `seal` and `open`, which
     /// read the powers `AesGcm::new` stores (`AesGcm::powers`).
     #[cfg(target_arch = "aarch64")]
-    powers: Option<&'static Prepared>,
+    powers: Option<Prepared>,
 }
 
 impl Backend {
@@ -696,12 +697,12 @@ static FNS_VAES_VPCLMUL_AVX512: Fns = Backend::VaesVpclmulAvx512.plain_fns();
 static FNS_AESNI_PCLMUL_AVX: Fns = Backend::AesNiPclmulAvx.plain_fns();
 #[cfg(target_arch = "aarch64")]
 static FNS_AES: Fns = Fns {
-    powers: Some(&PREPARED_AES),
+    powers: Some(PREPARED_AES),
     ..Backend::Aes.plain_fns()
 };
 #[cfg(target_arch = "aarch64")]
 static FNS_AES_SHA3: Fns = Fns {
-    powers: Some(&PREPARED_AES_SHA3),
+    powers: Some(PREPARED_AES_SHA3),
     ..Backend::AesSha3.plain_fns()
 };
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -935,13 +936,13 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
 };
 
 #[cfg(target_arch = "aarch64")]
-static PREPARED_AES: Prepared = Prepared {
+const PREPARED_AES: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
 };
 
 #[cfg(target_arch = "aarch64")]
-static PREPARED_AES_SHA3: Prepared = Prepared {
+const PREPARED_AES_SHA3: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes_sha3,
     open: vg_aes_gcm_open_with_powers_aes_sha3,
 };
@@ -974,17 +975,6 @@ impl Backend {
 /// `_prepared` instances.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_MIN_LEN: usize = 256;
-
-/// On AArch64, a message of at most this many bytes is sealed and opened by
-/// the plain instances, which do not read the powers: measured on Neoverse
-/// N2 (#2865), `vg_aes_gcm_seal_with_powers` and
-/// `vg_aes_gcm_open_with_powers` cost 1.5–8% more there (seal through the
-/// same path as `vg_aes_gcm_seal`, for reasons its layout and calls did not
-/// explain; open through `openShort`'s eight blocks, for AES-256). Longer
-/// messages gain from their path for TLS records, and from loading the
-/// powers rather than computing them.
-#[cfg(target_arch = "aarch64")]
-const PLAIN_MAX: usize = 16;
 
 /// Why an AES-GCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1214,13 +1204,11 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // On AArch64, a message of more than `PLAIN_MAX` bytes takes the
-        // powers, through `seal_prepared`.
+        // On AArch64, the powers, through `seal_prepared`.
         #[cfg(target_arch = "aarch64")]
-        if data.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
-        {
-            return Ok(self.seal_prepared(p, nonce, aad, data));
+        match &self.fns.powers {
+            Some(p) => return Ok(self.seal_prepared(p, nonce, aad, data)),
+            None => no_powers(),
         }
         let seal = self.fns.seal;
         let mut tag: Block = [0; 16];
@@ -1302,9 +1290,7 @@ impl AesGcm {
         return self.open_with(data, tag, nonce, aad);
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(target_arch = "aarch64")]
-        if data.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
-        {
+        if let Some(p) = &self.fns.powers {
             return self.open_prepared(p, nonce, aad, data, tag);
         }
         #[cfg(not(target_arch = "x86_64"))]
@@ -1407,9 +1393,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "aarch64")]
-        if out.len() > PLAIN_MAX
-            && let Some(p) = self.fns.powers
-        {
+        if let Some(p) = &self.fns.powers {
             return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
@@ -1470,13 +1454,20 @@ impl AesGcm {
     }
 }
 
-/// On AArch64, the calls of the `_with_powers` instances, out of line so
-/// that the shorter calls, which never make them, stay as fast as before.
+/// On AArch64, marks the path of a backend without `_with_powers`
+/// instances unlikely, so that the call of `seal_prepared` falls through
+/// (measured on Neoverse N2: a branch around it cost 1% at 15 bytes).
+#[cfg(target_arch = "aarch64")]
+#[cold]
+#[inline(never)]
+fn no_powers() {}
+
+/// On AArch64, the calls of the `_with_powers` instances.
 #[cfg(target_arch = "aarch64")]
 impl AesGcm {
     /// `encrypt_in_place` with the `_with_powers` instances `p` and the
     /// powers.
-    #[inline(never)]
+    #[inline]
     fn seal_prepared(&self, p: &Prepared, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let mut tag: Block = [0; 16];
         let seal = p.seal;
@@ -1503,7 +1494,7 @@ impl AesGcm {
     }
 
     /// `open` with the `_with_powers` instances `p` and the powers.
-    #[inline(never)]
+    #[inline]
     fn open_prepared(
         &self,
         p: &Prepared,

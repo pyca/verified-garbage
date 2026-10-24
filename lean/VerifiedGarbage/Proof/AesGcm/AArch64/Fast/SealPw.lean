@@ -19,7 +19,8 @@ Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_with_powers`
 is `seal` with `pw` a stack argument after `tag` (so `work` one slot further,
 `Fast.sealWithPw`), its whole blocks on the path for TLS records hashed by
 `vg_ghash_with_powers` (`GhashWithImpl`), called with `pw` loaded from the
-stack (`Fast.pwCall 8`). The proofs of `seal` hold for any such call
+stack (`Fast.pwCall 8`), unless at most one block is left, which
+`vg_ghash` hashes (`Fast.pwSel 8`). The proofs of `seal` hold for any such call
 (`sealWithE_wp`, `sealWithE_ct`), given `pw` readable beside the other
 regions (`sealPwN`): the call finds the powers there, as the code before it
 writes only the working space and the text (`gwCall_of`).
@@ -126,29 +127,24 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-omit hMK in
-theorem pwCall_keepsV : (Impl.AesGcm.AArch64.Fast.pwCall 8 g.fn).allInstrs keepsV = true := by
-  simp only [Impl.AesGcm.AArch64.Fast.pwCall, Code.allInstrs, g.keepsV, Bool.and_true]
-  decide
-
 theorem sealPw_wp {s : State} (hs : sealPwN s) :
     WP isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s fun s' =>
       GprAbi s s' ∧ sealAArch64.post s s' :=
   sealWithE_wp (w := 2) v _ hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
     have q := gwCall_of hs sY sS hrd hwr hsp hf
-    pw_call g (k := 8) (by decide) q.1 q.2.1 hc q.2.2
+    pwSel_call v g (k := 8) (by decide) q.1 q.2.1 hc q.2.2
 
 theorem sealPw_correctN (s : State) (hs : sealPwN s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       sealAArch64.post s s' :=
-  WP.withPreservedV (sealPw_wp v g hMK hs) (fastSealWithE_keepsV v (.inr rfl) (pwCall_keepsV g))
+  WP.withPreservedV (sealPw_wp v g hMK hs) (fastSealWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inl rfl)))
 
 theorem sealPw_ctN :
     ConstantTime isa sealPwN (onePub 3) (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) :=
   sealWithE_ct (w := 2) v _ hMK (.inr rfl) (extra := fun s => [pwR s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCall_of p sY sS hrd hwr hsp hf
-      pw_call g (k := 8) (by decide) q.1 q.2.1 hc q.2.2)
+      pwSel_call v g (k := 8) (by decide) q.1 q.2.1 hc q.2.2)
     fun {σ₁ σ₂ s₁ s₂ _ _ _ _} p₁ p₂ hq c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ => by
       obtain ⟨q0, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
       have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
@@ -158,7 +154,7 @@ theorem sealPw_ctN :
         (sp₂.trans qsp) (by rw [← e2, ← q6, ← q7]; exact f₂)
       rw [← e1] at hP₂ k₂
       rw [← q0] at k₂
-      exact pw_rel g (.inl rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm)
+      exact pwSel_rel v g (.inl rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm)
 
 end
 
