@@ -21,6 +21,7 @@ namespace VG.Proof.Ffdh.PPC64LE.ParameterCandidate
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
 open VG.Proof.MillerRabin.PPC64LE.Search (rw_off rw_self)
+open VG.Impl.MillerRabin.PPC64LE.Search (sth ldh hWsLen hUsed hRand hRandLen)
 
 theorem entryA_ok {s : State} {B : Addr} {n : Nat} (h10 : s.gpr .r10 = B) (hn : stackArg s 0 = BitVec.ofNat 64 n)
     (hargs : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8) (hn160 : 160 ≤ 8 * n)
@@ -82,5 +83,39 @@ theorem saves_ok {B : Addr} {n : Nat} {s₀ : State} (h11 : s₀.gpr .r11 = off 
   rw [map_flatMap]
   exact wp_range_flatMap (M := isa) (SV B n s₀) (fun k s hk h => save_step h11 hn160 hn hin hk h) 18
     (Nat.le_refl _) s₀ ⟨rfl, rfl, rfl, rfl, rfl, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), rfl⟩
+
+/-- The header's stores. -/
+def hdrW (m : Mem) (B : Addr) (r12 r3 r4 r5 r6 r7 r8 r9 : BitVec 64) : Mem :=
+  ((((((((m.writeW (B + BitVec.ofNat 64 0) r12).writeW (B + BitVec.ofNat 64 16) r3).writeW
+    (B + BitVec.ofNat 64 24) r4).writeW (B + BitVec.ofNat 64 152) r4).writeW (B + BitVec.ofNat 64 32) r5).writeW
+    (B + BitVec.ofNat 64 40) r6).writeW (B + BitVec.ofNat 64 128) r7).writeW (B + BitVec.ofNat 64 136) r8).writeW
+    (B + BitVec.ofNat 64 144) r9
+
+theorem header_ok {s : State} {B : Addr} (h10 : s.gpr .r10 = B)
+    (hst : ∀ d, d + 8 ≤ 256 → InRegions s.wr (B + BitVec.ofNat 64 d) 8) :
+    WP isa (.block [.addi .r31 .r10 0, sth .r12 hWsLen, sth .r3 hOut, sth .r4 hLen, sth .r4 hUsed, sth .r5 hUsedP,
+      sth .r6 hBits, .lsr .w .r7 .r7 0, sth .r7 hGen, sth .r8 hRand, sth .r9 hRandLen]) s fun t =>
+      (t.gpr .r31 = B ∧ t.gpr .r7 = ((s.gpr .r7).setWidth 32).setWidth 64 ∧
+        t.mem = hdrW s.mem B (s.gpr .r12) (s.gpr .r3) (s.gpr .r4) (s.gpr .r5) (s.gpr .r6)
+          (((s.gpr .r7).setWidth 32).setWidth 64) (s.gpr .r8) (s.gpr .r9)) ∧ Keep [.r7, .r31] s t := by
+  refine WP.keep _ ?_ (by decide)
+  simp only [sth, hWsLen, hOut, hLen, hUsed, hUsedP, hBits, hGen, hRand,
+    hRandLen]
+  prun [h10, hst 0 (by decide), hst 16 (by decide), hst 24 (by decide), hst 152 (by decide),
+    hst 32 (by decide), hst 40 (by decide), hst 128 (by decide), hst 136 (by decide), hst 144 (by decide),
+    BitVec.ushiftRight_zero]
+  exact ⟨BitVec.add_zero B, rfl⟩
+
+theorem hdrW_words (m : Mem) (B : Addr) (r12 r3 r4 r5 r6 r7 r8 r9 : BitVec 64) :
+    let h := hdrW m B r12 r3 r4 r5 r6 r7 r8 r9
+    word h B 0 = r12 ∧ word h B 16 = r3 ∧ word h B 24 = r4 ∧ word h B 152 = r4 ∧ word h B 32 = r5 ∧
+      word h B 40 = r6 ∧ word h B 128 = r7 ∧ word h B 136 = r8 ∧ word h B 144 = r9 := by
+  simp (disch := decide) only [hdrW, word, off, rw_off, rw_self, and_self]
+
+theorem hdrW_frm (m : Mem) (B : Addr) (r12 r3 r4 r5 r6 r7 r8 r9 : BitVec 64) :
+    Frm B [(0, 256)] m (hdrW m B r12 r3 r4 r5 r6 r7 r8 r9) := by
+  unfold hdrW
+  iterate 9 (refine VG.Proof.MillerRabin.PPC64LE.Search.frm_writeW ?_ _ ⟨(0, 256), List.mem_singleton_self _, by decide, by decide⟩ (by decide))
+  exact Frm.refl _ _ _
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
