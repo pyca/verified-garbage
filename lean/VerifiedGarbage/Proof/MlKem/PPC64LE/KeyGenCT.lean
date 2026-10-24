@@ -228,4 +228,95 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.keygen fun _ _ =
 
 end
 
+/-! ## The outcome -/
+
+/-- The `SampleNTT`s of `Â` all finished, with the entries the rows used. -/
+theorem sample_some {K : KemLay} {s₀ : State} (hk : okK K s₀ K.k = true) :
+    ∀ i < K.k, ∀ j < K.k,
+      sampleNTT 280 (VG.Proof.MlKem.matSeed (VG.Proof.MlKem.KPke.kgRho K.p (D s₀)) i j) =
+        some (aK K s₀ i j) := by
+  intro i hi j hj
+  have h₁ := List.all_eq_true.mp hk i (List.mem_range.mpr hi)
+  have h₂ := List.all_eq_true.mp h₁ j (List.mem_range.mpr hj)
+  simp only [rowSeed, Bool.false_eq_true, ite_false] at h₂
+  obtain ⟨v, hv⟩ := Option.isSome_iff_exists.mp h₂
+  rw [hv]
+  simp only [aK, effA, rowSeed, Bool.false_eq_true, ite_false, hv, Option.getD_some]
+
+/-- A `SampleNTT` of `Â` did not finish. -/
+theorem sample_none {K : KemLay} {s₀ : State} (hk : okK K s₀ K.k = false) :
+    ∃ i < K.k, ∃ j < K.k,
+      sampleNTT 280 (VG.Proof.MlKem.matSeed (VG.Proof.MlKem.KPke.kgRho K.p (D s₀)) i j) = none := by
+  rw [okK, List.all_eq_false] at hk
+  obtain ⟨i, hi, h₁⟩ := hk
+  rw [Bool.not_eq_true, okRow, List.all_eq_false] at h₁
+  obtain ⟨j, hj, h₂⟩ := h₁
+  simp only [rowSeed, Bool.false_eq_true, ite_false] at h₂
+  exact ⟨i, List.mem_range.mp hi, j, List.mem_range.mp hj, Option.not_isSome_iff_eq_none.mp h₂⟩
+
+/-- What key generation returns and writes is the outcome of
+`ML-KEM.KeyGen_internal(d, z)`. -/
+theorem outcome {K : KemLay} (hK : K.WF) (s₀ : State) :
+    Outcome (fun iters => keyGenInternal K.p iters (D s₀) (Z s₀)) (if okK K s₀ K.k then 1 else 0)
+      (EK K s₀, DK K s₀) := by
+  refine VG.Proof.MlKem.outcome_of_min ?_
+  rw [show minIterations = 280 from rfl]
+  cases hk : okK K s₀ K.k
+  · obtain ⟨i, hi, j, hj, hn⟩ := sample_none hk
+    refine .inr ⟨rfl, ?_⟩
+    rw [VG.Proof.MlKem.KPke.keyGenInternal_eq, VG.Proof.MlKem.KPke.kpkeKeyGen_none hi hj hn]; rfl
+  · refine .inl ⟨rfl, ?_⟩
+    rw [VG.Proof.MlKem.KPke.keyGenInternal_eq,
+      VG.Proof.MlKem.KPke.kpkeKeyGen_some hK.η₁ (sample_some hk)]
+    rfl
+
+/-! ## ML-KEM-768 -/
+
+theorem pre_of {s : State} (h : (Spec.MlKem.keyGenContract PPC64LE.abi 48).pre s) : Pre kl768 s := by
+  sig_pre [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  obtain ⟨h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩ := h
+  exact ⟨kl768_wf, kl768_calls, h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩
+
+theorem post_of {s₀ s : State} (h3 : s.gpr .r3 = if okK kl768 s₀ kl768.k then 1 else 0)
+    (hek : bytesAt s.mem (pEk s₀) 1184 = EK kl768 s₀)
+    (hdk : bytesAt s.mem (pDk s₀) 2400 = DK kl768 s₀) :
+    (Spec.MlKem.keyGenContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+  have e : BitVec.setWidth 32 (if okK kl768 s₀ kl768.k then (1 : BitVec 64) else 0) =
+      if okK kl768 s₀ kl768.k then 1 else 0 := by
+    cases okK kl768 s₀ kl768.k <;> rfl
+  rw [h3, hek, hdk, e]
+  exact outcome kl768_wf s₀
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 0x10000 | _ => 0
+  lr := 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 64⟩]
+  wr := [⟨0x2000, 1184⟩, ⟨0x3000, 2400⟩, ⟨0x10000, 32768⟩]
+
+theorem verified :
+    Verified PPC64LE.target Impl.MlKem.PPC64LE.keygen (Spec.MlKem.keyGenContract PPC64LE.abi 48) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hek, hdk⟩ := correct (pre_of hs)
+    exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hek hdk⟩
+  · have hp₁ := pre_of h₁
+    have hp₂ := pre_of h₂
+    sig_pub [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    obtain ⟨hsp, hl, g3, g4, g5, g6⟩ := hpub
+    have hr : ρ₀ kl768 s₁ = ρ₀ kl768 s₂ :=
+      (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (all_ct ⟨hp₁, hp₂, hsp, g3, g4, g5, g6, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨satState, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+      sig_and_intros
+      all_goals first
+        | trivial
+        | decide +kernel
+
 end VG.Proof.MlKem.PPC64LE.KeyGen
