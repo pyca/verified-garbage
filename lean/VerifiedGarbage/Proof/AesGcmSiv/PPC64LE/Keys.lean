@@ -49,20 +49,23 @@ theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
   rw [ofNat_sub (by omega) (by omega), ofNat_shl]
   unfold Spec.GcmSiv.keyLen; rcases hR with h | h <;> subst h <;> rfl
 
-theorem expand_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) : WP isa expand t (ExpPost c t) := by
+/-- The arguments of `expand`'s call. -/
+theorem expArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
+    WP isa (.block expandArgs) t fun t₅ => PK t t₅ ∧ t₅.mem = t.mem ∧
+      KeyCall t₅ (c.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen c.R) (c.W + BitVec.ofNat 64 256)
+        (c.W + BitVec.ofNat 64 1776) := by
   have hR := L.rounds
   have hl : Spec.GcmSiv.keyLen c.R = 16 ∨ Spec.GcmSiv.keyLen c.R = 32 := by
     unfold Spec.GcmSiv.keyLen; rcases hR with h | h <;> rw [h] <;> decide
-  unfold expand expandArgs
-  refine WP.seq (wp_addi (by decide) (by decide) fun t₁ u₁ => wp_subi (by decide) (by decide) fun t₂ u₂ =>
+  unfold expandArgs
+  refine wp_addi (by decide) (by decide) fun t₁ u₁ => wp_subi (by decide) (by decide) fun t₂ u₂ =>
     wp_lsl (by decide) fun t₃ u₃ => wp_addi (by decide) (by decide) fun t₄ u₄ =>
-    wp_addi (by decide) (by decide) fun t₅ u₅ => WP.block_nil ?_)
+    wp_addi (by decide) (by decide) fun t₅ u₅ => WP.block_nil ?_
   have pk₅ : PK t t₅ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
     (PK.ofUpd u₅))))
   have E₅ := E.of_pk pk₅
-  have hm₅ : t₅.mem = t.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have kc : KeyCall t₅ (c.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen c.R) (c.W + BitVec.ofNat 64 256)
-      (c.W + BitVec.ofNat 64 1776) :=
+  refine ⟨pk₅, by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], ?_⟩
+  exact
     { r3 := by
         rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr,
           E.r14] <;> rfl
@@ -80,6 +83,11 @@ theorem expand_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) : WP isa expand
       reads := Covers.append_left (Covers.cons (E₅.perm.wCR (by omega)) Covers.nil)
         (Covers.cons (E₅.perm.wCR (by decide)) (Covers.cons (E₅.perm.wCR (by decide)) Covers.nil))
       writes := Covers.cons (E₅.perm.wC (by decide)) (Covers.cons (E₅.perm.wC (by decide)) Covers.nil) }
+
+theorem expand_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) : WP isa expand t (ExpPost c t) := by
+  have hR := L.rounds
+  unfold expand
+  refine WP.seq (WP.mono (expArgs_wp L E) fun t₅ ⟨pk₅, hm₅, kc⟩ => ?_)
   refine WP.mono (key_call kc) fun t₆ P => ⟨pk₅.trans (PK.ofSaved P.rd P.wr P.sp P.saved), by rw [← hm₅]; exact P.frame, ?_⟩
   have hr : Spec.Aes.rounds (Spec.GcmSiv.keyLen c.R / 4) = c.R := by
     unfold Spec.Aes.rounds Spec.GcmSiv.keyLen; rcases hR with h | h <;> rw [h]
