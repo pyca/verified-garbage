@@ -51,8 +51,8 @@ theorem divOrder_ok {s0 u : State} (h : FF s0 u) {p : Nat}
   have f3 := f2.of_keep kk3 (by decide) (by simp) k3 ws3
   have d3 : num u3.mem (rvB s0) (ww (kK s0)) aDv = p := by
     have := fit aDv (by decide)
-    refine (Outs.val32 (Outs.of_outside o3 (List.mem_singleton_self _)) (fun r hr => ?_) (by omega)).trans ?_
-    · simp only [List.mem_singleton] at hr; subst hr; dsimp only; omega
+    refine (Outs.val32 (Outs.of_outside o3 (List.mem_singleton_self _)) (fun r hr => ?_) (by omega_arith)).trans ?_
+    · simp only [List.mem_singleton] at hr; subst hr; dsimp only; omega_arith
     · change num u2.mem (rvB s0) (ww (kK s0)) aDv = p
       rw [v2, N kk1 1 (by decide) (by decide) (by simp)]; exact hp
   have q3 : num u3.mem (rvB s0) (ww (kK s0)) aQ = nV s0 := by
@@ -82,7 +82,7 @@ theorem divOrder_ok {s0 u : State} (h : FF s0 u) {p : Nat}
   have ql : nV s0 / p < 2 ^ (32 * ww (kK s0)) := by
     rw [← q4]; exact val32_lt _ _ _ _
   have bit : (u5.gpr .r9).toNat = if p < nV s0 / p then 1 else 0 := by
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b5 with e | e <;> rw [e] at v5 ⊢ <;> split <;> omega
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b5 with e | e <;> rw [e] at v5 ⊢ <;> split <;> omega_arith
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil (stBorrow sLt)]
   refine stBorrow_ok ws5 (sl := sLt) (by decide) b5 fun u6 ws6 kk6 s6 k6 => WP.block_nil ?_
   have f6 := f5.of_keep kk6 (by simp) (by decide) k6 ws6
@@ -103,12 +103,12 @@ theorem divOrder_ok {s0 u : State} (h : FF s0 u) {p : Nat}
   refine ⟨ft, ?_, ?_⟩
   · rw [N kkt 5 (by decide) (by decide) (by simp), v7, s6, bit, p6, q6]
     by_cases hl : p < nV s0 / p
-    · simp only [hl, ite_true, Nat.one_ne_zero, ite_false, Nat.max_def]; split <;> omega
-    · simp only [hl, ite_false, ite_true, Nat.max_def]; split <;> omega
+    · simp only [hl, ite_true, Nat.one_ne_zero, ite_false, Nat.max_def]; split <;> omega_arith
+    · simp only [hl, ite_false, ite_true, Nat.max_def]; split <;> omega_arith
   · rw [vt, kk7.slot (e := sLt) (by decide) (by simp), s6, bit, N kk7 aQ (by decide) (by decide) (by simp),
       N kk7 1 (by decide) (by decide) (by simp), p6, q6]
     by_cases hl : p < nV s0 / p
-    · simp only [hl, ite_true, Nat.one_ne_zero, ite_false, Nat.min_def]; split <;> omega
-    · simp only [hl, ite_false, ite_true, Nat.min_def]; split <;> omega
+    · simp only [hl, ite_true, Nat.one_ne_zero, ite_false, Nat.min_def]; split <;> omega_arith
+    · simp only [hl, ite_false, ite_true, Nat.min_def]; split <;> omega_arith
 
 end VG.Proof.Rsa.PPC64LE.Recover

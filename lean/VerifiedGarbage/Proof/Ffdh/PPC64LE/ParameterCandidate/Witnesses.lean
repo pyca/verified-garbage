@@ -30,8 +30,8 @@ theorem cw_short {N mb n : Nat} (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (h
     (h : r.length < u + (mb + 7) / 8) : checkWitnesses N (n + 1) (r.drop u) = none := by
   have hw : Spec.Ffdh.witnessOctets N = (mb + 7) / 8 := by simp only [Spec.Ffdh.witnessOctets, hbl]
   have hd : Spec.Ffdh.drawWitness N (r.drop u) = none := by
-    rw [drawWitness_eq (by rw [hw]; omega), hw]
-    have : ¬((mb + 7) / 8 ≤ (r.drop u).length) := by rw [List.length_drop]; omega
+    rw [drawWitness_eq (by rw [hw]; omega_arith), hw]
+    have : ¬((mb + 7) / 8 ≤ (r.drop u).length) := by rw [List.length_drop]; omega_arith
     simp only [this, ↓reduceIte]
   simp only [checkWitnesses, hd, Option.bind_eq_bind, Option.bind_none]
 
@@ -43,8 +43,8 @@ theorem cw_step {N mb n : Nat} (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (hm
           else some (false, r.drop (u + (mb + 7) / 8)))
       else checkWitnesses N (n + 1) (r.drop (u + (mb + 7) / 8)) := by
   have hw : Spec.Ffdh.witnessOctets N = (mb + 7) / 8 := by simp only [Spec.Ffdh.witnessOctets, hbl]
-  have hl : (mb + 7) / 8 ≤ (r.drop u).length := by rw [List.length_drop]; omega
-  have hd := drawWitness_eq (w := N) (by rw [hw]; omega) (r.drop u)
+  have hl : (mb + 7) / 8 ≤ (r.drop u).length := by rw [List.length_drop]; omega_arith
+  have hd := drawWitness_eq (w := N) (by rw [hw]; omega_arith) (r.drop u)
   rw [hw, hbl] at hd
   simp only [hl, ↓reduceIte, List.drop_drop] at hd
   have ha : Spec.Rsa.os2ip ((r.drop u).take ((mb + 7) / 8)) % 2 ^ mb = wA mb r u := rfl

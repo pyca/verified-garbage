@@ -33,15 +33,15 @@ variable {Gs : Spec.Mgf1.Hash} {V : Nat → Byte} {em : List Byte} {lN E : Nat} 
 theorem vH_getD (hfE : Gs.len + 2 ≤ E) (hV : ∀ i < E, V (lN + i) = em.getD i 0) {i : Nat} (hi : i < Gs.len) :
     (vH Gs em (E - Gs.len - 1)).getD i 0 = V (lN + (E - Gs.len - 1) + i) := by
   simp only [vH, List.getD_eq_getElem?_getD, List.getElem?_take, ifp hi, List.getElem?_drop]
-  rw [← List.getD_eq_getElem?_getD, Nat.add_assoc, hV _ (by omega)]
+  rw [← List.getD_eq_getElem?_getD, Nat.add_assoc, hV _ (by omega_arith)]
 
 theorem vH_length (hE : em.length = E) (hfE : Gs.len + 2 ≤ E) : (vH Gs em (E - Gs.len - 1)).length = Gs.len := by
-  simp only [vH, List.length_take, List.length_drop, hE]; omega
+  simp only [vH, List.length_take, List.length_drop, hE]; omega_arith
 
 theorem srcB_vH (hE : em.length = E) (hfE : Gs.len + 2 ≤ E) (hV : ∀ i < E, V (lN + i) = em.getD i 0) :
     srcB (v1 V lN c (lN + E)) (lN + (E - Gs.len - 1)) Gs.len = vH Gs em (E - Gs.len - 1) := by
   refine (eq_range_map (vH_length hE hfE) fun i hi => ?_).symm
-  rw [vH_getD hfE hV hi, v1, ifn (by omega)]
+  rw [vH_getD hfE hV hi, v1, ifn (by omega_arith)]
 
 theorem wR_eq (hGv : Valid Gs) (hc : c = (0xFF : Byte) >>> z) (hE : em.length = E) (hfE : Gs.len + 2 ≤ E)
     (hV : ∀ i < E, V (lN + i) = em.getD i 0) {j : Nat} (hj : j < E - Gs.len - 1) :
@@ -52,16 +52,16 @@ theorem wR_eq (hGv : Valid Gs) (hc : c = (0xFF : Byte) >>> z) (hE : em.length = 
   let mk := Spec.Mgf1.mgf1 Gs (vH Gs em (E - Gs.len - 1)) (E - Gs.len - 1)
   have hm : mixV (v1 V lN c (lN + E)) (Spec.Mgf1.mgf1 Gs (srcB (v1 V lN c (lN + E)) (lN + (E - Gs.len - 1)) Gs.len)
       (E - Gs.len - 1)) lN (E - Gs.len - 1) (lN + j) = em.getD j 0 ^^^ mk.getD j 0 := by
-    rw [srcB_vH hE hfE hV, mixV, ifp ⟨by omega, by omega⟩, v1, ifn (by omega), hV _ (by omega),
+    rw [srcB_vH hE hfE hV, mixV, ifp ⟨by omega_arith, by omega_arith⟩, v1, ifn (by omega_arith), hV _ (by omega_arith),
       Nat.add_sub_cancel_left]
   have hx : (Spec.Mgf1.xorBytes (em.take (E - Gs.len - 1)) mk).getD j 0 = em.getD j 0 ^^^ mk.getD j 0 := by
-    rw [xorBytes_getD (by rw [List.length_take, hE]; omega) (by simp only [mk]; omega), ht hj]
+    rw [xorBytes_getD (by rw [List.length_take, hE]; omega_arith) (by simp only [mk]; omega_arith), ht hj]
   show (if lN + j = lN then _ &&& c else _) = _
   rw [vDb, clearTop_getD]
   by_cases e : j = 0
   · subst e
     rw [ifp (Nat.add_zero lN), ifp rfl, hm, ← hx, hc]
-  · rw [ifn (by omega), ifn e, hm, ← hx]
+  · rw [ifn (by omega_arith), ifn e, hm, ← hx]
 
 end
 
@@ -72,7 +72,7 @@ variable {Gs : Spec.Mgf1.Hash} (hGv : Valid Gs) {V : Nat → Byte} {em mh : List
 
 include hGv hc hE hfE hV in
 theorem db_eq : vDb Gs em (E - Gs.len - 1) z = (List.range (E - Gs.len - 1)).map (wR Gs V Gs.len lN (E - Gs.len - 1) c (lN + E)) := by
-  refine eq_range_map (by simp [vDb, VG.Proof.RsaPss.clearTop_length, xorBytes_length, mgf1_length hGv, hE]; omega)
+  refine eq_range_map (by simp [vDb, VG.Proof.RsaPss.clearTop_length, xorBytes_length, mgf1_length hGv, hE]; omega_arith)
     fun j hj => (wR_eq hGv hc hE hfE hV hj).symm
 
 include hGv hc hE hfE hV in
@@ -141,9 +141,9 @@ theorem res_iff {any saltLen : BitVec 64} {sLen : Option Nat} (hs : sLen = if an
   have hl := lzr_eq hGv hc hE hfE hV
   have hw : ∀ j < E - Gs.len - 1, wR Gs V Gs.len lN (E - Gs.len - 1) c (lN + E) j =
       (vDb Gs em (E - Gs.len - 1) z).getD j 0 := fun j hj => wR_eq hGv hc hE hfE hV hj
-  have hk1 : lN + E - 1 = lN + (E - 1) := by omega
-  have hV0 : V lN = em.getD 0 0 := hV 0 (by omega)
-  have hVk : V (lN + E - 1) = em.getD (E - 1) 0 := by rw [hk1]; exact hV _ (by omega)
+  have hk1 : lN + E - 1 = lN + (E - 1) := by omega_arith
+  have hV0 : V lN = em.getD 0 0 := hV 0 (by omega_arith)
+  have hVk : V (lN + E - 1) = em.getD (E - 1) 0 := by rw [hk1]; exact hV _ (by omega_arith)
   have hnot : ~~~c = ~~~((0xFF : Byte) >>> z) := by rw [hc]
   -- The hash compared, as lists.
   have hcmp : ∀ M : List Byte, (∀ i < Gs.len, V (lN + (E - Gs.len - 1) + i) = (Gs.hash M).getD i 0) ↔
@@ -165,7 +165,7 @@ theorem res_iff {any saltLen : BitVec 64} {sLen : Option Nat} (hs : sLen = if an
     · rw [ifn h]; simp [h]
   have hsl : lz (vDb Gs em (E - Gs.len - 1) z) < E - Gs.len - 1 →
       slR Gs V Gs.len lN (E - Gs.len - 1) c (lN + E) = E - Gs.len - 1 - 1 - lz (vDb Gs em (E - Gs.len - 1) z) :=
-    fun h => by unfold slR posR; rw [hl, ifp h]; omega
+    fun h => by unfold slR posR; rw [hl, ifp h]; omega_arith
   have hsv : (sLen = none ∨ sLen = some (E - Gs.len - 1 - 1 - lz (vDb Gs em (E - Gs.len - 1) z))) ↔
       (any = 0 → saltLen.toNat = E - Gs.len - 1 - 1 - lz (vDb Gs em (E - Gs.len - 1) z)) := by
     rw [hs]; split
@@ -179,7 +179,7 @@ theorem res_iff {any saltLen : BitVec 64} {sLen : Option Nat} (hs : sLen = if an
     · rename_i h0
       rw [BitVec.xor_eq_zero_iff]
       constructor
-      · intro e _; rw [← e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      · intro e _; rw [← e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
       · intro e; rw [← e h0, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rename_i h0; exact ⟨fun _ e => absurd e h0, fun _ => rfl⟩
   unfold Res accR accW EncOk

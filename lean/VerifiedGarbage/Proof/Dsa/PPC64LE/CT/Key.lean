@@ -131,7 +131,7 @@ theorem envP_of {v : VD} {s : State} (h : InP s v.L) : FixL (envP v) s := by
   exact ⟨h.env.h10, h.env.h11, h.env.h29, h.env.h31, h.h23⟩
 
 theorem body_out {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Body L m m') : Outside L.S 0 L.Z m m' :=
-  h.mono (Nat.zero_le _) (by have := hL.z256; omega)
+  h.mono (Nat.zero_le _) (by have := hL.z256; omega_arith)
 
 theorem ql_bounds {v : VD} {s : State} (h : Base v s) : 20 ≤ v.L.ql ∧ v.L.ql ≤ 32 := h.ok.ql
 
@@ -144,7 +144,7 @@ theorem w_O1 {v : VD} {s : State} (h : S5 v s) : WP isa (.block (ptrP ++ odd)) s
   rw [WP.block_append_iff]
   refine WP.mono (ptrP_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine WP.mono (odd_ok a12 a6 (by omega) (by omega) fun i hi => B1.hk.rd i (by omega))
+  refine WP.mono (odd_ok a12 a6 (by omega_arith) (by omega_arith) fun i hi => B1.hk.rd i (by omega_arith))
     fun u ⟨⟨b0, m2⟩, k2⟩ => ⟨B1.step k2 (by rw [m2]; exact Outside.refl _ _ _ _), ?_, fixL_nil _, hsz, ?_⟩
   · rw [k2.gpr .r2 (by decide), k1.gpr .r2 (by decide), r2]
   · rw [b0, m1, B.bytesP]; rfl
@@ -156,8 +156,8 @@ theorem w_O2 {v : VD} {s : State} (h : O1 v s ∧ s.gpr .r0 = 0) : WP isa (.bloc
   rw [WP.block_append_iff]
   refine WP.mono (ptrQ_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine WP.mono (odd_ok a12 a6 (by omega) (by omega)
-      fun i hi => (B1.hk.sub (o := v.L.pl) (k := v.L.ql) (by omega)).rd i hi)
+  refine WP.mono (odd_ok a12 a6 (by omega_arith) (by omega_arith)
+      fun i hi => (B1.hk.sub (o := v.L.pl) (k := v.L.ql) (by omega_arith)).rd i hi)
     fun u ⟨⟨b0, m2⟩, k2⟩ => ⟨B1.step k2 (by rw [m2]; exact Outside.refl _ _ _ _), ?_, fixL_nil _, hsz,
       e0.mp z, ?_⟩
   · rw [k2.gpr .r2 (by decide), k1.gpr .r2 (by decide), r2]
@@ -208,7 +208,7 @@ theorem w_pre {K : VD → Prop} {v : VD} {s : State} (h : PP K v s) (hg : G v) :
   have hw := hL.wp_ge
   have hw8 := hL.wp_eq
   have hnw := hL.nowrap
-  have hqZ : v.L.qOff + 1600 ≤ v.L.Z := by have := hL.buf_end; simp only [Lay.bOff] at this; omega
+  have hqZ : v.L.qOff + 1600 ≤ v.L.Z := by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith
   have hq28 : v.L.qOff = slot v.L.wp 28 := rfl
   have hov := ho v s B hg
   have e0 := Lay.slot_eq v.L.wp 0; have e3 := Lay.slot_eq v.L.wp 3; have e4 := Lay.slot_eq v.L.wp 4
@@ -217,14 +217,14 @@ theorem w_pre {K : VD → Prop} {v : VD} {s : State} (h : PP K v s) (hg : G v) :
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
   have en1 := ip.env.keep k1 (by decide)
   have he := B1.hk.sub (o := o v.L) (k := v.L.pl) hov
-  refine WP.mono (loadArr_ok en1 (j := 4) (by decide) a12 a6 (by omega) (by omega) he.rd
-    (fun i hi x hx => he.sep i hi x (by omega))) fun u ⟨⟨v4, top4, o2, a10⟩, k2⟩ => ?_
+  refine WP.mono (loadArr_ok en1 (j := 4) (by decide) a12 a6 (by omega_arith) (by omega_arith) he.rd
+    (fun i hi x hx => he.sep i hi x (by omega_arith))) fun u ⟨⟨v4, top4, o2, a10⟩, k2⟩ => ?_
   have en2 := env_keep10 en1 k2 (by decide) a10
-  have B2 := B1.step k2 (o2.mono (by omega) (by omega))
+  have B2 := B1.step k2 (o2.mono (by omega_arith) (by omega_arith))
   refine WP.mono (elemRange_ok en2 top4) fun w ⟨⟨r0, _, o3, en3⟩, k3⟩ => ?_
-  have B3 := B2.step k3 (o3.mono (by omega) (by omega))
+  have B3 := B2.step k3 (o3.mono (by omega_arith) (by omega_arith))
   have p1 : arr u.mem v.L.S v.L.wp 0 = v.p := by
-    rw [arr, Outside.val32 o2 (by omega) (by omega), m1]; exact p0
+    rw [arr, Outside.val32 o2 (by omega_arith) (by omega_arith), m1]; exact p0
   have x4 : arr u.mem v.L.S v.L.wp 4 = v.e (o v.L) := by
     rw [arr, v4, m1, B.bytes hov]; rfl
   refine ⟨B3, ?_, ?_, ?_⟩

@@ -58,11 +58,11 @@ theorem compare_ok {s : State} {L : Lay} {key sig dig : Addr} {b : Bool} (hL : L
   refine WP.seq (WP.mono (ModArith.reduce_ok (B := L.Q) (Z := 1600) (w := 4) (D := L.Buf) (L := L.pl) (e2.hs.congr k2.wr) (by decide) (by decide)
     (by decide) ((k2.gpr .r10 (by decide)).trans e2.h10) ((k2.gpr .r29 (by decide)).trans e2.h29)
     ((k2.gpr .r11 (by decide)).trans e2.h11) (by rw [m2]; exact (show 0 < arr s₁.mem L.Q 4 0 by rw [m1]; exact hq))
-    (by rw [a30]; exact (BitVec.add_zero _).symm) a31 (by omega) (by omega)
+    (by rw [a30]; exact (BitVec.add_zero _).symm) a31 (by omega_arith) (by omega_arith)
     (fun i hi => by
       rw [k12.rd, k12.wr]
-      exact (ScrL.bufN hs hL (n := L.pl) (by omega)).ld (show i + 1 ≤ L.pl by omega))
-    (buf_apartQ L (by omega))) fun s₃ ⟨⟨v1, o3⟩, k3⟩ => ?_)
+      exact (ScrL.bufN hs hL (n := L.pl) (by omega_arith)).ld (show i + 1 ≤ L.pl by omega_arith))
+    (buf_apartQ L (by omega_arith))) fun s₃ ⟨⟨v1, o3⟩, k3⟩ => ?_)
   rw [m21] at v1
   have k13 := k12.trans k3
   have o3' : Outside L.Q (slot 4 1) (24 * (4 + 2)) s.mem s₃.mem := by rw [← m21]; exact o3
@@ -83,8 +83,8 @@ theorem compare_ok {s : State} {L : Lay} {key sig dig : Addr} {b : Bool} (hL : L
   have Q5 := Q4.step k5 (by decide)
   have k15 := (k13.trans k4).trans k5
   refine WP.seq (WP.mono (loadQ_ok (j := 5) Q5 hL (by decide) (by decide)
-      ((hsg.keep k15.rd k15.wr).sub (o := 0) (k := L.ql) (by omega)) (by rw [b12, off, BitVec.add_zero]) b6
-      (by omega) (by omega)) fun s₆ ⟨⟨Q6, v5, _, o6, qa6⟩, k6⟩ => ?_)
+      ((hsg.keep k15.rd k15.wr).sub (o := 0) (k := L.ql) (by omega_arith)) (by rw [b12, off, BitVec.add_zero]) b6
+      (by omega_arith) (by omega_arith)) fun s₆ ⟨⟨Q6, v5, _, o6, qa6⟩, k6⟩ => ?_)
   refine WP.seq (WP.mono (eqMask_ok Q6.inq.env .r3 (a := 1) (b := 5) (by decide) (by decide))
     fun s₇ ⟨⟨c3, m7⟩, k7⟩ => ?_)
   have k17 := (k15.trans k6).trans k7
@@ -94,19 +94,19 @@ theorem compare_ok {s : State} {L : Lay} {key sig dig : Addr} {b : Bool} (hL : L
     fun t ⟨⟨t3, mt⟩, kt⟩ => ⟨⟨t3, ?_⟩, (k17.trans kt).mono (by decide)⟩
   · have a1 : val32 s₆.mem L.Q (slot 4 1) (2 * 4) =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem L.Buf L.pl) % arrQ s.mem L 0 := by
-      rw [Outside.val32 o6 (by rw [e71, e75]; omega) (by decide), m5, m4, v1]
+      rw [Outside.val32 o6 (by rw [e71, e75]; omega_arith) (by decide), m5, m4, v1]
     have a5 : val32 s₆.mem L.Q (slot 4 5) (2 * 4) = rOf s.mem L sig := by
       have := v5
       rw [arrQ, arr] at this
-      rw [this, m5, m4, (hsg.sub (o := 0) (k := L.ql) (by omega)).bytes (qa3.qbody.body hL) hL.z256]
+      rw [this, m5, m4, (hsg.sub (o := 0) (k := L.ql) (by omega_arith)).bytes (qa3.qbody.body hL) hL.z256]
       simp only [rOf, off, BitVec.add_zero]
     have hb7 : Body L s.mem s₇.mem := by
       rw [m7]; exact (qa3.trans (by rw [← m4, ← m5]; exact qa6)).qbody.body hL
     have hv : s₇.mem.readW (L.S + BitVec.ofNat 64 0) 64 = mask b := by
-      have := Outside.word hb7 (d := 0) (by omega) (by omega)
+      have := Outside.word hb7 (d := 0) (by omega_arith) (by omega_arith)
       rw [← hm]; exact this
     have hld : InRegions (s₇.rd ++ s₇.wr) (L.S + BitVec.ofNat 64 0) 8 :=
-      (hs.congr (k17.wr)).ld (show 0 + 8 ≤ L.Z by have := hL.z256; omega)
+      (hs.congr (k17.wr)).ld (show 0 + 8 ≤ L.Z by have := hL.z256; omega_arith)
     rw [a1, a5] at c3
     prun [c3, (k17.gpr .r21 (by decide)).trans hr.r21, hMask, hld, hv, mask_bit]
     simp only [decide_eq_true_eq]

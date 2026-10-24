@@ -47,10 +47,10 @@ theorem soutPre_ok {s : State} {L : Lay} {key nonce dig out : Addr} {b : Bool} (
   -- 0 into array 7.
   refine WP.seq (WP.mono (zeroArr_ok h.inq.env (j := 7) (by decide)) fun s₁ ⟨⟨z7, o1⟩, k1⟩ => ?_)
   have Q1 := h.step k1 (by decide)
-  have qa1 : QArr L s.mem s₁.mem := QArr.of o1 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega)
+  have qa1 : QArr L s.mem s₁.mem := QArr.of o1 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)
   -- The mask into `r22`.
   have hld : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r21 + BitVec.ofNat 64 hMask) 8 := by
-    rw [Q1.regs.r21]; exact Q1.scr.ld (show hMask + 8 ≤ L.Z by simp only [hMask]; omega)
+    rw [Q1.regs.r21]; exact Q1.scr.ld (show hMask + 8 ≤ L.Z by simp only [hMask]; omega_arith)
   have hw1 : word s₁.mem L.S hMask = mask b := (Body.hMask (qa1.qbody.body hL)).trans hm
   refine WP.seq (WP.mono (WP.keep [.r22] (Q := fun u => u.gpr .r22 = mask b ∧ u.mem = s₁.mem)
     (by prun [exec_ld (by decide) hld]; rw [Q1.regs.r21, ← hw1]) (by decide)) fun s₂ ⟨⟨a22, m2⟩, k2⟩ => ?_)
@@ -74,13 +74,13 @@ theorem soutPre_ok {s : State} {L : Lay} {key nonce dig out : Addr} {b : Bool} (
   have qa6 : QArr L s.mem s₆.mem := by
     refine qa1.trans ?_
     rw [← hm4]
-    exact (QArr.of o5 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega)).trans
-      (QArr.of o6 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega))
+    exact (QArr.of o5 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)).trans
+      (QArr.of o6 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith))
   have K6 := ((((k1.trans k2).trans k3).trans k4).trans k5).trans k6
   -- `out` into `r12`, `q_len` into `r6`.
   rw [WP.block_append_iff]
   have hld' : InRegions (s₆.rd ++ s₆.wr) (s₆.gpr .r21 + BitVec.ofNat 64 hOut) 8 := by
-    rw [Q6.regs.r21]; exact Q6.scr.ld (show hOut + 8 ≤ L.Z by simp only [hOut]; omega)
+    rw [Q6.regs.r21]; exact Q6.scr.ld (show hOut + 8 ≤ L.Z by simp only [hOut]; omega_arith)
   have hwo : word s₆.mem L.S hOut = out := (Body.hOut (qa6.qbody.body hL)).trans hw
   refine WP.mono (WP.keep [.r12] (Q := fun u => u.gpr .r12 = out ∧ u.mem = s₆.mem)
     (by prun [exec_ld (by decide) hld']; rw [Q6.regs.r21]; exact hwo) (by decide)) fun s₇ ⟨⟨a12, m7⟩, k7⟩ => ?_

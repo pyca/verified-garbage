@@ -77,7 +77,7 @@ theorem slayOf_ok {s : State} (h : sContract.pre s) : (slayOf s).Ok := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, nw, hv, -, -, hsw⟩ := h
   simp only [Spec.Dsa.scratchWords] at hsw
   simp only [Spec.Dsa.lengthsValid] at hv
-  exact ⟨by simp only [slayOf]; omega, by simp only [slayOf]; omega, by simp only [slayOf]; omega, nw⟩
+  exact ⟨by simp only [slayOf]; omega_arith, by simp only [slayOf]; omega_arith, by simp only [slayOf]; omega_arith, nw⟩
 
 /-- A run keeps the stack pointer. -/
 theorem wp_sp {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
@@ -101,7 +101,7 @@ theorem stack_sep {S B : Addr} {Z : Nat} (hd : (⟨S, Z⟩ : Region).Disjoint �
     Mem.Sep B 8 (S + BitVec.ofNat 64 hOut) 8 := by
   intro x h₁ h₂
   rw [hOut, Offset.lt_iff x S (by decide)] at h₂
-  exact hd x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+  exact hd x (by simp only [Region.Contains]; omega_arith) (by simp only [Region.Contains]; omega_arith)
 
 /-- The stack's arguments are kept by a change in the header. -/
 theorem stack_kept {S B : Addr} {Z : Nat} (hd : (⟨S, Z⟩ : Region).Disjoint ⟨B, 24⟩) (hZ : 256 ≤ Z)
@@ -109,8 +109,8 @@ theorem stack_kept {S B : Addr} {Z : Nat} (hd : (⟨S, Z⟩ : Region).Disjoint �
   refine Mem.readW_congr fun i hi => ho _ (Or.inr ?_)
   by_contra hc
   have hlt := (B + BitVec.ofNat 64 i - S).isLt
-  exact hd (B + BitVec.ofNat 64 i) (by simp only [Region.Contains, ofs] at hc ⊢; omega)
-    (by simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat B (by omega)]; omega)
+  exact hd (B + BitVec.ofNat 64 i) (by simp only [Region.Contains, ofs] at hc ⊢; omega_arith)
+    (by simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat B (by omega_arith)]; omega_arith)
 
 /-- After the registers are saved: the key, the nonce and the digest into
 `r27`, `r28` and `r26`, `out` into `hOut`, `digest_len` into `r10`, and the
@@ -145,7 +145,7 @@ theorem stail_ok {s : State} {S : Addr} (h21 : s.gpr .r21 = S)
     prun [BitVec.add_zero, es, ea, hld, hv]
   refine WP.block_append (WP.mono (capD_ok u) fun v ⟨⟨b4, mv⟩, kv⟩ => ?_)
   rw [a10] at b4
-  have hd : min (s.mem.readW (s.sp + BitVec.ofNat 64 96) 64).toNat 64 < 2 ^ 16 := by omega
+  have hd : min (s.mem.readW (s.sp + BitVec.ofNat 64 96) 64).toNat 64 < 2 ^ 16 := by omega_arith
   have v7 : v.gpr .r7 = s.gpr .r7 := (kv.gpr .r7 (by decide)).trans (ku.gpr .r7 (by decide))
   have v9 : v.gpr .r9 = s.gpr .r9 := (kv.gpr .r9 (by decide)).trans (ku.gpr .r9 (by decide))
   refine WP.mono (WP.keep [.r4, .r0, .r2] (Q := fun w =>
@@ -173,8 +173,8 @@ theorem sfront_ok {s : State} (h : sContract.pre s) :
         Outside (stackArg s 1) 0 256 s.mem t.mem) ∧ Keep sEntryRegs s t := by
   have hL := slayOf_ok h
   have hZ := hL.z256
-  have hpl : (s.gpr .r7).toNat < 2 ^ 16 := by have := hL.pl; simp only [slayOf] at this; omega
-  have hql : (s.gpr .r9).toNat < 2 ^ 16 := by have := hL.ql; simp only [slayOf] at this; omega
+  have hpl : (s.gpr .r7).toNat < 2 ^ 16 := by have := hL.pl; simp only [slayOf] at this; omega_arith
+  have hql : (s.gpr .r9).toNat < 2 ^ 16 := by have := hL.ql; simp only [slayOf] at this; omega_arith
   obtain ⟨-, hrd, hwr, -, -, -, -, -, -, -, -, dST, -, -, -, -, nw, -, -, -, -⟩ := h
   have hZ' : 256 ≤ (stackArg s 2).toNat * 8 := hZ
   have hstk : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8 :=
@@ -191,7 +191,7 @@ theorem sfront_ok {s : State} (h : sContract.pre s) :
     Scr.of_mem (by rw [ht, hwr]; simp [slayOf]) nw
   have hin : ∀ i < 19, InRegions s₁.wr (off (savW (s₁.gpr .r11)) (8 * i)) 8 := fun i hi => by
     rw [← saveOff_eq, a11]
-    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [slayOf] at hZ ⊢; omega)
+    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [slayOf] at hZ ⊢; omega_arith)
   refine WP.block_append (WP.mono (wp_sp (save_ok s₁ hin)) fun s₂ ⟨hS, sp2⟩ => ?_)
   have k12 := k1.trans hS.keep
   have h21 : s₂.gpr .r21 = stackArg s 1 := hS.r21.trans a11
@@ -206,9 +206,9 @@ theorem sfront_ok {s : State} (h : sContract.pre s) :
   have hsp : s₂.sp = s.sp := sp2.trans sp1
   have hd : s₂.mem.readW (s₂.sp + BitVec.ofNat 64 96) 64 = stackArg s 0 := by
     rw [hsp]; exact stack_kept (B := stackArgAddr s 0) dST hZ' o2
-  refine WP.mono (stail_ok h21 ((hscr s₂ k12.wr).st (d := hOut) (by simp only [hOut, slayOf] at hZ ⊢; omega))
+  refine WP.mono (stail_ok h21 ((hscr s₂ k12.wr).st (d := hOut) (by simp only [hOut, slayOf] at hZ ⊢; omega_arith))
     (by rw [hsp, k12.rd, k12.wr]; exact hstk)
-    (by rw [hsp]; exact stack_sep (B := stackArgAddr s 0) dST (by omega)) (by rw [e _ (by decide) (by decide)]; exact hpl) (by rw [e _ (by decide) (by decide)]; exact hql))
+    (by rw [hsp]; exact stack_sep (B := stackArgAddr s 0) dST (by omega_arith)) (by rw [e _ (by decide) (by decide)]; exact hpl) (by rw [e _ (by decide) (by decide)]; exact hql))
     fun t ⟨⟨t27, t28, t26, t2, mt⟩, kt⟩ => ?_
   have k := k12.trans kt
   rw [e .r5 (by decide) (by decide)] at t27
@@ -219,9 +219,9 @@ theorem sfront_ok {s : State} (h : sContract.pre s) :
   have t21 : t.gpr .r21 = stackArg s 1 := (kt.gpr .r21 (by decide)).trans h21
   have wo : Outside (stackArg s 1) hOut 8 s₂.mem t.mem := by
     rw [mt]; exact writeW_outside s₂.mem _ _ (by decide)
-  refine ⟨⟨Regs.of_pack hL t21 t27 t28 t26 t2 (by decide) (by omega), hscr t k.wr, t2,
+  refine ⟨⟨Regs.of_pack hL t21 t27 t28 t26 t2 (by decide) (by omega_arith), hscr t k.wr, t2,
     by rw [mt]; exact word_writeW_self _ _ _ _, fun i hi => ?_, ?_⟩, k.mono (by decide)⟩
-  · rw [Outside.word wo (Or.inr (by simp only [hOut, saveOff]; omega)) (by simp only [saveOff]; omega)]
+  · rw [Outside.word wo (Or.inr (by simp only [hOut, saveOff]; omega_arith)) (by simp only [saveOff]; omega_arith)]
     show s₂.mem.readW (stackArg s 1 + BitVec.ofNat 64 (104 + 8 * i)) 64 = _
     rw [saveOff_eq, ← a11, hS.saved i hi]
     exact k1.gpr _ fun h => front_saved_ne11 i hi (List.mem_singleton.mp h)

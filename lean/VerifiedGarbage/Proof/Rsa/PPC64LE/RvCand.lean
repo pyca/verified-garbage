@@ -48,7 +48,7 @@ theorem candBody_ok {s0 u : State} (hn : NOk s0) (hp : Par s0) {j : Nat} (hj : j
     (h24 : u.gpr .r24 = BitVec.ofNat 64 j) :
     WP isa candBody u fun t => CP s0 j t ∧
       t.gpr .r0 = b64 (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2) := by
-  have ht : tT s0 < 2 ^ 31 := by have := hp.tc; have := hp.c31; omega
+  have ht : tT s0 < 2 ^ 31 := by have := hp.tc; have := hp.c31; omega_arith
   unfold candBody
   rw [wp_seqs_append (by simp) (by simp)]
   refine WP.mono (cand0_ok h hn hj h24) fun u1 ⟨e1, a27⟩ => ?_
@@ -63,14 +63,14 @@ theorem candBody_ok {s0 u : State} (hn : NOk s0) (hp : Par s0) {j : Nat} (hj : j
   rw [show seqs [Code.block candNext] = .block candNext from rfl]
   have c := e4.cf
   have hz : 160 ≤ rvZ s0 := c.ws.hdr_le
-  have L := lt64 (a := j + 1) (b := 100) (by omega) (by decide)
+  have L := lt64 (a := j + 1) (b := 100) (by omega_arith) (by decide)
   refine WP.mono (WP.keep [.r0, .r3, .r4, .r24] (Q := fun x => x.mem = u4.mem ∧ x.gpr .r24 = BitVec.ofNat 64 j + 1#64 ∧
     x.gpr .r0 = (BitVec.ofNat 64 j + 1#64 - 100#64) >>> 63 &&&
       (BitVec.ofNat 64 (b2n (sqst s0 j (cB s0)).2.2) ^^^ 1#64)) ?_ (by decide)) fun t ⟨⟨mt, a24, a0⟩, kt⟩ => ?_
-  · prun [candNext, c.ws.r31, e4.r24, c.ws.scr.ld (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega),
+  · prun [candNext, c.ws.r31, e4.r24, c.ws.scr.ld (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega_arith),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sOk < 2 ^ 15 by decide), ld_slot e4.ok]
   have e1 : BitVec.ofNat 64 j + 1#64 = BitVec.ofNat 64 (j + 1) := by
-    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
   rw [e1] at a24 a0
   rw [L, show BitVec.ofNat 64 (b2n (sqst s0 j (cB s0)).2.2) = b64 (sqst s0 j (cB s0)).2.2 from rfl, b64_and] at a0
   have kk : KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [] [] u4.mem t.mem := by
@@ -108,18 +108,18 @@ theorem candLoop_ok {s0 u : State} (hn : NOk s0) (hp : Par s0) (h : CF s0 u) :
   have c1 := h.of_keep (show KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [] [] u.mem u1.mem by
     rw [m1]; exact KeyWorkspace.Keep.refl _ _ _ _ _) (by simp) (by simp) k1 (h.ws.of_keep k1)
   refine WP.loop (M := isa) (fun m s => ∃ j, m = nt s0 - 1 - j ∧ j < nt s0 ∧ CF s0 s ∧ s.gpr .r24 = BitVec.ofNat 64 j ∧
-    gos s0 recoverTries = gos s0 (recoverTries - j)) ?_ (nt s0 - 1) u1 ⟨0, rfl, by omega, c1, a24, rfl⟩
+    gos s0 recoverTries = gos s0 (recoverTries - j)) ?_ (nt s0 - 1) u1 ⟨0, rfl, by omega_arith, c1, a24, rfl⟩
   rintro m s ⟨j, rfl, hj, cs, s24, hg⟩
-  refine WP.mono (candBody_ok hn hp (by omega) cs s24) fun t ⟨cp, r0⟩ => ?_
+  refine WP.mono (candBody_ok hn hp (by omega_arith) cs s24) fun t ⟨cp, r0⟩ => ?_
   have cc := VG.Proof.Rsa.cand_cond (nV s0) (tT s0) (rR s0) (j := j) hj hg
   rw [← ok_eq hp] at cc
   have ev : isa.eval (.nonzero .d .r0) t = some (decide (j + 1 < nt s0)) := by
-    rw [eval_nonzero_ofNat' t .r0 (by have := b2n_le (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2); omega) r0,
+    rw [eval_nonzero_ofNat' t .r0 (by have := b2n_le (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2); omega_arith) r0,
       ← cc, Bool.not_not]
     cases (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2) <;> rfl
   by_cases hl : j + 1 < nt s0
   · -- The candidate failed: the next one.
-    refine .inr ⟨by rw [ev]; simp [hl], nt s0 - 1 - (j + 1), by omega, j + 1, rfl, hl, cp.cf, cp.r24, ?_⟩
+    refine .inr ⟨by rw [ev]; simp [hl], nt s0 - 1 - (j + 1), by omega_arith, j + 1, rfl, hl, cp.cf, cp.r24, ?_⟩
     have hok : (sqst s0 j (cB s0)).2.2 = false := by
       have : (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2) = true := by
         rw [← Bool.not_not (decide _ && _), cc]; simpa using hl
@@ -129,9 +129,9 @@ theorem candLoop_ok {s0 u : State} (hn : NOk s0) (hp : Par s0) (h : CF s0 u) :
       rw [ok_eq hp] at hok
       exact Option.not_isSome_iff_eq_none.mp (by rw [hok]; decide)
     rw [hg]; show recoverPrimes.go _ _ _ _ = recoverPrimes.go _ _ _ _
-    rw [VG.Proof.Rsa.go_eq _ _ _ (show j < recoverTries by unfold recoverTries; omega), hs]
+    rw [VG.Proof.Rsa.go_eq _ _ _ (show j < recoverTries by unfold recoverTries; omega_arith), hs]
   · refine .inl ⟨by rw [ev]; simp [hl], ?_, ?_⟩
-    · rw [show nt s0 - 1 = j by omega]; exact cp
-    · rw [show nt s0 - 1 = j by omega]; exact hg
+    · rw [show nt s0 - 1 = j by omega_arith]; exact cp
+    · rw [show nt s0 - 1 = j by omega_arith]; exact hg
 
 end VG.Proof.Rsa.PPC64LE.Recover

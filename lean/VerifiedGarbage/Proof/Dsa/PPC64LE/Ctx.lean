@@ -74,11 +74,11 @@ theorem Ok.wp_ge {L : Lay} (h : L.Ok) : 16 ≤ L.wp ∧ L.wp ≤ 48 := by
   rcases h.pl with e | e | e <;> simp [Lay.wp, e]
 
 theorem Ok.z256 {L : Lay} (h : L.Ok) : 256 ≤ L.Z := by
-  have := h.room; rcases h.pl with e | e | e <;> omega
+  have := h.room; rcases h.pl with e | e | e <;> omega_arith
 
 /-- The buffer ends within `scratch`. -/
 theorem Ok.buf_end {L : Lay} (h : L.Ok) : L.bOff + 2 * L.pl ≤ L.Z := by
-  have := h.qOff_eq; have := h.room; rcases h.pl with e | e | e <;> simp only [bOff] <;> omega
+  have := h.qOff_eq; have := h.room; rcases h.pl with e | e | e <;> simp only [bOff] <;> omega_arith
 
 end Lay
 
@@ -87,18 +87,18 @@ end Lay
 /-- The first `n` bytes of a working space are one. -/
 theorem scr_prefix {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size) (h : n ≤ size) :
     Scr s base n :=
-  ⟨let ⟨B₀, o, L, hm, hb, hL, hL'⟩ := hs.wr; ⟨B₀, o, L, hm, hb, by omega, hL'⟩, by have := hs.nowrap; omega⟩
+  ⟨let ⟨B₀, o, L, hm, hb, hL, hL'⟩ := hs.wr; ⟨B₀, o, L, hm, hb, by omega_arith, hL'⟩, by have := hs.nowrap; omega_arith⟩
 
 /-- Part of a working space is one. -/
 theorem scr_sub {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o n : Nat}
     (h : o + n ≤ size) (hn0 : 0 < n) : Scr s (off base o) n := by
   obtain ⟨⟨B₀, o₀, L, hm, hb, hL, hL'⟩, hn⟩ := hs
-  refine ⟨⟨B₀, o₀ + o, L, hm, ?_, by omega, hL'⟩, ?_⟩
+  refine ⟨⟨B₀, o₀ + o, L, hm, ?_, by omega_arith, hL'⟩, ?_⟩
   · subst hb; simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
   · rw [show (off base o).toNat = base.toNat + o by
       simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]]
-    omega
+      rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]]
+    omega_arith
 
 /-- In the P space. -/
 structure InP (s : State) (L : Lay) : Prop where
@@ -146,22 +146,22 @@ theorem outside_shift {B : Addr} {a o n : Nat} {m m' : Mem} (h : Outside (off B 
   apply h
   have hlt := (x - B).isLt
   simp only [ofs, off] at hx ⊢
-  rw [Offset.toNat_sub_add x B (by omega)]
+  rw [Offset.toNat_sub_add x B (by omega_arith)]
   by_cases hd : a ≤ (x - B).toNat
-  · rw [show 2 ^ 64 - a + (x - B).toNat = (x - B).toNat - a + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [show 2 ^ 64 - a + (x - B).toNat = (x - B).toNat - a + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
 /-- A frame of several ranges within `[lo, hi)` is one of `[lo, hi)`. -/
 theorem outs_within {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m') {lo hi : Nat}
     (hw : ∀ r ∈ rs, lo ≤ r.1 ∧ r.1 + r.2 ≤ hi) : Outside B lo (hi - lo) m m' :=
-  fun x hx => h x fun r hr => by have := hw r hr; omega
+  fun x hx => h x fun r hr => by have := hw r hr; omega_arith
 
 /-- A change in the P space's arrays is within the body. -/
 theorem Body.ofP {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.S o n m m') (ho : 256 ≤ o)
     (hn : o + n ≤ L.qOff) : Body L m m' :=
-  h.mono ho (by have := hL.buf_end; simp only [Lay.bOff] at this; omega)
+  h.mono ho (by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith)
 
 /-- A change in the Q space's arrays is within the body. -/
 theorem Body.ofQ {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.Q o n m m')
@@ -169,7 +169,7 @@ theorem Body.ofQ {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.Q
   have hb := hL.buf_end
   have hw := hL.nowrap
   simp only [Lay.bOff] at hb
-  exact (outside_shift h (by omega) (by omega)).mono (by simp only [Lay.qOff, Lay.slot_eq]; omega) (by omega)
+  exact (outside_shift h (by omega_arith) (by omega_arith)).mono (by simp only [Lay.qOff, Lay.slot_eq]; omega_arith) (by omega_arith)
 
 /-- A change in the buffer is within the body. -/
 theorem Body.ofBuf {L : Lay} (hL : L.Ok) {n : Nat} {m m' : Mem} (h : Outside L.Buf 0 n m m')
@@ -179,7 +179,7 @@ theorem Body.ofBuf {L : Lay} (hL : L.Ok) {n : Nat} {m m' : Mem} (h : Outside L.B
   have eb : L.bOff = 256 + 28 * (8 * (L.wp + 2)) + 1600 := rfl
   have := hL.wp_eq
   simp only [Lay.bOff, Lay.qOff, Lay.slot_eq] at hb
-  exact (outside_shift h (by omega) (by omega)).mono (by omega) (by omega)
+  exact (outside_shift h (by omega_arith) (by omega_arith)).mono (by omega_arith) (by omega_arith)
 
 /-- Memory changed only in the P space's arrays. -/
 abbrev PBody (L : Lay) (m m' : Mem) : Prop := Outside L.S 256 (L.qOff - 256) m m'
@@ -199,7 +199,7 @@ theorem QBody.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : QBody L m₁ m₂) 
 
 /-- A change in the P space's arrays is one in the body. -/
 theorem PBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') : Body L m m' :=
-  Body.ofP hL h (Nat.le_refl _) (by simp only [Lay.qOff, Lay.slot_eq]; omega)
+  Body.ofP hL h (Nat.le_refl _) (by simp only [Lay.qOff, Lay.slot_eq]; omega_arith)
 
 /-- A change in the Q space's arrays is one in the body. -/
 theorem QBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBody L m m') : Body L m m' :=
@@ -208,11 +208,11 @@ theorem QBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBody L m m') : Body 
 /-- A change in the P space's arrays keeps the Q space and the buffer. -/
 theorem PBody.outQ {L : Lay} {m m' : Mem} (h : PBody L m m') :
     Outside L.S 0 L.qOff m m' :=
-  h.mono (Nat.zero_le _) (by simp only [Lay.qOff, Lay.slot_eq]; omega)
+  h.mono (Nat.zero_le _) (by simp only [Lay.qOff, Lay.slot_eq]; omega_arith)
 
 /-- A change in the P space's arrays, seen from the Q space: none at its own offsets. -/
 theorem PBody.q {L : Lay} {m m' : Mem} (h : PBody L m m') : ∀ x, L.qOff ≤ ofs L.S x → m' x = m x :=
-  fun x hx => h x (Or.inr (by simp only [Lay.qOff, Lay.slot_eq] at hx ⊢; omega))
+  fun x hx => h x (Or.inr (by simp only [Lay.qOff, Lay.slot_eq] at hx ⊢; omega_arith))
 
 /-- Memory changed only in the P space's arrays from array 1 on. -/
 abbrev PArr (L : Lay) (m m' : Mem) : Prop := Outside L.S (slot L.wp 1) (L.qOff - slot L.wp 1) m m'
@@ -231,20 +231,20 @@ theorem QArr.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : QArr L m₁ m₂) (h
   Outside.trans h₁ h₂
 
 theorem PArr.pbody {L : Lay} {m m' : Mem} (h : PArr L m m') : PBody L m m' :=
-  h.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.qOff, Lay.slot_eq]; omega)
+  h.mono (by simp only [Lay.slot_eq]; omega_arith) (by simp only [Lay.qOff, Lay.slot_eq]; omega_arith)
 
 theorem QArr.qbody {L : Lay} {m m' : Mem} (h : QArr L m m') : QBody L m m' :=
-  h.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)
+  h.mono (by simp only [Lay.slot_eq]; omega_arith) (by simp only [Lay.slot_eq]; omega_arith)
 
 /-- A change in arrays `1 ≤ j < 28` of the P space. -/
 theorem PArr.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.S o n m m') (ho : slot L.wp 1 ≤ o)
     (hn : o + n ≤ L.qOff) : PArr L m m' :=
-  h.mono ho (by omega)
+  h.mono ho (by omega_arith)
 
 /-- A change in arrays `1 ≤ j < 28` of the Q space. -/
 theorem QArr.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.Q o n m m') (ho : slot 4 1 ≤ o)
     (hn : o + n ≤ 1600) : QArr L m m' :=
-  h.mono ho (by omega)
+  h.mono ho (by omega_arith)
 
 /-! ## The values kept in registers -/
 
@@ -266,41 +266,41 @@ theorem pack_toNat {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 
     (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat = pl + 2 ^ 16 * ql + 2 ^ 32 * qb + 2 ^ 48 * d := by
   rw [pack, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
   simp only [Nat.reducePow] at *
-  omega
+  omega_arith
 
 theorem pack_pl {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
     (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat % 2 ^ 16 = pl := by
-  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega
+  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega_arith
 
 theorem pack_ql {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
     (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat / 2 ^ 16 % 2 ^ 16 = ql := by
-  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega
+  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega_arith
 
 theorem pack_qb {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
     (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat / 2 ^ 32 % 2 ^ 16 = qb := by
-  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega
+  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega_arith
 
 theorem pack_d {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
     (h4 : d < 2 ^ 16) : pack pl ql qb d >>> 48 = BitVec.ofNat 64 d := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, pack_toNat h1 h2 h3 h4, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat]
-  simp only [Nat.reducePow] at *; omega
+  simp only [Nat.reducePow] at *; omega_arith
 
 /-- `sizes` adds q's significant octets. -/
 theorem pack_add {pl ql qb d : Nat} (h3 : qb < 2 ^ 16) :
     pack pl ql 0 d + BitVec.ofNat 64 qb <<< 32 = pack pl ql qb d := by
   apply BitVec.eq_of_toNat_eq
   rw [pack, pack, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (a := qb) (by simp only [Nat.reducePow] at *; omega)]
+    BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (a := qb) (by simp only [Nat.reducePow] at *; omega_arith)]
   simp only [Nat.reducePow] at *
-  omega
+  omega_arith
 
 /-- `Regs` for `r2` holding `pack`. -/
 theorem Regs.of_pack {s : State} {L : Lay} {key sig dig : Addr} {qb d : Nat} (hL : L.Ok)
     (h21 : s.gpr .r21 = L.S) (h27 : s.gpr .r27 = key) (h28 : s.gpr .r28 = sig) (h26 : s.gpr .r26 = dig)
     (h2 : s.gpr .r2 = pack L.pl L.ql qb d) (h3 : qb < 2 ^ 16) (h4 : d < 2 ^ 16) : Regs s L key sig dig := by
-  have hp : L.pl < 2 ^ 16 := by rcases hL.pl with e | e | e <;> omega
-  have hq : L.ql < 2 ^ 16 := by have := hL.ql; omega
+  have hp : L.pl < 2 ^ 16 := by rcases hL.pl with e | e | e <;> omega_arith
+  have hq : L.ql < 2 ^ 16 := by have := hL.ql; omega_arith
   exact ⟨h21, h27, h28, h26, by rw [h2]; exact pack_pl hp hq h3 h4, by rw [h2]; exact pack_ql hp hq h3 h4⟩
 
 /-- The registers `Regs` reads. -/
@@ -318,7 +318,7 @@ theorem shl_shr_ofNat (x : BitVec 64) (a : Nat) (ha : a = 16 ∨ a = 32 ∨ a = 
   have hx := x.isLt
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     BitVec.toNat_ofNat]
-  rcases ha with rfl | rfl | rfl <;> simp only [Nat.reducePow, Nat.reduceSub] <;> omega
+  rcases ha with rfl | rfl | rfl <;> simp only [Nat.reducePow, Nat.reduceSub] <;> omega_arith
 
 /-- `getP rd`: `rd := p_len`. -/
 theorem getP_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig dig) (rd : Reg) :
@@ -338,7 +338,7 @@ theorem Regs.q_eq {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key s
     s.gpr .r2 <<< 32 >>> 48 = BitVec.ofNat 64 L.ql := by
   rw [shl_shr_ofNat _ 32 (by decide), ← h.ql]
   congr 1
-  omega
+  omega_arith
 
 /-- `getQ rd`: `rd := q_len`. -/
 theorem getQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig dig) (rd : Reg) :
@@ -348,7 +348,7 @@ theorem getQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig
   prun [shl_shr_ofNat _ 32 (by decide)]
   rw [← h.ql]
   congr 1
-  omega
+  omega_arith
 
 /-- `getQb rd`: `rd :=` the 16 bits of `r2` from bit 32. -/
 theorem getQb_ok (s : State) (rd : Reg) :
@@ -358,7 +358,7 @@ theorem getQb_ok (s : State) (rd : Reg) :
   unfold getQb
   prun [shl_shr_ofNat _ 16 (by decide)]
   congr 1
-  omega
+  omega_arith
 
 /-- `getD rd`: `rd :=` `r2`'s top 16 bits. -/
 theorem getD_ok (s : State) (rd : Reg) :
@@ -370,19 +370,19 @@ theorem getD_ok (s : State) (rd : Reg) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
   have := (s.gpr .r2).isLt
-  omega
+  omega_arith
 
 /-- `scratch` is a working space. -/
 abbrev ScrL (s : State) (L : Lay) : Prop := Scr s L.S L.Z
 
 theorem ScrL.p {s : State} {L : Lay} (h : ScrL s L) (hL : L.Ok) : Scr s L.S L.qOff :=
-  scr_prefix h (by have := hL.buf_end; simp only [Lay.bOff] at this; omega)
+  scr_prefix h (by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith)
 
 theorem ScrL.q {s : State} {L : Lay} (h : ScrL s L) (hL : L.Ok) : Scr s L.Q 1600 :=
-  scr_sub h (by have := hL.buf_end; simp only [Lay.bOff] at this; omega) (by decide)
+  scr_sub h (by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith) (by decide)
 
 theorem ScrL.buf {s : State} {L : Lay} (h : ScrL s L) (hL : L.Ok) : Scr s L.Buf (2 * L.pl) :=
-  scr_sub h hL.buf_end (by rcases hL.pl with e | e | e <;> omega)
+  scr_sub h hL.buf_end (by rcases hL.pl with e | e | e <;> omega_arith)
 
 /-- The registers `enterP` writes. -/
 def enterRegs : List Reg := [.r10, .r11, .r23, .r29, .r31]
@@ -410,7 +410,7 @@ theorem enterP_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : S
       rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]; congr 1
     prun [b11, e3, Pub.ofNat_shl3, Pub.ofNat_shl1, e16]
   · have k := (ku.trans kv).trans kt
-    refine ⟨⟨⟨⟨Scr.congr (hs.p hL) k.wr, ?_, c29, c11, ?_, by omega, by omega, Nat.le_refl _⟩,
+    refine ⟨⟨⟨⟨Scr.congr (hs.p hL) k.wr, ?_, c29, c11, ?_, by omega_arith, by omega_arith, Nat.le_refl _⟩,
       (k.gpr .r21 (by decide)).trans hr.r21, ?_⟩, by rw [mt, mv, mu]⟩, k.mono (by decide)⟩
     · rw [kt.gpr .r10 (by decide), kv.gpr .r10 (by decide), a10]; simp [off, Lay.slot_eq]
     · rw [kt.gpr .r31 (by decide), kv.gpr .r31 (by decide), a31]
@@ -420,7 +420,7 @@ theorem q_addr {L : Lay} (hL : L.Ok) :
     BitVec.ofNat 64 L.pl * BitVec.ofNat 64 28 + BitVec.ofNat 64 704 + L.S = L.Q := by
   rw [Lay.Q, off, hL.qOff_eq, BitVec.ofNat_mul_ofNat, BitVec.ofNat_add_ofNat, BitVec.add_comm]
   congr 2
-  omega
+  omega_arith
 
 /-- The registers `qBase` is used with. -/
 def qPairs : List (Reg × Reg) := [(.r23, .r11), (.r24, .r0), (.r30, .r0), (.r12, .r0)]
@@ -473,8 +473,8 @@ theorem Src.keep {s t : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) 
 /-- Part of a buffer is one. -/
 theorem Src.sub {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {o k : Nat} (hk : o + k ≤ n) :
     Src s L (off D o) k :=
-  ⟨fun i hi => by rw [off, off, Offset.add_add]; exact h.rd (o + i) (by omega),
-    fun i hi x hx => by rw [off, off, Offset.add_add]; exact h.sep (o + i) (by omega) x hx⟩
+  ⟨fun i hi => by rw [off, off, Offset.add_add]; exact h.rd (o + i) (by omega_arith),
+    fun i hi x hx => by rw [off, off, Offset.add_add]; exact h.sep (o + i) (by omega_arith) x hx⟩
 
 /-- The first octets of a buffer apart from `scratch`. -/
 theorem Src.take {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {k : Nat} (hk : k ≤ n) :
@@ -489,12 +489,12 @@ theorem Src.sepIn {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {
   refine h.sep i hi x ?_
   have hlt := (x - L.S).isLt
   simp only [ofs, off] at hx ⊢
-  rw [Offset.toNat_sub_add x L.S (by omega)] at hx
+  rw [Offset.toNat_sub_add x L.S (by omega_arith)] at hx
   by_cases hd : a ≤ (x - L.S).toNat
-  · rw [show 2 ^ 64 - a + (x - L.S).toNat = (x - L.S).toNat - a + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)] at hx
-    omega
-  · rw [Nat.mod_eq_of_lt (by omega)] at hx; omega
+  · rw [show 2 ^ 64 - a + (x - L.S).toNat = (x - L.S).toNat - a + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith)] at hx
+    omega_arith
+  · rw [Nat.mod_eq_of_lt (by omega_arith)] at hx; omega_arith
 
 /-- A buffer's bytes, unchanged by a change in the body. -/
 theorem Src.bytes {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {m m' : Mem} (hb : Body L m m')

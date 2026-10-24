@@ -35,19 +35,19 @@ theorem wv_or1 {m m' : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w)
     (h0 : word m' B d = word m B d ||| 1#64) (hr : ∀ j, 1 ≤ j → j < w → word m' B (d + 8 * j) = word m B (d + 8 * j)) :
     wv m' B d w = wv m B d w + (1 - wv m B d w % 2) := by
   have e := fun mm => wv_add mm B d 1 (w - 1)
-  rw [show 1 + (w - 1) = w by omega] at e
+  rw [show 1 + (w - 1) = w by omega_arith] at e
   rw [e m, e m']
   simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.pow_zero, Nat.one_mul, Nat.mul_one]
   have hrest : wv m' B (d + 8) (w - 1) = wv m B (d + 8) (w - 1) := wv_congr fun i hi => by
-    rw [show d + 8 + 8 * i = d + 8 * (i + 1) by omega]; exact hr _ (by omega) (by omega)
+    rw [show d + 8 + 8 * i = d + 8 * (i + 1) by omega_arith]; exact hr _ (by omega_arith) (by omega_arith)
   rw [hrest, h0]
   have hor : (word m B d ||| 1#64).toNat = (word m B d).toNat + (1 - (word m B d).toNat % 2) := by
     rw [BitVec.toNat_or, show (1#64).toNat = 1 from rfl, VG.Proof.Rsa.KeyBits32.or_one]
-    omega
+    omega_arith
   rw [hor]
   have : (2 ^ 64 * wv m B (d + 8) (w - 1)) % 2 = 0 := by
     rw [Nat.mul_mod, show 2 ^ 64 % 2 = 0 from rfl, Nat.zero_mul, Nat.zero_mod]
-  omega
+  omega_arith
 
 /-- The registers `dRange` writes. -/
 def drRegs : List Reg := [.r14, .r15, .r0, .r17, .r5, .r3, .r4, .r6, .r8, .r9, .r16, .r20]
@@ -73,8 +73,8 @@ theorem dRange_ok {s : State} {B : Addr} {Z w N x : Nat} (hs : Scr s B Z) (h10 :
     ((k₁.gpr .r29 (by decide)).trans h29) 4) fun s₂ ⟨⟨a15, m₂⟩, k₂⟩ => ?_
   have k12 := k₁.trans k₂
   refine WP.seq (WP.mono (copyWithin_ok (hs.congr k12.wr) a15 ((k₂.gpr .r14 (by decide)).trans a14)
-    ((k12.gpr .r11 (by decide)).trans h11) (by omega) (by omega) (by simp only [es]; omega)
-    (by simp only [es]; omega) (by simp only [es]; omega)) fun s₃ ⟨⟨_, cp, o₃⟩, k₃⟩ => ?_)
+    ((k12.gpr .r11 (by decide)).trans h11) (by omega_arith) (by omega_arith) (by simp only [es]; omega_arith)
+    (by simp only [es]; omega_arith) (by simp only [es]; omega_arith)) fun s₃ ⟨⟨_, cp, o₃⟩, k₃⟩ => ?_)
   have k13 := k12.trans k₃
   rw [m₂, m₁] at cp o₃
   -- Its low bit set and its word `w` zeroed.
@@ -86,9 +86,9 @@ theorem dRange_ok {s : State} {B : Addr} {Z w N x : Nat} (hs : Scr s B Z) (h10 :
   refine WP.mono (Pub.base_ok (rd := .r5) (by decide) (by decide) h10₃ h29₃ 3) fun s₄ ⟨⟨a5, m₄⟩, k₄⟩ => ?_
   have k14 := k13.trans k₄
   have hs₄ : Scr s₄ B Z := hs.congr k14.wr
-  have l3 : InRegions (s₄.rd ++ s₄.wr) (off B (slot w 3)) 8 := hs₄.ld (by simp only [es]; omega)
-  have st3 : InRegions s₄.wr (off B (slot w 3)) 8 := hs₄.st (by simp only [es]; omega)
-  have st3w : InRegions s₄.wr (off B (slot w 3 + 8 * w)) 8 := hs₄.st (by simp only [es]; omega)
+  have l3 : InRegions (s₄.rd ++ s₄.wr) (off B (slot w 3)) 8 := hs₄.ld (by simp only [es]; omega_arith)
+  have st3 : InRegions s₄.wr (off B (slot w 3)) 8 := hs₄.st (by simp only [es]; omega_arith)
+  have st3w : InRegions s₄.wr (off B (slot w 3 + 8 * w)) 8 := hs₄.st (by simp only [es]; omega_arith)
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r3, .r4, .r6, .r5, .r0] (Q := fun u => u.mem =
       (s₄.mem.writeW (off B (slot w 3)) (s₄.mem.readW (off B (slot w 3)) 64 ||| 1#64)).writeW
@@ -105,37 +105,37 @@ theorem dRange_ok {s : State} {B : Addr} {Z w N x : Nat} (hs : Scr s B Z) (h10 :
   have k17 := k16.trans k₇
   -- `x | 1 − N`.
   refine WP.mono (subMod_ok (hs.congr k17.wr) ((k₇.gpr .r8 (by decide)).trans a8) a9
-    ((k17.gpr .r10 (by decide)).trans h10) ((k17.gpr .r11 (by decide)).trans h11) (by omega) (by omega)
-    (by simp only [es]; omega) (by simp only [es]; omega) (by simp only [es]; omega) (by simp only [es]; omega)
-    (by simp only [es]; omega)) fun t ⟨⟨c, hc, hsub, h20⟩, o₈, k₈⟩ => ?_
+    ((k17.gpr .r10 (by decide)).trans h10) ((k17.gpr .r11 (by decide)).trans h11) (by omega_arith) (by omega_arith)
+    (by simp only [es]; omega_arith) (by simp only [es]; omega_arith) (by simp only [es]; omega_arith) (by simp only [es]; omega_arith)
+    (by simp only [es]; omega_arith)) fun t ⟨⟨c, hc, hsub, h20⟩, o₈, k₈⟩ => ?_
   have m37 : s₇.mem = (s₃.mem.writeW (off B (slot w 3)) (s₃.mem.readW (off B (slot w 3)) 64 ||| 1#64)).writeW
       (off B (slot w 3 + 8 * w)) 0#64 := by rw [m₇, m₆, m₅, m₄]
   -- What changed before `subMod`: array 3.
   have f₇ : Frm B [(slot w 3, 8 * (w + 2))] s.mem s₇.mem := by
     rw [m37]
-    refine frm_writeW (a := slot w 3 + 8 * w) (frm_writeW (a := slot w 3) (Frm.of_outside (o₃.mono (o' := slot w 3) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega))
-      (List.mem_singleton_self _)) _ ⟨_, List.mem_singleton_self _, by dsimp only; omega,
-        by dsimp only; omega⟩ (by simp only [es]; omega)) _
-      ⟨_, List.mem_singleton_self _, by dsimp only; omega, by dsimp only; omega⟩ (by simp only [es]; omega)
+    refine frm_writeW (a := slot w 3 + 8 * w) (frm_writeW (a := slot w 3) (Frm.of_outside (o₃.mono (o' := slot w 3) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_arith))
+      (List.mem_singleton_self _)) _ ⟨_, List.mem_singleton_self _, by dsimp only; omega_arith,
+        by dsimp only; omega_arith⟩ (by simp only [es]; omega_arith)) _
+      ⟨_, List.mem_singleton_self _, by dsimp only; omega_arith, by dsimp only; omega_arith⟩ (by simp only [es]; omega_arith)
   have n₇ : val32 s₇.mem B (slot w 0) (2 * w) = N := by
     rw [Pre.val32_eq_wv, f₇.wv_eq (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; dsimp only; simp only [es]; omega) (by simp only [es]; omega), hN]
+      rw [List.mem_singleton] at hr; subst hr; dsimp only; simp only [es]; omega_arith) (by simp only [es]; omega_arith), hN]
   have x₃ : wv s₃.mem B (slot w 3) w = x := by
     rw [← hx]; exact wv_shift fun i hi => cp i hi
   have a₇ : val32 s₇.mem B (slot w 3) (2 * w) = x + (1 - x % 2) := by
     rw [Pre.val32_eq_wv, ← x₃]
-    refine wv_or1 (by omega) ?_ fun j h1 h2 => ?_
+    refine wv_or1 (by omega_arith) ?_ fun j h1 h2 => ?_
     · simp only [word, off] at m37 ⊢
-      rw [m37, rw_off _ _ _ (by omega) (by simp only [es]; omega) (by simp only [es]; omega), rw_self]
+      rw [m37, rw_off _ _ _ (by omega_arith) (by simp only [es]; omega_arith) (by simp only [es]; omega_arith), rw_self]
     · simp only [word, off] at m37 ⊢
-      rw [m37, rw_off _ _ _ (by omega) (by simp only [es]; omega) (by simp only [es]; omega),
-        rw_off _ _ _ (by omega) (by simp only [es]; omega) (by simp only [es]; omega)]
+      rw [m37, rw_off _ _ _ (by omega_arith) (by simp only [es]; omega_arith) (by simp only [es]; omega_arith),
+        rw_off _ _ _ (by omega_arith) (by simp only [es]; omega_arith) (by simp only [es]; omega_arith)]
   have z₇ : w32 s₇.mem B (slot w 3 + 4 * (2 * w)) = 0 := by
     have e := VG.Proof.Mont.word_eq_w32 s₇.mem B (slot w 3 + 8 * w)
     have e0 : (VG.Proof.Mont.word s₇.mem B (slot w 3 + 8 * w)).toNat = 0 := by
       simp only [VG.Proof.Mont.word, VG.Proof.Mont.off] at m37 ⊢; rw [m37, rw_self]; rfl
-    rw [show slot w 3 + 4 * (2 * w) = slot w 3 + 8 * w by omega]; omega
-  rw [n₇, a₇, show 32 * (2 * w) = 64 * w by omega] at hsub
+    rw [show slot w 3 + 4 * (2 * w) = slot w 3 + 8 * w by omega_arith]; omega_arith
+  rw [n₇, a₇, show 32 * (2 * w) = 64 * w by omega_arith] at hsub
   rw [z₇] at h20
   have hT : val32 t.mem B (slot w 6) (2 * w) < 2 ^ (64 * w) := by rw [Pre.val32_eq_wv]; exact wv_lt _ _ _ _
   have hX : x < 2 ^ (64 * w) := by rw [← hx]; exact wv_lt _ _ _ _
@@ -144,14 +144,14 @@ theorem dRange_ok {s : State} {B : Addr} {Z w N x : Nat} (hs : Scr s B Z) (h10 :
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with rfl | rfl
     · simp only [Nat.lt_irrefl, ↓reduceIte]
       constructor
-      · intro _ hlt; omega
+      · intro _ hlt; omega_arith
       · intro _; rfl
     · simp only [Nat.zero_lt_one, ↓reduceIte]
       constructor
       · intro h; exact absurd h (by decide)
-      · intro hn; exfalso; apply hn; omega
+      · intro hn; exfalso; apply hn; omega_arith
   · exact (f₇.mono fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self).trans
-      (Frm.of_outside (o₈.mono (o' := slot w 6) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega)) (List.mem_cons_of_mem _ List.mem_cons_self))
+      (Frm.of_outside (o₈.mono (o' := slot w 6) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_arith)) (List.mem_cons_of_mem _ List.mem_cons_self))
   · exact ((k17.trans k₈).mono (by decide))
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

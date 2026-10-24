@@ -49,7 +49,7 @@ theorem num_of_num1 {m : Mem} {B : Addr} {w j : Nat} (h : num1 m B w j < 2 ^ (32
     rcases Nat.eq_zero_or_pos (val32 m B (arr w j + 4 * w) 1) with z | z
     · exact z
     · have : 2 ^ (32 * w) ≤ 2 ^ (32 * w) * val32 m B (arr w j + 4 * w) 1 := Nat.le_mul_of_pos_right _ z
-      omega
+      omega_arith
   rw [this, Nat.mul_zero, Nat.add_zero]
 
 /-- The first part of `arith`. -/
@@ -80,7 +80,7 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd : Nat} (h : Ws s B Z w nA
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   have p1 : num t1.mem B w aP = P := by rw [k1.num (by decide) (by simp) (fit _ (by decide)), hi.p]
   have dz2 : w32 t2.mem B (arr w aDD + 4 * w) = 0 := by
-    rw [KeyWorkspace.Keep.word k2 (i := w) (by omega) (by simp) (by simp; decide) (fit _ (by decide)),
+    rw [KeyWorkspace.Keep.word k2 (i := w) (by omega_arith) (by simp) (by simp; decide) (fit _ (by decide)),
       top1, hi.top _ (by decide)]
   refine WP.mono (div_ok h2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) dz2) fun t3 ⟨h3, k3, r3, v3⟩ => ?_
@@ -119,8 +119,8 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd : Nat} (h : Ws s B Z w nA
     exact ⟨rfl, rfl⟩
   · rw [k5.slot (by decide) (by decide), e4, q3, qt]
   · rw [e5, r4', z4, rt]
-  · rw [KeyWorkspace.Keep.word k5 (i := w) (by omega) (by simp) (by simp; decide) (fit _ (by decide)),
-      KeyWorkspace.Keep.word k4 (i := w) (by omega) (by simp) (by simp; decide) (fit _ (by decide)),
-      KeyWorkspace.Keep.word k3 (i := w) (by omega) (by decide) (by simp) (fit _ (by decide)), dz2]
+  · rw [KeyWorkspace.Keep.word k5 (i := w) (by omega_arith) (by simp) (by simp; decide) (fit _ (by decide)),
+      KeyWorkspace.Keep.word k4 (i := w) (by omega_arith) (by simp) (by simp; decide) (fit _ (by decide)),
+      KeyWorkspace.Keep.word k3 (i := w) (by omega_arith) (by decide) (by simp) (fit _ (by decide)), dz2]
 
 end VG.Proof.Rsa.PPC64LE.CrtValues

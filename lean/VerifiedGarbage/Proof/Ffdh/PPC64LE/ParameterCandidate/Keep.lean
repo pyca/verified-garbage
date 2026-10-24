@@ -61,21 +61,21 @@ theorem Free.word {w d : Nat} {r : Nat × Nat} (h : Free w r) (hd : Read w d) :
   unfold Read at hd
   rcases h with ⟨h1, h2⟩ | ⟨j, hj1, hj2, h1, h2⟩
   · rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;>
-      (try rw [es]) <;> omega
+      (try rw [es]) <;> omega_arith
   · rw [h1]
     rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;>
       simp only [es] <;> (try have := Nat.mul_le_mul_right (8 * (w + 2)) hj2) <;>
-      (try have := Nat.mul_le_mul_right (8 * (w + 2)) hj1) <;> omega
+      (try have := Nat.mul_le_mul_right (8 * (w + 2)) hj1) <;> omega_arith
 
 theorem Free.arr {w j : Nat} {r : Nat × Nat} (h : Free w r) (hj : j = 0 ∨ j = 1 ∨ j = 9 ∨ j = 10 ∨ j = 27) :
     slot w j + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
   have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   rcases h with ⟨h1, h2⟩ | ⟨k, hk1, hk2, h1, h2⟩
-  · right; rcases hj with rfl | rfl | rfl | rfl | rfl <;> rw [es] <;> omega
+  · right; rcases hj with rfl | rfl | rfl | rfl | rfl <;> rw [es] <;> omega_arith
   · rw [h1]
     have a := Nat.mul_le_mul_right (8 * (w + 2)) hk2
     have b := Nat.mul_le_mul_right (8 * (w + 2)) hk1
-    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [es] <;> omega
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [es] <;> omega_arith
 
 theorem MSt.w {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) :
     2 ≤ wOf mb ∧ wOf mb ≤ 128 ∧ slot (wOf mb) 28 + saveBytes ≤ p.Z := by
@@ -83,7 +83,7 @@ theorem MSt.w {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) :
   have hb := h.st.dims.b2
   have := h.mb1; have := h.mb2
   simp only [wOf, slot, hdrBytes, saveBytes, PP.Z, PP.L] at hn ⊢
-  omega
+  omega_arith
 
 theorem Free.mut {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) {r : Nat × Nat} (hr : Free (wOf mb) r) :
     InMut p.n r := by
@@ -91,18 +91,18 @@ theorem Free.mut {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) {r : Nat �
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
   rcases hr with ⟨h1, h2⟩ | ⟨j, hj1, hj2, h1, h2⟩
   · refine ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), ?_, ?_⟩ <;> dsimp only <;>
-      omega
-  · refine InMut.arrays (by rw [h1, es]; omega) ?_
+      omega_arith
+  · refine InMut.arrays (by rw [h1, es]; omega_arith) ?_
     simp only [es, PP.Z] at hZ h1 ⊢
     have := Nat.mul_le_mul_right (8 * (wOf mb + 2)) hj2
-    rw [h1]; omega
+    rw [h1]; omega_arith
 
 theorem Read.le {w d : Nat} (hd : Read w d) : d + 8 ≤ slot w 28 := by
   have e0 : slot w 0 = 256 := by simp [slot, hdrBytes]
   have e27 : slot w 27 = 256 + 27 * (8 * (w + 2)) := rfl
   have e28 : slot w 28 = 256 + 28 * (8 * (w + 2)) := rfl
   unfold Read at hd
-  rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega
+  rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega_arith
 
 theorem MSt.frm {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N s) {rs : List (Nat × Nat)}
     (hf : Frm p.B rs s.mem t.mem) (hr : ∀ r ∈ rs, Free (wOf mb) r) {regs : List Reg} (k : Keep regs s t)
@@ -113,7 +113,7 @@ theorem MSt.frm {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N s) {rs : Lis
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (wOf mb + 2)) + saveBytes ≤ p.Z := by rw [← es]; exact hZ
   have hw : ∀ d, Read (wOf mb) d → word t.mem p.B d = word s.mem p.B d := fun d hd =>
-    hf.word_eq (fun r hr' => (hr r hr').word hd) (by have := hd.le; omega)
+    hf.word_eq (fun r hr' => (hr r hr').word hd) (by have := hd.le; omega_arith)
   refine ⟨h.st.step (Frm.toMut hf fun r hr' => Free.mut h (hr r hr')) k h31 h2,
     h.ph.keep r10 r11 r29 hw, ?_, h.mb1, h.mb2⟩
   refine h.prep.keep ⟨h.prep.env.hs.congr k.wr, r10.trans h.prep.env.h10,
@@ -131,7 +131,7 @@ theorem MSt.frm {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N s) {rs : Lis
   rw [Pre.val32_eq_wv, Pre.val32_eq_wv]
   exact hf.wv_eq (fun r hr' => (hr r hr').arr hj) (by
     have := es 0; have := es 1; have := es 9; have := es 10; have := es 27
-    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [saveBytes] at hZ' <;> omega)
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [saveBytes] at hZ' <;> omega_arith)
 
 theorem Read.kept {w d : Nat} (hd : Read w d) : ∀ i, d ≤ i → i < d + 8 → Kept w i := by
   intro i h1 h2
@@ -142,11 +142,11 @@ theorem Read.kept {w d : Nat} (hd : Read w d) : ∀ i, d ≤ i → i < d + 8 →
   refine ⟨fun k hk => ?_, fun j hj => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
     rcases hk with rfl | rfl | rfl | rfl | rfl <;>
-      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl <;>
-      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega
-  · rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega_arith
+  · rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega_arith
 
 /-- `MSt` survives a witness's round. -/
 theorem MSt.round {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N s)
@@ -157,7 +157,7 @@ theorem MSt.round {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N s)
     hu.sp hu.prep.env.h31 hZ (hu.cs .r2 (by decide) (by decide))
   have phu : Ph p mb u := h.ph.keep (hu.prep.env.h10.trans h.ph.r10.symm) (hu.prep.env.h11.trans h.ph.r11.symm)
     (hu.prep.env.h29.trans h.ph.r29.symm) fun d hd => keeps_word hu.keeps (by
-      have := hd.le; simp only [PP.Z, saveBytes] at hZ; omega) hd.kept
+      have := hd.le; simp only [PP.Z, saveBytes] at hZ; omega_arith) hd.kept
   have mu : MSt p mb N u := ⟨stu, phu, hu.prep, h.mb1, h.mb2⟩
   have hf : Frm p.B [(176, 8), (160, 8)] u.mem t.mem := by
     rw [tm]

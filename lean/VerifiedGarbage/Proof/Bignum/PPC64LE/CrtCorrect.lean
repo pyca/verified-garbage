@@ -55,7 +55,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     rw [kfu.wr]
     show InRegions _ (cS s + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)) 8
     rw [Offset.add_add]
-    exact ⟨_, hS, Offset.contains_base _ (by show _ ≤ (stackArg s 9).toNat * 8; omega) (by omega)⟩
+    exact ⟨_, hS, Offset.contains_base _ (by show _ ≤ (stackArg s 9).toNat * 8; omega_arith) (by omega_arith)⟩
   have hsav : ∀ i < 18, u.mem.readW (off (savW (cS s)) (8 * i)) 64 = s.gpr (Crt.saved i) := fun i hi => by
     rw [uF.readW (r := ⟨off (savW (cS s)) (8 * i), 8⟩) (by simp [Region.Contains]) ?_ (by decide)]
     · exact hF.sav i hi
@@ -65,10 +65,10 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
       · show Region.Disjoint ⟨cS s + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i), 8⟩
           ⟨cS s + BitVec.ofNat 64 256, _⟩
         rw [Offset.add_add]
-        exact Offset.disjoint _ (Or.inl (by omega)) (by omega) (by show _ ≤ 2 ^ 64; omega)
+        exact Offset.disjoint _ (Or.inl (by omega_arith)) (by omega_arith) (by show _ ≤ 2 ^ 64; omega_arith)
       · have sub : Region.Sub ⟨off (savW (cS s)) (8 * i), 8⟩ ⟨cS s, cZ s⟩ := by
           show Region.Sub ⟨cS s + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i), 8⟩ _
-          rw [Offset.add_add]; exact Offset.sub_base _ (by show _ ≤ (stackArg s 9).toNat * 8; omega)
+          rw [Offset.add_add]; exact Offset.sub_base _ (by show _ ≤ (stackArg s 9).toNat * 8; omega_arith)
         have dOS' : (⟨s.gpr .r3, ck s⟩ : Region).Disjoint ⟨cS s, cZ s⟩ := by
           show (⟨s.gpr .r3, (s.gpr .r6).toNat⟩ : Region).Disjoint _
           rw [← hOL]; exact dOS

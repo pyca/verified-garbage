@@ -39,10 +39,10 @@ theorem maskLoop_ok {s : State} {p : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^
       obtain ⟨r, hr, hc⟩ := hw _ hi
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     have hlt : ((Spec.Rsa.bytesAt s.mem p n).take i).length = i := by
-      simp [bytesAt_length]; omega
+      simp [bytesAt_length]; omega_arith
     have hv : t.mem (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i) := by
-      rw [hm, writeBytes_out _ _ _ _ i (fun i' hi' => Offset.add_ofNat_ne p (by omega) (by omega) (by omega))
-        (by simp only [List.length_map, hlt]; omega)]
+      rw [hm, writeBytes_out _ _ _ _ i (fun i' hi' => Offset.add_ofNat_ne p (by omega_arith) (by omega_arith) (by omega_arith))
+        (by simp only [List.length_map, hlt]; omega_arith)]
     refine wp_lbz rfl hR fun s₁ o₁ e₁ => wp_and fun s₂ o₂ e₂ => ?_
     have hA : InRegions s₂.wr (s₂.gpr .r11 + BitVec.ofNat 64 0) 1 := by
       rw [o₂.wr, o₁.wr, o₂.get .r11, o₁.get .r11, h11', hK.wr, BitVec.add_zero]; exact hw _ hi
@@ -54,7 +54,7 @@ theorem maskLoop_ok {s : State} {p : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^
         h11']
       simp only [BitVec.add_zero]
       rw [hv, BitVec.setWidth_and, byte_setWidth64, hm, bytesAt_take_succ _ _ hi, List.map_append, List.map_cons,
-        List.map_nil, writeBytes_snoc _ _ _ _ (by simp only [List.length_map, hlt]; omega), List.length_map, hlt]
+        List.map_nil, writeBytes_snoc _ _ _ _ (by simp only [List.length_map, hlt]; omega_arith), List.length_map, hlt]
     · rw [o₅.get .r11, e₄, m₃.gpr, o₂.get .r11, o₁.get .r11, h11', ofNat_succ']
     · rw [e₅, o₄.get .r8, m₃.gpr, o₂.get .r8, o₁.get .r8]
   · rw [List.take_of_length_le (by simp [bytesAt_length])] at h
@@ -69,7 +69,7 @@ theorem neg_bit (x : BitVec 64) :
       rw [show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 by decide, Nat.mul_mod_mul_right]
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, h₁,
       Nat.mul_div_cancel _ (by decide), BitVec.toNat_setWidth, BitVec.toNat_setWidth]
-    omega
+    omega_arith
   rw [e]
   by_cases h : x.setWidth 32 = 0
   · rw [h]; decide
@@ -79,7 +79,7 @@ theorem neg_bit (x : BitVec 64) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_setWidth]
     simp only [BitVec.toNat_setWidth] at h' hl
-    simp; omega
+    simp; omega_arith
 
 /-- The mask: all ones if `c`, else 0. -/
 def maskOf (c : Prop) [Decidable c] : BitVec 64 := if c then BitVec.allOnes 64 else 0

@@ -39,9 +39,9 @@ theorem Base.step2 {v : VD} {s t : State} {rs : List Reg} {qb : Nat} (h : Base v
     (hr : ∀ r ∈ ([.r21, .r26, .r27, .r28] : List Reg), r ∉ rs := by decide) : Base v t :=
   ⟨h.ok, Regs.of_pack h.ok ((k.gpr .r21 (hr _ (by decide))).trans h.regs.r21)
       ((k.gpr .r27 (hr _ (by decide))).trans h.regs.r27) ((k.gpr .r28 (hr _ (by decide))).trans h.regs.r28)
-      ((k.gpr .r26 (hr _ (by decide))).trans h.regs.r26) h2 hqb (by simp only [VD.d]; omega),
+      ((k.gpr .r26 (hr _ (by decide))).trans h.regs.r26) h2 hqb (by simp only [VD.d]; omega_arith),
     h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr, h.hdg.keep k.rd k.wr,
-    (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb, h.hx.keep k.rd k.wr,
+    (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega_arith))).trans h.kb, h.hx.keep k.rd k.wr,
     h.hdr_body ho, h.sgn, h.kn⟩
 
 /-- p's octets into `r24`. -/
@@ -63,8 +63,8 @@ theorem w_scanQ {v : VD} {s : State} (h : S2 v s) : WP isa (.seq (.block ptrQ) s
   have := B.kn
   refine WP.seq (WP.mono (ptrQ_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine WP.mono (sigLen_ok a12 a6 (by omega) (by omega)
-      fun i hi => (B1.hk.sub (o := v.L.pl) (k := v.L.ql) (by omega)).rd i hi)
+  refine WP.mono (sigLen_ok a12 a6 (by omega_arith) (by omega_arith)
+      fun i hi => (B1.hk.sub (o := v.L.pl) (k := v.L.ql) (by omega_arith)).rd i hi)
     fun u ⟨⟨b16, m2⟩, k2⟩ => ⟨B1.step k2 (by rw [m2]; exact Outside.refl _ _ _ _), ?_, ?_, tp⟩
   · rw [k2.gpr .r2 (by decide), k1.gpr .r2 (by decide), r2]
   · simp only [FixL, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]
@@ -80,8 +80,8 @@ theorem w_bitsQ {v : VD} {s : State} (h : S2 v s) : WP isa (.seq (.block ptrQ) b
   have := B.kn
   refine WP.seq (WP.mono (ptrQ_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine WP.mono (bytesBits_ok a12 a6 (by omega) (by omega)
-      fun i hi => (B1.hk.sub (o := v.L.pl) (k := v.L.ql) (by omega)).rd i hi)
+  refine WP.mono (bytesBits_ok a12 a6 (by omega_arith) (by omega_arith)
+      fun i hi => (B1.hk.sub (o := v.L.pl) (k := v.L.ql) (by omega_arith)).rd i hi)
     fun u ⟨⟨b16, b0, m2⟩, k2⟩ => ⟨B1.step k2 (by rw [m2]; exact Outside.refl _ _ _ _), ?_, ?_, tp, ?_⟩
   · rw [k2.gpr .r2 (by decide), k1.gpr .r2 (by decide), r2]
   · simp only [FixL, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]
@@ -111,10 +111,10 @@ theorem w_pairs {v : VD} {s : State} (h : S3 v s ∧ s.gpr .r0 = 0) :
   have hpl := pl_bounds B
   refine WP.seq (WP.mono (WP.keep [.r25, .r0, .r2] (Q := fun t => t.gpr .r25 = BitVec.ofNat 64 v.qb ∧
       t.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d ∧ t.mem = s.mem)
-    (by prun [f16, r2, BitVec.add_zero, pack_add (show v.qb < 2 ^ 16 by omega)]) (by decide))
+    (by prun [f16, r2, BitVec.add_zero, pack_add (show v.qb < 2 ^ 16 by omega_arith)]) (by decide))
     fun t ⟨⟨a25, a2, m1⟩, k1⟩ => ?_)
-  refine WP.mono (pairs_ok ((k1.gpr .r24 (by decide)).trans f24) a25 (by omega) (by omega))
-    fun u ⟨⟨b0, m2⟩, k2⟩ => ⟨(B.step2 k1 (by rw [m1]; exact Outside.refl _ _ _ _) a2 (by omega)).step k2
+  refine WP.mono (pairs_ok ((k1.gpr .r24 (by decide)).trans f24) a25 (by omega_arith) (by omega_arith))
+    fun u ⟨⟨b0, m2⟩, k2⟩ => ⟨(B.step2 k1 (by rw [m1]; exact Outside.refl _ _ _ _) a2 (by omega_arith)).step k2
       (by rw [m2]; exact Outside.refl _ _ _ _), by rw [k2.gpr .r2 (by decide), a2], fixL_nil u, tp, h0.mp z, b0⟩
 
 /-- The check of the sizes, for public data satisfying `G`. -/

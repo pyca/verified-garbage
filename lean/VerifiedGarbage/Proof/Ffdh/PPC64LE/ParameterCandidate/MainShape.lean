@@ -36,17 +36,17 @@ theorem shape_iff {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (h
       (Spec.Ffdh.generationShape bits g (Spec.Ffdh.candidateOf bits x) &&
         Spec.Ffdh.primeShape (Spec.Ffdh.candidateOf bits x) &&
         Spec.Ffdh.primeShape ((Spec.Ffdh.candidateOf bits x - 1) / 2)) = true := by
-  obtain ⟨ho, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := bits) (by omega) x
-  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := bits) (by omega) x).1
-  obtain ⟨hql, _⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega) ho hl hu
+  obtain ⟨ho, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := bits) (by omega_arith) x
+  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := bits) (by omega_arith) x).1
+  obtain ⟨hql, _⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_arith) ho hl hu
   generalize Spec.Ffdh.candidateOf bits x = c at ho hl hu hbl hql ⊢
-  have hq : (c - 1) / 2 = c / 2 := by omega
+  have hq : (c - 1) / 2 = c / 2 := by omega_arith
   have big : 8161 < c := Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
-    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega : 13 ≤ bits - 1)) hl)
+    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 1)) hl)
   have bigq : 8161 < c / 2 := by
     rw [← hq]
     exact Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
-      (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega : 13 ≤ bits - 2)) hql)
+      (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 2)) hql)
   have hgen : Spec.Ffdh.generationShape bits g c = true ↔ goodRes g c := by
     unfold Spec.Ffdh.generationShape goodRes
     rcases hg with rfl | rfl <;> simp [hb1, hb2, hbl]

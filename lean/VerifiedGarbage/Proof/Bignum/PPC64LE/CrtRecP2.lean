@@ -33,16 +33,16 @@ open VG.Proof.Bignum.PPC64LE
 theorem subAdd_val {A B P T T' N c : Nat} (hA : A < P) (hB : B < P) (hP : P < 2 ^ N) (hc : c ≤ 1)
     (hT : T < 2 ^ N) (h : T + B = A + 2 ^ N * c) (h' : T' = (T + (if 0 < c then P else 0)) % 2 ^ N) :
     T' = (A + P - B) % P := by
-  rcases (show c = 0 ∨ c = 1 by omega) with rfl | rfl
+  rcases (show c = 0 ∨ c = 1 by omega_arith) with rfl | rfl
   · simp only [Nat.lt_irrefl, ite_false, Nat.add_zero] at h'
     rw [Nat.mul_zero, Nat.add_zero] at h
-    rw [h', Nat.mod_eq_of_lt hT, show A + P - B = (A - B) + P by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [h', Nat.mod_eq_of_lt hT, show A + P - B = (A - B) + P by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · simp only [Nat.zero_lt_one, ite_true] at h'
     rw [Nat.mul_one] at h
-    rw [h', show T + P = (A + P - B) + 2 ^ N by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [h', show T + P = (A + P - B) + 2 ^ N by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- `recombineP`'s middle: `(m₁ + p - b) mod p` into array 3, changing only
 arrays 3 and 4 (above `m₁`). -/
@@ -71,13 +71,13 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b : Nat} {c : Prog isa} {Q :
   refine WP.mono (WP.keep [.r14, .r0] (Q := fun t =>
     t.mem = s₁.mem.writeW (off B (slot w 4 + 8 * w)) (0 : BitVec 64)) ?_ (by decide)) fun s₂ ⟨m2', k2⟩ => ?_
   · have e16 : off B (slot w 4 + 8 * (w + 2)) - BitVec.ofNat 64 16 = off B (slot w 4 + 8 * w) := by
-      rw [off, VG.Offset.add_ofNat_sub B (show 16 ≤ slot w 4 + 8 * (w + 2) by omega)]; congr 2
+      rw [off, VG.Offset.add_ofNat_sub B (show 16 ≤ slot w 4 + 8 * (w + 2) by omega_arith)]; congr 2
     prun [a14, (k1.gpr .r29 (by decide)).trans h29, off_add, e16,
-      (hs.congr k1.wr).st (show slot w 4 + 8 * w + 8 ≤ Z by omega)]
+      (hs.congr k1.wr).st (show slot w 4 + 8 * w + 8 ≤ Z by omega_arith)]
     rfl
   have k12 := k1.trans k2
   rw [m1'] at m2'
-  have ow := writeW_outside s.mem B (d := slot w 4 + 8 * w) (0 : BitVec 64) (by omega)
+  have ow := writeW_outside s.mem B (d := slot w 4 + 8 * w) (0 : BitVec 64) (by omega_arith)
   have ow' : Mont.Outside B (slot w 4 + 8 * w) 8 s.mem s₂.mem := by rw [m2']; exact fun x hx => ow x hx
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r8) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h10)
@@ -94,22 +94,22 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b : Nat} {c : Prog isa} {Q :
   refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 4) (dT := slot w 3) (dM := slot w 1)
     (hs.congr k15.wr) ((k5.gpr _ (by decide)).trans ((k4.gpr _ (by decide)).trans a8))
     ((k5.gpr _ (by decide)).trans a9) a10
-    ((k15.gpr _ (by decide)).trans h11) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega)) fun s₆ ⟨⟨cc, hcc, hD, h20⟩, out6, k6⟩ => ?_)
+    ((k15.gpr _ (by decide)).trans h11) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun s₆ ⟨⟨cc, hcc, hD, h20⟩, out6, k6⟩ => ?_)
   have k16 := k15.trans k6
   rw [hm5] at hD h20 out6
-  have v1 : val32 s₂.mem B (slot w 1) (2 * w) = b := by rw [ow'.val32 (Or.inl (by omega)) (by omega), hb]
-  have v4 : val32 s₂.mem B (slot w 4) (2 * w) = m1 := by rw [ow'.val32 (Or.inl (by omega)) (by omega), hm1]
-  have v0 : val32 s₂.mem B (slot w 0) (2 * w) = Pv := by rw [ow'.val32 (Or.inl (by omega)) (by omega), hP]
+  have v1 : val32 s₂.mem B (slot w 1) (2 * w) = b := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hb]
+  have v4 : val32 s₂.mem B (slot w 4) (2 * w) = m1 := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hm1]
+  have v0 : val32 s₂.mem B (slot w 0) (2 * w) = Pv := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
   have h0 : w32 s₂.mem B (slot w 4 + 4 * (2 * w)) = 0 := by
     have := word_eq_w32 s₂.mem B (slot w 4 + 8 * w)
     rw [show Mont.word s₂.mem B (slot w 4 + 8 * w) = 0 by rw [m2']; exact word_writeW_self _ _ _ _,
-      show (0 : BitVec 64).toNat = 0 from rfl, show slot w 4 + 8 * w = slot w 4 + 4 * (2 * w) by omega] at this
-    omega
+      show (0 : BitVec 64).toNat = 0 from rfl, show slot w 4 + 8 * w = slot w 4 + 4 * (2 * w) by omega_arith] at this
+    omega_arith
   rw [v1, v4] at hD
   rw [h0] at h20
   have out6' : Mont.Outside B (slot w 3) (4 * (2 * w)) s₂.mem s₆.mem := fun x hx => out6 x hx
-  have v0' : val32 s₆.mem B (slot w 0) (2 * w) = Pv := by rw [out6'.val32 (Or.inl (by omega)) (by omega), v0]
+  have v0' : val32 s₆.mem B (slot w 0) (2 * w) = Pv := by rw [out6'.val32 (Or.inl (by omega_arith)) (by omega_arith), v0]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r10] (Q := fun t => t.gpr .r10 = off B (slot w 0) ∧ t.mem = s₆.mem)
@@ -125,7 +125,7 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b : Nat} {c : Prog isa} {Q :
   refine WP.seq (WP.mono (addMask_ok (b := decide (0 < cc)) (n := 2 * w) (dT := slot w 3) (dM := slot w 0)
     (hs.congr k19.wr) ((k9.gpr _ (by decide)).trans a15) a16 ((k19.gpr _ (by decide)).trans h11)
     (by rw [k9.gpr _ (by decide), k8.gpr _ (by decide), k7.gpr _ (by decide), h20]; simp only [decide_eq_true_eq])
-    (by omega) (by omega) (by omega) (by omega) (by omega)) fun t ⟨hT, outT, kT⟩ => ?_)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun t ⟨hT, outT, kT⟩ => ?_)
   rw [hm9, v0'] at hT
   rw [hm9] at outT
   have hval : val32 t.mem B (slot w 3) (2 * w) = (m1 + Pv - b) % Pv := by
@@ -138,6 +138,6 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b : Nat} {c : Prog isa} {Q :
   have h4 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   have h3' : ofs B x < slot w 3 ∨ slot w 3 + 8 * (w + 2) ≤ ofs B x := h3
   have h4' : ofs B x < slot w 4 ∨ slot w 4 + 8 * (w + 2) ≤ ofs B x := h4
-  rw [outT x (by omega), out6 x (by omega), m2', ow x (by omega)]
+  rw [outT x (by omega_arith), out6 x (by omega_arith), m2', ow x (by omega_arith)]
 
 end VG.Proof.Bignum.PPC64LE.Crt

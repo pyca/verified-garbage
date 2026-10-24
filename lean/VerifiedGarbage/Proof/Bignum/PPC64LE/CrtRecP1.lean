@@ -38,7 +38,7 @@ theorem bytesAt_below {B : Addr} {o n d k : Nat} {m m' : Mem} (h : Outside B o n
   rw [bytesAt_eq, bytesAt_eq]
   refine List.map_congr_left fun i hi => h _ (Or.inl ?_)
   have hi := List.mem_range.mp hi
-  rw [ofs_off B (by omega)]; omega
+  rw [ofs_off B (by omega_arith)]; omega_arith
 
 /-- `recombineP`'s first part, in `p`'s working space `off BX oA` (`P` in
 array 0, `m₁` in array 4), `m₂` the `qL` bytes of `X`'s array 1 (`qL` in the
@@ -70,11 +70,11 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
   have hsA := hs.sub hA
   have hnA := hsA.nowrap
   have hlow : (word s.mem (off BX oA) (slot wP 0)).toNat % 2 = 1 := by
-    rw [← wv_low_mod2 _ _ _ (show 1 ≤ wP by omega), ← Pre.val32_eq_wv, hP, hPodd]
+    rw [← wv_low_mod2 _ _ _ (show 1 ≤ wP by omega_arith), ← Pre.val32_eq_wv, hP, hPodd]
   refine WP.seq ?_
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (Pub.minv_ok hsA h10 (by omega) hlow) fun s₁ ⟨⟨i12, iinv, m1'⟩, k1⟩ => ?_
+  refine WP.mono (Pub.minv_ok hsA h10 (by omega_arith) hlow) fun s₁ ⟨⟨i12, iinv, m1'⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r5) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h10)
     ((k1.gpr _ (by decide)).trans h29) 1) fun s₂ ⟨⟨a5, m2'⟩, k2⟩ => ?_
@@ -91,7 +91,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
     rw [k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide)]
   refine WP.seq (WP.mono (r2_ok (hsA.congr k14.wr) ((k4.gpr _ (by decide)).trans a8) a9
     ((k14.gpr _ (by decide)).trans h10) ((k4.gpr _ (by decide)).trans ((k3.gpr _ (by decide)).trans a5))
-    ((k14.gpr _ (by decide)).trans h11) (by omega) hw' (by omega) (by rw [hm4, hP]; exact hP2))
+    ((k14.gpr _ (by decide)).trans h11) (by omega_arith) hw' (by omega_arith) (by rw [hm4, hP]; exact hP2))
     fun s₅ ⟨r1, out5, k5⟩ => ?_)
   have k15 := k14.trans k5
   rw [hm4, hP] at r1
@@ -104,12 +104,12 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
     (((k15.trans k6).gpr _ (by decide)).trans h29) 1) fun s₇ ⟨⟨a15, m7⟩, k7⟩ => ?_
   have k17 := (k15.trans k6).trans k7
   refine WP.seq (WP.mono (copySub_ok (hsA.congr k17.wr) a15 ((k7.gpr _ (by decide)).trans a14)
-    ((k17.gpr _ (by decide)).trans h11) (by omega) hw' (by omega) (by omega) (by omega))
+    ((k17.gpr _ (by decide)).trans h11) (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₈ ⟨⟨hw8, out8⟩, k8⟩ => ?_)
   have k18 := k17.trans k8
   rw [m7, m6] at hw8 out8
   have outB : Outside BX oA (slot wP 8) s.mem s₈.mem :=
-    (out_sub (fun y hy => out5 y hy) (by omega) (by omega) (by omega)).trans (out_sub out8 (by omega) (by omega) (by omega))
+    (out_sub (fun y hy => out5 y hy) (by omega_arith) (by omega_arith) (by omega_arith)).trans (out_sub out8 (by omega_arith) (by omega_arith) (by omega_arith))
   refine WP.seq (WP.mono (xb_ok (rd := .r30) (by decide) (by decide) ((k18.gpr _ (by decide)).trans h27)
     ((k18.gpr _ (by decide)).trans h28) 1) fun s₁₀ ⟨⟨a30, m10⟩, k10⟩ => ?_)
   have k110 := k18.trans k10
@@ -118,35 +118,35 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
   have o5 : Mont.Outside (off BX oA) (slot wP 1) (24 * (wP + 2)) s.mem s₅.mem := out5
   have o8 : Mont.Outside (off BX oA) (slot wP 7) (8 * wP) s₅.mem s₈.mem := fun y hy => out8 y hy
   have v0 : val32 s₁₀.mem (off BX oA) (slot wP 0) (2 * wP) = Pv := by
-    rw [hm10, o8.val32 (Or.inl (by omega)) (by omega), o5.val32 (Or.inl (by omega)) (by omega), hP]
+    rw [hm10, o8.val32 (Or.inl (by omega_arith)) (by omega_arith), o5.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
   have v4 : val32 s₁₀.mem (off BX oA) (slot wP 4) (2 * wP) = m1 := by
-    rw [hm10, o8.val32 (Or.inl (by omega)) (by omega), o5.val32 (Or.inr (by omega)) (by omega), hm1]
+    rw [hm10, o8.val32 (Or.inl (by omega_arith)) (by omega_arith), o5.val32 (Or.inr (by omega_arith)) (by omega_arith), hm1]
   have v7 : val32 s₁₀.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv := by
     rw [hm10, Pre.val32_eq_wv, wv_congr2 (fun i hi => hw8 i hi), ← Pre.val32_eq_wv, r1, ← Nat.pow_add,
       ← Nat.two_mul, ← Nat.mul_assoc]
   have w0 : w32 s₁₀.mem (off BX oA) (slot wP 0) = w32 s.mem (off BX oA) (slot wP 0) := by
-    rw [hm10, o8.w32 (Or.inl (by omega)) (by omega), o5.w32 (Or.inl (by omega)) (by omega)]
+    rw [hm10, o8.w32 (Or.inl (by omega_arith)) (by omega_arith), o5.w32 (Or.inl (by omega_arith)) (by omega_arith)]
   have hb : Spec.Rsa.bytesAt s₁₀.mem (off BX (slot wX 1)) qL =
       Spec.Rsa.bytesAt s.mem (off BX (slot wX 1)) qL := by
-    rw [hm10]; exact bytesAt_below outB (by omega) (by omega)
-  refine WP.seq (WP.mono (ModArith.reduce_ok (D := off BX (slot wX 1)) (hsA.congr k110.wr) (by omega) hw' (by omega)
+    rw [hm10]; exact bytesAt_below outB (by omega_arith) (by omega_arith)
+  refine WP.seq (WP.mono (ModArith.reduce_ok (D := off BX (slot wX 1)) (hsA.congr k110.wr) (by omega_arith) hw' (by omega_arith)
     ((k110.gpr _ (by decide)).trans h10) ((k110.gpr _ (by decide)).trans h29)
-    ((k110.gpr _ (by decide)).trans h11) (by rw [v0]; omega)
-    (by rw [a30, off_off, Nat.add_zero]) a31 hq1 (by omega)
-    (fun i hi => by rw [off_off]; exact (hs.congr k110.wr).ld (by omega))
+    ((k110.gpr _ (by decide)).trans h11) (by rw [v0]; omega_arith)
+    (by rw [a30, off_off, Nat.add_zero]) a31 hq1 (by omega_arith)
+    (fun i hi => by rw [off_off]; exact (hs.congr k110.wr).ld (by omega_arith))
     (fun i hi y hy he => by
-      have := ofs_sub hy (by omega)
-      rw [← he] at this; simp only [off_off] at this; rw [show ofs BX (off BX (slot wX 1 + i)) = slot wX 1 + i from Mem.sub_ofNat_toNat BX (by omega)] at this
-      omega)) fun t ⟨⟨r1', outR⟩, kR⟩ => ?_)
+      have := ofs_sub hy (by omega_arith)
+      rw [← he] at this; simp only [off_off] at this; rw [show ofs BX (off BX (slot wX 1 + i)) = slot wX 1 + i from Mem.sub_ofNat_toNat BX (by omega_arith)] at this
+      omega_arith)) fun t ⟨⟨r1', outR⟩, kR⟩ => ?_)
   have gr12 : t.gpr .r12 = s₁.gpr .r12 := by
     rw [kR.gpr _ (by decide), k10.gpr _ (by decide), k8.gpr _ (by decide),
       k7.gpr _ (by decide), k6.gpr _ (by decide), k5.gpr _ (by decide), g12]
-  refine hc t (by rw [outR.val32 (Or.inl (by omega)) (by omega), v0])
-    (by rw [r1', hb, hm2, v0]) (by rw [outR.val32 (Or.inr (by omega)) (by omega), v4])
-    (by rw [outR.val32 (Or.inr (by omega)) (by omega), v7]) (by rw [gr12]; exact i12)
-    (by rw [gr12, outR.w32 (Or.inl (by omega)) (by omega), w0]; exact iinv) ?_ (k110.trans kR).mono
+  refine hc t (by rw [outR.val32 (Or.inl (by omega_arith)) (by omega_arith), v0])
+    (by rw [r1', hb, hm2, v0]) (by rw [outR.val32 (Or.inr (by omega_arith)) (by omega_arith), v4])
+    (by rw [outR.val32 (Or.inr (by omega_arith)) (by omega_arith), v7]) (by rw [gr12]; exact i12)
+    (by rw [gr12, outR.w32 (Or.inl (by omega_arith)) (by omega_arith), w0]; exact iinv) ?_ (k110.trans kR).mono
   rw [hm10] at outR
-  exact outB.trans (out_sub (fun y hy => outR y hy) (by omega) (by omega) (by omega))
+  exact outB.trans (out_sub (fun y hy => outR y hy) (by omega_arith) (by omega_arith) (by omega_arith))
 
 /-- `recombineP`'s first part, `q_len` (`qL`, in the header) first. -/
 theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Prog isa} {Q : State → Prop}
@@ -171,7 +171,7 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
   have hn := hs.nowrap
   have hQL' : s.mem.readW (off BX 56) 64 = BitVec.ofNat 64 qL := hQL
   refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = BitVec.ofNat 64 qL ∧ t.mem = s.mem) (by
-    prun [h23, oQLen, hs.ld (show 56 + 8 ≤ Z by have := slot_le (w := wX) (j := 0) (by decide); unfold slot at *; omega),
+    prun [h23, oQLen, hs.ld (show 56 + 8 ≤ Z by have := slot_le (w := wX) (j := 0) (by decide); unfold slot at *; omega_arith),
       hQL']) (by decide)) fun s' ⟨⟨a31, m'⟩, k'⟩ => ?_)
   rw [← m'] at hP hm1 hm2
   refine recP1'_ok (hs.congr k'.wr) hA hXA hw2 hw' ((k'.gpr _ (by decide)).trans h10) ((k'.gpr _ (by decide)).trans h29)

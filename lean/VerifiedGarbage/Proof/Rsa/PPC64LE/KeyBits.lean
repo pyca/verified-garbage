@@ -33,14 +33,14 @@ theorem and_one_arith (x : BitVec 32) :
   have := x.isLt
   rw [BitVec.toNat_setWidth, BitVec.toNat_and, toNat_ext32, BitVec.toNat_ofNat,
     show 1 % 2 ^ 64 = 1 by decide, Nat.and_one_is_mod]
-  omega
+  omega_arith
 
 theorem and_arith (x y : BitVec 32) (hx : x.toNat ≤ 1) (hy : y.toNat ≤ 1) :
     ((x.setWidth 64 &&& y.setWidth 64).setWidth 32).toNat =
       if x.toNat = 1 ∧ y.toNat = 1 then 1 else 0 := by
   rw [BitVec.toNat_setWidth, BitVec.toNat_and, toNat_ext32, toNat_ext32]
-  rcases (show x.toNat = 0 ∨ x.toNat = 1 by omega) with e | e <;>
-    rcases (show y.toNat = 0 ∨ y.toNat = 1 by omega) with f | f <;> rw [e, f] <;> decide
+  rcases (show x.toNat = 0 ∨ x.toNat = 1 by omega_arith) with e | e <;>
+    rcases (show y.toNat = 0 ∨ y.toNat = 1 by omega_arith) with f | f <;> rw [e, f] <;> decide
 
 theorem or_one_arith (x : BitVec 32) :
     ((x.setWidth 64 ||| BitVec.ofNat 64 1).setWidth 32).toNat = 2 * (x.toNat / 2) + 1 := by
@@ -51,18 +51,18 @@ theorem or_one_arith (x : BitVec 32) :
   have r1 : x.toNat % 2 ||| 1 = 1 := by
     rcases Nat.mod_two_eq_zero_or_one x.toNat with e | e <;> rw [e] <;> decide
   have e : x.toNat ||| 1 = 2 ^ 1 * (x.toNat / 2) + 1 := by
-    conv => lhs; rw [show x.toNat = 2 ^ 1 * (x.toNat / 2) + x.toNat % 2 by omega]
+    conv => lhs; rw [show x.toNat = 2 ^ 1 * (x.toNat / 2) + x.toNat % 2 by omega_arith]
     rw [Nat.two_pow_add_eq_or_of_lt hr, Nat.or_assoc, r1,
       ← Nat.two_pow_add_eq_or_of_lt (show 1 < 2 ^ 1 by decide)]
   rw [e]
-  omega
+  omega_arith
 
 theorem clr_arith (x : BitVec 32) :
     ((x.setWidth 64 >>> 1 <<< 1).setWidth 32).toNat = 2 * (x.toNat / 2) := by
   have hx := x.isLt
   rw [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, toNat_ext32,
     Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 /-! ## Slots -/
 
@@ -87,12 +87,12 @@ theorem stBorrow_ok {s : State} {B : Addr} {Z w N sl : Nat} (h : Ws s B Z w N)
       u.mem = s.mem.writeW (off B sl) ((s.gpr .r9).setWidth 32) ∧ Keep opRegs s u := by
     refine WP.mono (WP.keep [] (Q := fun u => u.mem = s.mem.writeW (off B sl) ((s.gpr .r9).setWidth 32))
       ?_ (by rfl)) fun u ⟨m, k⟩ => ⟨m, k.mono (by simp)⟩
-    prun [stBorrow, h.r31, h.scr.st (show sl + 4 ≤ Z by omega),
-      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sl < 2 ^ 15 by omega)]
-  refine WP.mono hb fun u ⟨mu, ku⟩ => k u (h.of_keep ku) (by rw [mu]; exact keep_slot _ _ (by simp) (by omega))
+    prun [stBorrow, h.r31, h.scr.st (show sl + 4 ≤ Z by omega_arith),
+      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sl < 2 ^ 15 by omega_arith)]
+  refine WP.mono hb fun u ⟨mu, ku⟩ => k u (h.of_keep ku) (by rw [mu]; exact keep_slot _ _ (by simp) (by omega_arith))
     ?_ ku
   rw [mu, slot_write_self, BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 /-- `andS d a b`: the slot `d` := the slots `a` and `b` and'ed. -/
 theorem andS_ok {s : State} {B : Addr} {Z w N d a b : Nat} (h : Ws s B Z w N)
@@ -109,12 +109,12 @@ theorem andS_ok {s : State} {B : Addr} {Z w N d a b : Nat} (h : Ws s B Z w N)
       (u.mem = s.mem.writeW (off B d) (((s.mem.readW (off B a) 32).setWidth 64 &&&
         (s.mem.readW (off B b) 32).setWidth 64).setWidth 32)) ∧ Keep opRegs s u := by
     refine WP.mono (WP.keep [.r0, .r3] ?_ (by rfl)) fun u ⟨m, k⟩ => ⟨m, k.mono⟩
-    prun [andS, h.r31, h.scr.ld (show a + 4 ≤ Z by omega), h.scr.ld (show b + 4 ≤ Z by omega),
-      h.scr.st (show d + 4 ≤ Z by omega),
-      exec_load_w (show Reg.r31 ≠ .r0 by decide) (show a < 2 ^ 15 by omega),
-      exec_load_w (show Reg.r31 ≠ .r0 by decide) (show b < 2 ^ 15 by omega),
-      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show d < 2 ^ 15 by omega)]
-  refine WP.mono hk fun u ⟨mu, ku⟩ => k u (h.of_keep ku) (by rw [mu]; exact keep_slot _ _ (by simp) (by omega))
+    prun [andS, h.r31, h.scr.ld (show a + 4 ≤ Z by omega_arith), h.scr.ld (show b + 4 ≤ Z by omega_arith),
+      h.scr.st (show d + 4 ≤ Z by omega_arith),
+      exec_load_w (show Reg.r31 ≠ .r0 by decide) (show a < 2 ^ 15 by omega_arith),
+      exec_load_w (show Reg.r31 ≠ .r0 by decide) (show b < 2 ^ 15 by omega_arith),
+      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show d < 2 ^ 15 by omega_arith)]
+  refine WP.mono hk fun u ⟨mu, ku⟩ => k u (h.of_keep ku) (by rw [mu]; exact keep_slot _ _ (by simp) (by omega_arith))
     ?_ ku
   rw [mu, slot_write_self, and_arith _ _ ba bb]
 
@@ -135,17 +135,17 @@ theorem lowOp_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj :
   have hS : S w = 4 * (w + 2) := rfl
   have := h.wpos
   rw [List.append_assoc]
-  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
+  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   rw [WP.block_append_iff]
   have k₀ : Keep opRegs s (s.write .r5 (off B (arr w j))) := (Keep.write _ _ _).mono
   refine WP.mono (hops _ (by simp [gpr_write]) rfl k₀) fun u ⟨mu, ku⟩ => ?_
   have kt : Keep opRegs s u := k₀.trans' ku
-  have o := writeW32_outside s.mem B (d := arr w j) (f (s.mem.readW (off B (arr w j)) 32)) (by omega)
+  have o := writeW32_outside s.mem B (d := arr w j) (f (s.mem.readW (off B (arr w j)) 32)) (by omega_arith)
   have keep : KeyWorkspace.Keep B w [j] [] s.mem u.mem := by
-    rw [mu]; exact KeyWorkspace.Keep.of_arr (d := 0) (by simpa using o) (by omega) (by simp)
+    rw [mu]; exact KeyWorkspace.Keep.of_arr (d := 0) (by simpa using o) (by omega_arith) (by simp)
   refine k u (h.of_keep kt) keep ?_ kt ?_
-  · rw [mu, num_write0 _ _ (by omega) (by omega)]
-  · rw [mu]; exact o.w32 (by omega) (by omega)
+  · rw [mu, num_write0 _ _ (by omega_arith) (by omega_arith)]
+  · rw [mu]; exact o.w32 (by omega_arith) (by omega_arith)
 
 /-- `setOne j`: the low digit of `[j]` := 1. -/
 theorem setOne_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N)
@@ -159,7 +159,7 @@ theorem setOne_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj 
   have hS : S w = 4 * (w + 2) := rfl
   refine lowOp_ok (f := fun _ => 1) h hj hN (fun u u5 um ku => ?_) fun t ht kt v kr _ => k t ht kt v kr
   refine WP.mono (WP.keep [.r0] ?_ (by decide)) fun u' ⟨m, k⟩ => ⟨m, k.mono⟩
-  prun [u5, um, (h.scr.congr ku.wr).st (show arr w j + 4 ≤ Z by omega)]
+  prun [u5, um, (h.scr.congr ku.wr).st (show arr w j + 4 ≤ Z by omega_arith)]
   rfl
 
 /-- `orOne j`: the low bit of `[j]` set. -/
@@ -175,13 +175,13 @@ theorem orOne_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj :
   refine lowOp_ok (f := fun x => (x.setWidth 64 ||| BitVec.ofNat 64 1).setWidth 32) h hj hN
     (fun u u5 um ku => ?_) fun t ht kt v kr _ => k t ht kt ?_ kr
   · refine WP.mono (WP.keep [.r0, .r3] ?_ (by decide)) fun u' ⟨m, k⟩ => ⟨m, k.mono⟩
-    prun [u5, um, (h.scr.congr ku.wr).ld (show arr w j + 4 ≤ Z by omega),
-      (h.scr.congr ku.wr).st (show arr w j + 4 ≤ Z by omega)]
+    prun [u5, um, (h.scr.congr ku.wr).ld (show arr w j + 4 ≤ Z by omega_arith),
+      (h.scr.congr ku.wr).st (show arr w j + 4 ≤ Z by omega_arith)]
   · rw [v, or_one_arith]
-    have e := num_mod32 s.mem B (w := w) (j := j) (by omega)
+    have e := num_mod32 s.mem B (w := w) (j := j) (by omega_arith)
     change _ = (s.mem.readW (off B (arr w j)) 32).toNat at e
     rw [← e]
-    omega
+    omega_arith
 
 /-- `clrLow j`: the low bit of `[j]` cleared. -/
 theorem clrLow_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N)
@@ -197,13 +197,13 @@ theorem clrLow_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj 
   refine lowOp_ok (f := fun x => (x.setWidth 64 >>> 1 <<< 1).setWidth 32) h hj hN
     (fun u u5 um ku => ?_) fun t ht kt v kr ktop => k t ht kt ?_ kr ktop
   · refine WP.mono (WP.keep [.r0] ?_ (by decide)) fun u' ⟨m, k⟩ => ⟨m, k.mono⟩
-    prun [u5, um, (h.scr.congr ku.wr).ld (show arr w j + 4 ≤ Z by omega),
-      (h.scr.congr ku.wr).st (show arr w j + 4 ≤ Z by omega)]
+    prun [u5, um, (h.scr.congr ku.wr).ld (show arr w j + 4 ≤ Z by omega_arith),
+      (h.scr.congr ku.wr).st (show arr w j + 4 ≤ Z by omega_arith)]
   · rw [v, clr_arith]
-    have e := num_mod32 s.mem B (w := w) (j := j) (by omega)
+    have e := num_mod32 s.mem B (w := w) (j := j) (by omega_arith)
     change _ = (s.mem.readW (off B (arr w j)) 32).toNat at e
     rw [← e]
-    omega
+    omega_arith
 
 /-- `bitOf sl j`: the slot `sl` := the low bit of `[j]`. -/
 theorem bitOf_ok {s : State} {B : Addr} {Z w N j sl : Nat} (h : Ws s B Z w N)
@@ -218,7 +218,7 @@ theorem bitOf_ok {s : State} {B : Addr} {Z w N j sl : Nat} (h : Ws s B Z w N)
   have := h.wpos
   unfold bitOf
   rw [List.append_assoc]
-  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
+  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   rw [WP.block_append_iff]
   have k₀ : Keep opRegs s (s.write .r5 (off B (arr w j))) := (Keep.write _ _ _).mono
   have hk : WP isa (.block [.load .w .r0 .r5 0, .li .r3 1, .logic .and .r0 .r0 .r3, .store .w .r0 .r31 sl])
@@ -226,11 +226,11 @@ theorem bitOf_ok {s : State} {B : Addr} {Z w N j sl : Nat} (h : Ws s B Z w N)
         (u.mem = s.mem.writeW (off B sl) (((s.mem.readW (off B (arr w j)) 32).setWidth 64 &&&
           BitVec.ofNat 64 1).setWidth 32)) ∧ Keep [.r0, .r3] (s.write .r5 (off B (arr w j))) u := by
     refine WP.keep _ ?_ (by rfl)
-    prun [h.r31, h.scr.ld (show arr w j + 4 ≤ Z by omega), h.scr.st (show sl + 4 ≤ Z by omega),
-      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sl < 2 ^ 15 by omega)]
+    prun [h.r31, h.scr.ld (show arr w j + 4 ≤ Z by omega_arith), h.scr.st (show sl + 4 ≤ Z by omega_arith),
+      exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sl < 2 ^ 15 by omega_arith)]
   refine WP.mono hk fun u ⟨mu, ku⟩ => ?_
   have kt : Keep opRegs s u := k₀.trans' ku.mono
-  refine k u (h.of_keep kt) (by rw [mu]; exact keep_slot _ _ (by simp) (by omega)) ?_ kt
-  rw [mu, slot_write_self, and_one_arith, num_mod2 _ _ (by omega)]
+  refine k u (h.of_keep kt) (by rw [mu]; exact keep_slot _ _ (by simp) (by omega_arith)) ?_ kt
+  rw [mu, slot_write_self, and_one_arith, num_mod2 _ _ (by omega_arith)]
 
 end VG.Proof.Rsa.PPC64LE.Keys

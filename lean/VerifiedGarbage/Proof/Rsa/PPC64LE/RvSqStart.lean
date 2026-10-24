@@ -39,8 +39,8 @@ theorem ld_slot {m : Mem} {B : Addr} {d v : Nat} (h : slot m B d = v) :
   apply BitVec.eq_of_toNat_eq
   have := (m.readW (B + BitVec.ofNat 64 d) 32).isLt
   simp only [slot, w32, off] at h
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), h]
-  rw [← h]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), h]
+  rw [← h]; omega_arith
 
 /-- A flag as a word. -/
 abbrev b64 (b : Bool) : BitVec 64 := BitVec.ofNat 64 (b2n b)
@@ -73,8 +73,8 @@ theorem sqStart_ok {s0 u : State} (hn : NOk s0) {j : Nat} (h : EI s0 j (cB s0) u
       SI s0 j 0 t ∧ t.gpr .r27 = BitVec.ofNat 64 (cB s0) := by
   have c := h.cf
   have hz : 160 ≤ rvZ s0 := c.ws.hdr_le
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
-  have hn1 : 1 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
+  have hn1 : 1 < nV s0 := by have := hn.big; omega_arith
   have ex : y0 s0 j < nV s0 := by rw [y0, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hn0
   have eY : num u.mem (rvB s0) (ww (kK s0)) mY = y0 s0 j * RR s0 % nV s0 := by
     rw [h.vY, Nat.mod_eq_of_lt hr, y0, VG.Proof.Bignum.powMod_eq, Nat.mod_mul_mod]
@@ -100,11 +100,11 @@ theorem sqStart_ok {s0 u : State} (hn : NOk s0) {j : Nat} (h : EI s0 j (cB s0) u
       (off (rvB s0) sOk) ((0#64).setWidth 32)).writeW (off (rvB s0) sK) ((0#64).setWidth 32) ∧
     x.gpr .r27 = u2.gpr .r26) ?_
     (by decide)) fun t ⟨⟨mt, a27⟩, kt⟩ => ?_
-  · prun [sqInit, ws2.r31, ws2.scr.ld (show sE1 + 4 ≤ rvZ s0 by simp only [sE1]; omega),
-      ws2.scr.ld (show sE2 + 4 ≤ rvZ s0 by simp only [sE2]; omega),
-      ws2.scr.st (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega),
-      ws2.scr.st (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega),
-      ws2.scr.st (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega),
+  · prun [sqInit, ws2.r31, ws2.scr.ld (show sE1 + 4 ≤ rvZ s0 by simp only [sE1]; omega_arith),
+      ws2.scr.ld (show sE2 + 4 ≤ rvZ s0 by simp only [sE2]; omega_arith),
+      ws2.scr.st (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega_arith),
+      ws2.scr.st (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega_arith),
+      ws2.scr.st (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega_arith),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sE1 < 2 ^ 15 by decide),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sE2 < 2 ^ 15 by decide),
       exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sDone < 2 ^ 15 by decide),
@@ -123,7 +123,7 @@ theorem sqStart_ok {s0 u : State} (hn : NOk s0) {j : Nat} (h : EI s0 j (cB s0) u
   · rw [mt, slot_wne _ _ _ (by decide) (by decide) (by decide), slot_wne _ _ _ (by decide) (by decide) (by decide),
       slot_write_self, b64_w32, BitVec.toNat_ofNat]
     simp only [sqst, sqIter, sqStart]
-    have := b2n_le (decide (y0 s0 j = 1) || decide (y0 s0 j = nV s0 - 1)); omega
+    have := b2n_le (decide (y0 s0 j = 1) || decide (y0 s0 j = nV s0 - 1)); omega_arith
   · rw [mt, slot_wne _ _ _ (by decide) (by decide) (by decide), slot_write_self]; rfl
   · rw [mt, slot_write_self]; rfl
   · rw [a27]; exact c2.r26

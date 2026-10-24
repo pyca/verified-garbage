@@ -45,7 +45,7 @@ theorem xb_ok {t : State} {B : Addr} {w : Nat} {rd : Reg} (hrd : rd ≠ .r0) (hr
       (k1.gpr .r28 (by simpa using Ne.symm hrd28)).trans h28]
     refine ⟨_, rfl, ⟨?_, m1⟩, (k1.trans (Keep.write _ _ _)).mono (by simp)⟩
     rw [gpr_write, ite_eq_left_iff.mpr fun e => absurd rfl e, off_add, show slot w (j + 1) = slot w j + 8 * (w + 2) by
-      unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega]
+      unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega_arith]
 
 /-- `exportM2`, `Q`'s working space at `BQ` (`r10`, `r29`), `X`'s at `BX` (`r23`,
 `r27`, `r28`) apart from it, and `q_len = L` in the header: `X`'s array 1's
@@ -71,9 +71,9 @@ theorem exportM2_ok {s : State} {BQ BX : Addr} {ZQ ZX wQ wX L : Nat} (hq : Scr s
   refine WP.mono (WP.keep [.r15, .r17] (Q := fun s₂ => s₂.gpr .r15 = off BQ (slot wQ 4 + (L - 1)) ∧
     s₂.gpr .r17 = BitVec.ofNat 64 L ∧ s₂.mem = s₁.mem) ?_ (by decide)) fun s₂ ⟨⟨b15, b17, m2⟩, k2⟩ => ?_
   · have hL' : s₁.mem.readW (off BX 56) 64 = BitVec.ofNat 64 L := by rw [m1]; exact hL
-    prun [a15, (k1.gpr .r23 (by decide)).trans h23, oQLen, (hx.congr k1.wr).ld (show 56 + 8 ≤ ZX by omega), hL',
+    prun [a15, (k1.gpr .r23 (by decide)).trans h23, oQLen, (hx.congr k1.wr).ld (show 56 + 8 ≤ ZX by omega_arith), hL',
       off_add, BitVec.add_zero]
-    rw [off_sub1 _ (by omega)]; congr 2; omega
+    rw [off_sub1 _ (by omega_arith)]; congr 2; omega_arith
   refine WP.mono (xb_ok (rd := .r16) (by decide) (by decide) ((k1.trans k2).gpr _ (by decide) |>.trans h27)
     ((k1.trans k2).gpr _ (by decide) |>.trans h28) 1) fun s₃ ⟨⟨b16, m3⟩, k3⟩ => ?_
   have k13 := (k1.trans k2).trans k3
@@ -86,11 +86,11 @@ theorem exportM2_ok {s : State} {BQ BX : Addr} {ZQ ZX wQ wX L : Nat} (hq : Scr s
       Keep [.r0, .r15, .r16, .r17] s t
   refine WP.mono (wp_countdown (body := .block ([.lbz .r0 .r15 0, .stb .r0 .r16 0, .addi .r16 .r16 1,
       .subi .r15 .r15 1] ++ ([.subi .r17 .r17 1] : List Instr)))
-    (cnt := .r17) (N := L) (by omega) (by omega) Inv (fun j hj t ⟨t15, t16, tout, tb, tk⟩ hc => ?_)
+    (cnt := .r17) (N := L) (by omega_arith) (by omega_arith) Inv (fun j hj t ⟨t15, t16, tout, tb, tk⟩ hc => ?_)
     ⟨by rw [b15']; rfl, by rw [b16]; rfl, by rw [m3, m2, m1]; exact Outside.refl _ _ _ _,
-      fun _ h => absurd h (by omega), k13.mono⟩ b17') fun t ⟨_, _, tout, tb, tk⟩ => ⟨⟨tb, tout⟩, tk⟩
+      fun _ h => absurd h (by omega_arith), k13.mono⟩ b17') fun t ⟨_, _, tout, tb, tk⟩ => ⟨⟨tb, tout⟩, tk⟩
   have hrd : InRegions (t.rd ++ t.wr) (off BQ (slot wQ 4 + (L - 1) - j)) 1 := by
-    rw [tk.rd, tk.wr]; exact hq.ld (show slot wQ 4 + (L - 1) - j + 1 ≤ ZQ by omega)
+    rw [tk.rd, tk.wr]; exact hq.ld (show slot wQ 4 + (L - 1) - j + 1 ≤ ZQ by omega_arith)
   have hst : WP isa (.block [.lbz .r0 .r15 0, .stb .r0 .r16 0, .addi .r16 .r16 1,
       .subi .r15 .r15 1, .subi .r17 .r17 1]) t fun t' => t' = (((({ (t.write .r0
         ((t.mem.read (off BQ (slot wQ 4 + (L - 1) - j)) 1).setWidth 64)) with
@@ -100,26 +100,26 @@ theorem exportM2_ok {s : State} {BQ BX : Addr} {ZQ ZX wQ wX L : Nat} (hq : Scr s
             (off BQ (slot wQ 4 + (L - 1) - j) - BitVec.ofNat 64 1)).write .r17 (t.gpr .r17 - BitVec.ofNat 64 1)) := by
     prun [t15, t16, exec_lbz' (show Reg.r15 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
       exec_stb (show Reg.r16 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hrd,
-      (hx.congr tk.wr).st (d := slot wX 1 + j) (n := 1) (by omega), off_add]
+      (hx.congr tk.wr).st (d := slot wX 1 + j) (n := 1) (by omega_arith), off_add]
   refine WP.mono hst fun t' e => ?_
   subst e
   have hw1 := write1_outside t.mem BX (d := slot wX 1 + j)
-    (((t.mem.read (off BQ (slot wQ 4 + (L - 1) - j)) 1).setWidth 64).setWidth 8) (by omega)
+    (((t.mem.read (off BQ (slot wQ 4 + (L - 1) - j)) 1).setWidth 64).setWidth 8) (by omega_arith)
   have harr : t.mem (off BQ (slot wQ 4 + (L - 1) - j)) = s.mem (off BQ (slot wQ 4 + (L - 1) - j)) := by
     refine tout _ (Or.inr ?_)
     by_contra hc
-    have := hsep (off BQ (slot wQ 4 + (L - 1) - j)) (by omega)
+    have := hsep (off BQ (slot wQ 4 + (L - 1) - j)) (by omega_arith)
     rw [show ofs BQ (off BQ (slot wQ 4 + (L - 1) - j)) = slot wQ 4 + (L - 1) - j from
-      Mem.sub_ofNat_toNat BQ (by omega)] at this
-    omega
+      Mem.sub_ofNat_toNat BQ (by omega_arith)] at this
+    omega_arith
   refine ⟨⟨?_, by gsimp; rw [Nat.add_assoc], ?_, ?_, ?_⟩, by gsimp⟩
-  · gsimp; rw [off_sub1 _ (by omega), show slot wQ 4 + (L - 1) - j - 1 = slot wQ 4 + (L - 1) - (j + 1) by omega]
-  · gsimp; exact (tout.mono (Nat.le_refl _) (by omega)).trans (hw1.mono (by omega) (by omega))
+  · gsimp; rw [off_sub1 _ (by omega_arith), show slot wQ 4 + (L - 1) - j - 1 = slot wQ 4 + (L - 1) - (j + 1) by omega_arith]
+  · gsimp; exact (tout.mono (Nat.le_refl _) (by omega_arith)).trans (hw1.mono (by omega_arith) (by omega_arith))
   · intro i hi
     gsimp
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [hw1 _ (by rw [ofs_off0 BX (by omega)]; omega)]; exact tb i hi
-    · rw [write1_self, show slot wQ 4 + (L - 1 - i) = slot wQ 4 + (L - 1) - i by omega, ← harr]
+    · rw [hw1 _ (by rw [ofs_off0 BX (by omega_arith)]; omega_arith)]; exact tb i hi
+    · rw [write1_self, show slot wQ 4 + (L - 1 - i) = slot wQ 4 + (L - 1) - i by omega_arith, ← harr]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, Mem.read]; rw [BitVec.toNat_append]; simpa using (t.mem _).isLt
   · exact tk.trans' (((((Keep.write _ _ _).trans (Keep.mem _ _)).trans

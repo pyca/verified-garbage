@@ -41,8 +41,8 @@ theorem row_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PF
   refine (rowMul_piece hP hF hS hi).seq (Piece.seq ?_ ((rowInv_piece hP hF hS hi).seq ((rowAdd_piece hP hF hS hi).seq
     ((rowP2r_piece hP hF hS hi).seq ((rowSbp_piece hP hF hS hi).seq (rowBp_piece hP hF hS hi))))))
   refine Piece.mono (Piece.seqR (I := fun j => RowI p STK i (tIs p STK fun A S => dotK p A S i j)) (p.ℓ - 1) 1
-    fun j h1 h2 => rowMulAdd_piece hP hF hS hi (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+    fun j h1 h2 => rowMulAdd_piece hP hF hS hi (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_arith] at h
 
 /-! ## The keys in memory -/
 
@@ -105,7 +105,7 @@ theorem trPieces {p : Params} (hF : PFacts p) {STK : Nat} {σ s : State} (hs : S
     (by rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> lsep hF [hashLay, Lay.size, hF.sk, hlen, ite_true]) (.inr rfl)
     fun _ => by decide⟩
   rw [List.mem_singleton] at hpc; subst hpc
-  exact pieceS hs rfl (show (0 : Nat) < 32768 by decide) hpk.1 (show 0 < p.pkLen by rw [hF.pk]; omega)
+  exact pieceS hs rfl (show (0 : Nat) < 32768 by decide) hpk.1 (show 0 < p.pkLen by rw [hF.pk]; omega_arith)
     (by lsep hF [hashLay, Lay.size, hF.pk, ite_true]) (.inr rfl) fun h => absurd h (by decide)
 
 theorem trHash_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {A : Nat → Poly} {S : Nat → IPoly}
@@ -118,11 +118,11 @@ theorem trHash_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {A : Nat
   refine WP.mono (hashS hs ktrue (rate := 136) (sfx := 0x1f) (by decide) (by decide) (by simp) hin hq)
     fun s' ⟨k', o'⟩ => ⟨A, S, R, h.keep hF k' ?_, ?_⟩
   · have := hF.scr
-    exact (KRChk.c0 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide)) (by omega)).append
+    exact (KRChk.c0 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide)) (by omega_arith)).append
       (W₁ := [_]) ((KRChk.c0 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
-      (by omega)).append (W₁ := [_]) ((KRChk.stk hF (Nat.le_refl _) (Nat.le_refl _)).append (W₁ := [_])
+      (by omega_arith)).append (W₁ := [_]) ((KRChk.stk hF (Nat.le_refl _) (Nat.le_refl _)).append (W₁ := [_])
       (KRChk.c4 (o := 64) (n := 64) hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (.inl (by decide))
-        (.inl (by simp only [oT0]; omega)) (by rw [hF.sk, oT0]; omega))))
+        (.inl (by simp only [oT0]; omega_arith)) (by rw [hF.sk, oT0]; omega_arith))))
   have o₃ : bytesAt s'.mem ((lay p STK σ).A 4 64) 64 = _ := o'
   rw [o₃]
   simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Lay.pb,
@@ -149,14 +149,14 @@ theorem epi_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ s : State} (h : KFin
   have hscr := hF.scr
   have hin : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions (s.rd ++ s.wr) (pScr σ + BitVec.ofNat 64 o) 8 :=
     fun o h₁ h₂ => mem_rd_wr' (Lay.covers (L := lay p STK σ) (o := o) (l := 8) (hs.cw 0 (by decide) (by decide))
-      (by rw [lay_size0]; omega) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+      (by rw [lay_size0]; omega_arith) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
   refine WP.mono (topEnd_ok hs.r31 h.kc.sav hin h.kc.pres)
     fun s' ⟨pr, lr, r3, m', sp', _, _⟩ => ⟨⟨pr, sp'.trans h.kc.sp, lr⟩, ?_⟩
   sig_post [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
   have e3 : σ.gpr .r4 = (lay p STK σ).A 3 0 := by simp only [Lay.A, BitVec.add_zero]; rfl
   have e4 : σ.gpr .r5 = (lay p STK σ).A 4 0 := by simp only [Lay.A, BitVec.add_zero]; rfl
   rw [r3, h.r24, m', e3, e4, pk_bytes hF h, sk_bytes hF h htr]
-  exact Proof.MlDsa.KeyGen.outcome_keyGen (by have := hF.l; omega) h.good
+  exact Proof.MlDsa.KeyGen.outcome_keyGen (by have := hF.l; omega_arith) h.good
 
 theorem ktaint31 {p : Params} {STK : Nat} {c : Prog isa} {hc : VG.Taint.Hint VG.PPC64LE.taint.T}
     (h : (VG.PPC64LE.taint.check (Taint.ofRegs [.r31]) c hc).isSome = true) : RelCT isa (KTwo p STK) c fun _ _ => True :=
@@ -182,13 +182,13 @@ theorem rest_piece :
     (Piece.seq (J := KRx p STK (p.ℓ + p.k) p.ℓ 0) ?_ (Piece.seq (J := KRx p STK (p.ℓ + p.k) p.ℓ p.k) ?_
       (trHash_piece hF))))
   · refine Piece.mono (Piece.seqR (I := fun r => KRx p STK r 0 0) (p.ℓ + p.k) 0
-      fun r _ hr => packS_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun r _ hr => packS_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
   · refine Piece.mono (Piece.seqR (I := fun j => KRx p STK (p.ℓ + p.k) j 0) p.ℓ 0
-      fun j _ hj => nttS_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun j _ hj => nttS_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
   · refine Piece.mono (Piece.seqR (I := fun i => KRx p STK (p.ℓ + p.k) p.ℓ i) p.k 0
-      fun i _ hi => row_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun i _ hi => row_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
 
 theorem keyGen_piece (hSTK : 48 ≤ STK) :
@@ -221,7 +221,7 @@ theorem keyGen_verified {P : Prims} {S : Nat} (hP : PrimsOk P S) (h48 : 48 ≤ S
     Verified PPC64LE.target (keyGen P p) (Spec.MlDsa.keyGenContract p PPC64LE.abi S) := by
   have hF := pfacts hp
   have hk := keyGen_piece hP hF (Nat.le_refl _) h48
-  obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega_arith⟩
   refine ⟨fun s hs => hk.ok s s (pre_of hs) rfl, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_,
     ⟨keyGenSat p, hsat⟩⟩
   sig_pub [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at hpub

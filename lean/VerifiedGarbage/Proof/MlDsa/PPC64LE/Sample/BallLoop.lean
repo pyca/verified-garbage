@@ -134,10 +134,10 @@ theorem zBody_ok {k : Nat} (hk : k < 256) {s : State} (h : ZAt σ k s) :
       rw [List.mem_singleton] at hr; subst hr
       exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 272) (by decide))).symm) (by decide)]
     exact h.out
-  · rw [m, coeffAt_writeW _ _ (by omega) hk, h.r12]
+  · rw [m, coeffAt_writeW _ _ (by omega_arith) hk, h.r12]
     by_cases e : k = j
     · rw [ifT e]; rfl
-    · rw [ifF e]; exact h.zero j (by omega)
+    · rw [ifF e]; exact h.zero j (by omega_arith)
   · rw [r6, h.r6, count_sub hk]; exact count_nz hk (by decide)
 
 /-- The zeroing loop, from what the sponge leaves. -/
@@ -157,7 +157,7 @@ theorem zero_ok {s₀ s : State} (h : J6 136 272 (spOf σ) σ s₀ s) (h27 : s�
     (fun s h => ⟨h.env, h.r27, h.out, fun k hk => ?_⟩) ⟨h.j0.env.regs hp m gp rd wr sp,
       by rw [gp _ (by decide), h.gp _ (by decide), h27], by rw [m, h.out]; exact (H_eq _ _).symm, r12, r4, r6,
       fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  rw [h.zero k hk, getElem!_pos _ k (by simp only [n]; omega), Vector.getElem_replicate]
+  rw [h.zero k hk, getElem!_pos _ k (by simp only [n]; omega_arith), Vector.getElem_replicate]
   rfl
 
 end
@@ -174,19 +174,19 @@ theorem sgn_beq {x y : Nat} (hx : x < 2 ^ 62) (hy : y < 2 ^ 62) :
     rw [e, decide_eq_false h]; rfl
 
 theorem byte_ofNat (b : Byte) : b.setWidth 64 = BitVec.ofNat 64 b.toNat :=
-  BitVec.eq_of_toNat_eq (by rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := b.isLt; omega)])
+  BitVec.eq_of_toNat_eq (by rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)])
 
 theorem shl2 {j : Nat} (hj : j < 2 ^ 32) : BitVec.ofNat 64 j <<< 2 = BitVec.ofNat 64 (4 * j) :=
   BitVec.eq_of_toNat_eq (by
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-      Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega)
+      Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith)
 
 theorem setWidth_32_64_32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x :=
   BitVec.eq_of_toNat_eq (by
     rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth]
     have := x.isLt
-    omega)
+    omega_arith)
 
 /-- The word of the sign, from the low bit of `x`. -/
 theorem sgn_val (x : BitVec 64) :
@@ -196,11 +196,11 @@ theorem sgn_val (x : BitVec 64) :
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
       Nat.shiftRight_eq_div_pow]
     have := x.isLt
-    omega)
+    omega_arith)
   rw [e]
   by_cases h : x.toNat % 2 = 1
   · rw [ifT h, h]; decide
-  · rw [ifF h, show x.toNat % 2 = 0 by omega]; decide
+  · rw [ifF h, show x.toNat % 2 = 0 by omega_arith]; decide
 
 /-- The word of the sign: 1, or `q - 1` for -1. -/
 theorem sgn_word (b : Bool) :
@@ -219,7 +219,7 @@ theorem take_succ' (L : List Byte) {i : Nat} (h : i < L.length) : L.take (i + 1)
 theorem St_succ (σ : State) {t : Nat} (ht : t < 264) :
     St σ (t + 1) = bStep (tau σ) (signs (X σ)) (St σ t) (Xb σ t) := by
   simp only [St]
-  rw [take_succ' _ (by rw [List.length_drop, X_length]; omega), bFold_snoc, List.getD_eq_getElem?_getD,
+  rw [take_succ' _ (by rw [List.length_drop, X_length]; omega_arith), bFold_snoc, List.getD_eq_getElem?_getD,
     List.getElem?_drop, ← List.getD_eq_getElem?_getD]
 
 /-- At the start of iteration `t`. -/
@@ -299,18 +299,18 @@ theorem pieceA {t : Nat} {s : State} (h : BAt σ t s) :
     simp only [RegUpd.gpr_write, h12, ite_false]
   refine WP.mono hk fun s' ⟨g12, g, m, rd, wr, sp⟩ => ⟨h.keep hp m (fun r _ _ _ d => g r d) rd wr sp, ?_⟩
   have := St_le σ t
-  rw [g12, h.r5, sgn_beq (by omega) (by decide)]
+  rw [g12, h.r5, sgn_beq (by omega_arith) (by decide)]
 
 theorem tryA {t : Nat} (ht : t < 264) {s : State} (h : M1 σ t s) (hz : (s.gpr .r12 == 0) = false) :
     WP isa (.block [.lbz .r8 .r3 0, .sub .r11 .r5 .r8, .lsr .d .r11 .r11 63]) s (T1 σ t) := by
   have hl : (St σ t).2 < 256 := by
-    have := h.z; rw [hz] at this; simp at this; omega
+    have := h.z; rw [hz] at this; simp at this; omega_arith
   have l := h.bat
   have iB : InRegions (s.rd ++ s.wr) ((spOf σ).scr + BitVec.ofNat 64 (848 + t)) 1 :=
-    inScrRd hp l.env.wr (a := 848 + t) (by omega)
+    inScrRd hp l.env.wr (a := 848 + t) (by omega_arith)
   have hb : s.mem ((spOf σ).scr + BitVec.ofNat 64 (848 + t)) = Xb σ t := by
     have := congrArg (fun L => L.getD (8 + t) 0) l.out
-    rw [MlKem.bytesAt_getD _ _ (by omega), ptr_add, show 840 + (8 + t) = 848 + t by omega] at this
+    rw [MlKem.bytesAt_getD _ _ (by omega_arith), ptr_add, show 840 + (8 + t) = 848 + t by omega_arith] at this
     exact this
   have hk : WP isa (.block [.lbz .r8 .r3 0, .sub .r11 .r5 .r8, .lsr .d .r11 .r11 63]) s fun u =>
       u.gpr .r8 = (s.mem ((spOf σ).scr + BitVec.ofNat 64 (848 + t))).setWidth 64 ∧
@@ -324,14 +324,14 @@ theorem tryA {t : Nat} (ht : t < 264) {s : State} (h : M1 σ t s) (hz : (s.gpr .
   refine WP.mono hk fun s' ⟨g8, g11, g, m, rd, wr, sp⟩ =>
     ⟨l.keep hp m (fun r a _ c _ => g r a c) rd wr sp, hl, by rw [g8, hb, byte_ofNat], ?_⟩
   have := (Xb σ t).isLt
-  rw [g11, hb, byte_ofNat, l.r5, sgn_beq (by omega) (by omega)]
+  rw [g11, hb, byte_ofNat, l.r5, sgn_beq (by omega_arith) (by omega_arith)]
 
 omit hp in
 /-- The sign bit of `i`, from the sign bits not yet used. -/
 theorem sign_bit {i : Nat} (hτ : tau σ ≤ 256) (hi0 : i0 σ ≤ i) {s : State} (hs : Sg σ i s) :
     ((s.gpr .r9).toNat % 2 = 1) = ((signs (X σ)).getD (i + tau σ - 256) false = true) := by
   have e0 : i0 σ = 256 - tau σ := rfl
-  rw [signs_getD, testBit_eq, show i + tau σ - 256 = i - i0 σ by omega, hs, decide_eq_true_iff]
+  rw [signs_getD, testBit_eq, show i + tau σ - 256 = i - i0 σ by omega_arith, hs, decide_eq_true_iff]
 
 omit hp in
 theorem bSet_ok (s : State) {Ai Aj : Addr} (hAi : s.gpr .r4 = Ai) (hAj : s.gpr .r30 + s.gpr .r8 <<< 2 = Aj)
@@ -369,14 +369,14 @@ theorem setOk (hτ : tau σ ≤ 256) {t : Nat} (ht : t < 264) {s : State} (h : T
   have hi := h.lt
   have hj : (Xb σ t).toNat ≤ (St σ t).2 := by have := h.z; rw [hz] at this; simpa using this
   have hAj : s.gpr .r30 + s.gpr .r8 <<< 2 = coeffAddr (spOf σ).a (Xb σ t).toNat := by
-    rw [l.env.r30, h.r8, shl2 (by have := (Xb σ t).isLt; omega)]
+    rw [l.env.r30, h.r8, shl2 (by have := (Xb σ t).isLt; omega_arith)]
   have inI : (spOf σ).aR.Contains (coeffAddr (spOf σ).a (St σ t).2) 4 := coeff_contains _ hi
-  have inJ : (spOf σ).aR.Contains (coeffAddr (spOf σ).a (Xb σ t).toNat) 4 := coeff_contains _ (by omega)
+  have inJ : (spOf σ).aR.Contains (coeffAddr (spOf σ).a (Xb σ t).toNat) 4 := coeff_contains _ (by omega_arith)
   have wA : (spOf σ).aR ∈ s.wr := by rw [l.env.wr, hp.wr]; simp
   refine WP.mono (bSet_ok s l.r4 hAj ⟨_, List.mem_append_right _ wA, inJ⟩ ⟨_, wA, inI⟩ ⟨_, wA, inJ⟩)
     fun u ⟨m, g9, g4, g5, g, rd, wr, sp⟩ => ?_
   have hst := St_succ σ ht
-  rw [bStep, ifT hi, ifF (show ¬ (Xb σ t).toNat > (St σ t).2 by omega)] at hst
+  rw [bStep, ifT hi, ifF (show ¬ (Xb σ t).toNat > (St σ t).2 by omega_arith)] at hst
   have hf : Frame [(spOf σ).aR] s.mem u.mem := by
     rw [m]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ inI).writeW (List.mem_singleton_self _) _ inJ
@@ -401,16 +401,16 @@ theorem setOk (hτ : tau σ ≤ 256) {t : Nat} (ht : t < 264) {s : State} (h : T
     have hs := l.sg
     simp only [Sg] at hs
     rw [g9, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hs, Nat.div_div_eq_div_mul, ← Nat.pow_succ,
-      show (St σ t).2 + 1 - i0 σ = (St σ t).2 - i0 σ + 1 by omega]
+      show (St σ t).2 + 1 - i0 σ = (St σ t).2 - i0 σ + 1 by omega_arith]
   · intro k hk
     have hsb := Iff.of_eq (sign_bit hτ ge l.sg)
-    rw [hst, m, l.r7, sgn_val' _ hsb, sgn_word, coeffAt_writeW _ _ hk (by omega), coeffAt_writeW _ _ hk hi,
-      ipoly_set!_get _ _ (by simp only [n]; omega), ipoly_set!_get _ _ (by simp only [n]; omega)]
+    rw [hst, m, l.r7, sgn_val' _ hsb, sgn_word, coeffAt_writeW _ _ hk (by omega_arith), coeffAt_writeW _ _ hk hi,
+      ipoly_set!_get _ _ (by simp only [n]; omega_arith), ipoly_set!_get _ _ (by simp only [n]; omega_arith)]
     by_cases ejk : (Xb σ t).toNat = k
     · rw [ifT ejk, ifT ejk]
     · rw [ifF ejk, ifF ejk]
       by_cases eik : (St σ t).2 = k
-      · subst eik; rw [ifT rfl, ifT rfl, setWidth_32_64_32, ← coeffAt_eq, l.st _ (by omega)]
+      · subst eik; rw [ifT rfl, ifT rfl, setWidth_32_64_32, ← coeffAt_eq, l.st _ (by omega_arith)]
       · rw [ifF eik, ifF eik]; exact l.st k hk
 
 theorem tryB (hτ : tau σ ≤ 256) {t : Nat} (ht : t < 264) {s : State} (h : T1 σ t s) :
@@ -426,7 +426,7 @@ theorem pieceB (hτ : tau σ ≤ 256) {t : Nat} (ht : t < 264) {s : State} (h : 
     WP isa (.ite (.zero .d .r12) (.block []) bTry) s (M2 σ t) := by
   refine WP.ite _ (eval_zero _ _) (fun e => ?_) (fun e => WP.seq (WP.mono (tryA hp ht h e) fun _ h1 => tryB hp hτ ht h1))
   have hl : (St σ t).2 = 256 := by
-    have := h.z; rw [e] at this; simp at this; have := St_le σ t; omega
+    have := h.z; rw [e] at this; simp at this; have := St_le σ t; omega_arith
   exact wp_nil (M2.of_same h.bat (by rw [St_succ σ ht, bStep_full hl]))
 
 theorem pieceC {t : Nat} (ht : t < 264) {s : State} (h : M2 σ t s) :

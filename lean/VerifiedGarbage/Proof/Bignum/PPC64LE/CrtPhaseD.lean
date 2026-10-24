@@ -33,7 +33,7 @@ open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.
 open VG.Proof.Bignum.PPC64LE
 
 theorem Scr.le {s : State} {B : Addr} {Z n : Nat} (hs : Scr s B Z) (h : n ≤ Z) : Scr s B n :=
-  ⟨let ⟨B₀, o, L, hm, hb, hL, hL'⟩ := hs.wr; ⟨B₀, o, L, hm, hb, by omega, hL'⟩, by have := hs.nowrap; omega⟩
+  ⟨let ⟨B₀, o, L, hm, hb, hL, hL'⟩ := hs.wr; ⟨B₀, o, L, hm, hb, by omega_arith, hL'⟩, by have := hs.nowrap; omega_arith⟩
 
 /-- `exportM2`, `setupP oBP oPLen` and `recombineP`: with `q`'s working space
 at `off BX oQ` (its registers set, `m₂` below `256^qL` in array 4) and `p`'s
@@ -65,26 +65,26 @@ theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
   have eX1 := e wX 1; have eX2 := e wX 2; have eX7 := e wX 7; have eX8 := e wX 8
   have eP0 := e (wsWords pL) 0; have eP4 := e (wsWords pL) 4; have eP8 := e (wsWords pL) 8
   have eQ8 := e (wsWords qL) 8
-  have hqw : qL ≤ 8 * wsWords qL := by unfold wsWords; omega
-  have hw2 : 2 ≤ wsWords pL := by unfold wsWords; omega
-  refine WP.seq (WP.mono (exportM2_ok (L := qL) (hs.sub hQZ) (Scr.le hs (show slot wX 8 ≤ Z by omega)) h10 h29
-    h23 h27 h28 hQL hq1 hqw (by omega) (Nat.le_refl _) (Nat.le_refl _)
-    (fun x hx => by rcases ofs_rebase BX x (o := oQ) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega))
+  have hqw : qL ≤ 8 * wsWords qL := by unfold wsWords; omega_arith
+  have hw2 : 2 ≤ wsWords pL := by unfold wsWords; omega_arith
+  refine WP.seq (WP.mono (exportM2_ok (L := qL) (hs.sub hQZ) (Scr.le hs (show slot wX 8 ≤ Z by omega_arith)) h10 h29
+    h23 h27 h28 hQL hq1 hqw (by omega_arith) (Nat.le_refl _) (Nat.le_refl _)
+    (fun x hx => by rcases ofs_rebase BX x (o := oQ) (by omega_arith) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith))
     fun s₁ ⟨⟨hb, o1⟩, k1⟩ => ?_)
   have hbytes : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₁.mem (off BX (slot wX 1)) qL) = M2 := by
     rw [Pub.out_bytes (B := off BX oQ) (d := slot (wsWords qL) 4) hqw hm2 hm2b
       (fun i hi => by rw [off_off]; exact hb i hi), VG.Proof.Rsa.os2ip_i2osp, Nat.mod_eq_of_lt hm2b]
-  have hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd => o1.word (Or.inl (by omega)) (by omega)
+  have hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd => o1.word (Or.inl (by omega_arith)) (by omega_arith)
   refine WP.seq (WP.mono (setupP_ok (oA := oP) (hs.congr k1.wr) ((k1.gpr _ (by decide)).trans h23) (by decide) (by decide)
-    (by omega) (by rw [hd _ (by decide)]; exact hBP) (by rw [hd _ (by decide)]; exact hPL) hp1 hp')
+    (by omega_arith) (by rw [hd _ (by decide)]; exact hBP) (by rw [hd _ (by decide)]; exact hPL) hp1 hp')
     fun s₂ ⟨⟨a10, a21, a29, a11, _, m2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
-  refine WP.mono (recombineP_ok (QI := QI) (hs.congr k12.wr) hPZ hXP hw2 (by omega) hwP hwX a10 a21 a29 a11
+  refine WP.mono (recombineP_ok (QI := QI) (hs.congr k12.wr) hPZ hXP hw2 (by omega_arith) hwP hwX a10 a21 a29 a11
     ((k12.gpr _ (by decide)).trans h23) ((k12.gpr _ (by decide)).trans h27) ((k12.gpr _ (by decide)).trans h28)
-    (by rw [m2, hd _ (by decide)]; exact hQL) hq1 (by omega)
-    (by rw [m2, val32_off_eq o1 (Or.inr (by omega)) (by omega), hP0]) hP2 hPodd
-    (by rw [m2, val32_off_eq o1 (Or.inr (by omega)) (by omega), hm1]) hm1P (by rw [m2]; exact hbytes)
-    (by rw [m2, o1.wv (Or.inr (by omega)) (by omega)]
+    (by rw [m2, hd _ (by decide)]; exact hQL) hq1 (by omega_arith)
+    (by rw [m2, val32_off_eq o1 (Or.inr (by omega_arith)) (by omega_arith), hP0]) hP2 hPodd
+    (by rw [m2, val32_off_eq o1 (Or.inr (by omega_arith)) (by omega_arith), hm1]) hm1P (by rw [m2]; exact hbytes)
+    (by rw [m2, o1.wv (Or.inr (by omega_arith)) (by omega_arith)]
         exact wv_low (by rw [← Pre.val32_eq_wv]; exact hQI) hQIb hwP) hQP)
     fun t ⟨⟨v4, o2⟩, k3⟩ => ⟨⟨v4, fun x hx => ?_⟩, (k12.trans k3).mono⟩
   have h1 := hx _ (List.mem_cons_self ..)

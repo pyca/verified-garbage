@@ -126,16 +126,16 @@ theorem hbu_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : stk ≤ 
   obtain ⟨l0, ll, lo, h0, lh⟩ := m.lt
   have e5 : ((view (glueSt s (hbuArgs y len om h hl)) (hbuRd L y len) (hbuWr L h hl)).gpr .r5).setWidth 32 =
       BitVec.ofNat 32 om := by
-    rw [g5]; exact imm32 (by omega)
-  refine hbu_pre g3 g4 e5 g6 g7 (by rw [State.withRegions_rd, imm_toNat (by omega)])
-    (by rw [State.withRegions_wr, imm_toNat (by omega)]) (by rw [hsp]; exact Nat.le_trans hstk hs.spk) ?_ ?_ ?_
-    (by rw [imm_toNat (by omega)]; exact hs.fitE m.py l0) (by rw [imm_toNat (by omega)]; exact hs.fitE m.ph h0)
-    (by rw [imm32_toNat (by omega), imm_toNat (by omega)]; exact m.hp)
-    (by rw [imm32_toNat (by omega), imm_toNat (by omega)]; exact m.ho)
-    (by rw [imm32_toNat (by omega), imm_toNat (by omega), imm_toNat (by omega)]; exact m.hh)
-  · rw [imm_toNat (by omega), imm_toNat (by omega)]; exact hs.dE m.d1 (.inr m.wh)
-  · rw [imm_toNat (by omega)]; exact hs.kE m.py hstk hsp
-  · rw [imm_toNat (by omega)]; exact hs.kE m.ph hstk hsp
+    rw [g5]; exact imm32 (by omega_arith)
+  refine hbu_pre g3 g4 e5 g6 g7 (by rw [State.withRegions_rd, imm_toNat (by omega_arith)])
+    (by rw [State.withRegions_wr, imm_toNat (by omega_arith)]) (by rw [hsp]; exact Nat.le_trans hstk hs.spk) ?_ ?_ ?_
+    (by rw [imm_toNat (by omega_arith)]; exact hs.fitE m.py l0) (by rw [imm_toNat (by omega_arith)]; exact hs.fitE m.ph h0)
+    (by rw [imm32_toNat (by omega_arith), imm_toNat (by omega_arith)]; exact m.hp)
+    (by rw [imm32_toNat (by omega_arith), imm_toNat (by omega_arith)]; exact m.ho)
+    (by rw [imm32_toNat (by omega_arith), imm_toNat (by omega_arith), imm_toNat (by omega_arith)]; exact m.hh)
+  · rw [imm_toNat (by omega_arith), imm_toNat (by omega_arith)]; exact hs.dE m.d1 (.inr m.wh)
+  · rw [imm_toNat (by omega_arith)]; exact hs.kE m.py hstk hsp
+  · rw [imm_toNat (by omega_arith)]; exact hs.kE m.ph hstk hsp
 
 theorem hbu_ok {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract PPC64LE.abi stk) S) {s : State}
     (hs : Site L Wb STK s) (hS : S ≤ STK) {name : String} (m : HbuOk L Wb y len om h hl) {Q : State → Prop}
@@ -151,8 +151,8 @@ theorem hbu_ok {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract P
     fun s' hk hp => hQ s' (hs.keptW [tri h (hl * 4)] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g3, g4, g5, g6, -⟩ := hbu_vg hs m (hbuRd L y len) (hbuWr L h hl)
   have := hbu_post hp
-  rwa [g3, g4, g5, g6, view_glue_mem, State.withRegions_mem, State.withRegions_gpr, imm32 (by omega),
-    imm32_toNat (by omega), imm_toNat (by omega)] at this
+  rwa [g3, g4, g5, g6, view_glue_mem, State.withRegions_mem, State.withRegions_gpr, imm32 (by omega_arith),
+    imm32_toNat (by omega_arith), imm_toNat (by omega_arith)] at this
 
 theorem hbu_tr {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract PPC64LE.abi stk) S) (hS : S ≤ STK)
     {name : String} (m : HbuOk L Wb y len om h hl) {P : State → State → Prop}
@@ -169,7 +169,7 @@ theorem hbu_tr {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract P
     hbu_pub (by rw [view_glue_sp, view_glue_sp, hsp]) (by rw [gx3, gy3]) (by rw [gx4, gy4]) (by rw [gx5, gy5])
       (by rw [gx6, gy6]) (by rw [gx7, gy7]) ?_, (hbu_cov hx m).1, (hbu_cov hx m).2, (hbu_cov hy m).1,
     (hbu_cov hy m).2⟩
-  rw [gx3, gy3, gx4, gy4, view_glue_mem, view_glue_mem, imm_toNat (by omega)]
+  rw [gx3, gy3, gx4, gy4, view_glue_mem, view_glue_mem, imm_toNat (by omega_arith)]
   exact hl'
 
 end
@@ -226,17 +226,17 @@ theorem bu_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : stk ≤ S
   obtain ⟨l0, ll, la, lb⟩ := m.lt
   have e5 : ((view (glueSt s (buArgs v len a b f)) (buRd L v len) (buWr L f)).gpr .r5).setWidth 32 =
       BitVec.ofNat 32 a := by
-    rw [g5]; exact imm32 (by omega)
+    rw [g5]; exact imm32 (by omega_arith)
   have e6 : ((view (glueSt s (buArgs v len a b f)) (buRd L v len) (buWr L f)).gpr .r6).setWidth 32 =
       BitVec.ofNat 32 b := by
-    rw [g6]; exact imm32 (by omega)
-  refine bu_pre g3 g4 e5 e6 g7 (by rw [State.withRegions_rd, imm_toNat (by omega)]) rfl
+    rw [g6]; exact imm32 (by omega_arith)
+  refine bu_pre g3 g4 e5 e6 g7 (by rw [State.withRegions_rd, imm_toNat (by omega_arith)]) rfl
     (by rw [hsp]; exact Nat.le_trans hstk hs.spk) ?_ ?_ (hs.kE m.pf hstk hsp)
-    (by rw [imm_toNat (by omega)]; exact hs.fitE m.pv l0) (hs.fitE m.pf (by decide))
-    (by rw [imm32_toNat (by omega), imm32_toNat (by omega)]; exact m.hab)
-    (by rw [imm_toNat (by omega), imm32_toNat (by omega), imm32_toNat (by omega)]; exact m.hl)
-  · rw [imm_toNat (by omega)]; exact hs.dE m.d1 (.inr m.wf)
-  · rw [imm_toNat (by omega)]; exact hs.kE m.pv hstk hsp
+    (by rw [imm_toNat (by omega_arith)]; exact hs.fitE m.pv l0) (hs.fitE m.pf (by decide))
+    (by rw [imm32_toNat (by omega_arith), imm32_toNat (by omega_arith)]; exact m.hab)
+    (by rw [imm_toNat (by omega_arith), imm32_toNat (by omega_arith), imm32_toNat (by omega_arith)]; exact m.hl)
+  · rw [imm_toNat (by omega_arith)]; exact hs.dE m.d1 (.inr m.wf)
+  · rw [imm_toNat (by omega_arith)]; exact hs.kE m.pv hstk hsp
 
 theorem bu_ok {c : Prog isa} (hc : Callee c (fun stk => bitUnpackContract PPC64LE.abi stk) S) {s : State}
     (hs : Site L Wb STK s) (hS : S ≤ STK) {name : String} (m : BuOk L Wb v len a b f) {Q : State → Prop}
@@ -250,8 +250,8 @@ theorem bu_ok {c : Prog isa} (hc : Callee c (fun stk => bitUnpackContract PPC64L
     fun s' hk hp => hQ s' (hs.keptW [tri f 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g3, g4, g5, g6, g7⟩ := bu_vg hs m (buRd L v len) (buWr L f)
   have := bu_post hp
-  rwa [State.withRegions_mem, g3, g4, g5, g6, g7, view_glue_mem, imm32 (by omega), imm32 (by omega),
-    imm32_toNat (by omega), imm32_toNat (by omega), imm_toNat (by omega)] at this
+  rwa [State.withRegions_mem, g3, g4, g5, g6, g7, view_glue_mem, imm32 (by omega_arith), imm32 (by omega_arith),
+    imm32_toNat (by omega_arith), imm32_toNat (by omega_arith), imm_toNat (by omega_arith)] at this
 
 theorem bu_tr {c : Prog isa} (hc : Callee c (fun stk => bitUnpackContract PPC64LE.abi stk) S) (hS : S ≤ STK)
     {name : String} (m : BuOk L Wb v len a b f) {P : State → State → Prop}
@@ -325,14 +325,14 @@ theorem ball_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : stk ≤
   obtain ⟨l0, ll, lt⟩ := m.lt
   have e5 : ((view (glueSt s (ballArgs ct len tau c w)) (ballRd L ct len) (ballWr L c w)).gpr .r5).setWidth 32 =
       BitVec.ofNat 32 tau := by
-    rw [g5]; exact imm32 (by omega)
-  refine ball_pre g3 g4 e5 g6 g7 (by rw [State.withRegions_rd, imm_toNat (by omega)]) rfl
+    rw [g5]; exact imm32 (by omega_arith)
+  refine ball_pre g3 g4 e5 g6 g7 (by rw [State.withRegions_rd, imm_toNat (by omega_arith)]) rfl
     (by rw [hsp]; exact Nat.le_trans hstk hs.spk) ?_ ?_ (hs.dE m.d3 (.inl m.wc)) ?_ (hs.kE m.pc hstk hsp)
-    (hs.kE m.pw hstk hsp) (by rw [imm_toNat (by omega)]; exact hs.fitE m.pct l0) (hs.fitE m.pc (by decide))
-    (hs.fitE m.pw (by decide)) (by rw [imm_toNat (by omega), imm32_toNat (by omega)]; exact m.hp)
-  · rw [imm_toNat (by omega)]; exact hs.dE m.d1 (.inr m.wc)
-  · rw [imm_toNat (by omega)]; exact hs.dE m.d2 (.inr m.ww)
-  · rw [imm_toNat (by omega)]; exact hs.kE m.pct hstk hsp
+    (hs.kE m.pw hstk hsp) (by rw [imm_toNat (by omega_arith)]; exact hs.fitE m.pct l0) (hs.fitE m.pc (by decide))
+    (hs.fitE m.pw (by decide)) (by rw [imm_toNat (by omega_arith), imm32_toNat (by omega_arith)]; exact m.hp)
+  · rw [imm_toNat (by omega_arith)]; exact hs.dE m.d1 (.inr m.wc)
+  · rw [imm_toNat (by omega_arith)]; exact hs.dE m.d2 (.inr m.ww)
+  · rw [imm_toNat (by omega_arith)]; exact hs.kE m.pct hstk hsp
 
 theorem ball_ok {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContract PPC64LE.abi stk) S) {s : State}
     (hs : Site L Wb STK s) (hS : S ≤ STK) {name : String} (m : BallOk L Wb ct len tau c w) {Q : State → Prop}
@@ -349,8 +349,8 @@ theorem ball_ok {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContract
   all_goals
     obtain ⟨g3, g4, g5, g6, -⟩ := ball_vg hs m (ballRd L ct len) (ballWr L c w)
     have := ball_post hp
-    rw [State.withRegions_mem, State.withRegions_gpr, g3, g4, g5, g6, view_glue_mem, imm32 (by omega),
-      imm32_toNat (by omega), imm_toNat (by omega)] at this
+    rw [State.withRegions_mem, State.withRegions_gpr, g3, g4, g5, g6, view_glue_mem, imm32 (by omega_arith),
+      imm32_toNat (by omega_arith), imm_toNat (by omega_arith)] at this
   exacts [this.1, this.2]
 
 theorem ball_tr {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContract PPC64LE.abi stk) S) (hS : S ≤ STK)
@@ -368,7 +368,7 @@ theorem ball_tr {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContract
     ball_pub (by rw [view_glue_sp, view_glue_sp, hsp]) (by rw [gx3, gy3]) (by rw [gx4, gy4]) (by rw [gx5, gy5])
       (by rw [gx6, gy6]) (by rw [gx7, gy7]) ?_, (ball_cov hx m).1, (ball_cov hx m).2, (ball_cov hy m).1,
     (ball_cov hy m).2⟩
-  rw [gx3, gy3, gx4, gy4, view_glue_mem, view_glue_mem, imm_toNat (by omega)]
+  rw [gx3, gy3, gx4, gy4, view_glue_mem, view_glue_mem, imm_toNat (by omega_arith)]
   exact hl
 
 end
@@ -417,7 +417,7 @@ theorem nl_ok {c : Prog isa} (hc : Callee c (fun stk => normLtContract PPC64LE.a
     fun s' hk hp => hQ s' (hs.keptW [] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g3, g4⟩ := nl_vg hs pf hbd [L.R (ix f.1) f.2 1024] []
   have := normLt_post hp
-  rwa [g3, g4, view_glue_mem, State.withRegions_gpr, imm32 (by omega), imm32_toNat (by omega)] at this
+  rwa [g3, g4, view_glue_mem, State.withRegions_gpr, imm32 (by omega_arith), imm32_toNat (by omega_arith)] at this
 
 theorem nl_tr {c : Prog isa} (hc : Callee c (fun stk => normLtContract PPC64LE.abi stk) S) (hS : S ≤ STK)
     {name : String} (pf : PtrIn L f 1024) (hbd : bd < 2 ^ 31) {P : State → State → Prop}
@@ -482,11 +482,11 @@ theorem uh_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : stk ≤ S
   obtain ⟨g3, g4, g5, g6⟩ := uh_vg hs m (uhRd L h r) (uhWr L o)
   have e5 : ((view (glueSt s (uhArgs h r g2 o)) (uhRd L h r) (uhWr L o)).gpr .r5).setWidth 32 =
       BitVec.ofNat 32 g2 := by
-    rw [g5]; exact imm32 (by have := m.lt; omega)
+    rw [g5]; exact imm32 (by have := m.lt; omega_arith)
   refine useHint_pre g3 g4 e5 g6 rfl rfl (by rw [hsp]; exact Nat.le_trans hstk hs.spk)
     (hs.dE m.d1 (.inr m.wo)) (hs.dE m.d2 (.inr m.wo)) (hs.kE m.ph hstk hsp) (hs.kE m.pr hstk hsp)
     (hs.kE m.po hstk hsp) (hs.fitE m.ph (by decide)) (hs.fitE m.pr (by decide)) (hs.fitE m.po (by decide))
-    (by rw [imm32_toNat (by have := m.lt; omega)]; exact m.hg) ?_
+    (by rw [imm32_toNat (by have := m.lt; omega_arith)]; exact m.hg) ?_
   rw [view_glue_mem]; exact hr
 
 theorem uh_ok {c : Prog isa} (hc : Callee c (fun stk => useHintContract PPC64LE.abi stk) S) {s : State}
@@ -502,8 +502,8 @@ theorem uh_ok {c : Prog isa} (hc : Callee c (fun stk => useHintContract PPC64LE.
     fun s' hk hp => hQ s' (hs.keptW [tri o 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g3, g4, g5, g6⟩ := uh_vg hs m (uhRd L h r) (uhWr L o)
   have := useHint_post hp
-  rwa [State.withRegions_mem, g3, g4, g5, g6, view_glue_mem, imm32 (by have := m.lt; omega),
-    imm32_toNat (by have := m.lt; omega)] at this
+  rwa [State.withRegions_mem, g3, g4, g5, g6, view_glue_mem, imm32 (by have := m.lt; omega_arith),
+    imm32_toNat (by have := m.lt; omega_arith)] at this
 
 theorem uh_tr {c : Prog isa} (hc : Callee c (fun stk => useHintContract PPC64LE.abi stk) S) (hS : S ≤ STK)
     {name : String} (m : UhOk L Wb h r g2 o) {P : State → State → Prop}

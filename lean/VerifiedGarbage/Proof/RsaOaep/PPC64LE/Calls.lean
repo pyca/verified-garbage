@@ -48,7 +48,7 @@ theorem offs : oEm = 0 ∧ oSt = 1024 ∧ oDig = 1280 ∧ oCtr = 1344 ∧ oW = 1
 /-- The sizes of a hash function's ranges in our part of the working space. -/
 theorem hfits {H : Hash} (hH : HashOK H) : H.S ≤ 192 ∧ H.FD ≤ 64 ∧ H.W ≤ 1024 := by
   have := hH.dims.N; have := hH.dims.so; have := hH.dims.B; have := hH.hFD64
-  simp only [Hash.S]; omega
+  simp only [Hash.S]; omega_arith
 
 section
 variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
@@ -66,16 +66,16 @@ theorem same_of_frame {t t' : State} (hsp : t.sp = fb s) {rgs : List (Nat × Nat
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp h'
     have := hrg p hp
     rcases hr p hp with h₁ | h₁
-    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inl (by omega)) (by omega) (by omega) _
+    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inl (by omega_arith)) (by omega_arith) (by omega_arith) _
         (Region.contains_self _ _) hc
-    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inr (by omega)) (by omega) (by omega) _
+    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inr (by omega_arith)) (by omega_arith) (by omega_arith) _
         (Region.contains_self _ _) hc
   · rw [List.mem_singleton.mp h', hsp] at hc
-    exact cR_dis P (o := o) (n := 1) (by omega) _ hc (Region.contains_self _ _)
+    exact cR_dis P (o := o) (n := 1) (by omega_arith) _ hc (Region.contains_self _ _)
 
 theorem sp48 {t : State} (h : Base S vf s t) : 48 ≤ t.sp.toNat := by
   rw [h.sp]; have := P.sp1
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes]; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes]; omega_arith
 
 /-- A call of the streaming `init` on the state at `S + oSt`. -/
 theorem init_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vf s t) (h3 : t.gpr .r3 = off (S s) oSt) :
@@ -83,11 +83,11 @@ theorem init_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vf s t) (h3 :
       Same (S s) t t' [(oSt, H.S)] ∧ hH.SH.Repr t'.mem (off (S s) oSt) [] := by
   have F := hfits hH
   obtain ⟨_, _, _, _, _, _⟩ := offs
-  have hc : Covers [⟨off (S s) oSt, H.S⟩] t.wr := by rw [h.wr]; exact sc_cov P (by omega)
-  refine hH.callInit_ok h3 ⟨sp48 P h, by rw [h.sp]; exact cR_dis P (by omega)⟩ (Covers.right hc) hc
+  have hc : Covers [⟨off (S s) oSt, H.S⟩] t.wr := by rw [h.wr]; exact sc_cov P (by omega_arith)
+  refine hH.callInit_ok h3 ⟨sp48 P h, by rw [h.sp]; exact cR_dis P (by omega_arith)⟩ (Covers.right hc) hc
     fun t' hrd hwr hsp hf hg hr => ⟨h.call P (R := [⟨off (S s) oSt, H.S⟩]) (fun r hr' => by
-      rw [List.mem_singleton.mp hr']; exact sc_in (by omega)) hrd hwr hsp hf hg, hg,
-      same_of_frame P h.sp (rgs := [(oSt, H.S)]) (by simp; omega) hf, hr⟩
+      rw [List.mem_singleton.mp hr']; exact sc_in (by omega_arith)) hrd hwr hsp hf hg, hg,
+      same_of_frame P h.sp (rgs := [(oSt, H.S)]) (by simp; omega_arith) hf, hr⟩
 
 /-- A call of the streaming `update` on the state at `S + oSt`, with the
 `len` bytes at `dat`. -/
@@ -103,16 +103,16 @@ theorem upd_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vf s t) {dat :
   have F := hfits hH
   obtain ⟨_, _, _, _, _, _⟩ := offs
   have hc : Covers [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oW, H.W⟩] t.wr := by
-    rw [h.wr]; exact Covers.pair (sc_cov P (by omega)) (sc_cov P (by omega))
-  refine hH.callUpd_ok h3 h5 h6 h7 (sdis (.inl (by omega)) (by omega) (by omega)) hd₁ hd₂ (sp48 P h)
-    (by rw [h.sp]; exact cR_dis P (by omega)) (by rw [h.sp]; exact hd₃) (by rw [h.sp]; exact cR_dis P (by omega))
+    rw [h.wr]; exact Covers.pair (sc_cov P (by omega_arith)) (sc_cov P (by omega_arith))
+  refine hH.callUpd_ok h3 h5 h6 h7 (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) hd₁ hd₂ (sp48 P h)
+    (by rw [h.sp]; exact cR_dis P (by omega_arith)) (by rw [h.sp]; exact hd₃) (by rw [h.sp]; exact cR_dis P (by omega_arith))
     (Covers.append_left hdc (Covers.right hc)) hc fun t' hrd hwr hsp hf hg hr => ⟨h.call P
       (R := [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oW, H.W⟩]) (fun r hr' => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         rcases hr' with rfl | rfl
-        · exact sc_in (by omega)
-        · exact sc_in (by omega)) hrd hwr hsp hf hg, hg,
-      same_of_frame P h.sp (rgs := [(oSt, H.S), (oW, H.W)]) (by simp; omega) hf, hr⟩
+        · exact sc_in (by omega_arith)
+        · exact sc_in (by omega_arith)) hrd hwr hsp hf hg, hg,
+      same_of_frame P h.sp (rgs := [(oSt, H.S), (oW, H.W)]) (by simp; omega_arith) hf, hr⟩
 
 /-- A call of the streaming `finalize` on the state at `S + oSt`, its digest
 to `S + oDig`. -/
@@ -125,18 +125,18 @@ theorem fin_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vf s t) (h3 : 
   have F := hfits hH
   obtain ⟨_, _, _, _, _, _⟩ := offs
   have hc : Covers [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oDig, H.FD⟩, ⟨off (S s) oW, H.W⟩] t.wr := by
-    rw [h.wr]; exact (sc_cov P (by omega)).cons (Covers.pair (sc_cov P (by omega)) (sc_cov P (by omega)))
-  refine hH.callFin_ok h3 h5 h6 (sdis (.inl (by omega)) (by omega) (by omega))
-    (sdis (.inl (by omega)) (by omega) (by omega)) (sdis (.inl (by omega)) (by omega) (by omega)) (sp48 P h)
-    (by rw [h.sp]; exact cR_dis P (by omega)) (by rw [h.sp]; exact cR_dis P (by omega))
-    (by rw [h.sp]; exact cR_dis P (by omega)) (Covers.right hc) hc fun t' hrd hwr hsp hf hg hr => ⟨h.call P
+    rw [h.wr]; exact (sc_cov P (by omega_arith)).cons (Covers.pair (sc_cov P (by omega_arith)) (sc_cov P (by omega_arith)))
+  refine hH.callFin_ok h3 h5 h6 (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+    (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (sp48 P h)
+    (by rw [h.sp]; exact cR_dis P (by omega_arith)) (by rw [h.sp]; exact cR_dis P (by omega_arith))
+    (by rw [h.sp]; exact cR_dis P (by omega_arith)) (Covers.right hc) hc fun t' hrd hwr hsp hf hg hr => ⟨h.call P
       (R := [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oDig, H.FD⟩, ⟨off (S s) oW, H.W⟩]) (fun r hr' => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         rcases hr' with rfl | rfl | rfl
-        · exact sc_in (by omega)
-        · exact sc_in (by omega)
-        · exact sc_in (by omega)) hrd hwr hsp hf hg, hg,
-      same_of_frame P h.sp (rgs := [(oSt, H.S), (oDig, H.FD), (oW, H.W)]) (by simp; omega) hf, hr⟩
+        · exact sc_in (by omega_arith)
+        · exact sc_in (by omega_arith)
+        · exact sc_in (by omega_arith)) hrd hwr hsp hf hg, hg,
+      same_of_frame P h.sp (rgs := [(oSt, H.S), (oDig, H.FD), (oW, H.W)]) (by simp; omega_arith) hf, hr⟩
 
 end
 

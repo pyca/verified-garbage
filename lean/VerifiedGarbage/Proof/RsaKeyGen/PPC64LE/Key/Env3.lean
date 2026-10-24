@@ -79,8 +79,8 @@ theorem invOfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {a m : Nat} (ha : a
     have hNM : num t6.mem B w aNM + num t6.mem B w aM = 2 ^ (32 * w) := by
       rw [vNM, vM]
       unfold subW
-      rw [Nat.zero_add, Nat.mod_eq_of_lt (Nat.sub_lt (Nat.two_pow_pos _) (by omega))]
-      omega
+      rw [Nat.zero_add, Nat.mod_eq_of_lt (Nat.sub_lt (Nat.two_pow_pos _) (by omega_arith))]
+      omega_arith
     have hZ : num t6.mem B w aZero = 0 := vZ
     have hod : num t6.mem B w aM % 2 = 1 := by rw [vM]; exact odd
     have hgt : 1 < num t6.mem B w aM := by rw [vM]; exact gt

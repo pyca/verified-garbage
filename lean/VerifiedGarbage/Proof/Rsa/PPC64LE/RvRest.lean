@@ -33,7 +33,7 @@ open VG.Impl.Rsa.PPC64LE.Recover (rest halving mont candLoop fin)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 
 theorem mV_eq {s0 : State} (odd : dV s0 * eV s0 % 2 = 1) : mV s0 = dV s0 * eV s0 - 1 := by
-  simp only [mV]; omega
+  simp only [mV]; omega_arith
 
 /-- The sizes, from the contract. -/
 theorem par_of {s0 : State} (h : rvP.pre s0) (odd : dV s0 * eV s0 % 2 = 1) (two : 2 ≤ dV s0 * eV s0) : Par s0 := by
@@ -49,17 +49,17 @@ theorem par_of {s0 : State} (h : rvP.pre s0) (odd : dV s0 * eV s0 % 2 = 1) (two 
     have : dV s0 * eV s0 < 2 ^ cB s0 :=
       calc dV s0 * eV s0 < 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat) * 2 ^ (8 * (s0.gpr .r10).toNat) :=
             Nat.mul_lt_mul'' bD bE
-        _ = 2 ^ cB s0 := by rw [← Nat.pow_add]; congr 1; simp only [cB]; omega
-    simp only [mV]; omega
-  have hm0 : 0 < mV s0 := by simp only [mV]; omega
-  have hme : mV s0 % 2 = 0 := by simp only [mV]; omega
+        _ = 2 ^ cB s0 := by rw [← Nat.pow_add]; congr 1; simp only [cB]; omega_arith
+    simp only [mV]; omega_arith
+  have hm0 : 0 < mV s0 := by simp only [mV]; omega_arith
+  have hme : mV s0 % 2 = 0 := by simp only [mV]; omega_arith
   obtain ⟨e, ro⟩ := splitTwos_spec hm0
-  refine ⟨by simp only [cB]; omega, by simp only [cB]; omega, ?_, ?_, Nat.le_of_lt (splitTwos_lt hm0 hm)⟩
+  refine ⟨by simp only [cB]; omega_arith, by simp only [cB]; omega_arith, ?_, ?_, Nat.le_of_lt (splitTwos_lt hm0 hm)⟩
   · have : rR s0 ≤ mV s0 := by
       have := Nat.le_mul_of_pos_left (rR s0) (Nat.two_pow_pos (tT s0)); rw [← e] at this; exact this
-    omega
+    omega_arith
   · show 1 ≤ (splitTwos (mV s0)).1
-    rw [splitTwos_even (by omega) hme]; omega
+    rw [splitTwos_even (by omega_arith) hme]; omega_arith
 
 /-- What `recoverPrimes` returns, from the last candidate. -/
 theorem res_eq {s0 : State} (hn : NOk s0) (hp : Par s0)
@@ -68,8 +68,8 @@ theorem res_eq {s0 : State} (hn : NOk s0) (hp : Par s0)
       min (Nat.gcd (yV s0 - 1) (nV s0)) (nV s0 / Nat.gcd (yV s0 - 1) (nV s0))) else none) ∧
       (okB s0 = true → 1 ≤ yV s0) := by
   have n1 := nt_pos s0; have n2 := nt_le s0
-  have hn1 : 1 < nV s0 := by have := hn.big; omega
-  have hJ : jL s0 < recoverTries := by unfold recoverTries; simp only [jL]; omega
+  have hn1 : 1 < nV s0 := by have := hn.big; omega_arith
+  have hJ : jL s0 < recoverTries := by unfold recoverTries; simp only [jL]; omega_arith
   have ge := VG.Proof.Rsa.go_eq (nV s0) (tT s0) (rR s0) hJ
   have hsq := VG.Proof.Rsa.sq_result (n := nV s0) (r := rR s0) (g := jL s0 + 2) hp.t1 hp.tc
   change sqRes (sqst s0 (jL s0) (cB s0)) = _ at hsq
@@ -85,12 +85,12 @@ theorem res_eq {s0 : State} (hn : NOk s0) (hp : Par s0)
     · rw [h100, Nat.sub_self, recoverPrimes.go]
     · exfalso
       have := VG.Proof.Rsa.go_ge1 (nV s0) (tT s0) (rR s0) (k := recoverTries - (jL s0 + 1) - 1)
-        (by unfold recoverTries at *; omega)
-      rw [show recoverTries - (jL s0 + 1) - 1 + 1 = recoverTries - (jL s0 + 1) by unfold recoverTries at *; omega,
+        (by unfold recoverTries at *; omega_arith)
+      rw [show recoverTries - (jL s0 + 1) - 1 + 1 = recoverTries - (jL s0 + 1) by unfold recoverTries at *; omega_arith,
         ← ge, ← (show recoverPrimes.go (nV s0) (tT s0) (rR s0) recoverTries =
           recoverPrimes.go (nV s0) (tT s0) (rR s0) (recoverTries - jL s0) from hg)] at this
       change _ ≤ nt s0 at this
-      unfold recoverTries at *; simp only [jL] at *; omega
+      unfold recoverTries at *; simp only [jL] at *; omega_arith
   · -- Found.
     have hs : recoverStep (nV s0) (tT s0) (rR s0) (jL s0 + 2) = some (yV s0) := by
       rw [← hsq]; simp only [sqRes, okB] at hb ⊢; rw [hb]; rfl

@@ -35,9 +35,9 @@ theorem add_arith (x y : BitVec 32) (c : BitVec 64) (b : Bool) (hc : c.toNat ≤
     · simp only [↓reduceIte]; exact BitVec.and_allOnes
   have vD : D.toNat = x.toNat + (if b then y.toNat else 0) + c.toNat := by
     simp only [D, hm]
-    cases b <;> simp only [Bool.false_eq_true, ↓reduceIte, BitVec.toNat_add, toNat_ext32] <;> simp <;> omega
+    cases b <;> simp only [Bool.false_eq_true, ↓reduceIte, BitVec.toNat_add, toNat_ext32] <;> simp <;> omega_arith
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_setWidth, vD]
-  split <;> omega
+  split <;> omega_arith
 
 /-- `addMask`, `T` (`n` digits) at `dT` (`r15`), `M` at `dM` (`r16`) apart from
 it, and the mask of `b` in `r20`: `T := T + (b ? M : 0) mod 2^(32 n)`. -/
@@ -68,7 +68,7 @@ theorem addMask_ok {s : State} {B : Addr} {Z dT dM n : Nat} {b : Bool} (hs : Scr
   refine WP.mono (wp_countdown (body := .block ([.load .w .r0 .r15 0, .load .w .r3 .r16 0,
       .logic .and .r3 .r3 .r20, .add .r0 .r0 .r3, .add .r0 .r0 .r24, .store .w .r0 .r15 0, .lsr .d .r24 .r0 32,
       .addi .r15 .r15 4, .addi .r16 .r16 4] ++ ([.subi .r17 .r17 1] : List Instr)))
-    (cnt := .r17) (N := n) (by omega) (by omega) Inv (fun i hi t ⟨j15, j16, j24, jout, jeq, jk⟩ hc => ?_)
+    (cnt := .r17) (N := n) (by omega_arith) (by omega_arith) Inv (fun i hi t ⟨j15, j16, j24, jout, jeq, jk⟩ hc => ?_)
     ⟨by rw [k₁.gpr .r15 (by decide), h15]; rfl, by rw [k₁.gpr .r16 (by decide), h16]; rfl, by rw [i24]; decide,
       by rw [← im]; exact Outside.refl _ _ _ _, by cases b <;> simp [val32, i24], k₁.mono⟩ i17)
     fun t ⟨_, _, j24, jout, jeq, jk⟩ => ⟨?_, jout, jk⟩
@@ -92,20 +92,20 @@ theorem addMask_ok {s : State} {B : Addr} {Z dT dM n : Nat} {b : Bool} (hs : Scr
           t'.gpr .r24 = D >>> 32 ∧ t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1 ∧
           t'.mem = t.mem.writeW (off B (dT + 4 * i)) (D.setWidth 32)) ?_ (by decide))
         fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
-      prun [j15, j16, h20t, (hs.congr jk.wr).ld (show dT + 4 * i + 4 ≤ Z by omega),
-        (hs.congr jk.wr).ld (show dM + 4 * i + 4 ≤ Z by omega),
-        (hs.congr jk.wr).st (show dT + 4 * i + 4 ≤ Z by omega)])
+      prun [j15, j16, h20t, (hs.congr jk.wr).ld (show dT + 4 * i + 4 ≤ Z by omega_arith),
+        (hs.congr jk.wr).ld (show dM + 4 * i + 4 ≤ Z by omega_arith),
+        (hs.congr jk.wr).st (show dT + 4 * i + 4 ≤ Z by omega_arith)])
     refine WP.mono hst fun t' ⟨l15, l16, l24, l17, lm, lk⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, jk.trans' lk⟩, l17⟩
-    · rw [l15, show dT + 4 * i + 4 = dT + 4 * (i + 1) by omega]
-    · rw [l16, show dM + 4 * i + 4 = dM + 4 * (i + 1) by omega]
+    · rw [l15, show dT + 4 * i + 4 = dT + 4 * (i + 1) by omega_arith]
+    · rw [l16, show dM + 4 * i + 4 = dM + 4 * (i + 1) by omega_arith]
     · rw [l24]; exact (add_arith _ _ _ b j24).1
     · rw [lm]
-      exact (jout.mono (Nat.le_refl _) (by omega)).trans
-        ((writeW32_outside _ B (d := dT + 4 * i) _ (by omega)).mono (by omega) (by omega))
-    · have wx : w32 t.mem B (dT + 4 * i) = w32 s.mem B (dT + 4 * i) := jout.w32 (by omega) (by omega)
-      have wy : w32 t.mem B (dM + 4 * i) = w32 s.mem B (dM + 4 * i) := jout.w32 (by omega) (by omega)
+      exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans
+        ((writeW32_outside _ B (d := dT + 4 * i) _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
+    · have wx : w32 t.mem B (dT + 4 * i) = w32 s.mem B (dT + 4 * i) := jout.w32 (by omega_arith) (by omega_arith)
+      have wy : w32 t.mem B (dM + 4 * i) = w32 s.mem B (dM + 4 * i) := jout.w32 (by omega_arith) (by omega_arith)
       have k := (add_arith (t.mem.readW (off B (dT + 4 * i)) 32) (t.mem.readW (off B (dM + 4 * i)) 32) _ b j24).2
-      rw [lm, l24, val32_write_top _ _ _ _ _ (by omega), val32_succ s.mem B dT i, val32_succ s.mem B dM i,
+      rw [lm, l24, val32_write_top _ _ _ _ _ (by omega_arith), val32_succ s.mem B dT i, val32_succ s.mem B dM i,
         ← pow32_mul i]
       rw [← wx, ← wy]
       change _ + 2 ^ 32 * _ = w32 t.mem B (dT + 4 * i) + (if b then w32 t.mem B (dM + 4 * i) else 0) +

@@ -39,12 +39,12 @@ theorem arr_val {m m' : Mem} {B : Addr} {w i j : Nat} (h : Outside B (slot w i) 
     (hij : i ≠ j) (hj : j < 8) (hn : B.toNat + slot w 8 ≤ 2 ^ 64) :
     Mont.val32 m' B (slot w j) (2 * w) = Mont.val32 m B (slot w j) (2 * w) := by
   rw [Pre.val32_eq_wv, Pre.val32_eq_wv]
-  exact h.wv (by have := slot_sep (w := w) hij; omega) (by have := slot_le (w := w) hj; omega)
+  exact h.wv (by have := slot_sep (w := w) hij; omega_arith) (by have := slot_le (w := w) hj; omega_arith)
 
 theorem arr_word {m m' : Mem} {B : Addr} {w i j q : Nat} (h : Outside B (slot w i) (8 * (w + 1)) m m')
     (hij : i ≠ j) (hj : j < 8) (hq : q ≤ w) (hn : B.toNat + slot w 8 ≤ 2 ^ 64) :
     word m' B (slot w j + 8 * q) = word m B (slot w j + 8 * q) :=
-  h.word (by have := slot_sep (w := w) hij; omega) (by have := slot_le (w := w) hj; omega)
+  h.word (by have := slot_sep (w := w) hij; omega_arith) (by have := slot_le (w := w) hj; omega_arith)
 
 /-- The address and length of a buffer from the header (words `oA`, `oL`),
 then the buffer into `X`'s array `j`. -/
@@ -67,9 +67,9 @@ theorem loadOne_ok {s : State} {BX A : Addr} {Z w L j oA oL : Nat} (hs : Scr s B
   have hL' : s.mem.readW (off BX oL) 64 = BitVec.ofNat 64 L := hLw
   refine WP.seq (WP.mono (WP.keep [.r12, .r6] (Q := fun t => t.gpr .r12 = off A 0 ∧
     t.gpr .r6 = BitVec.ofNat 64 L ∧ t.mem = s.mem) (by
-      prun [h23, exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oA < 2 ^ 15 by omega, show oA % 4 = 0 by omega⟩,
-        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oL < 2 ^ 15 by omega, show oL % 4 = 0 by omega⟩,
-        hs.ld (show oA + 8 ≤ Z by omega), hs.ld (show oL + 8 ≤ Z by omega), hA', hL']) rfl)
+      prun [h23, exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oA < 2 ^ 15 by omega_arith, show oA % 4 = 0 by omega_arith⟩,
+        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oL < 2 ^ 15 by omega_arith, show oL % 4 = 0 by omega_arith⟩,
+        hs.ld (show oA + 8 ≤ Z by omega_arith), hs.ld (show oL + 8 ≤ Z by omega_arith), hA', hL']) rfl)
     fun s₁ ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   refine WP.mono (loadArr_ok (hs.congr k1.wr) hj a12 a6 ((k1.gpr _ (by decide)).trans h10)
     ((k1.gpr _ (by decide)).trans h21) ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11)
@@ -82,7 +82,7 @@ def loadXRegs : List Reg := [.r0, .r3, .r6, .r10, .r12, .r14, .r15, .r16, .r17]
 /-- A frame within the arrays is one of all of them. -/
 theorem out_arrs {m m' : Mem} {B : Addr} {w o n : Nat} (h : Outside B o n m m') (ho : 256 ≤ o)
     (hn : o + n ≤ slot w 8) : Outside B 256 (slot w 8 - 256) m m' :=
-  h.mono ho (by omega)
+  h.mono ho (by omega_arith)
 
 /-- `loadX`, in `X` (`w` words, at `BX`, its header holding the buffers'
 addresses and lengths). -/
@@ -116,20 +116,20 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
   have e0 := e 0; have e1 := e 1; have e4 := e 4; have e5 := e 5; have e6 := e 6; have e7 := e 7
   have e8 := e 8
   have hh : hdrBytes = 256 := rfl
-  have hn8 : BX.toNat + slot w 8 ≤ 2 ^ 64 := by omega
+  have hn8 : BX.toNat + slot w 8 ≤ 2 ^ 64 := by omega_arith
   have hd : ∀ {m m' : Mem}, Outside BX 256 (slot w 8 - 256) m m' → ∀ d, d + 8 ≤ 256 → word m' BX d = word m BX d :=
-    fun h d hd => h.word (Or.inl hd) (by omega)
+    fun h d hd => h.word (Or.inl hd) (by omega_arith)
   have hbz : ∀ {m m' : Mem} {A : Addr} {L : Nat}, Outside BX 256 (slot w 8 - 256) m m' →
       (∀ i < L, ∀ x, ofs BX x < Z → off A i ≠ x) → Spec.Rsa.bytesAt m' A L = Spec.Rsa.bytesAt m A L :=
-    fun h hs' => bytesAt_out h (by omega) hs'
+    fun h hs' => bytesAt_out h (by omega_arith) hs'
   unfold loadX
   refine WP.seq (WP.mono (WP.keep [.r14] (Q := fun t => t.gpr .r14 = off BX (slot w 0) ∧ t.mem = s.mem)
     (by prun [h10, BitVec.add_zero]) (by decide)) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (onesWords_ok (hs.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans h11) hw1 hw'
-    (by omega)) fun s₂ ⟨⟨h1s, o2⟩, k2⟩ => ?_)
+    (by omega_arith)) fun s₂ ⟨⟨h1s, o2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
   rw [m1] at o2
-  have O2 := out_arrs (w := w) o2 (by omega) (by omega)
+  have O2 := out_arrs (w := w) o2 (by omega_arith) (by omega_arith)
   -- `n` into array 1.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 1) (A := Na) (L := k) (hs.congr k12.wr) hZ (by decide)
     hw' ((k12.gpr _ (by decide)).trans h23) ((k12.gpr _ (by decide)).trans h10)
@@ -137,7 +137,7 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
     (by decide) (by decide) (by rw [hd O2 _ (by decide)]; exact hNa) (by rw [hd O2 _ (by decide)]; exact hK) hk hkw
     (fun i hi => by rw [k12.rd, k12.wr]; exact rN i hi) sN) fun s₃ ⟨⟨v1, t1, o3, b10⟩, k3⟩ => ?_))
   have k13 := k12.trans k3
-  have O3 := out_arrs (w := w) o3 (by omega) (by have := slot_le (w := w) (j := 1) (by decide); omega)
+  have O3 := out_arrs (w := w) o3 (by omega_arith) (by have := slot_le (w := w) (j := 1) (by decide); omega_arith)
   have O23 := O2.trans O3
   -- `p` into array 4.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 4) (A := Pa) (L := pL) (hs.congr k13.wr) hZ (by decide)
@@ -146,7 +146,7 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
     (by decide) (by decide) (by rw [hd O23 _ (by decide)]; exact hPa) (by rw [hd O23 _ (by decide)]; exact hPL)
     hp hpw (fun i hi => by rw [k13.rd, k13.wr]; exact rP i hi) sP) fun s₄ ⟨⟨v4, t4, o4, c10⟩, k4⟩ => ?_))
   have k14 := k13.trans k4
-  have O4 := out_arrs (w := w) o4 (by omega) (by have := slot_le (w := w) (j := 4) (by decide); omega)
+  have O4 := out_arrs (w := w) o4 (by omega_arith) (by have := slot_le (w := w) (j := 4) (by decide); omega_arith)
   have O24 := O23.trans O4
   -- `q` into array 5.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 5) (A := Qa) (L := qL) (hs.congr k14.wr) hZ (by decide)
@@ -155,7 +155,7 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
     (by decide) (by decide) (by rw [hd O24 _ (by decide)]; exact hQa) (by rw [hd O24 _ (by decide)]; exact hQL)
     hq hqw (fun i hi => by rw [k14.rd, k14.wr]; exact rQ i hi) sQ) fun s₅ ⟨⟨v5, t5, o5, d10⟩, k5⟩ => ?_))
   have k15 := k14.trans k5
-  have O5 := out_arrs (w := w) o5 (by omega) (by have := slot_le (w := w) (j := 5) (by decide); omega)
+  have O5 := out_arrs (w := w) o5 (by omega_arith) (by have := slot_le (w := w) (j := 5) (by decide); omega_arith)
   have O25 := O24.trans O5
   -- The input into array 6.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 6) (A := Ia) (L := k) (hs.congr k15.wr) hZ (by decide)
@@ -164,7 +164,7 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
     (by decide) (by decide) (by rw [hd O25 _ (by decide)]; exact hIa) (by rw [hd O25 _ (by decide)]; exact hK)
     hk hkw (fun i hi => by rw [k15.rd, k15.wr]; exact rI i hi) sI) fun s₆ ⟨⟨v6, t6, o6, e10⟩, k6⟩ => ?_))
   have k16 := k15.trans k6
-  have O6 := out_arrs (w := w) o6 (by omega) (by have := slot_le (w := w) (j := 6) (by decide); omega)
+  have O6 := out_arrs (w := w) o6 (by omega_arith) (by have := slot_le (w := w) (j := 6) (by decide); omega_arith)
   have O26 := O25.trans O6
   -- `qInv` into array 7.
   refine WP.mono (loadOne_ok (j := 7) (A := QIa) (L := pL) (hs.congr k16.wr) hZ (by decide)
@@ -172,12 +172,12 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
     ((k16.gpr _ (by decide)).trans h21) ((k16.gpr _ (by decide)).trans h29) ((k16.gpr _ (by decide)).trans h11)
     (by decide) (by decide) (by rw [hd O26 _ (by decide)]; exact hQIa) (by rw [hd O26 _ (by decide)]; exact hPL)
     hp hpw (fun i hi => by rw [k16.rd, k16.wr]; exact rQI i hi) sQI) fun t ⟨⟨v7, t7, o7, t10⟩, k7⟩ => ?_
-  have O7 := out_arrs (w := w) o7 (by omega) (by have := slot_le (w := w) (j := 7) (by decide); omega)
+  have O7 := out_arrs (w := w) o7 (by omega_arith) (by have := slot_le (w := w) (j := 7) (by decide); omega_arith)
   have hones : Mont.val32 s₂.mem BX (slot w 0) (2 * w) = 2 ^ (64 * w) - 1 := by
     rw [Pre.val32_eq_wv]; exact wv_ones h1s
   have w0 : ∀ {m m' : Mem} {i : Nat}, Outside BX (slot w i) (8 * (w + 1)) m m' → i ≠ 0 →
       word m' BX (slot w 0) = word m BX (slot w 0) := fun h hi => by
-    have := arr_word (q := 0) h hi (by decide) (by omega) hn8
+    have := arr_word (q := 0) h hi (by decide) (by omega_arith) hn8
     simpa only [Nat.mul_zero, Nat.add_zero] using this
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, t7, O26.trans O7, t10⟩, (k16.trans k7).mono⟩
   · rw [arr_val o7 (by decide) (by decide) hn8, arr_val o6 (by decide) (by decide) hn8,

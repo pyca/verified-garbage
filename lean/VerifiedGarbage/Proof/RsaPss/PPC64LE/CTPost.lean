@@ -51,7 +51,7 @@ theorem acc0_wp {a t : State} (h : BL D a t) : WP isa (.block acc0) t (BL D a) :
 theorem qM_fit {a t : State} (h : BL D a t) : MFit (qM D a).1 (qM D a).2.1 (qM D a).2.2.1 (qM D a).2.2.2 := by
   have := h.dn
   show MFit ((lo a).toNat + (dbLen D a).toNat) D (lo a).toNat (dbLen D a).toNat
-  exact ⟨by omega, by omega, .inr (by omega), by omega⟩
+  exact ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩
 
 include hD in
 theorem dbArgs_wp {a t : State} (h : BL D a t) :
@@ -94,7 +94,7 @@ theorem scan_wp {a t : State} (h : BL D a t) : WP isa scan t fun t' => BL D a t'
   have L := agree_lay P g
   have hd1 := L.d1
   exact WP.mono (scan_ok L b (w := fun j => view t.mem (Sp s) ((lo a).toNat + j)) fun _ _ => rfl)
-    fun t' ⟨b', _, _, x8, _⟩ => ⟨⟨s, P, g, b'⟩, _, by split <;> omega, x8⟩
+    fun t' ⟨b', _, _, x8, _⟩ => ⟨⟨s, P, g, b'⟩, _, by split <;> omega_arith, x8⟩
 
 /-- Some position in `DB` in `r8`, and the length of the salt after it in `r25`. -/
 abbrev Pos25 (D : Nat) (a t : State) : Prop :=
@@ -196,7 +196,7 @@ theorem post_ct : RelCT isa (Two fun a t => BL D a t ∧ Fit D a)
     refine two_seq (Ψ := F0) (copySalt_taint H (bl_pins (an := id) (fun _ _ h => h.1) [.r14, .r17, .r19, .r21]))
       (fun a t h => WP.mono (salt_wp hD h.1 h.2) fun t' b => ⟨b, h.2⟩) ?_
     have hb : ∀ {a t : State}, F0 a t → (a.gpr .r10).toNat + 8 + D ≤ 2048 := fun h => by
-      have := h.1.dn; have := h.2; omega
+      have := h.1.dn; have := h.2; omega_arith
     refine two_seq (Ψ := BL D) ((hashFixed_ct hH cH hD).mono (fun _ _ ⟨a, h₁, h₂⟩ =>
         ⟨a, ⟨h₁.1, hb h₁⟩, ⟨h₂.1, hb h₂⟩⟩) fun _ _ h => h)
       (fun a t h => hashFixed_wp hH hD h.1 (hb h)) ?_
@@ -212,11 +212,11 @@ theorem post_ct : RelCT isa (Two fun a t => BL D a t ∧ Fit D a)
       (fun a t h => ?_) ?_
     · obtain ⟨pos, hp, x8, x25⟩ := h.2
       exact WP.mono (shift_wp hD h.1 ⟨pos, hp, x8⟩) fun t' ⟨b, g⟩ =>
-        ⟨b, (dbLen D a).toNat - pos - 1, by omega, by rw [g, x25]⟩
+        ⟨b, (dbLen D a).toNat - pos - 1, by omega_arith, by rw [g, x25]⟩
     have hs : ∀ {a t : State}, A1 a t → S25 t := fun h => by
       obtain ⟨sl, hsl, x25⟩ := h.2
       have := h.1.dn
-      exact ⟨sl, x25, by omega⟩
+      exact ⟨sl, x25, by omega_arith⟩
     refine two_seq (Ψ := BL D) ((hashAny_ct hH cH hD).mono (fun _ _ ⟨a, h₁, h₂⟩ =>
         ⟨a, ⟨h₁.1, hs h₁⟩, ⟨h₂.1, hs h₂⟩⟩) fun _ _ h => h)
       (fun a t h => let ⟨_, hsl, x25⟩ := h.2; hashAny_wp hH hD h.1 hsl x25) ?_

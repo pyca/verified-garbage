@@ -84,13 +84,13 @@ def InMut (n : Nat) (r : Nat × Nat) : Prop := ∃ r' ∈ mutR n, r'.1 ≤ r.1 �
 
 theorem InMut.arrays {n o k : Nat} (h1 : 256 ≤ o) (h2 : o + k + saveBytes ≤ 8 * n) : InMut n (o, k) :=
   ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))), h1,
-    by simp only [saveBytes] at h2 ⊢; omega⟩
+    by simp only [saveBytes] at h2 ⊢; omega_arith⟩
 
 theorem InMut.hdr {n i : Nat} (h : i = 1 ∨ (6 ≤ i ∧ i < 16) ∨ (19 ≤ i ∧ i < 32)) : InMut n (8 * i, 8) := by
   rcases h with rfl | h | h
   · exact ⟨_, List.mem_cons_self, by decide, by decide⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by omega, by omega⟩
-  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), by omega, by omega⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by omega_arith, by omega_arith⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), by omega_arith, by omega_arith⟩
 
 /-- A change within ranges of `mutR` is within `mutR`. -/
 theorem Frm.toMut {B : Addr} {n : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
@@ -104,7 +104,7 @@ theorem Args.frm {m m' : Mem} {p : PP} {B' : Addr} (h : Args m p) (hf : Frm B' (
       word m' p.B (8 * i) = word m p.B (8 * i) := fun hi =>
     hf.word_eq (fun r hr => by
       simp only [mutR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
   exact ⟨(k (by decide)).trans h.wsLen, (k (by decide)).trans h.out, (k (by decide)).trans h.len,
     (k (by decide)).trans h.usedP, (k (by decide)).trans h.bits, (k (by decide)).trans h.gen,
     (k (by decide)).trans h.rand, (k (by decide)).trans h.rlen⟩
@@ -136,7 +136,7 @@ theorem bytes_frm {p : PP} {m m' : Mem} {rs : List (Nat × Nat)} (hf : Frm p.B r
   have h2 := hr r hr'
   show r.1 + r.2 ≤ ofs p.B (off p.rp i)
   by_contra hc
-  exact this (by omega) rfl
+  exact this (by omega_arith) rfl
 
 /-- `out`'s bytes are kept by a change in the working space. -/
 theorem out_frm {p : PP} {m m' : Mem} {rs : List (Nat × Nat)} (hf : Frm p.B rs m m')
@@ -145,16 +145,16 @@ theorem out_frm {p : PP} {m m' : Mem} {rs : List (Nat × Nat)} (hf : Frm p.B rs 
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => hf _ fun r hr' => Or.inr ?_
   have hi' := List.mem_range.mp hi
-  have := hsep (p.op + BitVec.ofNat 64 i) (by simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hi')
+  have := hsep (p.op + BitVec.ofNat 64 i) (by simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; exact hi')
   have h2 := hr r hr'
-  omega
+  omega_arith
 
 theorem Bufs.step {p : PP} {s t : State} {rs : List (Nat × Nat)} {regs : List Reg} (h : Bufs p s)
     (hf : Frm p.B rs s.mem t.mem) (hr : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z) (k : Keep regs s t) : Bufs p t where
   rdR := by rw [k.rd, k.wr]; exact h.rdR
   sepR := h.sepR
   bR := by rw [bytes_frm hf hr h.sepR]; exact h.bR
-  bO := by rw [out_frm hf hr h.sepO (by have := h.scrO.nowrap; omega)]; exact h.bO
+  bO := by rw [out_frm hf hr h.sepO (by have := h.scrO.nowrap; omega_arith)]; exact h.bO
   scrO := h.scrO.congr k.wr
   sepO := h.sepO
   scrU := h.scrU.congr k.wr
@@ -189,7 +189,7 @@ theorem St.step {p : PP} {s t : State} {regs : List Reg} (h : St p s) (hf : Frm 
   bufs := h.bufs.step hf (fun r hr => by
     have := h.dims.n
     simp only [mutR, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only [PP.Z, saveBytes] <;> omega) k
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only [PP.Z, saveBytes] <;> omega_arith) k
   dims := h.dims
   ws := by rw [k.wr]; exact h.ws
   sp := k.sp.trans h.sp
@@ -197,19 +197,19 @@ theorem St.step {p : PP} {s t : State} {regs : List Reg} (h : St p s) (hf : Frm 
   stkB := h.stkB
   save := fun i hi => by
     have := h.dims.n; have := h.dims.n'; have := h.dims.b1
-    refine (hf.word_eq (fun r hr => .inr ?_) (by simp only [saveBytes]; omega)).trans (h.save i hi)
+    refine (hf.word_eq (fun r hr => .inr ?_) (by simp only [saveBytes]; omega_arith)).trans (h.save i hi)
     simp only [mutR, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [saveBytes, PP.L] at * <;> omega
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [saveBytes, PP.L] at * <;> omega_arith
   r2 := (k.gpr .r2 h2).trans h.r2
 
 /-- A header word of `St`'s working space: its load and its store. -/
 theorem St.ld {p : PP} {s : State} (h : St p s) {d : Nat} (hd : d + 8 ≤ 256) :
     InRegions (s.rd ++ s.wr) (p.B + BitVec.ofNat 64 d) 8 :=
-  h.scr.ld (d := d) (by have := h.dims.n; simp only [PP.Z]; omega)
+  h.scr.ld (d := d) (by have := h.dims.n; simp only [PP.Z]; omega_arith)
 
 theorem St.st {p : PP} {s : State} (h : St p s) {d : Nat} (hd : d + 8 ≤ 256) :
     InRegions s.wr (p.B + BitVec.ofNat 64 d) 8 :=
-  h.scr.st (d := d) (by have := h.dims.n; simp only [PP.Z]; omega)
+  h.scr.st (d := d) (by have := h.dims.n; simp only [PP.Z]; omega_arith)
 
 /-- The tape's first `k` bytes in memory. -/
 theorem St.take_bytes {p : PP} {s : State} (h : St p s) {k : Nat} (hk : k ≤ p.r.length) :

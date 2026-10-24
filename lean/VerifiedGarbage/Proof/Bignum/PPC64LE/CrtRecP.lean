@@ -52,7 +52,7 @@ theorem recombineP_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
   have hsA := (hs.congr k1.wr).sub hA
   refine recP2a_ok hsA (Nat.le_refl _) hw2 hw' ((k1.gpr _ (by decide)).trans h10)
     ((k1.gpr _ (by decide)).trans h21) ((k1.gpr _ (by decide)).trans h29)
-    ((k1.gpr _ (by decide)).trans h11) v0 v1 v4 (Nat.mod_lt _ (by omega)) hm1P
+    ((k1.gpr _ (by decide)).trans h11) v0 v1 v4 (Nat.mod_lt _ (by omega_arith)) hm1P
     fun t₂ v3 out2 a10 k2 => ?_
   have hr2 : ∀ j, j ≠ 3 → j ≠ 4 → j < 8 →
       ∀ r ∈ [(slot wP 3, 8 * (wP + 2)), (slot wP 4, 8 * (wP + 2))],
@@ -60,10 +60,10 @@ theorem recombineP_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
     intro j h3 h4 h8 r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have s3 := slot_sep (w := wP) h3; have s4 := slot_sep (w := wP) h4
-    rcases hr with rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith
   have out2' := outs_sub (S := slot wP 8) out2 (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith) (by omega_arith)
   have o12 := out1.trans out2'
   refine WP.mono (recP3_ok (hs.congr (k1.trans k2).wr) hA hXA hw2 hw' a10
     ((k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h29))
@@ -77,10 +77,10 @@ theorem recombineP_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
       refine congrArg (fun v => (v * (t₁.gpr .r12).toNat + 1) % 2 ^ 32) ?_
       refine congrArg BitVec.toNat (Mem.readW_congr fun i hi => out2 _ fun r hr => ?_)
       have := hr2 0 (by decide) (by decide) (by decide) r hr
-      rw [Mont.ofs_off (off BX oA) (d := slot wP 0) (i := i) (by omega)]; omega)
-    (by rw [out2.val32 (hr2 0 (by decide) (by decide) (by decide)) (by omega), v0]) hPodd v3
-    (by rw [out2.val32 (hr2 7 (by decide) (by decide) (by decide)) (by omega), v7])
-    (by rw [o12.wv (Or.inl (by omega)) (by omega)]; exact hQ) hQP)
+      rw [Mont.ofs_off (off BX oA) (d := slot wP 0) (i := i) (by omega_arith)]; omega_arith)
+    (by rw [out2.val32 (hr2 0 (by decide) (by decide) (by decide)) (by omega_arith), v0]) hPodd v3
+    (by rw [out2.val32 (hr2 7 (by decide) (by decide) (by decide)) (by omega_arith), v7])
+    (by rw [o12.wv (Or.inl (by omega_arith)) (by omega_arith)]; exact hQ) hQP)
     fun t ⟨⟨v4', out3⟩, k3⟩ => ⟨⟨v4', o12.trans out3⟩, ((k1.trans k2).trans k3).mono⟩
 
 end VG.Proof.Bignum.PPC64LE.Crt

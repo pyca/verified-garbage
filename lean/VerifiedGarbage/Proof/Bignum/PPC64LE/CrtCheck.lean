@@ -34,7 +34,7 @@ theorem isZero_bits (v : BitVec 64) :
     (((v >>> 1) ||| (v &&& 1#64)) - 1#64) >>> 63 = BitVec.ofNat 64 (if v = 0 then 1 else 0) := by
   by_cases h : v.toNat ≤ 1
   · rcases (show v = 0 ∨ v = 1 by
-      rcases (show v.toNat = 0 ∨ v.toNat = 1 by omega) with h | h
+      rcases (show v.toNat = 0 ∨ v.toNat = 1 by omega_arith) with h | h
       · exact Or.inl (BitVec.eq_of_toNat_eq h)
       · exact Or.inr (BitVec.eq_of_toNat_eq h)) with rfl | rfl <;> decide
   · have hu1 : 1 ≤ ((v >>> 1) ||| (v &&& 1#64)).toNat := by
@@ -42,18 +42,18 @@ theorem isZero_bits (v : BitVec 64) :
       rw [BitVec.toNat_or]
       have : (v >>> 1).toNat = v.toNat / 2 := by
         rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-      omega
+      omega_arith
     have hu2 : ((v >>> 1) ||| (v &&& 1#64)).toNat < 2 ^ 63 := by
       rw [BitVec.toNat_or]
       apply Nat.or_lt_two_pow
-      · rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := v.isLt; omega
+      · rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := v.isLt; omega_arith
       · rw [BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
     have hv : v ≠ 0 := fun e => by subst e; simp at h
     simp only [hv, ↓reduceIte]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- `checkN`: `r26 :=` all ones if the `k` bytes of `n` (at `N`, from the
 header) are a valid modulus, else 0. -/
@@ -61,7 +61,7 @@ theorem checkN_ok {s : State} {S N : Addr} {Z k : Nat} {nb : List Byte} (hs : Sc
     (h23 : s.gpr .r23 = S) (hN : word s.mem S oN = off N 0) (hNL : word s.mem S oNLen = BitVec.ofNat 64 k)
     (hk : 64 ≤ k) (hk' : k ≤ 1024) (hlen : nb.length = k)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off N i) 1)
-    (hb : ∀ i (h : i < k), s.mem (off N i) = nb[i]'(by omega)) :
+    (hb : ∀ i (h : i < k), s.mem (off N i) = nb[i]'(by omega_arith)) :
     WP isa checkN s fun t =>
       (t.gpr .r26 = BitVec.ofNat 64 0 -
           BitVec.ofNat 64 (if Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k then 1 else 0) ∧ t.mem = s.mem) ∧
@@ -72,7 +72,7 @@ theorem checkN_ok {s : State} {S N : Addr} {Z k : Nat} {nb : List Byte} (hs : Sc
     t.gpr .r6 = BitVec.ofNat 64 k ∧ t.mem = s.mem) ?_ (by decide)) fun s₁ ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   · have hN' : s.mem.readW (off S 8) 64 = off N 0 := hN
     have hNL' : s.mem.readW (off S 16) 64 = BitVec.ofNat 64 k := hNL
-    prun [h23, oN, oNLen, hs.ld (show 8 + 8 ≤ Z by omega), hs.ld (show 16 + 8 ≤ Z by omega), hN', hNL']
+    prun [h23, oN, oNLen, hs.ld (show 8 + 8 ≤ Z by omega_arith), hs.ld (show 16 + 8 ≤ Z by omega_arith), hN', hNL']
   refine WP.seq (WP.mono (check_ok (nb := nb) a12 a6 hk hk' hlen (by rw [k1.rd, k1.wr]; exact hrd)
     fun i hi => by rw [m1]; exact hb i hi) fun s₂ ⟨hv, m2, k2⟩ => ?_)
   refine WP.mono (WP.keep [.r3, .r4, .r26] (Q := fun t => t.gpr .r26 = BitVec.ofNat 64 0 -
@@ -116,31 +116,31 @@ theorem cmpLt_ok {s : State} {B : Addr} {Z w a m : Nat} (hs : Scr s B Z) (ha : a
   refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w a) (dT := slot w 3) (dM := slot w m)
     (hs.congr k13.wr) ((k3.gpr _ (by decide)).trans ((k2.gpr _ (by decide)).trans a8))
     ((k3.gpr _ (by decide)).trans a9) a10
-    ((k13.gpr _ (by decide)).trans h11) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega)) fun s₄ ⟨⟨c, hc, hD, h20⟩, out, k4⟩ => ?_)
+    ((k13.gpr _ (by decide)).trans h11) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun s₄ ⟨⟨c, hc, hD, h20⟩, out, k4⟩ => ?_)
   have k14 := k13.trans k4
   refine WP.mono (WP.keep [.r10] (Q := fun t => t.gpr .r10 = off B (slot w 0) ∧ t.mem = s₄.mem)
     (by prun [(k14.gpr .r21 (by decide)).trans h21]) (by decide)) fun t ⟨⟨t10, tm⟩, k5⟩ =>
-    ⟨⟨?_, by rw [m3, m2, m1] at out; rw [tm]; exact out.mono (Nat.le_refl _) (by omega), t10⟩,
+    ⟨⟨?_, by rw [m3, m2, m1] at out; rw [tm]; exact out.mono (Nat.le_refl _) (by omega_arith), t10⟩,
       (k14.trans k5).mono⟩
   rw [k5.gpr .r20 (by decide), h20, m3, m2, m1]
   rw [m3, m2, m1] at hD
   have h0 : Mont.w32 s.mem B (slot w a + 4 * (2 * w)) = 0 := by
     have := Mont.word_eq_w32 s.mem B (slot w a + 8 * w)
     rw [show Mont.word s.mem B (slot w a + 8 * w) = 0 from htop, show (0 : BitVec 64).toNat = 0 from rfl,
-      show slot w a + 8 * w = slot w a + 4 * (2 * w) by omega] at this
-    omega
+      show slot w a + 8 * w = slot w a + 4 * (2 * w) by omega_arith] at this
+    omega_arith
   rw [h0]
   have hDl' := Mont.val32_lt s₄.mem B (slot w 3) (2 * w)
   have hAl := Mont.val32_lt s.mem B (slot w a) (2 * w)
   have hMl := Mont.val32_lt s.mem B (slot w m) (2 * w)
   congr 2
-  rcases (show c = 0 ∨ c = 1 by omega) with rfl | rfl
+  rcases (show c = 0 ∨ c = 1 by omega_arith) with rfl | rfl
   · simp only [Nat.lt_irrefl, ite_false]
-    have h : ¬ Mont.val32 s.mem B (slot w a) (2 * w) < Mont.val32 s.mem B (slot w m) (2 * w) := by omega
+    have h : ¬ Mont.val32 s.mem B (slot w a) (2 * w) < Mont.val32 s.mem B (slot w m) (2 * w) := by omega_arith
     simp only [h, ite_false]
   · simp only [Nat.zero_lt_one, ite_true]
-    have h : Mont.val32 s.mem B (slot w a) (2 * w) < Mont.val32 s.mem B (slot w m) (2 * w) := by omega
+    have h : Mont.val32 s.mem B (slot w a) (2 * w) < Mont.val32 s.mem B (slot w m) (2 * w) := by omega_arith
     simp only [h, ite_true]
 
 /-- `checkLt a m`: `r26 &=` `cmpLt a m`'s mask. -/
@@ -186,14 +186,14 @@ theorem w32_ones {m : Mem} {B : Addr} {d : Nat} (h : word m B d = BitVec.allOnes
   rw [show Mont.word m B d = BitVec.allOnes 64 from h, BitVec.toNat_allOnes] at this
   have h1 : Mont.w32 m B d < 2 ^ 32 := BitVec.isLt _
   have h2 : Mont.w32 m B (d + 4) < 2 ^ 32 := BitVec.isLt _
-  omega
+  omega_arith
 
 /-- A word apart from every range that changed. -/
 theorem outs_word {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Mont.Outs base rs m m') {d : Nat}
     (hd : ∀ r ∈ rs, d + 8 ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd' : d + 8 ≤ 2 ^ 64) : word m' base d = word m base d :=
   (Mem.readW_congr fun i hi => (h _ fun r hr => by
-    have := hd r hr; simp only [Mont.ofs]; rw [show (_ - base).toNat = ofs base _ from rfl, ofs_off base (by omega)]
-    omega).symm).symm
+    have := hd r hr; simp only [Mont.ofs]; rw [show (_ - base).toNat = ofs base _ from rfl, ofs_off base (by omega_arith)]
+    omega_arith).symm).symm
 
 /-- The registers `checkPQ` writes. -/
 def pqRegs : List Reg :=
@@ -235,12 +235,12 @@ theorem checkPQ_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 
   have k12 := k1.trans k2
   have hP : Mont.val32 s₂.mem B (slot w 6) (2 * w) =
       Mont.val32 s.mem B (slot w 4) (2 * w) * Mont.val32 s.mem B (slot w 5) (2 * w) := by
-    exact mont_exact (by omega) h6l hpq e6v
+    exact mont_exact (by omega_arith) h6l hpq e6v
   have o2' : Mont.Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w 6, 8 * (w + 2))]
       s.mem s₂.mem := by rw [← m1]; exact o2
   have v21 : Mont.val32 s₂.mem B (slot w 1) (2 * w) = Mont.val32 s.mem B (slot w 1) (2 * w) :=
     o2'.val32 (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-                  rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega)
+                  rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)
   -- Array 6's word `w` := 0.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -249,29 +249,29 @@ theorem checkPQ_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 
   refine WP.mono (WP.keep [.r14, .r0] (Q := fun t =>
     t.mem = s₃.mem.writeW (off B (slot w 6 + 8 * w)) (0 : BitVec 64)) ?_ (by decide)) fun s₄ ⟨m4, k4⟩ => ?_
   · have e16 : off B (slot w 6 + 8 * (w + 2)) - BitVec.ofNat 64 16 = off B (slot w 6 + 8 * w) := by
-      rw [off, VG.Offset.add_ofNat_sub B (show 16 ≤ slot w 6 + 8 * (w + 2) by omega)]; congr 2
+      rw [off, VG.Offset.add_ofNat_sub B (show 16 ≤ slot w 6 + 8 * (w + 2) by omega_arith)]; congr 2
     prun [a14, (k3.gpr .r29 (by decide)).trans ((k12.gpr .r29 (by decide)).trans h29), off_add, e16,
-      (hs.congr (k12.trans k3).wr).st (show slot w 6 + 8 * w + 8 ≤ Z by omega)]
+      (hs.congr (k12.trans k3).wr).st (show slot w 6 + 8 * w + 8 ≤ Z by omega_arith)]
     rfl
   have k14 := (k12.trans k3).trans k4
   rw [m3] at m4
-  have ow := writeW_outside s₂.mem B (d := slot w 6 + 8 * w) (0 : BitVec 64) (by omega)
+  have ow := writeW_outside s₂.mem B (d := slot w 6 + 8 * w) (0 : BitVec 64) (by omega_arith)
   have v46 : Mont.val32 s₄.mem B (slot w 6) (2 * w) =
       Mont.val32 s.mem B (slot w 4) (2 * w) * Mont.val32 s.mem B (slot w 5) (2 * w) := by
-    rw [m4, Mont.Outside.val32 (fun x hx => ow x hx) (by omega) (by omega), hP]
+    rw [m4, Mont.Outside.val32 (fun x hx => ow x hx) (by omega_arith) (by omega_arith), hP]
   have v41 : Mont.val32 s₄.mem B (slot w 1) (2 * w) = Mont.val32 s.mem B (slot w 1) (2 * w) := by
-    rw [m4, Mont.Outside.val32 (fun x hx => ow x hx) (by omega) (by omega), v21]
+    rw [m4, Mont.Outside.val32 (fun x hx => ow x hx) (by omega_arith) (by omega_arith), v21]
   have t46 : word s₄.mem B (slot w 6 + 8 * w) = 0 := by rw [m4]; exact word_writeW_self _ _ _ _
   have t41 : word s₄.mem B (slot w 1 + 8 * w) = 0 := by
-    rw [m4, ow.word (by omega) (by omega)]
+    rw [m4, ow.word (by omega_arith) (by omega_arith)]
     have hw1 : word s₂.mem B (slot w 1 + 8 * w) = word s.mem B (slot w 1 + 8 * w) := by
-      refine outs_word o2' (fun r hr => ?_) (by omega)
+      refine outs_word o2' (fun r hr => ?_) (by omega_arith)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
     rw [hw1]; exact h1top
   -- `p q < n`?
   refine WP.seq (WP.mono (cmpLt_ok (a := 6) (m := 1) (hs.congr k14.wr) (by decide) (by decide) (by decide)
-    (by decide) (by omega) hw' hZ ((k14.gpr _ (by decide)).trans h10) ((k14.gpr _ (by decide)).trans h21)
+    (by decide) (by omega_arith) hw' hZ ((k14.gpr _ (by decide)).trans h10) ((k14.gpr _ (by decide)).trans h21)
     ((k14.gpr _ (by decide)).trans h29) ((k14.gpr _ (by decide)).trans h11) t46)
     fun s₅ ⟨⟨a20, o5, a10⟩, k5⟩ => ?_)
   rw [v46, v41] at a20
@@ -281,13 +281,13 @@ theorem checkPQ_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 
   have k16 := (k14.trans k5).trans k6
   -- `n < p q`?
   refine WP.seq (WP.mono (cmpLt_ok (a := 1) (m := 6) (hs.congr k16.wr) (by decide) (by decide) (by decide)
-    (by decide) (by omega) hw' hZ (by rw [k6.gpr .r10 (by decide)]; exact a10)
+    (by decide) (by omega_arith) hw' hZ (by rw [k6.gpr .r10 (by decide)]; exact a10)
     ((k16.gpr _ (by decide)).trans h21)
     ((k16.gpr _ (by decide)).trans h29) ((k16.gpr _ (by decide)).trans h11)
-    (by rw [m6, (show Outside B (slot w 3) (8 * w) s₄.mem s₅.mem from fun x hx => o5 x hx).word (by omega)
-      (by omega)]; exact t41))
+    (by rw [m6, (show Outside B (slot w 3) (8 * w) s₄.mem s₅.mem from fun x hx => o5 x hx).word (by omega_arith)
+      (by omega_arith)]; exact t41))
     fun s₇ ⟨⟨b20, o7, b10⟩, k7⟩ => ?_)
-  rw [m6, o5.val32 (by omega) (by omega), o5.val32 (by omega) (by omega), v46, v41] at b20
+  rw [m6, o5.val32 (by omega_arith) (by omega_arith), o5.val32 (by omega_arith) (by omega_arith), v46, v41] at b20
   refine WP.mono (WP.keep [.r0, .r3, .r26] (Q := fun t => t.gpr .r26 = s₇.gpr .r26 &&&
     ((s₇.gpr .r24 ||| s₇.gpr .r20) ^^^ (BitVec.ofNat 64 0 - 1#64)) ∧ t.mem = s₇.mem) (by prun) (by decide))
     fun t ⟨⟨t26, tm⟩, k8⟩ => ⟨⟨?_, ?_, by rw [k8.gpr .r10 (by decide)]; exact b10⟩, ?_⟩
@@ -296,11 +296,11 @@ theorem checkPQ_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 
   · intro x hx
     rw [tm]
     have hx3 : Mont.ofs B x < slot w 3 ∨ slot w 3 + 8 * w ≤ Mont.ofs B x := by
-      have := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)); simp only at this; omega
+      have := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)); simp only at this; omega_arith
     have hx6 : Mont.ofs B x < slot w 6 + 8 * w ∨ slot w 6 + 8 * w + 8 ≤ Mont.ofs B x := by
       have := hx _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-      simp only at this; omega
-    rw [o7 x hx3, m6, o5 x hx3, m4, ow x (by simp only [Mont.ofs, ofs] at hx6 ⊢; omega)]
+      simp only at this; omega_arith
+    rw [o7 x hx3, m6, o5 x hx3, m4, ow x (by simp only [Mont.ofs, ofs] at hx6 ⊢; omega_arith)]
     exact o2' x hx
   · exact (k16.trans (k7.trans k8)).mono
 

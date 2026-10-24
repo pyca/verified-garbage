@@ -128,7 +128,8 @@ name = "NativeTactics"
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Framework.Lit",
   "VerifiedGarbage.Proof.Framework.LitShare", "VerifiedGarbage.Proof.Framework.LitAlias",
-  "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaLit",
+  "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaAll",
+  "VerifiedGarbage.Proof.Framework.OmegaLit",
   "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig",
   "VerifiedGarbage.Proof.Framework.RegionsSub",
   "VerifiedGarbage.Proof.Framework.PlainSimp", "VerifiedGarbage.Proof.Framework.TacticTemplate",

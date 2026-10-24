@@ -48,8 +48,8 @@ theorem scan_foldl (bs : List Byte) (a : Bool × Nat) :
     rcases a with ⟨_ | _, c⟩
     · by_cases hb : b = 0#8
       · subst hb; simp [scanStep, significant]
-      · simp [scanStep, significant, hb]; omega
-    · simp [scanStep]; omega
+      · simp [scanStep, significant, hb]; omega_arith
+    · simp [scanStep]; omega_arith
 
 theorem bytesAt_take_succ (m : Mem) (N : Addr) {k i : Nat} (hi : i < k) :
     (Spec.Rsa.bytesAt m N k).take (i + 1) = (Spec.Rsa.bytesAt m N k).take i ++ [m (off N i)] := by
@@ -74,7 +74,7 @@ theorem scanAcc_le (bs : List Byte) (i : Nat) : (scanAcc bs i).2 ≤ i := by
   rw [scanAcc, scan_foldl]
   have := significant_fits (bs.take i)
   simp only [Bool.false_eq_true, ite_false, Nat.zero_add, List.length_take] at this ⊢
-  omega
+  omega_arith
 
 theorem scanStep_or {c : Bool × Nat} {x : Nat} (b : Byte) (hx : x = 0 ↔ c.1 = false) :
     (x ||| b.toNat = 0 ↔ (scanStep c b).1 = false) ∧
@@ -102,7 +102,7 @@ theorem significant_get (bs : List Byte) (h : (significant bs).1 ≠ 0) :
     · rw [significant, ite_eq_left hb] at h ⊢
       have := significant_fits bs
       rw [List.length_cons, show bs.length + 1 - (significant bs).1 = (bs.length - (significant bs).1) + 1 by
-        omega, List.getElem?_cons_succ]
+        omega_arith, List.getElem?_cons_succ]
       exact ih h
     · rw [significant, ite_eq_right hb]
       simp
@@ -113,22 +113,22 @@ theorem bytesAt_get (m : Mem) (N : Addr) {k j : Nat} (hj : j < k) :
 
 theorem bytesAt_last (m : Mem) (N : Addr) {k : Nat} (hk : 1 ≤ k) :
     Spec.Rsa.bytesAt m N k = Spec.Rsa.bytesAt m N (k - 1) ++ [m (off N (k - 1))] := by
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega_arith⟩
   simp [Spec.Rsa.bytesAt, List.range_succ]
 
 theorem or_ofNat {x y : Nat} (hx : x < 256) (hy : y < 256) :
     BitVec.ofNat 64 x ||| BitVec.ofNat 64 y = BitVec.ofNat 64 (x ||| y) := by
-  have : x ||| y < 2 ^ 8 := Nat.or_lt_two_pow (by omega) (by omega)
+  have : x ||| y < 2 ^ 8 := Nat.or_lt_two_pow (by omega_arith) (by omega_arith)
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_or, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem neg_shr63 {y : Nat} (hy : y < 256) :
     (BitVec.ofNat 64 0 - BitVec.ofNat 64 y) >>> 63 = BitVec.ofNat 64 (if y = 0 then 0 else 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  split <;> simp only [Nat.reducePow, Nat.zero_mod, Nat.add_zero] <;> omega
+  split <;> simp only [Nat.reducePow, Nat.zero_mod, Nat.add_zero] <;> omega_arith
 
 /-- The registers `sigLen` and `bytesBits` write. -/
 def sigRegs : List Reg := [.r0, .r3, .r14, .r15, .r16, .r17]
@@ -155,7 +155,7 @@ theorem sigLen_ok {s : State} {N : Addr} {k : Nat} (h12 : s.gpr .r12 = N) (h6 : 
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr
   refine WP.mono (wp_countdown (body := .block ([.lbz .r0 .r14 0, .logic .or .r15 .r15 .r0, .li .r3 0,
       .sub .r3 .r3 .r15, .lsr .d .r3 .r3 63, .add .r16 .r16 .r3, .addi .r14 .r14 1] ++
-      ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := k) (by omega) (by omega) Inv
+      ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := k) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨t14, ⟨x, hx, t15, hx0⟩, t16, tm, trd, twr⟩ _ => ?_)
     ⟨i14, ⟨0, by decide, i15, by simp [scanAcc]⟩, by rw [i16]; rfl, im, ird, iwr⟩ i17)
     fun t ⟨_, _, t16, tm, _⟩ => ⟨by rw [t16, scanAcc_all], tm⟩
@@ -183,7 +183,7 @@ theorem bytesBits_ok {s : State} {N : Addr} {k : Nat} (h12 : s.gpr .r12 = N)
   refine WP.seq (WP.mono (sigLen_ok h12 h6 hk hk' hrd) fun t ⟨⟨t16, tm⟩, kt⟩ => ?_)
   have hc := significant_fits (Spec.Rsa.bytesAt s.mem N k)
   rw [bytesAt_length] at hc
-  refine WP.ite _ (eval_zero_ofNat _ _ (by omega) t16) (fun hz => ?_) (fun hz => ?_)
+  refine WP.ite _ (eval_zero_ofNat _ _ (by omega_arith) t16) (fun hz => ?_) (fun hz => ?_)
   · have hz : (significant (Spec.Rsa.bytesAt s.mem N k)).1 = 0 := by simpa using hz
     have h2 := (significant_nonzero _).mp hz
     prun [t16, tm]
@@ -191,12 +191,12 @@ theorem bytesBits_ok {s : State} {N : Addr} {k : Nat} (h12 : s.gpr .r12 = N)
     decide
   · have hz : (significant (Spec.Rsa.bytesAt s.mem N k)).1 ≠ 0 := by simpa using hz
     have hg := significant_get _ hz
-    rw [bytesAt_length, bytesAt_get _ _ (by omega), Option.some.injEq] at hg
+    rw [bytesAt_length, bytesAt_get _ _ (by omega_arith), Option.some.injEq] at hg
     have hr : InRegions (t.rd ++ t.wr) (off N (k - (significant (Spec.Rsa.bytesAt s.mem N k)).1)) 1 := by
-      rw [kt.rd, kt.wr]; exact hrd _ (by omega)
+      rw [kt.rd, kt.wr]; exact hrd _ (by omega_arith)
     unfold topBit
     prun [kt.gpr .r12 (by decide), kt.gpr .r6 (by decide), h12, h6, t16,
-      Offset.add_ofNat_sub N (show (significant (Spec.Rsa.bytesAt s.mem N k)).1 ≤ k by omega),
+      Offset.add_ofNat_sub N (show (significant (Spec.Rsa.bytesAt s.mem N k)).1 ≤ k by omega_arith),
       exec_lbz' (show Reg.r14 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hr, read_byte64, tm, hg]
     exact top_xor (significant (Spec.Rsa.bytesAt s.mem N k)).2.isLt
 
@@ -220,7 +220,7 @@ theorem pairOk_ok {s : State} {a b P Q : Nat} {R : Prop} (h24 : s.gpr .r24 = Bit
   have e : (t.gpr .r3 == 0) = decide (a = P ∧ b = Q) := by
     rw [t3, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff,
       show ∀ x y : BitVec 64, (x ||| y = 0 ↔ x = 0 ∧ y = 0) from fun _ _ => BitVec.or_eq_zero_iff,
-      ofNat_sub_eq_zero (by omega) (by omega), ofNat_sub_eq_zero (by omega) (by omega)]
+      ofNat_sub_eq_zero (by omega_arith) (by omega_arith), ofNat_sub_eq_zero (by omega_arith) (by omega_arith)]
   have t24 : t.gpr .r24 = BitVec.ofNat 64 a := (kt.gpr _ (by decide)).trans h24
   have t25 : t.gpr .r25 = BitVec.ofNat 64 b := (kt.gpr _ (by decide)).trans h25
   refine WP.ite _ (by rw [eval_zero, e]) (fun hz => ?_) (fun hz => ?_)
@@ -259,11 +259,11 @@ theorem pairs_ok {s : State} {a b : Nat} (h24 : s.gpr .r24 = BitVec.ofNat 64 a)
   · rintro ((((⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) | ⟨rfl, rfl⟩) | ⟨rfl, rfl⟩) | ⟨rfl, rfl⟩) <;> decide
   · unfold Spec.Dsa.supportedSizes
     rintro (⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩)
-    · exact .inl (.inl (.inl (.inl ⟨by omega, by omega⟩)))
-    · exact .inl (.inl (.inl (.inr ⟨by omega, by omega⟩)))
-    · exact .inl (.inl (.inr ⟨by omega, by omega⟩))
-    · exact .inl (.inr ⟨by omega, by omega⟩)
-    · exact .inr ⟨by omega, by omega⟩
+    · exact .inl (.inl (.inl (.inl ⟨by omega_arith, by omega_arith⟩)))
+    · exact .inl (.inl (.inl (.inr ⟨by omega_arith, by omega_arith⟩)))
+    · exact .inl (.inl (.inr ⟨by omega_arith, by omega_arith⟩))
+    · exact .inl (.inr ⟨by omega_arith, by omega_arith⟩)
+    · exact .inr ⟨by omega_arith, by omega_arith⟩
 
 /-- `odd`: `r0 = 0` exactly when the number of the `k` octets at `N` is odd. -/
 theorem odd_ok {s : State} {N : Addr} {k : Nat} (h12 : s.gpr .r12 = N) (h6 : s.gpr .r6 = BitVec.ofNat 64 k)
@@ -273,7 +273,7 @@ theorem odd_ok {s : State} {N : Addr} {k : Nat} (h12 : s.gpr .r12 = N) (h6 : s.g
         Keep [.r0, .r3, .r14] s t := by
   refine WP.keep _ ?_ (by decide)
   unfold odd
-  have hr : InRegions (s.rd ++ s.wr) (off N (k - 1)) 1 := hrd _ (by omega)
+  have hr : InRegions (s.rd ++ s.wr) (off N (k - 1)) 1 := hrd _ (by omega_arith)
   prun [h12, h6, Offset.add_ofNat_sub N hk, exec_lbz' (show Reg.r14 ≠ .r0 by decide)
     (show 0 < 2 ^ 15 by decide), hr, read_byte64]
   rw [odd_xor, bytesAt_last s.mem N hk, Proof.Dsa.decodeBE_last_mod_two]
@@ -296,7 +296,7 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
     (hfail : ∀ t, ¬ SizesOk s.mem L key → t.mem = s.mem → Keep sizesRegs s t → Regs t L key sig dig →
       WP isa fail t Q) :
     WP isa (sizes rest fail) s Q := by
-  have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega
+  have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega_arith
   have hql := hL.ql
   have hnw := hL.nowrap
   have fp := significant_fits (Spec.Rsa.bytesAt s.mem key L.pl)
@@ -311,8 +311,8 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
   unfold sizes andThen
   -- p's octets
   refine WP.seq (WP.seq (WP.mono (ptrP_ok hr) fun t₁ ⟨⟨a12, a6, am⟩, k1⟩ =>
-    WP.mono (bytesBits_ok a12 a6 (by omega) (by omega) fun i hi => by
-      rw [k1.rd, k1.wr]; exact hk.rd i (by omega)) fun t₂ ⟨⟨b16, b0, bm⟩, k2⟩ => ?_))
+    WP.mono (bytesBits_ok a12 a6 (by omega_arith) (by omega_arith) fun i hi => by
+      rw [k1.rd, k1.wr]; exact hk.rd i (by omega_arith)) fun t₂ ⟨⟨b16, b0, bm⟩, k2⟩ => ?_))
   rw [am] at b16 b0
   have m2 : t₂.mem = s.mem := by rw [bm, am]
   refine WP.ite _ (eval_zero _ _) (fun hz => ?ok) (fun hz => ?bad)
@@ -328,8 +328,8 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
   have hr₃ : Regs t₃ L key sig dig := hr.keep kA
   -- q's octets
   refine WP.seq (WP.seq (WP.mono (ptrQ_ok hr₃) fun t₄ ⟨⟨d12, d6, dm⟩, k4⟩ =>
-    WP.mono (bytesBits_ok d12 d6 (by omega) (by omega) fun i hi => by
-      rw [k4.rd, k4.wr, kA.rd, kA.wr]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega)).rd i hi)
+    WP.mono (bytesBits_ok d12 d6 (by omega_arith) (by omega_arith) fun i hi => by
+      rw [k4.rd, k4.wr, kA.rd, kA.wr]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega_arith)).rd i hi)
       fun t₅ ⟨⟨e16, e0, em⟩, k5⟩ => ?_))
   rw [dm, cm, m2] at e16 e0
   have m5 : t₅.mem = s.mem := by rw [em, dm, cm, m2]
@@ -341,7 +341,7 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
     exact absurd hz' (by decide)
   have hq := e0.mp (beq_iff_eq.mp hz')
   have hqb : (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 < 2 ^ 16 := by
-    simp only [Nat.reducePow]; omega
+    simp only [Nat.reducePow]; omega_arith
   have h2₅ : t₅.gpr .r2 = pack L.pl L.ql 0 d := (kB.gpr _ (by decide)).trans h2
   refine WP.seq (WP.mono (WP.keep [.r25, .r0, .r2] (Q := fun t =>
     t.gpr .r25 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 ∧
@@ -351,7 +351,7 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
   -- the pair
   have g24 : t₆.gpr .r24 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1 :=
     (((k4.trans k5).trans k6).gpr _ (by decide)).trans c24
-  refine WP.seq (WP.mono (pairs_ok g24 f25 (by omega) (by omega)) fun t₇ ⟨⟨g0, gm⟩, k7⟩ => ?_)
+  refine WP.seq (WP.mono (pairs_ok g24 f25 (by omega_arith) (by omega_arith)) fun t₇ ⟨⟨g0, gm⟩, k7⟩ => ?_)
   have kC := (kB.trans k6).trans k7
   have m7 := gm.trans fm
   refine WP.ite _ (eval_zero _ _) (fun hz'' => ?_) (fun hz'' => ?_)
@@ -360,7 +360,7 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
         (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 := by
       rw [show qOf s.mem L key = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql) from rfl,
         Proof.Dsa.subgroup_scan_width (p := Spec.Rsa.bytesAt s.mem key L.pl) hok]
-      omega
+      omega_arith
     exact hrest t₇ hok m7 (by rw [k7.gpr _ (by decide), f2, hb]) kC.mono
   · refine hfail t₇ (fun h => ?_) m7 kC.mono (Regs.of_pack hL ((kC.gpr _ (by decide)).trans hr.r21)
       ((kC.gpr _ (by decide)).trans hr.r27) ((kC.gpr _ (by decide)).trans hr.r28)
@@ -380,20 +380,20 @@ theorem odds_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop} 
     (hfail : ∀ t, ¬ (pOf s.mem L key % 2 = 1 ∧ qOf s.mem L key % 2 = 1) → t.mem = s.mem →
       Keep oddsRegs s t → WP isa fail t Q) :
     WP isa (odds rest fail) s Q := by
-  have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega
+  have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega_arith
   have hql := hL.ql
   unfold odds andThen
   refine WP.seq (WP.block_append (WP.mono (ptrP_ok hr) fun t₁ ⟨⟨a12, a6, am⟩, k1⟩ =>
-    WP.mono (odd_ok a12 a6 (by omega) (by omega) fun i hi => by
-      rw [k1.rd, k1.wr]; exact hk.rd i (by omega)) fun t₂ ⟨⟨b0, bm⟩, k2⟩ => ?_))
+    WP.mono (odd_ok a12 a6 (by omega_arith) (by omega_arith) fun i hi => by
+      rw [k1.rd, k1.wr]; exact hk.rd i (by omega_arith)) fun t₂ ⟨⟨b0, bm⟩, k2⟩ => ?_))
   rw [am] at b0
   have kA := k1.trans k2
   have hr₂ : Regs t₂ L key sig dig := hr.keep kA
   refine WP.ite _ (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   · have hp : pOf s.mem L key % 2 = 1 := b0.mp (beq_iff_eq.mp hz)
     refine WP.seq (WP.block_append (WP.mono (ptrQ_ok hr₂) fun t₃ ⟨⟨c12, c6, cm⟩, k3⟩ =>
-      WP.mono (odd_ok c12 c6 (by omega) (by omega) fun i hi => by
-        rw [k3.rd, k3.wr, kA.rd, kA.wr]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega)).rd i hi)
+      WP.mono (odd_ok c12 c6 (by omega_arith) (by omega_arith) fun i hi => by
+        rw [k3.rd, k3.wr, kA.rd, kA.wr]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega_arith)).rd i hi)
         fun t₄ ⟨⟨d0, dm⟩, k4⟩ => ?_))
     rw [cm, bm, am] at d0
     have kB := (kA.trans k3).trans k4

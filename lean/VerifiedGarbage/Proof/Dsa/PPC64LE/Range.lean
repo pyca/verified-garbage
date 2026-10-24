@@ -63,14 +63,14 @@ theorem subLt_ok {s : State} {B : Addr} {Z w a : Nat} (h : Env s B Z w) (ha : a 
   have sep3 := slot_sep (w := w) ha3
   refine WP.seq (WP.mono (subMod_ok (dA := slot w a) (dT := slot w 3) (dM := slot w 0) (n := 2 * w)
     (hs.congr k12.wr) ((k2.gpr .r8 (by decide)).trans a8) a9 ((k12.gpr .r10 (by decide)).trans h.h10)
-    ((k12.gpr .r11 (by decide)).trans h.h11) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega)) fun t ⟨⟨c', hc', hv, h20⟩, ot, kt⟩ => ?_)
+    ((k12.gpr .r11 (by decide)).trans h.h11) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith)) fun t ⟨⟨c', hc', hv, h20⟩, ot, kt⟩ => ?_)
   rw [hm2] at hv h20 ot
-  refine hc t ?_ (ot.mono (Nat.le_refl _) (by omega)) ((k12.trans kt).mono (by decide))
+  refine hc t ?_ (ot.mono (Nat.le_refl _) (by omega_arith)) ((k12.trans kt).mono (by decide))
   have hw32 : w32 s.mem B (slot w a + 4 * (2 * w)) = 0 := by
     have := word_eq_w32 s.mem B (slot w a + 8 * w)
     rw [top, show (0 : BitVec 64).toNat = 0 from rfl] at this
-    rw [show slot w a + 4 * (2 * w) = slot w a + 8 * w by omega]; omega
+    rw [show slot w a + 4 * (2 * w) = slot w a + 8 * w by omega_arith]; omega_arith
   have hlt : (w32 s.mem B (slot w a + 4 * (2 * w)) < c') ↔ arr s.mem B w a < arr s.mem B w 0 := by
     have hT := val32_lt t.mem B (slot w 3) (2 * w)
     have hA' := val32_lt s.mem B (slot w a) (2 * w)
@@ -78,8 +78,8 @@ theorem subLt_ok {s : State} {B : Addr} {Z w a : Nat} (h : Env s B Z w) (ha : a 
     simp only [arr]
     rw [hw32]
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc' with rfl | rfl
-    · omega
-    · rw [show 32 * (2 * w) = 64 * w by omega] at hT hv hA' hM; omega
+    · omega_arith
+    · rw [show 32 * (2 * w) = 64 * w by omega_arith] at hT hv hA' hM; omega_arith
   rw [h20, mask_of_ite]
   simp only [hlt]
 
@@ -97,7 +97,7 @@ theorem inRange_ok {s : State} {B : Addr} {Z w a : Nat} {b : Bool} (h : Env s B 
   unfold inRange
   refine subLt_ok h ha ha3 top fun s₁ h20 o1 k1 => ?_
   have e1 := h.keep k1 (by decide)
-  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.hs.nowrap; have := h.hZ; omega
+  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.hs.nowrap; have := h.hZ; omega_arith
   have q1 : ∀ j, j < 28 → j ≠ 3 → arr s₁.mem B w j = arr s.mem B w j := fun j hj h3 =>
     Outside.arrEq o1 hj h3 hn
   refine WP.seq (WP.mono (eqMask_ok e1 .r19 (a := a) (b := 7) ha (by decide)) fun s₂ ⟨⟨a19, m2⟩, k2⟩ => ?_)
@@ -113,6 +113,6 @@ theorem inRange_ok {s : State} {B : Addr} {Z w a : Nat} {b : Bool} (h : Env s B 
   prun [b20, b22, a19, mask_clear, mask_and]
   congr 1
   cases b <;> by_cases h0 : arr s.mem B w a = 0 <;> by_cases hl : arr s.mem B w a < arr s.mem B w 0 <;>
-    simp [h0, hl] <;> omega
+    simp [h0, hl] <;> omega_arith
 
 end VG.Proof.Dsa.PPC64LE

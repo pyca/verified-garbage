@@ -57,9 +57,9 @@ theorem Kept.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : Kept L m₁ m₂) (h
   ⟨h₁.out.trans h₂.out, fun i hi => (h₂.sav i hi).trans (h₁.sav i hi)⟩
 
 theorem Kept.ofBody {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Body L m m') : Kept L m m' :=
-  ⟨h.mono (Nat.zero_le _) (by have := hL.z256; omega), fun i hi =>
-    Outside.word h (Or.inl (by simp only [saveOff]; omega))
-      (by have := hL.nowrap; have := hL.z256; simp only [saveOff]; omega)⟩
+  ⟨h.mono (Nat.zero_le _) (by have := hL.z256; omega_arith), fun i hi =>
+    Outside.word h (Or.inl (by simp only [saveOff]; omega_arith))
+      (by have := hL.nowrap; have := hL.z256; simp only [saveOff]; omega_arith)⟩
 
 /-- A buffer apart from `scratch`, kept. -/
 theorem Src.kept {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {m m' : Mem}
@@ -76,11 +76,11 @@ theorem params_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (2 * L.
     (h : Outside L.S 0 L.Z m m') :
     pOf m' L key = pOf m L key ∧ qOf m' L key = qOf m L key ∧ gOf m' L key = gOf m L key := by
   refine ⟨?_, ?_, ?_⟩
-  · have e := (hk.sub (o := 0) (k := L.pl) (by omega)).kept h
+  · have e := (hk.sub (o := 0) (k := L.pl) (by omega_arith)).kept h
     simp only [off, BitVec.add_zero] at e
     simp only [pOf]; rw [e]
-  · simp only [qOf]; rw [(hk.sub (o := L.pl) (k := L.ql) (by omega)).kept h]
-  · simp only [gOf]; rw [(hk.sub (o := L.pl + L.ql) (k := L.pl) (by omega)).kept h]
+  · simp only [qOf]; rw [(hk.sub (o := L.pl) (k := L.ql) (by omega_arith)).kept h]
+  · simp only [gOf]; rw [(hk.sub (o := L.pl + L.ql) (k := L.pl) (by omega_arith)).kept h]
 
 /-- The key's values, kept. -/
 theorem key_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (3 * L.pl + L.ql)) {m m' : Mem}
@@ -94,38 +94,38 @@ theorem key_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (3 * L.pl 
 /-- `p ≡ 1 (mod q)`, as the code checks it. -/
 theorem pmod_iff {p q : Nat} (hp : 1 ≤ p) (hq : 2 ≤ q) : (p - 1) % q = 0 ↔ p % q = 1 := by
   have h := Nat.div_add_mod p q
-  have hr := Nat.mod_lt p (show 0 < q by omega)
+  have hr := Nat.mod_lt p (show 0 < q by omega_arith)
   generalize p / q = a at h
   generalize p % q = r at h hr ⊢
   subst h
   rcases Nat.eq_zero_or_pos r with rfl | hr0
   · rcases a with _ | b
-    · simp only [Nat.mul_zero, Nat.add_zero] at hp; omega
-    · rw [show q * (b + 1) + 0 - 1 = (q - 1) + q * b by rw [Nat.mul_succ]; omega, Nat.add_mul_mod_self_left,
-        Nat.mod_eq_of_lt (by omega)]
-      omega
-  · rw [show q * a + r - 1 = (r - 1) + q * a by omega, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
-    omega
+    · simp only [Nat.mul_zero, Nat.add_zero] at hp; omega_arith
+    · rw [show q * (b + 1) + 0 - 1 = (q - 1) + q * b by rw [Nat.mul_succ]; omega_arith, Nat.add_mul_mod_self_left,
+        Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
+  · rw [show q * a + r - 1 = (r - 1) + q * a by omega_arith, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 /-- A change in the P space's arrays keeps the Q space. -/
 theorem PBody.keepQ {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') :
     Outside L.Q 1600 (2 ^ 64 - 1600) m m' := by
   intro x hx
-  have hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega
-  have h256 : 256 ≤ L.qOff := by rw [hL.qOff_eq]; omega
+  have hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega_arith
+  have h256 : 256 ≤ L.qOff := by rw [hL.qOff_eq]; omega_arith
   have hlt := (x - L.S).isLt
   have hlt' := (x - L.Q).isLt
   refine h x (Or.inr ?_)
   simp only [ofs, Lay.Q, off] at hx ⊢
-  rw [Offset.toNat_sub_add x L.S (by omega)] at hx
+  rw [Offset.toNat_sub_add x L.S (by omega_arith)] at hx
   by_cases hd : L.qOff ≤ (x - L.S).toNat
-  · omega
-  · rw [Nat.mod_eq_of_lt (by omega)] at hx; omega
+  · omega_arith
+  · rw [Nat.mod_eq_of_lt (by omega_arith)] at hx; omega_arith
 
 theorem PBody.arrQ {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') (j : Nat) (hj : j < 28) :
     arrQ m' L j = arrQ m L j :=
-  Outside.val32 (h.keepQ hL) (by have := slot_lt (w := 4) hj; simp only [Lay.slot_eq] at this ⊢; omega)
-    (by have := slot_lt (w := 4) hj; simp only [Lay.slot_eq] at this ⊢; omega)
+  Outside.val32 (h.keepQ hL) (by have := slot_lt (w := 4) hj; simp only [Lay.slot_eq] at this ⊢; omega_arith)
+    (by have := slot_lt (w := 4) hj; simp only [Lay.slot_eq] at this ⊢; omega_arith)
 
 theorem PBody.qtop {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') :
     word m' L.Q (slot 4 0 + 32) = word m L.Q (slot 4 0 + 32) :=
@@ -187,7 +187,7 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q :
   rw [hP, hQ'] at hSz
   rw [hQ'] at r2₁
   have hqb : Spec.Dsa.bitLength q / 8 < 2 ^ 16 := by
-    unfold Spec.Dsa.supportedSizes at hSz; simp only [Nat.reducePow]; omega
+    unfold Spec.Dsa.supportedSizes at hSz; simp only [Nat.reducePow]; omega_arith
   have K₁ : Body L s.mem t₁.mem := by rw [m₁]; exact Body.refl _ _
   have hs₁ : ScrL t₁ L := hs.congr k₁.wr
   have hr₁ : Regs t₁ L key sig dig :=
@@ -209,7 +209,7 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q :
   have hr₂ := hr₁.keep k₂
   have hk₂ := hk.keep k₁₂.rd k₁₂.wr
   -- `p mod q = 1`.
-  refine WP.seq (WP.mono (pModQ_ok hL hs₂ hr₂ hk₂ (by rw [(vals K₂).2.1]; omega))
+  refine WP.seq (WP.mono (pModQ_ok hL hs₂ hr₂ hk₂ (by rw [(vals K₂).2.1]; omega_arith))
     fun t₃ ⟨⟨iq₃, q0₃, qtop₃, r0₃, qb₃⟩, k₃⟩ => ?_)
   rw [(vals K₂).1, (vals K₂).2.1] at r0₃
   rw [(vals K₂).2.1] at q0₃
@@ -220,12 +220,12 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q :
   have hr₃ := hr₂.keep k₃
   refine WP.ite (t₃.gpr .r0 == 0) (eval_zero _ _) (fun hb₃ => ?_) (fun hb₃ => hfail t₃ (fun hK => by
       have := (hPar.mp hK).2.2.1
-      rw [pmod_iff (by omega) (by omega)] at this
+      rw [pmod_iff (by omega_arith) (by omega_arith)] at this
       exact absurd (r0₃.mpr this) (by simpa using hb₃)) K₃ hr₃ hs₃ (k₁₃.mono (by decide)))
   have pm : p % q = 1 := r0₃.mp (by simpa using hb₃)
   -- The P space.
   refine WP.seq (WP.mono (setupP_ok hL hs₃ hr₃ (hk.keep k₁₃.rd k₁₃.wr)
-      (by rw [(vals K₃).1]; omega)) fun t₄ ⟨⟨ip₄, p0₄, ptop₄, p8₄, pb₄⟩, k₄⟩ => ?_)
+      (by rw [(vals K₃).1]; omega_arith)) fun t₄ ⟨⟨ip₄, p0₄, ptop₄, p8₄, pb₄⟩, k₄⟩ => ?_)
   rw [(vals K₃).1] at p0₄ p8₄
   have B₄ : Body L t₃.mem t₄.mem := pb₄.body hL
   have K₄ := K₃.trans B₄
@@ -239,8 +239,8 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q :
   have hk₅ := hk₄.keep k₅.rd k₅.wr
   have hr₅ := hr₄.keep k₅
   refine WP.mono (checkElem_ok hL hr₅ ip₅ hk₅
-      (hk₅.sub (o := L.pl + L.ql) (k := L.pl) (by omega)) a12 a6 (by rw [m₅]; exact p0₄)
-      (by rw [m₅]; exact ptop₄) (by omega) hpo (by rw [m₅]; exact p8₄))
+      (hk₅.sub (o := L.pl + L.ql) (k := L.pl) (by omega_arith)) a12 a6 (by rw [m₅]; exact p0₄)
+      (by rw [m₅]; exact ptop₄) (by omega_arith) hpo (by rw [m₅]; exact p8₄))
     fun t₆ ⟨⟨ip₆, p0₆, ptop₆, p8₆, r0₆, pb₆⟩, k₆⟩ => ?_
   have eg : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t₅.mem (off key (L.pl + L.ql)) L.pl) = g := (vals K₅).2.2
   rw [eg, (vals K₅).2.1] at r0₆

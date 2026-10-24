@@ -44,9 +44,9 @@ theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
   have h10 := hp.r10
   have h11 := hp.r11
   generalize hwd : wOf p.bits = w at h10 h11 ⊢
-  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega
-  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega
-  have hZ : slot w 0 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega
+  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega_arith
+  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega_arith
+  have hZ : slot w 0 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega_arith
   generalize hx : wv s.mem p.B (slot w 0) w = x
   have kd : ∀ d, d < 2 ^ 62 → 2 ≤ d → ∀ (tail : List Instr) {u : State} (Q : State → Prop),
       WP isa (.block [.li .r4 d]) u (fun v => (v.gpr .r4 = BitVec.ofNat 64 d ∧ v.mem = u.mem) ∧ Keep [.r4] u v) →
@@ -57,7 +57,7 @@ theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
     intro d hd hd2 tail u Q hli hu u10 u11 um ht
     refine WP.seq (WP.mono hli fun v ⟨⟨v4, vm⟩, kv⟩ => ?_)
     refine WP.seq (WP.mono (smallMod_ok (hu.scr.congr kv.wr) ((kv.gpr .r10 (by decide)).trans u10)
-      ((kv.gpr .r11 (by decide)).trans u11) v4 (by omega) (by omega) hZ hd2 hd) fun t' ⟨⟨t3, tm'⟩, kt'⟩ => ?_)
+      ((kv.gpr .r11 (by decide)).trans u11) v4 (by omega_arith) (by omega_arith) hZ hd2 hd) fun t' ⟨⟨t3, tm'⟩, kt'⟩ => ?_)
     rw [vm, um, hx] at t3
     have k3 := kv.trans kt'
     refine WP.mono (ht t' t3 (by rw [tm', vm, um]) (hu.step (by rw [tm', vm]; exact Frm.refl _ _ _) k3))
@@ -93,6 +93,6 @@ theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
         ⟨bad_post tm ?_, kt.mono (by decide)⟩
     · simp only [sth, hBad]
       prun [ht'.r31, ht'.st (d := 200) (by decide), tm', t3]
-    · rw [res5 _ (Nat.mod_lt _ (by decide)), goodRes, ite_eq_right (by omega)]
+    · rw [res5 _ (Nat.mod_lt _ (by decide)), goodRes, ite_eq_right (by omega_arith)]
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

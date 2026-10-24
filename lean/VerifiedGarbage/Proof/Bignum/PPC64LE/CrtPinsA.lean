@@ -49,7 +49,7 @@ theorem XI.hdr {s₀ s t : State} (hP : PF s₀) (X : XI s₀ s t) {d : Nat} (hd
     word t.mem (cS s₀) d = word s.mem (cS s₀) d := by
   have hn := hP.nw; have room := hP.room
   have : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
-  exact X.out.word (Or.inl hd) (by omega)
+  exact X.out.word (Or.inl hd) (by omega_arith)
 
 /-- `XI` through code that keeps the registers and changes only the arrays. -/
 theorem XI.step {s₀ s t u : State} (hP : PF s₀) (X : XI s₀ s t) {rs : List Reg} (k : Keep rs t u)
@@ -61,7 +61,7 @@ theorem XI.step {s₀ s t u : State} (hP : PF s₀) (X : XI s₀ s t) {rs : List
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h
   exact ⟨X.scr.congr k.wr, (k.gpr _ h.1).trans X.r23, h10, (k.gpr _ h.2.1).trans X.r21,
     (k.gpr _ h.2.2.1).trans X.r29, (k.gpr _ h.2.2.2.1).trans X.r11, (k.gpr _ h.2.2.2.2.1).trans X.r27,
-    (k.gpr _ h.2.2.2.2.2).trans X.r28, X.out.trans (o.mono (Nat.le_refl _) (by omega)),
+    (k.gpr _ h.2.2.2.2.2).trans X.r28, X.out.trans (o.mono (Nat.le_refl _) (by omega_arith)),
     by rw [k.rd, k.wr]; exact X.rd⟩
 
 /-- `r14 := r10`, then `X`'s array 0 := all ones. -/
@@ -74,11 +74,11 @@ theorem xi_ones {s₀ s t : State} {c : Prog isa} {Q : State → Prop} (hP : PF 
   have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
   refine WP.seq (WP.mono (WP.keep [.r14] (Q := fun u => u.gpr .r14 = off (cS s₀) (slot (cwX s₀) 0) ∧
     u.mem = t.mem) (by prun [X.r10, BitVec.add_zero]) (by decide)) fun t₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
-  refine WP.seq (WP.mono (onesWords_ok (X.scr.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans X.r11) (by omega)
-    (by omega) (by omega)) fun t₂ ⟨⟨_, o2⟩, k2⟩ => hc t₂ ?_)
+  refine WP.seq (WP.mono (onesWords_ok (X.scr.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans X.r11) (by omega_arith)
+    (by omega_arith) (by omega_arith)) fun t₂ ⟨⟨_, o2⟩, k2⟩ => hc t₂ ?_)
   rw [m1] at o2
   exact XI.step hP X (k1.trans k2) (by decide) (((k1.trans k2).gpr _ (by decide)).trans X.r10)
-    (o2.mono (by omega) (by omega))
+    (o2.mono (by omega_arith) (by omega_arith))
 
 /-- A buffer's address and length from the header's words `oA`, `oL`. -/
 theorem ld2_ok {s₀ s t : State} {oA oL : Nat} {A : Addr} {L : Nat} (hP : PF s₀) (X : XI s₀ s t)
@@ -91,9 +91,9 @@ theorem ld2_ok {s₀ s t : State} {oA oL : Nat} {A : Addr} {L : Nat} (hP : PF s�
   have hA' : t.mem.readW (off (cS s₀) oA) 64 = off A 0 := by rw [← hA]; exact X.hdr hP hoA.1
   have hL' : t.mem.readW (off (cS s₀) oL) 64 = BitVec.ofNat 64 L := by rw [← hLw]; exact X.hdr hP hoL.1
   refine WP.keep _ ?_ rfl
-  prun [X.r23, exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oA < 2 ^ 15 by omega, show oA % 4 = 0 by omega⟩,
-    exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oL < 2 ^ 15 by omega, show oL % 4 = 0 by omega⟩,
-    X.scr.ld (show oA + 8 ≤ cZ s₀ by omega), X.scr.ld (show oL + 8 ≤ cZ s₀ by omega), hA', hL']
+  prun [X.r23, exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oA < 2 ^ 15 by omega_arith, show oA % 4 = 0 by omega_arith⟩,
+    exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oL < 2 ^ 15 by omega_arith, show oL % 4 = 0 by omega_arith⟩,
+    X.scr.ld (show oA + 8 ≤ cZ s₀ by omega_arith), X.scr.ld (show oL + 8 ≤ cZ s₀ by omega_arith), hA', hL']
 
 /-- A buffer into `X`'s array `j`. -/
 theorem xi_load {s₀ s t : State} {c : Prog isa} {Q : State → Prop} {j oA oL : Nat} {A : Addr} {L : Nat}
@@ -107,12 +107,12 @@ theorem xi_load {s₀ s t : State} {c : Prog isa} {Q : State → Prop} {j oA oL 
   have room := hP.room; have k64 := hP.k64; have k1024 := hP.k1024
   have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
   have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
-  refine WP.seq (WP.mono (loadOne_ok X.scr (by omega) hj (by omega) X.r23 X.r10 X.r21 X.r29 X.r11 hoA hoL
-    (by rw [X.hdr hP hoA.1]; exact hA) (by rw [X.hdr hP hoL.1]; exact hLw) hL (by omega)
+  refine WP.seq (WP.mono (loadOne_ok X.scr (by omega_arith) hj (by omega_arith) X.r23 X.r10 X.r21 X.r29 X.r11 hoA hoL
+    (by rw [X.hdr hP hoA.1]; exact hA) (by rw [X.hdr hP hoL.1]; exact hLw) hL (by omega_arith)
     (by rw [X.rd]; exact hrd) hsep) fun u ⟨⟨_, _, o, u10⟩, k⟩ => hc u ?_)
   have := slot_le (w := cwX s₀) hj
   have h256 : 256 ≤ slot (cwX s₀) j := Nat.le_add_right _ _
-  exact XI.step hP X k (by decide) u10 (o.mono (by omega) (by omega))
+  exact XI.step hP X k (by decide) u10 (o.mono (by omega_arith) (by omega_arith))
 
 /-- The registers after a buffer's address and length. -/
 theorem xi_ld {s₀ s t : State} {oA oL : Nat} {A : Addr} {L : Nat} (hP : PF s₀) (X : XI s₀ s t)
@@ -182,7 +182,7 @@ theorem pins5 : Pins (At C0 crtF 5) [.r6, .r10, .r11, .r12, .r21, .r23, .r29] :=
 theorem pins13 : Pins (At C0 crtF 13) [.r6, .r10, .r11, .r12, .r21, .r23, .r29] :=
   pins_at_list (fun s₀ => ldVals s₀ (s₀.gpr .r9) (cpL s₀))
     (fun _ s₀ h => WP.of_flat (c := N0 (LJ 1 oN oNLen (LD oP oPLen))) rfl (xi_start h fun _ _ hP F X =>
-      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega)
+      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
       xi_ld hP X (by decide) (by decide) F.hP F.hPL))
     fun _ _ _ h h' => let E := data_vals h h'; ldVals_eq h h' E.2.2.2.2.2.2.2.1 E.2.2.1
@@ -191,7 +191,7 @@ theorem pins21 : Pins (At C0 crtF 21) [.r6, .r10, .r11, .r12, .r21, .r23, .r29] 
   pins_at_list (fun s₀ => ldVals s₀ (stackArg s₀ 0) (cqL s₀))
     (fun _ s₀ h => WP.of_flat (c := N0 (LJ 1 oN oNLen (LJ 4 oP oPLen (LD oQ oQLen)))) rfl
       (xi_start h fun _ _ hP F X =>
-      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega)
+      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
       xi_load (j := 4) hP X (by decide) (by decide) (by decide) F.hP F.hPL hP.p1 (Nat.le_of_lt hP.pk)
         hP.rP hP.sP fun _ X =>
@@ -202,7 +202,7 @@ theorem pins29 : Pins (At C0 crtF 29) [.r6, .r10, .r11, .r12, .r21, .r23, .r29] 
   pins_at_list (fun s₀ => ldVals s₀ (s₀.gpr .r7) (ck s₀))
     (fun _ s₀ h => WP.of_flat (c := N0 (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LD oIn oNLen))))) rfl
       (xi_start h fun _ _ hP F X =>
-      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega)
+      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
       xi_load (j := 4) hP X (by decide) (by decide) (by decide) F.hP F.hPL hP.p1 (Nat.le_of_lt hP.pk)
         hP.rP hP.sP fun _ X =>
@@ -216,13 +216,13 @@ theorem pins37 : Pins (At C0 crtF 37) [.r6, .r10, .r11, .r12, .r21, .r23, .r29] 
     (fun _ s₀ h => WP.of_flat
       (c := N0 (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LJ 6 oIn oNLen (LD oQInv oPLen)))))) rfl
       (xi_start h fun _ _ hP F X =>
-      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega)
+      xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
       xi_load (j := 4) hP X (by decide) (by decide) (by decide) F.hP F.hPL hP.p1 (Nat.le_of_lt hP.pk)
         hP.rP hP.sP fun _ X =>
       xi_load (j := 5) hP X (by decide) (by decide) (by decide) F.hQ F.hQL hP.q1 (Nat.le_of_lt hP.qk)
         hP.rQ hP.sQ fun _ X =>
-      xi_load (j := 6) hP X (by decide) (by decide) (by decide) F.hIn F.hNL (by have := hP.k64; omega)
+      xi_load (j := 6) hP X (by decide) (by decide) (by decide) F.hIn F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rI hP.sI fun _ X =>
       xi_ld hP X (by decide) (by decide) F.hQI F.hPL))
     fun _ _ _ h h' => let E := data_vals h h'; ldVals_eq h h' E.2.2.2.2.2.2.2.2.2.2.2.1 E.2.2.1
@@ -235,13 +235,13 @@ theorem xi_loadX {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ :
     {Q : State → Prop} (h : C0 d s₀) (hc : ∀ s t, PF s₀ → Front s₀ s → XI s₀ s t → WP isa c t Q) :
     WP isa (NX c) s₀ Q :=
   xi_start h fun s _ hP F X =>
-    xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega)
+    xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
       (Nat.le_refl _) hP.rN hP.sN fun _ X =>
     xi_load (j := 4) hP X (by decide) (by decide) (by decide) F.hP F.hPL hP.p1 (Nat.le_of_lt hP.pk)
       hP.rP hP.sP fun _ X =>
     xi_load (j := 5) hP X (by decide) (by decide) (by decide) F.hQ F.hQL hP.q1 (Nat.le_of_lt hP.qk)
       hP.rQ hP.sQ fun _ X =>
-    xi_load (j := 6) hP X (by decide) (by decide) (by decide) F.hIn F.hNL (by have := hP.k64; omega)
+    xi_load (j := 6) hP X (by decide) (by decide) (by decide) F.hIn F.hNL (by have := hP.k64; omega_arith)
       (Nat.le_refl _) hP.rI hP.sI fun _ X =>
     xi_load (j := 7) hP X (by decide) (by decide) (by decide) F.hQI F.hPL hP.p1 (Nat.le_of_lt hP.pk)
       hP.rQI hP.sQI fun t X => hc s t hP F X
@@ -273,14 +273,14 @@ theorem pins46 : Pins (At C0 crtF 46) [.r6, .r10, .r11, .r15, .r21, .r23, .r27, 
       fun v ⟨⟨_, v15, _, _⟩, k2⟩ => ?_
     · have hs := hP.sN i hi
       have hx : ¬ ofs (cS s₀) (Mont.off (s₀.gpr .r5) i) < cZ s₀ := fun hc => hs _ hc rfl
-      rw [m1, X.out _ (Or.inr (by omega)), F.mem _ (Or.inr (by omega))]
+      rw [m1, X.out _ (Or.inr (by omega_arith)), F.mem _ (Or.inr (by omega_arith))]
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
     · have k12 := k1.trans k2
       simp only [List.map_cons, List.map_nil, v15, k2.gpr .r6 (by decide), a6, k12.gpr .r10 (by decide),
         k12.gpr .r11 (by decide), k12.gpr .r21 (by decide), k12.gpr .r23 (by decide), k12.gpr .r27 (by decide),
         k12.gpr .r28 (by decide), k12.gpr .r29 (by decide), X.r10, X.r11, X.r21, X.r23, X.r27, X.r28, X.r29,
         nb0, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show 0 < (Spec.Rsa.bytesAt s₀.mem
-          (s₀.gpr .r5) (ck s₀)).length by rw [VG.Proof.Bignum.bytesAt_length]; omega), Option.getD_some]
+          (s₀.gpr .r5) (ck s₀)).length by rw [VG.Proof.Bignum.bytesAt_length]; omega_arith), Option.getD_some]
   · obtain ⟨eS, ek, -, -, -, -, -, -, -, -, -, -, en⟩ := data_vals h h'
     simp only [nb0, cwX]; rw [en, eS, ek]
 

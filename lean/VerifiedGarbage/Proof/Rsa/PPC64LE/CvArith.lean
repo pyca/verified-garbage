@@ -63,14 +63,14 @@ theorem arith_ok {s : State} {B : Addr} {Z w Nv P Q Dd : Nat} (h : Ws s B Z w nA
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     obtain ⟨a, b, c, d, e, f⟩ := hj'
     rw [keepA j a f, hi.zero j a b c d e]
-  have bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega
-  have b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega
-  have b2 : slot t1.mem B sE2 ≤ 1 := by rw [e2]; split <;> omega
+  have bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega_arith
+  have b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega_arith
+  have b2 : slot t1.mem B sE2 ≤ 1 := by rw [e2]; split <;> omega_arith
   refine WP.mono (partB_ok (P := P) (Q := Q) h1 (by rw [keepA _ (by decide) (by decide), hi.q])
     (by rw [keepA _ (by decide) (by decide), hi.p]) z1 bo b1 b2) fun t2 ⟨h2, k2, m2, v2, r2⟩ => ?_
   rw [wp_seqs_append (by unfold divD; exact List.cons_ne_nil _ _) (by unfold divD; exact List.cons_ne_nil _ _)]
   have top2 : w32 t2.mem B (arr w aDD + 4 * w) = 0 := by
-    rw [KeyWorkspace.Keep.word k2 (i := w) (by omega) (by decide) (by decide) (fit _ (by decide)), top1]
+    rw [KeyWorkspace.Keep.word k2 (i := w) (by omega_arith) (by decide) (by decide) (fit _ (by decide)), top1]
   refine WP.mono (divD_ok h2 (.inl rfl) (.inl rfl) top2) fun t3 ⟨h3, k3, v3, top3, r3⟩ => ?_
   refine WP.mono (divD_ok h3 (.inr rfl) (.inr rfl) top3) fun t ⟨h4, k4, v4, _, r4⟩ => ?_
   -- What the later parts keep.

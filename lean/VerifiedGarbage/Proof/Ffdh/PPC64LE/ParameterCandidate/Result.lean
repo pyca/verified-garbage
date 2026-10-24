@@ -58,7 +58,7 @@ theorem pResult_ok {p : PP} {s : State} {c : Nat} {resP : Option (Bool × List B
         (fun _ => ?_)
       refine finEnd Mv.st (r := 2) (v := u) (Or.inr rfl) rfl rfl ?_ (by rw [vm]; exact hU')
       simp only [Option.map_some, Bool.false_eq_true, ↓reduceIte, usedOf, List.length_drop, Nat.reduceEqDiff]
-      omega
+      omega_arith
     · refine WP.ite false (eval_zero_ofNat t .r3 (k := 1) (by decide) (t3.trans hS)) (fun h => absurd h (by decide))
         (fun _ => ?_)
       refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun v => v.gpr .r3 = BitVec.ofNat 64 0 ∧ v.mem = t.mem)
@@ -90,7 +90,7 @@ theorem qResult_ok {p : PP} {s : State} {mb N : Nat} {resQ : Option (Bool × Lis
         (fun _ => ?_)
       refine finEnd Mt.st (r := 2) (v := u) (Or.inr rfl) rfl rfl ?_ (by rw [tm]; exact hU)
       simp only [Option.map_some, ↓reduceIte, usedOf, List.length_drop, Nat.reduceEqDiff]
-      omega
+      omega_arith
     · exact absurd rfl (hq rest)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

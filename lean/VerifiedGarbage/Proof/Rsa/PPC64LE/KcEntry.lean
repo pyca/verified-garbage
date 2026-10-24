@@ -47,11 +47,11 @@ theorem entry_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K o
   refine WP.mono (hm u) fun v ⟨⟨mv', vm, v7, v8⟩, kv⟩ => ?_
   have bv := bu.of_regs kv vm hmv
   have hc : ∀ i < Le, (⟨Ep, Le⟩ : Region).Contains (off Ep i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have e7 : v.gpr .r7 = off Ep 0 := by
     rw [v7, ku.gpr _ (by decide), h5]; simp [off]
   have e8 : v.gpr .r8 = BitVec.ofNat 64 Le := by rw [v8, ku.gpr _ (by decide), h6]
-  refine WP.seq (WP.mono (Pub.readE_ok e7 e8 hL (by omega)
+  refine WP.seq (WP.mono (Pub.readE_ok e7 e8 hL (by omega_arith)
     (fun i hi => ⟨_, List.mem_append_left _ (by rw [bv.rd]; exact hrd), hc i hi⟩)) fun w ⟨⟨w24, wm⟩, kw⟩ => ?_)
   have hb : Spec.Rsa.bytesAt v.mem Ep Le = Spec.Rsa.bytesAt s0.mem Ep Le := by
     simp only [Spec.Rsa.bytesAt]
@@ -59,7 +59,7 @@ theorem entry_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K o
       bv.frame _ (CrtValues.past_of_disjoint hd (hc i (List.mem_range.mp hi)))
   rw [hb] at w24
   have hsat : sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem Ep Le)) ≤ 2 ^ 33 := by
-    unfold sat; omega
+    unfold sat; omega_arith
   refine WP.mono (Pub.checkE_ok w24 hsat) fun t ⟨⟨t26, t24, tm⟩, kt⟩ => ?_
   refine ⟨u, v, ku, mv', kw.trans kt, (bv.of_regs kw wm).of_regs kt tm, t24, ?_, ?_⟩
   · rw [t26, Pub.exponentValid_sat]

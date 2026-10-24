@@ -29,25 +29,25 @@ open VG.Proof.Bignum.PPC64LE
 
 theorem toNat_off_le (B : Addr) (d : Nat) : (off B d).toNat ≤ B.toNat + d := by
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  exact Nat.le_trans (Nat.mod_le _ _) (by have := Nat.mod_le d (2 ^ 64); omega)
+  exact Nat.le_trans (Nat.mod_le _ _) (by have := Nat.mod_le d (2 ^ 64); omega_arith)
 
 /-- A part of a working space is one. -/
 theorem _root_.VG.Proof.Bignum.PPC64LE.Scr.sub {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) {d n : Nat} (h : d + n ≤ Z) :
     Scr s (off B d) n := by
   obtain ⟨⟨B₀, o, L, hm, hb, hL, hL'⟩, hn⟩ := hs
-  exact ⟨⟨B₀, o + d, L, hm, by rw [hb, off_off], by omega, hL'⟩, by have := toNat_off_le B d; omega⟩
+  exact ⟨⟨B₀, o + d, L, hm, by rw [hb, off_off], by omega_arith, hL'⟩, by have := toNat_off_le B d; omega_arith⟩
 
 /-- The offset from `B` of an address within `n` bytes of `off B o`. -/
 theorem ofs_sub {B x : Addr} {o n : Nat} (h : ofs (off B o) x < n) (hn : o + n ≤ 2 ^ 64) :
     ofs B x = o + ofs (off B o) x := by
-  rcases ofs_rebase B x (o := o) (by omega) with ⟨h1, h2⟩ | ⟨_, h2⟩ <;> omega
+  rcases ofs_rebase B x (o := o) (by omega_arith) with ⟨h1, h2⟩ | ⟨_, h2⟩ <;> omega_arith
 
 /-- Two separate parts of `2⁶⁴` bytes from `B`. -/
 theorem sep_sub (B : Addr) {a n b m : Nat} (ha : a + n ≤ 2 ^ 64) (hb : b + m ≤ 2 ^ 64)
     (hd : a + n ≤ b ∨ b + m ≤ a) (hm : 0 < m) : ∀ x, ofs (off B a) x < n → m ≤ ofs (off B b) x := by
   intro x hx
   have e := ofs_sub hx ha
-  rcases ofs_rebase B x (o := b) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
+  rcases ofs_rebase B x (o := b) (by omega_arith) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith
 
 /-- Frames of a part are frames of the whole. -/
 theorem outs_sub {B : Addr} {o S : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Mont.Outs (off B o) rs m m')
@@ -56,7 +56,7 @@ theorem outs_sub {B : Addr} {o S : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h
   refine h x fun r hr' => ?_
   change ofs (off B o) x < r.1 ∨ r.1 + r.2 ≤ ofs (off B o) x
   have := hr r hr'
-  rcases ofs_rebase B x (o := o) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
+  rcases ofs_rebase B x (o := o) (by omega_arith) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith
 
 theorem out_sub {B : Addr} {o d n S : Nat} {m m' : Mem} (h : Outside (off B o) d n m m')
     (hS : d + n ≤ S) (hS' : o + S ≤ 2 ^ 64) (hS0 : 0 < S) : Outside B o S m m' :=
@@ -68,7 +68,7 @@ theorem out_super {B : Addr} {o d n : Nat} {m m' : Mem} (h : Outside B (o + d) n
     Outside (off B o) d n m m' := by
   intro x hx
   refine h x ?_
-  rcases ofs_rebase B x ho with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
+  rcases ofs_rebase B x ho with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith
 
 /-- `copyWords`, `w` words from `a` to `b` of the working space (`r15`,
 `r14`), apart, with `2 w` in `r11`. -/
@@ -82,11 +82,11 @@ theorem copySub_ok {s : State} {B : Addr} {Z a b w : Nat} (hs : Scr s B Z)
   have hn := hs.nowrap
   have z : ∀ c, off (off B c) 0 = off B c := fun c => by rw [off_off, Nat.add_zero]
   refine WP.mono (Pub.copyIn_ok (B := off B b) (Z := 8 * w) (P := off B a) (Zp := 8 * w) (dS := 0) (dD := 0)
-    (hs.sub hb) (by have := toNat_off_le B a; omega)
-    (fun i hi => by rw [off_off]; exact hs.ld (by omega) (by decide))
-    (by rw [z]; exact h15) (by rw [z]; exact h14) h11 hw hw' (by omega) (by omega)
-    (sep_sub B (by omega) (by omega) hd (by omega))) fun t ⟨⟨_, _, hw, ho⟩, k⟩ =>
+    (hs.sub hb) (by have := toNat_off_le B a; omega_arith)
+    (fun i hi => by rw [off_off]; exact hs.ld (by omega_arith) (by decide))
+    (by rw [z]; exact h15) (by rw [z]; exact h14) h11 hw hw' (by omega_arith) (by omega_arith)
+    (sep_sub B (by omega_arith) (by omega_arith) hd (by omega_arith))) fun t ⟨⟨_, _, hw, ho⟩, k⟩ =>
       ⟨⟨fun i hi => by have := hw i hi; rwa [word_off, word_off, Nat.zero_add] at this,
-        out_sub ho (by omega) (by omega) (by omega)⟩, k⟩
+        out_sub ho (by omega_arith) (by omega_arith) (by omega_arith)⟩, k⟩
 
 end VG.Proof.Bignum.PPC64LE.Crt

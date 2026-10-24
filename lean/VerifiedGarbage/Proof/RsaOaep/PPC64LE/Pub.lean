@@ -58,11 +58,11 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 theorem scl : 1024 ≤ (stackArg s 4).toNat := by
-  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; omega
+  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; omega_arith
 
 theorem rsa_sub : Region.Sub (rsaR s) (scR s) := by
   have := scl P
-  exact Offset.sub_base _ (by unfold oRsa; omega)
+  exact Offset.sub_base _ (by unfold oRsa; omega_arith)
 
 theorem pubArgs_ok {t : State} {EM : List Byte} (h : Base S vO s t) (he : Spec.Rsa.bytesAt t.mem (off (S s) 0) (kk s) = EM) :
     WP isa (.block pubArgs) t (AtCall s EM) := by
@@ -104,8 +104,8 @@ theorem pubArgs_ok {t : State} {EM : List Byte} (h : Base S vO s t) (he : Spec.R
   · rw [← he]
     exact bytes_entry (A := ⟨fb s + BitVec.ofNat 64 96, 16⟩) (B := ⟨fb s + BitVec.ofNat 64 96, 16⟩)
       (hfr.mono fun r hr => by simp at hr ⊢; exact hr)
-      ((P.fits.ksc).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega)))
-      ((P.fits.ksc).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega))) (by omega)
+      ((P.fits.ksc).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega_arith)))
+      ((P.fits.ksc).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega_arith))) (by omega_arith)
   · rw [o₁₄.get .r3, o₁₃.get .r3, o₁₂.get .r3, o₁₁.get .r3, o₁₀.get .r3, o₉.get .r3, o₈.get .r3, e₇, m₆.gpr,
       o₅.get .r16, m₄.gpr, k₃.get .r16, h.r16]
   · rw [o₁₄.get .r4, o₁₃.get .r4, o₁₂.get .r4, o₁₁.get .r4, o₁₀.get .r4, o₉.get .r4, e₈, o₇.get .r15, m₆.gpr,
@@ -127,7 +127,7 @@ theorem pubArgs_ok {t : State} {EM : List Byte} (h : Base S vO s t) (he : Spec.R
       (by decide)) (by decide), o₅.mem, m₄.mem, Mem.readW_writeW_self64, e₃, o₂.get .r14, o₁.get .r14, h.r14, e₂]
   · show t₁₄.mem.readW (stackArgAddr t₁₄ 1) 64 = _
     rw [stackArgAddr_in, hsp, k₁₄.mem, m₆.mem, Mem.readW_writeW_self64, e₅, m₄.gpr, k₃.get .r23, h.r23,
-      sub_k (by omega)]
+      sub_k (by omega_arith)]
 
 theorem oR_eq : oR s = ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [oR, P.ok]
 
@@ -142,10 +142,10 @@ theorem pdOk_of {t : State} {EM : List Byte} (ha : AtCall s EM t) : PdOk t := by
   have eS : (S s).toNat = (stackArg s 3).toNat := rfl
   have hko : (kR s).Disjoint ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [← oR_eq P]; exact P.ko
   have hem : Region.Sub ⟨off (S s) 0, (s.gpr .r6).toNat⟩ (scR s) :=
-    fun x hx => sc_sub P x (sc_in (by unfold oRsa; omega) x hx)
+    fun x hx => sc_sub P x (sc_in (by unfold oRsa; omega_arith) x hx)
   have hfa : Region.Sub ⟨fb s + BitVec.ofNat 64 96, 16⟩ (kR s) := frame_sub s (by decide)
   have h1 : (stackArg t 1).toNat = (stackArg s 4).toNat - 1024 := by
-    rw [ha.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [ha.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   refine ⟨?hl, ?sp, ?hrd, ?hwr, ?hk, ?h6, ?h10, ?he1, ?he2, ?hs⟩
   case hl =>
     rw [ha.g3, ha.g4, ha.g5, ha.g6, ha.g7, ha.g8, ha.g9, ha.g10, ha.a0, h1, hsa]
@@ -157,27 +157,27 @@ theorem pdOk_of {t : State} {EM : List Byte} (ha : AtCall s EM t) : PdOk t := by
       oa := (hko.sub_left hfa).symm
       ns := P.sp.symm.sub_right (rsa_sub P)
       es := P.es.sub_right (rsa_sub P)
-      is := Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      is := Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
       sa := ((P.ksc.sub_left hfa).sub_right (rsa_sub P)).symm
       wo := by have := P.wo; rw [P.ok] at this; exact this
       wn := P.wp
       we := P.we
       wi := by
         show (S s + BitVec.ofNat 64 0).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
-        rw [BitVec.add_zero]; unfold oRsa at hS; omega
+        rw [BitVec.add_zero]; unfold oRsa at hS; omega_arith
       ws := by
         show (S s + BitVec.ofNat 64 oRsa).toNat + ((stackArg s 4).toNat - 1024) * 8 ≤ 2 ^ 64
-        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oRsa at *; omega }
+        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oRsa at *; omega_arith }
   case sp =>
     rw [hsp]; have := P.sp1
-    simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes]; omega
+    simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes]; omega_arith
   case hrd =>
     simp only [pdRd]
     rw [ha.g5, ha.g6, ha.g7, ha.g8, ha.g9, ha.g10, hsa, ha.rd, ha.sv.wr]
     have hm : ∀ r ∈ s.rd, Covers [r] (s.rd ++ (fr s :: s.wr)) := fun r hr =>
       Covers.left (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; exact hr)
     refine Covers.cons (hm _ (by rw [P.hrd]; simp)) (Covers.cons (hm _ (by rw [P.hrd]; simp))
-      (Covers.cons (Covers.right (sc_cov P.fits (by unfold oRsa; omega)))
+      (Covers.cons (Covers.right (sc_cov P.fits (by unfold oRsa; omega_arith)))
         (Covers.one (in_fr' s _ _ (by decide) (by decide)) |>.cons Covers.nil)))
   case hwr =>
     simp only [pdWr]
@@ -187,14 +187,14 @@ theorem pdOk_of {t : State} {EM : List Byte} (ha : AtCall s EM t) : PdOk t := by
       (Covers.cons ?_ Covers.nil)
     exact Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact ⟨scR s, by rw [P.hwr]; simp, oRsa, rfl, by simp only; unfold oRsa; omega⟩
+      exact ⟨scR s, by rw [P.hwr]; simp, oRsa, rfl, by simp only; unfold oRsa; omega_arith⟩
   case hk => rw [ha.g4]; exact ⟨hk1, hk2⟩
   case h6 => rw [ha.g6, ha.g4]; exact P.hp
   case h10 => rw [ha.g10, ha.g4]
   case he1 => rw [ha.g8]; exact P.e1
   case he2 => rw [ha.g8, ha.g4]; exact P.e2
   case hs =>
-    rw [ha.g4, h1]; have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; omega
+    rw [ha.g4, h1]; have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; omega_arith
 
 /-- After the call: what the restores need, and `out` written with RSAEP of
 `EM` if `pre` holds the modulus' values. -/
@@ -209,7 +209,7 @@ theorem call_ok {t : State} {EM : List Byte} (ha : AtCall s EM t) :
   have hk2 := P.k2
   refine pdCall (pdOk_of P ha) fun s' hrd' hwr' hsp' hf hpres hpost => ?_
   simp only [pdWr] at hf
-  rw [ha.g3, ha.g4, ha.a0, ha.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (stackArg s 4).isLt; omega)] at hf
+  rw [ha.g3, ha.g4, ha.a0, ha.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (stackArg s 4).isLt; omega_arith)] at hf
   have hko : (kR s).Disjoint ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [← oR_eq P]; exact P.ko
   have hd : ∀ r ∈ [(⟨s.gpr .r3, (s.gpr .r6).toNat⟩ : Region), rsaR s], (slR s).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -219,7 +219,7 @@ theorem call_ok {t : State} {EM : List Byte} (ha : AtCall s EM t) :
   refine ⟨⟨hsp'.trans ha.sv.sp, hwr'.trans ha.sv.wr, fun r hr => (hpres r (by revert r; decide)).trans (ha.sv.hi r hr),
     ha.sv.sv.frame hf fun p hp' r hr => (hd r hr).sub_left (by
       have := saved_offs p hp'
-      exact Offset.sub _ (n := 8) (by omega) (by unfold oLr at *; omega)),
+      exact Offset.sub _ (n := 8) (by omega_arith) (by unfold oLr at *; omega_arith)),
     by
       rw [hf.readW (Region.contains_self _ _) (fun r hr => (hd r hr).sub_left
         (Offset.sub _ (n := 8) (by decide) (by decide))) (by decide)]
@@ -230,7 +230,7 @@ theorem call_ok {t : State} {EM : List Byte} (ha : AtCall s EM t) :
   have := hpost (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
     (by rw [ha.g4, bytesAt_length]) (by rw [hw]; exact hc)
   rw [ha.g3, ha.g4, ha.g7, ha.g8, ha.g9, ha.em,
-    bytes_entry ha.mem P.ke ((P.es.symm).sub_left (sc_sub P)) (by have := P.we; omega)] at this
+    bytes_entry ha.mem P.ke ((P.es.symm).sub_left (sc_sub P)) (by have := P.we; omega_arith)] at this
   exact this
 
 /-- `encFail`: zeros to `out`, and 0. -/
@@ -245,8 +245,8 @@ theorem fail_ok {t : State} (h : Base S vO s t) :
   have hout : ∀ i < kk s, InRegions t₃.wr (s.gpr .r3 + BitVec.ofNat 64 i) 1 := fun i hi => by
     rw [k₃.wr, h.wr]
     exact ⟨oR s, List.mem_cons_of_mem _ (by rw [P.hwr]; simp),
-      Offset.contains_base _ (by rw [P.ok]; omega) (by have := P.wo; omega)⟩
-  refine WP.mono (zero_ok (p := s.gpr .r3) (n := kk s) (b := 0) (by omega) (by omega)
+      Offset.contains_base _ (by rw [P.ok]; omega_arith) (by have := P.wo; omega_arith)⟩
+  refine WP.mono (zero_ok (p := s.gpr .r3) (n := kk s) (b := 0) (by omega_arith) (by omega_arith)
     (by rw [o₃.get .r4, o₂.get .r4, e₁, h.r16]) (by rw [e₃ |> fun _ => o₃.get .r5, e₂, o₁.get .r15, h.r15]; simp)
     (by rw [e₃]; rfl) hout) fun t₄ ⟨k₄, m₄⟩ => wp_li (by decide) fun t₅ o₅ e₅ => wp_nil ?_
   have hko : (kR s).Disjoint ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [← oR_eq P]; exact P.ko
@@ -257,7 +257,7 @@ theorem fail_ok {t : State} (h : Base S vO s t) :
   refine ⟨h.sv.keep ((k₃.keep.trans (k₄.trans o₅.keep)).mono (rs' := [.r3, .r4, .r5, .r6])) hf
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hko.sub_left (slR_sub s)), by rw [e₅]; rfl, ?_⟩
   have := Proof.RsaPkcs1Sig.bytesAt_writeBytes t₃.mem (s.gpr .r3) (List.replicate (kk s) (0 : Byte))
-    (by simp; omega)
+    (by simp; omega_arith)
   rw [List.length_replicate] at this
   rw [o₅.mem, m₄, this]
 

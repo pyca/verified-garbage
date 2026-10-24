@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.OmegaAll
 
 /-!
 # ML-DSA key generation on PPC64LE: its parameters, precondition and buffers
@@ -162,6 +163,6 @@ macro_rules
                          Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, Bool.and_true, Bool.true_and,
                          true_and, and_true, true_or, or_true, Nat.zero_add, oP, oSS, oKL, oHX, oSA, oSB, oT0, aP, sP, tP, t1P, t0P,
                          sc, false_or, or_false, decide_eq_true_iff, $ls,*]
-                       and_intros <;> omega_arith))
+                       focus (and_intros; all_omega_arith)))
 
 end VG.Proof.MlDsa.PPC64LE.KeyGen
