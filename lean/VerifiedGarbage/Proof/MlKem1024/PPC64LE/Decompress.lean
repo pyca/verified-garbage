@@ -3,15 +3,12 @@ module
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem.Encode1024
-public import VerifiedGarbage.Proof.MlKem.Compress1024
+import VerifiedGarbage.Proof.MlKem.Encode1024
+import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
-import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
-import VerifiedGarbage.Proof.MlKem.PPC64LE.Reduce
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -40,6 +37,9 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.Spec.MlKem.Poly
 
 /-!
 # ML-KEM-1024 on PPC64LE: `vg_mlkem1024_decode_decompress`

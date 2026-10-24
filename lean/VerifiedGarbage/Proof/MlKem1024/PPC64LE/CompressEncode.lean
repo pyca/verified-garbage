@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem.Encode1024
+import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Reduce
@@ -39,6 +39,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Spec.MlKem
 
 /-!
 # ML-KEM-1024 on PPC64LE: `vg_mlkem1024_compress_encode`
