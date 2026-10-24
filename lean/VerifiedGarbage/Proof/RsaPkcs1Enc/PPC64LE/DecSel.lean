@@ -120,7 +120,8 @@ theorem validBlock_ok {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (
           s.gpr .r7 - BitVec.ofNat 64 sep - BitVec.ofNat 64 1 else BitVec.ofNat 64 al) &&&
         bm (decide (R ^^^ BitVec.ofNat 64 1 = 0)) ∧
       u.gpr .r3 = s.gpr .r7 - (if vOf (t.mem (s.gpr .r3 + BitVec.ofNat 64 0)) (t.mem (s.gpr .r3 + BitVec.ofNat 64 1))
-          f sep then s.gpr .r7 - BitVec.ofNat 64 sep - BitVec.ofNat 64 1 else BitVec.ofNat 64 al)) ∧
+          f sep then s.gpr .r7 - BitVec.ofNat 64 sep - BitVec.ofNat 64 1 else BitVec.ofNat 64 al) ∧
+      u.gpr .r12 = fb s) ∧
       Keep [.r12, .r11, .r7, .r10, .r9, .r4, .r5, .r6, .r3] t u := by
   have c1 : oOut < 2 ^ 15 ∧ oOut % 4 = 0 := by decide
   have c2 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
@@ -157,7 +158,8 @@ theorem validBlock_ok {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (
     w.gpr .r3 = s.gpr .r7 - (if vOf (t.mem (s.gpr .r3 + BitVec.ofNat 64 0)) (t.mem (s.gpr .r3 + BitVec.ofNat 64 1))
         f sep then s.gpr .r7 - BitVec.ofNat 64 sep - BitVec.ofNat 64 1 else BitVec.ofNat 64 al)) ?_ rfl)
     fun w ⟨⟨wm, w5, w4, w6, w3⟩, kw⟩ => ⟨⟨wm.trans um, by rw [kw.gpr _ (by decide), u11],
-      by rw [kw.gpr _ (by decide), u7], w5, w4, w6, w3⟩, (ku.mono (by decide)).trans' (kw.mono (by decide))⟩
+      by rw [kw.gpr _ (by decide), u7], w5, w4, w6, w3, by rw [kw.gpr _ (by decide), u12]⟩,
+      (ku.mono (by decide)).trans' (kw.mono (by decide))⟩
   · unfold validRest
     prun [exec_lbz (show Reg.r11 ≠ .r0 by decide) c1' j1, u0, u3, u5, u6, u7, u8, u10, u11, u12, c3, j3, hr]
     simp only [read1_64, zero_mask64 _ (byte2_lt _), zero_mask64 _ hR, ten_mask hsep, bm_not, byte_two, um,
