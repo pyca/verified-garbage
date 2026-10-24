@@ -86,6 +86,9 @@ pub(crate) mod camellia_ctr;
 pub(crate) mod camellia_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod cast5;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
@@ -96,6 +99,9 @@ pub(crate) mod cmac_aes;
 
 #[rustfmt::skip]
 pub(crate) mod cmac_triple_des;
+
+#[rustfmt::skip]
+pub(crate) mod consts;
 
 #[rustfmt::skip]
 pub(crate) mod ct;
