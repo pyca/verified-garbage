@@ -25,10 +25,20 @@ open VG.Proof.Mont (word off)
 theorem stat_eq {i K : Nat} (hi : i < 2 ^ 62) (hK : K < 2 ^ 62) :
     BitVec.ofNat 64 4 - (BitVec.ofNat 64 K - BitVec.ofNat 64 (i + 1) - BitVec.ofNat 64 1) >>> 63 * BitVec.ofNat 64 3 =
       BitVec.ofNat 64 (if i + 1 < K then 4 else 1) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
-    Nat.shiftRight_eq_div_pow]
-  split <;> omega
+  have e1 : BitVec.ofNat 64 K - BitVec.ofNat 64 (i + 1) - BitVec.ofNat 64 1 =
+      BitVec.ofNat 64 (if i + 1 < K then K - (i + 2) else 2 ^ 64 - (i + 2 - K)) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat]
+    split <;> omega
+  have e2 : ∀ n, n < 2 ^ 64 → BitVec.ofNat 64 n >>> 63 = BitVec.ofNat 64 (n / 2 ^ 63) := fun n hn => by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+      Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by omega)]
+  rw [e1]
+  split
+  · rw [e2 _ (by omega), Nat.div_eq_of_lt (by omega)]; rfl
+  · rw [e2 _ (by omega), show (2 ^ 64 - (i + 2 - K)) / 2 ^ 63 = 1 by omega]; rfl
 
 /-- What `round` leaves: the round's state `u` (`RcPost`), and the status
 and count stored over it. -/
