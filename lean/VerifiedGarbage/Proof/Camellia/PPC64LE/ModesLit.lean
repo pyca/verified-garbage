@@ -21,5 +21,6 @@ materialize_code Impl.Camellia.PPC64LE.cbcDecryptChained
 materialize_code Impl.Camellia.PPC64LE.ofb
 materialize_code Impl.Camellia.PPC64LE.cfbEncrypt
 materialize_code Impl.Camellia.PPC64LE.cfbDecrypt
+materialize_code Impl.Camellia.PPC64LE.ctr
 
 end VG
