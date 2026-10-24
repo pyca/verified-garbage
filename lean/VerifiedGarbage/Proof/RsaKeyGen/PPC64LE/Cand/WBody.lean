@@ -56,6 +56,43 @@ theorem tape_len {s : State} {B Ra : Addr} {L w c rl ch : Nat} {r : Spec.RsaKeyG
     (P : LIn s B Ra L w c rl ch r) : r.length = rl := by
   rw [← P.tape]; simp [Spec.Rsa.bytesAt]
 
+theorem drIn_of {s t : State} {B Ra : Addr} {L w c rl ch k : Nat} {r : Spec.RsaKeyGen.Rand}
+    (P : LIn s B Ra L w c rl ch r) (hi : St s B L w c r k t) (hav : 8 * w * (k + 1) + 8 * w ≤ r.length) :
+    DrIn t B Ra L w c (8 * w * (k + 1)) (mrS c (8 * w) r k).1 (mrS c (8 * w) r k).2 ch := by
+  have e := hi.prep.env
+  have hnw := e.hs.nowrap
+  have hZ := e.hZ
+  have hw4 := e.hw
+  rw [slot_lin] at hZ
+  obtain ⟨_, hb1, _⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega : 1 ≤ w) P.shape
+  have hrl := tape_len P
+  have hrl' := P.hrl
+  have hk1 : 32 * (k + 1) ≤ 8 * w * (k + 1) := Nat.mul_le_mul_right _ (by omega)
+  have hsn := mrS_snd c (8 * w) r k
+  have hwd : ∀ d, d < 31 → d ∉ lpWords → word t.mem B (8 * d) = word s.mem B (8 * d) := fun d h1 h2 =>
+    hi.hdr _ (by omega) (fun j hj => by
+      have : j ≠ d := fun e => h2 (e ▸ hj)
+      simp only [lpWords, List.mem_cons, List.not_mem_nil, or_false] at hj; omega)
+  exact ⟨hi.prep, P.h35, hb1, P.shape.2.2, (hwd hRand (by decide) (by decide)).trans P.rand, hi.used,
+    (hwd hK (by decide) (by decide)).trans P.kk,
+    fun i hi' => by rw [hi.rd, hi.wr]; exact P.rN _ (by omega),
+    fun i hi' x hx hxe => P.rD ⟨B, 8 * L⟩ (by simp) _
+      (Offset.contains_base Ra (d := 8 * w * (k + 1) + i) (by omega) (by omega))
+      (by show Region.Contains _ (off Ra (8 * w * (k + 1) + i)) 1
+          rw [hxe]; simp only [Region.Contains]; simp only [ofs] at hx; omega),
+    by rw [hi.wr]; exact P.wr, by rw [hi.sp]; exact P.hsp, by rw [hi.sp]; exact P.hstk, hi.idx, hi.uni,
+    (hwd hChecks (by decide) (by decide)).trans P.chk, by rw [mrS_fst]; omega, by omega, P.hch'⟩
+
+/-- The witness drawn is the tape's. -/
+theorem drX_eq {s t : State} {B Ra : Addr} {L w c rl ch k : Nat} {r : Spec.RsaKeyGen.Rand}
+    (P : LIn s B Ra L w c rl ch r) (hi : St s B L w c r k t) (hav : 8 * w * (k + 1) + 8 * w ≤ r.length) :
+    Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off Ra (8 * w * (k + 1)))
+      (8 * w))) = wit c (8 * w) r (8 * w * (k + 1)) := by
+  have hrl := tape_len P
+  have hrl' := P.hrl
+  unfold wit
+  rw [← seg_eq t.mem Ra (n := rl) (by omega), bytes_keep hi.frame (by omega) P.rD, P.tape]
+
 theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Nat} {r : Spec.RsaKeyGen.Rand}
     (P : LIn s B Ra L w c rl ch r)
     (ha : MrAt c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 (8 * w) r k n)
@@ -102,26 +139,8 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
   · have hav : 8 * w * (k + 1) + 8 * w ≤ r.length := by
       simp only [decide_eq_false_iff_not] at hz
       split at hz <;> first | omega | exact absurd rfl hz
-    have hk1 : 32 * (k + 1) ≤ 8 * w * (k + 1) := Nat.mul_le_mul_right _ (by omega)
-    have hsn := mrS_snd c (8 * w) r k
-    have hwd : ∀ d, d < 31 → d ∉ lpWords → word t.mem B (8 * d) = word s.mem B (8 * d) := fun d h1 h2 =>
-      hi.hdr _ (by omega) (fun j hj => by
-        have : j ≠ d := fun e => h2 (e ▸ hj)
-        simp only [lpWords, List.mem_cons, List.not_mem_nil, or_false] at hj; omega)
-    refine WP.mono (draw_ok R hi.prep P.h35 hb1 P.shape.2.2 (Ra := Ra) (u := 8 * w * (k + 1))
-      ((hwd hRand (by decide) (by decide)).trans P.rand) hi.used ((hwd hK (by decide) (by decide)).trans P.kk)
-      (fun i hi' => by rw [hi.rd, hi.wr]; exact P.rN _ (by omega))
-      (fun i hi' x hx hxe => P.rD ⟨B, 8 * L⟩ (by simp) _
-        (Offset.contains_base Ra (d := 8 * w * (k + 1) + i) (by omega) (by omega))
-        (by show Region.Contains _ (off Ra (8 * w * (k + 1) + i)) 1
-            rw [hxe]; simp only [Region.Contains]; simp only [ofs] at hx; omega))
-      (by rw [hi.wr]; exact P.wr) (by rw [hi.sp]; exact P.hsp) (by rw [hi.sp]; exact P.hstk) hi.idx hi.uni
-      ((hwd hChecks (by decide) (by decide)).trans P.chk) (by rw [mrS_fst]; omega) (by omega) P.hch')
-      fun t₂ hd => ?_
-    have hX : Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off Ra (8 * w * (k + 1)))
-        (8 * w))) = wit c (8 * w) r (8 * w * (k + 1)) := by
-      unfold wit
-      rw [← seg_eq t.mem Ra (n := rl) (by omega), bytes_keep hi.frame (by omega) P.rD, P.tape]
+    refine WP.mono (draw_ok R (drIn_of P hi hav)) fun t₂ hd => ?_
+    have hX := drX_eq P hi hav
     have hst := hd.stat
     have hid := hd.idx
     have hun := hd.uni
