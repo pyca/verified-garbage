@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Dec
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.TopCT
+public import VerifiedGarbage.Proof.AesSiv.PPC64LE.MacCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchLists
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Init
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
@@ -225,5 +230,69 @@ theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract PPC64LE.abi 2608).pre
   implies_sat [Spec.Siv.decryptContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Spec.Siv.decryptPost,
     Spec.Siv.decryptLeak, PPC64LE.abi, PPC64LE.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩]
+
+/-! ## Constant time -/
+
+/-- Descriptors whose bytes are the same in two memories have the same words. -/
+theorem descW_eq {m m' : Mem} {A : Addr} {N : Nat}
+    (h : ∀ k < N * 16, m (A + BitVec.ofNat 64 k) = m' (A + BitVec.ofNat 64 k))
+    {i j : Nat} (hi : i < N) (hj : j < 2) : descW m A i j = descW m' A i j := by
+  have e := Mem.read_congr (m := m) (m' := m') (a := A + BitVec.ofNat 64 (16 * i + 8 * j))
+    (n := 64 / 8) fun k hk => by rw [Offset.add_add]; exact h _ (by omega)
+  simp only [descW, Mem.readW, e]
+
+/-- Two runs from the same public arguments: both from the public values of
+the first, with the same descriptors. -/
+theorem enc_two {s₁ s₂ : State} (A₂ : Args (cxOf s₂) s₂) (hA₂ : Ads (cxOf s₂) s₂.mem s₂)
+    (hp : s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+      s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
+      s₁.gpr .r10 = s₂.gpr .r10 ∧ ∀ i, i < (s₁.gpr .r6).toNat * 16 →
+        s₁.mem (s₁.gpr .r5 + BitVec.ofNat 64 i) = s₂.mem (s₁.gpr .r5 + BitVec.ofNat 64 i)) :
+    Args (cxOf s₁) s₂ ∧ Ads (cxOf s₁) s₂.mem s₂ ∧ DescAgree (cxOf s₁) s₁.mem s₂.mem := by
+  obtain ⟨-, q3, q4, q5, q6, q7, q8, q9, q10, hd⟩ := hp
+  have hcx : cxOf s₂ = cxOf s₁ := by simp only [cxOf, q3, q4, q5, q6, q7, q8, q9, q10]
+  rw [hcx] at A₂ hA₂
+  exact ⟨A₂, hA₂, fun i hi => ⟨descW_eq hd hi (by decide), descW_eq hd hi (by decide)⟩⟩
+
+theorem encrypt_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.encrypt
+    (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0) := by
+  refine ⟨encrypt_correct, VG.Proof.Gather.PPC64LE.ct_of fun s₁ s₂ h₁ h₂ hp => ?_, encSat_pre⟩
+  sig_pub [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, PPC64LE.abi, PPC64LE.argRegs,
+    List.getD] at hp
+  obtain ⟨A₁, hA₁, -⟩ := encPre_of h₁
+  obtain ⟨A₂, hA₂, -⟩ := encPre_of h₂
+  obtain ⟨A₂', hA₂', hd⟩ := enc_two A₂ hA₂ hp
+  exact encrypt_rel A₁ A₂' hA₁ hA₂' hd hp.1
+
+theorem decrypt_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.decrypt
+    (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0) := by
+  refine ⟨decrypt_correct, VG.Proof.Gather.PPC64LE.ct_of fun s₁ s₂ h₁ h₂ hp => ?_, decSat_pre⟩
+  sig_pub [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptLeak,
+    PPC64LE.abi, PPC64LE.argRegs, List.getD] at hp
+  obtain ⟨hsp, -, hr⟩ := hp
+  obtain ⟨A₁, hA₁⟩ := decPre_of h₁
+  obtain ⟨A₂, hA₂⟩ := decPre_of h₂
+  obtain ⟨A₂', hA₂', hd⟩ := enc_two A₂ hA₂ ⟨hsp, hr⟩
+  exact decrypt_rel A₁ A₂' hA₁ hA₂' hd hsp
+
+/-! ## The working space on the stack -/
+
+/-- `encrypt` with its working space in a frame of 2608 bytes. -/
+theorem encrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10
+    Impl.AesSiv.PPC64LE.encrypt) (Spec.Siv.encryptContract PPC64LE.abi 2608) :=
+  Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
+    (pre := Spec.Siv.encryptPre PPC64LE.abi.ptrBits) (post := Spec.Siv.encryptPost PPC64LE.abi.ptrBits)
+    (wa := true) (stack := 0) (bytes := 2608) encrypt_verified (by decide) (by decide)
+    (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
+
+/-- `decrypt` with its working space in a frame of 2608 bytes. -/
+theorem decrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10
+    Impl.AesSiv.PPC64LE.decrypt) (Spec.Siv.decryptContract PPC64LE.abi 2608) :=
+  Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
+    (pre := Spec.Siv.decryptPre PPC64LE.abi.ptrBits) (post := Spec.Siv.decryptPost PPC64LE.abi.ptrBits)
+    (wa := true) (stack := 0) (bytes := 2608) (leak := some (Spec.Siv.decryptLeak PPC64LE.abi.ptrBits))
+    decrypt_verified (by decide) (by decide)
+    (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _) decFrameSat_pre
+    (hleak := Proof.AesSiv.decryptLeak_local _)
 
 end VG.Proof.AesSiv.PPC64LE

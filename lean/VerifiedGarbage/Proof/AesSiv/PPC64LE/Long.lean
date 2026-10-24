@@ -97,7 +97,7 @@ theorem xorD_eq : xorD = Proof.CmacAes.PPC64LE.xor2 .r11 .r14 .r11 16 dO 16 := r
 the stack pointer. -/
 theorem xorTail_wp' {c : Cx} {s : State} (E : Env c s) {T : Nat} (hT : 16 ≤ T) (hT' : T ≤ 32)
     (h : s.gpr .r20 - s.gpr .r21 = BitVec.ofNat 64 T) :
-    WP isa (.block ([.sub .r11 .r20 .r21, .add .r11 .r14 .r11] ++ xorD)) s fun s' => s'.rd = s.rd ∧
+    WP isa (.block (([.sub .r11 .r20 .r21, .add .r11 .r14 .r11] : List Instr) ++ xorD)) s fun s' => s'.rd = s.rd ∧
       s'.wr = s.wr ∧ (∀ r, r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → s'.gpr r = s.gpr r) ∧
       s'.mem = Proof.Cmac.xor2Mem s.mem (c.W + BitVec.ofNat 64 (16 + T)) (c.W + BitVec.ofNat 64 (16 + T))
         (c.W + BitVec.ofNat 64 dO) := by
