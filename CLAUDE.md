@@ -584,8 +584,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/<Curve>/Comb7Shape.lean`, not by `decide` on each target.
 * **Code without its literal:** `lit_decide` and `taint_decide` read the
   literal of code only if the module imports the module that materializes
-  it; otherwise the kernel builds the code again (seconds for unrolled
-  code). Import the code's `Lit` module wherever its code is evaluated.
+  it, or a module that `public import`s it; otherwise the kernel builds the
+  code again (seconds for unrolled code). Import the code's `Lit` module
+  wherever its code is evaluated: registration files too, whose default
+  `sp_safe` evaluates their code. `decide +kernel` reads no literal at all:
+  use `lit_decide`. `python3 ci/check_lit_imports.py` lists the checks that
+  evaluate code without a literal they could import (see "Finding what to
+  optimize").
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
   definition that uses a recursive call's result twice (`let r := f …;
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one
@@ -606,6 +611,7 @@ python3 ci/lean_profile.py --sort kernel          # by kernel time alone
 python3 ci/lean_profile.py --by module --top 50   # the costliest modules
 python3 ci/lean_profile.py --module VerifiedGarbage.Proof.Sha256 --json
 python3 ci/lean_profile.py --tests                # with the known-answer tests
+python3 ci/check_lit_imports.py                   # checks evaluating code without its literal
 ```
 
 A command that generates declarations (`materialize_code`, `taint_summary`,

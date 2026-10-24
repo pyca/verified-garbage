@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the entry, the table and `[S]B`

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-DSA (FIPS 204) on x86: the sampling primitives

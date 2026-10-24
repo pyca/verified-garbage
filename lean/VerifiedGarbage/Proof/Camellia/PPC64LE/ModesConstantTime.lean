@@ -59,4 +59,8 @@ theorem cfbDecrypt_constantTime (pre : State → Prop) : ConstantTime isa pre mo
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
+theorem ctr_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ctr :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
+
 end VG.Proof.Camellia.PPC64LE

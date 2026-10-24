@@ -29,6 +29,9 @@ pub(crate) mod aes_ocb;
 pub(crate) mod aes_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod aes_siv;
+
+#[rustfmt::skip]
 pub(crate) mod aes_xts;
 
 #[rustfmt::skip]
@@ -75,6 +78,9 @@ pub(crate) mod camellia_cbc;
 
 #[rustfmt::skip]
 pub(crate) mod camellia_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod camellia_ctr;
 
 #[rustfmt::skip]
 pub(crate) mod camellia_ofb;
@@ -137,6 +143,12 @@ pub(crate) mod ec_p384;
 pub(crate) mod ec_p384_compressed;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p521_compressed;
+
+#[rustfmt::skip]
 pub(crate) mod ec_secp256k1;
 
 #[rustfmt::skip]
@@ -162,6 +174,9 @@ pub(crate) mod ecdh_p256;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p521;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_secp256k1;
@@ -210,6 +225,9 @@ pub(crate) mod ecdsa_p384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p384_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p521;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_secp256k1;
@@ -402,6 +420,9 @@ pub(crate) mod sm4_cfb;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_ctr;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_gcm;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_ofb;

@@ -29,7 +29,8 @@
 //! `vg_ghash_vpclmul`, eight blocks at a time in 256-bit registers). Which
 //! one a key calls depends only on the CPU. AArch64 CPUs with PMULL run the
 //! `_aes` instances (with `vg_ghash_aes`). On ARMv7 there is one
-//! implementation, calling the baseline `vg_ghash`.
+//! implementation, calling the baseline `vg_ghash`, and on PPC64LE one, with
+//! GHASH inline.
 //!
 //! # Tags
 //!
@@ -46,7 +47,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "arm",
-    target_arch = "aarch64"
+    target_arch = "aarch64",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 #[cfg(target_arch = "aarch64")]
@@ -154,8 +156,11 @@ impl Ghash {
         }
     }
 
-    /// The only implementation on ARMv7, whatever the CPU.
-    #[cfg(target_arch = "arm")]
+    /// The only implementation on ARMv7 and PPC64LE, whatever the CPU.
+    #[cfg(any(
+        target_arch = "arm",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
     fn select(_: Features) -> Ghash {
         Ghash::Scalar
     }

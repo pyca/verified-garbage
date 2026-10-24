@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesConstantTime
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
 public import VerifiedGarbage.Proof.Camellia.FbScratch
+public import VerifiedGarbage.Proof.Camellia.CtrScratch
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModeCore
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
+import VerifiedGarbage.Proof.Modes.PPC64LE.Ctr
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
 public import VerifiedGarbage.Proof.Modes.Steps
 import VerifiedGarbage.Spec.Camellia.Cfb
@@ -117,6 +119,9 @@ def cfbEncPost (s s' : State) : Prop :=
 def cfbDecPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Cfb.decrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
+def ctrPost (s s' : State) : Prop :=
+  dataAt s'.mem s = Spec.Ctr.crypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
+    ivAt s'.mem s = Spec.Ctr.next (ivAt s.mem s) (s.gpr .r7).toNat
 
 /-- A mode's function on PPC64LE with its working space as the sixth
 argument, and the postcondition `post`. -/
@@ -349,6 +354,22 @@ theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
       show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
     exact h3
 
+theorem ctr_correct (s : State) (hs : (modeContract ctrPost).pre s) :
+    ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract ctrPost).post s s' := by
+  have hw := Proof.Modes.PPC64LE.ctr_wp (dirCoreSpec .encrypt) rfl
+    (seqPre_of hs .encrypt (M := Mode.ctr) rfl) (keyArgs_of hs .encrypt (M := Mode.ctr) rfl)
+  have hc := Proof.Modes.PPC64LE.ctr_changes (dirCoreSpec .encrypt) rfl
+    (seqPre_of hs .encrypt (M := Mode.ctr) rfl) (keyArgs_of hs .encrypt (M := Mode.ctr) rfl)
+  obtain ⟨eP, eD, eN⟩ := entry_args s
+  rw [eP, eD, eN] at hw
+  refine WP.mono (run_wrapped hs rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
+  all_goals rw [← hm]
+  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
+      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
+    exact h2
+  · simp only [Proof.Modes.PPC64LE.iv0, eP, show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs] at h3
+    exact h3
+
 /-! ## The contracts -/
 
 /-- A state satisfying the modes' precondition: the schedule at `0x1000`,
@@ -398,6 +419,12 @@ theorem cfbDecrypt_verified : Verified target cfbDecrypt (Proof.Camellia.cfbDecS
   refine Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _) ?_
   sig_implies [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig,
     Spec.Camellia.cfbPre, Spec.Camellia.cfbDecryptPost, abi, argRegs, modeContract, cfbDecPost, modePub_iff,
+    modeSlots_eq] [modeSat] using modeSat
+
+theorem ctr_verified : Verified target ctr (Proof.Camellia.ctrScratchContract abi 422) := by
+  refine Verified.of_correct ctr_correct (ctr_constantTime _) ?_
+  sig_implies [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig,
+    Spec.Camellia.ctrPre, Spec.Camellia.ctrPost, abi, argRegs, modeContract, ctrPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 end VG.Proof.Camellia.PPC64LE.Modes

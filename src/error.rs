@@ -115,6 +115,11 @@ mod tests {
             crate::aes_gcm_siv::Error::TagMismatch,
         );
         check!(
+            crate::aes_siv::Error::InvalidKeyLength,
+            crate::aes_siv::Error::TooManyComponents,
+            crate::aes_siv::Error::TagMismatch,
+        );
+        check!(
             crate::aes_ccm::Error::InvalidKeyLength,
             crate::aes_ccm::Error::InvalidNonceLength,
             crate::aes_ccm::Error::InvalidTextLength,
@@ -135,9 +140,6 @@ mod tests {
             crate::aes_gcm::Error::AadAfterText,
             crate::aes_gcm::Error::InvalidOutputLength,
             crate::aes_gcm::Error::TooManyPieces,
-            crate::aes_siv::Error::InvalidKeyLength,
-            crate::aes_siv::Error::TooManyComponents,
-            crate::aes_siv::Error::TagMismatch,
             crate::chacha20poly1305::Error::InvalidTextLength,
             crate::chacha20poly1305::Error::TagMismatch,
             crate::chacha20poly1305::Error::InvalidOutputLength,
