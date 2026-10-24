@@ -66,15 +66,22 @@ theorem dHead_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
     fun t ⟨⟨a10, m⟩, k⟩ => ⟨⟨(k.gpr .r12 (by decide)).trans a12, (k.gpr .r6 (by decide)).trans a6, a10,
       m.trans am⟩, (k₁.trans k).mono (by decide)⟩
 
-/-- The head and the load: the witness's octets in array 4. -/
-theorem dLoad_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
-    WP isa (.seq (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK, .add .r3 .r3 .r6,
-        sth .r3 hUsed] ++ base .r10 4)) loadN) s fun t =>
-      (val32 t.mem p.B (slot (wOf mb) 4) (2 * wOf mb) = Spec.Rsa.os2ip ((p.r.drop u).take ((mb + 7) / 8)) ∧
-        t.gpr .r10 = off p.B (slot (wOf mb) 4) ∧
-        Frm p.B [(152, 8), (slot (wOf mb) 4, 8 * wOf mb)] s.mem t.mem ∧
-        t.mem.readW (p.B + BitVec.ofNat 64 152) 64 = BitVec.ofNat 64 (u + (mb + 7) / 8)) ∧
-      Keep (([.r3, .r6, .r12, .r10] : List Reg) ++ ([.r0, .r14, .r15, .r16, .r17] : List Reg)) s t := by
+/-- After the head of a draw. -/
+def DHead (p : PP) (mb u : Nat) (s t : State) : Prop :=
+  (t.gpr .r12 = p.rp + BitVec.ofNat 64 u ∧ t.gpr .r6 = BitVec.ofNat 64 ((mb + 7) / 8) ∧
+    t.gpr .r10 = off p.B (slot (wOf mb) 4) ∧
+    t.mem = s.mem.writeW (p.B + BitVec.ofNat 64 152) (BitVec.ofNat 64 (u + (mb + 7) / 8))) ∧
+  Keep [.r3, .r6, .r12, .r10] s t
+
+/-- The load, after the head: the witness's octets in array 4. -/
+theorem dLoadN_ok {p : PP} {mb N u : Nat} {s t : State} (h : DPre p mb N u s) (ht : DHead p mb u s t) :
+    WP isa loadN t fun t₂ =>
+      (val32 t₂.mem p.B (slot (wOf mb) 4) (2 * wOf mb) = Spec.Rsa.os2ip ((p.r.drop u).take ((mb + 7) / 8)) ∧
+        t₂.gpr .r10 = off p.B (slot (wOf mb) 4) ∧
+        Frm p.B [(152, 8), (slot (wOf mb) 4, 8 * wOf mb)] s.mem t₂.mem ∧
+        t₂.mem.readW (p.B + BitVec.ofNat 64 152) 64 = BitVec.ofNat 64 (u + (mb + 7) / 8)) ∧
+      Keep (([.r3, .r6, .r12, .r10] : List Reg) ++ ([.r0, .r14, .r15, .r16, .r17] : List Reg)) s t₂ := by
+  obtain ⟨⟨a12, a6, a10, am⟩, k₁⟩ := ht
   have hb1 := h.st.dims.b1
   have hb2 := h.st.dims.b2
   have hn := h.st.dims.n
@@ -90,7 +97,6 @@ theorem dLoad_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
   have hZ : slot w 4 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega
   generalize hKd : (mb + 7) / 8 = K at *
   have hK1 : 1 ≤ K := by omega
-  refine WP.seq (WP.mono (dHead_ok h) fun t ⟨⟨a12, a6, a10, am⟩, k₁⟩ => ?_)
   rw [hKd, hwd] at *
   have ho : Outside p.B 152 8 s.mem t.mem := by rw [am]; exact writeW_outside _ _ _ (by omega)
   have hbr : Spec.Rsa.bytesAt t.mem p.rp p.r.length = p.r := by
@@ -114,6 +120,18 @@ theorem dLoad_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
   · rw [show t₂.mem.readW (p.B + BitVec.ofNat 64 152) 64 = word t₂.mem p.B 152 from rfl,
       Outside.word o₂ (by simp only [slot, hdrBytes]; omega) (by omega), am]
     exact Mem.readW_writeW_self64 _ _ _
+
+
+/-- The head and the load: the witness's octets in array 4. -/
+theorem dLoad_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
+    WP isa (.seq (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK, .add .r3 .r3 .r6,
+        sth .r3 hUsed] ++ base .r10 4)) loadN) s fun t =>
+      (val32 t.mem p.B (slot (wOf mb) 4) (2 * wOf mb) = Spec.Rsa.os2ip ((p.r.drop u).take ((mb + 7) / 8)) ∧
+        t.gpr .r10 = off p.B (slot (wOf mb) 4) ∧
+        Frm p.B [(152, 8), (slot (wOf mb) 4, 8 * wOf mb)] s.mem t.mem ∧
+        t.mem.readW (p.B + BitVec.ofNat 64 152) 64 = BitVec.ofNat 64 (u + (mb + 7) / 8)) ∧
+      Keep (([.r3, .r6, .r12, .r10] : List Reg) ++ ([.r0, .r14, .r15, .r16, .r17] : List Reg)) s t :=
+  WP.seq (WP.mono (dHead_ok h) fun _ ht => dLoadN_ok h ht)
 
 /-- The cut: array 4's top word and'ed with `hTop`, so it holds its number
 modulo `2^mb`; then `r24 :=` its low word halved, for the scan of the rest

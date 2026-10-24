@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.RelCTChain
 
 /-!
 # An FFDH parameter candidate on PPC64LE: a draw
@@ -27,6 +29,8 @@ open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
 open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 open VG.Proof.MillerRabin.PPC64LE (RoundImpl arr)
 open VG.Proof.Mont (val32)
+open VG.Impl.Bignum.PPC64LE.PublicChecked (base)
+open VG.Impl.Bignum.PPC64LE.Precompute (loadN copyWords)
 
 
 /-- `hStat` after a draw of `a`, from 4. -/
@@ -46,23 +50,57 @@ theorem wp_then3 {a b c d e : Prog isa} {s : State} {P Q : State → Prop}
   rw [WP.seq_iff] at ht ⊢
   exact WP.mono ht fun t ht => WP.seq (WP.mono ht k)
 
-theorem draw_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {s : State} (h : MSt p mb N s)
+theorem WP.chain {l : List (Prog isa)} {rest : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa (.seq (Prog.chain l (.block [])) rest) s Q) : WP isa (Prog.chain l rest) s Q := by
+  induction l generalizing s with
+  | nil => rw [Prog.chain, WP.seq_iff, WP.block_nil_iff] at h; exact h
+  | cons a l ih => exact WP.seq (WP.mono (WP.seq_iff.mp (WP.assoc h)) fun _ h => ih h)
+
+/-- The draw's pieces between its head and its branches. -/
+def drawMid : List (Prog isa) :=
+  [loadN, .block (([.addi .r10 .r31 hdrBytes] : List Instr) ++ base .r5 4 ++ ([.lsl .r6 .r11 2,
+    .add .r5 .r5 .r6, .subi .r5 .r5 8, ldh .r4 hTop, .load .d .r6 .r5 0, .logic .and .r6 .r6 .r4,
+    .store .d .r6 .r5 0] : List Instr) ++ base .r5 4 ++ ([.load .d .r24 .r5 0, .lsr .d .r24 .r24 1,
+    .addi .r5 .r5 8, .lsr .d .r6 .r11 1, .subi .r6 .r6 1] : List Instr)),
+   countLoop .r6 [.load .d .r3 .r5 0, .logic .or .r24 .r24 .r3, .addi .r5 .r5 8],
+   .block (base .r14 3 ++ base .r15 4), copyWords,
+   .block (base .r5 3 ++ ([.load .d .r3 .r5 0, .li .r4 1, .logic .or .r3 .r3 .r4, .store .d .r3 .r5 0,
+     .lsl .r6 .r11 2, .add .r5 .r5 .r6, .li .r0 0, .store .d .r0 .r5 0] : List Instr) ++ base .r8 3 ++ base .r9 6),
+   subMod]
+
+/-- The draw's branches: on the witness below 2, on its range, and the round. -/
+def drawBranch (name : String) (roundCode : Prog isa) : Prog isa :=
+  .ite (.zero .d .r24) (.block []) (.ite (.zero .d .r20) (.block []) (round name roundCode))
+
+theorem draw_eq (name : String) (roundCode : Prog isa) :
+    draw name roundCode = .seq (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK,
+      .add .r3 .r3 .r6, sth .r3 hUsed] ++ base .r10 4)) (Prog.chain drawMid (drawBranch name roundCode)) := rfl
+
+/-- Before the draw's branches: the witness `wA mb p.r u` in array 4, `r24`
+zero exactly when it is below 2, `r20` exactly when it is not below
+`N − 1`. -/
+structure DMid (p : PP) (mb N u i : Nat) (t : State) : Prop where
+  m : MSt p mb N t
+  used : word t.mem p.B 152 = BitVec.ofNat 64 (u + (mb + 7) / 8)
+  stat : word t.mem p.B 160 = BitVec.ofNat 64 4
+  idx : word t.mem p.B 176 = BitVec.ofNat 64 i
+  z24 : t.gpr .r24 = 0#64 ↔ wA mb p.r u < 2
+  z20 : t.gpr .r20 = 0#64 ↔ ¬ wA mb p.r u < N - 1
+  a4 : arr t.mem p.B (wOf mb) 4 = wA mb p.r u
+
+theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hroom : u + (mb + 7) / 8 ≤ p.r.length)
     (hI : word s.mem p.B 176 = BitVec.ofNat 64 i) (hS : word s.mem p.B 160 = BitVec.ofNat 64 4)
-    (hi : i < 2 ^ 62) :
-    WP isa (draw R.name R.code) s fun t => MSt p mb N t ∧
-      word t.mem p.B 152 = BitVec.ofNat 64 (u + (mb + 7) / 8) ∧
-      word t.mem p.B 160 = BitVec.ofNat 64 (dStat N (Spec.Ffdh.primeChecks mb) i (wA mb p.r u)) ∧
-      word t.mem p.B 176 = BitVec.ofNat 64 (dIdx N i (wA mb p.r u)) := by
+    (ht : DHead p mb u s t) :
+    WP isa (Prog.chain drawMid (.block [])) t (DMid p mb N u i) := by
   obtain ⟨hw2, hw128, hZ⟩ := h.w
   have hnw := h.st.scr.nowrap
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (wOf mb + 2)) + saveBytes ≤ p.Z := by rw [← es]; exact hZ
   simp only [saveBytes] at hZ'
   have hD : DPre p mb N u s := ⟨h.st, h.ph, h.prep, hu, hroom, h.mb1, h.mb2⟩
-  unfold draw
-  refine WP.seq (WP.mono (WP.seq_iff.mp (dLoad_ok hD)) fun t₀ ht₀ => WP.seq (WP.mono ht₀
-    fun t₁ ⟨⟨v₁, a10₁, f₁, u₁⟩, k₁⟩ => ?_))
+  unfold drawMid
+  refine WP.seq (WP.mono (dLoadN_ok hD ht) fun t₁ ⟨⟨v₁, a10₁, f₁, u₁⟩, k₁⟩ => ?_)
   have fr : ∀ r ∈ [(152, 8), (slot (wOf mb) 4, 8 * wOf mb), (slot (wOf mb) 3, 8 * (wOf mb + 2)),
       (slot (wOf mb) 6, 8 * (wOf mb + 2))], Free (wOf mb) r := by
     intro r hr
@@ -144,15 +182,39 @@ theorem draw_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {s : State} (h : MSt p
       have := es 3; have := es 4; have := es 6
       rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega) (by omega)
   have r24₄ : t₄.gpr .r24 = t₃.gpr .r24 := k₄.gpr .r24 (by decide)
+  rw [Prog.chain, WP.block_nil_iff]
+  refine ⟨M₄, u₄, (hdr (Or.inl rfl)).trans hS, (hdr (Or.inr rfl)).trans hI, ?_, ?_, ?_⟩
+  · rw [r24₄]; exact z₃
+  · exact z₄
+  · show val32 _ _ _ _ = _
+    rw [Pre.val32_eq_wv, ← ha₂]
+    exact f₄.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      have := es 3; have := es 4; have := es 6
+      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by have := es 4; omega)
+
+theorem drawTail_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {t₄ : State} (h : DMid p mb N u i t₄)
+    (hi : i < 2 ^ 62) :
+    WP isa (drawBranch R.name R.code) t₄ fun t => MSt p mb N t ∧
+      word t.mem p.B 152 = BitVec.ofNat 64 (u + (mb + 7) / 8) ∧
+      word t.mem p.B 160 = BitVec.ofNat 64 (dStat N (Spec.Ffdh.primeChecks mb) i (wA mb p.r u)) ∧
+      word t.mem p.B 176 = BitVec.ofNat 64 (dIdx N i (wA mb p.r u)) := by
+  obtain ⟨M₄, u₄, hS, hI, z₃, z₄, ha₄⟩ := h
+  obtain ⟨hw2, hw128, hZ⟩ := M₄.w
+  have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
+  have hnw := M₄.st.scr.nowrap
+  have hZ' : 256 + 28 * (8 * (wOf mb + 2)) + saveBytes ≤ p.Z := by rw [← es]; exact hZ
+  simp only [saveBytes] at hZ'
   have out : ¬ (2 ≤ wA mb p.r u ∧ wA mb p.r u < N - 1) → MSt p mb N t₄ ∧
       word t₄.mem p.B 152 = BitVec.ofNat 64 (u + (mb + 7) / 8) ∧
       word t₄.mem p.B 160 = BitVec.ofNat 64 (dStat N (Spec.Ffdh.primeChecks mb) i (wA mb p.r u)) ∧
       word t₄.mem p.B 176 = BitVec.ofNat 64 (dIdx N i (wA mb p.r u)) := fun hn =>
-    ⟨M₄, u₄, by rw [hdr (Or.inl rfl), hS, dStat, ite_eq_right hn], by
-      rw [hdr (Or.inr rfl), hI, dIdx, ite_eq_right fun ⟨a, b, _⟩ => hn ⟨a, b⟩]⟩
+    ⟨M₄, u₄, by rw [hS, dStat, ite_eq_right hn], by
+      rw [hI, dIdx, ite_eq_right fun ⟨a, b, _⟩ => hn ⟨a, b⟩]⟩
+  unfold drawBranch
   refine WP.ite (t₄.gpr .r24 == 0) (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
   · rw [WP.block_nil_iff]
-    have h0 : t₃.gpr .r24 = 0#64 := by rw [← r24₄]; exact beq_iff_eq.mp hb
+    have h0 : t₄.gpr .r24 = 0#64 := beq_iff_eq.mp hb
     exact out fun ⟨a, _⟩ => by have := z₃.mp h0; omega
   refine WP.ite (t₄.gpr .r20 == 0) (eval_zero _ _) (fun hb' => ?_) (fun hb' => ?_)
   · rw [WP.block_nil_iff]
@@ -160,23 +222,16 @@ theorem draw_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {s : State} (h : MSt p
   -- A witness in range: its round.
   have ha2 : 2 ≤ wA mb p.r u := by
     by_contra hc
-    have : (t₄.gpr .r24 == 0) = true := beq_iff_eq.mpr (by rw [r24₄]; exact z₃.mpr (by omega))
+    have : (t₄.gpr .r24 == 0) = true := beq_iff_eq.mpr (z₃.mpr (by omega))
     rw [hb] at this; exact absurd this (by decide)
   have haN : wA mb p.r u < N - 1 := by
     by_contra hc
     have : (t₄.gpr .r20 == 0) = true := beq_iff_eq.mpr (z₄.mpr hc)
     rw [hb'] at this; exact absurd this (by decide)
-  have ha₄ : arr t₄.mem p.B (wOf mb) 4 = wA mb p.r u := by
-    show val32 _ _ _ _ = _
-    rw [Pre.val32_eq_wv, ← ha₂]
-    exact f₄.wv_eq (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      have := es 3; have := es 4; have := es 6
-      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by have := es 4; omega)
   have hK : Spec.Ffdh.primeChecks mb < 2 ^ 62 := by unfold Spec.Ffdh.primeChecks; split <;> omega
   have hsp₄ := M₄.st.sp
   refine WP.mono (roundCount_ok R M₄.prep ha₄ (show wA mb p.r u < N by omega) M₄.st.ws (by rw [hsp₄]; exact M₄.st.stk)
-    (by rw [hsp₄]; exact M₄.st.stkB) (by have := hdr (d := 176) (Or.inr rfl); exact this.trans hI) M₄.ph.checksW hi hK)
+    (by rw [hsp₄]; exact M₄.st.stkB) hI M₄.ph.checksW hi hK)
     fun t ht => ⟨M₄.round ht, ?_⟩
   obtain ⟨v, hv, tm, -⟩ := ht
   have hn₄ : 8 * p.n = p.Z := rfl
@@ -189,8 +244,23 @@ theorem draw_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {s : State} (h : MSt p
   · rw [rw_off _ _ _ (by omega) (by omega) (by omega)]; exact u₅
   · rw [rw_self, dStat, ite_eq_left ht2, hr]; rfl
   · rw [rw_off _ _ _ (by omega) (by omega) (by omega), dIdx, ite_eq_right (by simp [hr])]
-    exact (keeps_hdr (i := 22) hv.keeps (by decide) (by decide) (by omega)).trans
-      ((hdr (Or.inr rfl)).trans hI)
+    exact (keeps_hdr (i := 22) hv.keeps (by decide) (by decide) (by omega)).trans hI
   · rw [rw_off _ _ _ (by omega) (by omega) (by omega), rw_off _ _ _ (by omega) (by omega) (by omega)]; exact u₅
   · rw [rw_self, dStat, ite_eq_left ht2, hr]; rfl
   · rw [rw_off _ _ _ (by omega) (by omega) (by omega), rw_self, dIdx, ite_eq_left ⟨ha2, haN, hr⟩]
+
+
+theorem draw_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {s : State} (h : MSt p mb N s)
+    (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hroom : u + (mb + 7) / 8 ≤ p.r.length)
+    (hI : word s.mem p.B 176 = BitVec.ofNat 64 i) (hS : word s.mem p.B 160 = BitVec.ofNat 64 4)
+    (hi : i < 2 ^ 62) :
+    WP isa (draw R.name R.code) s fun t => MSt p mb N t ∧
+      word t.mem p.B 152 = BitVec.ofNat 64 (u + (mb + 7) / 8) ∧
+      word t.mem p.B 160 = BitVec.ofNat 64 (dStat N (Spec.Ffdh.primeChecks mb) i (wA mb p.r u)) ∧
+      word t.mem p.B 176 = BitVec.ofNat 64 (dIdx N i (wA mb p.r u)) := by
+  have hD : DPre p mb N u s := ⟨h.st, h.ph, h.prep, hu, hroom, h.mb1, h.mb2⟩
+  rw [draw_eq]
+  exact WP.seq (WP.mono (dHead_ok hD) fun t ht => WP.chain (WP.seq (WP.mono (drawRest_ok h hu hroom hI hS ht)
+    fun t₄ h₄ => drawTail_ok R h₄ hi)))
+
+end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
