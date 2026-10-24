@@ -15,7 +15,8 @@ Untrusted: everything here is checked by Lean. As AES-GCM's
 (`Proof/AesGcm/PPC64LE/OneEntry.lean`): `oneEntry off` loads the working
 space `W`, the stack argument at `sp + off`, saves our caller's registers
 there and keeps the arguments in nonvolatile registers, the tag's address
-(`r10`) in `r20` (`one1_wp`).
+(`r10`) in `r20`, and SM4's working space, the stack argument after `W`, in
+`r28` (`one1_wp`).
 -/
 
 @[expose] public section
@@ -27,7 +28,7 @@ open VG.Impl.AesGcm.PPC64LE (mov)
 open VG.Proof.AesGcm.PPC64LE (Keeps Entered SavedAt savedR save_ok SavedAt.congr)
 
 /-- After the entry of `seal` or `open`, from `s₀`. -/
-structure SO1 (W : Addr) (s₀ s₁ : State) : Prop where
+structure SO1 (W X : Addr) (s₀ s₁ : State) : Prop where
   en : Entered s₀ W s₁
   r31 : s₁.gpr .r31 = W
   r30 : s₁.gpr .r30 = W + BitVec.ofNat 64 16
@@ -40,6 +41,20 @@ structure SO1 (W : Addr) (s₀ s₁ : State) : Prop where
   r27 : s₁.gpr .r27 = s₀.gpr .r8
   r23 : s₁.gpr .r23 = s₀.gpr .r9
   r20 : s₁.gpr .r20 = s₀.gpr .r10
+  r28 : s₁.gpr .r28 = X
+
+/-- A doubleword above the stack pointer into `t`, through `r12`. -/
+theorem ldSp_ok {s : State} {t : Reg} {off : Nat} {v : BitVec 64} (ho4 : off % 4 = 0)
+    (ho15 : off < 2 ^ 15) (hi : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 off) 8)
+    (hv : s.mem.readW (s.sp + BitVec.ofNat 64 off) 64 = v) :
+    WP isa (.block [.addSp .r12 0, .load .d t .r12 off]) s fun s' =>
+      s'.gpr t = v ∧ (∀ r, r ≠ .r12 → r ≠ t → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
+    hi, ho4, ho15, Proof.Gcm.PPC64LE.read_8, hv, Option.bind_some, Option.map_some, Option.some.injEq,
+    exists_eq_left', reduceCtorEq, ne_eq, not_false_eq_true, Nat.reduceLT, Nat.reducePow, ↓reduceIte,
+    and_self, implies_true, BitVec.setWidth_eq, BitVec.add_zero]
+  exact ⟨by simp, fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 /-- The head of the entry: `W`, the stack argument at `sp + off`, into `r12`. -/
 theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 96 ∨ off = 104)
@@ -56,11 +71,19 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 96 ∨ off =
     and_self, implies_true, BitVec.setWidth_eq, BitVec.add_zero]
   exact ⟨trivial, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
-theorem one1_wp {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 96 ∨ off = 104)
+theorem one1_wp {s₀ : State} {off : Nat} {W X : Addr} (hoff : off = 96 ∨ off = 104)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
-    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
-    WP isa (.block (oneEntry off)) s₀ (SO1 W s₀) := by
+    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
+    (hXi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 (off + 8)) 8)
+    (hXv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 (off + 8)) 64 = X)
+    (hXd : (⟨s₀.sp + BitVec.ofNat 64 (off + 8), 8⟩ : Region).Disjoint (savedR W)) :
+    WP isa (.block (oneEntry off)) s₀ (SO1 W X s₀) := by
   simp only [oneEntry]
+  rw [show ([mov .r29 .r3, .addi .r30 .r31 16, mov .r24 .r4, mov .r25 .r5, mov .r18 .r5, mov .r21 .r6,
+      mov .r22 .r7, mov .r27 .r8, mov .r23 .r9, mov .r20 .r10, .addSp .r12 0, .load .d .r28 .r12 (off + 8)] :
+      List Instr) = ([mov .r29 .r3, .addi .r30 .r31 16, mov .r24 .r4, mov .r25 .r5, mov .r18 .r5, mov .r21 .r6,
+      mov .r22 .r7, mov .r27 .r8, mov .r23 .r9, mov .r20 .r10] : List Instr) ++
+      ([.addSp .r12 0, .load .d .r28 .r12 (off + 8)] : List Instr) from rfl]
   refine WP.block_append (WP.block_append ?_)
   have hA := oneA_ok hoff hWi hWv
   refine WP.mono hA fun sA ⟨a12, gA, kA⟩ => ?_
@@ -95,19 +118,38 @@ theorem one1_wp {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 96 ∨ off =
       | exact ⟨rfl, rfl, rfl, rfl, rfl⟩
       | (intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
          rcases hr with rfl | rfl | rfl | rfl | rfl <;> rfl)
-  refine WP.mono hB fun s₁ ⟨b31, b30, b29, b24, b25, b18, b21, b22, b27, b23, b20, bl, bk⟩ => ?_
-  refine ⟨⟨fun r hr => ?_, ⟨bk.rd.trans (hk.rd.trans kA.rd), bk.wr.trans (hk.wr.trans kA.wr),
-    bk.sp.trans (hk.sp.trans kA.sp), bk.lr.trans (hk.lr.trans kA.lr)⟩, ?_, ?_⟩,
-    b31, b30, b29, b24, b25, b18, b21, b22, b27, b23, b20⟩
-  · rw [bl r hr]
+  refine WP.block_append (WP.mono hB fun s₁ ⟨b31, b30, b29, b24, b25, b18, b21, b22, b27, b23, b20, bl, bk⟩ => ?_)
+  have k₁ : VG.Proof.AesGcm.PPC64LE.Keeps' s₀ s₁ := ⟨bk.rd.trans (hk.rd.trans kA.rd),
+    bk.wr.trans (hk.wr.trans kA.wr), bk.sp.trans (hk.sp.trans kA.sp), bk.lr.trans (hk.lr.trans kA.lr)⟩
+  have hX₁ : s₁.mem.readW (s₁.sp + BitVec.ofNat 64 (off + 8)) 64 = X := by
+    rw [k₁.sp, bk.mem, Frame.readW hf (r := ⟨s₀.sp + BitVec.ofNat 64 (off + 8), 8⟩) (Region.contains_self _ _)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hXd) (by decide), kA.mem]
+    exact hXv
+  refine WP.mono (ldSp_ok (t := .r28) (off := off + 8) (by omega) (by omega)
+    (by rw [k₁.sp, k₁.rd, k₁.wr]; exact hXi) hX₁) fun s₃ ⟨c28, g₃, k₃⟩ => ?_
+  have q : ∀ r, r ≠ .r12 → r ≠ .r28 → s₃.gpr r = s₁.gpr r := g₃
+  refine ⟨⟨fun r hr => ?_, ⟨k₃.rd.trans k₁.rd, k₃.wr.trans k₁.wr, k₃.sp.trans k₁.sp, k₃.lr.trans k₁.lr⟩, ?_, ?_⟩,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, c28⟩
+  · rw [q r (by revert hr; revert r; decide) (by revert hr; revert r; decide), bl r hr]
     exact e r (by revert hr; revert r; decide) (by revert hr; revert r; decide) (by revert hr; revert r; decide)
-  · rw [bk.mem]
+  · rw [k₃.mem, bk.mem]
     exact hsv.congr (fun p hp => (gA p.1 (by revert hp; revert p; decide)).symm) kA.lr.symm
-  · rw [bk.mem, ← kA.mem]; exact hf
+  · rw [k₃.mem, bk.mem, ← kA.mem]; exact hf
+  · rw [q _ (by decide) (by decide)]; exact b31
+  · rw [q _ (by decide) (by decide)]; exact b30
+  · rw [q _ (by decide) (by decide)]; exact b29
+  · rw [q _ (by decide) (by decide)]; exact b24
+  · rw [q _ (by decide) (by decide)]; exact b25
+  · rw [q _ (by decide) (by decide)]; exact b18
+  · rw [q _ (by decide) (by decide)]; exact b21
+  · rw [q _ (by decide) (by decide)]; exact b22
+  · rw [q _ (by decide) (by decide)]; exact b27
+  · rw [q _ (by decide) (by decide)]; exact b23
+  · rw [q _ (by decide) (by decide)]; exact b20
 
 /-- After a step that changes no register the entry set but `r12`, `r19` (and `r0`). -/
-theorem SO1.keep {W : Addr} {s₀ s₁ s₂ : State} (h1 : SO1 W s₀ s₁)
-    (hg : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r19 → s₂.gpr r = s₁.gpr r) (hk : Keeps s₁ s₂) : SO1 W s₀ s₂ :=
+theorem SO1.keep {W X : Addr} {s₀ s₁ s₂ : State} (h1 : SO1 W X s₀ s₁)
+    (hg : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r19 → s₂.gpr r = s₁.gpr r) (hk : Keeps s₁ s₂) : SO1 W X s₀ s₂ :=
   ⟨⟨fun r hr => by
       rw [hg r (by revert hr; revert r; decide) (by revert hr; revert r; decide) (by revert hr; revert r; decide)]
       exact h1.en.low r hr,
@@ -123,6 +165,7 @@ theorem SO1.keep {W : Addr} {s₀ s₁ s₂ : State} (h1 : SO1 W s₀ s₁)
     by rw [hg _ (by decide) (by decide) (by decide)]; exact h1.r22,
     by rw [hg _ (by decide) (by decide) (by decide)]; exact h1.r27,
     by rw [hg _ (by decide) (by decide) (by decide)]; exact h1.r23,
-    by rw [hg _ (by decide) (by decide) (by decide)]; exact h1.r20⟩
+    by rw [hg _ (by decide) (by decide) (by decide)]; exact h1.r20,
+    by rw [hg _ (by decide) (by decide) (by decide)]; exact h1.r28⟩
 
 end VG.Proof.Sm4Gcm.PPC64LE

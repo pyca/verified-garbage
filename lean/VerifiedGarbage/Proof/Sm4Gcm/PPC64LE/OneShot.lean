@@ -70,10 +70,10 @@ theorem oneCrypt_ok {s : State} (he : Env V sp s)
 end
 
 /-- The regions `oneTag o` writes. -/
-abbrev otFrame (st w : Addr) (o : Nat) : List Region :=
+abbrev otFrame (st w x : Addr) (o : Nat) : List Region :=
   [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩, xR x]
 
-theorem abs_otSub {st w : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
+theorem abs_otSub {st w x : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -81,7 +81,7 @@ theorem abs_otSub {st w : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' �
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
-theorem t_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
+theorem t_otSub {st w x : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -89,7 +89,7 @@ theorem t_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ o
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
-theorem tag_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tagFrame st w x o, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
+theorem tag_otSub {st w x : Addr} {o : Nat} : ∀ r ∈ tagFrame st w x o, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl

@@ -26,14 +26,14 @@ namespace VG.Proof.Sm4Gcm.PPC64LE
 open VG VG.PPC64LE VG.Impl.Sm4Gcm.PPC64LE
 open VG.Proof.AesGcm.PPC64LE (Env Lay Perm DataW DataOk SavedAt savedR restore_ok covers_mem covers_left
   covers_off covers_prefix bytesAt_frame blockAt_frame ctx_saved ctxH_keep saved_w Lay.saved_st WP.with_rdwr
-  tagOut_ok saved_j0Frame data_j0 oneAad_ok oneLay args_in j0Frame length_bytesAt)
+  tagOut_ok saved_j0Frame data_j0 oneAad_ok oneLay args_in j0Frame length_bytesAt add_ofNat_assoc)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ctxH ghashInput fullTag zeros padLen j0 inc32 gctr encryptWith toBytes)
 open VG.Spec.Sm4.Gcm (ctxCiph)
 open VG.Proof.Gcm (Absorbed)
 
 /-- After the entry, the environment. -/
-theorem one_env {s₀ s₁ : State} {W : Addr} (h1 : SO1 W s₀ s₁)
+theorem one_env {s₀ s₁ : State} {W X : Addr} (h1 : SO1 W X s₀ s₁)
     (hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr)) (hW : Covers [⟨W, 2560⟩] s₀.wr) :
     Env s₁.gpr s₀.sp s₁ := by
   have perm : Perm (s₀.gpr .r3) (W + BitVec.ofNat 64 16) W s₁ :=
@@ -41,18 +41,16 @@ theorem one_env {s₀ s₁ : State} {W : Addr} (h1 : SO1 W s₀ s₁)
       Perm (s₀.gpr .r3) (W + BitVec.ofNat 64 16) W s₀).of_eq h1.en.keeps.rd h1.en.keeps.wr
   exact ⟨fun _ _ => rfl, h1.en.keeps.sp, by rw [h1.r29, h1.r30, h1.r31]; exact perm⟩
 
-/-- SM4's working space, past the state at `W + 16`. -/
-theorem oneX {c W : Addr} (fW : W.toNat + scrBytes ≤ 2 ^ 64) (dcW : (⟨c, 256⟩ : Region).Disjoint ⟨W, scrBytes⟩) :
-    XOk c (W + BitVec.ofNat 64 16) W :=
-  ⟨fW, dcW.sub_right (VG.Offset.sub_base _ (by decide)),
-    VG.Offset.disjoint _ (.inl (by decide)) (by decide) (by simp only [sO, sBytes, scrBytes] at fW ⊢; omega)⟩
+/-- SM4's working space, apart from the context and `W`, with the state at `W + 16`. -/
+theorem oneX {c W X : Addr} (fx : X.toNat + xBytes ≤ 2 ^ 64) (dcx : (⟨c, 256⟩ : Region).Disjoint ⟨X, xBytes⟩)
+    (dwx : (⟨W, scrBytes⟩ : Region).Disjoint ⟨X, xBytes⟩) : XOk c (W + BitVec.ofNat 64 16) W X :=
+  ⟨fx, dcx, dwx.sub_left (VG.Offset.sub_base _ (by decide)), dwx⟩
 
 section
 variable {c st w x : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
 theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st w x o, (savedR w).Disjoint r := by
-  have hf : w.toNat + 5824 ≤ 2 ^ 64 := X.fit
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -60,33 +58,32 @@ theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st 
   · exact saved_w (by decide) (.inl (by decide))
   · exact saved_w (by omega) (.inl (by omega))
   · exact saved_w (by decide) (.inr (by decide))
-  · exact VG.Offset.disjoint _ (.inl (by simp only [sO]; omega)) (by omega) (by simp only [sO, sBytes]; omega)
+  · exact X.wx.sub_left (Lay.wSub (by decide))
 
 end
 
 theorem seal_wp {s₀ : State} (h : sealPPC64LE.pre s₀) :
     WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' := by
   have h' : sealPre s₀ := h
-  obtain ⟨hrd, hwr, dcd, dcX, dnd, dnX, dad, daX, ddt, ddX, ddA, dtX, dXA, fc, fn, fa, fd, -, fX, fsp⟩ := h'
-  have sub : Region.Sub ⟨stackArg s₀ 0, 2560⟩ ⟨stackArg s₀ 0, scrBytes⟩ := Region.sub_prefix (by decide)
-  have dcW := dcX.sub_right sub
-  have dnW := dnX.sub_right sub
-  have daW := daX.sub_right sub
-  have ddW := ddX.sub_right sub
-  have dtW := dtX.sub_right sub
-  have fX' : (stackArg s₀ 0).toNat + 5824 ≤ 2 ^ 64 := fX
-  have L₀ := oneLay fc (by omega) dcW
-  have X₀ := oneX fX dcX
+  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, -, fW, fsp, dcx, -,
+    -, ddx, -, dwx, -, fx⟩ := h'
+  have L₀ := oneLay fc fW dcW
+  have X₀ := oneX fx dcx dwx
   have hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hW' : Covers [⟨stackArg s₀ 0, scrBytes⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  have hW : Covers [⟨stackArg s₀ 0, 2560⟩] s₀.wr := covers_prefix hW' (by decide)
-  have hXw : Covers [xR (stackArg s₀ 0)] s₀.wr := covers_off hW' (by decide) (by decide)
-  have hA : Covers [args s₀ 1] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  refine WP.seq (WP.mono (one1_wp (off := 96) (W := stackArg s₀ 0) (.inl rfl) hW
-    (args_in hA (by decide) (i := 0) (by decide)) rfl) fun s₁ h1 => ?_)
+  have hW : Covers [⟨stackArg s₀ 0, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  have hXw : Covers [xR (stackArg s₀ 1)] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  have hA : Covers [args s₀ 2] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
+  have hXd : (⟨s₀.sp + BitVec.ofNat 64 (96 + 8), 8⟩ : Region).Disjoint (savedR (stackArg s₀ 0)) := by
+    have hs := VG.Offset.sub_base (s₀.sp + BitVec.ofNat 64 96) (d := 8) (n := 8) (k := 16) (by decide)
+    rw [add_ofNat_assoc] at hs
+    exact ((dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).symm).sub_left hs
+  refine WP.seq (WP.mono (one1_wp (off := 96) (W := stackArg s₀ 0) (X := stackArg s₀ 1) (.inl rfl) hW
+    (args_in hA (by decide) (i := 0) (by decide)) rfl (args_in hA (by decide) (i := 1) (by decide)) rfl hXd)
+    fun s₁ h1 => ?_)
   have he₁ := one_env h1 hC hW
   have L := L₀.v h1.r29 h1.r30 h1.r31
-  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by
+    rw [h1.r29, h1.r30, h1.r31, h1.r28]; exact X₀
   have f₁ := h1.en.frame
   have hk₁ := h1.en.keeps
   -- `oneAad`
@@ -109,9 +106,9 @@ theorem seal_wp {s₀ : State} (h : sealPPC64LE.pre s₀) :
     have hDw : Covers [⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩] s₂.wr := by
       rw [wr₂, hk₁.wr, hwr]; exact covers_mem (by simp)
     exact ⟨⟨covers_left hDw, (s₀.gpr .r9).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW⟩, hDw, dcd⟩
-  have hxw₂ : Covers [xR (s₁.gpr .r31)] s₂.wr := by rw [wr₂, hk₁.wr, h1.r31]; exact hXw
-  have hdx : (⟨s₁.gpr .r27, (s₁.gpr .r23).toNat⟩ : Region).Disjoint (xR (s₁.gpr .r31)) := by
-    rw [h1.r27, h1.r23, h1.r31]; exact ddX.sub_right (VG.Offset.sub_base _ (by decide))
+  have hxw₂ : Covers [xR (s₁.gpr .r28)] s₂.wr := by rw [wr₂, hk₁.wr, h1.r28]; exact hXw
+  have hdx : (⟨s₁.gpr .r27, (s₁.gpr .r23).toNat⟩ : Region).Disjoint (xR (s₁.gpr .r28)) := by
+    rw [h1.r27, h1.r23, h1.r28]; exact ddx
   refine WP.seq (WP.mono (WP.with_rdwr (oneCrypt_ok L X oa.env hd₂ hxw₂ hdx oa.cb))
     fun s₃ ⟨oc, rd₃, wr₃, _⟩ => ?_)
   -- `oneTag 0`
@@ -132,9 +129,9 @@ theorem seal_wp {s₀ : State} (h : sealPPC64LE.pre s₀) :
   refine WP.seq (WP.mono (tagOut_ok ot.env hTw hTd') fun s₅ ⟨hb₅, hf₅, g₅, k₅⟩ => ?_)
   have he₅ := ot.env.keep (fun r hr => g₅ r (by revert r; decide)) k₅.sp k₅.rd k₅.wr
   have of₄ := ot.frame
-  rw [h1.r30, h1.r31] at of₄
+  rw [h1.r30, h1.r31, h1.r28] at of₄
   have cf₃ := oc.frame
-  rw [h1.r30, h1.r31, h1.r27, h1.r23] at cf₃
+  rw [h1.r30, h1.r28, h1.r27, h1.r23] at cf₃
   have jf₂ := oa.frame
   rw [h1.r30, h1.r31] at jf₂
   have hd₂₀ : DataW (s₀.gpr .r3) (stackArg s₀ 0 + BitVec.ofNat 64 16) (stackArg s₀ 0) s₂ (s₀.gpr .r8)
@@ -201,7 +198,7 @@ theorem seal_wp {s₀ : State} (h : sealPPC64LE.pre s₀) :
     · exact ddW.sub_right (Lay.wSub (by decide))
     · exact ddW.sub_right (Lay.wSub (by decide))
     · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact ddX.sub_right (VG.Offset.sub_base _ (by decide))
+    · exact ddx
   have hD₅ : bytesAt s₅.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₄.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
     bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]; exact ddt)
       (by have := (s₀.gpr .r9).isLt; omega)

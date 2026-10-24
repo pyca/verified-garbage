@@ -47,21 +47,22 @@ variable {s₀ : State} (h : verPre s₀)
 include h
 
 theorem verLay : Lay (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) := by
-  obtain ⟨-, -, dcs, dcw, -, dsw, -, fc, fs, -, fw⟩ := h
-  have fw' : (s₀.gpr .r9).toNat + 5824 ≤ 2 ^ 64 := fw
+  obtain ⟨-, -, dcs, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
+  have fw' : (s₀.gpr .r9).toNat + 2560 ≤ 2 ^ 64 := fw
   exact Lay.of fc fs (by omega) dcs (dcw.sub_right (Region.sub_prefix (by decide)))
     (dsw.sub_right (Region.sub_prefix (by decide)))
 
-theorem verX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) := by
-  obtain ⟨-, -, -, dcw, -, dsw, -, -, -, -, fw⟩ := h
-  exact ⟨fw, dcw.sub_right (VG.Offset.sub_base _ (by decide)), dsw.sub_right (VG.Offset.sub_base _ (by decide))⟩
+theorem verX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) (s₀.gpr .r10) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, dcx, dsx, -, dwx, fx⟩ := h
+  exact ⟨fx, dcx, dsx, dwx⟩
 
 theorem ver_W' : Covers [⟨s₀.gpr .r9, scrBytes⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
 theorem ver_W : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr := covers_prefix (ver_W' h) (by decide)
 
-theorem ver_X : Covers [xR (s₀.gpr .r9)] s₀.wr := covers_off (ver_W' h) (by decide) (by decide)
+theorem ver_X : Covers [xR (s₀.gpr .r10)] s₀.wr := by
+  rw [h.2.1]; exact covers_mem (by simp)
 
 end
 
@@ -75,6 +76,7 @@ structure SV1 (s₀ s₁ : State) : Prop where
   r23 : s₁.gpr .r23 = s₀.gpr .r6
   r20 : s₁.gpr .r20 = s₀.gpr .r7
   r19 : s₁.gpr .r19 = s₀.gpr .r8
+  r28 : s₁.gpr .r28 = s₀.gpr .r10
 
 theorem ver1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr) :
     WP isa (.block verEntry) s₀ (SV1 s₀) := by
@@ -85,9 +87,10 @@ theorem ver1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr) 
   have e6 : s₁.gpr .r6 = s₀.gpr .r6 := hg _ (by decide) (by decide)
   have e7 : s₁.gpr .r7 = s₀.gpr .r7 := hg _ (by decide) (by decide)
   have e8 : s₁.gpr .r8 = s₀.gpr .r8 := hg _ (by decide) (by decide)
-  crun [mov, BitVec.or_self, e3, e4, e5, e6, e7, e8, h31]
+  have e10 : s₁.gpr .r10 = s₀.gpr .r10 := hg _ (by decide) (by decide)
+  crun [mov, BitVec.or_self, e3, e4, e5, e6, e7, e8, e10, h31]
   refine ⟨⟨fun r hr => by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hg],
-    ⟨hk.rd, hk.wr, hk.sp, hk.lr⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ⟨hk.rd, hk.wr, hk.sp, hk.lr⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp [h31]
 
 /-- The environment after the entry. -/
@@ -114,7 +117,7 @@ theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.leng
   have L₀ := verLay h
   have X₀ := verX h
   have hh := h
-  obtain ⟨hrd, -, -, -, -, dsw, dtw, -, -, -, -⟩ := hh
+  obtain ⟨hrd, -, -, -, -, dsw, dtw, -, -, -, -, -⟩ := hh
   have hTr : Covers [⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩] (s₀.rd ++ s₀.wr) :=
     covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have dT : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩ : Region).Disjoint
@@ -173,13 +176,13 @@ theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.leng
       · exact dsw.sub_right (VG.Offset.sub_base _ (by decide))
     have hH₄ : blockAt s₄.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
       rw [h1.r29]; exact ctxH_keep f₀₄ dc₀₄
-    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31, h1.r28]; exact X₀
     refine WP.seq (WP.mono (WP.with_rdwr (finTag_ok L X (o := 0) (.inl rfl) (a := a) (ct := ct) he₄
-      (by rw [h1.r31, k₄.wr, k₃.wr, h1.en.keeps.wr]; exact ver_X h) hH₄ (by rw [h1.r22]; exact ha)
+      (by rw [h1.r28, k₄.wr, k₃.wr, h1.en.keeps.wr]; exact ver_X h) hH₄ (by rw [h1.r22]; exact ha)
       (by rw [h1.r23]; exact hP))) fun s₅ ⟨fo, rd₅, wr₅, _⟩ => ?_)
     refine WP.mono (cmp_ok fo.env (o := 0) (.inl rfl) tl19 t1 t16) fun s₇ ⟨h3₇, hf₇, g₇, k₇⟩ => ?_
     have fof := fo.frame
-    rw [h1.r30, h1.r31] at fof
+    rw [h1.r30, h1.r31, h1.r28] at fof
     refine ⟨fo.env.keep (fun r hr => g₇ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide)) k₇.sp k₇.rd k₇.wr, ?_, fun iv hs hl => ?_⟩
     · have sv₅ := (sv₃.frame hf₄ (fun r hr => by
@@ -202,9 +205,7 @@ theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.leng
             · simpa using Lay.w_w (w := s₀.gpr .r9) (a := 256) (n := 16) (d := 0) (k := 16) (.inr (by decide))
                 (by decide) (by decide)
             · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-            · have hf : (s₀.gpr .r9).toNat + 5824 ≤ 2 ^ 64 := X₀.fit
-              exact VG.Offset.disjoint _ (.inl (by simp only [sO]; omega)) (by omega)
-                (by simp only [sO, sBytes]; omega)) (by decide), hb₄, k₃.mem,
+            · exact X₀.wx.sub_left (Lay.wSub (by decide))) (by decide), hb₄, k₃.mem,
           ← h1.r20, bytesAt_frame h1.en.frame (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]
             exact dT (d := 128) (k := 120) (by decide)) (by omega), h1.r20]

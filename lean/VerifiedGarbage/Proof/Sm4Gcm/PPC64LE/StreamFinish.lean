@@ -43,21 +43,22 @@ variable {s₀ : State} (h : finPre s₀)
 include h
 
 theorem finLay : Lay (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r8) := by
-  obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw⟩ := h
-  have fw' : (s₀.gpr .r8).toNat + 5824 ≤ 2 ^ 64 := fw
+  obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
+  have fw' : (s₀.gpr .r8).toNat + 2560 ≤ 2 ^ 64 := fw
   exact Lay.of fc fs (by omega) dcs (dcw.sub_right (Region.sub_prefix (by decide)))
     (dsw.sub_right (Region.sub_prefix (by decide)))
 
-theorem finX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r8) := by
-  obtain ⟨-, -, -, -, dcw, -, dsw, -, -, -, -, fw⟩ := h
-  exact ⟨fw, dcw.sub_right (VG.Offset.sub_base _ (by decide)), dsw.sub_right (VG.Offset.sub_base _ (by decide))⟩
+theorem finX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r8) (s₀.gpr .r9) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, dcx, dsx, -, dwx, fx⟩ := h
+  exact ⟨fx, dcx, dsx, dwx⟩
 
 theorem fin_W' : Covers [⟨s₀.gpr .r8, scrBytes⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
 theorem fin_W : Covers [⟨s₀.gpr .r8, 2560⟩] s₀.wr := covers_prefix (fin_W' h) (by decide)
 
-theorem fin_X : Covers [xR (s₀.gpr .r8)] s₀.wr := covers_off (fin_W' h) (by decide) (by decide)
+theorem fin_X : Covers [xR (s₀.gpr .r9)] s₀.wr := by
+  rw [h.2.1]; exact covers_mem (by simp)
 
 end
 
@@ -70,6 +71,7 @@ structure SF1 (s₀ s₁ : State) : Prop where
   r22 : s₁.gpr .r22 = s₀.gpr .r5
   r23 : s₁.gpr .r23 = s₀.gpr .r6
   r20 : s₁.gpr .r20 = s₀.gpr .r7
+  r28 : s₁.gpr .r28 = s₀.gpr .r9
 
 theorem fin1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r8, 2560⟩] s₀.wr) :
     WP isa (.block finEntry) s₀ (SF1 s₀) := by
@@ -79,9 +81,10 @@ theorem fin1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r8, 2560⟩] s₀.wr) 
   have e5 : s₁.gpr .r5 = s₀.gpr .r5 := hg _ (by decide) (by decide)
   have e6 : s₁.gpr .r6 = s₀.gpr .r6 := hg _ (by decide) (by decide)
   have e7 : s₁.gpr .r7 = s₀.gpr .r7 := hg _ (by decide) (by decide)
-  crun [mov, BitVec.or_self, e3, e4, e5, e6, e7, h31]
+  have e9 : s₁.gpr .r9 = s₀.gpr .r9 := hg _ (by decide) (by decide)
+  crun [mov, BitVec.or_self, e3, e4, e5, e6, e7, e9, h31]
   refine ⟨⟨fun r hr => by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hg],
-    ⟨hk.rd, hk.wr, hk.sp, hk.lr⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ⟨hk.rd, hk.wr, hk.sp, hk.lr⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp [h31]
 
 /-- The environment after the entry. -/
@@ -98,7 +101,6 @@ variable {c st w x : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
 theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame st w x o, (savedR w).Disjoint r := by
-  have hf : w.toNat + 5824 ≤ 2 ^ 64 := X.fit
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -106,7 +108,7 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame s
   · exact saved_w (by decide) (.inl (by decide))
   · exact saved_w (by omega) (.inl (by omega))
   · exact saved_w (by decide) (.inr (by decide))
-  · exact VG.Offset.disjoint _ (.inl (by simp only [sO]; omega)) (by omega) (by simp only [sO, sBytes]; omega)
+  · exact X.wx.sub_left (Lay.wSub (by decide))
 
 end
 
@@ -143,7 +145,7 @@ theorem streamFinish_wp {s₀ : State} (h : streamFinishPPC64LE.pre s₀) :
   have L₀ := finLay h'
   have X₀ := finX h'
   have hh := h'
-  obtain ⟨-, hwr, -, -, -, -, -, dtw, -, -, -, -⟩ := hh
+  obtain ⟨-, hwr, -, -, -, -, -, dtw, -, -, -, -, -⟩ := hh
   have hTw : Covers [⟨s₀.gpr .r7, 16⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have run : ∀ {a ct : List Byte}, a.length % 16 = (s₀.gpr .r5).toNat % 16 → (s₀.gpr .r6).toNat = ct.length →
       WP isa streamFinish s₀ fun s' => abiPreserved s₀ s' ∧ ∀ iv,
@@ -157,9 +159,9 @@ theorem streamFinish_wp {s₀ : State} (h : streamFinishPPC64LE.pre s₀) :
     have L := L₀.v h1.r29 h1.r30 h1.r31
     have hH₁ : blockAt s₁.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
       rw [h1.r29]; exact ctxH_keep h1.en.frame (ctx_saved L₀)
-    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+    have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31, h1.r28]; exact X₀
     refine WP.seq (WP.mono (WP.with_rdwr (finTag_ok L X (o := 0) (.inl rfl) (a := a) (ct := ct) he₁
-      (by rw [h1.r31, h1.en.keeps.wr]; exact fin_X h') hH₁ (by rw [h1.r22]; exact ha)
+      (by rw [h1.r28, h1.en.keeps.wr]; exact fin_X h') hH₁ (by rw [h1.r22]; exact ha)
       (by rw [h1.r23]; exact hP))) fun s₂ ⟨hf, rd₂, wr₂, _⟩ => ?_)
     have hTw₂ : Covers [⟨s₁.gpr .r20, 16⟩] s₂.wr := by
       rw [wr₂, h1.en.keeps.wr, h1.r20]; exact hTw
@@ -168,7 +170,7 @@ theorem streamFinish_wp {s₀ : State} (h : streamFinishPPC64LE.pre s₀) :
     refine WP.seq (WP.mono (tagOut_ok hf.env hTw₂ hTd) fun s₃ ⟨hb₃, hf₃, g₃, hk₃⟩ => ?_)
     have he₃ := hf.env.keep (fun r hr => g₃ r (by revert r; decide)) hk₃.sp hk₃.rd hk₃.wr
     have sv₂ : SavedAt s₂.mem (s₀.gpr .r8) s₀ := by
-      have := hf.frame; rw [h1.r30, h1.r31] at this
+      have := hf.frame; rw [h1.r30, h1.r31, h1.r28] at this
       exact h1.en.saved.frame this (saved_tagFrame L₀ X₀ (.inl rfl))
     have sv₃ : SavedAt s₃.mem (s₀.gpr .r8) s₀ := sv₂.frame hf₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]
