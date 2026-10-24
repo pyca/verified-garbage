@@ -121,4 +121,30 @@ theorem signCached_verified (hl : Proof.Ed448.BaseLadder2Ok) :
           | exact Region.disjoint_of_sep (by decide)
           | (rw [hz']; first | done | exact Region.disjoint_of_sep (by decide) | decide) }
 
+/-- A state satisfying `vg_ed448_sign_cached`'s precondition, without the frame. -/
+def signFrameSat (m : Mem) : State := { signSat m with
+  rd := [⟨0x2000, 57⟩, ⟨0x2100, 57⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩], wr := [⟨0x1000, 114⟩, ⟨0x4000, 8192⟩] }
+
+theorem signFrameSat_pre : ∃ s, (Spec.Ed448.signCachedContract PPC64LE.abi (48 + 576)).pre s := by
+  obtain ⟨m, hm⟩ : ∃ m : Mem, bytesAt m 0x2100 57 = Spec.Ed448.publicKey (bytesAt m 0x2000 57) :=
+    ⟨_, Proof.Ed448.WholeLocal.sat_pk⟩
+  refine ⟨signFrameSat m, ?_⟩
+  sig_pre [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig, Spec.Ed448.scratchWords, PPC64LE.abi,
+    PPC64LE.argRegs, signFrameSat, signSat]
+  sig_and_intros
+  all_goals first
+    | exact hm
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+
+/-- In its frame of 576 bytes: the frame argument's copy, then the frame. -/
+theorem signCached_framed (hl : Proof.Ed448.BaseLadder2Ok) :
+    Verified PPC64LE.target signCachedCode (Spec.Ed448.signCachedContract PPC64LE.abi (48 + 576)) :=
+  Verified.stackScratchArgs (sig := Spec.Ed448.signCachedSig) (nm := "frame") (e := .u8) (n := 464)
+    (pre := Proof.Ed448.WholeLocal.signCachedPre PPC64LE.abi.ptrBits)
+    (post := Proof.Ed448.WholeLocal.signCachedPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 576)
+    (m := 0) (signCached_verified hl) (by decide) (by decide) (Proof.Ed448.WholeLocal.signCachedPre_local _)
+    (Proof.Ed448.WholeLocal.signCachedPost_local _) signFrameSat_pre
+
 end VG.Proof.Ed448.PPC64LE.Whole
