@@ -11,6 +11,9 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.Decode12
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CheckEk
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGenCT
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.EncapsCT
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecapsCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM (FIPS 203) on PPC64LE -/
@@ -59,6 +62,26 @@ def artifacts : List Artifact := [
   Spec.MlKem.decodeDecompressApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.decodeDecompress
     verified := Proof.MlKem.PPC64LE.DecodeDecompress.verified },
+  Spec.MlKem.keyGenApi.artifact PPC64LE.target {
+    notes := ["The function has no stack frame of its own: it saves `r24`–`r31` and its return address in \
+        `scratch`; the functions it calls use the 48 bytes of stack below the stack pointer."]
+    code := Impl.MlKem.PPC64LE.keygen
+    stack := 48
+    verified := Proof.MlKem.PPC64LE.KeyGen.verified },
+  Spec.MlKem.encapsApi.artifact PPC64LE.target {
+    notes := ["The function has no stack frame of its own: it saves `r24`–`r31` and its return address in \
+        `scratch`, and copies `m` into it; the functions it calls use the 48 bytes of stack below the stack \
+        pointer."]
+    code := Impl.MlKem.PPC64LE.encaps
+    stack := 48
+    verified := Proof.MlKem.PPC64LE.Encaps.verified },
+  Spec.MlKem.decapsApi.artifact PPC64LE.target {
+    notes := ["The function has no stack frame of its own: it saves `r24`–`r31`, its return address and \
+        `key` in `scratch`, and copies `ct` into it; the functions it calls use the 48 bytes of stack below \
+        the stack pointer."]
+    code := Impl.MlKem.PPC64LE.decaps
+    stack := 48
+    verified := Proof.MlKem.PPC64LE.Decaps.verified },
   Spec.MlKem.checkEkApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.checkEk
     verified := Proof.MlKem.PPC64LE.CheckEk.verified }]
