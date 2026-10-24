@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCall
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Prep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
@@ -112,5 +114,89 @@ theorem dLoad_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
   · rw [show t₂.mem.readW (p.B + BitVec.ofNat 64 152) 64 = word t₂.mem p.B 152 from rfl,
       Outside.word o₂ (by simp only [slot, hdrBytes]; omega) (by omega), am]
     exact Mem.readW_writeW_self64 _ _ _
+
+/-- The cut: array 4's top word and'ed with `hTop`, so it holds its number
+modulo `2^mb`; then `r24 :=` its low word halved, for the scan of the rest
+(`r5`, `r6`), and `r10 :=` array 0. -/
+theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) (hm2 : mb ≤ p.bits)
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wOf mb)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wOf mb + 2)))
+    (htop : word s.mem p.B (8 * hTop) = BitVec.ofNat 64 (2 ^ (mb + 64 - 64 * wOf mb) - 1)) :
+    WP isa (.block ([.addi .r10 .r31 hdrBytes] ++ base .r5 4 ++ [.lsl .r6 .r11 2, .add .r5 .r5 .r6,
+        .subi .r5 .r5 8, ldh .r4 hTop, .load .d .r6 .r5 0, .logic .and .r6 .r6 .r4, .store .d .r6 .r5 0] ++
+        base .r5 4 ++ [.load .d .r24 .r5 0, .lsr .d .r24 .r24 1, .addi .r5 .r5 8, .lsr .d .r6 .r11 1,
+        .subi .r6 .r6 1])) s fun t =>
+      (wv t.mem p.B (slot (wOf mb) 4) (wOf mb) = wv s.mem p.B (slot (wOf mb) 4) (wOf mb) % 2 ^ mb ∧
+        t.gpr .r24 = word t.mem p.B (slot (wOf mb) 4) >>> 1 ∧ t.gpr .r5 = off p.B (slot (wOf mb) 4 + 8) ∧
+        t.gpr .r6 = BitVec.ofNat 64 (wOf mb - 1) ∧ t.gpr .r10 = off p.B (slot (wOf mb) 0) ∧
+        Frm p.B [(slot (wOf mb) 4, 8 * wOf mb)] s.mem t.mem) ∧ Keep [.r10, .r5, .r6, .r4, .r24] s t := by
+  have hb2 := h.dims.b2
+  have hn := h.dims.n
+  have hnw := h.scr.nowrap
+  generalize hwd : wOf mb = w at *
+  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega
+  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega
+  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have hZ : slot w 4 + 8 * w ≤ p.Z := by
+    simp only [es, PP.Z] at hn ⊢; simp only [PP.L] at hn; omega
+  have hk1 : 1 ≤ mb + 64 - 64 * w := by simp only [wOf] at hwd; omega
+  have hk2 : mb + 64 - 64 * w ≤ 64 := by simp only [wOf] at hwd; omega
+  have hb : 64 * (w - 1) + (mb + 64 - 64 * w) = mb := by simp only [wOf] at hwd; omega
+  generalize hkd : mb + 64 - 64 * w = k at htop hk1 hk2 hb
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.r10] (Q := fun u => u.gpr .r10 = off p.B (slot w 0) ∧ u.mem = s.mem)
+    (by prun [h.r31, hdrBytes]; simp only [es, Nat.zero_mul, Nat.add_zero]) (by decide))
+    fun u ⟨⟨u10, um⟩, ku⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.base_ok (rd := .r5) (by decide) (by decide) u10 ((ku.gpr .r29 (by decide)).trans h29) 4)
+    fun v ⟨⟨v5, vm⟩, kv⟩ => ?_
+  have kuv := ku.trans kv
+  rw [WP.block_append_iff]
+  have e5 : off p.B (slot w 4 + 8 * w) - BitVec.ofNat 64 8 = off p.B (slot w 4 + 8 * (w - 1)) := by
+    simp only [off]; rw [Offset.add_ofNat_sub _ (by omega)]; congr 2; omega
+  have sT : InRegions v.wr (off p.B (slot w 4 + 8 * (w - 1))) 8 := by
+    rw [kuv.wr]; exact h.scr.st (by omega)
+  have lT : InRegions (v.rd ++ v.wr) (off p.B (slot w 4 + 8 * (w - 1))) 8 := by
+    rw [kuv.rd, kuv.wr]; exact h.scr.ld (by omega)
+  have l192 : InRegions (v.rd ++ v.wr) (p.B + BitVec.ofNat 64 192) 8 := by
+    rw [kuv.rd, kuv.wr]; exact h.ld (d := 192) (by decide)
+  have tv : s.mem.readW (p.B + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (2 ^ k - 1) := htop
+  refine WP.mono (WP.keep [.r4, .r5, .r6] (Q := fun t => t.gpr .r5 = off p.B (slot w 4 + 8 * (w - 1)) ∧
+      t.mem = s.mem.writeW (off p.B (slot w 4 + 8 * (w - 1)))
+        (s.mem.readW (off p.B (slot w 4 + 8 * (w - 1))) 64 &&& BitVec.ofNat 64 (2 ^ k - 1))) ?_ (by decide))
+    fun t₁ ⟨⟨t5₁, tm₁⟩, k₁⟩ => ?_
+  · simp only [ldh, hTop]
+    prun [v5, (kuv.gpr .r11 (by decide)).trans h11, (kuv.gpr .r31 (by decide)).trans h.r31,
+      Proof.MillerRabin.PPC64LE.shl2_ofNat, e5, sT, lT, l192, tv, BitVec.add_zero, vm, um]
+  have k₁' := kuv.trans k₁
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.base_ok (rd := .r5) (by decide) (by decide) ((k₁.gpr .r10 (by decide)).trans ((kv.gpr .r10 (by decide)).trans u10))
+    ((k₁'.gpr .r29 (by decide)).trans h29) 4) fun t₂ ⟨⟨b5, m₂⟩, k₂⟩ => ?_
+  have k₂' := k₁'.trans k₂
+  have hsh : BitVec.ofNat 64 (2 * w) >>> 1 = BitVec.ofNat 64 w := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+    omega
+  have hsub : BitVec.ofNat 64 w - 1#64 = BitVec.ofNat 64 (w - 1) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega
+  have l4 : InRegions (t₂.rd ++ t₂.wr) (off p.B (slot w 4)) 8 := by
+    rw [k₂'.rd, k₂'.wr]; exact h.scr.ld (by omega)
+  refine WP.mono (WP.keep [.r24, .r5, .r6] (Q := fun t => t.gpr .r24 = t₂.mem.readW (off p.B (slot w 4)) 64 >>> 1 ∧
+      t.gpr .r5 = off p.B (slot w 4 + 8) ∧ t.gpr .r6 = BitVec.ofNat 64 (w - 1) ∧ t.mem = t₂.mem) ?_ (by decide))
+    fun t ⟨⟨t24, t5, t6, tm⟩, kt⟩ => ?_
+  · prun [b5, BitVec.add_zero, l4, (k₂'.gpr .r11 (by decide)).trans h11, hsh, hsub]
+  have e0 : t.mem = s.mem.writeW (off p.B (slot w 4 + 8 * (w - 1)))
+      (s.mem.readW (off p.B (slot w 4 + 8 * (w - 1))) 64 &&& BitVec.ofNat 64 (2 ^ k - 1)) := by rw [tm, m₂, tm₁]
+  refine ⟨⟨?_, by rw [t24, tm, m₂], t5, t6, (kt.gpr .r10 (by decide)).trans ((k₂.gpr .r10 (by decide)).trans
+    ((k₁.gpr .r10 (by decide)).trans ((kv.gpr .r10 (by decide)).trans u10))), ?_⟩, (k₂'.trans kt).mono (by decide)⟩
+  · rw [← hb]
+    refine Proof.Ffdh.ParameterCandidate.wv_cut (by omega) hk2 ?_ fun j hj => ?_
+    · simp only [word, off] at e0 ⊢; rw [e0, rw_self]
+    · simp only [word, off] at e0 ⊢; rw [e0, rw_off _ _ _ (by omega) (by omega) (by omega)]
+  · rw [e0]
+    exact frm_writeW (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by dsimp only; omega,
+      by dsimp only; omega⟩ (by omega)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
