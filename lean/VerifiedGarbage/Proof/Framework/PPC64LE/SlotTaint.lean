@@ -130,7 +130,10 @@ def storeStep (τ : T) (n : Reg) (off w : Nat) (p : Bool) : Option T :=
   if pub τ n then some { τ with slots := storeSlots τ n off w p } else none
 
 def step (τ : T) : Instr → Option T
-  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m => some (wr τ d (pub τ n && pub τ m))
+  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m | .addc d n m | .subc d n m =>
+    some (wr τ d (pub τ n && pub τ m))
+  -- They read the carry bit, which is secret (see `Taint`).
+  | .adde d .. | .addze d _ | .sube d .. => some (wr τ d false)
   | .logic op d n m =>
     if op = .or ∧ n = m then some { τ with regs := set τ d (pub τ n), bases := movBases τ d n }
     else some (wr τ d (pub τ n && pub τ m))
@@ -474,6 +477,13 @@ theorem Agree.wrW {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (d : Re
     {v₁ v₂ : BitVec 64} (hv : p = true → v₁ = v₂) : Agree (SlotTaint.wr τ d p) (s₁.write d v₁) (s₂.write d v₂) :=
   ha.write d hv (kill_write ha.wf₁ d v₁) (kill_write ha.wf₂ d v₂)
 
+/-- A carrying instruction writes the register as `write` does, and the carry
+bit, which `Agree` does not relate. -/
+theorem Agree.carry {τ : T} {s₁ s₂ : State} {d : Reg} {v₁ v₂ : Nat}
+    (ha : Agree τ (s₁.write d (BitVec.ofNat 64 v₁)) (s₂.write d (BitVec.ofNat 64 v₂))) :
+    Agree τ (s₁.writeCarry d v₁) (s₂.writeCarry d v₂) :=
+  ⟨ha.sp, ha.regs, ha.wr, ha.wf₁, ha.wf₂, ha.ok, ha.slots⟩
+
 theorem Agree.withLr {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (l₁ l₂ : BitVec 64) :
     Agree τ { s₁ with lr := l₁ } { s₂ with lr := l₂ } :=
   ⟨ha.sp, ha.regs, ha.wr, ha.wf₁, ha.wf₂, ha.ok, ha.slots⟩
@@ -509,6 +519,16 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨rfl, ha.wrW d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.reg hp.1, ha.reg hp.2]
+  | addc d n m | subc d n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    refine ⟨rfl, Agree.carry (ha.wrW d fun hp => ?_)⟩
+    simp only [Bool.and_eq_true] at hp
+    rw [ha.reg hp.1, ha.reg hp.2]
+  | adde d n m | addze d n | sube d n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, Agree.carry (ha.wrW d fun h => by cases h)⟩
   | logic op d n m =>
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     simp only [step] at hs

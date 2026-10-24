@@ -12,8 +12,11 @@ Untrusted: everything here is checked by Lean.
 The abstract state is the set of registers known to be public; the stack
 pointer is always public. Memory is always secret: a loaded value is secret,
 and an address must be computed from public registers or the stack pointer.
-The link register is not tracked: `mflr` gives a secret. (No modelled
-instruction touches the condition register outside a branch condition.)
+The link register is not tracked: `mflr` gives a secret. Nor is the carry
+bit CA: it is always secret, so a result that reads it (`adde`, `addze`,
+`sube`) is secret, and a carrying add or subtract's result (`addc`, `subc`)
+is public iff its operands are. (No modelled instruction touches the
+condition register outside a branch condition.)
 -/
 
 @[expose] public section
@@ -40,8 +43,11 @@ def set (τ : T) (r : Reg) (p : Bool) : T :=
   if p then τ.insert r else τ.erase r
 
 def step (τ : T) : Instr → Option T
-  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m | .logic _ d n m =>
+  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m | .logic _ d n m | .addc d n m
+  | .subc d n m =>
     some (set τ d (pub τ n && pub τ m))
+  -- They read CA, which is secret.
+  | .adde d .. | .addze d _ | .sube d .. => some (set τ d false)
   | .addi d n _ | .subi d n _ | .ori d n _ | .oris d n _ | .rotr _ d n _ | .lsr _ d n _
   | .lsl d n _ => some (set τ d (pub τ n))
   | .li d _ | .lis d _ => some (set τ d true)
@@ -82,6 +88,13 @@ theorem Agree.write {τ : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) (d : R
     · simp [hrd, h.2 r (hr.resolve_left hrd)]
   · simp only [hp, Bool.false_eq_true, ite_false, RegSet.mem_erase] at hr
     simp [hr.1, h.2 r hr.2]
+
+/-- A carrying instruction writes the register as `write` does, and CA, which
+`Agree` does not relate. -/
+theorem Agree.writeCarry {τ : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) (d : Reg) {p : Bool}
+    {v₁ v₂ : Nat} (hv : p = true → v₁ = v₂) :
+    Agree (set τ d p) (s₁.writeCarry d v₁) (s₂.writeCarry d v₂) :=
+  h.write d fun hp => by rw [hv hp]
 
 /-- The result of an instruction that writes `d` from the state, if it does
 not fault. -/
@@ -127,6 +140,16 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     first
     | exact ⟨rfl, ha.write d fun hp => by rw [ha.reg hp]⟩
     | exact ⟨rfl, ha.write d fun _ => rfl⟩
+  | addc d n m | subc d n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    refine ⟨rfl, ha.writeCarry d fun hp => ?_⟩
+    simp only [Bool.and_eq_true] at hp
+    rw [ha.reg hp.1, ha.reg hp.2]
+  | adde d n m | addze d n | sube d n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.writeCarry d fun h => by cases h⟩
   | mflr d =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂

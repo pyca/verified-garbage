@@ -448,7 +448,8 @@ def samplePPC : Prog PPC64LE.isa :=
   .seq (.ite (.zero .d .r5) (.block []) (.block []))
   (.ite (.zero .w .r6) (.block [])
     (.loop (.block [
-      .add .r3 .r4 .r5, .sub .r6 .r7 .r8, .mul .r3 .r4 .r5, .mulhu .r6 .r7 .r8, .addi .r4 .r4 64, .subi .r5 .r5 1, .subi .r5 .r5 32768,
+      .add .r3 .r4 .r5, .sub .r6 .r7 .r8, .mul .r3 .r4 .r5, .mulhu .r6 .r7 .r8, .addc .r3 .r4 .r5, .adde .r6 .r7 .r8,
+      .addze .r9 .r10, .subc .r3 .r4 .r5, .sube .r6 .r7 .r8, .addi .r4 .r4 64, .subi .r5 .r5 1, .subi .r5 .r5 32768,
       .li .r9 32767, .lis .r10 0x428a, .lis .r10 0xb5c0, .ori .r10 .r10 0x2f98,
       .oris .r11 .r11 0xffff,
       .logic .and .r0 .r2 .r31, .logic .or .r14 .r15 .r16, .logic .xor .r17 .r18 .r19,
@@ -473,6 +474,11 @@ def samplePPC : Prog PPC64LE.isa :=
   "subf %r6, %r8, %r7",
   "mulld %r3, %r4, %r5",
   "mulhdu %r6, %r7, %r8",
+  "addc %r3, %r4, %r5",
+  "adde %r6, %r7, %r8",
+  "addze %r9, %r10",
+  "subfc %r3, %r5, %r4",
+  "subfe %r6, %r8, %r7",
   "addi %r4, %r4, 64",
   "addi %r5, %r5, -1",
   "addi %r5, %r5, -32768",

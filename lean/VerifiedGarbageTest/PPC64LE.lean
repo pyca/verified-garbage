@@ -49,6 +49,31 @@ def reg (i : Instr) : Option (BitVec 64) := (exec i s0).map (·.gpr .r7)
 #guard reg (.mulhu .r7 .r4 .r6) == some 0x800000017091a2b2
 #guard reg (.mulhu .r7 .r6 .r5) == some 0x3
 #guard reg (.mul .r7 .r6 .r5) == some 0xfffffffc048d159c
+-- The carrying adds and subtracts: `r7` and CA after running `i` with CA set
+-- to `c` before. `addc` and `subc` ignore CA; the extended forms add it;
+-- `subc` and `sube` set CA iff there is no borrow.
+def carry (i : Instr) (c : Bool) : Option (BitVec 64 × Bool) :=
+  (exec i { s0 with ca := c }).map fun s => (s.gpr .r7, s.ca)
+#guard [false, true].all fun c => carry (.addc .r7 .r4 .r6) c == some (0x80000000f1234568, true)
+#guard [false, true].all fun c => carry (.addc .r7 .r5 .r6) c == some (0xffffffff0123456b, false)
+#guard carry (.adde .r7 .r4 .r6) false == some (0x80000000f1234568, true)
+#guard carry (.adde .r7 .r4 .r6) true == some (0x80000000f1234569, true)
+#guard carry (.adde .r7 .r5 .r6) false == some (0xffffffff0123456b, false)
+#guard carry (.adde .r7 .r5 .r6) true == some (0xffffffff0123456c, false)
+#guard carry (.addze .r7 .r6) false == some (0xffffffff01234567, false)
+#guard carry (.addze .r7 .r6) true == some (0xffffffff01234568, false)
+#guard [false, true].all fun c => carry (.subc .r7 .r5 .r4) c == some (0x7ffffffe10000003, false)
+#guard [false, true].all fun c => carry (.subc .r7 .r4 .r5) c == some (0x80000001effffffd, true)
+#guard [false, true].all fun c => carry (.subc .r7 .r5 .r5) c == some (0, true)
+#guard carry (.sube .r7 .r5 .r4) false == some (0x7ffffffe10000002, false)
+#guard carry (.sube .r7 .r5 .r4) true == some (0x7ffffffe10000003, false)
+#guard carry (.sube .r7 .r4 .r5) false == some (0x80000001effffffc, true)
+#guard carry (.sube .r7 .r4 .r5) true == some (0x80000001effffffd, true)
+#guard carry (.sube .r7 .r5 .r5) false == some (0xffffffffffffffff, false)
+#guard carry (.sube .r7 .r5 .r5) true == some (0, true)
+-- Nothing else sets CA, and nothing else reads it.
+#guard carry (.add .r7 .r4 .r6) false == some (0x80000000f1234568, false)
+#guard carry (.add .r7 .r4 .r6) true == some (0x80000000f1234568, true)
 
 -- Word rotates and shifts read the low word and zero-extend the result.
 #guard reg (.rotr .w .r7 .r4 4) == some 0x1f000000

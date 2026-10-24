@@ -19,8 +19,15 @@ Modelling choices:
   only they and `addSp` (`addi RT, r1, SI`, a pointer into the stack) read
   it. `r13` is the thread pointer, which the ABI reserves (ELFv2 ABI §2.2.2.1,
   Table 2.21, "Reserved"): it is never an operand, so never changed. The link
-  register `LR` is modelled (`State.lr`); the count register, `XER` and the
+  register `LR` is modelled (`State.lr`), and of `XER` only its carry bit CA
+  (`State.ca`, see below); the count register, the rest of `XER` and the
   condition register are not, and no modelled instruction reads them.
+* The carry bit CA is what the carrying adds and subtracts (`addc`, `adde`,
+  `addze`, `subc`, `sube`) set and the extended ones read, in 64-bit mode
+  the carry out of the 64-bit sum (Book I §3.3.9). `XER` is volatile across
+  calls (ELFv2 ABI §2.2.2.1, Table 2.21), so a contract says nothing of CA
+  and code may not rely on it across a call or at its entry; nothing else
+  reads or writes it, and it is never a branch condition or an address.
 * The registers are 64 bits. The only 32-bit operations are the rotates and
   shifts of words (`rlwinm`, which reads the low 32 bits and zero-extends
   its 32-bit result), the loads of words (zero-extended), the stores of words
@@ -126,6 +133,8 @@ structure State where
   unknowns : Nat → BitVec 64 := fun _ => 0
   /-- The address of each `static` the code can name (`adrSym`), by name. -/
   syms : String → BitVec 64 := fun _ => 0
+  /-- `XER`'s carry bit, CA. -/
+  ca : Bool := false
 
 inductive LogicOp | and | or | xor
   deriving DecidableEq, Repr
@@ -139,6 +148,18 @@ inductive Instr
   | mul (d n m : Reg)
   /-- `mulhdu RT, RA, RB`: the high 64 bits of the unsigned product -/
   | mulhu (d n m : Reg)
+  /-- `addc RT, RA, RB`: `d := n + m`, CA the carry out -/
+  | addc (d n m : Reg)
+  /-- `adde RT, RA, RB`: `d := n + m + CA`, CA the carry out -/
+  | adde (d n m : Reg)
+  /-- `addze RT, RA`: `d := n + CA`, CA the carry out -/
+  | addze (d n : Reg)
+  /-- `subfc RT, RB, RA` (extended mnemonic `subc RT, RA, RB`): `d := n - m`,
+  CA set iff there is no borrow (`n ≥ m`) -/
+  | subc (d n m : Reg)
+  /-- `subfe RT, RB, RA`: `d := n - m - 1 + CA`, CA set iff there is no
+  borrow (`n + CA ≥ m + 1`) -/
+  | sube (d n m : Reg)
   /-- `addi RT, RA, SI` with `0 ≤ SI < 2 ^ 15`, `RA ≠ 0` -/
   | addi (d n : Reg) (imm : Nat)
   /-- `addi RT, RA, -imm` (extended mnemonic `subi`), `0 ≤ imm ≤ 2 ^ 15`,
@@ -226,6 +247,11 @@ def read (s : State) (sz : Size) (r : Reg) : BitVec sz.bits := (s.gpr r).setWidt
 def write (s : State) (r : Reg) (v : BitVec 64) : State :=
   { s with gpr := fun r' => if r' = r then v else s.gpr r' }
 
+/-- Write the low 64 bits of the sum `v` into a register, and its carry out
+(`2⁶⁴ ≤ v`) into CA. -/
+def writeCarry (s : State) (r : Reg) (v : Nat) : State :=
+  { s.write r (BitVec.ofNat 64 v) with ca := decide (2 ^ 64 ≤ v) }
+
 /-- Load `n` bytes, faulting if not permitted. -/
 def load (s : State) (a : Addr) (n : Nat) : Option (BitVec (8 * n)) :=
   if InRegions (s.rd ++ s.wr) a n then some (s.mem.read a n) else none
@@ -271,6 +297,13 @@ abbrev Size.ext (sz : Size) (v : BitVec sz.bits) : BitVec 64 := v.setWidth 64
   Shifted" (`lis RT, SI` is `addis RT, 0, SI`: `RT ← EXTS(SI ||
   0x0000)`); the non-record, non-overflow forms, which set no other
   register;
+* §3.3.9 "Add Carrying" (`RT ← (RA) + (RB)`), "Add Extended" (`RT ← (RA) +
+  (RB) + CA`), "Add to Zero Extended" (`RT ← (RA) + CA`), "Subtract From
+  Carrying" (`RT ← ¬(RA) + (RB) + 1`; `subc RT, RA, RB` is `subfc RT, RB,
+  RA`) and "Subtract From Extended" (`RT ← ¬(RA) + (RB) + CA`), each of
+  which "the carry out ... is placed into CA" (in 64-bit mode, the carry
+  out of bit 0: of the 64-bit sum); the non-record, non-overflow forms,
+  which set no other register than RT and CA (CA32 is not modelled);
 * §3.3.9.1, "64-bit Fixed-Point Arithmetic Instructions": "Multiply Low
   Doubleword" (`prod0:127 ← (RA) × (RB)`, `RT ← prod64:127`: the low 64
   bits of the product, which are the same for signed and unsigned
@@ -327,6 +360,13 @@ def exec : Instr → State → Option State
   | .mul d n m, s => some (s.write d (s.gpr n * s.gpr m))
   | .mulhu d n m, s =>
     some (s.write d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64)))
+  | .addc d n m, s => some (s.writeCarry d ((s.gpr n).toNat + (s.gpr m).toNat))
+  | .adde d n m, s => some (s.writeCarry d ((s.gpr n).toNat + (s.gpr m).toNat + s.ca.toNat))
+  | .addze d n, s => some (s.writeCarry d ((s.gpr n).toNat + s.ca.toNat))
+  -- `¬(RA) + (RB) + 1` with `RA = m` and `RB = n`: `¬m` is `2⁶⁴ - 1 - m`.
+  | .subc d n m, s => some (s.writeCarry d ((s.gpr n).toNat + (2 ^ 64 - 1 - (s.gpr m).toNat) + 1))
+  | .sube d n m, s =>
+    some (s.writeCarry d ((s.gpr n).toNat + (2 ^ 64 - 1 - (s.gpr m).toNat) + s.ca.toNat))
   | .addi d n imm, s =>
     if n ≠ .r0 ∧ imm < 2 ^ 15 then some (s.write d (s.gpr n + BitVec.ofNat 64 imm)) else none
   | .subi d n imm, s =>

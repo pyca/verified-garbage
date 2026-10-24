@@ -116,6 +116,24 @@ theorem exec_mulhu {s : State} {d n m : Reg} :
     exec (.mulhu d n m) s =
       some (s.write d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64))) := rfl
 
+theorem exec_addc {s : State} {d n m : Reg} :
+    exec (.addc d n m) s = some (s.writeCarry d ((s.gpr n).toNat + (s.gpr m).toNat)) := rfl
+
+theorem exec_adde {s : State} {d n m : Reg} :
+    exec (.adde d n m) s =
+      some (s.writeCarry d ((s.gpr n).toNat + (s.gpr m).toNat + s.ca.toNat)) := rfl
+
+theorem exec_addze {s : State} {d n : Reg} :
+    exec (.addze d n) s = some (s.writeCarry d ((s.gpr n).toNat + s.ca.toNat)) := rfl
+
+theorem exec_subc {s : State} {d n m : Reg} :
+    exec (.subc d n m) s =
+      some (s.writeCarry d ((s.gpr n).toNat + (2 ^ 64 - 1 - (s.gpr m).toNat) + 1)) := rfl
+
+theorem exec_sube {s : State} {d n m : Reg} :
+    exec (.sube d n m) s =
+      some (s.writeCarry d ((s.gpr n).toNat + (2 ^ 64 - 1 - (s.gpr m).toNat) + s.ca.toNat)) := rfl
+
 theorem exec_logic {op : LogicOp} {s : State} {d n m : Reg} :
     exec (.logic op d n m) s = some (s.write d (match op with
       | .and => s.gpr n &&& s.gpr m | .or => s.gpr n ||| s.gpr m
