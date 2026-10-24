@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA on PPC64LE -/
@@ -64,6 +66,19 @@ def artifacts : List Artifact := [
         are saved in the frame."]
     stack := 304
     code := Impl.Dsa.PPC64LE.Generate.code
-    verified := Proof.Dsa.PPC64LE.generate_verified }]
+    verified := Proof.Dsa.PPC64LE.generate_verified },
+  Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target {
+    notes := ["The key's public part is checked as for verification (sizes, oddness, p mod q = 1, the \
+        orders of g and y), with the fixed-window power of the RSA code on PPC64LE, branching only on \
+        the key, which is public."]
+    code := Impl.Dsa.PPC64LE.Prevalidated.validate
+    verified := Proof.Dsa.PPC64LE.validate_verified },
+  Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target {
+    notes := ["As `vg_dsa_verify`, without the checks of the key the precondition establishes: only the \
+        sizes are checked (which give q's significant octets), then p, R² mod p and q are loaded into \
+        the working spaces and the verification is `vg_dsa_verify`'s, with the range checks of r and s \
+        kept as a mask: signature and digest do not affect the leakage trace."]
+    code := Impl.Dsa.PPC64LE.Prevalidated.verify
+    verified := Proof.Dsa.PPC64LE.prevalidated_verified }]
 
 end VG.Artifacts.Dsa.PPC64LE
