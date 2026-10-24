@@ -7366,6 +7366,254 @@ blr",
     )
 }
 
+/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+///
+/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in a frame of 128 bytes holding its stack arguments at offset 96, within a frame saving the link register. The model has no carry bit: the tape is short when `len − p_len` is negative and `len` is below `2^63`. Timing depends on the domain, the controller's public words and the attempts' statuses.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
+/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
+/// * `x_len` and `y_len` must be `p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"addi %r11, %r1, 96
+ld %r12, 32(%r11)
+ld %r0, 0(%r11)
+ld %r4, 8(%r11)
+ld %r6, 16(%r11)
+ld %r10, 24(%r11)
+std %r31, 32(%r12)
+addi %r31, %r12, 0
+std %r3, 40(%r31)
+std %r5, 48(%r31)
+std %r8, 56(%r31)
+std %r9, 64(%r31)
+std %r7, 120(%r31)
+std %r0, 72(%r31)
+std %r4, 80(%r31)
+li %r11, 0
+std %r11, 88(%r31)
+std %r6, 96(%r31)
+std %r10, 104(%r31)
+mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+20:
+ld %r9, 0(%r31)
+cmpldi %cr0, %r9, 0
+beq %cr0, 21f
+ld %r9, 8(%r31)
+cmpldi %cr0, %r9, 0
+beq %cr0, 23f
+ld %r9, 80(%r31)
+ld %r10, 16(%r31)
+subf %r12, %r10, %r9
+rldicl %r12, %r12, 1, 63
+rldicl %r11, %r9, 1, 63
+and %r11, %r11, %r12
+xor %r12, %r12, %r11
+cmpldi %cr0, %r12, 0
+beq %cr0, 25f
+ld %r10, 16(%r31)
+li %r11, 0
+std %r10, 24(%r31)
+std %r11, 112(%r31)
+ld %r3, 40(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+27:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 27b
+ld %r3, 48(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+28:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 28b
+b 26f
+25:
+stdu %r1, -128(%r1)
+ld %r3, 40(%r31)
+ld %r4, 16(%r31)
+ld %r5, 48(%r31)
+ld %r6, 16(%r31)
+ld %r7, 56(%r31)
+ld %r8, 64(%r31)
+ld %r9, 16(%r31)
+ld %r10, 72(%r31)
+ld %r12, 96(%r31)
+ld %r0, 104(%r31)
+addi %r11, %r1, 96
+std %r4, 0(%r11)
+std %r12, 8(%r11)
+std %r0, 16(%r11)
+bl {vg_ffdh_generate_key}
+addi %r1, %r1, 128
+rldicr %r9, %r3, 32, 31
+rldicl %r9, %r9, 32, 32
+ld %r11, 16(%r31)
+ld %r12, 72(%r31)
+ld %r3, 80(%r31)
+ld %r4, 88(%r31)
+add %r12, %r12, %r11
+subf %r3, %r11, %r3
+add %r4, %r4, %r11
+std %r12, 72(%r31)
+std %r3, 80(%r31)
+std %r4, 88(%r31)
+addi %r10, %r9, -1
+cmpldi %cr0, %r10, 0
+beq %cr0, 29f
+addi %r10, %r9, -2
+cmpldi %cr0, %r10, 0
+beq %cr0, 211f
+addi %r10, %r9, -3
+cmpldi %cr0, %r10, 0
+beq %cr0, 213f
+li %r10, 0
+li %r11, 3
+std %r10, 0(%r31)
+std %r10, 8(%r31)
+std %r10, 24(%r31)
+std %r11, 112(%r31)
+ld %r3, 40(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+215:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 215b
+ld %r3, 48(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+216:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 216b
+b 214f
+213:
+ld %r10, 0(%r31)
+addi %r10, %r10, -1
+li %r11, 128
+li %r12, 4
+std %r10, 0(%r31)
+std %r11, 8(%r31)
+std %r12, 112(%r31)
+214:
+b 212f
+211:
+ld %r10, 8(%r31)
+addi %r10, %r10, -1
+li %r11, 4
+std %r10, 8(%r31)
+std %r11, 112(%r31)
+212:
+b 210f
+29:
+li %r10, 0
+li %r11, 1
+std %r10, 0(%r31)
+std %r10, 8(%r31)
+std %r10, 24(%r31)
+std %r11, 112(%r31)
+210:
+26:
+b 24f
+23:
+li %r10, 0
+li %r11, 3
+std %r10, 0(%r31)
+std %r10, 8(%r31)
+std %r10, 24(%r31)
+std %r11, 112(%r31)
+ld %r3, 40(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+217:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 217b
+ld %r3, 48(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+218:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 218b
+24:
+b 22f
+21:
+li %r10, 0
+li %r11, 3
+std %r10, 0(%r31)
+std %r10, 8(%r31)
+std %r10, 24(%r31)
+std %r11, 112(%r31)
+ld %r3, 40(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+219:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 219b
+ld %r3, 48(%r31)
+ld %r4, 16(%r31)
+li %r5, 0
+220:
+stb %r5, 0(%r3)
+addi %r3, %r3, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 220b
+22:
+ld %r9, 112(%r31)
+addi %r9, %r9, -4
+cmpldi %cr0, %r9, 0
+beq %cr0, 20b
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+ld %r4, 120(%r31)
+ld %r5, 88(%r31)
+ld %r3, 112(%r31)
+std %r5, 0(%r4)
+ld %r31, 32(%r31)
+blr",
+        vg_ffdh_generate_key = sym super::ffdh::vg_ffdh_generate_key,
+    )
+}
+
 /// One candidate for the probable safe prime p of finite-field Diffie–Hellman parameters of `bits` bits with the generator 2 or 5 (PKCS #3 §6, with OpenSSL's congruences). Reads from the front of `rand` `out_len` bytes, most significant first, cut to `bits` bits with the most and least significant bits set, as p, and `q = (p − 1) / 2`. Rejects p unless `p mod 24 = 11` (generator 2) or `p mod 10 ∈ {3, 7}` (generator 5) and no odd prime below 256 divides p or q but itself. Then runs Miller–Rabin on q and, if it passes, on p, with 64 witnesses (128 above 2048 bits) for each, every witness for w read from `rand` as the bytes of `w − 1`, cut to its bit length, and read again until it is in `2..w − 1`; the first witness that proves a number composite is the last read for it. Returns 1 and writes p to `out` if both pass, 2 if p is rejected, and writes the number of bytes of `rand` read to `used`; or returns 0 if `rand` is too short, for which the caller calls it again with `rand` extended by more random bytes. `out` is zeros but for 1, and `used` is 0 for 0.
 ///
 /// Contract: `VG.Spec.Ffdh.parameterCandidateContract`. Every value is public: timing may depend on `rand`.

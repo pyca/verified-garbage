@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Verified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
@@ -72,6 +73,16 @@ def artifacts : List Artifact := [
         masked by the status being 1, without a branch. The nonvolatile registers, and x's, `y`'s and \
         `rand`'s addresses and x's length, are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.GenerateKey.generateKey
-    verified := Proof.Ffdh.PPC64LE.GenerateKey.gk_verified }]
+    verified := Proof.Ffdh.PPC64LE.GenerateKey.gk_verified },
+  Spec.Ffdh.keySearchApi.artifact PPC64LE.target {
+    stack := 176
+    notes := ["The whole key search runs in verified code: both rejection budgets, the octets each \
+        attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in \
+        a frame of 128 bytes holding its stack arguments at offset 96, within a frame saving the link \
+        register. The model has no carry bit: the tape is short when `len − p_len` is negative and \
+        `len` is below `2^63`. Timing depends on the domain, the controller's public words and the \
+        attempts' statuses."]
+    code := Proof.Ffdh.PPC64LE.KeyGeneration.keyCode
+    verified := Proof.Ffdh.PPC64LE.KeyGeneration.key_verified }]
 
 end VG.Artifacts.Ffdh.PPC64LE
