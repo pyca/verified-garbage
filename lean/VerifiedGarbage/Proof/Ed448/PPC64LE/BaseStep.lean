@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
+import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
 public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
 public import VerifiedGarbage.Proof.Ed448.Ref
@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.ScalarBase
+public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
 
 /-!
 # Ed448 on PPC64LE: one iteration of base-point multiplication

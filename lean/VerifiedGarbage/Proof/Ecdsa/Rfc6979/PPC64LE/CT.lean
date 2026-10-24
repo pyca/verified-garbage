@@ -29,6 +29,14 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE
 meta import VerifiedGarbage.TCB.Code
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Msg
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Msg
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 
 /-!
 # Deterministic ECDSA on PPC64LE: constant time, up to the number of candidates
