@@ -211,6 +211,87 @@ theorem primeCall_vp {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {name
       List.cons.injEq, and_true] at this
     exact this
 
+/-! ## The result -/
+
+theorem status_lt (res : Option (Bool × Spec.RsaKeyGen.Rand)) : Spec.Dsa.ProbablePrime.status res < 3 := by
+  unfold Spec.Dsa.ProbablePrime.status; split <;> decide
+
+/-- The test's result, zero-extended, into `fRes`. -/
+theorem testRes_vp {c' : Cfg} {res : Option (Bool × Spec.RsaKeyGen.Rand)} :
+    VP (fun σ t => St G c' X σ t ∧ ((t.gpr .r3).setWidth 32).toNat = Spec.Dsa.ProbablePrime.status res)
+      (.block [.lsr .w .r3 .r3 0, st .r3 fRes])
+      (fun σ t => St G (c'.setV fRes (BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res))) X σ t ∧
+        t.gpr .r3 = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res)) := by
+  refine VP.pub (SS.pub (c := fun _ => c') fun σ s h => h.1.1) []
+    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block [.lsr .w .r3 .r3 0, st .r3 fRes]), rfl⟩
+    (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨⟨h, x⟩, r3⟩ => ?_
+  have hv : ((s.gpr .r3).setWidth 32 >>> 0).setWidth 64 = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.ushiftRight_zero, BitVec.toNat_setWidth, r3, BitVec.toNat_ofNat]
+  refine WP.wr (exec_lsr_w (by decide)) fun s₁ u₁ sp₁ _ => ?_
+  have h₁ := h.of_upd u₁ sp₁ (by decide)
+  refine h₁.stF varOk_fRes fun t ht m _ => WP.block_nil ⟨⟨?_, x⟩, ?_⟩
+  · rw [u₁.gpr, hv] at ht; exact ht
+  · rw [m.gpr, u₁.gpr, hv]
+
+/-- `fUsed` := the witnesses read, unless the tape ran out. -/
+theorem testTail_vp {cl' : Claims} {u cand : Nat} (hU : fUsed ∈ c.LS) (hUv : c.V fUsed = BitVec.ofNat 64 u)
+    (hU88 : fUsedOut ∉ c.LS) (hwl : G.witB.length = G.witLen) (hu : u ≤ G.witLen) :
+    VP (fun σ t => St G ((callCfg c cl' G.witLen u (Spec.Dsa.probablePrime cand (G.witB.drop u))).setV fRes
+        (BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime cand (G.witB.drop u))))) X σ t ∧
+        t.gpr .r3 = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime cand (G.witB.drop u))))
+      (.ite (.zero .d .r3) (.block []) (.block [ld .r4 fUsedOut, ld .r5 fUsed, .add .r5 .r5 .r4, st .r5 fUsed]))
+      (St G (testCfg c cl' G.witLen (Spec.Dsa.probablePrime cand (G.witB.drop u))) X) := by
+  generalize hres : Spec.Dsa.probablePrime cand (G.witB.drop u) = res
+  refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_
+  · refine VP.block_nil fun σ s ⟨⟨⟨h, x⟩, r3⟩, z⟩ => ?_
+    rw [eval_zero, r3, ofNat_beq_zero (by have := status_lt res; omega)] at z
+    rcases res with _ | ⟨b, rest⟩
+    · exact ⟨h, x⟩
+    · cases b <;> simp [Spec.Dsa.ProbablePrime.status] at z
+  rcases res with _ | ⟨b, rest⟩
+  · exact VP.of_false fun σ s ⟨⟨_, r3⟩, z⟩ => by
+      rw [eval_zero, r3] at z; simp [Spec.Dsa.ProbablePrime.status] at z
+  -- The tape sufficed: `fUsed` := `u` and the count.
+  have rl : rest.length ≤ G.witLen - u := by
+    have := (VG.Proof.Dsa.Generation.probablePrime_suffix hres).length_le
+    rw [List.length_drop, hwl] at this; exact this
+  let x : BitVec 64 := BitVec.ofNat 64 (G.witLen - u - rest.length)
+  let st0 : BitVec 64 := BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (some (b, rest)))
+  let c6 : Cfg := ({ c with cl := cl' }.setV fUsedOut x).setV fRes st0
+  have v88 : c6.V fUsedOut = x := by
+    show upd (upd c.V fUsedOut x) fRes st0 fUsedOut = x; rw [upd_ne _ _ (by decide), upd_self]
+  have vU : c6.V fUsed = BitVec.ofNat 64 u := by
+    show upd (upd c.V fUsedOut x) fRes st0 fUsed = _; rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), hUv]
+  refine VP.pub (SS.pub (c := fun _ => c6) fun σ s h => h.1.1.1) []
+    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
+      (.block [ld .r4 fUsedOut, ld .r5 fUsed, .add .r5 .r5 .r4, st .r5 fUsed]), rfl⟩
+    (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨⟨⟨h, xx⟩, _⟩, _⟩ => ?_
+  change SS G 176 σ c6 s at h
+  refine WP.sp_eq (h.ldK (o := fUsedOut) (by decide) (by decide) ((h.gi.slotV (by simp [c6])).trans v88)
+    (by decide) fun s₁ h₁ u₁ => ?_)
+  refine h₁.ldK (o := fUsed) (by decide) (by decide) ((h₁.gi.slotV (by simp [c6, hU])).trans vU) (by decide)
+    fun s₂ h₂ u₂ => ?_
+  refine WP.wr exec_add fun s₃ u₃ sp₃ _ => ?_
+  have h₃ := h₂.of_upd u₃ sp₃ (by decide)
+  refine h₃.stF varOk_fUsed fun t ht _ _ => WP.block_nil fun _ => ⟨?_, xx⟩
+  have v5 : s₃.gpr .r5 = BitVec.ofNat 64 (G.witLen - rest.length) := by
+    rw [u₃.gpr, u₂.gpr, u₂.other _ (by decide), u₁.gpr]
+    show BitVec.ofNat 64 u + BitVec.ofNat 64 (G.witLen - u - rest.length) = _
+    rw [← BitVec.ofNat_add, show u + (G.witLen - u - rest.length) = G.witLen - rest.length by omega]
+  rw [v5] at ht
+  refine ht.mono (fun o ho => ?_) (fun x hx => hx) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
+  simp only [testCfg, c6, Cfg.setV, List.mem_cons] at ho ⊢
+  rcases ho with rfl | rfl | ho
+  · exact ⟨by simp, by simp [upd]⟩
+  · refine ⟨by simp, ?_⟩
+    simp only [upd, show fRes ≠ fUsed by decide, ite_false, ite_true]
+    cases b <;> rfl
+  · refine ⟨by simp [ho], ?_⟩
+    have n88 : o ≠ fUsedOut := fun e => hU88 (e ▸ ho)
+    have e : st0 = BitVec.ofNat 64 (if b then 1 else 2) := by cases b <;> rfl
+    simp only [upd, n88, ite_false, e]
+
 end
 
 end VG.Proof.Dsa.PPC64LE.Gen
