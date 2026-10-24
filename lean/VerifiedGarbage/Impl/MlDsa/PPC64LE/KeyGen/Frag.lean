@@ -67,15 +67,17 @@ def seqR (f : Nat → Prog isa) (a : Nat) : Nat → Prog isa
 
 /-! ## Results -/
 
-/-- `r24 ← r24 ∧ r3`. -/
-def and24 : List Instr := [.logic .and .r24 .r24 .r3]
+/-- `r3 ←` its low word (the result is a `u32`, and the rest of the register
+is anything), then `r24 ← r24 ∧ r3`. -/
+def and24 : List Instr := [.lsr .w .r3 .r3 0, .logic .and .r24 .r24 .r3]
 
 def maskBody : List Instr :=
   [.load .w .r6 .r4 0, .logic .and .r6 .r6 .r12, .store .w .r6 .r4 0, .addi .r4 .r4 4, .subi .r5 .r5 1]
 
-/-- The polynomial at `a` masked by the result `r3` (0 or 1) of the sampler
-that wrote it: unchanged if 1, and zero if 0, so that it is reduced either
-way, without a branch. `r12 ← -r3`, then each coefficient `∧ r12`. -/
+/-- The polynomial at `a` masked by the result `r3` (0 or 1, after `and24`)
+of the sampler that wrote it: unchanged if 1, and zero if 0, so that it is
+reduced either way, without a branch. `r12 ← -r3`, then each coefficient
+`∧ r12`. -/
 def mask (a : Ptr) : Prog isa :=
   .seq (.block (([.li .r12 0, .sub .r12 .r12 .r3] : List Instr) ++ Arg.instrs .r4 (.ptr a) ++
       ([.li .r5 256] : List Instr)))
