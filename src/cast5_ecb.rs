@@ -5,15 +5,16 @@
 //! to 10 bytes is used with 12 rounds, a longer one with 16. Each operation
 //! accepts complete eight-byte blocks, including empty input. The S-box
 //! lookups scan whole tables (in vector registers: SSE2 on x86-64 and x86,
-//! AdvSIMD on AArch64; on ARMv7, which has no SIMD, the tables are immediates
-//! in the code and each lookup compares its index with every entry), so their
-//! timing depends on neither the key nor the data; one block at a time.
+//! AdvSIMD on AArch64; on ARMv7 and PPC64LE, in general-purpose registers,
+//! each lookup comparing its index with every entry of a static table), so
+//! their timing depends on neither the key nor the data; one block at a time.
 
 #![cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "x86",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::cast5::{vg_cast5_ecb_decrypt, vg_cast5_ecb_encrypt, vg_cast5_expand_key};
@@ -75,12 +76,25 @@ impl Cast5Ecb {
         self.crypt(buffer, vg_cast5_ecb_decrypt)
     }
 
-    /// The subkeys, for the modes built on CAST5 (`crate::cast5_cbc`, …).
+    /// The subkeys, for the modes built on CAST5 (`crate::cast5_cbc`, …),
+    /// on their architectures.
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ))]
     pub(crate) fn schedule(&self) -> &[u8; 128] {
         &self.schedule
     }
 
     /// The number of rounds, 12 or 16, for the modes built on CAST5.
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ))]
     pub(crate) fn rounds(&self) -> usize {
         self.rounds
     }
@@ -114,7 +128,12 @@ impl Cast5Ecb {
 #[cfg(target_arch = "x86_64")]
 type Ecb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
 /// The signature of `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt`.
-#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "x86",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 type Ecb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
 
 impl Drop for Cast5Ecb {

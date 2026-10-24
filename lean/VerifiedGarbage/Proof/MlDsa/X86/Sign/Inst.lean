@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-DSA signing on x86 (32-bit): the primitives it calls
@@ -141,6 +142,6 @@ def prims_ok : PrimsOk prims where
   ok := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro c (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-      exact cok (by decide +kernel) (by decide +kernel)
+      exact cok (by lit_decide) (by lit_decide)
 
 end VG.Proof.MlDsa.X86.Sign

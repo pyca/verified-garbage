@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Sha512.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha512.Digest
-import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset

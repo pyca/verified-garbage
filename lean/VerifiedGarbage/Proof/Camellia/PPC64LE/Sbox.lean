@@ -36,7 +36,7 @@ def sboxPost (e : Env Nat) : Bool :=
 
 theorem sbox_check :
     check (table 64 256) sboxCfg (fun _ => none) Impl.Camellia.PPC64LE.sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+  lit_decide
 
 /-- The registers the S-box writes. -/
 def sboxWrites : List Reg := [q 0, q 1, q 2, q 3, q 4, q 5, q 6, q 7, .r22, .r23, .r24, .r25,
@@ -47,7 +47,7 @@ def restRegs : List Reg := [.r2, .r3, .r4, .r5, .r6, .r7, .r8, .r10, .r11, .r12]
 
 theorem sbox_writes_rest :
     restRegs.all (fun r => Impl.Camellia.PPC64LE.sboxCode.all fun i => dstOf i != some r) = true := by
-  decide +kernel
+  lit_decide
 
 theorem not_sboxWrites (r : Reg) (hr : r ∉ sboxWrites) : r ∈ restRegs := by
   revert hr; cases r <;> decide

@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 
 /-!
 # AES-GCM on PPC64LE: `crypt`

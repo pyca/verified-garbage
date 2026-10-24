@@ -138,7 +138,7 @@ def cfbDecAArch64 : Contract isa where
 /-- The core keeps `x25`, where the modes keep the IV's address. -/
 theorem keeps_x25 :
     Modes.AArch64.KeepsReg .x25 modeCore.prepare ∧ Modes.AArch64.KeepsReg .x25 modeCore.crypt :=
-  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide +kernel), Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)⟩
+  ⟨Modes.AArch64.keepsReg_of_regSafe (by lit_decide), Modes.AArch64.keepsReg_of_regSafe (by lit_decide)⟩
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the
 IV as `fbOut` and `fbIn`, keeping the callee-saved registers. -/

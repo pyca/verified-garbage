@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 meta import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Derive
+meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Derive
+meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 
 /-!
 # AES-GCM-SIV on PPC64LE: the keys in two runs

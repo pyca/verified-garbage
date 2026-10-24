@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
 import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-DSA key generation on x86 (32-bit), with this library's primitives
@@ -29,17 +30,17 @@ open VG VG.X86
 open VG.Impl.MlDsa.X86.KeyGen (prims keyGen44 keyGen65 keyGen87)
 
 theorem prims_ok : PrimsOk prims where
-  ntt := ⟨⟨15, by decide, Arith.NttFwd.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  invNtt := ⟨⟨15, by decide, Arith.NttInvP.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  mul := ⟨⟨15, by decide, Arith.mul_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  mulAdd := ⟨⟨15, by decide, Arith.mulAdd_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  add := ⟨⟨15, by decide, Arith.add_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  rejNtt := ⟨⟨55, by decide, Sample.RejNtt.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  rejBounded := ⟨⟨55, by decide, Sample.RejBounded.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  power2Round := ⟨⟨15, by decide, Round.power2Round_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  simpleBitPack := ⟨⟨15, by decide, Pack.SimpleBitPack.verified⟩, by decide +kernel,
-    NoSp.of_all (by decide +kernel)⟩
-  bitPack := ⟨⟨15, by decide, Pack.BitPack.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
+  ntt := ⟨⟨15, by decide, Arith.NttFwd.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  invNtt := ⟨⟨15, by decide, Arith.NttInvP.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  mul := ⟨⟨15, by decide, Arith.mul_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  mulAdd := ⟨⟨15, by decide, Arith.mulAdd_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  add := ⟨⟨15, by decide, Arith.add_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  rejNtt := ⟨⟨55, by decide, Sample.RejNtt.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  rejBounded := ⟨⟨55, by decide, Sample.RejBounded.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  power2Round := ⟨⟨15, by decide, Round.power2Round_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  simpleBitPack := ⟨⟨15, by decide, Pack.SimpleBitPack.verified⟩, by lit_decide,
+    NoSp.of_all (by lit_decide)⟩
+  bitPack := ⟨⟨15, by decide, Pack.BitPack.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
 
 theorem keyGen44_verified :
     Verified X86.target keyGen44 (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 X86.abi 96) :=
