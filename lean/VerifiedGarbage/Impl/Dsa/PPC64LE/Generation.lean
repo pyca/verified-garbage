@@ -36,7 +36,7 @@ The first domain that passes is copied to `out`, with status 1; otherwise
 `out` is zeroed, with status 0: no seed left, or `witnesses` ran out.
 
 `scratch` (`S`) holds, from byte 0, the search's state (`f…`), our
-caller's `r14`–`r31` and our return address, then small buffers (`s…`),
+caller's `r2`, `r14`–`r31` and our return address, then small buffers (`s…`),
 then the P space (at `pB`), the key working space (at `kB pLen`) and the
 working space of the functions we call (at `wB pLen`). `S` stays in `r28`,
 which no code here or that we call writes: every value of the search is
@@ -71,12 +71,12 @@ def fUsedOut : Nat := 112
 def fLR : Nat := 120
 def fHs : Nat := 128
 def fHsLen : Nat := 136
-/-- Our caller's `r14`–`r31`. -/
+/-- Our caller's `r2` and `r14`–`r31`. -/
 def fSave : Nat := 144
 
 /-- The nonvolatile registers saved, `r28` (which keeps `S`) last. -/
 def saved : List Reg :=
-  [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r29, .r30,
+  [.r2, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r29, .r30,
     .r31, .r28]
 
 /-- `r :=` the state word at `o`. -/
@@ -408,19 +408,28 @@ end Geo
 
 /-! ## Entry -/
 
-/-- `scratch` into `r11`, our caller's registers and our return address
-saved there, `scratch` into `r28`; `out`, the tapes' pointers and lengths;
-nothing used, searching. -/
+/-- The words `entry` stores into the header (through `r11`, `scratch`): our
+return address, our caller's registers, `out`, the tapes' pointers and
+lengths; nothing used, searching. -/
+def entryStores : List (Reg × Nat) :=
+  [(.r0, fLR)] ++ saved.zipIdx.map (fun (r, i) => (r, fSave + 8 * i)) ++
+    [(.r3, fOut), (.r7, fSeed), (.r8, fSeedLeft), (.r9, fHs), (.r10, fHsLen), (.r12, fWit), (.r4, fWitLen),
+      (.r6, fUsed), (.r6, fStatus)]
+
+/-- `scratch` into `r11`, the witnesses' pointer and length into `r12` and
+`r4`, our return address into `r0` and 0 into `r6`; the header's words
+stored, and `scratch` into `r28`. -/
 def entry : List Instr :=
-  [.addSp .r11 (96 + 8 * 2), .load .d .r11 .r11 0, .mflr .r0, .store .d .r0 .r11 fLR] ++
-    saved.zipIdx.map (fun (r, i) => .store .d r .r11 (fSave + 8 * i)) ++
-    [.addi .r28 .r11 0, st .r3 fOut, st .r7 fSeed, st .r8 fSeedLeft, st .r9 fHs, st .r10 fHsLen,
-      .addSp .r11 96, .load .d .r11 .r11 0, st .r11 fWit, .addSp .r11 (96 + 8), .load .d .r11 .r11 0,
-      st .r11 fWitLen, .li .r0 0, st .r0 fUsed, st .r0 fStatus]
+  [.addSp .r11 (96 + 8 * 2), .load .d .r11 .r11 0, .addSp .r12 96, .load .d .r12 .r12 0,
+    .addSp .r4 (96 + 8), .load .d .r4 .r4 0, .mflr .r0, .li .r6 0] ++
+    entryStores.map (fun p => .store .d p.1 .r11 p.2) ++ [.addi .r28 .r11 0]
+
+/-- Our caller's registers but `r28`, and where they are in the header. -/
+def restoreLoads : List (Reg × Nat) := (saved.zipIdx.map fun (r, i) => (r, fSave + 8 * i)).take 18
 
 /-- Our return address and our caller's registers back, `r28` last. -/
 def restore : List Instr :=
-  [ld .r0 fLR, .mtlr .r0] ++ (saved.zipIdx.map fun (r, i) => .load .d r .r28 (fSave + 8 * i))
+  [ld .r0 fLR, .mtlr .r0] ++ restoreLoads.map (fun p => .load .d p.1 .r28 p.2) ++ [ld .r28 (fSave + 8 * 18)]
 
 /-- The three geometries, by `p_len` (in `r5`). -/
 def dispatch (g1 g2 g3 : Geo) : Prog isa :=

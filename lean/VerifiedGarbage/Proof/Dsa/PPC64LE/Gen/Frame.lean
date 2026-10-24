@@ -27,7 +27,7 @@ open VG VG.PPC64LE
 open VG.Impl.Dsa.PPC64LE.Generation
 
 /-- The header's end: the state, then the saved registers. -/
-def hEnd : Nat := fSave + 8 * 18
+def hEnd : Nat := fSave + 8 * 19
 
 /-- The header word at `o`. -/
 abbrev fw (m : Mem) (G : GP) (o : Nat) : BitVec 64 := m.readW (G.scr + BitVec.ofNat 64 o) 64
@@ -56,7 +56,7 @@ structure GI (G : GP) (STK : Nat) (σ : State) (V : Nat → BitVec 64) (LS : Lis
   rd : s.rd = σ.rd
   wr : s.wr = σ.wr
   r28 : s.gpr .r28 = G.scr
-  saved : ∀ i < 18, fw s.mem G (fSave + 8 * i) = σ.gpr (saved.getD i .r14)
+  saved : ∀ i < 19, fw s.mem G (fSave + 8 * i) = σ.gpr (saved.getD i .r14)
   lr : fw s.mem G fLR = σ.lr
   fixed : ∀ p ∈ fixedWords G, fw s.mem G p.1 = p.2
   slots : ∀ o ∈ LS, fw s.mem G o = V o
