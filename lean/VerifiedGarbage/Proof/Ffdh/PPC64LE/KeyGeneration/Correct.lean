@@ -5,9 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Loop
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Guards
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Outputs
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 

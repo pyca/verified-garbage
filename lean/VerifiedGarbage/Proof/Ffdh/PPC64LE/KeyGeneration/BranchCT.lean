@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Loop
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Guards
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Writes
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Writes
 
 /-! # An iteration of the key search branches on its public point alone (PPC64LE)
 

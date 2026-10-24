@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live

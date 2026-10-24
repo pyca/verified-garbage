@@ -2,12 +2,10 @@ module
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.KeyGeneration.Search
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Data
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
-public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Writes
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Outputs
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.KeyGeneration.Search
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Data
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
@@ -16,6 +14,8 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Writes
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Outputs
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-! # Public positions in the key search, and its exits and rejections (PPC64LE)
 

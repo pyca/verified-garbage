@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Call
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Writes
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Writes
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Classify
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Outputs
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Impl.Ffdh.PPC64LE.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.ControlMemory
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Data
 
 /-! # After an attempt: the key, or one fewer scalar or key (PPC64LE) -/
 

@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Guards
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.CTCode
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

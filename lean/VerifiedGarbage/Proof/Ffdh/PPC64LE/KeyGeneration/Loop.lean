@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Guards
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Call
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Writes
 
 /-! # Total correctness of the key-generation controller's loop (PPC64LE) -/
 

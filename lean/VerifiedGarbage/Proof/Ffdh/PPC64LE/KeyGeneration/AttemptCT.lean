@@ -3,13 +3,15 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.LeafCT
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Call
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Loop
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.LeafCT
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Call
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Loop
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 
 /-! # An attempt leaks only its public arguments, the domain and its status (PPC64LE)
 

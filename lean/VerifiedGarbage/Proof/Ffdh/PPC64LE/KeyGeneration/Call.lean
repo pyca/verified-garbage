@@ -4,14 +4,15 @@ public import VerifiedGarbage.Impl.Ffdh.PPC64LE.KeyGeneration.Search
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.CallFacts
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Outputs
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 
 /-! # One attempt of the key-generation controller (PPC64LE)
 
