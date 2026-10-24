@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
-public import VerifiedGarbage.Proof.Rsa.X86.RvCount
-public import VerifiedGarbage.Proof.Rsa.X86.RvMont
+import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
+import VerifiedGarbage.Proof.Rsa.X86.RvCount
+import VerifiedGarbage.Proof.Rsa.X86.RvMont
 import VerifiedGarbage.Proof.Bignum.Math
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 
 /-! # The candidate's power, one 4-bit window of the exponent per iteration
 
