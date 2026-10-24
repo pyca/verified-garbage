@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTBase
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTPre
+import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTPre
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Main
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
+public import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # A candidate on PPC64LE: what two runs of the witnesses' loop share

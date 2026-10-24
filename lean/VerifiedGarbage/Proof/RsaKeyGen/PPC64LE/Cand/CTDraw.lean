@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTLoop
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTPre
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTPre
 
 /-!
 # A candidate on PPC64LE: a draw in constant time

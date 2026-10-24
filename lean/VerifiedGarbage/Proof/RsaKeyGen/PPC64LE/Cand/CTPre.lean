@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCall
-public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Witness
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
@@ -12,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Minv
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
+public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Search
 
 /-!
 # A candidate on PPC64LE: the states the round is called from
