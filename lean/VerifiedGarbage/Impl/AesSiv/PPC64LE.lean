@@ -208,16 +208,16 @@ def kBlock : Prog isa :=
   .seq (.block [.subi .r9 .r20 1, .lsr .d .r9 .r9 4, .li .r21 0])
     (.ite (.zero .d .r9) (.block []) (.block [.subi .r9 .r9 1, .lsl .r21 .r9 4]))
 
-/-- `D` XORed into the 16 bytes at `r9 + 16`. -/
+/-- `D` XORed into the 16 bytes at `r11 + 16`. -/
 def xorD : List Instr :=
-  [.load .d .r10 .r9 16, .load .d .r11 .r14 dO, .logic .xor .r10 .r10 .r11, .store .d .r10 .r9 16,
-    .load .d .r10 .r9 24, .load .d .r11 .r14 (dO + 8), .logic .xor .r10 .r10 .r11, .store .d .r10 .r9 24]
+  [.load .d .r9 .r11 16, .load .d .r10 .r14 dO, .logic .xor .r9 .r9 .r10, .store .d .r9 .r11 16,
+    .load .d .r9 .r11 24, .load .d .r10 .r14 (dO + 8), .logic .xor .r9 .r9 .r10, .store .d .r9 .r11 24]
 
 /-- The last `L − 16 k` bytes (at least 16) of the string copied to the
 tail, and `D` XORed into its last 16 bytes, at `W + 16 + (L − 16 k)`. -/
 def tailCopy : Prog isa :=
   .seq (.block [.add .r3 .r19 .r21, .addi .r9 .r14 tailO, .sub .r4 .r20 .r21])
-    (.seq copyBytes (.block ([.sub .r9 .r20 .r21, .add .r9 .r14 .r9] ++ xorD)))
+    (.seq copyBytes (.block ([.sub .r11 .r20 .r21, .add .r11 .r14 .r11] ++ xorD)))
 
 /-- The long case, `L ≥ 16`: `16 k` in `r21`, and the tail. -/
 def longTail : Prog isa := .seq kBlock tailCopy
