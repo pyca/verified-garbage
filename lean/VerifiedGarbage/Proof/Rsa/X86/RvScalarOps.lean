@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Compare
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite

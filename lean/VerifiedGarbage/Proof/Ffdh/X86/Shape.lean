@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 import VerifiedGarbage.Proof.Rsa.X86.RtShape
 public import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 
 /-! # FFDH on i686: no instruction writes `esp` -/
 
