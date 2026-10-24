@@ -475,11 +475,18 @@ def fourConsts : List Instr :=
 bytes into `ctx[672, 800)`, from the state at `rdi` (`ctx + 608`, counter 0),
 with `buf` for `Avx2Tail`'s code at `ctx + 672` (its constants past the
 keystream); then `rsi` at `buf`, as the call of `vg_chacha20_xor` leaves it. -/
-def twoKs (vl : Bool) : Prog isa :=
+def twoKsB (vl : Bool) : Prog isa :=
   .seq (.block (ptr .rcx .r15 672 ++ twoConsts ++ ([.mov .r9 (.reg .rcx)] : List Instr)))
   (.seq (.seq (.block ChaCha20.X86_64.Avx2Tail.setup1) (.seq (ChaCha20.X86_64.Avx2Tail.roundsS vl 1 10)
       (.block (ChaCha20.X86_64.Avx2Tail.addIn1 ++ ChaCha20.X86_64.Avx2Tail.storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))))
     (.block (([.vop .vzeroupper] : List Instr) ++ ptr .rsi .r15 128)))
+
+/-- `twoKsB`, padded to keep the code after the prologue at its offset
+modulo 64 before `twoKs` replaced the call past 448 bytes (Zen 3 ran `open`'s
+code for 16 to 448 bytes, and the tail of 193 to 256 bytes, up to 2% slower
+when it moved by 9 bytes). -/
+def twoKs (vl : Bool) : Prog isa :=
+  .seq (twoKsB vl) (.block (padIns .rax 9))
 
 /-- As `twoKs` with two sets: the one-time key's block and the three blocks
 of the last 65 to 192 bytes into `ctx[672, 928)`. -/

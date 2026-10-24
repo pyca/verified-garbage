@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Two
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -239,10 +240,10 @@ theorem endB_ok (s : State) :
 /-- `twoKs`, with its permissions: the state copy at `stA c'` and `bfA c'`
 for `c' = c + 544` (`c` in `r15`), whose first 128 bytes it leaves the
 keystream of the blocks at counters `0` and `xCtr len` in. -/
-theorem twoKsN_ok (vl : Bool) {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
+theorem twoKsBN_ok (vl : Bool) {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
     (hrdi : s.gpr .rdi = stA (c + BitVec.ofNat 64 544))
     (hwr : s.wr = [stR (stA (c + BitVec.ofNat 64 544)), bufR (bfA (c + BitVec.ofNat 64 544))]) :
-    WP isa (twoKs vl) s fun t =>
+    WP isa (twoKsB vl) s fun t =>
       (∀ k < 128, t.mem (bfA (c + BitVec.ofNat 64 544) + BitVec.ofNat 64 k) =
         (serialize (Spec.ChaCha20.block (ctr (stateAt s.mem (stA (c + BitVec.ofNat 64 544)))
           (cOf (xCtr (s.gpr .r13)).toNat (k / 64))))).getD (k % 64) 0) ∧
@@ -250,7 +251,7 @@ theorem twoKsN_ok (vl : Bool) {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have hb : off c 672 = bfA (c + BitVec.ofNat 64 544) := by
     rw [off_eq]; simp only [bfA, Offset.add_add]
-  unfold twoKs
+  unfold twoKsB
   refine WP.seq (WP.mono (twoPre_ok (buf := bfA (c + BitVec.ofNat 64 544)) (by rw [hr15, hb]) (by rw [hwr]; simp))
     fun s₁ ⟨m₁, r9₁, rcx₁, g₁, rd₁, wr₁⟩ => ?_)
   have hc : VG.Proof.ChaCha20.X86_64.Avx512Tail.Ctx 0 s₁ := ctx0 (c := c + BitVec.ofNat 64 544)
@@ -273,6 +274,21 @@ theorem twoKsN_ok (vl : Bool) {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
   refine ⟨fun k hk => ?_, by rw [rsi₃, g₂, g₁ _ (by decide) (by decide) (by decide), hr15],
     fun r h₁ h₂ h₃ h₄ => by rw [g₃ r h₄, g₂, g₁ r h₁ h₂ h₃], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩
   rw [m₃, ← r9₁, ks₂ k hk, S₁]
+
+theorem twoKsN_ok (vl : Bool) {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
+    (hrdi : s.gpr .rdi = stA (c + BitVec.ofNat 64 544))
+    (hwr : s.wr = [stR (stA (c + BitVec.ofNat 64 544)), bufR (bfA (c + BitVec.ofNat 64 544))]) :
+    WP isa (twoKs vl) s fun t =>
+      (∀ k < 128, t.mem (bfA (c + BitVec.ofNat 64 544) + BitVec.ofNat 64 k) =
+        (serialize (Spec.ChaCha20.block (ctr (stateAt s.mem (stA (c + BitVec.ofNat 64 544)))
+          (cOf (xCtr (s.gpr .r13)).toNat (k / 64))))).getD (k % 64) 0) ∧
+      t.gpr .rsi = off c 128 ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+  WP.seq (WP.mono (twoKsBN_ok vl hr15 hrdi hwr) fun t ⟨ks, rsi, g, rd, wr⟩ =>
+    WP.mono (padIns_ok .rax (by decide) t) fun u p =>
+      ⟨by rw [p.mem]; exact ks, by rw [p.gpr _ (by decide)]; exact rsi,
+        fun r h₁ h₂ h₃ h₄ => by rw [p.gpr r h₁]; exact g r h₁ h₂ h₃ h₄, by rw [p.rd]; exact rd,
+        by rw [p.wr]; exact wr⟩)
 
 /-! ## The four blocks, on narrowed permissions -/
 

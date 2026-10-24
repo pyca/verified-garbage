@@ -31190,6 +31190,9 @@ vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
 mov rsi, r15
 add rsi, 128
+mov eax, 0
+mov eax, eax
+mov eax, eax
 jmp 26f
 25:
 mov rcx, r15
@@ -72961,6 +72964,9 @@ vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
 mov rsi, r15
 add rsi, 128
+mov eax, 0
+mov eax, eax
+mov eax, eax
 jmp 272f
 271:
 mov rcx, r15
@@ -115003,6 +115009,9 @@ vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
 mov rsi, r15
 add rsi, 128
+mov eax, 0
+mov eax, eax
+mov eax, eax
 jmp 272f
 271:
 mov rcx, r15
@@ -128601,6 +128610,9 @@ vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
 mov rsi, r15
 add rsi, 128
+mov eax, 0
+mov eax, eax
+mov eax, eax
 jmp 272f
 271:
 mov rcx, r15
