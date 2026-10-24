@@ -289,11 +289,12 @@ abbrev SizesOk (m : Mem) (L : Lay) (key : Addr) : Prop :=
 added to `r2`'s third field, if the sizes are supported; else `fail`. -/
 theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State → Prop} {rest fail : Prog isa}
     (hL : L.Ok) (hr : Regs s L key sig dig) (h2 : s.gpr .r2 = pack L.pl L.ql 0 d)
-    (hk : Src s L key (3 * L.pl + L.ql))
+    (hk : Src s L key (3 * L.pl + L.ql)) (hd : d < 2 ^ 16)
     (hrest : ∀ t, SizesOk s.mem L key → t.mem = s.mem →
       t.gpr .r2 = pack L.pl L.ql (Spec.Dsa.bitLength (qOf s.mem L key) / 8) d →
       Keep sizesRegs s t → WP isa rest t Q)
-    (hfail : ∀ t, ¬ SizesOk s.mem L key → t.mem = s.mem → Keep sizesRegs s t → WP isa fail t Q) :
+    (hfail : ∀ t, ¬ SizesOk s.mem L key → t.mem = s.mem → Keep sizesRegs s t → Regs t L key sig dig →
+      WP isa fail t Q) :
     WP isa (sizes rest fail) s Q := by
   have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega
   have hql := hL.ql
@@ -316,7 +317,7 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
   have m2 : t₂.mem = s.mem := by rw [bm, am]
   refine WP.ite _ (eval_zero _ _) (fun hz => ?ok) (fun hz => ?bad)
   case bad =>
-    refine hfail t₂ (fun h => ?_) m2 (k1.trans k2).mono
+    refine hfail t₂ (fun h => ?_) m2 (k1.trans k2).mono (hr.keep (k1.trans k2))
     rw [b0.mpr (hSz.mp h).1] at hz
     exact absurd hz (by decide)
   have hp := b0.mp (beq_iff_eq.mp hz)
@@ -335,7 +336,7 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
   have kB := (kA.trans k4).trans k5
   refine WP.ite _ (eval_zero _ _) (fun hz' => ?ok2) (fun hz' => ?bad2)
   case bad2 =>
-    refine hfail t₅ (fun h => ?_) m5 kB.mono
+    refine hfail t₅ (fun h => ?_) m5 kB.mono (hr.keep kB)
     rw [e0.mpr (hSz.mp h).2.1] at hz'
     exact absurd hz' (by decide)
   have hq := e0.mp (beq_iff_eq.mp hz')
@@ -361,7 +362,9 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
         Proof.Dsa.subgroup_scan_width (p := Spec.Rsa.bytesAt s.mem key L.pl) hok]
       omega
     exact hrest t₇ hok m7 (by rw [k7.gpr _ (by decide), f2, hb]) kC.mono
-  · refine hfail t₇ (fun h => ?_) m7 kC.mono
+  · refine hfail t₇ (fun h => ?_) m7 kC.mono (Regs.of_pack hL ((kC.gpr _ (by decide)).trans hr.r21)
+      ((kC.gpr _ (by decide)).trans hr.r27) ((kC.gpr _ (by decide)).trans hr.r28)
+      ((kC.gpr _ (by decide)).trans hr.r26) ((k7.gpr _ (by decide)).trans f2) hqb hd)
     rw [g0.mpr (hSz.mp h).2.2] at hz''
     exact absurd hz'' (by decide)
 

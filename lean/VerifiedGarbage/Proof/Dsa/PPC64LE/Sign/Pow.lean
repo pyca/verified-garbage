@@ -1,16 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Comb.Pow
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
+import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem.Basic
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # DSA signing on PPC64LE: a power by a secret in the P space

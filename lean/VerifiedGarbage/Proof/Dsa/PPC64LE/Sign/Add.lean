@@ -4,11 +4,14 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Math
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # DSA signing on PPC64LE: addition modulo q

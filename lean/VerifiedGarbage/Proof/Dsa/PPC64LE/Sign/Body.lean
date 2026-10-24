@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.KeyPair
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Gk
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.R
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Keep9
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyInv
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Inverse
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.S
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Output
@@ -80,28 +80,34 @@ theorem out_bytes {m : Mem} {out : Addr} {ql a b : Nat} (ha : a < 256 ^ ql) (hb 
     (VG.Proof.Dsa.encodeBE_eq_bytes (VG.Proof.Bignum.bytesAt_length _ _ _) ha).mpr h1.symm,
     (VG.Proof.Dsa.encodeBE_eq_bytes (VG.Proof.Bignum.bytesAt_length _ _ _) hb).mpr h2.symm]
 
-theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
+/-- q fits in its `q_len` octets. -/
+theorem qOf_lt {s₀ s : State} {L : Lay} {key : Addr} (hkp : Kept L s₀.mem s.mem)
+    (hk : Src s L key (3 * L.pl + L.ql)) : qOf s₀.mem L key < 2 ^ (8 * L.ql) := by
+  rw [← (key_kept hk hkp.out).2.1, qOf, ← VG.Proof.Bignum.pow256_eq]
+  have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)
+  rwa [VG.Proof.Bignum.bytesAt_length] at this
+
+/-- `Sign.body` up to `output` (here any `c`): `sValue` leaves r in the Q
+space's array 9, s in its array 6, and in the header's word `hMask` the mask
+of the checks but `s ≠ 0`, keeping `hOut`. -/
+theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat} {c : Prog isa}
+    {Q : State → Prop}
     (hL : L.Ok) (hK : KeyOk s₀.mem L key) (hc : Checked s₀ s L key nonce dig d)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
-    (hd : d < 2 ^ 16) (hdg : Src s L dig d)
-    (hw : word s.mem L.S hOut = out) (ho : Scr s out (2 * L.ql)) (hos : Src s L out (2 * L.ql)) :
-    WP isa Sign.body s fun t =>
-      (Spec.Rsa.bytesAt t.mem out (2 * L.ql) =
-          (if SignOk (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (yOf s₀.mem L key)
-              (xOf s.mem L key) (kOf s.mem L nonce)
-              (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
-            then Spec.Dsa.encodeBE L.ql (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key)
-                (kOf s.mem L nonce)) ++
-              Spec.Dsa.encodeBE L.ql (sigS (qOf s₀.mem L key) (xOf s.mem L key) (kOf s.mem L nonce)
-                (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
-                (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce)))
-            else List.replicate (2 * L.ql) 0) ∧
-        t.gpr .r3 = BitVec.ofNat 64 (if SignOk (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key)
-            (yOf s₀.mem L key) (xOf s.mem L key) (kOf s.mem L nonce)
-            (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
-          then 1 else 0) ∧
-        (∃ m, Kept L s.mem m ∧ Outside out 0 (2 * L.ql) m t.mem) ∧ t.gpr .r21 = L.S ∧ ScrL t L) ∧
-        Keep bodyRegs s t := by
+    (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hw : word s.mem L.S hOut = out)
+    (hcont : ∀ t, QS t L key nonce dig → Kept L s.mem t.mem → word t.mem L.S hOut = out →
+      word t.mem L.S hMask = mask (decide (gOf s₀.mem L key ^ xOf s.mem L key % pOf s₀.mem L key =
+          yOf s₀.mem L key) &&
+        decide ((0 < kOf s.mem L nonce ∧ kOf s.mem L nonce < qOf s₀.mem L key) ∧
+          (0 < xOf s.mem L key ∧ xOf s.mem L key < qOf s₀.mem L key) ∧
+          sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce) ≠ 0)) →
+      arrQ t.mem L 9 = sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce) →
+      arrQ t.mem L 6 = sigS (qOf s₀.mem L key) (xOf s.mem L key) (kOf s.mem L nonce)
+        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
+        (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce)) →
+      Keep bodyRegs s t → WP isa c t Q) :
+    WP isa (.seq keyPair (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
+      (.seq sValue c))))))) s Q := by
   have hZ := hL.z256
   have hpl := hL.pl
   have hql := hL.ql
@@ -114,38 +120,32 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
   have e8 := Lay.slot_eq L.wp 8; have e28 := Lay.slot_eq L.wp 28
   obtain ⟨ip, scr, regs, p0, -, p8, q0, -, r2⟩ := hc
   have hk3 : Src s L key (3 * L.pl + L.ql) := hk.take (by omega)
-  obtain ⟨-, eq, eg, ey⟩ := key_kept hk3 hkp.out
+  obtain ⟨-, -, eg, ey⟩ := key_kept hk3 hkp.out
+  have hqlt := qOf_lt hkp hk3
   unfold KeyOk at hK
-  have hqlt : qOf s₀.mem L key < 2 ^ (8 * L.ql) := by
-    rw [← eq, qOf, ← VG.Proof.Bignum.pow256_eq]
-    have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)
-    rwa [VG.Proof.Bignum.bytesAt_length] at this
-  generalize pOf s₀.mem L key = p at hK p0 p8 ⊢
-  generalize hq : qOf s₀.mem L key = q at hK q0 r2 hqlt ⊢
-  generalize hgg : gOf s₀.mem L key = g at hK eg ⊢
-  generalize hyy : yOf s₀.mem L key = y at hK ey ⊢
+  generalize pOf s₀.mem L key = p at hK p0 p8 hcont
+  generalize qOf s₀.mem L key = q at hK q0 r2 hqlt hcont
+  generalize gOf s₀.mem L key = g at hK eg hcont
+  generalize yOf s₀.mem L key = y at hK ey hcont
   have B := VG.Proof.Dsa.supported_bounds hK.1.1
   have hqo : q % 2 = 1 := hK.1.2.1
   have hpo : p % 2 = 1 := hK.1.2.2
   have hq8 : Spec.Dsa.bitLength q = 8 * (Spec.Dsa.bitLength q / 8) := by
     have := hK.1.1; unfold Spec.Dsa.supportedSizes at this; omega
-  generalize hn' : Spec.Dsa.bitLength q / 8 = n at r2 hq8 ⊢
+  generalize Spec.Dsa.bitLength q / 8 = n at r2 hq8 hcont
   have hnq : n ≤ L.ql := by
     have hq0 : q ≠ 0 := by omega
     have hlog : q.log2 < 8 * L.ql := (Nat.log2_lt hq0).mpr hqlt
     have : Spec.Dsa.bitLength q = q.log2 + 1 := by simp [Spec.Dsa.bitLength, hq0]
     omega
-  have hn16 : n < 2 ^ 16 := by omega
   -- The values read from outside `scratch`, kept.
   have hdgn : Src s L dig (min d n) := hdg.take (Nat.min_le_left _ _)
   have vals : ∀ {m : Mem}, Kept L s.mem m → xOf m L key = xOf s.mem L key ∧ kOf m L nonce = kOf s.mem L nonce ∧
       gOf m L key = g ∧ Spec.Rsa.bytesAt m dig (min d n) = Spec.Rsa.bytesAt s.mem dig (min d n) := fun hm =>
     ⟨by simp only [xOf]; rw [(hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)).kept hm.out],
       by simp only [kOf]; rw [hn.kept hm.out], (key_kept hk3 hm.out).2.2.1.trans eg, hdgn.kept hm.out⟩
-  generalize hX : xOf s.mem L key = X at vals ⊢
-  generalize hK' : kOf s.mem L nonce = K at vals ⊢
-  generalize hZz : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d n)) = Z at ⊢
-  unfold Sign.body
+  generalize hX : xOf s.mem L key = X at vals hcont
+  generalize kOf s.mem L nonce = K at vals hcont
   -- The mask of `g^x mod p = y`.
   refine WP.seq (WP.mono (keyPair_ok (p := p) hL scr regs ip hk p0 (by omega) hpo p8)
     fun s₁ ⟨⟨mx₁, ip₁, o₁, p0₁, _, sav₁, hout₁⟩, k₁⟩ => ?_)
@@ -181,11 +181,11 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
   have hout₃ : word s₃.mem L.S hOut = out := by
     rw [Outside.word fb (Or.inr (by decide)) (by decide), Body.hOut (qa₃.qbody.body hL)]; exact hout₂
   -- `R² mod q`.
-  refine WP.seq (WP.mono (rrQ9_ok Q₃ (by rw [q0₃]; omega)) fun s₄ ⟨⟨Q₄, h8₄, qa₄, a9₄⟩, k₄⟩ => ?_)
+  refine WP.seq (WP.mono (rrQ_ok Q₃ (by rw [q0₃]; omega)) fun s₄ ⟨⟨Q₄, h8₄, qa₄, a9₄⟩, k₄⟩ => ?_)
   rw [q0₃] at h8₄
   have q0₄ : arrQ s₄.mem L 0 = q := qa₄.arr0.trans q0₃
   -- `q − 2`.
-  refine WP.seq (WP.mono (qMinus2_9_ok Q₄ hL (by rw [q0₄]; omega) (by rw [q0₄]; exact hqlt))
+  refine WP.seq (WP.mono (qMinus2_ok Q₄ hL (by rw [q0₄]; omega) (by rw [q0₄]; exact hqlt))
     fun s₅ ⟨⟨Q₅, bq₅, a8₅, qb₅, a9₅⟩, k₅⟩ => ?_)
   rw [q0₄] at bq₅
   have q0₅ : arrQ s₅.mem L 0 = q := qb₅.arr0.trans q0₄
@@ -215,22 +215,55 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
       (by rw [a8₆, a8₅, h8₄, q0₆]) (by rw [w4₆, q0₆]; exact Nat.mod_lt _ (by omega))
       (by rw [r9₆, q0₆]; exact Nat.mod_lt _ (by omega)) hz)
     fun s₇ ⟨⟨Q₇, s6₇, a9₇, qa₇⟩, k₇⟩ => ?_)
-  rw [q0₆, w4₆, r9₆, (vals K₆).1, (vals K₆).2.2.2, hZz] at s6₇
-  have q0₇ : arrQ s₇.mem L 0 = q := qa₇.arr0.trans q0₆
+  rw [q0₆, w4₆, r9₆, (vals K₆).1, (vals K₆).2.2.2] at s6₇
   have B₃₇ := B₃₆.trans (qa₇.qbody.body hL)
-  have K₇ := K₃.trans (Kept.ofBody hL B₃₇)
-  have k₁₇ := k₁₆.trans k₇
-  have r9₇ : arrQ s₇.mem L 9 = sigR p q g K := a9₇.trans r9₆
-  have s6₇' : arrQ s₇.mem L 6 = sigS q X K Z (sigR p q g K) := s6₇
+  exact hcont s₇ Q₇ (K₃.trans (Kept.ofBody hL B₃₇)) ((Body.hOut B₃₇).trans hout₃) ((Body.hMask B₃₇).trans m₃)
+    (a9₇.trans r9₆) s6₇ (keep_but21 (k₁₆.trans k₇) (by decide) (by decide))
+
+theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
+    (hL : L.Ok) (hK : KeyOk s₀.mem L key) (hc : Checked s₀ s L key nonce dig d)
+    (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
+    (hd : d < 2 ^ 16) (hdg : Src s L dig d)
+    (hw : word s.mem L.S hOut = out) (ho : Scr s out (2 * L.ql)) (hos : Src s L out (2 * L.ql)) :
+    WP isa Sign.body s fun t =>
+      (Spec.Rsa.bytesAt t.mem out (2 * L.ql) =
+          (if SignOk (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (yOf s₀.mem L key)
+              (xOf s.mem L key) (kOf s.mem L nonce)
+              (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
+            then Spec.Dsa.encodeBE L.ql (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key)
+                (kOf s.mem L nonce)) ++
+              Spec.Dsa.encodeBE L.ql (sigS (qOf s₀.mem L key) (xOf s.mem L key) (kOf s.mem L nonce)
+                (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
+                (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce)))
+            else List.replicate (2 * L.ql) 0) ∧
+        t.gpr .r3 = BitVec.ofNat 64 (if SignOk (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key)
+            (yOf s₀.mem L key) (xOf s.mem L key) (kOf s.mem L nonce)
+            (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
+          then 1 else 0) ∧
+        (∃ m, Kept L s.mem m ∧ Outside out 0 (2 * L.ql) m t.mem) ∧ t.gpr .r21 = L.S ∧ ScrL t L) ∧
+        Keep bodyRegs s t := by
+  have hqlt := qOf_lt hkp (hk.take (by omega))
+  have scr := hc.scr
+  unfold Sign.body
+  refine sprefix_ok hL hK hc hkp hk hn hd hdg hw fun s₇ Q₇ K₇ hout₇ m₇ r9₇ s6₇ k₁₇ => ?_
+  unfold KeyOk at hK
+  generalize pOf s₀.mem L key = p at hK m₇ r9₇ s6₇ ⊢
+  generalize qOf s₀.mem L key = q at hK hqlt m₇ r9₇ s6₇ ⊢
+  generalize gOf s₀.mem L key = g at hK m₇ r9₇ s6₇ ⊢
+  generalize yOf s₀.mem L key = y at hK m₇ ⊢
+  generalize xOf s.mem L key = X at m₇ s6₇ ⊢
+  generalize kOf s.mem L nonce = K at m₇ r9₇ s6₇ ⊢
+  generalize Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength q / 8))) = Z at s6₇ ⊢
+  have B := VG.Proof.Dsa.supported_bounds hK.1.1
   -- The output.
   have hrq : sigR p q g K < q := Nat.mod_lt _ (by omega)
   have hsq : sigS q X K Z (sigR p q g K) < q := Nat.mod_lt _ (by omega)
-  refine WP.mono (output_ok hL Q₇ ((Body.hOut B₃₇).trans hout₃) ((Body.hMask B₃₇).trans m₃)
-      (ho.congr k₁₇.wr) (hos.keep k₁₇.rd k₁₇.wr) (by rw [r9₇]; omega) (by rw [s6₇']; omega))
+  refine WP.mono (output_ok hL Q₇ hout₇ m₇
+      (ho.congr k₁₇.wr) (hos.keep k₁₇.rd k₁₇.wr) (by rw [r9₇]; omega) (by rw [s6₇]; omega))
     fun t ⟨⟨o1, o2, t3, mo, qo, oo⟩, kt⟩ => ?_
-  rw [r9₇, s6₇'] at o1
-  rw [s6₇'] at o2 t3
-  have hcb : (decide (g ^ X % p = y) && decide ((0 < K ∧ K < q) ∧ (0 < X ∧ X < q) ∧ g ^ K % p % q ≠ 0) &&
+  rw [r9₇, s6₇] at o1
+  rw [s6₇] at o2 t3
+  have hcb : (decide (g ^ X % p = y) && decide ((0 < K ∧ K < q) ∧ (0 < X ∧ X < q) ∧ sigR p q g K ≠ 0) &&
       decide (sigS q X K Z (sigR p q g K) ≠ 0)) = decide (SignOk p q g y X K Z) := by
     rw [Bool.eq_iff_iff]
     simp only [Bool.and_eq_true, decide_eq_true_eq]

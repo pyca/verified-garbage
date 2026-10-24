@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Front
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Save
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Body
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.CheckKey
+import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Zero
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Output
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFn
@@ -128,7 +128,7 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := key_kept (srcK3 s rfl rfl) Out₁
   have hKs : KeyOk s₁.mem (slayOf s) (s.gpr .r5) ↔ KeyOk s.mem (slayOf s) (s.gpr .r5) := by
     simp only [KeyOk, ep₁, eq₁, eg₁, ey₁]
-  refine WP.seq (checkKeyB_ok hL scr₁ hr₁ r2₁ (by omega) (srcK3 s₁ k₁.rd k₁.wr) (fun t hK hc Bd kc => ?_)
+  refine WP.seq (checkKey_ok hL scr₁ hr₁ r2₁ (by omega) (srcK3 s₁ k₁.rd k₁.wr) (fun t hK hc Bd kc => ?_)
     (fun t hn Bd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
     have Kd := Kept.ofBody hL Bd

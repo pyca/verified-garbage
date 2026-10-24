@@ -190,12 +190,12 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
     (mask_arrP hL wo hj).trans (qa₁.qbuf.arrP hL hj)
   have k₁₂ := k₁.trans k₂
   -- `R² mod q`.
-  refine WP.seq (WP.mono (rrQ_ok Q₂ (by rw [q0₂]; omega)) fun s₃ ⟨⟨Q₃, h8₃, qa₃⟩, k₃⟩ => ?_)
+  refine WP.seq (WP.mono (rrQ_ok Q₂ (by rw [q0₂]; omega)) fun s₃ ⟨⟨Q₃, h8₃, qa₃, _⟩, k₃⟩ => ?_)
   rw [q0₂] at h8₃
   have q0₃ : arrQ s₃.mem L 0 = q := qa₃.arr0.trans q0₂
   -- `q − 2`.
   refine WP.seq (WP.mono (qMinus2_ok Q₃ hL (by rw [q0₃]; omega) (by rw [q0₃]; exact hqlt))
-    fun s₄ ⟨⟨Q₄, bq₄, a8₄, qb₄⟩, k₄⟩ => ?_)
+    fun s₄ ⟨⟨Q₄, bq₄, a8₄, qb₄, _⟩, k₄⟩ => ?_)
   rw [q0₃] at bq₄
   have q0₄ : arrQ s₄.mem L 0 = q := qb₄.arr0.trans q0₃
   have k₁₄ := (k₁₂.trans k₃).trans k₄
