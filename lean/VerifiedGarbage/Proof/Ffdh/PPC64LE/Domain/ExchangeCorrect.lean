@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
 import VerifiedGarbage.Proof.Ffdh.Domain
@@ -12,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeBody
 
 /-!
 # `vg_ffdh_exchange` on PPC64LE: correctness

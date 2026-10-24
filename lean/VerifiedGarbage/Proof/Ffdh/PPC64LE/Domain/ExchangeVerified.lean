@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
@@ -77,5 +79,9 @@ theorem ex_implies : exContract.Implies (Spec.Ffdh.exchangeContract abi) where
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, Spec.Ffdh.pLenValid,
       Spec.Ffdh.domainLenValid] [exSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using exSatState
+
+/-- `vg_ffdh_exchange`. -/
+theorem ex_verified : Verified target exchange (Spec.Ffdh.exchangeContract abi) :=
+  Verified.of_correct ex_correct ex_ct ex_implies
 
 end VG.Proof.Ffdh.PPC64LE.Domain

@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeBody
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # `vg_ffdh_exchange` on PPC64LE: the function
