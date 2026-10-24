@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.MlKem.Mem
 As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseK.lean`), once `SampleInBall`
 succeeded (`KB`): `ĉ = NTT(c)`, and each check of the iteration, their
 results ANDed into `r24`: the norm of each `z[r]` (`IZ`), of each `r₀[i]`
-(`IR`) and of each `ct₀[i]`, with each hint `h[i]` and the number of its 1s
+(`IQ`) and of each `ct₀[i]`, with each hint `h[i]` and the number of its 1s
 summed in `r26` (`IH`), and that sum against `ω`; so `r24` is 1 exactly when
 the iteration passes (`KO`).
 -/
@@ -135,10 +135,47 @@ theorem IZ.weak {p : Params} {STK : Nat} {σ : State} {t r : Nat} {s : State} (h
     (hr : r < p.ℓ) : IZ p STK σ t r (r + 1) s ∧ PolyIs s.mem (SL p STK σ (yBase p + r)) (Yv p σ (p.ℓ * t) r) :=
   ⟨⟨h.b, h.z, fun j hj hj' => h.y j (by omega) hj', h.w, h.r26, h.r24⟩, h.y r (Nat.le_refl _) hr⟩
 
+/-! ## `r₀` -/
+
+/-- The checks of `r₀[j]` for `j < nr` (`w[j]` is `w[j] - cs₂[j]`); `w[j]` for `ws ≤ j < k`; `z` checked, `r26 = 0`. -/
+structure IQ (p : Params) (STK : Nat) (σ : State) (t nr ws : Nat) (s : State) : Prop where
+  b : KB p STK σ t s
+  z : ∀ r < p.ℓ, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)
+  w' : ∀ i < nr, PolyIs s.mem (SL p STK σ (wBase p + i)) (W'v p σ (p.ℓ * t) i)
+  w : ∀ i, ws ≤ i → i < p.k → PolyIs s.mem (SL p STK σ (wBase p + i)) (Wv p σ (p.ℓ * t) i)
+  r26 : s.gpr .r26 = 0
+  r24 : s.gpr .r24 = bit (ZOk p σ (p.ℓ * t) ∧ ∀ j < nr, normRq [R0v p σ (p.ℓ * t) j] < p.γ₂ - p.β)
+
+/-- A part that writes `W` keeps `IQ`. -/
+def iqChk (p : Params) (STK : Nat) (W : List (Nat × Nat × Nat)) (nr ws : Nat) : Bool :=
+  kbChk p STK W && sepAll [scrLen p, STK, p.skLen, 64, p.sigLen] (0, oP (yBase p + 0), 1024 * (p.ℓ - 0)) W &&
+    sepAll [scrLen p, STK, p.skLen, 64, p.sigLen] (0, oP (wBase p + 0), 1024 * (nr - 0)) W &&
+    sepAll [scrLen p, STK, p.skLen, 64, p.sigLen] (0, oP (wBase p + ws), 1024 * (p.k - ws)) W
+
+theorem IQ.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t nr ws : Nat} {s s' : State}
+    (h : IQ p STK σ t nr ws s) {W : List (Nat × Nat × Nat)} (hk : Kept ((slay2 p STK σ).RL W) s s')
+    (hc : iqChk p STK W nr ws = true) : IQ p STK σ t nr ws s' := by
+  simp only [iqChk, Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨c1, c2⟩, c3⟩, c4⟩ := hc
+  have hL := h.b.l.k.sc.site.ok
+  have h0 : 0 ∈ sWb2 := by decide
+  exact ⟨h.b.keep hF hk c1, fun r hr => famR_keep hL h0 hk.frame c2 (fun j _ hj => h.z j hj) r (Nat.zero_le _) hr,
+    fun i hi => famR_keep hL h0 hk.frame c3 (fun j _ hj => h.w' j hj) i (Nat.zero_le _) hi,
+    famR_keep hL h0 hk.frame c4 h.w, (hk.cs .r26 (by decide)).trans h.r26, (hk.cs .r24 (by decide)).trans h.r24⟩
+
+theorem IQ.weak {p : Params} {STK : Nat} {σ : State} {t i : Nat} {s : State} (h : IQ p STK σ t i i s)
+    (hi : i < p.k) : IQ p STK σ t i (i + 1) s ∧ PolyIs s.mem (SL p STK σ (wBase p + i)) (Wv p σ (p.ℓ * t) i) :=
+  ⟨⟨h.b, h.z, h.w', fun j hj hj' => h.w j (by omega) hj', h.r26, h.r24⟩, h.w i (Nat.le_refl _) hi⟩
+
+theorem IZ.iq {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h : IZ p STK σ t p.ℓ p.ℓ s) :
+    IQ p STK σ t 0 0 s :=
+  ⟨h.b, h.z, fun _ h => absurd h (Nat.not_lt_zero _), fun i _ hi => h.w i hi, h.r26,
+    by rw [h.r24]; exact bit_congr ⟨fun h => ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩, fun h => h.1⟩⟩
+
 /-- `ssep`, with the slots and checks of the signing loop. -/
 syntax "csep " term:max : tactic
 macro_rules
-  | `(tactic| csep $hF) => `(tactic| ssep $hF [izChk, kbChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, s2Base,
+  | `(tactic| csep $hF) => `(tactic| ssep $hF [izChk, iqChk, kbChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, s2Base,
       t0Base, aBase, nSec])
 
 /-- `slt`, with the slots of the signing loop. -/
@@ -209,6 +246,89 @@ theorem zR_piece {t r : Nat} (hr : r < p.ℓ) :
   unfold zR normAt
   refine Piece.mono (p1.seq (p2.seq ((Piece.mono p3 (fun σ s _ h => ⟨⟨h.1.1, h.2⟩, h.1.2⟩)
     fun σ s _ h => ⟨h.1.1, h.2⟩).seq (p4.seq p5)))) (fun σ s _ h => h.weak hr) fun _ _ _ h => h
+end
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+/-- `w[i]` while `r₀[i]` is computed. -/
+abbrev RA (p : Params) (STK t i : Nat) (σ s : State) : Prop :=
+  IQ p STK σ t i (i + 1) s ∧ PolyIs s.mem (SL p STK σ (wBase p + i)) (Wv p σ (p.ℓ * t) i)
+
+omit hP hS in
+theorem ra_keep {t i : Nat} (hi : i < p.k) {σ s s' : State} (h : RA p STK t i σ s) {x : Nat} (hx : 1 ≤ x ∧ x < 5)
+    (hk : Kept ((slay2 p STK σ).RL [tri (pS x) 1024, tri (sc oPS) 1024, (1, 0, STK)]) s s') :
+    RA p STK t i σ s' := by
+  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  exact ⟨h.1.keep hF hk (by csep hF), polyIs_keepW h.1.b.l.k.sc.site.ok hk.frame (by csep hF) (by decide) rfl h.2⟩
+
+theorem r0R_piece {t i : Nat} (hi : i < p.k) :
+    SPiece p STK (fun σ s => IQ p STK σ t i i s) (fun σ s => IQ p STK σ t (i + 1) (i + 1) s) (r0R P p i) := by
+  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  have hra : ∀ σ s, RA p STK t i σ s → SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
+  -- `T1 ← NTT⁻¹(ĉ ŝ₂[i])`
+  have p1 := mulP_piece hP hS hra (x := 1) (a := 0) (b := s2Base p + i)
+    (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
+      ⟨sptr_ok rfl (by clt hF), by csep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, by csep hF, by csep hF⟩)
+    (F := fun σ => chF (cV p σ (p.ℓ * t))) (G := fun σ => S2v p σ i)
+    (fun _ _ h => h.1.b.c) (fun _ _ h => h.1.b.l.k.s2 i hi)
+    (fun σ s s' h k => ra_keep hF hi h (x := 1) (by decide) (k.monoL (by simp)))
+  have p2 := ipP_piece hS hra (t := nttInv) hP.invNtt (x := 1) (name := "vg_mldsa_inv_ntt")
+    (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
+      show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
+    (F := fun σ => multiplyNTT (chF (cV p σ (p.ℓ * t))) (S2v p σ i))
+    (fun σ s s' h k => ra_keep hF hi h (x := 1) (by decide) (k.monoL (by simp)))
+  -- `w[i] ← w[i] - T1`
+  have hrb : ∀ σ s, (IQ p STK σ t i (i + 1) s ∧
+      PolyIs s.mem (SL p STK σ 1) (nttInv (multiplyNTT (chF (cV p σ (p.ℓ * t))) (S2v p σ i)))) → SC2 p STK σ s :=
+    fun _ _ h => h.1.b.l.k.sc
+  have p3 := subP_piece hP hS hrb (f := wBase p + i) (g := 1)
+    (fun σ => ⟨⟨sptr_ok rfl (by clt hF), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
+      show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
+    (F := fun σ => Wv p σ (p.ℓ * t) i) (G := fun σ => nttInv (multiplyNTT (chF (cV p σ (p.ℓ * t))) (S2v p σ i)))
+    (fun _ _ h => h.2)
+    (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
+      polyIs_keepW h.1.b.l.k.sc.site.ok k.frame (by csep hF) (by decide) rfl h.2⟩)
+  -- `T2 ← LowBits(w[i])`
+  have hrc : ∀ σ s, (IQ p STK σ t i (i + 1) s ∧ PolyIs s.mem (SL p STK σ (wBase p + i)) (W'v p σ (p.ℓ * t) i)) →
+      SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
+  have p4 := lbP_piece hP hS hrc (r := wBase p + i) (o := 2) (g2 := p.γ₂)
+    (fun σ => ⟨⟨sptr_ok rfl (by clt hF), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
+      show ix Reg.r31 ∈ sWb2 by decide, by csep hF, hF.g2,
+      by have hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
+         rcases hg with e | e <;> rw [e] <;> decide⟩)
+    (F := fun σ => W'v p σ (p.ℓ * t) i) (fun _ _ h => h.2)
+    (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
+      polyIs_keepW h.1.b.l.k.sc.site.ok k.frame (by csep hF) (by decide) rfl h.2⟩)
+  -- its norm, into `r24`
+  have hB : p.γ₂ - p.β < 2 ^ 31 := by
+    have hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
+    have hq : q = 8380417 := rfl
+    rcases hg with e | e <;> rw [e] <;> omega
+  have p5 := normP_piece hP hS hrc (f := 2) (B := p.γ₂ - p.β) (fun σ => ⟨sptr_ok rfl (by decide), by csep hF⟩)
+    (fun σ => by csep hF) hB (F := fun σ => R0v p σ (p.ℓ * t) i)
+    (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
+      polyIs_keepW h.1.b.l.k.sc.site.ok k.frame (by csep hF) (by decide) rfl h.2⟩)
+  have p6 := and24_piece (p := p) (STK := STK) (J := fun σ s => ((IQ p STK σ t i (i + 1) s ∧
+      PolyIs s.mem (SL p STK σ (wBase p + i)) (W'v p σ (p.ℓ * t) i)) ∧ PolyIs s.mem (SL p STK σ 2) (R0v p σ (p.ℓ * t) i)) ∧
+      (s.gpr .r3).setWidth 32 = (if normRq [R0v p σ (p.ℓ * t) i] < p.γ₂ - p.β then 1 else 0))
+    (J' := fun σ s => IQ p STK σ t (i + 1) (i + 1) s) (fun _ _ h => h.1.1.1.b.l.k.sc)
+    fun σ s s' ⟨⟨⟨h, hw⟩, _⟩, h3⟩ r2 e24 => ⟨h.b.regs2 r2, fun j hj => by rw [r2.mem]; exact h.z j hj,
+      fun j hj => by
+        rw [r2.mem]
+        rcases (by omega : j < i ∨ j = i) with h' | rfl
+        exacts [h.w' j h', hw],
+      fun j hj hj' => by rw [r2.mem]; exact h.w j hj hj',
+      by rw [r2.gpr .r26 (by decide) (by decide)]; exact h.r26,
+      by
+        rw [e24, h.r24, bit_and h3]
+        exact bit_congr ⟨fun ⟨⟨a, b⟩, c⟩ => ⟨a, forall_lt_succ.mp ⟨b, c⟩⟩,
+          fun ⟨a, b⟩ => ⟨⟨a, (forall_lt_succ.mpr b).1⟩, (forall_lt_succ.mpr b).2⟩⟩⟩
+  unfold r0R normAt
+  refine Piece.mono (p1.seq (p2.seq ((Piece.mono p3 (fun σ s _ h => ⟨⟨h.1.1, h.2⟩, h.1.2⟩)
+    fun σ s _ h => ⟨h.1.1, h.2⟩).seq (p4.seq (p5.seq p6))))) (fun σ s _ h => h.weak hi) fun _ _ _ h => h
+
 end
 
 end VG.Proof.MlDsa.PPC64LE.Sign

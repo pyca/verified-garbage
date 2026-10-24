@@ -131,6 +131,22 @@ theorem normP_piece {f B : Nat} (pf : ∀ σ, PtrIn (slay2 p STK σ) (pS f) 1024
     rw [e] at hq
     exact hq
 
+theorem lbP_piece {r o g2 : Nat} (m : ∀ σ, KeyGen.BitsOk (slay2 p STK σ) sWb2 (pS r) g2 (pS o)) {F : State → Poly}
+    (hr : ∀ σ s, I σ s → PolyIs s.mem (SL p STK σ r) (F σ))
+    (hk : ∀ σ s s', I σ s → Kept ((slay2 p STK σ).RL [tri (pS o) 1024, (1, 0, STK)]) s s' → I σ s') :
+    SPiece p STK I (fun σ s => I σ s ∧ PolyIs s.mem (SL p STK σ o) ((F σ).map fun c => ofInt (lowBits g2 c)))
+      (lowBitsAt P (pS r) g2 (pS o)) := by
+  refine ⟨fun σ s _ h => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.lb_tr hP.lowBits hS (m σ)
+    (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧ Reduced x.mem (SL p STK σ r) ∧ Reduced y.mem (SL p STK σ r))
+      fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2.1, h.2.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub (hI _ _ h₁) (hI _ _ h₂), (hr _ _ h₁).1, by
+      rw [SL_pub pub]; exact (hr _ _ h₂).1⟩⟩
+  unfold lowBitsAt
+  refine KeyGen.lb_ok hP.lowBits (hI _ _ h).site hS (m σ) (hr _ _ h).1 fun s' k' hq => ⟨hk _ _ _ h k', ?_⟩
+  have e : polyAt s.mem (lpa (slay2 p STK σ) (pS r)) = F σ := (hr _ _ h).2
+  rw [e] at hq
+  exact hq
+
 end
 
 /-! ## `r24 ← r24 ∧ r3` -/
