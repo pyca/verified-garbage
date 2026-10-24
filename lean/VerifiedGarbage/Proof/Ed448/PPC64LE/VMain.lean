@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VSetup
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecode
-import VerifiedGarbage.Proof.Ed448.PPC64LE.VCheckS
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VCheckScalar
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VTab
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VStep
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VFinish
