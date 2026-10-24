@@ -7,19 +7,19 @@
 Prints a JSON list of platforms (see `PLATFORMS`) for the Benchmarks
 workflow's matrix. Given a change, it prints what the change needs, to scope
 a manual run of the workflow by: an architecture is benchmarked when its own
-assembly (`src/asm/<arch>/`) changed, or anything shared by every
-architecture (the rest of `src/`, the benchmarks, the dependencies, the
-comparison). Changes to other files (e.g. Lean that leaves `src/asm/` as it
-was) need none.
+assembly (`src/asm/<arch>/`, or the directory `ASM_DIRS` names) changed, or
+anything shared by every architecture (the rest of `src/`, the benchmarks,
+the dependencies, the comparison). Changes to other files (e.g. Lean that
+leaves `src/asm/` as it was) need none.
 
 A Rust file outside `src/asm/<arch>/` counts as changed on an architecture
 only if what that architecture compiles of it changed: without comments,
 items under a `cfg` that cannot hold there (one naming only other
-architectures, e.g. PPC64LE's), and `cfg_attr`s that cannot apply. A `cfg`
-that holds there is as if absent, so adding another architecture to a
-module's list changes nothing. A `cfg` that depends on more than
-`target_arch` and `target_endian` (a feature, `test`) is kept as written,
-and a file this cannot follow counts as changed everywhere.
+architectures, e.g. x86-64's on AArch64), and `cfg_attr`s that cannot
+apply. A `cfg` that holds there is as if absent, so adding another
+architecture to a module's list changes nothing. A `cfg` that depends on
+more than `target_arch` and `target_endian` (a feature, `test`) is kept as
+written, and a file this cannot follow counts as changed everywhere.
 
 Each platform's `modules` narrows its benchmarks to the modules whose own
 files changed:
@@ -139,13 +139,13 @@ import re
 import sys
 import tomllib
 
-# The architectures benchmarked, and where each one runs natively, in the
-# images ci/runner.Dockerfile builds, as ci.yml's `rust` job tests them (so
-# that its build of the dependencies is the cache bench.yml restores): x86 in
-# a 32-bit userspace on the x86-64 host, and ARMv7 cross-compiled on the
-# ARM64 host, in armv7-cross, whose binaries run natively. bench_compare.py
-# runs them itself, not through ci/arm32-run, so on a host without AArch32
-# they fail rather than time QEMU.
+# The architectures benchmarked, by `target_arch`, and where each one runs
+# natively, in the images ci/runner.Dockerfile builds, as ci.yml's `rust` job
+# tests them (so that its build of the dependencies is the cache bench.yml
+# restores): x86 in a 32-bit userspace on the x86-64 host, PPC64LE on a
+# ppc64le host, and ARMv7 cross-compiled on the ARM64 host, in armv7-cross,
+# whose binaries run natively. bench_compare.py runs them itself, not through
+# ci/arm32-run, so on a host without AArch32 they fail rather than time QEMU.
 PLATFORMS = {
     "x86_64": {"os": "ubuntu-26.04"},
     "aarch64": {"os": "ubuntu-26.04-arm"},
@@ -161,7 +161,21 @@ PLATFORMS = {
         "os": "ubuntu-26.04-arm",
         "image": "ghcr.io/pyca/verified-garbage-runner:armv7-cross",
     },
+    "powerpc64": {
+        "os": "ubuntu-24.04-ppc64le",
+        "image": "ghcr.io/pyca/verified-garbage-runner:ppc64le",
+    },
 }
+
+# The directory of an architecture's verified functions, `src/asm/<dir>/`,
+# where it is not its `target_arch` (as in ci/rust_arches.py); each matrix
+# entry's `asm`, which bench.yml checks out.
+ASM_DIRS = {"powerpc64": "powerpc64le"}
+
+
+def asm_dir(arch):
+    return ASM_DIRS.get(arch, arch)
+
 
 # Platforms only a run by hand measures (`--arches`), never a pull request's
 # selection, each with the architecture whose code, configurations and
@@ -833,12 +847,12 @@ def asm_users(arch, module, root="."):
     """The other modules of `src/asm/<arch>/` that use the generated module
     `module` (e.g. `consts`, the tables of constants), or None if Rust code
     outside them does (through `crate::arch` or `crate::asm`) or none does."""
-    names = set()
+    names, directory = set(), asm_dir(arch)
     sibling = re.compile(rf"\bsuper::{module}\b")
-    outside = re.compile(rf"\b(?:arch|asm::{arch})::{module}\b")
+    outside = re.compile(rf"\b(?:arch|asm::{directory})::{module}\b")
     for path in rust_files(root):
         text = read(path, None, root) or ""
-        if not path.startswith(f"src/asm/{arch}/"):
+        if not path.startswith(f"src/asm/{directory}/"):
             if outside.search(text):
                 return None
         elif (m := ASM.match(path)) and m[2] not in ("mod", module) and sibling.search(text):
@@ -912,7 +926,7 @@ def requirements(arch, modules, revisions):
             return None if CPU_FEATURES.get(arch) else set()
         quoted = re.compile(r'"(%s)"' % "|".join(map(re.escape, sorted(arch_features))))
         for module in modules:
-            asm = read(f"src/asm/{arch}/{module}.rs", revision) or ""
+            asm = read(f"src/asm/{asm_dir(arch)}/{module}.rs", revision) or ""
             found = {frozenset(QUOTED.findall(lst)) for lst in FEATURES.findall(asm)}
             opt_in = False
             for path in sources(module):
@@ -969,9 +983,9 @@ def arches(changed, base=None):
                 continue
         if path.startswith("src/") and not asm and tests_only(path, base):
             continue
-        # A change to code only other architectures compile (e.g. PPC64LE's)
-        # needs nothing.
-        targets = [asm[1]] if asm else affected(path, base)
+        # A change to code only other architectures compile, or to the
+        # assembly of one that is not benchmarked, needs nothing.
+        targets = [a for a in PLATFORMS if asm_dir(a) == asm[1]] if asm else affected(path, base)
         if path in ("src/lib.rs", "bench/benches/primitives/main.rs") or (asm and asm[2] == "mod"):
             for arch in targets:
                 names = registrations(path, base, arch)
@@ -1002,12 +1016,9 @@ def arches(changed, base=None):
                     needed[a] = ALL
                 for module in modules or ():
                     need(a, module)
-        elif asm and asm[1] in PLATFORMS:
-            need_asm(asm[1], asm[2])
         elif asm:
-            # The assembly of an architecture that is not benchmarked (e.g.
-            # PPC64LE) needs no benchmark.
-            pass
+            for a in targets:
+                need_asm(a, asm[2])
         elif path == HASHES:
             for a in targets:
                 for name in hashes():
@@ -1189,6 +1200,7 @@ def platforms(arch, modules=ALL, reqs=None, benchmarks=None, configurations=None
         {
             "arch": arch,
             **PLATFORMS[arch],
+            "asm": asm_dir(arch),
             "cpu-features": features,
             "modules": " ".join(sorted(modules or ())),
             "shard": f"{shard}/{shards}" if shards > 1 else "",
