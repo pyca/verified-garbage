@@ -307,7 +307,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.PPC64LE.Cfg.exchange c =
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers and `lr`. -/
-theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.PPC64LE.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -377,7 +377,7 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c
     rcases hi with rfl | rfl | rfl | rfl <;>
       rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]
   -- `[d]P`, then `Z^(p-2)`.
-  refine ladPow_ok hc h3 h6 hC (gx := PX) (gy := PY) (by decide) (by decide) K₄ (k := dk c s₀)
+  refine ladPow_ok hc h3 hC (gx := PX) (gy := PY) (by decide) (by decide) (by decide) (by decide) K₄ (k := dk c s₀)
     (ofBytes_bytesAt_lt _ _ _) (by rw [r₄ (by simp)]; exact S₂.rx) (by rw [r₄ (by simp)]; exact S₂.ry)
     (by rw [r₄ (by simp)]; exact S₂.rz)
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, hkv])

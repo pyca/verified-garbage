@@ -50,7 +50,7 @@ theorem post_of {s s' : State} (h : EPost brainpoolp256r1 s s') : ecdhPPC.post s
 
 theorem ecdh_ppc (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (s : State) (hs : ecdhPPC.pre s) :
     ∃ t s', Exec isa exchangeBrainpoolP256r1 s t s' ∧ abiPreserved s s' ∧ ecdhPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok brainpoolp256r1_ok (by decide) (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok brainpoolp256r1_ok (by decide) hL (pre_of hs)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhPPC.pre ecdhPPC.pub exchangeBrainpoolP256r1 :=

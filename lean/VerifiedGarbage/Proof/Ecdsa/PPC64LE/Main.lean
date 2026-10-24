@@ -282,7 +282,7 @@ theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith Args.sign))
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores
 the callee-saved registers and `lr`, and changes only the working space and
 `out`. -/
-theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {s₀ : State} {extra : List Region}
+theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {extra : List Region}
     (hp : Pre c s₀ extra) :
     WP isa c.sign s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -297,7 +297,7 @@ theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) 
       (toM _ _ (wordsVal s₁.mem _ (c.sl ONEP) c.n)) (G c.C)
     rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
     exact rep_affine' hC _ _
-  exact stage₂ hc h3 h6 hC (gx := GX) (gy := GY) (by decide) (by decide) S₁ hc.onG hG
+  exact stage₂ hc h3 hC (gx := GX) (gy := GY) (by decide) (by decide) (by decide) (by decide) S₁ hc.onG hG
     (lt_of_eq_of_lt F.gx (hmont _)) (lt_of_eq_of_lt F.gy (hmont _)) fun s₂ S₂ =>
       stage₃ hc S₂ fun s₃ S₃ => stage₄ hc hC hp S₃
 

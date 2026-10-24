@@ -63,7 +63,7 @@ theorem verify_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.verify c =
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {s₀ : State}
+theorem verify_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State}
     {extra : List Region} (hp : VPre c s₀ extra) :
     WP isa (Impl.Ecdsa.Verify.PPC64LE.Cfg.verify c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -79,7 +79,7 @@ theorem verify_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
       (tmv c.C c.n (s₀.gpr .r6) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  refine points_ok hc h3 h6 hC hM hPc hQ fun s₃ hP => ?_
+  refine points_ok hc h3 hC hM hPc hQ fun s₃ hP => ?_
   refine WP.mono (vtail_ok hc hP) fun s' ⟨saved, sp, lr, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, sp, lr, frame⟩, ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt

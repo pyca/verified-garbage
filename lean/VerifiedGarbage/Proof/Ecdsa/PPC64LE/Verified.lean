@@ -49,7 +49,7 @@ theorem post_of {s s' : State} (h : SignPost p256 s s') : signPPC.post s s' := b
 
 theorem sign_ppc (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : signPPC.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p256_ok (by decide) (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p256_ok (by decide) hL (pre_of hs)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem sign_ct : ConstantTime isa signPPC.pre signPPC.pub signP256 :=

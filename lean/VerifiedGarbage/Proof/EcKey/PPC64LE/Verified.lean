@@ -48,7 +48,7 @@ theorem post_of {s s' : State} (h : PkPost p256 s s') : pkPPC.post s s' := by
 
 theorem pk_ppc (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : pkPPC.pre s) :
     ∃ t s', Exec isa Impl.EcKey.PPC64LE.publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok p256_ok (by decide) (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok p256_ok (by decide) hL (pre_of hs)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkPPC.pre pkPPC.pub Impl.EcKey.PPC64LE.publicKeyP256 :=

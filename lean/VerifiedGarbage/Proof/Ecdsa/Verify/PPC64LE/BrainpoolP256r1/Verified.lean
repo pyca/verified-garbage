@@ -38,7 +38,7 @@ theorem pre_of {s : State} (h : verifyPPC.pre s) : VPre brainpoolp256r1 s := by
 
 theorem verify_ppc (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (s : State) (hs : verifyPPC.pre s) :
     ∃ t s', Exec isa verifyBrainpoolP256r1 s t s' ∧ abiPreserved s s' ∧ verifyPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok brainpoolp256r1_ok (by decide) (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok brainpoolp256r1_ok (by decide) hL (pre_of hs)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
 
 theorem verify_ct : ConstantTime isa verifyPPC.pre verifyPPC.pub verifyBrainpoolP256r1 :=
