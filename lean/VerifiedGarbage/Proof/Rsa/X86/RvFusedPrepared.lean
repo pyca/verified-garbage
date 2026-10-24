@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedSearch
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedRest
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 
-import VerifiedGarbage.Proof.Rsa.X86.RvHalving
 public import VerifiedGarbage.Proof.Rsa.X86.RvLoads
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
 public import VerifiedGarbage.Proof.Framework.Semantics
