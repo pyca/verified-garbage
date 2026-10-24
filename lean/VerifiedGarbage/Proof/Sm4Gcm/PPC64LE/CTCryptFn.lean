@@ -22,6 +22,8 @@ public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
 public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt` are constant time

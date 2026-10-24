@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFilterTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePreparedTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingBranch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingInput
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate

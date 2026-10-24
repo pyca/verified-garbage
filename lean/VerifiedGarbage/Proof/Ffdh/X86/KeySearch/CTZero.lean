@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Two runs of the key search's exits (x86)
 

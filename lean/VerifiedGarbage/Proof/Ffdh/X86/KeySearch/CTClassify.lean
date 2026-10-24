@@ -5,6 +5,8 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.CTAttempt
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Classify
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Two runs after an attempt (x86)
 

@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-import VerifiedGarbage.Proof.Mont.X86.Row
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.X86.Chain

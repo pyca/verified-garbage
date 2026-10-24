@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowLoop
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSet
-public import VerifiedGarbage.Proof.Rsa.X86.RvArguments
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.X86.RvArguments
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
+import VerifiedGarbage.Proof.Rsa.X86.RvCount
+import VerifiedGarbage.Proof.Rsa.X86.RvMont
 
 /-! # A recovery candidate's power by fixed 4-bit windows
 

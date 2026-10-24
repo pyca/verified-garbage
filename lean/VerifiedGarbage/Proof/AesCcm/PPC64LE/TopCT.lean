@@ -34,6 +34,8 @@ meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Tag
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 
 /-!
 # AES-CCM on PPC64LE: constant time

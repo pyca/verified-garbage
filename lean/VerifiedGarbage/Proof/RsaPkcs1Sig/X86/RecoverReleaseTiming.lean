@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseArgs
 import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeCopy
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
 
 /-! # Digest copying and zero output use only public pointers and counters -/

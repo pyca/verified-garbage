@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Rounds
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Rounds
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.IntervalCases
 meta import Mathlib.Tactic.IntervalCases
@@ -13,6 +13,9 @@ meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # ChaCha20 block function on PPC64LE: the whole function

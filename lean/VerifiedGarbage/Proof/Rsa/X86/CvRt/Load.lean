@@ -2,12 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Core
 public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Bignum.ByteWords
-import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion

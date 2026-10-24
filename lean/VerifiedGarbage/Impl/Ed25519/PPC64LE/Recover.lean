@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Freeze
-import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Layout
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Packed
 

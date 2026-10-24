@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
+import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.HPrime
 
@@ -11,6 +11,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Argon2.PPC64LE.HPrime
+public import VerifiedGarbage.Impl.MdStream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Merged from `Proof.Argon2.PPC64LE.HPrime.Next`. -/
 

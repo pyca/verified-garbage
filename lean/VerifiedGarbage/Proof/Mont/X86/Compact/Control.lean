@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Mont.X86.Compact.Length
-import VerifiedGarbage.Proof.Mont.X86.Rt.Blocks
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Args
 
 /-! # Public row count in prepared Montgomery multiplication -/

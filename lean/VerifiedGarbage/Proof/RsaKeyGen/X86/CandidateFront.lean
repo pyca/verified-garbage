@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateClearInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoEntropy
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 
 /-! # Clearing, the public entropy guard, and width dispatch implement the candidate operation -/

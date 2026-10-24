@@ -1,12 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCT3
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCT1
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.ReduceCT
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemCT
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.InitialCT
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Correct
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 import VerifiedGarbage.Proof.Argon2.References
 import VerifiedGarbage.Proof.Argon2.Iterations
@@ -23,6 +20,9 @@ meta import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.Iterations
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTBase
+import VerifiedGarbage.Proof.Argon2.FinalReduction
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Reduce
+meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Reduce
 
 /-!
 # Argon2 on PPC64LE: the derivation is constant time

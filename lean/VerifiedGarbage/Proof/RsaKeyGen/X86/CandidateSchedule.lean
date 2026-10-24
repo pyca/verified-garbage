@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SievePattern
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P256
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Sha384
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
@@ -10,6 +10,9 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P256
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Sha384
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.CT
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-384 on PPC64LE

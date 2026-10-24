@@ -1,15 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
-public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 public import VerifiedGarbage.Proof.Hmac.Scratch
-public import VerifiedGarbage.Proof.Hmac.AnyKey
+import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-public import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.EntryBranch
 import all Init.Data.Nat.Bitwise.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.StackScratch.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+public import VerifiedGarbage.Spec.Hmac.Generic
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # HMAC over any streaming hash function on PPC64LE: the shared contracts

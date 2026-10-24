@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Chain
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Compare
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Length
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Correct
-import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

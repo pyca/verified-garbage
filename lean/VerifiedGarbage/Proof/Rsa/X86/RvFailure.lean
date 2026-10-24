@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.X86.CvStores
-import VerifiedGarbage.TCB.X86.Target
 
 /-! # Invalid moduli clear both recovery outputs while preserving inputs and the ABI save area -/
 

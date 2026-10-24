@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFactors
 public import VerifiedGarbage.Proof.Rsa.X86.RvStores
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # The GCD, ordered factors, masked outputs and return value -/
 

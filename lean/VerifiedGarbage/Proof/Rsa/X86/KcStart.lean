@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86.KcDiv
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Initial state for i686 RSA key validation -/
 

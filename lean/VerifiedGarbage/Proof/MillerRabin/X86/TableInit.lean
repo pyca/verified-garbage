@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
-import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.StageCopy

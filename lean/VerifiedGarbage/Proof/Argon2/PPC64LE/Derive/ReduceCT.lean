@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Reduce
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Reduce
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCT1
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.Matrix
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 
 /-!
 # Argon2 on PPC64LE: the final block and the tag, in two runs

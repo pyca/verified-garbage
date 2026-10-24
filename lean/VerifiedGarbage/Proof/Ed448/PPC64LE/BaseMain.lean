@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's base-point multiplication on PPC64LE: the whole function

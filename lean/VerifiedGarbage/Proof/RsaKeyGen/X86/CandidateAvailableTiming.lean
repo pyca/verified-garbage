@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatchTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWidthTiming
 

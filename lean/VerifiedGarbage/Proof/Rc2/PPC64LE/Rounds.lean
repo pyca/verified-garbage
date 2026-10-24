@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Mix
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.Word
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Lookup
 
 /-!
 # RC2 on PPC64LE: the steps of the rounds

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Mont.X86.CombTable
 
 public import VerifiedGarbage.Proof.Mont.X86.CombFrame
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! Initialize the retained modulus, R-squared, and the first two comb entries. -/
 

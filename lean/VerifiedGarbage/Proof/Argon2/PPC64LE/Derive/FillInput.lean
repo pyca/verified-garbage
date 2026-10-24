@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillSteps
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the address-generation input block

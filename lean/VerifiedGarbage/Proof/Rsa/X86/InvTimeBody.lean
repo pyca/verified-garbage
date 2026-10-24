@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvTimeCompare
 public import VerifiedGarbage.Proof.Rsa.X86.WorkspaceTaint
-import VerifiedGarbage.Proof.Rsa.X86.InvBatch.TimeCheck
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Proof.Framework.X86.Taint

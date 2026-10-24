@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Erase the complete temporary encoding while preserving the result status -/
 

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Framed
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Preserve
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentClass
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext

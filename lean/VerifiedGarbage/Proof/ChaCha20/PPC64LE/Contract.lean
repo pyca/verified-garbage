@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20
-public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.TCB.PPC64LE.Target
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ChaCha20: the PPC64LE contract of the block function

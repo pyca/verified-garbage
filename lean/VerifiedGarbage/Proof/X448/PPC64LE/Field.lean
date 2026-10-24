@@ -2,11 +2,13 @@ module
 public import VerifiedGarbage.Impl.X448.PPC64LE
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 public import VerifiedGarbage.Proof.X448.PPC64LE.Limbs
-public import VerifiedGarbage.Proof.X448.PPC64LE.Pass
+import VerifiedGarbage.Proof.X448.PPC64LE.Pass
 public import VerifiedGarbage.Proof.X448.Field
 
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Limbs
 
 /-!
 # X448 on PPC64LE: field elements in the working space

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.SquareState
 public import VerifiedGarbage.Proof.MillerRabin.X86.DataWindowControl
-import VerifiedGarbage.Proof.MillerRabin.X86.MaskMath
 
 /-! # Values through four squares, a complete table scan and one window product -/
 

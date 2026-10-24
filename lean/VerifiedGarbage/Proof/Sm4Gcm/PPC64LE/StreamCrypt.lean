@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt`

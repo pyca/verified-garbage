@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 import VerifiedGarbage.Proof.Hmac.Common
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # HMAC over any streaming hash function on PPC64LE: copying words
