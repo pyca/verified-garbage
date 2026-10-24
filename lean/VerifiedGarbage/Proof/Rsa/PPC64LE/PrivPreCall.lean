@@ -45,14 +45,16 @@ theorem word_in {s : State} {d : Nat} (hd : oLr + 8 ≤ d) (hd' : d + 8 ≤ fram
     InRegions (fr s :: rs) (fb s + BitVec.ofNat 64 d) 8 :=
   in_fr s rs (by unfold oLr at hd; omega) hd'
 
-/-- `Mid` is kept by a write of a word of the frame above the slots. -/
-theorem Mid.store {s t : State} (M : Mid s t) {d : Nat} (hd : oLr + 8 ≤ d) (hd' : d + 8 ≤ frameBytes)
+/-- `Mid` is kept by a write of a word of the frame apart from the slots. -/
+theorem Mid.store {s t : State} (M : Mid s t) {d : Nat} (hd : oLr + 8 ≤ d ∨ d + 8 ≤ oSave)
+    (hd' : d + 8 ≤ frameBytes)
     (v : BitVec 64) {u : State} (hg : ∀ r ∈ preserved, u.gpr r = t.gpr r) (hsp : u.sp = t.sp)
     (hrd : u.rd = t.rd) (hwr : u.wr = t.wr) (hm : u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 d) v) :
     Mid s u := by
-  have hd1 : ∀ {e : Nat}, e + 8 ≤ oLr + 8 →
-      Region.Disjoint ⟨fb s + BitVec.ofNat 64 e, 8⟩ ⟨fb s + BitVec.ofNat 64 d, 8⟩ := fun he =>
-    Offset.disjoint _ (.inl (by omega)) (by unfold oLr at he; omega) (by unfold frameBytes at hd'; omega)
+  have hd1 : ∀ {e : Nat}, oSave ≤ e → e + 8 ≤ oLr + 8 →
+      Region.Disjoint ⟨fb s + BitVec.ofNat 64 e, 8⟩ ⟨fb s + BitVec.ofNat 64 d, 8⟩ := fun he he' =>
+    Offset.disjoint _ (by unfold oSave oLr at *; omega) (by unfold oLr at he'; omega)
+      (by unfold frameBytes at hd'; omega)
   have fw : Frame [⟨fb s + BitVec.ofNat 64 d, 8⟩] t.mem u.mem := by
     rw [hm]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hsp.trans M.sp, hrd.trans M.rd, hwr.trans M.wr, (hg _ (by decide)).trans M.r24,
@@ -60,10 +62,12 @@ theorem Mid.store {s t : State} (M : Mid s t) {d : Nat} (hd : oLr + 8 ≤ d) (hd
     (hg _ (by decide)).trans M.r28, (hg _ (by decide)).trans M.r29,
     fun r hr => (hg r (by revert r; decide)).trans (M.hi r hr), ?_,
     M.sv.frame fw fun p hp r hr => by
-      rw [List.mem_singleton.mp hr]; exact hd1 (by have := saved_offs p hp; unfold oSave oLr at *; omega), ?_⟩
+      rw [List.mem_singleton.mp hr]
+      have := saved_offs p hp
+      exact hd1 this.1 (by unfold oSave oLr at *; omega), ?_⟩
   · rw [hm]; exact M.mem.writeW (List.mem_cons_self ..) _ (frame_contains s hd')
-  · rw [fw.readW (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd1 (by decide))
-      (by decide)]
+  · rw [fw.readW (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hd1 (by decide) (by decide)) (by decide)]
     exact M.ls
 
 /-- Our stack argument `j`, after the frame and the working space changed. -/
@@ -124,7 +128,7 @@ theorem preArgs_ok {s t : State} (h : PreP s) (M : Mid s t) (C : crtOut s t) :
     prun [exec_addSp0, M.sp, ho, c1, c2, c3, c4, c5, c6, c7, i10, i11, a10, a11, e26, preLen_val hk, M.r25, M.r26,
       BitVec.or_self, exec_addi (show Reg.r12 ≠ .r0 by decide) c3, Impl.AesGcm.PPC64LE.mov]
     all_goals exact (gpr_ofNat _).symm
-  · refine ⟨M.store (d := oSt) (by decide) (by decide) _ (fun r hr => k.gpr r (by revert r; decide)) k.sp k.rd
+  · refine ⟨M.store (d := oSt) (.inl (by decide)) (by decide) _ (fun r hr => k.gpr r (by revert r; decide)) k.sp k.rd
       k.wr um, ?_, u3, u4, u5, u6, u7, u8⟩
     have hb : Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .r6).toNat =
         Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .r6).toNat := by
