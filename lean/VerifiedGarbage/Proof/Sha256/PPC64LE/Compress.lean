@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.IntervalCases
-meta import Mathlib.Tactic.IntervalCases
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -332,9 +330,11 @@ theorem stateAt_writeState (m : Mem) (p : Addr) (v : HashValue) : stateAt (write
   apply stateAt_eq
   intro k hk
   simp only [writeState]
-  interval_cases k <;>
-  simp only [Mem.readW_writeW_self32, readW_writeW_off, Nat.reduceMod, Nat.reduceMul, Nat.reduceLT,
-    Nat.reduceEqDiff, reduceCtorEq, ne_eq, not_false_eq_true]
+  match k, hk with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
+    simp only [Mem.readW_writeW_self32, readW_writeW_off, Nat.reduceMod, Nat.reduceMul, Nat.reduceLT,
+      Nat.reduceEqDiff, reduceCtorEq, ne_eq, not_false_eq_true]
+  | k + 8, h => exact absurd h (by omega)
 
 theorem frame_writeState {s₀ : State} {m m' : Mem} (h : Frame [stR s₀] m m') (v : HashValue) :
     Frame [stR s₀] m (writeState m' (st s₀) v) := by
