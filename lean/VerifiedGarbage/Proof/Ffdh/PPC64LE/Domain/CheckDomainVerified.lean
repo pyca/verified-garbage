@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
@@ -32,5 +33,9 @@ def cdSatState : State where
 theorem cd_implies : cdContract.Implies (Spec.Ffdh.checkDomainContract abi) := by
   sig_implies [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argRegs, cdContract,
     Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid] [cdSatState] using cdSatState
+
+/-- `vg_ffdh_check_domain`. -/
+theorem cd_verified : Verified target checkDomain (Spec.Ffdh.checkDomainContract abi) :=
+  Verified.of_correct cd_correct cd_ct cd_implies
 
 end VG.Proof.Ffdh.PPC64LE.Domain

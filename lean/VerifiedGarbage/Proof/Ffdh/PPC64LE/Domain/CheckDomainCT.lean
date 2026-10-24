@@ -191,6 +191,11 @@ theorem Base.gv {d : CD} {s : State} (h : Base d s) :
   show _ = Spec.Rsa.os2ip ((d.db.drop d.k).take d.k)
   rw [← h.bD, VG.Proof.Dsa.bytesAt_slice _ _ (by rcases h.hL with h | h <;> omega)]
 
+theorem Base.pv {d : CD} {s : State} (h : Base d s) :
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.D d.k) = d.p := by
+  show _ = Spec.Rsa.os2ip (d.db.take d.k)
+  rw [← h.bD, Proof.Ffdh.take_bytesAt _ _ h.kL]
+
 /-- What `qDiv` needs of q. -/
 def QOk (d : CD) : Prop := (1 < d.q ∧ d.q < d.p - 1) ∧ d.q % 2 = 1
 
@@ -272,5 +277,145 @@ theorem DO {d : CD} {s : State} (h : E5b d s) : WP isa (.block qOdd) s (E6 d) :=
   have hk := hb.k64
   refine WP.mono (qOdd_ok hb.r21 hb.r28 h26 (by omega) hb.k1024 (hb.rdD _ (by omega)))
     fun t ⟨⟨a26, m⟩, k⟩ => ⟨hv.of k m, hL, by rw [a26, hb.qv hL]⟩
+
+theorem DD {d : CD} {s : State} (h : E6 d s ∧ s.gpr .r26 ≠ 0) : WP isa qDiv s (E7 d) := by
+  obtain ⟨⟨hv, hL, h26⟩, hnz⟩ := h
+  have hb := hv.base
+  have hwd : d.w = (d.k + 7) / 8 := rfl
+  have hk := hb.k64
+  have hq : QOk d := by
+    rw [h26, Ne, mask_eq_zero, Bool.not_eq_false, Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq] at hnz
+    exact hnz
+  refine WP.mono (qDiv_ok hb.env hb.r23 hb.r21 hb.r28 (by omega) (by omega) (fun i hi => hb.rdD i (by omega))
+    (fun i hi => hb.sepD i (by omega)) (by rw [hb.qv hL]; have := hq.1.1; omega))
+    fun t ⟨⟨a25, p0, bt, a31⟩, k⟩ => ⟨⟨hb.of (fun r hr => ?_) k.rd k.wr bt, ?_, hv.valid⟩, hL, hq, ?_⟩
+  · simp only [baseRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals first | exact k.gpr _ (by decide) | rw [a31, hb.env.h31]
+  · rw [p0, hb.pv]
+  · rw [a25, hb.qv hL, hb.pv]
+
+/-- `checkG` from what `Base` and p in array 0 give: the mask of g's range in
+`r26`, with `r25` kept. -/
+theorem checkG_base {d : CD} {s : State} (hb : Base d s) (hp : arr s.mem d.S d.w 0 = d.p)
+    (hp1 : 1 ≤ d.p) :
+    WP isa checkG s fun t => (Base d t ∧ arr t.mem d.S d.w 0 = d.p ∧
+      t.gpr .r26 = mask (decide (1 < d.g ∧ d.g < d.p - 1))) ∧ Keep rangeRegs s t := by
+  have hwd : d.w = (d.k + 7) / 8 := rfl
+  have hk := hb.k64
+  have hkL := hb.kL
+  refine WP.mono (checkG_ok hb.env hb.r23 hb.r21 hb.r28 (by omega) (by omega)
+    (fun i hi => by rw [off_off']; exact hb.rdD _ (by rcases hb.hL with h | h <;> omega))
+    (fun i hi => by rw [off_off']; exact hb.sepD _ (by rcases hb.hL with h | h <;> omega)) (by rw [hp]; omega))
+    fun t ⟨⟨_, p0, a26, bt, a10⟩, k⟩ => ⟨⟨hb.of (fun r hr => ?_) k.rd k.wr bt, by rw [p0, hp], ?_⟩, k⟩
+  · simp only [baseRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [a10, hb.env.h10]
+    all_goals exact k.gpr _ (by decide)
+  · rw [a26, hp, hb.gv]
+
+theorem DG {d : CD} {s : State} (h : E7 d s) : WP isa checkG s (E8 d) := by
+  obtain ⟨hv, hL, hq, h25⟩ := h
+  have hf := modulus_facts hv.valid
+  refine WP.mono (checkG_base hv.base hv.p0 (by omega)) fun t ⟨⟨hb, p0, a26⟩, k⟩ =>
+    ⟨⟨hb, p0, hv.valid⟩, hL, hq, (k.gpr .r25 (by decide)).trans h25, a26⟩
+
+theorem DN {d : CD} {s : State} (h : E8 d s) : WP isa (.block [.logic .and .r26 .r26 .r25]) s (E9 d) := by
+  obtain ⟨hv, hL, hq, h25, h26⟩ := h
+  refine WP.mono (WP.keep [.r26] (Q := fun t => t.gpr .r26 = mask (decide (1 < d.g ∧ d.g < d.p - 1) &&
+    decide (d.p % d.q = 1)) ∧ t.mem = s.mem) (by prun [h25, h26, mask_and']) (by decide))
+    fun t ⟨⟨a26, m⟩, k⟩ => ⟨hv.of k m, hL, hq, a26⟩
+
+theorem DS {d : CD} {s : State} (h : E9 d s ∧ s.gpr .r26 ≠ 0) : WP isa subgroup s (CF d) := by
+  obtain ⟨⟨hv, hL, _, _⟩, _⟩ := h
+  have hb := hv.base
+  have hf := modulus_facts hv.valid
+  have hk := hb.k64
+  refine WP.mono (subgroup_ok hb.env hb.r23 hb.r21 hb.r28 (by omega) hb.k1024 (by rw [hv.p0]; omega)
+    (by rw [hv.p0]; exact hf.2)
+    (fun i hi => by rw [off_off']; exact hb.rdD _ (by omega))
+    (fun i hi => by rw [off_off']; exact hb.sepD _ (by omega))) fun t ⟨_, k⟩ => ?_
+  show t.gpr .r23 = d.S
+  rw [k.gpr .r23 (by decide), hb.r23]
+
+theorem DG0 {d : CD} {s : State} (h : E5 d s ∧ s.gpr .r0 ≠ 0) : WP isa checkG s (E10 d) := by
+  obtain ⟨⟨hv, _⟩, _⟩ := h
+  have hf := modulus_facts hv.valid
+  exact WP.mono (checkG_base hv.base hv.p0 (by omega)) fun t ⟨⟨hb, _, a26⟩, _⟩ => ⟨hb, a26⟩
+
+/-! ## Constant time -/
+
+theorem fix_mask {α : Type} {Φ : α → State → Prop} {f : α → Bool} (h : ∀ a s, Φ a s → s.gpr .r26 = mask (f a)) :
+    ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → (s₁.gpr .r26 = 0 ↔ s₂.gpr .r26 = 0) := fun a s₁ s₂ h₁ h₂ => by
+  rw [h a s₁ h₁, h a s₂ h₂]
+
+theorem withQ_rel : RelCT isa (Two fun d s => E5 d s ∧ s.gpr .r0 = 0) withQ (Two CF) := by
+  unfold withQ
+  refine RelCT.seq (two_post (two_taint _ (pins_base (Φ := fun d s => E5 d s ∧ s.gpr .r0 = 0)
+    fun _ _ h => h.1.1.base) (by taint_decide)) fun _ _ h => DQP h) ?_
+  refine RelCT.seq (two_post (two_taint (baseRegs ++ ([.r26] : List Reg)) (Φ := E5a) (fun d s₁ s₂ h₁ h₂ r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact h₁.1.base.pins h₂.1.base r hr
+      · rw [List.mem_singleton] at hr; subst hr; rw [h₁.2.2, h₂.2.2]) (by taint_decide))
+    fun _ _ h => DR h) ?_
+  refine RelCT.seq (two_post (two_taint _ (pins_base (Φ := E5b) fun _ _ h => h.1.base) (by taint_decide))
+    fun _ _ h => DO h) ?_
+  refine two_ite (Φ := E6) (fix_mask fun _ _ h => h.2.2)
+    (two_post (two_taint _ (pins_base (Φ := fun d s => E6 d s ∧ s.gpr .r26 = 0) fun _ _ h => h.1.1.base)
+      (by taint_decide)) fun _ _ h => TK0 (Φ := fun d s => E6 d s ∧ s.gpr .r26 = 0) (fun _ _ h => h.1.1.base) h) ?_
+  refine RelCT.seq (two_post (two_taint _ (pins_base (Φ := fun d s => E6 d s ∧ s.gpr .r26 ≠ 0)
+    fun _ _ h => h.1.1.base) (by taint_decide)) fun _ _ h => DD h) ?_
+  refine RelCT.seq (two_post (two_taint _ (pins_base (Φ := E7) fun _ _ h => h.1.base) (by taint_decide))
+    fun _ _ h => DG h) ?_
+  refine RelCT.seq (two_post (two_taint _ (pins_base (Φ := E8) fun _ _ h => h.1.base) (by taint_decide))
+    fun _ _ h => DN h) ?_
+  exact two_ite (Φ := E9) (fix_mask fun _ _ h => h.2.2.2)
+    (two_post (two_taint _ (pins_base (Φ := fun d s => E9 d s ∧ s.gpr .r26 = 0) fun _ _ h => h.1.1.base)
+      (by taint_decide)) fun _ _ h => TK0 (Φ := fun d s => E9 d s ∧ s.gpr .r26 = 0) (fun _ _ h => h.1.1.base) h)
+    (two_post (two_taint _ (pins_base (Φ := fun d s => E9 d s ∧ s.gpr .r26 ≠ 0) fun _ _ h => h.1.1.base)
+      (by taint_decide)) fun _ _ h => DS h)
+
+theorem withoutQ_rel : RelCT isa (Two fun d s => E5 d s ∧ s.gpr .r0 ≠ 0) withoutQ (Two CF) := by
+  unfold withoutQ
+  refine RelCT.seq (two_post (two_taint _ (pins_base (Φ := fun d s => E5 d s ∧ s.gpr .r0 ≠ 0)
+    fun _ _ h => h.1.1.base) (by taint_decide)) fun _ _ h => DG0 h) ?_
+  exact two_ite (Φ := E10) (fix_mask fun _ _ h => h.2)
+    (two_post (two_taint _ (pins_base (Φ := fun d s => E10 d s ∧ s.gpr .r26 = 0) fun _ _ h => h.1.1)
+      (by taint_decide)) fun _ _ h => TK0 (Φ := fun d s => E10 d s ∧ s.gpr .r26 = 0) (fun _ _ h => h.1.1) h)
+    (two_post (two_taint _ (pins_base (Φ := fun d s => E10 d s ∧ s.gpr .r26 ≠ 0) fun _ _ h => h.1.1)
+      (by taint_decide)) fun _ _ h => TK1 (Φ := fun d s => E10 d s ∧ s.gpr .r26 ≠ 0) (fun _ _ h => h.1.1) h)
+
+theorem cd_rel : RelCT isa (Two E0) checkDomain fun _ _ => True := by
+  unfold checkDomain
+  refine RelCT.seq (two_post (two_taint _ pins_E0 (by taint_decide)) fun _ _ h => D01 h)
+    (RelCT.seq (R := Two E4) ?_ (RelCT.seq (R := Two CF) ?_ (two_taint _ pins_CF (by taint_decide))))
+  · unfold loadP Precompute.check
+    exact RelCT.seq (two_post (two_taint _ (pins_base (Φ := Base) fun _ _ h => h) (by taint_decide))
+      fun _ _ h => DA h)
+      (RelCT.seq (two_post (two_taint _ (pins_E1a fun _ _ h => h) (by taint_decide)) fun _ _ h => DL h)
+        (RelCT.seq (two_post (two_taint (Φ := E2) _ (pins_E1a fun _ _ h => h.1) (by taint_decide))
+          fun _ _ h => DC1 h)
+          (two_post (two_taint _ pins_E3 (by taint_decide)) fun _ _ h => DC2 h)))
+  · refine two_ite (fun d s₁ s₂ h₁ h₂ => h₁.2.2.trans h₂.2.2.symm) ?_
+      (two_post (two_taint _ (pins_base (Φ := fun d s => E4 d s ∧ s.gpr .r0 ≠ 0) fun _ _ h => h.1.1)
+        (by taint_decide)) fun _ _ h => TK0 (Φ := fun d s => E4 d s ∧ s.gpr .r0 ≠ 0) (fun _ _ h => h.1.1) h)
+    unfold domainBody
+    exact RelCT.seq (two_post (two_taint _ (pins_base (Φ := fun d s => E4 d s ∧ s.gpr .r0 = 0) fun _ _ h => h.1.1)
+      (by taint_decide)) fun _ _ h => DQ h)
+      (two_ite (Φ := E5) (fun d s₁ s₂ h₁ h₂ => h₁.2.trans h₂.2.symm) withQ_rel withoutQ_rel)
+
+theorem cd_ct : ConstantTime isa cdContract.pre cdContract.pub checkDomain :=
+  RelCT.constantTime (cd_rel.mono (fun s t ⟨hs, ht, hsp, h3, h4, h5, h6, h7, hb⟩ => ⟨cdDataOf s, ⟨hs, rfl⟩,
+    ⟨ht, by
+      have hb' := (List.map_inj_right (fun _ _ h => BitVec.eq_of_toNat_eq h)).mp hb
+      have hk : Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r5).toNat =
+          Spec.Rsa.bytesAt t.mem (t.gpr .r3) (t.gpr .r5).toNat := by
+        rw [← h3, ← h5, ← Proof.Ffdh.take_bytesAt _ _ (show (s.gpr .r5).toNat ≤ (s.gpr .r4).toNat by
+          have := hs.2.2.2.2.2.2.1; simp only [Spec.Ffdh.domainLenValid] at this; omega),
+          ← Proof.Ffdh.take_bytesAt t.mem _ (show (s.gpr .r5).toNat ≤ (s.gpr .r4).toNat by
+          have := hs.2.2.2.2.2.2.1; simp only [Spec.Ffdh.domainLenValid] at this; omega), hb', h3, h4]
+      simp only [cdDataOf]
+      rw [hb', hk]
+      simp only [h3, h4, h5, h6, h7]⟩, hsp⟩) fun _ _ h => h)
 
 end VG.Proof.Ffdh.PPC64LE.Domain
