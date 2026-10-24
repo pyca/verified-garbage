@@ -120,6 +120,12 @@ theorem wp_then {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP is
   rw [WP.seq_iff] at h ⊢
   exact WP.mono h fun t ht => WP.seq (WP.mono ht k)
 
+/-- Whether the witness loop goes on after the witness at `u`, `i` passed. -/
+def mrGo (r : List Byte) (mb N i u : Nat) : Bool :=
+  decide (u + (mb + 7) / 8 ≤ r.length) &&
+    (!decide (2 ≤ wA mb r u ∧ wA mb r u < N - 1) ||
+      (Spec.MillerRabin.round N (wA mb r u) && decide (i + 1 < Spec.Ffdh.primeChecks mb)))
+
 /-- An iteration: `hStat` tested after the head. -/
 theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i u : Nat} {s : State}
     (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (h : MrSt p mb N res i u s) :
@@ -127,8 +133,8 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
         geFlag .r5 .r3 .r4))
       (.seq (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw R.name R.code))
         (.block [ldh .r3 hStat, .subi .r3 .r3 4]))) s fun t =>
-      (isa.eval (.zero .d .r3) t = some false ∧ MrEnd p mb N res t) ∨
-      (isa.eval (.zero .d .r3) t = some true ∧ ∃ i', MrSt p mb N res i' (u + (mb + 7) / 8) t) := by
+      isa.eval (.zero .d .r3) t = some (mrGo p.r mb N i u) ∧ (mrGo p.r mb N i u = false → MrEnd p mb N res t) ∧
+      (mrGo p.r mb N i u = true → MrSt p mb N res (dIdx N i (wA mb p.r u)) (u + (mb + 7) / 8) t) := by
   have hm1 := h.m.mb1
   have hik := h.ik
   have hN3 := h.m.prep.c3
@@ -150,38 +156,43 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
   rcases hmid with ⟨hr, h0⟩ | ⟨hr, hu, hs, hi⟩
   · -- No room for a witness.
     rw [cw_short hbl hm hr] at hres
-    refine Or.inl ⟨by rw [ev 0 (by decide) h0]; decide, M', fun _ => by rw [hw]; exact h0, fun b rest hb => ?_⟩
+    have hg : mrGo p.r mb N i u = false := by
+      simp only [mrGo, Bool.and_eq_false_iff, decide_eq_false_iff_not]; exact Or.inl (by omega)
+    rw [hg]
+    refine ⟨(ev 0 (by decide) h0).trans (by decide), fun _ => ⟨M', fun _ => by rw [hw]; exact h0, fun b rest hb => ?_⟩,
+      fun h => absurd h (by decide)⟩
     rw [← hres] at hb; cases hb
   rw [cw_step hbl hm hr] at hres
   have hround := mr_round_eq (wA mb p.r u) hN3 hodd
-  simp only [dStat, dIdx, hround] at hs hi
-  generalize wA mb p.r u = a at hs hi hres
+  simp only [dStat, dIdx, mrGo, hround, decide_eq_true hr, Bool.true_and] at hs hi ⊢
+  generalize wA mb p.r u = a at hs hi hres ⊢
   by_cases hrg : 2 ≤ a ∧ a < N - 1
-  · simp only [hrg.1, hrg.2, and_self, true_and, ↓reduceIte] at hs hi hres
+  · simp only [hrg.1, hrg.2, and_self, true_and, ↓reduceIte, decide_true, Bool.not_true, Bool.false_or]
+      at hs hi hres ⊢
     by_cases hmr : Spec.Ffdh.mrRound N a = true
-    · simp only [hmr, ↓reduceIte] at hs hi hres
+    · simp only [hmr, ↓reduceIte, Bool.true_and] at hs hi hres ⊢
       by_cases hk : i + 1 < Spec.Ffdh.primeChecks mb
-      · simp only [hk, ↓reduceIte] at hs
-        refine Or.inr ⟨by rw [ev 4 (by decide) hs]; decide, i + 1,
-          ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hk, ?_⟩⟩
+      · simp only [hk, ↓reduceIte, decide_true] at hs ⊢
+        refine ⟨(ev 4 (by decide) hs).trans (by decide), fun h => absurd h (by decide),
+          fun _ => ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hk, ?_⟩⟩
         rw [show Spec.Ffdh.primeChecks mb - (i + 1) = Spec.Ffdh.primeChecks mb - i - 1 by omega]; exact hres
-      · simp only [hk, ↓reduceIte] at hs
+      · simp only [hk, ↓reduceIte, decide_false] at hs ⊢
         rw [show Spec.Ffdh.primeChecks mb - i - 1 = 0 by omega, checkWitnesses] at hres
-        refine Or.inl ⟨by rw [ev 1 (by decide) hs]; decide, M', fun hn => (by rw [← hres] at hn; cases hn),
-          fun b rest hb => ?_⟩
+        refine ⟨(ev 1 (by decide) hs).trans (by decide), fun _ => ⟨M', fun hn => (by rw [← hres] at hn; cases hn),
+          fun b rest hb => ?_⟩, fun h => absurd h (by decide)⟩
         rw [← hres, Option.some.injEq, Prod.mk.injEq] at hb
         obtain ⟨rfl, rfl⟩ := hb
         exact ⟨by rw [hw]; exact hs, u + (mb + 7) / 8, hr, rfl, by rw [hw]; exact hu⟩
-    · simp only [hmr, Bool.false_eq_true, ↓reduceIte] at hs hi hres
-      refine Or.inl ⟨by rw [ev 2 (by decide) hs]; decide, M', fun hn => (by rw [← hres] at hn; cases hn),
-        fun b rest hb => ?_⟩
+    · simp only [hmr, Bool.false_eq_true, ↓reduceIte, Bool.false_and] at hs hi hres ⊢
+      refine ⟨(ev 2 (by decide) hs).trans (by decide), fun _ => ⟨M', fun hn => (by rw [← hres] at hn; cases hn),
+        fun b rest hb => ?_⟩, fun h => absurd h (by decide)⟩
       rw [← hres, Option.some.injEq, Prod.mk.injEq] at hb
       obtain ⟨rfl, rfl⟩ := hb
       exact ⟨by rw [hw]; exact hs, u + (mb + 7) / 8, hr, rfl, by rw [hw]; exact hu⟩
   · have hrg' : ¬(2 ≤ a ∧ a < N - 1 ∧ Spec.Ffdh.mrRound N a = true) := fun h => hrg ⟨h.1, h.2.1⟩
-    simp only [hrg, hrg', ↓reduceIte] at hs hi hres
-    refine Or.inr ⟨by rw [ev 4 (by decide) hs]; decide, i,
-      ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hik, ?_⟩⟩
+    simp only [hrg, hrg', ↓reduceIte, decide_false, Bool.not_false, Bool.true_or] at hs hi hres ⊢
+    refine ⟨(ev 4 (by decide) hs).trans (by decide), fun h => absurd h (by decide),
+      fun _ => ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hik, ?_⟩⟩
     rw [show Spec.Ffdh.primeChecks mb - i = Spec.Ffdh.primeChecks mb - i - 1 + 1 by omega]; exact hres
 
 /-- The witnesses of `N`, drawn from octet `u` of the tape. -/
@@ -217,12 +228,13 @@ theorem millerRabin_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State}
       MrSt p mb N (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u)) i u' v) ?_ (p.r.length + 1 - u) t ?_
   · rintro m v ⟨i, u', rfl, hv⟩
     have hit := mrIter_ok R hbl hv
-    refine WP.mono hit fun w hw => ?_
-    rcases hw with hw | ⟨he, i', hw⟩
-    · exact Or.inl hw
-    · have hul' := hw.ul
+    refine WP.mono hit fun w ⟨he, hend, hgo⟩ => ?_
+    cases hg : mrGo p.r mb N i u'
+    · exact Or.inl ⟨by rw [he, hg], hend hg⟩
+    · have hw := hgo hg
+      have hul' := hw.ul
       have hlt : p.r.length + 1 - (u' + (mb + 7) / 8) < p.r.length + 1 - u' := by omega_using [hul', hm1]
-      exact Or.inr ⟨he, p.r.length + 1 - (u' + (mb + 7) / 8), hlt, i', u' + (mb + 7) / 8, rfl, hw⟩
+      exact Or.inr ⟨by rw [he, hg], p.r.length + 1 - (u' + (mb + 7) / 8), hlt, _, u' + (mb + 7) / 8, rfl, hw⟩
   · have hK : 0 < Spec.Ffdh.primeChecks mb := by unfold Spec.Ffdh.primeChecks; split <;> omega
     exact ⟨0, u, rfl, M, t152, t176, t160, hul, hK, by rw [Nat.sub_zero]⟩
 
