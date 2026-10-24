@@ -1318,7 +1318,7 @@ yours to keep:
 
 <td>✅ AES-NI, PCLMULQDQ</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 

@@ -20,6 +20,9 @@ pub(crate) mod aes_cfb8;
 pub(crate) mod aes_ctr;
 
 #[rustfmt::skip]
+pub(crate) mod aes_gcm_siv;
+
+#[rustfmt::skip]
 pub(crate) mod aes_ofb;
 
 #[rustfmt::skip]
