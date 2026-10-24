@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Search
+public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Witness
 
 /-!
 # A candidate for a prime of an RSA key on PPC64LE
@@ -35,17 +35,23 @@ against `p`, which comes before anything that writes them.
    on words with masks (`Proof/RsaKeyGen/Gcd.lean`); 3 unless it is 1.
    The model has no carry bit: `ltU` compares 64-bit numbers by their top
    bits and the borrow of their low 63 bits.
-5. The prime test (`test`: trial division, then Miller–Rabin with
-   `Spec.RsaKeyGen.mrStep`'s witnesses, from `rand` after the candidate),
-   with `rand`, its length, the octets read, the octets of a witness
-   (`out_len`) and the uniform witnesses needed (`checksW w`) in the
-   header; its status (`hStat`: 0 if `rand` ran out, 1 for a probable prime,
-   2 for a rejection) gives the result 0, 1 or 3.
+5. The prime test, as `Spec.RsaKeyGen.candidateStep` does it after the check
+   of `gcd(c − 1, e)` (which does not draw from `rand`, so its place before
+   or after trial division changes nothing): trial division by the first
+   512 entries of the table of small primes (1024 above 1024 bits), by
+   `trial` (the shared `Trial.trial`, whose count is in `hTrial`; it writes
+   `r22`–`r24`, so `out` and `out_len` are saved around it), 3 if one
+   divides `c`; then `montPrep` and RSA's witnesses (`Witness.millerRabin`)
+   from `rand` after the candidate, with `rand`, its length, the octets
+   read, a witness's octets (`out_len`) and the uniform witnesses needed
+   (`checksW w`) in the header. Their status (`hStat`: 0 if `rand` ran out,
+   1 for a probable prime, 2 for a rejection) gives the result 0, 1 or 3.
 6. `out`: `c`, most significant octet first, for the result 1 (it was
    zeroed otherwise); `used`: the octets read, or 0 for the result 0.
 
 The code branches on the lengths, `e` and what the leak allows: whether `c`
-is too close to `p`, whether `gcd(c − 1, e) = 1`, and the test's result.
+is too close to `p`, whether `gcd(c − 1, e) = 1`, whether a small prime
+divides it, and whether each witness passed.
 -/
 
 @[expose] public section
@@ -56,7 +62,7 @@ open VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE
 open VG.Impl.Bignum.PPC64LE.PublicChecked (base)
 open VG.Impl.Bignum.PPC64LE.Precompute (loadN)
 open VG.Impl.MillerRabin.PPC64LE.Search (ldh sth geFlag hWsLen hRand hRandLen hUsed hStat hChecks hK hW
-  hStride)
+  hStride montPrep)
 
 /-- Right-nested sequencing. -/
 def seqs : List (Prog isa) → Prog isa
@@ -194,13 +200,13 @@ def modBit : List Instr :=
   [.li .r0 1, .logic .xor .r9 .r9 .r0, .logic .or .r9 .r9 .r8, .li .r0 0, .sub .r9 .r0 .r9,
     .sub .r4 .r3 .r21, .logic .xor .r4 .r4 .r3, .logic .and .r4 .r4 .r9, .logic .xor .r3 .r3 .r4]
 
-/-- `r3 := (c − 1) mod e`: `c` copied to `aCm1` with its low bit cleared,
+/-- `r3 := (c − 1) mod e`: `c` copied to `aCm1`, less 1 (its low word is odd),
 then its words from the top (`r14` walking down, `r17` counting), 64 bits
 each (`r6` counting). -/
 def modE : Prog isa :=
   .seq (.block (base .r14 aCm1 ++ [.addi .r15 .r10 0])) (.seq Precompute.copyWords
-    (.seq (.block (base .r14 aCm1 ++ [.load .d .r3 .r14 0, .li .r4 1, .logic .xor .r3 .r3 .r4,
-        .store .d .r3 .r14 0, .lsl .r5 .r11 2, .add .r14 .r14 .r5, .lsr .d .r17 .r11 1, .li .r3 0]))
+    (.seq (.block (base .r14 aCm1 ++ [.load .d .r3 .r14 0, .subi .r3 .r3 1, .store .d .r3 .r14 0,
+        .lsl .r5 .r11 2, .add .r14 .r14 .r5, .lsr .d .r17 .r11 1, .li .r3 0]))
       (.loop (.seq (.block [.subi .r14 .r14 8, .load .d .r7 .r14 0, .li .r6 64]) (.seq (Precompute.countLoop .r6 modBit)
           (.block [.subi .r17 .r17 1])))
         (.nonzero .d .r17))))
@@ -230,17 +236,29 @@ def gcdCheck : Prog isa :=
 
 /-! ## The prime test -/
 
+/-- The table entries trial division uses, and `out` and `out_len` saved
+around it: header words the search leaves to its caller. -/
+def hTrial : Nat := 16
+def hOut : Nat := 3
+def hOutLen : Nat := 5
+
 /-- `r5 := v` if `w ≥ k`, for `w` in `r3` (`r4`, `r6` written). -/
 def checksIf (k v : Nat) : List Instr :=
   [.subi .r4 .r3 k, .lsr .d .r4 .r4 63, .subi .r4 .r4 1, .li .r6 v, .logic .xor .r6 .r6 .r5,
     .logic .and .r6 .r6 .r4, .logic .xor .r5 .r5 .r6]
 
 /-- The test's inputs in the header: `rand`, its length, the octets read, a
-witness's octets and `checksW w`. -/
+witness's octets, `checksW w`, and the table entries (`512 (1 + [w > 16])`). -/
 def testArgs : List Instr :=
   [sth .r26 hRand, sth .r27 hRandLen, sth .r28 hUsed, sth .r24 hK, ldh .r3 hW, .li .r5 27] ++
   checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++ checksIf 8 5 ++ checksIf 22 4 ++ checksIf 59 3 ++
-  [sth .r5 hChecks]
+  [sth .r5 hChecks, .li .r4 16, .sub .r4 .r4 .r3, .lsr .d .r4 .r4 63, .li .r5 512, .mul .r4 .r4 .r5,
+    .add .r4 .r4 .r5, sth .r4 hTrial]
+
+/-- Trial division (`r22` nonzero if a small prime divides `c`), with `out`
+and `out_len` saved around it. -/
+def trialDiv (trial : Prog isa) : Prog isa :=
+  .seq (.block [sth .r23 hOut, sth .r24 hOutLen]) (.seq trial (.block [ldh .r23 hOut, ldh .r24 hOutLen]))
 
 /-- The test's result: 0, 1 or 3 from its status 0, 1 or 2, with the octets
 read. -/
@@ -248,23 +266,29 @@ def testResult : Prog isa :=
   .seq (.block [ldh .r28 hUsed, ldh .r3 hStat])
     (.ite (.zero .d .r3) finNone (.seq (.block [.subi .r3 .r3 1]) (.ite (.zero .d .r3) finPrime (finish 3))))
 
+/-- Once `gcd(c − 1, e) = 1`: trial division, then Miller–Rabin. -/
+def test (trial : Prog isa) (name : String) (round : Prog isa) : Prog isa :=
+  seqs [.block testArgs, trialDiv trial,
+    .ite (.nonzero .d .r22) (finish 3) (seqs [montPrep, Witness.millerRabin name round, testResult])]
+
 /-! ## `vg_rsa_keygen_candidate` -/
 
 /-- Once `rand` has the candidate's octets. -/
-def main (test : Prog isa) : Prog isa :=
+def main (trial : Prog isa) (name : String) (round : Prog isa) : Prog isa :=
   seqs [setup, loadC, closeCheck,
     .ite (.nonzero .d .r22) (finish 2)
-      (.seq gcdCheck (.ite (.nonzero .d .r22) (finish 3) (seqs [.block testArgs, test, testResult])))]
+      (.seq gcdCheck (.ite (.nonzero .d .r22) (finish 3) (test trial name round)))]
 
 /-- The body, in the frame. -/
-def body (test : Prog isa) : Prog isa :=
-  seqs [.block entry, zeroOut, .block (geFlag .r5 .r27 .r24), .ite (.zero .d .r5) finNone (main test),
+def body (trial : Prog isa) (name : String) (round : Prog isa) : Prog isa :=
+  seqs [.block entry, zeroOut, .block (geFlag .r5 .r27 .r24), .ite (.zero .d .r5) finNone (main trial name round),
     .block restore]
 
-/-- `vg_rsa_keygen_candidate`, with the prime test `test`. -/
-def code (test : Prog isa) : Prog isa :=
+/-- `vg_rsa_keygen_candidate`, with trial division `trial` and calling the
+Miller–Rabin round `round` named `name`. -/
+def code (trial : Prog isa) (name : String) (round : Prog isa) : Prog isa :=
   .seq (.block [.mflr .r0])
-    (.seq (.frame (.push .r0) (.frame (.alloc frameBytes) (body test) (.free frameBytes)) (.pop .r0))
+    (.seq (.frame (.push .r0) (.frame (.alloc frameBytes) (body trial name round) (.free frameBytes)) (.pop .r0))
       (.block [.mtlr .r0]))
 
 end VG.Impl.RsaKeyGen.PPC64LE.Candidate
