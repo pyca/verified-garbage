@@ -391,7 +391,7 @@ structure T4 (s0 : State) (w c : Nat) (s : State) : Prop where
   tc : TC s0 w c
   noc : Spec.RsaKeyGen.obviouslyComposite (64 * w) c = false
 
-theorem mrS {s0 s : State} {w c : Nat} (R : RoundImpl) (h : T3 s0 w c s) :
+theorem mrStage {s0 s : State} {w c : Nat} (R : RoundImpl) (h : T3 s0 w c s) :
     WP isa (VG.Impl.RsaKeyGen.PPC64LE.Witness.millerRabin R.name R.code) s (T4 s0 w c) := by
   have hp := h.ctx.bx.pre
   have hcB := cB_fit hp
@@ -428,6 +428,6 @@ theorem test_ok {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) {s0 s : Sta
   · have hoc : Spec.RsaKeyGen.obviouslyComposite (64 * w) c = false := by
       revert hz; cases Spec.RsaKeyGen.obviouslyComposite (64 * w) c <;> decide
     refine WP.seq (WP.mono (prepS h₂ hoc) fun t₃ h₃ => ?_)
-    exact WP.seq (WP.mono (mrS R h₃) fun t₄ h₄ => h₄.result_ok)
+    exact WP.seq (WP.mono (mrStage R h₃) fun t₄ h₄ => h₄.result_ok)
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand
