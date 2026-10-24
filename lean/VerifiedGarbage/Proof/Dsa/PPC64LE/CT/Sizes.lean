@@ -31,12 +31,14 @@ def VD.pB (v : VD) : List Byte := v.at 0 v.L.pl
 def VD.qB (v : VD) : List Byte := v.at v.L.pl v.L.ql
 
 theorem Base.bytesP {v : VD} {s : State} (h : Base v s) : Spec.Rsa.bytesAt s.mem v.key v.L.pl = v.pB := by
+  have := h.kn
   have := h.bytes (o := 0) (k := v.L.pl) (by omega)
   rwa [off, BitVec.add_zero] at this
 
 theorem Base.bytesQ {v : VD} {s : State} (h : Base v s) :
-    Spec.Rsa.bytesAt s.mem (off v.key v.L.pl) v.L.ql = v.qB :=
-  h.bytes (by omega)
+    Spec.Rsa.bytesAt s.mem (off v.key v.L.pl) v.L.ql = v.qB := by
+  have := h.kn
+  exact h.bytes (by omega)
 
 /-- The sizes are supported, on the public data. -/
 def SzOk (v : VD) : Prop :=
@@ -103,6 +105,7 @@ theorem pl_bounds {v : VD} {s : State} (h : Base v s) : 128 ≤ v.L.pl ∧ v.L.p
 theorem w_scanP {v : VD} {s : State} (h : S0 v s) : WP isa (.seq (.block ptrP) sigLen) s (S0a v) := by
   obtain ⟨B, r2, -⟩ := h
   have hb := pl_bounds B
+  have := B.kn
   refine WP.seq (WP.mono (ptrP_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine WP.mono (sigLen_ok a12 a6 (by omega) (by omega) fun i hi => B1.hk.rd i (by omega))
@@ -116,6 +119,7 @@ theorem w_scanP {v : VD} {s : State} (h : S0 v s) : WP isa (.seq (.block ptrP) s
 theorem w_bitsP {v : VD} {s : State} (h : S0 v s) : WP isa (.seq (.block ptrP) bytesBits) s (S1 v) := by
   obtain ⟨B, r2, -⟩ := h
   have hb := pl_bounds B
+  have := B.kn
   refine WP.seq (WP.mono (ptrP_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine WP.mono (bytesBits_ok a12 a6 (by omega) (by omega) fun i hi => B1.hk.rd i (by omega))

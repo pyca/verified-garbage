@@ -49,6 +49,8 @@ structure VD where
   sl : Nat
   /-- When signing, `out`, which the header's word `hOut` keeps. -/
   out : Option Addr
+  /-- The key's public octets, `kb`'s: p||q||g, and y for a key. -/
+  kn : Nat
 
 /-- The digest's length the code uses: at most 64 octets. -/
 abbrev VD.d (v : VD) : Nat := min v.dl 64
@@ -58,13 +60,15 @@ structure Base (v : VD) (s : State) : Prop where
   ok : v.L.Ok
   regs : Regs s v.L v.key v.sig v.dig
   scr : ScrL s v.L
-  hk : Src s v.L v.key (3 * v.L.pl + v.L.ql)
+  hk : Src s v.L v.key v.kn
   hsg : Src s v.L v.sig v.sl
   hdg : Src s v.L v.dig v.d
-  kb : Spec.Rsa.bytesAt s.mem v.key (3 * v.L.pl + v.L.ql) = v.kb
+  kb : Spec.Rsa.bytesAt s.mem v.key v.kn = v.kb
   hx : Src s v.L v.key v.kl
   hdr : ∀ o ∈ v.out, word s.mem v.L.S Impl.Dsa.PPC64LE.Sign.hOut = o
-  sgn : v.out.isSome → v.kl = 3 * v.L.pl + 2 * v.L.ql ∧ v.sl = v.L.ql
+  sgn : v.out.isSome → v.kl = 3 * v.L.pl + 2 * v.L.ql ∧ v.sl = v.L.ql ∧ v.kn = 3 * v.L.pl + v.L.ql
+  /-- The public octets hold at least the domain. -/
+  kn : 2 * v.L.pl + v.L.ql ≤ v.kn
 
 /-- A change past the header keeps its word `hOut`. -/
 theorem Base.hdr_body {v : VD} {s t : State} (h : Base v s) (ho : Body v.L s.mem t.mem) :
@@ -76,30 +80,33 @@ theorem Base.step {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Kee
     (ho : Body v.L s.mem t.mem) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Base v t :=
   ⟨h.ok, h.regs.keep k hr, h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr,
     h.hdg.keep k.rd k.wr, (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb,
-    h.hx.keep k.rd k.wr, h.hdr_body ho, h.sgn⟩
+    h.hx.keep k.rd k.wr, h.hdr_body ho, h.sgn, h.kn⟩
 
 /-- The key's octets from `o`, `k` of them. -/
 def VD.at (v : VD) (o k : Nat) : List Byte := (v.kb.drop o).take k
 
-theorem Base.bytes {v : VD} {s : State} (h : Base v s) {o k : Nat} (hk : o + k ≤ 3 * v.L.pl + v.L.ql) :
+theorem Base.bytes {v : VD} {s : State} (h : Base v s) {o k : Nat} (hk : o + k ≤ v.kn) :
     Spec.Rsa.bytesAt s.mem (off v.key o) k = v.at o k := by
   rw [VD.at, ← h.kb, VG.Proof.Dsa.bytesAt_slice s.mem v.key hk]
 
 theorem Base.p {v : VD} {s : State} (h : Base v s) :
     pOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at 0 v.L.pl) := by
+  have := h.kn
   have := h.bytes (o := 0) (k := v.L.pl) (by omega)
   rw [off, BitVec.add_zero] at this
   rw [pOf, this]
 
 theorem Base.q {v : VD} {s : State} (h : Base v s) :
     qOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at v.L.pl v.L.ql) := by
+  have := h.kn
   rw [qOf, h.bytes (by omega)]
 
 theorem Base.g {v : VD} {s : State} (h : Base v s) :
     gOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at (v.L.pl + v.L.ql) v.L.pl) := by
+  have := h.kn
   rw [gOf, h.bytes (by omega)]
 
-theorem Base.y {v : VD} {s : State} (h : Base v s) :
+theorem Base.y {v : VD} {s : State} (h : Base v s) (h3 : 3 * v.L.pl + v.L.ql ≤ v.kn) :
     yOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at (2 * v.L.pl + v.L.ql) v.L.pl) := by
   rw [yOf, h.bytes (by omega)]
 

@@ -45,7 +45,7 @@ def pModQRegs : List Reg :=
 /-- `pModQ`: into the Q space, q into its array 0 (word 4 zero), and `r0 = 0`
 exactly when `p mod q = 1`. -/
 theorem pModQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig dig) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hk : Src s L key (2 * L.pl + L.ql))
     (hq : 0 < qOf s.mem L key) :
     WP isa pModQ s fun t =>
       (InQ t L ∧ arrQ t.mem L 0 = qOf s.mem L key ∧ word t.mem L.Q (slot 4 0 + 8 * 4) = 0 ∧
@@ -58,7 +58,7 @@ theorem pModQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : Sc
   have hpl := hL.pl
   have hql := hL.ql
   have e : ∀ j, slot 4 j = 256 + j * 48 := fun _ => rfl
-  have hsepK : ∀ i < 3 * L.pl + L.ql, ∀ x, ofs L.Q x < 1600 → off key i ≠ x :=
+  have hsepK : ∀ i < 2 * L.pl + L.ql, ∀ x, ofs L.Q x < 1600 → off key i ≠ x :=
     hk.sepIn (a := L.qOff) (by simp only [Lay.bOff] at hbuf; omega) hnw
   unfold pModQ
   refine WP.seq (WP.mono (enterQ_ok hL hs hr) fun s₁ ⟨⟨q1, m1⟩, k1⟩ => ?_)
@@ -116,7 +116,7 @@ def setupPRegs : List Reg :=
 /-- `setupP`: into the P space, p into its array 0 (word `w` zero) and
 `R² mod p` (`R = 2^(64 w)`) into its array 8. -/
 theorem setupP_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig dig) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hk : Src s L key (2 * L.pl + L.ql))
     (hp : 2 ≤ pOf s.mem L key) :
     WP isa setupP s fun t =>
       (InP t L ∧ arrP t.mem L 0 = pOf s.mem L key ∧ word t.mem L.S (slot L.wp 0 + 8 * L.wp) = 0 ∧
@@ -177,7 +177,7 @@ the `p_len` octets at `E` (`r12`, `p_len` in `r6`) into array 4, and `r0 = 0`
 exactly when their number `e` has `1 < e < p` and `e^q mod p = 1`. Arrays 0
 and 8 are kept. -/
 theorem checkElem_ok {s : State} {L : Lay} {key sig dig E : Addr} {p : Nat} (hL : L.Ok)
-    (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
     (he : Src s L E L.pl) (h12 : s.gpr .r12 = E) (h6 : s.gpr .r6 = BitVec.ofNat 64 L.pl)
     (hp0 : arrP s.mem L 0 = p) (hz0 : word s.mem L.S (slot L.wp 0 + 8 * L.wp) = 0) (hp : 2 ≤ p)
     (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :

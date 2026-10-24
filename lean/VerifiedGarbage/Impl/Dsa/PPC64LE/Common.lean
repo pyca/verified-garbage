@@ -30,8 +30,9 @@ The addresses and the lengths stay in registers that no arithmetic writes
 (`r21`, `r2`, `r26`–`r28`), so they are public throughout; the P space's
 header keeps the nonvolatile registers in its words 13–31.
 
-`checkKey` checks the public part of the key, `parametersValid` and `y`'s
-part of `keyValid`, on public values only, and branches on them:
+`checkKey` checks the public part of the key, `parametersValid`
+(`checkParams`, which also checks a domain alone) and `y`'s part of
+`keyValid`, on public values only, and branches on them:
 
 * the sizes: `bitLength p` and `bitLength q` are the sizes of a supported
   pair, all multiples of 8, so each is 8 times the number's significant
@@ -223,11 +224,16 @@ def elemOrder : Prog isa :=
 exactly when it is above 1, below p, and its q-th power modulo p is 1. -/
 def checkElem : Prog isa := .seq (loadArr 4) (andThen elemRange elemOrder (.block []))
 
-/-- The check of the key's public part: sizes, oddness, `p mod q = 1`, g and
-y; then `rest`, or `fail`. In the P space after it, with p in array 0 and
+/-- The check of the domain p||q||g at `r27`: sizes, oddness, `p mod q = 1`
+and g; then `rest`, or `fail`. In the P space after it, with p in array 0 and
+`R² mod p` in array 8. -/
+def checkParams (rest fail : Prog isa) : Prog isa :=
+  sizes (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG) checkElem) rest fail)) fail) fail) fail
+
+/-- The check of the key's public part: the domain's (`checkParams`), then y;
+then `rest`, or `fail`. In the P space after it, with p in array 0 and
 `R² mod p` in array 8. -/
 def checkKey (rest fail : Prog isa) : Prog isa :=
-  sizes (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG) checkElem)
-    (andThen (.seq (.block ptrY) checkElem) rest fail) fail)) fail) fail) fail
+  checkParams (andThen (.seq (.block ptrY) checkElem) rest fail) fail
 
 end VG.Impl.Dsa.PPC64LE

@@ -39,10 +39,10 @@ theorem body_rel : RelCT isa (Two K9) Verify.body (Two End) :=
   rel_end (two_taint _ (pins_fixL _ _ fun _ => rfl) (by taint_decide)) (fun _ _ h => h.1.regs.r21)
     (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
 
-theorem checkKey_rel : RelCT isa (Two S0) (checkKey Verify.body (.block [.li .r3 0])) (Two End) :=
-  (sizes_rel (G := fun _ => True) (oddsTail_rel (body_rel.mono (fun _ _ => two_mono fun _ _ h => h.1)
-      fun _ _ h => h) fun _ h => fail_rel fun v s h' => (h v s h').1) fun _ h => fail_rel fun v s h' => (h v s h').1).mono
-    (fun _ _ => two_mono fun _ _ h => ⟨h, trivial⟩) fun _ _ h => h
+theorem checkKey_rel :
+    RelCT isa (Two fun v s => S0 v s ∧ KY v) (checkKey Verify.body (.block [.li .r3 0])) (Two End) :=
+  sizes_rel (oddsTail_rel (fun _ _ _ h => h) (body_rel.mono (fun _ _ => two_mono fun _ _ h => h.1)
+      fun _ _ h => h) fun _ h => fail_rel fun v s h' => (h v s h').1) fun _ h => fail_rel fun v s h' => (h v s h').1
 
 theorem verify_rel : RelCT isa (Two C0) Verify.verify fun _ _ => True := by
   unfold Verify.verify

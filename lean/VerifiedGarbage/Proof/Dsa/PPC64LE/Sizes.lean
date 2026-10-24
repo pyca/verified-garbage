@@ -289,7 +289,7 @@ abbrev SizesOk (m : Mem) (L : Lay) (key : Addr) : Prop :=
 added to `r2`'s third field, if the sizes are supported; else `fail`. -/
 theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State → Prop} {rest fail : Prog isa}
     (hL : L.Ok) (hr : Regs s L key sig dig) (h2 : s.gpr .r2 = pack L.pl L.ql 0 d)
-    (hk : Src s L key (3 * L.pl + L.ql)) (hd : d < 2 ^ 16)
+    (hk : Src s L key (2 * L.pl + L.ql)) (hd : d < 2 ^ 16)
     (hrest : ∀ t, SizesOk s.mem L key → t.mem = s.mem →
       t.gpr .r2 = pack L.pl L.ql (Spec.Dsa.bitLength (qOf s.mem L key) / 8) d →
       Keep sizesRegs s t → WP isa rest t Q)
@@ -374,7 +374,7 @@ def oddsRegs : List Reg := [.r0, .r3, .r6, .r12, .r14]
 /-- `odds rest fail`: `rest` if p and q are odd, else `fail`. -/
 theorem odds_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop} {rest fail : Prog isa}
     (hL : L.Ok) (hr : Regs s L key sig dig)
-    (hk : Src s L key (3 * L.pl + L.ql))
+    (hk : Src s L key (2 * L.pl + L.ql))
     (hrest : ∀ t, pOf s.mem L key % 2 = 1 → qOf s.mem L key % 2 = 1 → t.mem = s.mem → Keep oddsRegs s t →
       WP isa rest t Q)
     (hfail : ∀ t, ¬ (pOf s.mem L key % 2 = 1 ∧ qOf s.mem L key % 2 = 1) → t.mem = s.mem →

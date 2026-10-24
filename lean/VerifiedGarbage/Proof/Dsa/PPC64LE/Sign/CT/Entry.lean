@@ -35,7 +35,8 @@ def SG (v : VD) : Prop := v.out.isSome = true
 def svdOf (s : State) : VD :=
   ⟨slayOf s, s.gpr .r5, s.gpr .r8, s.gpr .r10, (stackArg s 0).toNat,
     Spec.Rsa.bytesAt s.mem (s.gpr .r5) (3 * (s.gpr .r7).toNat + (s.gpr .r9).toNat),
-    3 * (s.gpr .r7).toNat + 2 * (s.gpr .r9).toNat, (s.gpr .r9).toNat, some (s.gpr .r3)⟩
+    3 * (s.gpr .r7).toNat + 2 * (s.gpr .r9).toNat, (s.gpr .r9).toNat, some (s.gpr .r3),
+    3 * (s.gpr .r7).toNat + (s.gpr .r9).toNat⟩
 
 /-- On entry. -/
 def SC0 (v : VD) (s : State) : Prop := sContract.pre s ∧ svdOf s = v
@@ -92,7 +93,8 @@ theorem sfront_S0 {v : VD} {s : State} (h : SC0 v s) :
     spre_src (A := s.gpr .r10) (k := min (stackArg s 0).toNat 64) (by rw [hrd]; simp) dDS (stackArg s 0).isLt
       (Nat.min_le_left _ _) k.rd k.wr,
     ((hK (n := 3 * (slayOf s).pl + (slayOf s).ql) (by omega) rfl rfl).kept Out), hK (Nat.le_refl _) k.rd k.wr,
-    (fun o ho => by cases ho; exact hw), (fun _ => ⟨rfl, rfl⟩)⟩, r2, fixL_nil t, trivial⟩, rfl⟩
+    (fun o ho => by cases ho; exact hw), (fun _ => ⟨rfl, rfl, rfl⟩), (by simp only [svdOf, slayOf]; omega)⟩,
+    r2, fixL_nil t, trivial⟩, rfl⟩
 
 theorem sentry_rel : RelCT isa (Two SC0) (.block Sign.entry) (Two fun v s => S0 v s ∧ SG v) := by
   refine two_post ?_ fun _ _ h => sfront_S0 h
