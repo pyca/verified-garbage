@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
+import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 
 /-! # RSA (RFC 8017) on x86-64 -/
 

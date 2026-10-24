@@ -66,17 +66,19 @@ theorem erase_reductionProducts (N k count : Nat) :
   funext j
   exact (KList.map_eq _ _).symm.trans (erase_reductionTerm N k j)
 
+/-- Right-nested `KList.append`s, which the kernel evaluates faster than `++`. -/
 def input (N k : Nat) : List Instr :=
   bif Nat.blt k (2 * N - 1) then
-    KList.map Instr.erase (ptr .edi argA .eax) ++ inputProducts N k N ++
-      KList.map Instr.erase (VG.Impl.Mont.X86.Rt.StaticSquare.double) ++ (bif Nat.beq (k % 2) 0 then aprod else [])
+    KList.append (KList.map Instr.erase (ptr .edi argA .eax)) (KList.append (inputProducts N k N)
+      (KList.append (KList.map Instr.erase VG.Impl.Mont.X86.Rt.StaticSquare.double)
+        (bif Nat.beq (k % 2) 0 then aprod else [])))
   else []
 
 theorem erase_input (N k : Nat) : KList.map Instr.erase (VG.Impl.Mont.X86.Rt.StaticSquare.input N k) = input N k := by
   unfold VG.Impl.Mont.X86.Rt.StaticSquare.input input
   simp only [Bool.cond_eq_ite, Nat.blt_eq, Nat.beq_eq]
   split
-  · simp only [KList.map_eq, List.map_append]
+  · simp only [KList.map_eq, KList.append_eq, List.map_append, List.append_assoc]
     rw [← KList.map_eq Instr.erase (VG.Impl.Mont.X86.Rt.StaticSquare.inputProducts N k N),
       erase_inputProducts]
     split

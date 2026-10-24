@@ -3,6 +3,7 @@ import VerifiedGarbage.Spec.Dsa.SignVerify
 import VerifiedGarbage.Spec.Sha512
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+import VerifiedGarbageTest.Memo
 
 /-! # DSA specification regression tests
 Known answers are parsed from the byte-for-byte NIST CAVP files, including
@@ -77,96 +78,162 @@ def digest (v : Vector) : Except String (List Byte) :=
   | "SHA-512" => pure (Spec.Sha512.sha512 v.msg)
   | h => throw s!"unknown hash {h}"
 
-private def nonceUsing (key : Key) (valid : Bool) (digest : List Byte) (k : Nat) : Option Signature := do
+/-! The checks of a signing vector compute the same exponentiations modulo
+`p` again (`g^q`, `y^q` and `g^x` validating the domain and the key in
+every function, `g^k` signing, `g^u₁` and `y^u₂` verifying): they evaluate
+copies of the functions with `pm` for those exponentiations
+(`signBytes_eq`, …), and `pm` looks up the ones computed once
+(`Test.memo_tableOf`). -/
+
+section
+variable (pm : Nat × Nat × Nat → Nat)
+
+/-- `parametersValid`. -/
+def parametersValidP (a : Params) : Prop :=
+  supportedSizes (bitLength a.p) (bitLength a.q) ∧ a.p % 2 = 1 ∧ a.q % 2 = 1 ∧
+    a.q < a.p ∧ (a.p - 1) % a.q = 0 ∧ 1 < a.g ∧ a.g < a.p ∧ pm (a.g, a.q, a.p) = 1
+
+instance (a : Params) : Decidable (parametersValidP pm a) := by
+  unfold parametersValidP
+  infer_instance
+
+/-- `keyValid`. -/
+def keyValidP (key : Key) : Bool :=
+  let a := key.params
+  1 < key.y && key.y < a.p && pm (key.y, a.q, a.p) == 1 &&
+    match key.x with
+    | none => true
+    | some x => 0 < x && x < a.q && pm (a.g, x, a.p) == key.y
+
+/-- `fromComponents`. -/
+def fromComponentsP (p q g y : Nat) (x : Option Nat) : Option Key :=
+  let key : Key := ⟨⟨p, q, g⟩, y, x⟩
+  if parametersValidP pm key.params && keyValidP pm key then some key else none
+
+/-- `generate`. -/
+def generateP (a : Params) (candidates : List Nat) : Option Key := do
+  let x ← sampleScalar a.q candidates
+  return ⟨a, pm (a.g, x, a.p), some x⟩
+
+/-- `signWithNonce`. -/
+def signWithNonceP (key : Key) (digest : List Byte) (k : Nat) : Option Signature := do
   let x ← key.x
-  if !valid || !(0 < k && k < key.params.q) then none else do
+  if !keyValidP pm key || !(0 < k && k < key.params.q) then none else do
     let a := key.params
-    let r := powMod a.g k a.p % a.q
+    let r := pm (a.g, k, a.p) % a.q
     let s := powMod k (a.q - 2) a.q * (digestScalar a.q digest + x * r) % a.q
     if r == 0 || s == 0 then none else some ⟨r, s⟩
 
-private def verifyUsing (key : Key) (valid : Bool) (sig : Signature) (digest : List Byte) : Bool :=
+/-- `sign`. -/
+def signP (key : Key) (digest : List Byte) : List Nat → Option Signature
+  | [] => none
+  | k :: ks => match signWithNonceP pm key digest k with
+    | some sig => some sig
+    | none => signP key digest ks
+
+/-- `verify`. -/
+def verifyP (key : Key) (sig : Signature) (digest : List Byte) : Bool :=
   let a := key.params
-  if !valid || !(0 < sig.r && sig.r < a.q && 0 < sig.s && sig.s < a.q) then false
+  let publicKey := { key with x := none }
+  if !keyValidP pm publicKey || !(0 < sig.r && sig.r < a.q && 0 < sig.s && sig.s < a.q) then false
   else
     let w := powMod sig.s (a.q - 2) a.q
     let u1 := digestScalar a.q digest * w % a.q
     let u2 := sig.r * w % a.q
-    (powMod a.g u1 a.p * powMod key.y u2 a.p % a.p) % a.q == sig.r
+    (pm (a.g, u1, a.p) * pm (key.y, u2, a.p) % a.p) % a.q == sig.r
 
-private def nonceCached (key : Key) (valid : {b // b = keyValid key})
-    (digest : List Byte) (k : Nat) : {s // s = signWithNonce key digest k} :=
-  ⟨nonceUsing key valid.val digest k, by simp only [nonceUsing, valid.property, signWithNonce]⟩
+/-- `signBytes`. -/
+def signBytesP (pLen qLen : Nat) (key nonce digest : List Byte) : Option (List Byte) := do
+  if !(lengthsValid pLen qLen) || key.length != 3 * pLen + 2 * qLen ||
+      nonce.length != qLen then none else do
+    let k := privateKeyBytes pLen qLen key
+    if !parametersValidP pm k.params then none else do
+      let sig ← signWithNonceP pm k digest (decodeBE nonce)
+      return encodeBE qLen sig.r ++ encodeBE qLen sig.s
 
-private def verifyCached (key : Key) (valid : {b // b = keyValid { key with x := none }})
-    (sig : Signature) (digest : List Byte) : {b // b = verify key sig digest} :=
-  ⟨verifyUsing key valid.val sig digest, by simp only [verifyUsing, valid.property, verify]⟩
+/-- `verifyBytes`. -/
+def verifyBytesP (pLen qLen : Nat) (key signature digest : List Byte) : Bool :=
+  if !(lengthsValid pLen qLen) || key.length != 3 * pLen + qLen ||
+      signature.length != 2 * qLen then false else
+    let k := publicKeyBytes pLen qLen key
+    decide (parametersValidP pm k.params) &&
+      verifyP pm k ⟨decodeBE (signature.take qLen), decodeBE (signature.drop qLen)⟩ digest
 
-private def signUsing (key : Key) (valid : Bool) (digest : List Byte) : List Nat → Option Signature
-  | [] => none
-  | k :: ks => match nonceUsing key valid digest k with
-    | some sig => some sig
-    | none => signUsing key valid digest ks
+end
 
-private theorem signUsing_eq (key : Key) (digest : List Byte) (ks : List Nat) :
-    signUsing key (keyValid key) digest ks = sign key digest ks := by
+/-- `powMod`, of one argument. -/
+def powMod' (x : Nat × Nat × Nat) : Nat := powMod x.1 x.2.1 x.2.2
+
+theorem fromComponents_eq (p q g y : Nat) (x : Option Nat) :
+    fromComponents p q g y x = fromComponentsP powMod' p q g y x := rfl
+theorem generate_eq (a : Params) (candidates : List Nat) :
+    generate a candidates = generateP powMod' a candidates := rfl
+theorem signWithNonce_eq (key : Key) (digest : List Byte) (k : Nat) :
+    signWithNonce key digest k = signWithNonceP powMod' key digest k := rfl
+theorem sign_eq (key : Key) (digest : List Byte) (ks : List Nat) :
+    sign key digest ks = signP powMod' key digest ks := by
   induction ks with
   | nil => rfl
-  | cons k ks ih =>
-    simp only [signUsing, sign, show nonceUsing key (keyValid key) digest k =
-      signWithNonce key digest k from rfl, ih]
-    rfl
-
-private def signCached (key : Key) (valid : {b // b = keyValid key})
-    (digest : List Byte) (ks : List Nat) : {s // s = sign key digest ks} :=
-  ⟨signUsing key valid.val digest ks, by rw [valid.property, signUsing_eq]⟩
+  | cons k ks ih => simp only [sign, signP, ih]; rfl
+theorem verify_eq (key : Key) (sig : Signature) (digest : List Byte) :
+    verify key sig digest = verifyP powMod' key sig digest := rfl
+theorem signBytes_eq (pLen qLen : Nat) (key nonce digest : List Byte) :
+    signBytes pLen qLen key nonce digest = signBytesP powMod' pLen qLen key nonce digest := rfl
+theorem verifyBytes_eq (pLen qLen : Nat) (key signature digest : List Byte) :
+    verifyBytes pLen qLen key signature digest =
+      verifyBytesP powMod' pLen qLen key signature digest := rfl
 
 def check (v : Vector) (signing : Bool) : Except String Unit := do
   let d ← digest v
   let key : Key := ⟨v.params, v.y, some v.x⟩
-  let publicValid : {b // b = keyValid { key with x := none }} := ⟨keyValid { key with x := none }, rfl⟩
-  unless (verifyCached key publicValid v.sig d).val == v.pass do throw "verification mismatch"
+  let a := v.params
+  -- The exponentiations a signing vector's checks compute (see above),
+  -- computed once: `pm` is `powMod'`.
+  let w := powMod v.sig.s (a.q - 2) a.q
+  let table := if signing then
+      Test.tableOf powMod' [(a.g, a.q, a.p), (v.y, a.q, a.p), (a.g, v.x, a.p), (a.g, v.k, a.p),
+        (a.g, digestScalar a.q d * w % a.q, a.p), (v.y, v.sig.r * w % a.q, a.p),
+        (a.g, v.x + 1, a.p)]
+    else []
+  let pm := Test.memo table powMod'
+  unless verifyP pm key v.sig d == v.pass do throw "verification mismatch"
   if signing then
-    let valid : {b // b = keyValid key} := ⟨keyValid key, rfl⟩
-    unless (nonceCached key valid d v.k).val == some v.sig do throw "signature mismatch"
-    unless (signCached key valid d [0, v.params.q, v.k]).val == some v.sig do throw "nonce rejection failed"
-    unless generate v.params [0, v.params.q, v.x] == some key do throw "key generation mismatch"
+    unless signWithNonceP pm key d v.k == some v.sig do throw "signature mismatch"
+    unless signP pm key d [0, v.params.q, v.k] == some v.sig do throw "nonce rejection failed"
+    unless generateP pm v.params [0, v.params.q, v.x] == some key do throw "key generation mismatch"
     let pLen := bitLength v.params.p / 8
     let qLen := bitLength v.params.q / 8
     let publicBytes := encodeBE pLen v.params.p ++ encodeBE qLen v.params.q ++
       encodeBE pLen v.params.g ++ encodeBE pLen v.y
     let privateBytes := publicBytes ++ encodeBE qLen v.x
     let signature := encodeBE qLen v.sig.r ++ encodeBE qLen v.sig.s
-    unless signBytes pLen qLen privateBytes (encodeBE qLen v.k) d == some signature do
+    unless signBytesP pm pLen qLen privateBytes (encodeBE qLen v.k) d == some signature do
       throw "packed signing mismatch"
-    unless verifyBytes pLen qLen publicBytes signature d do throw "packed verification mismatch"
-    unless signBytes pLen qLen privateBytes (encodeBE qLen 0) d == none do
+    unless verifyBytesP pm pLen qLen publicBytes signature d do throw "packed verification mismatch"
+    unless signBytesP pm pLen qLen privateBytes (encodeBE qLen 0) d == none do
       throw "packed signing accepted zero nonce"
-    unless signBytes pLen qLen publicBytes (encodeBE qLen v.k) d == none do
+    unless signBytesP pm pLen qLen publicBytes (encodeBE qLen v.k) d == none do
       throw "packed signing accepted public-only key"
-    if verifyBytes pLen qLen privateBytes signature d then throw "packed public key length accepted"
-    if verifyBytes pLen qLen publicBytes (signature ++ [0]) d then throw "oversized signature accepted"
-    if verifyBytes pLen qLen publicBytes (List.replicate (2 * qLen) 0) d then
+    if verifyBytesP pm pLen qLen privateBytes signature d then throw "packed public key length accepted"
+    if verifyBytesP pm pLen qLen publicBytes (signature ++ [0]) d then throw "oversized signature accepted"
+    if verifyBytesP pm pLen qLen publicBytes (List.replicate (2 * qLen) 0) d then
       throw "packed zero signature accepted"
-    unless fromComponents v.params.p v.params.q v.params.g v.y (some v.x) == some key do
+    unless fromComponentsP pm v.params.p v.params.q v.params.g v.y (some v.x) == some key do
       throw "component import mismatch"
     unless toComponents key == (v.params.p, v.params.q, v.params.g, v.y, some v.x) do
       throw "component export mismatch"
-    unless signWithNonce { key with x := none } d v.k == none do throw "signed with public key"
-    unless signWithNonce { key with x := some (v.x + 1) } d v.k == none do
+    unless signWithNonceP pm { key with x := none } d v.k == none do throw "signed with public key"
+    unless signWithNonceP pm { key with x := some (v.x + 1) } d v.k == none do
       throw "accepted inconsistent private key"
     for bad in [⟨0, v.sig.s⟩, ⟨v.params.q, v.sig.s⟩, ⟨v.sig.r, 0⟩, ⟨v.sig.r, v.params.q⟩] do
-      if (verifyCached key publicValid bad d).val then throw "accepted out-of-range signature"
-    if verify { key with y := 1 } v.sig d then throw "accepted identity public key"
+      if verifyP pm key bad d then throw "accepted out-of-range signature"
+    if verifyP pm { key with y := 1 } v.sig d then throw "accepted identity public key"
     -- Truncation discards low digest bits; extending a long digest by a
     -- byte must not change z. An empty digest represents zero.
     unless digestScalar v.params.q (d ++ [0]) == digestScalar v.params.q d ||
       8 * d.length < bitLength v.params.q do throw "digest truncation mismatch"
     unless digestScalar v.params.q [] == 0 do throw "empty digest mismatch"
 
-/-- Check published A.1.1.2 prime candidates without rerunning primality.
-The CAVP archive also contains constructions outside this spec; only the
-three default size/hash combinations are selected here. -/
 def checkParameterCandidates (text : String) : Except String Unit := do
   let mut hash := ""
   let mut p := 0

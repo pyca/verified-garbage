@@ -3,6 +3,7 @@ import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.RsaPkcs1Enc
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+import VerifiedGarbageTest.Memo
 
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection: known-answer tests
@@ -184,13 +185,37 @@ def parse (text : String) : Except String (Array Group) := do
       i := i + 1
   return groups
 
-/-- Reuse the checked private operation while varying only the implicit-rejection key. -/
-def decryptCached (nB eB pB qB dPB dQB qInvB C : List Byte)
-    (em : { v : Spec.Rsa.Outcome // v = Spec.Rsa.privateChecked nB eB C pB qB dPB dQB qInvB })
-    (dB : List Byte) : { v : Spec.Rsa.Outcome // v = decrypt nB eB dB pB qB dPB dQB qInvB C } :=
-  ⟨decryptWith (fun _ => em.val) nB.length dB C, by
-    simp only [decrypt, decryptWith]
-    rw [em.property]⟩
+/-- `alternative k dB C`, of `d = os2ip dB` (`alternative_eq`): `d` with
+leading zero octets or without has the same alternative message. -/
+def alternativeOf (k d : Nat) (C : List Byte) : List Byte :=
+  let key := Spec.Hmac.hmac Spec.Hmac.sha256 (Spec.Sha256.hash (i2osp d k)) C
+  let CL := irprf key (ascii "length") 256
+  let AM := irprf key (ascii "message") k
+  let AL := altLength k CL
+  lastN AL AM
+
+theorem alternative_eq (k : Nat) (dB C : List Byte) :
+    alternative k dB C = alternativeOf k (os2ip dB) C :=
+  rfl
+
+/-- `decrypt`, with RSADP's outcome `em` computed once for a ciphertext's
+checks, and its alternative message given by `alt` (`alt (len, d)` for
+`alternativeOf len d C`), computed once too (`Test.memo`): `decrypt` when
+they are those of `decrypt` (`decrypt_eq`). -/
+def decryptFrom (em : Spec.Rsa.Outcome) (k : Nat) (alt : Nat × Nat → List Byte)
+    (dB C : List Byte) : Spec.Rsa.Outcome :=
+  if C.length = k ∧ 11 ≤ k then
+    match em with
+    | .ok EM => .ok (if valid EM then lastN (msgLength EM) EM else alt (EM.length, os2ip dB))
+    | .invalid => .invalid
+    | .fault => .fault
+  else .invalid
+
+theorem decrypt_eq (nB eB dB pB qB dPB dQB qInvB C : List Byte) :
+    decrypt nB eB dB pB qB dPB dQB qInvB C =
+      decryptFrom (Spec.Rsa.privateChecked nB eB C pB qB dPB dQB qInvB) nB.length
+        (fun p => alternativeOf p.1 p.2 C) dB C :=
+  rfl
 
 /-- Checks one key and its cases. -/
 def check (g : Group) : Except String Unit := do
@@ -211,7 +236,15 @@ def check (g : Group) : Except String Unit := do
   for cs in g.cases do
     unless cs.c.length == k do throw s!"{cs.title}: ciphertext of {cs.c.length} octets"
     let em := Spec.Rsa.privateChecked nB eB cs.c pB qB dPB dQB qInvB
-    let decC := fun dB => (decryptCached nB eB pB qB dPB dQB qInvB cs.c ⟨em, rfl⟩ dB).val
+    -- The alternative message of `d`, computed once if the padding is not
+    -- valid: `alt` is `altF` (`Test.memo_tableOf`), so `decC` is `decrypt`
+    -- (`decrypt_eq`).
+    let altF := fun (p : Nat × Nat) => alternativeOf p.1 p.2 cs.c
+    let table := match em with
+      | .ok EM => if valid EM then [] else Test.tableOf altF [(EM.length, key.d)]
+      | _ => []
+    let alt := Test.memo table altF
+    let decC := fun dB => decryptFrom em nB.length alt dB cs.c
     let result := decC dB
     unless result == .ok cs.m do throw s!"{cs.title}: wrong message"
     -- The leading zeros of `d` do not matter.
@@ -227,7 +260,8 @@ def check (g : Group) : Except String Unit := do
       unless EM == encode cs.m PS do throw s!"{cs.title}: encoding"
       unless encrypt nB eB cs.m PS == some cs.c do throw s!"{cs.title}: encryption"
     else
-      unless result == .ok (alternative k dB cs.c) do throw s!"{cs.title}: alternative"
+      -- `alternative k dB cs.c` (`alternative_eq`).
+      unless result == .ok (alt (k, os2ip dB)) do throw s!"{cs.title}: alternative"
     unless dec dB (cs.c.drop 1) == .invalid && dec dB (0 :: cs.c) == .invalid do
       throw s!"{cs.title}: accepted a ciphertext of another length"
   unless dec dB nB == .invalid do throw "accepted the ciphertext n"

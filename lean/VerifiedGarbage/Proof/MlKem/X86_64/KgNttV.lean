@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgNtt
 public import VerifiedGarbage.Spec.MlKem.KpkeKgRows
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
@@ -45,7 +48,7 @@ theorem kgNtt768_correct : ∀ s, (kgNttK 3).pre s →
     ∃ t s', Exec isa (KpkeKgRows.kgNtt kem768 .avx2) s t s' ∧ abiPreserved s s' ∧ (kgNttK 3).post s s' := by
   intro s hp
   obtain ⟨t, s', he, hg, hq⟩ := KgNtt.kgNtt_wp PrimsOk.avx2 (by lit_decide) (L := kem768) (.inl rfl)
-    (by decide +kernel) hp
+    (by lit_decide) hp
   exact ⟨t, s', he, abiPreserved_of_ctl (by lit_decide) he hg, hq⟩
 
 /-- A state the contract permits. -/

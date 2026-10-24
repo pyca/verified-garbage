@@ -138,13 +138,26 @@ theorem firstChunk_taint (vl : Bool) :
     ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (firstChunk vl) h).isSome = true := by
   cases vl <;> taint_decide_sum []
 
+/-! The stitched rounds, which the chunks of `seal` and `open` and the tails
+of eight blocks run after `setup`, analysed once for each configuration, as
+summaries. -/
+
+taint_summary sroundsFF : taintS (τR [.rdi, .rcx, .rsi, .rsp]) (sroundsFor false false)
+taint_summary sroundsFT : taintS (τR [.rdi, .rcx, .rsi, .rsp]) (sroundsFor false true)
+taint_summary sroundsTF : taintS (τR [.rdi, .rcx, .rsi, .rsp]) (sroundsFor true false)
+taint_summary sroundsTT : taintS (τR [.rdi, .rcx, .rsi, .rsp]) (sroundsFor true true)
+
 theorem chunk_taint (vl : Bool) :
     ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (chunk vl false) h).isSome = true := by
-  cases vl <;> taint_decide_sum []
+  cases vl
+  · taint_decide_sum [sroundsFF]
+  · taint_decide_sum [sroundsTF]
 
 theorem chunkP_taint (vl : Bool) :
     ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (chunk vl true) h).isSome = true := by
-  cases vl <;> taint_decide_sum []
+  cases vl
+  · taint_decide_sum [sroundsFT]
+  · taint_decide_sum [sroundsTT]
 
 theorem leave_taint : ∃ h, (taintS.check (τR [.rcx, .rsi, .rsp]) (.block leave) h).isSome = true := by
   taint_decide_sum []
@@ -170,7 +183,7 @@ theorem padK_taint : ∃ h, (taintS.check (τR []) (.block (padIns .rax 29)) h).
 
 theorem tailKAB_taint (vl pre : Bool) :
     ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (tailKAB vl pre) h).isSome = true := by
-  cases vl <;> cases pre <;> taint_decide_sum []
+  cases vl <;> cases pre <;> taint_decide_sum [sroundsFF, sroundsFT, sroundsTF, sroundsTT]
 
 theorem tailAB_taint (two pre : Bool) :
     ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (tailAB two pre) h).isSome = true := by
@@ -3926,10 +3939,10 @@ theorem FC.co {c dp : Addr} {L : Nat} {sp : Addr} {s : State} (h : FC c dp L sp 
   exact acc
 
 theorem chunkO_taint : ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (chunkO false) h).isSome = true := by
-  taint_decide_sum []
+  taint_decide_sum [sroundsFF]
 
 theorem chunkOVL_taint : ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (chunkO true) h).isSome = true := by
-  taint_decide_sum []
+  taint_decide_sum [sroundsTF]
 
 theorem leaveO_taint : ∃ h, (taintS.check (τR [.rcx, .rsi, .rsp]) (.block leaveO) h).isSome = true := by
   taint_decide_sum []
@@ -4128,7 +4141,9 @@ end
 
 theorem wholeORest_taint (vl : Bool) : ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp])
     (.seq (tailKMain vl true) (.block (leaveTO 28 ++ ([.vop .vzeroupper] : List Instr)))) h).isSome = true := by
-  cases vl <;> taint_decide_sum []
+  cases vl
+  · taint_decide_sum [sroundsFT]
+  · taint_decide_sum [sroundsTT]
 
 /-- `wholeO`, with its permissions. -/
 theorem wholeO_rel {c dp : Addr} {L : Nat} (sp : Addr) (vl : Bool) :

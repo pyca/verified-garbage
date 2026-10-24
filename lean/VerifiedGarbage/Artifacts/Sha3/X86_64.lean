@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 
 public import VerifiedGarbage.Proof.Sha3.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration

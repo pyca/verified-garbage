@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP512r1.Lit
 
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec

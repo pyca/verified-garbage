@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed25519 on PPC64LE: `vg_gf25519_r32_mul`'s code
@@ -94,24 +95,24 @@ theorem mulSetup_ok {o x y : Nat} {s : State} (hc : Ctx3 b s)
   have st : ∀ (t : State), Ctx3 b t → ∀ d, d + 4 ≤ 4096 → ∀ {is : List Instr} {Q : State → Prop},
       (∀ t', Mupd t t' (t.mem.writeW (b + BitVec.ofNat 64 d) ((t.gpr .r7).setWidth 32)) →
         WP isa (.block is) t' Q) → WP isa (.block (.store .w .r7 .r3 d :: is)) t Q :=
-    fun t ht d hd _ _ k => wp_sw (by decide) (by omega) (by rw [ht.r3]) (ht.inW hd) k
+    fun t ht d hd _ _ k => wp_sw (by decide) (by omega_arith) (by rw [ht.r3]) (ht.inW hd) k
   -- The eight stores of zero.
   have hz : ∀ t : State, Rest [] s8 t → t.gpr .r7 = 0 := fun t ht => by
     rw [ht.gpr _ (by decide), u8.gpr]; rfl
-  refine st _ hc8 _ (by omega) fun t1 v1 => ?_
-  refine st _ (hc8.of_rest (v1.rest []) (by decide)) _ (by omega) fun t2 v2 => ?_
+  refine st _ hc8 _ (by omega_arith) fun t1 v1 => ?_
+  refine st _ (hc8.of_rest (v1.rest []) (by decide)) _ (by omega_arith) fun t2 v2 => ?_
   have r2 : Rest [] s8 t2 := (v1.rest []).trans (v2.rest [])
-  refine st _ (hc8.of_rest r2 (by decide)) _ (by omega) fun t3 v3 => ?_
+  refine st _ (hc8.of_rest r2 (by decide)) _ (by omega_arith) fun t3 v3 => ?_
   have r3 : Rest [] s8 t3 := r2.trans (v3.rest [])
-  refine st _ (hc8.of_rest r3 (by decide)) _ (by omega) fun t4 v4 => ?_
+  refine st _ (hc8.of_rest r3 (by decide)) _ (by omega_arith) fun t4 v4 => ?_
   have r4 : Rest [] s8 t4 := r3.trans (v4.rest [])
-  refine st _ (hc8.of_rest r4 (by decide)) _ (by omega) fun t5 v5 => ?_
+  refine st _ (hc8.of_rest r4 (by decide)) _ (by omega_arith) fun t5 v5 => ?_
   have r5 : Rest [] s8 t5 := r4.trans (v5.rest [])
-  refine st _ (hc8.of_rest r5 (by decide)) _ (by omega) fun t6 v6 => ?_
+  refine st _ (hc8.of_rest r5 (by decide)) _ (by omega_arith) fun t6 v6 => ?_
   have r6 : Rest [] s8 t6 := r5.trans (v6.rest [])
-  refine st _ (hc8.of_rest r6 (by decide)) _ (by omega) fun t7 v7 => ?_
+  refine st _ (hc8.of_rest r6 (by decide)) _ (by omega_arith) fun t7 v7 => ?_
   have r7 : Rest [] s8 t7 := r6.trans (v7.rest [])
-  refine st _ (hc8.of_rest r7 (by decide)) _ (by omega) fun t8 v8 => ?_
+  refine st _ (hc8.of_rest r7 (by decide)) _ (by omega_arith) fun t8 v8 => ?_
   have r8 : Rest [] s8 t8 := r7.trans (v8.rest [])
   refine wp_addi (by decide) (by decide) fun t9 w9 => wp_li (by decide) fun t10 w10 => WP.block_nil ?_
   have hm : t10.mem = ((((((((s8.mem.writeW (b + BitVec.ofNat 64 (ACC + 4 * 0)) (0 : BitVec 32)).writeW
@@ -144,15 +145,15 @@ theorem mulSetup_ok {o x y : Nat} {s : State} (hc : Ctx3 b s)
   · rw [w10.gpr]; rfl
   · have m1 := List.mem_singleton_self (⟨b + BitVec.ofNat 64 ACC, 32⟩ : Region)
     have c : ∀ k < 8, (⟨b + BitVec.ofNat 64 ACC, 32⟩ : Region).Contains (b + BitVec.ofNat 64 (ACC + 4 * k)) (32 / 8) :=
-      fun k hk => Offset.contains _ (by omega) (by omega) (by omega)
+      fun k hk => Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
     rw [hm, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     exact (((((((((Frame.refl _ _).writeW m1 _ (c 0 (by decide))).writeW m1 _ (c 1 (by decide))).writeW m1 _
       (c 2 (by decide))).writeW m1 _ (c 3 (by decide))).writeW m1 _ (c 4 (by decide))).writeW m1 _
       (c 5 (by decide))).writeW m1 _ (c 6 (by decide))).writeW m1 _ (c 7 (by decide)))
   · rw [accw, hm]
-    have hj' : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
+    have hj' : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega_arith
     rcases hj' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp (disch := omega) only [wd_write_other, wd_write_self] <;> rfl
+      simp (disch := omega_arith) only [wd_write_other, wd_write_self] <;> rfl
 
 /-- The loop invariant of the rows of `mulFn` from `s0`, after `i` rows. -/
 structure RowInvF (b : Addr) (o x y : Nat) (s0 : State) (i : Nat) (s : State) : Prop where
@@ -293,15 +294,15 @@ theorem mulFinal_ok {o : Nat} (ho : o + 32 ≤ 768) {s : State} (hc : Ctx3 b s)
   have hA := ACC_eq
   have t38 : (38 : BitVec 64).toNat = 38 := rfl
   have hl16 : ∀ k < 16, accw ACC s.mem b k < 2 ^ 32 := fun k _ => wd_lt _ _ _
-  have hlo := val32_lt (f := accw ACC s.mem b) (n := 8) fun k hk => hl16 k (by omega)
-  have hhi := val32_lt (f := fun k => accw ACC s.mem b (8 + k)) (n := 8) fun k hk => hl16 (8 + k) (by omega)
+  have hlo := val32_lt (f := accw ACC s.mem b) (n := 8) fun k hk => hl16 k (by omega_arith)
+  have hhi := val32_lt (f := fun k => accw ACC s.mem b (8 + k)) (n := 8) fun k hk => hl16 (8 + k) (by omega_arith)
   rw [show 32 * 8 = 256 from rfl] at hlo hhi
-  have hv : val32 (foldC (accw ACC s.mem b)) 8 < 39 * 2 ^ 256 := by rw [val32_foldC]; omega
+  have hv : val32 (foldC (accw ACC s.mem b)) 8 < 39 * 2 ^ 256 := by rw [val32_foldC]; omega_arith
   have hrb : ∀ t : State, Rest [.r5, .r7, .r8] s t → t.gpr .r12 = b + BitVec.ofNat 64 o := fun t ht => by
     rw [ht.gpr _ (by decide), h12]
   have hw : ∀ t : State, Rest [.r5, .r7, .r8] s t → ∀ k < 8,
       InRegions t.wr (t.gpr .r12 + BitVec.ofNat 64 (0 + 4 * k)) 4 := fun t ht k hk => by
-    rw [hrb t ht, Offset.add_add]; exact (hc.of_rest ht (by decide)).inW (by omega)
+    rw [hrb t ht, Offset.add_add]; exact (hc.of_rest ht (by decide)).inW (by omega_arith)
   simp only [mulFinal, List.cons_append, List.nil_append, List.append_assoc]
   refine wp_li (by decide) fun s1 u1 => ?_
   have hr1 : Rest [.r5, .r7, .r8] s s1 := u1.rest (by decide)
@@ -315,29 +316,29 @@ theorem mulFinal_ok {o : Nat} (ho : o + 32 ≤ 768) {s : State} (hc : Ctx3 b s)
       rw [← u1.mem]
       refine wd_frame hp'.frame fun r hr => ?_
       rw [List.mem_singleton.mp hr, hrb s1 hr1, Offset.add_add]
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
     simp only [mulFnSrc]
-    refine wp_lw (a := b + BitVec.ofNat 64 (ACC + 4 * k)) (by decide) (by omega)
-      (by rw [hc'.r3]) (hc'.inR (by omega)) fun t1 v1 => ?_
-    refine wp_lw (a := b + BitVec.ofNat 64 (ACC + 32 + 4 * k)) (by decide) (by omega)
-      (by rw [v1.other _ (by decide), hc'.r3]) (by rw [v1.rd, v1.wr]; exact hc'.inR (by omega)) fun t2 v2 => ?_
+    refine wp_lw (a := b + BitVec.ofNat 64 (ACC + 4 * k)) (by decide) (by omega_arith)
+      (by rw [hc'.r3]) (hc'.inR (by omega_arith)) fun t1 v1 => ?_
+    refine wp_lw (a := b + BitVec.ofNat 64 (ACC + 32 + 4 * k)) (by decide) (by omega_arith)
+      (by rw [v1.other _ (by decide), hc'.r3]) (by rw [v1.rd, v1.wr]; exact hc'.inR (by omega_arith)) fun t2 v2 => ?_
     refine wp_mul fun t3 v3 => wp_add fun t4 v4 => WP.block_nil ⟨?_, ?_, by
       rw [v4.mem, v3.mem, v2.mem, v1.mem]⟩
     · have el : (t1.gpr .r7).toNat = accw ACC s.mem b k := by
         rw [v1.gpr, toNat_ext32]; show wd s'.mem _ _ = _
-        rw [hfr _ (by omega) (by omega)]; rfl
+        rw [hfr _ (by omega_arith) (by omega_arith)]; rfl
       have eh : (t2.gpr .r5).toNat = accw ACC s.mem b (8 + k) := by
         rw [v2.gpr, toNat_ext32, v1.mem]; show wd s'.mem _ _ = _
-        rw [hfr _ (by omega) (by omega), accw]
-        congr 1; omega
+        rw [hfr _ (by omega_arith) (by omega_arith), accw]
+        congr 1; omega_arith
       have e0 : t2.gpr .r0 = 38 := by
         rw [v2.other _ (by decide), v1.other _ (by decide), hp'.rest.gpr _ (by decide), hr1.gpr _ (by decide), h0]
-      have hh := hl16 (8 + k) (by omega)
-      have hl := hl16 k (by omega)
+      have hh := hl16 (8 + k) (by omega_arith)
+      have hl := hl16 k (by omega_arith)
       have e3 : (t3.gpr .r5).toNat = accw ACC s.mem b (8 + k) * 38 := by
-        rw [v3.gpr, e0, toNat_mul_lt (by rw [eh, t38]; omega), eh, t38]
+        rw [v3.gpr, e0, toNat_mul_lt (by rw [eh, t38]; omega_arith), eh, t38]
       rw [v4.gpr, v3.other .r7 (by decide), v2.other .r7 (by decide),
-        toNat_add_lt (by rw [el, e3]; omega), el, e3, foldC, Nat.mul_comm 38]
+        toNat_add_lt (by rw [el, e3]; omega_arith), el, e3, foldC, Nat.mul_comm 38]
     · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
         (v4.rest (by decide))))
   -- The fold done; the carry out, folded in as 38 times itself.
@@ -350,27 +351,27 @@ theorem mulFinal_ok {o : Nat} (ho : o + 32 ≤ 768) {s : State} (hc : Ctx3 b s)
   have hcl := carry_le hv
   refine wp_mul fun s3 u3 => ?_
   have e3 : (s3.gpr .r8).toNat = 38 * chain (foldC (accw ACC s.mem b)) 0 8 := by
-    rw [u3.gpr, hr2.gpr .r0 (by decide), h0, toNat_mul_lt (by rw [hp.r8, t38]; omega), hp.r8, t38]
-    omega
+    rw [u3.gpr, hr2.gpr .r0 (by decide), h0, toNat_mul_lt (by rw [hp.r8, t38]; omega_arith), hp.r8, t38]
+    omega_arith
   have hr3 : Rest [.r5, .r7, .r8] s s3 := hr2.trans (u3.rest (by decide))
   have hl : ∀ k < 8, limb s2.mem b o k < 2 ^ 32 := fun k _ => limb_lt _ _ _ _
   have ht := tail_facts hl (c8 := chain (foldC (accw ACC s.mem b)) 0 8) hcl
   refine WP.append (pass_ok (rb := .r12) (o := 0) (s0 := s3) (c := limb s2.mem b o)
     (cin := 38 * chain (foldC (accw ACC s.mem b)) 0 8)
-    (by decide) (by decide) (by decide) (hw s3 hr3) e3 (fun k hk => by have := hl k hk; omega) (by omega) ?_)
+    (by decide) (by decide) (by decide) (hw s3 hr3) e3 (fun k hk => by have := hl k hk; omega_arith) (by omega_arith) ?_)
     fun s4 hp4 => ?_
   · intro k hk s' hp'
     have hc' : Ctx3 b s' := (hc.of_rest hr3 (by decide)).of_rest hp'.rest (by decide)
     simp only [mulTailSrc]
-    refine wp_lw (a := b + BitVec.ofNat 64 (o + 4 * k)) (by decide) (by omega)
-      (by rw [hp'.rest.gpr _ (by decide), hrb s3 hr3, Offset.add_add]) (hc'.inR (by omega))
+    refine wp_lw (a := b + BitVec.ofNat 64 (o + 4 * k)) (by decide) (by omega_arith)
+      (by rw [hp'.rest.gpr _ (by decide), hrb s3 hr3, Offset.add_add]) (hc'.inR (by omega_arith))
       fun t1 v1 => WP.block_nil ⟨?_, v1.rest (by decide), v1.mem⟩
     rw [v1.gpr, toNat_ext32]
     show wd s'.mem _ _ = _
     rw [← u3.mem]
     refine wd_frame hp'.frame fun r hr => ?_
     rw [List.mem_singleton.mp hr, hrb s3 hr3, Offset.add_add]
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   have hr4 : Rest [.r5, .r7, .r8] s s4 := hr3.trans hp4.rest
   have hc4 : Ctx3 b s4 := hc.of_rest hr4 (by decide)
   have hpo4 : ∀ j < 8, wd s4.mem b (o + 4 * j) = out (limb s2.mem b o) (38 * chain (foldC (accw ACC s.mem b)) 0 8) j :=
@@ -379,15 +380,15 @@ theorem mulFinal_ok {o : Nat} (ho : o + 32 ≤ 768) {s : State} (hc : Ctx3 b s)
     have := hp4.frame; rwa [hrb s3 hr3, Offset.add_add, Nat.add_zero] at this
   refine wp_mul fun s5 u5 => ?_
   have e5 : (s5.gpr .r8).toNat = 38 * chain (limb s2.mem b o) (38 * chain (foldC (accw ACC s.mem b)) 0 8) 8 := by
-    rw [u5.gpr, hr4.gpr .r0 (by decide), h0, toNat_mul_lt (by rw [hp4.r8, t38]; have := ht.1; omega), hp4.r8, t38]
-    omega
+    rw [u5.gpr, hr4.gpr .r0 (by decide), h0, toNat_mul_lt (by rw [hp4.r8, t38]; have := ht.1; omega_arith), hp4.r8, t38]
+    omega_arith
   have hr5 : Rest [.r5, .r7, .r8] s s5 := hr4.trans (u5.rest (by decide))
   refine wp_lw (a := b + BitVec.ofNat 64 o) (by decide) (by decide)
-    (by rw [hrb s5 hr5]; simp) ((hc.of_rest hr5 (by decide)).inR (by omega)) fun s6 u6 => ?_
+    (by rw [hrb s5 hr5]; simp) ((hc.of_rest hr5 (by decide)).inR (by omega_arith)) fun s6 u6 => ?_
   refine wp_add fun s7 u7 => ?_
   have hr7 : Rest [.r5, .r7, .r8] s s7 := hr5.trans ((u6.rest (by decide)).trans (u7.rest (by decide)))
   refine wp_sw (a := b + BitVec.ofNat 64 o) (by decide) (by decide)
-    (by rw [hrb s7 hr7]; simp) ((hc.of_rest hr7 (by decide)).inW (by omega)) fun s8 u8 => WP.block_nil ?_
+    (by rw [hrb s7 hr7]; simp) ((hc.of_rest hr7 (by decide)).inW (by omega_arith)) fun s8 u8 => WP.block_nil ?_
   have h0' := ht.2.1 0 (by decide)
   have o0 := hpo4 0 (by decide)
   rw [Nat.mul_zero, Nat.add_zero] at o0
@@ -395,7 +396,7 @@ theorem mulFinal_ok {o : Nat} (ho : o + 32 ≤ 768) {s : State} (hc : Ctx3 b s)
     rw [u7.gpr, u6.gpr, u6.other .r8 (by decide), u5.mem]
     simp only [tailL, ite_true] at h0' ⊢
     unfold wd at o0
-    rw [toNat_add_lt (by rw [toNat_ext32, e5, o0]; omega), toNat_ext32, e5, o0]
+    rw [toNat_add_lt (by rw [toNat_ext32, e5, o0]; omega_arith), toNat_ext32, e5, o0]
   have hm8 : s8.mem = s4.mem.writeW (b + BitVec.ofNat 64 o) ((s7.gpr .r7).setWidth 32) := by
     rw [u8.mem, u7.mem, u6.mem, u5.mem]
   have hlimb : ∀ k < 8, limb s8.mem b o k = tailL (limb s2.mem b o) (chain (foldC (accw ACC s.mem b)) 0 8) k := by
@@ -403,12 +404,12 @@ theorem mulFinal_ok {o : Nat} (ho : o + 32 ≤ 768) {s : State} (hc : Ctx3 b s)
     rw [limb, hm8]
     rcases Nat.eq_zero_or_pos k with rfl | hk0
     · rw [Nat.mul_zero, Nat.add_zero, wd_write_self, toNat_lo32, e7, Nat.mod_eq_of_lt h0']
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega), hpo4 k hk]
-      simp only [tailL, show k ≠ 0 by omega, ite_false]
+    · rw [wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), hpo4 k hk]
+      simp only [tailL, show k ≠ 0 by omega_arith, ite_false]
   refine ⟨hr7.trans (u8.rest _), ?_, ?_⟩
   · rw [hm8]
     refine (hpf.trans (?_ : Frame _ s2.mem s4.mem)).writeW (List.mem_singleton_self _) _
-      (Offset.contains b (d := o) (n := 32 / 8) (e := o) (k := 32) (Nat.le_refl _) (by omega) (by omega))
+      (Offset.contains b (d := o) (n := 32 / 8) (e := o) (k := 32) (Nat.le_refl _) (by omega_arith) (by omega_arith))
     rw [← u3.mem]; exact hpf4
   · rw [V, val32_congr hlimb, ht.2.2, val32_congr (f := limb s2.mem b o) hpo]
     have hcv := chain_val (foldC (accw ACC s.mem b)) 0 8
@@ -433,7 +434,7 @@ theorem mulFn_ok {o x y : Nat} (ho : o + 32 ≤ 768) (hx : x + 32 ≤ 768) (hy :
     refine ⟨h1.ctx, h1.rest, h1.r0, h1.r12, by rw [h1.r10]; rfl, h1.r6, by rw [h1.r9]; simp,
       by rw [h1.r11]; rfl, ?_, ?_⟩
     · refine h1.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
-      rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
     · rw [Nat.zero_add, val32_congr (g := fun _ => 0) h1.zero, val32_zero_fn]
       exact (Nat.zero_mul _).symm
   refine WP.seq (WP.mono (Q := RowInvF b o x y s 8) (WP.loop (M := isa)
@@ -444,8 +445,8 @@ theorem mulFn_ok {o x y : Nat} (ho : o + 32 ≤ 768) (hx : x + 32 ≤ 768) (hy :
     by_cases h8 : i + 1 = 8
     · refine .inl ⟨by rw [eval_nonzero, hz]; simp [h8], ?_⟩
       rw [h8] at hr'; exact hr'
-    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega, 8 - (i + 1), by omega, i + 1, rfl,
-        by omega, hr'⟩
+    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega_arith, 8 - (i + 1), by omega_arith, i + 1, rfl,
+        by omega_arith, hr'⟩
   · refine WP.mono (mulFinal_ok ho h2.ctx h2.r0 h2.r12) fun s3 ⟨hr3, hf3, hv3⟩ => ⟨?_, ?_, ?_⟩
     · exact h2.rest.trans (hr3.mono (by decide))
     · exact (h2.frame.mono fun r hr => by simp [List.mem_singleton.mp hr]).trans

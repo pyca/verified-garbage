@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvTop
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAccA
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc0
@@ -42,8 +43,8 @@ theorem nttInvAccY_correct (s : State) (hs : (invAccK accY).pre s) :
   have hW : WP isa nttInvAccY s fun s' => PolyIs s'.mem (s.gpr .rdi) (nttInv F0) ∧
       Frame [pR (s.gpr .rdi), pR (s.gpr .rsi)] s.mem s'.mem :=
     WP.mono (NttR.nttIR_ok NttR.checkI_acc hw hwf hd (src := .acc) hF0) fun _ ⟨hP, hf, _⟩ => ⟨hP, hf⟩
-  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .r8] hW (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he
+  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .r8] hW (by lit_decide)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he
     (gprPreserved_of hk (by decide) hf (by simpa using ⟨hs.2.2.2.1, hs.2.2.2.2.1⟩)),
     fun F hF => by rw [acc16_unique hF hF0]; exact hP⟩
 

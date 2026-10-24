@@ -9,8 +9,17 @@ import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressCT
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressCT
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootCT
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.LitAlias
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitAlias
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
@@ -27,9 +36,16 @@ open VG.Proof.Ecdsa.X86.P224
 
 abbrev code : Prog isa := Impl.EcKey.Compressed.X86.decompress p224
 
+materialize_aliases fns := code
 materialize_shared baseline := code
 
 theorem sp : SpOk code 28 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
+
+taint_summary mulSum : taint ({ codecMulT (2 * Spec.P224.curve.len + 1) with regs := .ofList [.esp, .edi, .esi], argLen := 0, argBases := [] })
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+
+taint_summary mulSumW : taint ({ codecMulT (2 * Spec.P224.curve.len + 1) with regs := .ofList [.esp, .edi], argLen := 0, argBases := [] })
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
 
 theorem ct : ConstantTime isa (decompressContract Spec.P224.curve (fun a : Spec.Weierstrass.Fe Spec.P224.curve => Impl.EcKey.Compressed.rootTonelli a ((Spec.P224.curve.p - 1) / 2 ^ 96) 96 (Fin.ofNat Spec.P224.curve.p 11))).pre
     (decompressContract Spec.P224.curve (fun a : Spec.Weierstrass.Fe Spec.P224.curve => Impl.EcKey.Compressed.rootTonelli a ((Spec.P224.curve.p - 1) / 2 ^ 96) 96 (Fin.ofNat Spec.P224.curve.p 11))).pub code := by
@@ -38,21 +54,21 @@ theorem ct : ConstantTime isa (decompressContract Spec.P224.curve (fun a : Spec.
   · apply VG.Taint.constantTime (A := taint) (codecT (2 * Spec.P224.curve.len + 1))
     · exact fun _ _ hs ht hp => codec_agree hs ht hp
     · taint_decide
+  · obtain ⟨_, hc⟩ : ∃ h, (taint.check (rootT p224) (prepareRoot p224) h).isSome = true := by
+      native_taint_decide_sum [mulSum]
+    exact VG.Taint.constantTime (A := taint) (rootT p224) (fun _ _ _ _ hp => root_agree hp) hc
   · apply VG.Taint.constantTime (A := taint) (rootT p224)
     · exact fun _ _ _ _ hp => root_agree hp
     · taint_decide
-  · apply VG.Taint.constantTime (A := taint) (rootT p224)
-    · exact fun _ _ _ _ hp => root_agree hp
-    · taint_decide
-  · apply VG.Taint.constantTime (A := taint) (powerT p224)
-    · exact fun _ _ _ _ hp => power_agree hp
-    · taint_decide
-  · apply VG.Taint.constantTime (A := taint) (rootT p224)
-    · exact fun _ _ _ _ hp => root_agree hp
-    · taint_decide
-  · apply VG.Taint.constantTime (A := taint) (rootT p224)
-    · exact fun _ _ _ _ hp => root_agree hp
-    · taint_decide
+  · obtain ⟨_, hc⟩ : ∃ h, (taint.check (powerT p224) (Impl.EcKey.Compressed.X86.squarePower p224) h).isSome = true := by
+      native_taint_decide_sum [mulSum]
+    exact VG.Taint.constantTime (A := taint) (powerT p224) (fun _ _ _ _ hp => power_agree hp) hc
+  · obtain ⟨_, hc⟩ : ∃ h, (taint.check (rootT p224) (descentKeeps p224) h).isSome = true := by
+      native_taint_decide_sum [mulSumW]
+    exact VG.Taint.constantTime (A := taint) (rootT p224) (fun _ _ _ _ hp => root_agree hp) hc
+  · obtain ⟨_, hc⟩ : ∃ h, (taint.check (rootT p224) (.seq (Impl.EcKey.Compressed.X86.selectRoot p224) (Impl.EcKey.Compressed.X86.checkRoot p224)) h).isSome = true := by
+      native_taint_decide_sum [mulSumW]
+    exact VG.Taint.constantTime (A := taint) (rootT p224) (fun _ _ _ _ hp => root_agree hp) hc
   · apply VG.Taint.constantTime (A := taint) (finishT p224)
     · exact fun _ _ hs ht hp => finish_agree hs ht hp.1 hp.2
     · taint_decide

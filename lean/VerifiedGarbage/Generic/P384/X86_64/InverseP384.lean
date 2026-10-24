@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseCfgLit
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseVerified

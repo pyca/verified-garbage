@@ -4842,20 +4842,20 @@ section
 open Impl.Poly1305.X86_64.Blocks
 taint_summary blocksBigS : taintS (τB true true) (.call scalar.name scalar.code)
 taint_summary blocksSmallS : taintS (τB true false) (.call scalar.name scalar.code)
-taint_summary blocksBigAvx2S : taintS (τB true true) (.call avx2.name avx2.code)
-taint_summary blocksSmallAvx2S : taintS (τB true false) (.call avx2.name avx2.code)
-taint_summary blocksBigAvx512S : taintS (τB true true) (.call avx512.name avx512.code)
-taint_summary blocksSmallAvx512S : taintS (τB true false) (.call avx512.name avx512.code)
-taint_summary blocksBigIfmaS : taintS (τB true true) (.call ifma.name ifma.code)
-taint_summary blocksSmallIfmaS : taintS (τB true false) (.call ifma.name ifma.code)
+taint_summary blocksBigAvx2S : taintS (τB true true) (.call avx2.name avx2.code) using blocksBigS
+taint_summary blocksSmallAvx2S : taintS (τB true false) (.call avx2.name avx2.code) using blocksSmallS
+taint_summary blocksBigAvx512S : taintS (τB true true) (.call avx512.name avx512.code) using blocksBigS blocksBigAvx2S
+taint_summary blocksSmallAvx512S : taintS (τB true false) (.call avx512.name avx512.code) using blocksSmallS blocksSmallAvx2S
+taint_summary blocksBigIfmaS : taintS (τB true true) (.call ifma.name ifma.code) using blocksBigS blocksBigAvx2S
+taint_summary blocksSmallIfmaS : taintS (τB true false) (.call ifma.name ifma.code) using blocksSmallS blocksSmallAvx2S
 taint_summary blocksBigO : taintS (τB false true) (.call scalar.name scalar.code)
 taint_summary blocksSmallO : taintS (τB false false) (.call scalar.name scalar.code)
-taint_summary blocksBigAvx2O : taintS (τB false true) (.call avx2.name avx2.code)
-taint_summary blocksSmallAvx2O : taintS (τB false false) (.call avx2.name avx2.code)
-taint_summary blocksBigAvx512O : taintS (τB false true) (.call avx512.name avx512.code)
-taint_summary blocksSmallAvx512O : taintS (τB false false) (.call avx512.name avx512.code)
-taint_summary blocksBigIfmaO : taintS (τB false true) (.call ifma.name ifma.code)
-taint_summary blocksSmallIfmaO : taintS (τB false false) (.call ifma.name ifma.code)
+taint_summary blocksBigAvx2O : taintS (τB false true) (.call avx2.name avx2.code) using blocksBigO
+taint_summary blocksSmallAvx2O : taintS (τB false false) (.call avx2.name avx2.code) using blocksSmallO
+taint_summary blocksBigAvx512O : taintS (τB false true) (.call avx512.name avx512.code) using blocksBigO blocksBigAvx2O
+taint_summary blocksSmallAvx512O : taintS (τB false false) (.call avx512.name avx512.code) using blocksSmallO blocksSmallAvx2O
+taint_summary blocksBigIfmaO : taintS (τB false true) (.call ifma.name ifma.code) using blocksBigO blocksBigAvx2O
+taint_summary blocksSmallIfmaO : taintS (τB false false) (.call ifma.name ifma.code) using blocksSmallO blocksSmallAvx2O
 end
 
 taint_summary finalizeSumS : taintS (τB true false)

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 
 /-! # The serial Camellia core implements the existing feedback-mode interface -/
 
@@ -35,10 +36,26 @@ def coreSpec : CoreSpec core where
 
 abbrev blockSpec : BlockSpec core := coreSpec.toBlock rfl
 
-theorem keeps_x19 : KeepsReg .x19 core.prepare ∧ KeepsReg .x19 core.crypt := by
-  constructor <;> exact VG.Proof.Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)
+theorem prepare_regSafe_x19 : VG.Proof.Modes.AArch64.regSafe .x19 core.prepare = true := by
+  show VG.Proof.Modes.AArch64.regSafe .x19 (.seq (.block table) copySchedule) = true
+  rw [VG.Proof.Camellia.AArch64.serialTable.lit_eq]
+  decide +kernel
 
-theorem keeps_x30 : KeepsReg .x30 core.prepare ∧ KeepsReg .x30 core.crypt := by
-  constructor <;> exact VG.Proof.Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)
+theorem crypt_regSafe_x19 : VG.Proof.Modes.AArch64.regSafe .x19 core.crypt = true := by decide +kernel
+
+theorem keeps_x19 : KeepsReg .x19 core.prepare ∧ KeepsReg .x19 core.crypt :=
+  ⟨VG.Proof.Modes.AArch64.keepsReg_of_regSafe prepare_regSafe_x19,
+    VG.Proof.Modes.AArch64.keepsReg_of_regSafe crypt_regSafe_x19⟩
+
+theorem prepare_regSafe_x30 : VG.Proof.Modes.AArch64.regSafe .x30 core.prepare = true := by
+  show VG.Proof.Modes.AArch64.regSafe .x30 (.seq (.block table) copySchedule) = true
+  rw [VG.Proof.Camellia.AArch64.serialTable.lit_eq]
+  decide +kernel
+
+theorem crypt_regSafe_x30 : VG.Proof.Modes.AArch64.regSafe .x30 core.crypt = true := by decide +kernel
+
+theorem keeps_x30 : KeepsReg .x30 core.prepare ∧ KeepsReg .x30 core.crypt :=
+  ⟨VG.Proof.Modes.AArch64.keepsReg_of_regSafe prepare_regSafe_x30,
+    VG.Proof.Modes.AArch64.keepsReg_of_regSafe crypt_regSafe_x30⟩
 
 end VG.Proof.Camellia.AArch64.Serial

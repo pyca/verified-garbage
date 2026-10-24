@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Common
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming SHA-256 on PPC64LE: `finalize`
@@ -277,7 +279,7 @@ theorem compress_buf {s₀ : State} (hp : Pre N s₀) {s : State} (hC : Common s
       · exact (hp.st_scr.symm.sub_left (saved_sub hp')).sub_right e32
       · simp only [Impl.Sha256.PPC64LE.Stream.saved, List.mem_cons, List.not_mem_nil, or_false] at hp'
         rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        · intro a h₁ h₂; simp only [Region.Contains] at h₁ h₂; bv_omega
+        exact Offset.disjoint_base _ (by decide) (by decide)
 
 theorem times8 (x : BitVec 64) : x + x + (x + x) + (x + x + (x + x)) = BitVec.ofNat 64 (8 * x.toNat) := by
   bv_omega
@@ -453,7 +455,7 @@ theorem body_ok {s₀ : State} (hp : Pre N s₀) {k n : Nat} {s : State} (h : LI
     · rw [u₁₃.gpr, u₁₂.other _ (by decide), h24₁₁]; rfl
     · rw [h.hash iv m hm]
       simp only [ite_true, show ¬ (0 = 1) by decide, ite_false, Fin1, Fin0, hst iv m hm]
-      simp [bytesAt]
+      rw [show bytesAt s₁₃.mem (st s₀ + 32) 0 = [] from rfl, List.nil_append, Nat.sub_zero]
   · have hk0 : k = 0 := by omega
     subst hk0
     refine ⟨.inl ⟨by rw [hz]; simp, hC₁₃, fun iv m hm => ?_⟩, nv₁₃⟩
@@ -547,7 +549,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre N s₀) :
     have e := bytesAt_writeBytes s₇.mem (st s₀ + 32) (cnt s₀ % 64) [0x80] (by simp; omega)
     simp only [List.length_singleton] at e
     rw [hm₁₃, hm₁₀, e, hm₇]
-    congr 1
+    refine congrArg (· ++ [0x80]) ?_
     rw [hm.length]
     refine (bytesAt_congr ?_).trans hm.1.2
     intro i hi
@@ -772,11 +774,44 @@ theorem finalHash_length (iv : HashValue) (m : List Byte) : (Spec.Sha256.finalHa
     (Nat.le_refl _)
   rwa [List.take_of_length_le (by simp)] at this
 
+/-- `untouched.all fun r => o != some r` as one `match`, which the kernel
+evaluates several times faster on the inlined compression function. -/
+def keepsU : Option Reg → Bool
+  | some .r2 | some .r20 | some .r21 | some .r22 | some .r23 | some .r24 | some .r25 => false
+  | _ => true
+
+theorem keepsU_all (l : List Instr) (h : (l.all fun i => keepsU (dstOf i)) = true) :
+    (l.all fun i => untouched.all fun r => dstOf i != some r) = true := by
+  refine List.all_eq_true.mpr fun i hi => ?_
+  have h := List.all_eq_true.mp h i hi
+  generalize dstOf i = o at h ⊢
+  rcases o with _ | d
+  · rfl
+  · cases d <;> revert h <;> decide
+
+/-- The checks of `finalizeMainWith N` on every instruction, made once on its
+loop (which inlines the compression function). -/
+theorem untouched_main (N : Nat)
+    (h : ((List.range N).flatMap outW).all (fun i => untouched.all fun r => dstOf i != some r) = true) :
+    ((instrs (finalizeMainWith N)).all fun i => untouched.all fun r => dstOf i != some r) = true := by
+  have hb : ((instrs finalizeBody).all fun i => untouched.all fun r => dstOf i != some r) = true :=
+    keepsU_all _ (by rw [← Code.allInstrs_eq]; decide +kernel)
+  simp only [finalizeMainWith, instrs, List.all_append, hb, h, Bool.true_and]
+  decide
+
+theorem fdepth_main (N : Nat) : 48 * (finalizeMainWith N).fdepth + 48 < 2 ^ 64 := by
+  have hb : 48 * finalizeBody.fdepth + 48 < 2 ^ 64 := by decide +kernel
+  simpa only [finalizeMainWith, Code.fdepth, Nat.zero_max, Nat.max_zero] using hb
+
+theorem pushFrames_main (N : Nat) : pushFrames (finalizeMainWith N) = true := by
+  have hb : pushFrames finalizeBody = true := by decide +kernel
+  simp only [finalizeMainWith, pushFrames, hb, Bool.and_true]
+
 /-- SHA-256's `finalize`, all 8 words: `finalizePPC64LE`. -/
 theorem correct {s₀ : State} (hp : Pre 8 s₀) (hs : Stack 8 s₀) :
     WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha256.finalizePPC64LE.post s₀ s' :=
-  WP.mono (correctN hp hs (by decide) (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
-    (by decide +kernel) (by decide +kernel))
+  WP.mono (correctN hp hs (by decide) (untouched_of (untouched_main _ (by decide))) (by decide)
+    (fdepth_main _) (pushFrames_main _))
     fun _ ⟨ha, h⟩ => ⟨ha, fun iv m hr hc => by
       have := h iv m hr hc
       rwa [List.take_of_length_le (by rw [finalHash_length])] at this⟩
@@ -809,22 +844,17 @@ theorem finalize_verified : Verified PPC64LE.target finalize Proof.Sha256.finali
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
       (fun _ _ _ _ hp => agree₀ (N := 8) hp) (by taint_decide)
   · refine ⟨sat, rfl, rfl, ?_, ?_, ?_, by decide, ?_, ?_, ?_⟩ <;>
-    · intro a h₁ h₂
-      simp only [Region.Contains, sat] at h₁ h₂
-      bv_omega
+    exact Region.disjoint_of_sep (by decide)
 
 /-- SHA-224's `finalize`, the first 7 words. -/
 theorem finalize224_verified : Verified PPC64LE.target finalize224 (Proof.Sha256.finalizeNPPC64LE 7) := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h⟩ := correctN (preN_of hs).1 (preN_of hs).2 (by decide)
-      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide) (by decide +kernel)
-      (by decide +kernel)
+      (untouched_of (untouched_main _ (by decide))) (by decide) (fdepth_main _) (pushFrames_main _)
     exact ⟨t, s', he, h⟩
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
       (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
   · refine ⟨sat224, rfl, rfl, ?_, ?_, ?_, by decide, ?_, ?_, ?_⟩ <;>
-    · intro a h₁ h₂
-      simp only [Region.Contains, sat224, sat] at h₁ h₂
-      bv_omega
+    exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.Sha256.PPC64LE.Stream.Finalize

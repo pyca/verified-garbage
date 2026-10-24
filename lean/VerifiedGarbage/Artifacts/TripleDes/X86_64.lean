@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.VerifiedBlock
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified

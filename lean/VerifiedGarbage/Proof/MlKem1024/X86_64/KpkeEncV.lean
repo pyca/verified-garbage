@@ -1,4 +1,7 @@
 module
+
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
 

@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.EcKey.X86_64.P192.Lit
 
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec

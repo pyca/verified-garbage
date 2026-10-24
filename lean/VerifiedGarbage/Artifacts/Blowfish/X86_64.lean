@@ -1,4 +1,6 @@
 module
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
+import VerifiedGarbage.Proof.Blowfish.X86_64.Lit
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Frame
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Verified

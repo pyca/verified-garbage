@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PPC64LE.TaintErase
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintErase
 
 /-!
 # Streaming SHA-512 on PPC64LE: `init`
@@ -97,14 +99,17 @@ def initSat : State where
 /-- The hint for `init 0`, which is also one for `init iv`. -/
 abbrev initHint : VG.Taint.Hint taint.T := VG.Taint.hintOf taint (Taint.ofRegs [.r3]) (init 0)
 
+/-- `init iv` is `init 0` but for its immediates. -/
+private theorem init_eraseImm (iv : HashValue) :
+    PPC64LE.Code.eraseImm (init iv) = PPC64LE.Code.eraseImm (init 0) := by
+  simp only [init, PPC64LE.Code.eraseImm, List.map_flatMap, movImm64, List.cons_append, List.nil_append,
+    List.map_cons, List.map_nil, Instr.eraseImm]
+
 /-- The taint check never looks at an immediate, so its result on `init iv`
 is its result on `init 0`, which is decided. -/
 theorem init_check (iv : HashValue) :
-    (taint.check (Taint.ofRegs [.r3]) (init iv) initHint).isSome = true := by
-  have h : (taint.check (Taint.ofRegs [.r3]) (init 0) initHint).isSome = true := by taint_decide
-  rw [show taint.check (Taint.ofRegs [.r3]) (init iv) initHint =
-    taint.check (Taint.ofRegs [.r3]) (init 0) initHint from rfl]
-  exact h
+    (taint.check (Taint.ofRegs [.r3]) (init iv) initHint).isSome = true :=
+  Taint.isSome_check_of_eraseImm (init_eraseImm iv) (by taint_decide)
 
 theorem init_verified (iv : HashValue) :
     Verified PPC64LE.target (init iv) (Proof.Sha512.initPPC64LE iv) := by
