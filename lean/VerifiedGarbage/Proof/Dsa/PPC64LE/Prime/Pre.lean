@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.ProbablePrime
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # DSA's probable-prime test on PPC64LE: the contract's precondition

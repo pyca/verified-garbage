@@ -39,7 +39,7 @@ theorem status_eq_zero {x : Option (Bool × Spec.RsaKeyGen.Rand)} (h : Spec.Dsa.
   rcases x with _ | ⟨_ | _, _⟩ <;> first | rfl | cases h
 
 /-- The restores' slots: `savedSlots` but the return address. -/
-theorem restore_eq : restore = [.load .d .r0 .r9 saveOff, .mtlr .r0] ++ Spill.restoreCode .r9 savedSlots.tail := rfl
+theorem restore_eq : restore = ([.load .d .r0 .r9 saveOff, .mtlr .r0] : List Instr) ++ Spill.restoreCode .r9 savedSlots.tail := rfl
 
 theorem tail_fits : ∀ p ∈ savedSlots.tail, p.2 % 8 = 0 ∧ p.2 < 32768 := by decide
 theorem tail_restorable : Spill.Restorable .r9 savedSlots.tail := by decide
