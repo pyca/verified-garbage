@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Live
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Outputs
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -114,19 +115,6 @@ theorem key_arguments_ok {p : KeyPublic} {original s : State} {used keys scalars
     hl 64 (by decide), hl 72 (by decide), hl 96 (by decide), hl 104 (by decide), hw96, hw96', hw104, hw112, hv2, hv5, hv6, hv7, hv8,
     hv9, hv12, hv13]
 
-namespace KeyInput
-
-variable {p : KeyPublic} {original : State}
-
-theorem x_eq (h : KeyInput p original) : inX original = ⟨p.xp, p.len⟩ := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, hx1, -, -, -, -, -, -⟩ := h.1
-  rw [← h.2]; simp only [inX, keyOfState, hx1]
-
-theorem y_eq (h : KeyInput p original) : inY original = ⟨p.yp, p.len⟩ := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hx3, -, -, -, -, -⟩ := h.1
-  rw [← h.2]; simp only [inY, keyOfState, hx3]
-
-end KeyInput
 
 /-- The regions the attempt reads: the domain, `p_len` octets of the tape at
 `used`, and its stack arguments; those it writes: `x`, `y` and the working
