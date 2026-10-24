@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunAccR101
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunAccR100
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
 # ML-KEM on x86-64: `NTT` to an accumulator, with AVX2
@@ -47,8 +48,8 @@ theorem nttAccY_correct (s : State) (hs : nttAccK.pre s) :
     unfold KpkeMul.nttAccY
     exact WP.mono (NttR.nttRAcc_ok NttR.checkAcc_r10 (.inr rfl) hw hrf hwt hs.2.2.1 hs.2.2.2.1 hs.2.2.2.2.2.2)
       fun s' ⟨hP, hf, hk⟩ => ⟨⟨hP, fun r h1 h2 => hk.gpr (by simp [h1, h2])⟩, hf⟩
-  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .r8] hW (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he
+  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .r8] hW (by lit_decide)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he
     (gprPreserved_of hk (by decide) hf (by simpa using ⟨hs.2.2.2.2.1, hs.2.2.2.2.2.1⟩)), hP⟩
 
 /-- `nttAccK` of the polynomial of `u16`s at `rdi` (512 bytes). -/
@@ -72,8 +73,8 @@ theorem nttAccY16_correct (s : State) (hs : nttAcc16K.pre s) :
     unfold KpkeMul.nttAccY16
     exact WP.mono (NttR.nttRAcc16_ok NttR.checkAcc_r10 (.inr rfl) hw hrf hwt hs.2.2.1 hs.2.2.2.1 hs.2.2.2.2.2.2)
       fun s' ⟨hP, hf, hk⟩ => ⟨⟨hP, fun r h1 h2 => hk.gpr (by simp [h1, h2])⟩, hf⟩
-  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .r8] hW (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he
+  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .r8] hW (by lit_decide)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he
     (gprPreserved_of hk (by decide) hf (by simpa using ⟨hs.2.2.2.2.1, hs.2.2.2.2.2.1⟩)), hP⟩
 
 end VG.Proof.MlKem.X86_64

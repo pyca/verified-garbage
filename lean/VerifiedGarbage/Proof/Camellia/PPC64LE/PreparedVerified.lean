@@ -234,12 +234,12 @@ theorem crypt_correct (s : State) (hs : cryptPPC64LE.pre s) :
   have fitN : ((narrow s (s.gpr .r4)).gpr .r4).toNat + 8 * slots ≤ 2 ^ 64 := by
     show (s.gpr .r4).toNat + 8 * slots ≤ 2 ^ 64; omega
   have hn : cryptPrepared.noCalls = true := by lit_decide
-  obtain ⟨t, s', he, ⟨h₁, hRd, hF, -, -, -⟩, h₃⟩ := WP.keep bodyWrites
+  obtain ⟨t, s', he, ⟨h₁, hRd, hF, -, -, -, -⟩, h₃⟩ := WP.keep bodyWrites
     (cryptBody_wp hwN fitN hR (readyAt_of_words (words_of_holds hH))) (by lit_decide) hn
   have he' := exec_widen hwr hl he
   refine ⟨t, s'.withRegions s.rd s.wr, he', helperAbi_of he' (Exec.lr he' hn (by lit_decide)) h₁ (h₃.gpr (by decide)),
     fun w d hk => ?_, fun i hi hout => ?_⟩
-  · obtain ⟨t₂, s₂, he₂, -, -, -, -, -, hB₂⟩ := cryptBody_wp hwN fitN hR (readyAt_of_words (words_of_holds hk))
+  · obtain ⟨t₂, s₂, he₂, -, -, -, -, -, -, hB₂⟩ := cryptBody_wp hwN fitN hR (readyAt_of_words (words_of_holds hk))
     obtain ⟨-, rfl⟩ := Exec.det he he₂
     refine blocks_of _ fun j hj => ?_
     have := hB₂ j hj

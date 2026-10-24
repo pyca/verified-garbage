@@ -83,7 +83,12 @@ ARMv7, by `movw` and `movt` of the difference between the static and the
 `pc` an `add` then adds (`SymPart.armPcRel`, the same text in ARM and Thumb
 code, and position independent; ELF only, as COFF, for Windows' Thumb
 targets, cannot represent the difference, so such code does not assemble
-there). The
+there); on PPC64LE, by `bcl 20, 31` to the next instruction, `mflr` of
+the address it leaves in the link register, and `addis` and `addi` of the
+high and low halves of the static's distance from there
+(`SymPart.ppcHa`, `SymPart.ppcLo`: `(<sym> - 2b)@ha` and `@l`, the
+relocations `R_PPC64_REL16_HA` and `R_PPC64_REL16_LO`, position
+independent). The
 linker resolves them to the static's address, which the model gives
 (`State.syms`, fixed for the run as a static's address is) and at which the
 contract (`Abi.withConsts`) says the memory holds the table, readable and
@@ -173,6 +178,8 @@ def lineText (call : String) : Line → Option String
   | .sym s .ripRel n => some (escapeBraces s ++ "[rip + {" ++ n ++ "}]")
   | .sym s .x86PcRel n => some (escapeBraces s ++ "{" ++ n ++ "} - 2b")
   | .sym s .armPcRel n => some (escapeBraces s ++ "{" ++ n ++ "} - (2f + 2 * (3f - 2f)))")
+  | .sym s .ppcHa n => some (escapeBraces s ++ "{" ++ n ++ "} - 2b)@ha")
+  | .sym s .ppcLo n => some (escapeBraces s ++ "{" ++ n ++ "} - 2b)@l")
   | .sym _ .page _ | .sym _ .pageOff _ => none
 
 /-- One line of the `naked_asm!` template as an argument of its own. -/

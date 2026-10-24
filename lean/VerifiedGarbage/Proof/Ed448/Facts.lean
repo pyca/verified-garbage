@@ -175,4 +175,83 @@ theorem verifyEq_ok : VerifyEqOk := by
   rw [Nat.sub_self, Nat.shiftRight_zero, Nat.shiftRight_zero, toAffine_negPoint hva] at hQ
   exact verifyEquation_some hl hs hc ha hr hQ (rep_toAffine (decodePoint_valid hr))
 
+
+/-- One bit of the four-iteration ladder: `Q` for the bits above `t` becomes
+`Q` for the bits from `t` up. -/
+theorem vstep4_rep {q a' r' : Point} {S K M t : Nat} {a r : EPoint dZ}
+    (hq : Rep q ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a + (M >>> (t + 1)) • r))
+    (ha : Rep a' a) (hr : Rep r' r) :
+    Rep (vstep4 S K M t a' r' q) ((S >>> t) • baseAff + (K >>> t) • a + (M >>> t) • r) := by
+  have h2 := pointAdd_rep hq hq
+  have e1 : (S >>> t) • baseAff + (K >>> t) • a + (M >>> t) • r =
+      ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a + (M >>> (t + 1)) • r) +
+        ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a + (M >>> (t + 1)) • r) +
+        ((S >>> t) &&& 1) • baseAff + ((K >>> t) &&& 1) • a + ((M >>> t) &&& 1) • r := by
+    conv => lhs; rw [shift_step S t, shift_step K t, shift_step M t]
+    rw [add_nsmul, add_nsmul, add_nsmul, two_mul, two_mul, two_mul, add_nsmul, add_nsmul, add_nsmul]
+    abel
+  rw [e1]
+  unfold vstep4 vbit vphase
+  simp only [show (0 : Nat) ≠ 3 from by decide, show (1 : Nat) ≠ 3 from by decide,
+    show (2 : Nat) ≠ 3 from by decide, show (0 : Nat) ≠ 2 from by decide, show (0 : Nat) ≠ 1 from by decide,
+    show (1 : Nat) ≠ 2 from by decide, ite_true, ite_false]
+  rcases bit_cases S t with ⟨hs, bs⟩ | ⟨hs, bs⟩ <;> rcases bit_cases K t with ⟨hk, bk⟩ | ⟨hk, bk⟩ <;>
+    rcases bit_cases M t with ⟨hm, bm⟩ | ⟨hm, bm⟩ <;>
+    simp only [hs, hk, hm, bs, bk, bm, zero_nsmul, add_zero, one_nsmul, Bool.false_eq_true, ite_true,
+      ite_false]
+  · exact h2
+  · exact pointAdd_rep h2 hr
+  · exact pointAdd_rep h2 ha
+  · exact pointAdd_rep (pointAdd_rep h2 ha) hr
+  · exact pointAdd_rep h2 basePoint_rep
+  · exact pointAdd_rep (pointAdd_rep h2 basePoint_rep) hr
+  · exact pointAdd_rep (pointAdd_rep h2 basePoint_rep) ha
+  · exact pointAdd_rep (pointAdd_rep (pointAdd_rep h2 basePoint_rep) ha) hr
+
+theorem vladder4_rep {S K M : Nat} (hS : S >>> 458 = 0) (hK : K >>> 458 = 0) (hM : M >>> 458 = 0)
+    {a' r' : Point} {a r : EPoint dZ} (ha : Rep a' a) (hr : Rep r' r) :
+    ∀ m ≤ 458, Rep (vladder4 S K M a' r' m)
+      ((S >>> (458 - m)) • baseAff + (K >>> (458 - m)) • a + (M >>> (458 - m)) • r)
+  | 0, _ => by
+    rw [Nat.sub_zero, hS, hK, hM, zero_nsmul, zero_nsmul, zero_nsmul, add_zero, add_zero]
+    exact identity_rep
+  | m + 1, hm => by
+    have h := vstep4_rep (t := 457 - m) (show Rep (vladder4 S K M a' r' m)
+      ((S >>> (457 - m + 1)) • baseAff + (K >>> (457 - m + 1)) • a + (M >>> (457 - m + 1)) • r) by
+      rw [show 457 - m + 1 = 458 - m by omega]; exact vladder4_rep hS hK hM ha hr m (by omega)) ha hr
+    rw [show 458 - (m + 1) = 457 - m by omega]
+    exact h
+
+theorem verifyEq4_ok : VerifyEq4Ok := by
+  intro pk sig ch a r hl hs hc ha hr
+  have hva := decodePoint_valid ha
+  have hvr := decodePoint_valid hr
+  have hS := decodeLE_below (bs := sig.drop 57) (by rw [List.length_drop, hs])
+  have hK := decodeLE_below hc
+  unfold Spec.Ed448.verifyEquation
+  simp only [hl, hs, hc, bne_self_eq_false, Bool.or_false, Bool.false_eq_true, ite_false, ha, hr]
+  refine congrArg (decide (Spec.Ed448.decodeLE (sig.drop 57) < Spec.Ed448.L) && ·) ?_
+  generalize Spec.Ed448.decodeLE (sig.drop 57) = S at *
+  generalize Spec.Ed448.decodeLE ch = K at *
+  have h4 : ∀ x, (4 * x) >>> 458 = x >>> 456 := fun x => by
+    rw [show 458 = 2 + 456 from rfl, Nat.shiftRight_add,
+      show (4 * x) >>> 2 = x by rw [Nat.shiftRight_eq_div_pow]; omega]
+  have hQ := vladder4_rep (S := 4 * S) (K := 4 * K) (M := 4) (by rw [h4]; exact shift_456 hS)
+    (by rw [h4]; exact shift_456 hK)
+    (by rw [show 458 = 3 + 455 from rfl, Nat.shiftRight_add, show (4 : Nat) >>> 3 = 0 by decide,
+      Nat.zero_shiftRight])
+    (rep_toAffine (valid_negPoint hva)) (rep_toAffine (valid_negPoint hvr)) 458 (Nat.le_refl _)
+  rw [Nat.sub_self, Nat.shiftRight_zero, Nat.shiftRight_zero, Nat.shiftRight_zero, toAffine_negPoint hva,
+    toAffine_negPoint hvr] at hQ
+  have h1 := pointMul_rep 4 (pointMul_rep S basePoint_rep)
+  have h2 := pointAdd_rep (pointMul_rep 4 (rep_toAffine hvr)) (pointMul_rep 4 (pointMul_rep K (rep_toAffine hva)))
+  rw [Bool.eq_iff_iff, pointEqual_rep h1 h2, pointEqual_rep hQ identity_rep, Nat.mul_comm 4 S,
+    Nat.mul_comm 4 K, mul_nsmul, mul_nsmul]
+  constructor
+  · intro h
+    rw [h, smul_neg, smul_neg]; abel
+  · intro h
+    rw [smul_neg, smul_neg] at h
+    rw [← sub_eq_zero, ← h]; abel
+
 end VG.Proof.Ed448

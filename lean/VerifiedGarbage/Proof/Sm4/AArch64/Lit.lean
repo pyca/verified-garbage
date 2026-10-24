@@ -34,7 +34,8 @@ materialize_flat_code ecbAnyCode := Impl.Sm4.AArch64.ecbAny
 materialize_flat_code prepareKeysCode := Impl.Sm4.AArch64.prepareKeys
 materialize_flat_code cryptPreparedCode := Impl.Sm4.AArch64.cryptPrepared
 materialize_flat_code ctrCode := Impl.Sm4.AArch64.ctr
-materialize_flat_code cbcEncryptChainedCode := Impl.Sm4.AArch64.cbcEncryptChained
+materialize_value serialTable := Impl.Sm4.AArch64.Serial.preparedTable
+materialize_code cbcEncryptChainedCode := Impl.Sm4.AArch64.cbcEncryptChained
 materialize_flat_code cbcDecryptChainedCode := Impl.Sm4.AArch64.cbcDecryptChained
 
 end VG.Proof.Sm4.AArch64

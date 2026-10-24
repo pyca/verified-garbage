@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Sha256.Spec
 public import VerifiedGarbage.Impl.Sha256.PPC64LE
 import all Init.Data.Nat.Bitwise.Basic
@@ -57,10 +58,15 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     WP isa (.block (round t)) s fun s' =>
       Vars (t + 1) s' (roundKW v (K t) w) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  have hd' := List.nodup_reverse.mpr (round_nodup t)
   -- The registers the round reads and writes.
   have hs := (List.nodup_append.mp (round_nodup t)).1
   have hs' := List.nodup_reverse.mpr hs
+  have hdj := (List.nodup_append.mp (round_nodup t)).2.2
+  -- The registers the round writes are not in `pubRegs`.
+  have hpw : ∀ r ∈ pubRegs, r ≠ var t 3 ∧ r ≠ var t 7 ∧ r ≠ T1 ∧ r ≠ T2 :=
+    fun r hr => ⟨fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
+      fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm⟩
+  clear hdj
   simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega),
     var_succ t _ (show 1 < 7 by omega), var_succ t _ (show 2 < 7 by omega),
     var_succ t _ (show 3 < 7 by omega), var_succ t _ (show 4 < 7 by omega),
@@ -76,18 +82,20 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
   generalize var t 5 = f at *
   generalize var t 6 = g at *
   generalize var t 7 = h at *
-  simp only [T0, T1, T2, T3, pubRegs, List.nodup_cons, List.mem_cons, List.not_mem_nil,
+  simp only [T0, T1, T2] at hpw hw ⊢
+  simp only [T0, T1, T2, T3, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
-    List.nodup_nil, and_true] at hs hs' hd' hw ⊢
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.read, State.write,
+    List.nodup_nil, and_true] at hs hs'
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
+    RegUpd.wr_write,
     Size.bits, Size.ext, hs, hs', Option.some.injEq, exists_eq_left',
     Nat.reduceAdd, 
     Nat.reduceLT, ↓reduceIte, 
     true_and]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_⟩
   rotate_right
-  · rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl <;> simp [hd']
+  · obtain ⟨n3, n7, n17, n18⟩ := hpw r hr
+    simp only [n3, n7, n17, n18, ↓reduceIte]
   all_goals
     simp only [lo32_add, BitVec.setWidth_xor, BitVec.setWidth_and, BitVec.setWidth_or,
       BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, lis_ori', h0, h1, h2, h3, h4, h5, h6, h7,
@@ -125,7 +133,7 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     have hb := hblk ht
     simp only [Impl.Sha256.PPC64LE.schedule, ht, ite_true, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_li (show 4 * t < 2 ^ 15 by omega),
-      exec_loadRev_w, exec_store_w, slot_ok, isa, State.write, hr4, hr6, hi, hout, 
+      exec_loadRev_w, exec_store_w, slot_ok, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr4, hr6, hi, hout, 
       BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb, Option.some.injEq,
       exists_eq_left', 
       Nat.reduceLeDiff, reduceCtorEq, ↓reduceIte, ne_eq,
@@ -143,7 +151,7 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
     simp only [Impl.Sha256.PPC64LE.schedule, ht, ite_false, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_w, exec_store_w, slot_ok,
-      exec_add, exec_logic, exec_rotr_w, exec_lsr_w, isa, State.write, hr6, hin, hout, 
+      exec_add, exec_logic, exec_rotr_w, exec_lsr_w, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, 
       Option.some.injEq, exists_eq_left', 
       Nat.reduceLT, reduceCtorEq,
       ↓reduceIte, ne_eq, not_false_eq_true, true_and

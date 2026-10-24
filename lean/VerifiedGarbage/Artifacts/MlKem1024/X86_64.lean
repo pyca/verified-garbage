@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEkAvx2

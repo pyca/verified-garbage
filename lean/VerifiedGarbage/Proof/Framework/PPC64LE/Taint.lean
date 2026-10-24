@@ -53,8 +53,9 @@ def step (τ : T) : Instr → Option T
   | .storeRev _ _ a b => if pub τ a && pub τ b then some τ else none
   | .mflr d => some (set τ d false)
   | .mtlr _ => some τ
-  -- Frames are analysed by `push` and `pop`.
-  | .push .. | .pop .. | .alloc .. | .free .. => none
+  -- Frames are analysed by `push` and `pop`; a static's address
+  -- (`adrSym`) is not analysed.
+  | .push .. | .pop .. | .alloc .. | .free .. | .adrSym .. => none
 
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
@@ -94,7 +95,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | adrSym => simp only [step, reduceCtorEq] at hs
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂

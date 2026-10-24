@@ -269,7 +269,7 @@ theorem in_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀
 
 theorem t_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k) :
     PolyIs m (tP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (tP s₀ + BitVec.ofNat 64 (1024 * e))) :=
-  in_frame hf he hp.2.2.2.1 (dTC hp) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  in_frame hf he hp.2.2.2.1 (dTC hp :) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 
 omit hp in
@@ -279,7 +279,7 @@ theorem dUU {i i' : Nat} (hi : i < k + 1) (hi' : i' < k + 1) (hne : i ≠ i') :
   Offset.disjoint _ (by omega) (by omega) (by omega)
 
 theorem dUhi {i : Nat} (hi : i < k + 1) : (hiR (cP s₀)).Disjoint (pR (uP s₀ + BitVec.ofNat 64 (1024 * i))) := by
-  have h1 := (dUC hp).sub_left (sub_v _ hi)
+  have h1 := (dUC hp :).sub_left (sub_v _ hi)
   have h2 : Region.Sub (hiR (cP s₀)) (cR (cP s₀)) := sub_c (by decide)
   exact (h1.sub_right h2).symm
 
@@ -291,7 +291,7 @@ include hp
 
 theorem a_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k * k) :
     PolyIs m (aP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (aP s₀ + BitVec.ofNat 64 (1024 * e))) :=
-  in_frame hf he hp.2.2.1 (dAC hp) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  in_frame hf he hp.2.2.1 (dAC hp :) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 end
 
@@ -302,7 +302,7 @@ include hp
 
 theorem y_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k) :
     PolyIs m (yP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (yP s₀ + BitVec.ofNat 64 (1024 * e))) :=
-  in_frame hf he hp.2.2.2.2.1 (dYC hp) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+  in_frame hf he hp.2.2.2.2.1 (dYC hp :) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
 end
 
@@ -359,7 +359,7 @@ theorem zeroStep_ok {g : Reg → BitVec 64} (hbp : g .rbp = uP s₀) {i : Nat} (
   refine WP.inline (k := zeroK R) hB.zero (rd := []) (wr := [pR (uP s₀ + BitVec.ofNat 64 (1024 * i))]) ?_ ?_ ?_
     (fun s2 hrd2 hwr2 habi2 hf2 _ hpost2 => ?_) hB.nc.2.2.1
   · simp only [zeroK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h1di, hsp1, retR]
-    exact ⟨trivial, trivial, (rU hp).sub_right (sub_v _ hi)⟩
+    exact ⟨trivial, trivial, (rU hp :).sub_right (sub_v _ hi)⟩
   · rw [k1.2.1, k1.2.2, hsw]
     exact Covers.right ((cov_one (by simp) (in_vec _ (by omega) hi)).cons Covers.nil)
   · rw [k1.2.2, hsw]
@@ -368,7 +368,7 @@ theorem zeroStep_ok {g : Reg → BitVec 64} (hbp : g .rbp = uP s₀) {i : Nat} (
   rw [hm1] at hf2
   have hcs2 : ∀ r ∈ calleeSaved, s2.gpr r = s.gpr r := fun r hr => by
     rw [habi2.1 r hr]; exact k1.gpr (fun h => by simp at h; subst h; simp [calleeSaved] at hr)
-  have hd := (dUC hp).sub_left (sub_v (uP s₀) hi)
+  have hd := (dUC hp :).sub_left (sub_v (uP s₀) hi)
   refine ⟨hI.toBase.step hf2 (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact .inl (sub_v _ hi))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dUhi hp hi)
     (by rw [hrd2, k1.2.1]) (by rw [hwr2, k1.2.2]) hcs2, fun r hr => by rw [hcs2 r hr, hI.cs r hr], ?_,
@@ -433,7 +433,7 @@ theorem prod_frame {i : Nat} (hi : i < k + 1) :
     (∀ i' < k + 1, i' ≠ i → ∀ r ∈ [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀), tmpR (cP s₀)],
       (pR (uP s₀ + BitVec.ofNat 64 (1024 * i'))).Disjoint r) := by
   have pd := DecMul.prod_dis (cP s₀)
-  have hd := (dUC hp).sub_left (sub_v (uP s₀) hi)
+  have hd := (dUC hp :).sub_left (sub_v (uP s₀) hi)
   refine ⟨fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun i' hi' hne r hr => ?_⟩ <;>
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr <;> rcases hr with rfl | rfl | rfl
   · exact .inl (sub_v _ hi)
@@ -449,8 +449,8 @@ theorem prod_frame {i : Nat} (hi : i < k + 1) :
   · exact pd.1
   · exact pd.2.1
   · exact dUU hk hi' hi hne
-  · exact ((dUC hp).sub_left (sub_v (uP s₀) hi')).sub_right (sub_c0 _)
-  · exact ((dUC hp).sub_left (sub_v (uP s₀) hi')).sub_right (sub_c (by decide))
+  · exact ((dUC hp :).sub_left (sub_v (uP s₀) hi')).sub_right (sub_c0 _)
+  · exact ((dUC hp :).sub_left (sub_v (uP s₀) hi')).sub_right (sub_c (by decide))
 
 set_option linter.unusedSimpArgs false in
 /-- A product of the terms `j`: `Â[j, i] ×_T ŷ[j]` added to accumulator `i`. -/
@@ -471,9 +471,9 @@ theorem innerStep_ok {j i : Nat} {c14 : BitVec 64} (hj : j < k) (hi : i < k) {s 
   have hiu : i < k + 1 := by omega
   refine WP.mono (prodAcc_ok hB hi31 (C := cP s₀) (F := aP s₀ + BitVec.ofNat 64 (1024 * (k * j + i)))
     hI.rbx (by rw [hI.rbp]) ?_ ?_ ?_
-    ((dAC hp).sub_left (sub_v _ e)) ((dUC hp).sub_left (sub_v _ hiu))
+    ((dAC hp :).sub_left (sub_v _ e)) ((dUC hp :).sub_left (sub_v _ hiu))
     (((hp.2.2.1).sub_left (sub_v _ hiu)).sub_right (sub_v _ e))
-    (by rw [hret]; exact (rA hp).sub_right (sub_v _ e)) (by rw [hret]; exact (rU hp).sub_right (sub_v _ hiu))
+    (by rw [hret]; exact (rA hp :).sub_right (sub_v _ e)) (by rw [hret]; exact (rU hp :).sub_right (sub_v _ hiu))
     (by rw [hret]; exact rC hp) hA.1 hI.yh.1 hI.tab hX) fun s1 ⟨hP1, hf1, hcs1, hrd1, hwr1⟩ => ?_
   · vrunm [hI.rbx, hI.r12, hI.rbp, sx1024, sx_ofNat hi31]
     refine ⟨?_, fun r hr => ?_, rfl, rfl⟩
@@ -533,9 +533,9 @@ theorem termE_ok {j : Nat} (hj : j < k) {s : State} (hE : EInv k s₀ R T j s) :
     (fun s2 hrd2 hwr2 habi2 hf2 _ hpost2 => ?_) hB.nc.1)
   · simp only [nttOK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
       h1di, h1si, h1r10, hsp1, hm1, retR]
-    exact ⟨trivial, trivial, (dYC hp).sub_left (sub_v _ hj) |>.sub_right (sub_c0 _),
-      Offset.disjoint_base _ (by decide) (by decide), (rC hp).sub_right (sub_c (by decide)),
-      (rC hp).sub_right (sub_c0 _), hY.1⟩
+    exact ⟨trivial, trivial, (dYC hp :).sub_left (sub_v _ hj) |>.sub_right (sub_c0 _),
+      Offset.disjoint_base _ (by decide) (by decide), (rC hp :).sub_right (sub_c (by decide)),
+      (rC hp :).sub_right (sub_c0 _), hY.1⟩
   · rw [k1.2.1, k1.2.2, hsr, hsw]
     exact (cov_one (by simp) (in_vec _ (by omega) hj)).cons ((cov_one (by simp) (in_c (by decide))).cons
       ((cov_one (by simp) (in_c0 _)).cons Covers.nil))
@@ -557,7 +557,7 @@ theorem termE_ok {j : Nat} (hj : j < k) {s : State} (hE : EInv k s₀ R T j s) :
   have hacc2 : ∀ i < k + 1, R.is s2.mem (uP s₀ + BitVec.ofNat 64 (1024 * i)) (accE k s₀ j i) := fun i hi =>
     R.frame hf2 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      have hd := (dUC hp).sub_left (sub_v (uP s₀) hi)
+      have hd := (dUC hp :).sub_left (sub_v (uP s₀) hi)
       rcases hr with rfl | rfl
       exacts [hd.sub_right (sub_c (by decide)), hd.sub_right (sub_c0 _)]) (hE.acc i hi)
   have htab2 : T.is s2.mem (cP s₀) := T.frame hf2 (fun r hr => by
@@ -581,9 +581,9 @@ theorem termE_ok {j : Nat} (hj : j < k) {s : State} (hE : EInv k s₀ R T j s) :
   have hku : k < k + 1 := by omega
   refine WP.seq (WP.mono (prodAcc_ok hB hk31 (f := [.mov .rsi (.reg .r15)]) (C := cP s₀)
     (F := tP s₀ + BitVec.ofNat 64 (1024 * j)) hI.rbx (by rw [hI.rbp]) ?_ ?_ ?_
-    ((dTC hp).sub_left (sub_v _ hj)) ((dUC hp).sub_left (sub_v _ hku))
+    ((dTC hp :).sub_left (sub_v _ hj)) ((dUC hp :).sub_left (sub_v _ hku))
     (((hp.2.2.2.1).sub_left (sub_v _ hku)).sub_right (sub_v _ hj))
-    (by rw [hret]; exact (rT hp).sub_right (sub_v _ hj)) (by rw [hret]; exact (rU hp).sub_right (sub_v _ hku))
+    (by rw [hret]; exact (rT hp :).sub_right (sub_v _ hj)) (by rw [hret]; exact (rU hp :).sub_right (sub_v _ hku))
     (by rw [hret]; exact rC hp) hT.1 hI.yh.1 hI.tab hX) fun s4 ⟨hP4, hf4, hcs4, hrd4, hwr4⟩ => ?_)
   · vrunm [hI.rbx, hI.r15, hI.rbp, sx1024, sx_ofNat hk31]
     refine ⟨fun r hr => ?_, rfl, rfl⟩
@@ -648,8 +648,8 @@ theorem invStep_ok {i : Nat} (hi : i < k + 1) {s : State} (hV : VInv R k s₀ i 
     (fun s2 hrd2 hwr2 habi2 hf2 _ hpost2 => ?_) hB.nc.2.1)
   · simp only [invAccK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
       h1di, h1si, hsp1, retR]
-    exact ⟨trivial, trivial, (dUC hp).sub_left (sub_v _ hi) |>.sub_right (sub_c0 _),
-      (rU hp).sub_right (sub_v _ hi), (rC hp).sub_right (sub_c0 _), ⟨_, hX1⟩⟩
+    exact ⟨trivial, trivial, (dUC hp :).sub_left (sub_v _ hi) |>.sub_right (sub_c0 _),
+      (rU hp :).sub_right (sub_v _ hi), (rC hp :).sub_right (sub_c0 _), ⟨_, hX1⟩⟩
   · rw [k1.2.1, k1.2.2, hsw]
     exact Covers.right ((cov_one (by simp) (in_vec _ (by omega) hi)).cons ((cov_one (by simp) (in_c0 _)).cons
       Covers.nil))
@@ -671,7 +671,7 @@ theorem invStep_ok {i : Nat} (hi : i < k + 1) {s : State} (hV : VInv R k s₀ i 
       (pR (uP s₀ + BitVec.ofNat 64 (1024 * i'))).Disjoint r := fun hi' h r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [dUU hk hi' hi h, ((dUC hp).sub_left (sub_v (uP s₀) hi')).sub_right (sub_c0 _)]
+    exacts [dUU hk hi' hi h, ((dUC hp :).sub_left (sub_v (uP s₀) hi')).sub_right (sub_c0 _)]
   vrunm [habi2.1 .rbp (by decide), habi2.1 .r15 (by decide), k1.gpr (r := .rbp) (by decide),
     k1.gpr (r := .r15) (by decide), sx1024]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fun i' hi' => ?_, fun i' hi1 hi2 => ?_⟩
@@ -805,7 +805,7 @@ theorem wp_all (hk0 : 0 < k)
       rw [hm']
       have := polyIs_frame hf5 (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ((dUC hp).sub_left (sub_v _ hi)).sub_right (sub_c (by decide))) (hacc4 i hi)
+        exact ((dUC hp :).sub_left (sub_v _ hi)).sub_right (sub_c (by decide))) (hacc4 i hi)
       by_cases h : i < k
       · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [mulMatTVec_length]; exact h),
           ← List.getD_eq_getElem?_getD, mulMatTVec_getD _ _ _ _ h, ← accE_full h]

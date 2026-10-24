@@ -1,4 +1,5 @@
 import VerifiedGarbageTest.Ec.Common
+import VerifiedGarbageTest.Memo
 import VerifiedGarbage.Spec.Ecdsa
 import VerifiedGarbage.Spec.Sha1
 import VerifiedGarbage.Spec.Sha256
@@ -58,11 +59,34 @@ def parse (start stop : String) (text : String) : Except String (Nat × Nat × N
   unless vs.size == 10 do throw s!"expected 10 signatures, got {vs.size}"
   return (x, ux, uy, vs.toList)
 
+/-- `signWith`, with the multiples of `G` given by `mG`: `signWith C` when
+`mG` is `mul` (`signWith_eq`), so that the checks of a vector compute `kG`
+once (`Test.memo`). -/
+def signWithM (C : Curve) (mG : Nat → Point C) (d e k : Nat) : Option (Nat × Nat) :=
+  if 1 ≤ d ∧ d < C.n ∧ 1 ≤ k ∧ k < C.n then
+    match mG k with
+    | .infinity => none
+    | .affine xR _ =>
+      let r := xR.val % C.n
+      let s : Scalar C := pow (Fin.ofNat C.n k) (C.n - 2) *
+        (Fin.ofNat C.n e + Fin.ofNat C.n r * Fin.ofNat C.n d)
+      if r = 0 ∨ s = 0 then none else some (r, s.val)
+  else none
+
+theorem signWith_eq (C : Curve) (d e k : Nat) :
+    signWith C d e k = signWithM C (mul · (G C)) d e k :=
+  rfl
+
 def checkVector (C : Curve) (x : Nat) (v : Vector) : Except String Unit := do
   let some (_, H) := hashes.find? (·.1 == v.hash) | throw s!"unknown hash {v.hash}"
   let digest := H (utf8 v.message)
   let e := hashToInt C digest
-  unless signWith C x e v.k == some (v.r, v.s) do
+  -- `kG` is computed once: `mulG'` is `mulG` (`Test.memo_tableOf`), and
+  -- `signWithM C mulG` is `signWith C` (`signWith_eq`).
+  let mulG := (mul · (G C))
+  let tableG := Test.tableOf mulG [v.k]
+  let signWith' := signWithM C (Test.memo tableG mulG)
+  unless signWith' x e v.k == some (v.r, v.s) do
     throw s!"{v.hash}, {v.message}: signature mismatch"
   let enc := encode C (v.r, v.s)
   unless enc.length == 2 * C.len && ofBytes (enc.take C.len) == v.r &&
@@ -75,8 +99,8 @@ def checkVector (C : Curve) (x : Nat) (v : Vector) : Except String Unit := do
     else toBytes C.len (e <<< (8 * C.len - nBits C))
   unless hashToInt C arg == e do throw s!"{v.hash}: truncated hash disagrees"
   -- Another hash or key gives another signature.
-  if signWith C x (e + 1) v.k == some (v.r, v.s) then throw "accepted another hash"
-  if signWith C (x + 1) e v.k == some (v.r, v.s) then throw "accepted another key"
+  if signWith' x (e + 1) v.k == some (v.r, v.s) then throw "accepted another hash"
+  if signWith' (x + 1) e v.k == some (v.r, v.s) then throw "accepted another key"
 
 def checkCurve (C : Curve) (x ux uy : Nat) : Except String Unit := do
   let n := C.n

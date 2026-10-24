@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Avx2Lit
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv

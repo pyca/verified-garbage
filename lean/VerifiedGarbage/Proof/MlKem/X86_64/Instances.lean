@@ -47,25 +47,25 @@ theorem decaps_spSafe (v : Sample4Impl) :
 
 theorem keyGen1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.keyGen1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  keyGenSel_sp v (fun _ c S => by s16_sp v c S MlKem1024.X86_64.kpke1024) (by
+  keyGenSel_sp v (fun m _ S => MlKem1024.X86_64.keyGen16_1024_sp v m S) (by
     s4_sp v
     all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _)
 
 theorem encapsH1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.encapsH1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  encapsHSel_sp v (fun _ c S => by s16_sp v c S MlKem1024.X86_64.kpke1024) (by
+  encapsHSel_sp v (fun m _ S => MlKem1024.X86_64.encapsH16_1024_sp v m S) (by
     s4_sp v
     all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _)
 
 theorem encaps1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.encaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  encapsSel_sp v (fun _ c b S B => by ek16_sp v c b S B MlKem1024.X86_64.kpke1024) (by
+  encapsSel_sp v (fun m _ _ S B => MlKem1024.X86_64.encaps16_1024_sp v m S B) (by
     s4_sp v
     all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _)
 
 theorem decaps1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.decaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  decapsSel_sp v (fun _ c b S B => by ek16_sp v c b S B MlKem1024.X86_64.kpke1024) (by
+  decapsSel_sp v (fun m _ _ S B => MlKem1024.X86_64.decaps16_1024_sp v m S B) (by
     s4_sp v
     all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _)
 

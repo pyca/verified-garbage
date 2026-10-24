@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law

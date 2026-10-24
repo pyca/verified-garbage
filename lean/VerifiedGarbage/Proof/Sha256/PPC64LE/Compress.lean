@@ -9,6 +9,8 @@ meta import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.IntervalCases
 meta import Mathlib.Tactic.IntervalCases
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-256 compression function on PPC64LE: the whole function
@@ -559,8 +561,6 @@ theorem compress_verified :
     simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, rfl, rfl, ?_, ?_, ?_⟩ <;>
-    · intro a h₁ h₂
-      simp only [Region.Contains, satState] at h₁ h₂
-      bv_omega
+    exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.Sha256.PPC64LE

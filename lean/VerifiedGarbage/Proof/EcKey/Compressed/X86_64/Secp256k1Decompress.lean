@@ -40,14 +40,17 @@ abbrev code (adx : Bool) : Prog isa := Impl.EcKey.Compressed.X86_64.decompress (
 materialize_shared baseline := code false
 
 theorem inlineOk (adx : Bool) : (code adx).InlineOk = true := by
-  cases adx <;> lit_decide
+  rw [show code adx = code false from rfl]
+  lit_decide
 
 theorem hmx (adx : Bool) : (code adx).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx <;> lit_decide
+  rw [show code adx = code false from rfl]
+  lit_decide
 
 theorem ct (adx : Bool) : ConstantTime isa (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pre
     (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pub (code adx) := by
-  cases adx <;> apply VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp])
+  rw [show code adx = code false from rfl]
+  apply VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp])
   all_goals first
     | (intro s₁ s₂ _ _ hp
        obtain ⟨hsp, hout, hpk, hws⟩ := hp

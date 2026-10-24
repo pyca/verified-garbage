@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontMul
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Montgomery multiplication on PPC64LE: the rounds
@@ -39,8 +40,8 @@ theorem round_ok {s : State} {B : Addr} {Z da dA dB dM n : Nat} (hs : Scr s B Z)
       Keep roundRegs s s' := by
   have hnw := hs.nowrap
   unfold round
-  refine WP.seq (WP.mono (head_ok hs h6 h8 h7 h10 h11 h12 (by omega) (by omega) ha (by omega)
-    (by omega) (by omega)) fun s₁ ⟨⟨i18, i6, i20, i19, i22, i14, i15, i16, i17, im⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (head_ok hs h6 h8 h7 h10 h11 h12 (by omega_arith) (by omega_arith) ha (by omega_arith)
+    (by omega_arith) (by omega_arith)) fun s₁ ⟨⟨i18, i6, i20, i19, i22, i14, i15, i16, i17, im⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.wr
   have hmod : ((w32 s.mem B dA + w32 s.mem B da * w32 s.mem B dB) % 2 ^ 32 +
       (w32 s.mem B dA + w32 s.mem B da * w32 s.mem B dB) % 2 ^ 32 * (s.gpr .r12).toNat % 2 ^ 32 *
@@ -62,32 +63,32 @@ theorem round_ok {s : State} {B : Addr} {Z da dA dB dM n : Nat} (hs : Scr s B Z)
         w32 s.mem B dM) (2 ^ 32)
     rw [hmod, Nat.add_zero] at h2
     rw [Nat.mul_add]
-    omega
-  refine WP.seq (WP.mono (inner_ok hs₁ i14 i15 i16 i17 hn (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by rw [i18]; exact (s.mem.readW _ 32).isLt) hu hc1 hc2 h0)
+    omega_arith
+  refine WP.seq (WP.mono (inner_ok hs₁ i14 i15 i16 i17 hn (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by rw [i18]; exact (s.mem.readW _ 32).isLt) hu hc1 hc2 h0)
     fun s₂ ⟨j14, j20, j22, jout, jeq, k₂⟩ => ?_)
   have hs₂ := hs₁.congr k₂.wr
-  refine WP.mono (top_ok hs₂ j14 (by omega) j20 j22) fun s₃ ⟨jm, k₃⟩ => ?_
+  refine WP.mono (top_ok hs₂ j14 (by omega_arith) j20 j22) fun s₃ ⟨jm, k₃⟩ => ?_
   have k23 := k₂.trans k₃
   refine ⟨⟨?_, ?_, (s₁.gpr .r19).toNat, hu, ?_⟩, ?_⟩
   · rw [k23.gpr _ (by decide), i6]
   · rw [jm, ← im]
-    exact (jout.mono (Nat.le_refl _) (by omega)).trans
-      (((writeW32_outside _ B (d := dA + 4 * (n - 1)) _ (by omega)).mono (by omega) (by omega)).trans
-        ((writeW32_outside _ B (d := dA + 4 * (n - 1) + 4) _ (by omega)).mono (by omega) (by omega)))
-  · obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans
+      (((writeW32_outside _ B (d := dA + 4 * (n - 1)) _ (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
+        ((writeW32_outside _ B (d := dA + 4 * (n - 1) + 4) _ (by omega_arith)).mono (by omega_arith) (by omega_arith)))
+  · obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
     simp only [Nat.add_sub_cancel] at jm jeq jout ⊢
     -- The top digit read is the one on entry.
     have wt : w32 s₂.mem B (dA + 4 * k + 4) = w32 s.mem B (dA + 4 * k + 4) := by
-      rw [jout.w32 (by omega) (by omega), im]
-    rw [jm, wt, val32_succ, (writeW32_outside _ B _ (by omega)).val32 (by omega) (by omega),
-      show dA + 4 * (k + 1) = dA + 4 * k + 4 by omega, w32_write_self, BitVec.toNat_ofNat,
-      val32_write_top _ _ _ _ _ (by omega), BitVec.toNat_ofNat]
+      rw [jout.w32 (by omega_arith) (by omega_arith), im]
+    rw [jm, wt, val32_succ, (writeW32_outside _ B _ (by omega_arith)).val32 (by omega_arith) (by omega_arith),
+      show dA + 4 * (k + 1) = dA + 4 * k + 4 by omega_arith, w32_write_self, BitVec.toNat_ofNat,
+      val32_write_top _ _ _ _ _ (by omega_arith), BitVec.toNat_ofNat]
     rw [im, i18] at jeq
-    rw [val32_succ s.mem B dA (k + 1), show dA + 4 * (k + 1) = dA + 4 * k + 4 by omega]
+    rw [val32_succ s.mem B dA (k + 1), show dA + 4 * (k + 1) = dA + 4 * k + 4 by omega_arith]
     have htn : w32 s.mem B (dA + 4 * k + 4) < 2 ^ 32 := (s.mem.readW _ 32).isLt
     have := Fios32.top_eq (pow32_mul k) jeq htn j20 j22
-    omega
+    omega_arith
   · exact ((k₁.trans k23).mono (by decide))
 
 /-- The `n` rounds (`rounds`), counted by `r4` from `n`, over the digits of
@@ -118,28 +119,28 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM n : Nat} (hs : Scr s�
     2 ^ (32 * i) * val32 s.mem B dA (n + 1) % M = val32 s₀.mem B da i * Bv % M ∧
     Keep (roundRegs ++ ([.r4] : List Reg)) s₀ s
   have hJ0 : J 0 s₀ := by
-    refine ⟨by rw [h6]; rfl, Outside.refl _ _ _ _, by rw [hz]; omega, by rw [hz]; simp [val32], Keep.refl _ _⟩
+    refine ⟨by rw [h6]; rfl, Outside.refl _ _ _ _, by rw [hz]; omega_arith, by rw [hz]; simp [val32], Keep.refl _ _⟩
   refine wp_countdown (body := .seq round (.block [.subi .r4 .r4 1])) (cnt := .r4) (N := n)
-    (by omega) (by omega) J (fun i hi s hJ hc => ?_) hJ0 h4 |>.mono
+    (by omega_arith) (by omega_arith) J (fun i hi s hJ hc => ?_) hJ0 h4 |>.mono
     fun s ⟨_, jout, jlt, jeq, jk⟩ => ⟨⟨jlt, jeq, jout⟩, jk⟩
   obtain ⟨j6, jout, jlt, jeq, jk⟩ := hJ
   have keep : ∀ r ∈ [Reg.r7, .r8, .r10, .r11, .r12], s.gpr r = s₀.gpr r := fun r hr =>
     jk.gpr r (by revert r hr; decide)
   have wM : ∀ i < n, w32 s.mem B (dM + 4 * i) = w32 s₀.mem B (dM + 4 * i) := fun i hi =>
-    jout.w32 (by omega) (by omega)
-  have vM : val32 s.mem B dM n = M := jout.val32 (by omega) (by omega)
-  have vB : val32 s.mem B dB n = Bv := jout.val32 (by omega) (by omega)
-  have wa : w32 s.mem B (da + 4 * i) = w32 s₀.mem B (da + 4 * i) := jout.w32 (by omega) (by omega)
+    jout.w32 (by omega_arith) (by omega_arith)
+  have vM : val32 s.mem B dM n = M := jout.val32 (by omega_arith) (by omega_arith)
+  have vB : val32 s.mem B dB n = Bv := jout.val32 (by omega_arith) (by omega_arith)
+  have wa : w32 s.mem B (da + 4 * i) = w32 s₀.mem B (da + 4 * i) := jout.w32 (by omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (round_ok (hs.congr jk.wr) j6
     (by rw [keep .r8 (by decide), h8]) (by rw [keep .r7 (by decide), h7])
     (by rw [keep .r10 (by decide), h10]) (by rw [keep .r11 (by decide), h11])
     (by rw [keep .r12 (by decide)]; exact h12)
-    (by rw [keep .r12 (by decide), show dM = dM + 4 * 0 by rfl, wM 0 (by omega)]; exact hinv)
-    hn hn' (by omega) hA hB hM dBA dMA) fun s₁ ⟨⟨k6, kout, u, hu, keq⟩, k₁⟩ => ?_)
+    (by rw [keep .r12 (by decide), show dM = dM + 4 * 0 by rfl, wM 0 (by omega_arith)]; exact hinv)
+    hn hn' (by omega_arith) hA hB hM dBA dMA) fun s₁ ⟨⟨k6, kout, u, hu, keq⟩, k₁⟩ => ?_)
   refine WP.mono (subi_ok s₁ .r4 (by decide)) fun s₂ e => ?_
   subst e
   rw [vM, vB, wa] at keq
-  have hM0 : 0 < M := by omega
+  have hM0 : 0 < M := by omega_arith
   refine ⟨⟨by gsimp; rw [k6, Nat.mul_succ, Nat.add_assoc], ?_, ?_, ?_, ?_⟩, ?_⟩
   · gsimp; exact jout.trans kout
   · gsimp; exact Fios32.round_lt keq jlt (s₀.mem.readW _ 32).isLt hb hu

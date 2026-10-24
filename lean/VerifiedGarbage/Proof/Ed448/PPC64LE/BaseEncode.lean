@@ -86,8 +86,9 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   have hr2' : Rest [.r0, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12] s s2 := hst1.rest.trans (hr2.mono (by decide))
   have hc2 : Ctx b s2 := hc1.of_rest hr2 (by decide)
   have h32 : s2.gpr .r3 = o := by rw [hr2'.gpr _ (by decide), h3]
-  refine WP.seq (WP.append (freeze_ok hc2 h32 (n := 57) (by decide) (by rw [hr2'.wr]; exact hout) hd56)
-    fun s3 ⟨hb3, hr3, hf3⟩ => ?_)
+  refine WP.seq (WP.append (freeze_ok hc2 h32
+    (fun k hk => in_base (len := 57) (by rw [hr2'.wr]; exact hout) (by omega) (by omega)) hd56)
+    fun s3 ⟨hb3, hr3, hf3, _⟩ => ?_)
   have hS3 := slots_freeze hf3 hd56 hS2 (by decide)
   have h33 : s3.gpr .r3 = o := by rw [hr3.gpr _ (by decide), h32]
   have hw3 : s3.wr = s.wr := by rw [hr3.wr, hr2'.wr]
@@ -116,8 +117,9 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   have hc8 : Ctx b s8 := hc7.of_rest hr8 (by decide)
   have h38 : s8.gpr .r3 = o := by rw [hr8.gpr _ (by decide), hr7.gpr _ (by decide), h33]
   have hw8 : s8.wr = s.wr := by rw [hr8.wr, hr7.wr, hw3]
-  refine WP.append (freeze_ok hc8 h38 (n := 57) (by decide) (by rw [hw8]; exact hout) hd56)
-    fun s9 ⟨hb9, hr9, _⟩ => ?_
+  refine WP.append (freeze_ok hc8 h38
+    (fun k hk => in_base (len := 57) (by rw [hw8]; exact hout) (by omega) (by omega)) hd56)
+    fun s9 ⟨hb9, hr9, _, _⟩ => ?_
   refine wp_stb (a := o + BitVec.ofNat 64 56) (by decide) (by decide)
     (by rw [hr9.gpr _ (by decide), h38])
     (by rw [hr9.wr, hw8]; exact in_base hout (by decide) (by decide)) fun s10 u10 => WP.block_nil ?_

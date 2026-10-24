@@ -25,6 +25,8 @@ def text (ls : List Line) : List String :=
     | .sym s .ripRel n => s!"{s}<riprel {n}>"
     | .sym s .x86PcRel n => s!"{s}<pcrel {n}>"
     | .sym s .armPcRel n => s!"{s}<armpcrel {n}>"
+    | .sym s .ppcHa n => s!"{s}<ppcha {n}>"
+    | .sym s .ppcLo n => s!"{s}<ppclo {n}>"
 
 open X86_64
 
@@ -593,6 +595,32 @@ instructions. -/
       mem := fun _ => 0, rd := [], wr := [], syms := fun _ => 12288 } with
   | none => false
   | some s => s.gpr .lr == 12288 && s.gpr .r4 == 17 && s.sp == 4096 && s.n && !s.z && s.c && !s.v
+
+-- The address of a static (PPC64LE): `bcl` to the next instruction, label 2,
+-- whose address it leaves in the link register, `mflr` of it, then `addis`
+-- and `addi` of the high and low halves of the static's distance from label
+-- 2. `asm` gives the text `Rust.line` writes, for reading.
+#guard text (PPC64LE.printer.function (.block [.adrSym .r4 "VG_TABLE"] : Prog PPC64LE.isa)) == [
+  "bcl 20, 31, 2f", "2:", "mflr %r4", "addis %r4, %r4, (<ppcha VG_TABLE>",
+  "addi %r4, %r4, (<ppclo VG_TABLE>", "blr"]
+#guard Rust.line PPC64LE.printer.call (.sym "addis %r4, %r4, (" .ppcHa "VG_TABLE") ==
+  "        r\"addis %r4, %r4, ({VG_TABLE} - 2b)@ha\",\n"
+#guard Rust.line PPC64LE.printer.call (.sym "addi %r4, %r4, (" .ppcLo "VG_TABLE") ==
+  "        r\"addi %r4, %r4, ({VG_TABLE} - 2b)@l\",\n"
+#guard PPC64LE.Instr.asm (.adrSym .r4 "VG_TABLE") == [
+  "bcl 20, 31, 2f", "2:", "mflr %r4", "addis %r4, %r4, (VG_TABLE - 2b)@ha",
+  "addi %r4, %r4, (VG_TABLE - 2b)@l"]
+-- It writes the static's address to its register, and the next unknown value
+-- to the link register, and nothing else.
+#guard match PPC64LE.exec (.adrSym .r4 "VG_TABLE")
+    { gpr := fun _ => 17, lr := 5, sp := 4096, mem := fun _ => 0, rd := [], wr := [],
+      unknowns := fun n => 100 + BitVec.ofNat 64 n, syms := fun _ => 12288 } with
+  | none => false
+  | some s => s.gpr .r4 == 12288 && s.gpr .r3 == 17 && s.lr == 100 && s.unknowns 0 == 101 &&
+      s.sp == 4096
+-- With `r0`, `addis` and `addi` would read 0: the model faults.
+#guard (PPC64LE.exec (.adrSym .r0 "VG_TABLE")
+    { gpr := fun _ => 17, lr := 5, sp := 4096, mem := fun _ => 0, rd := [], wr := [] }).isNone
 
 -- Pass two arguments on the stack, inside a frame saving `lr` (ARMv7). A pop
 -- loads the lowest word of its frame.

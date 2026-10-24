@@ -50,7 +50,7 @@ structure Rfc where
   hcn : c.n = R.E.curve.n
   hct : c.tries = I.tries
   hk : c.len = 4 * k
-  hk12 : k ≤ 12
+  hk16 : k ≤ 16
   hbits : Spec.Ecdsa.nBits R.E.curve = 8 * c.len
   hn₁ : c.n < 2 ^ (32 * k)
   hn₂ : 2 ^ (32 * k) < 2 * c.n
@@ -121,7 +121,7 @@ theorem Lay.Ok.toNat_off (hL : L.Ok) {d : Nat} (hd : d < 400) :
   rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
 
 /-- The frame above the calls' 96 bytes is apart from what `core` writes. -/
-theorem core_apart (hL : L.Ok) {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 400) :
+theorem core_apart (hL : L.Ok) {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 400 + L.e) :
     ∀ r ∈ [L.OUT, L.SCR, ⟨L.B, 96⟩], Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
   have := hL.nB
   simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -131,7 +131,7 @@ theorem core_apart (hL : L.Ok) {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 4
   · exact Offset.disjoint_base _ h₁ (by omega)
 
 /-- The frame above `K` and `V` is apart from a step's writes. -/
-theorem kvW_apart (hL : L.Ok) {d n : Nat} (h₁ : 256 ≤ d) (h₂ : d + n ≤ 400) :
+theorem kvW_apart (hL : L.Ok) {d n : Nat} (h₁ : 256 ≤ d) (h₂ : d + n ≤ 400 + L.e) :
     ∀ r ∈ kvW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
   have := hL.nB
   simp only [kvW, List.mem_cons, List.not_mem_nil, or_false]
@@ -175,12 +175,14 @@ structure P₁ (P : Rfc) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State
   kk : Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 192) L.q) =
     Spec.Ecdsa.Rfc6979.bits2int P.C (candI P L m₀ i)
 
-theorem lq_le (hq : L.q = P.c.len) : L.q ≤ 48 := by rw [hq, P.hk]; have := P.hk12; omega
+theorem lq_le (hq : L.q = P.c.len) : L.q ≤ 64 := by rw [hq, P.hk]; have := P.hk16; omega
+
+theorem lq_ok (hq : L.q = P.c.len) : L.HOk := L.hOk (lq_le hq)
 
 theorem try₁_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr m₀ t) {i : Nat}
     (hi : LoopInv P L m₀ i t) :
     WP isa P.c.hmacV t fun u => Ctx L g lr m₀ u ∧ P₁ P L m₀ i u := by
-  refine WP.mono (hmacV_ok P.K P.hcH hL (lq_le hq) hc) fun u ⟨hcu, hf, hk, _, hv⟩ => ⟨hcu, hi.lt, ?_, ?_, ?_,
+  refine WP.mono (hmacV_ok P.K P.hcH hL (lq_ok hq) hc) fun u ⟨hcu, hf, hk, _, hv⟩ => ⟨hcu, hi.lt, ?_, ?_, ?_,
     hi.fails, ?_⟩
   · rw [hk, hi.k]
   · rw [hv, hi.k, hi.v]
@@ -253,7 +255,7 @@ theorem try₃_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr 
       rintro r (rfl | rfl | rfl)
       · exact .inl fun _ h => h
       · exact .inr (.inl fun _ h => h)
-      · exact .inr (.inr (Region.sub_prefix (by omega))))
+      · exact .inr (.inr (.inl (Region.sub_prefix (by omega)))))
     have e : Spec.Ecdsa.signWith P.R.E.curve
         (Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt t.mem L.d P.R.E.curve.len))
         (Spec.Ecdsa.hashToInt P.R.E.curve (Spec.Ecdsa.bytesAt t.mem L.dg P.R.E.curve.len))
@@ -348,7 +350,7 @@ theorem branch_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr 
   have hq4 : L.q % 4 = 0 := by rw [hq, P.hk]; omega
   by_cases hgo : sigI P L m₀ i = none ∧ i + 1 < P.c.tries
   · refine WP.ite true (by rw [hi.dec, decide_eq_true hgo]) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.seq (WP.mono (rekey_ok P.K P.hcH hq.symm hL hq48 hq4 hc) fun u₅ h₅ => ?_)
+    refine WP.seq (WP.mono (rekey_ok P.K P.hcH hq.symm hL (lq_ok hq) hq4 hc) fun u₅ h₅ => ?_)
     refine again_ok fun u₆ k₆ m₆ v₆ => ⟨h₅.ctx.kp hL k₆ m₆, .inr ⟨by rw [eval_nonzero, v₆]; rfl, hgo.2, ?_, ?_, ?_,
       fun j hj => ?_⟩⟩
     · rw [m₆, h₅.key, hi.k, hi.v]; rfl

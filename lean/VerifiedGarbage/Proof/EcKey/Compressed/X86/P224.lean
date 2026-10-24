@@ -4,8 +4,17 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
 public import VerifiedGarbage.Spec.EcKey.P224
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.LitAlias
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitAlias
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86
 meta import VerifiedGarbage.Impl.Ecdsa.P224.X86
@@ -21,15 +30,20 @@ open VG.Proof.Ecdsa.X86.P224
 
 abbrev code : Prog isa := Impl.EcKey.Compressed.X86.compress p224
 
+materialize_aliases fns := code
 materialize_shared baseline := code
 
 theorem sp : SpOk code 28 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
+taint_summary mulCodecSum : taint ({ codecMulT (Spec.P224.curve.len + 1) with regs := .ofList [.esp, .edi] })
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+
 theorem ct : ConstantTime isa (compressContract Spec.P224.curve).pre
     (compressContract Spec.P224.curve).pub code := by
-  apply VG.Taint.constantTime (A := taint) (codecT (Spec.P224.curve.len + 1))
-  · exact fun _ _ hs ht hp => codec_agree hs ht hp
-  · taint_decide
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (codecT (Spec.P224.curve.len + 1)) code h).isSome = true := by
+    native_taint_decide_sum [mulCodecSum]
+  exact VG.Taint.constantTime (A := taint) (codecT (Spec.P224.curve.len + 1))
+    (fun _ _ hs ht hp => codec_agree hs ht hp) hc
 
 theorem sat : ∃ s, (Spec.EcKey.P224.inst.compressPublicKeyContract abi 28).pre s := by
   have a0 : arg (satState 57 29) 0 = 0x1000 := by decide

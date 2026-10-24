@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V

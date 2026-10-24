@@ -87,8 +87,10 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Dir)
 
 /-! ## Correctness -/
 
-theorem cipher_enc (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl
-theorem cipher_dec (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := rfl
+theorem cipher_enc (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := by
+  simp only [dirCoreSpec, Proof.Sm4.PPC64LE.dirCipher]
+theorem cipher_dec (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := by
+  simp only [dirCoreSpec, Proof.Sm4.PPC64LE.dirCipher]
 
 theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 16 cbcEncPost).pre s) :
     ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cbcEncPost).post s s' :=

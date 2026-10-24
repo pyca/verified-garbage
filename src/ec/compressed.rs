@@ -5,7 +5,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 #[cfg(target_arch = "x86_64")]
@@ -130,6 +131,7 @@ codec!(
         VG_EC_P384_COMPRESS_PUBLIC_KEY_ADX_FEATURES
     ]
 );
+#[cfg(not(all(target_arch = "powerpc64", target_endian = "little")))]
 codec!(
     P521,
     66,
@@ -247,6 +249,7 @@ mod tests {
     cases!(p224, P224, 28);
     cases!(p256, P256, 32);
     cases!(p384, P384, 48);
+    #[cfg(not(all(target_arch = "powerpc64", target_endian = "little")))]
     cases!(p521, P521, 66);
     cases!(secp256k1, Secp256k1, 32);
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
