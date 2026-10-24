@@ -115,7 +115,7 @@ def xb (rd : Reg) (j : Nat) : List Instr :=
 
 /-- The `r11 / 2` words at `r14` := all ones. -/
 def onesWords : Prog isa :=
-  .seq (.block [.lsr .d .r17 .r11 1, .li .r0 0, .subi .r0 .r0 1])
+  .seq (.block [.lsr .d .r17 .r11 1, .li .r0 0, .li .r3 1, .sub .r0 .r0 .r3])
     (Precompute.countLoop .r17 [.store .d .r0 .r14 0, .addi .r14 .r14 8])
 
 /-- `k` bytes (`r6`) at `r12` into array `j`, as `Precompute.loadN` loads
