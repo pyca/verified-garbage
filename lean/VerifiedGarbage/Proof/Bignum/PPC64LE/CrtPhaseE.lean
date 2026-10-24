@@ -52,7 +52,7 @@ theorem phaseE_ok {s : State} {BX O : Addr} {Z oP oQ pL qL wX k Qv H M2 : Nat} {
       (Spec.Rsa.bytesAt t.mem O k = Spec.Rsa.i2osp (if b then Qv * H + M2 else 0) k ∧
         t.gpr .r3 = BitVec.ofNat 64 (if b then 1 else 0) ∧
         Frame [⟨off BX 256, Z - 256⟩, ⟨O, k⟩] s.mem t.mem) ∧
-      Keep (recXRegs ++ [.r0, .r3, .r15, .r16, .r17, .r27, .r28]) s t := by
+      Keep (recXRegs ++ ([.r0, .r3, .r15, .r16, .r17, .r27, .r28] : List Reg)) s t := by
   have hn := hs.nowrap
   have hno := ho.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl

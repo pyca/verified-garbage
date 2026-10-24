@@ -61,7 +61,7 @@ theorem phaseP_ok {s : State} {BX I D : Addr} {Z oA wX xj k L Pv oB oLen oD : Na
         Outside BX oA (slot (wsWords L) 8) s.mem t.mem ∧
         t.gpr .r10 = off (off BX oA) (slot (wsWords L) 0) ∧ t.gpr .r21 = off (off BX oA) (slot (wsWords L) 0) ∧
         t.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords L + 2)) ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * wsWords L)) ∧
-      Keep ([.r0, .r3, .r4, .r10, .r11, .r21, .r29] ++ powerRegs) s t := by
+      Keep (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs) s t := by
   have hn := hs.nowrap
   have e8 : slot wX 8 = 256 + 8 * (8 * (wX + 2)) := rfl
   have hw2 : 2 ≤ wsWords L := by unfold wsWords; omega

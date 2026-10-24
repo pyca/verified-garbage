@@ -57,7 +57,7 @@ theorem xfer_ok {s : State} {BX : Addr} {Z oA wA wX j : Nat} (hs : Scr s BX Z) (
     (h14 : s.gpr .r14 = off BX (slot wX j)) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wX))
     (h22 : s.gpr .r22 = BitVec.ofNat 64 (2 * wA)) (h15 : s.gpr .r15 = off (off BX oA) (slot wA 4))
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2))) :
-    WP isa (.seq Precompute.zeroWords (.seq (.block (xb .r14 j ++ [.addi .r11 .r22 0])) copyN)) s fun t =>
+    WP isa (.seq Precompute.zeroWords (.seq (.block (xb .r14 j ++ ([.addi .r11 .r22 0] : List Instr))) copyN)) s fun t =>
       (val32 t.mem BX (slot wX j) (2 * wX) = val32 s.mem (off BX oA) (slot wA 4) (2 * wA) ∧
         Outside BX (slot wX j) (8 * wX) s.mem t.mem) ∧ Keep [.r0, .r11, .r14, .r15, .r17] s t := by
   have hn := hs.nowrap
@@ -123,7 +123,7 @@ theorem blk_ok {s : State} {BX : Addr} {Z oA len oB oLen wX j : Nat} (mid : List
     (hl' : len < 2 ^ 60) (hwX : wX < 2 ^ 31)
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2))) :
     WP isa (.block (setupP oB oLen ++ PublicChecked.base .r15 4 ++ mid ++ xb .r14 j ++
-      [.addi .r11 .r28 0, .subi .r11 .r11 16, .lsr .d .r11 .r11 2])) s fun t =>
+      ([.addi .r11 .r28 0, .subi .r11 .r11 16, .lsr .d .r11 .r11 2] : List Instr))) s fun t =>
       (t.gpr .r14 = off BX (slot wX j) ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * wX) ∧
         t.gpr .r22 = BitVec.ofNat 64 (2 * wsWords len) ∧ t.gpr .r15 = off (off BX oA) (slot (wsWords len) 4) ∧
         t.mem = s.mem) ∧ Keep [.r0, .r3, .r4, .r10, .r11, .r14, .r15, .r21, .r22, .r29] s t := by

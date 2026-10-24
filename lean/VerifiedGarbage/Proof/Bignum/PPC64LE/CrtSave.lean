@@ -82,7 +82,7 @@ structure Saved (s₀ : State) (s : State) : Prop where
 
 theorem saveRegs_ok (s₀ : State) (hin : ∀ i < 18, InRegions s₀.wr (off (savW (s₀.gpr .r11)) (8 * i)) 8) :
     WP isa (.block ((List.range 18).flatMap (fun i => [.store .d (saved i) .r11 (savOff i)]) ++
-      [.addi .r23 .r11 0])) s₀ (Saved s₀) := by
+      ([.addi .r23 .r11 0] : List Instr))) s₀ (Saved s₀) := by
   refine WP.block_append (WP.mono (wp_range_flatMap (M := isa) (SI s₀)
     (fun k s hk h => save_step s₀ hin hk h) 18 (Nat.le_refl _) s₀
     ⟨rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s h => ?_)

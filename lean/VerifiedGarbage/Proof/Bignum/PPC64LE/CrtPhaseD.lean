@@ -58,7 +58,7 @@ theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
       (Mont.val32 t.mem (off BX oP) (slot (wsWords pL) 4) (2 * wsWords pL) =
           (m1 + Pv - M2 % Pv) % Pv * QI % Pv ∧
         Mont.Outs BX [(slot wX 1, qL), (oP, slot (wsWords pL) 8)] s.mem t.mem) ∧
-      Keep ([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] ++ recRegs) s t := by
+      Keep (([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] : List Reg) ++ recRegs) s t := by
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl

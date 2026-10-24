@@ -53,9 +53,9 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b : Nat} {c : Prog isa} {Q :
     (hc : ∀ t, val32 t.mem B (slot w 3) (2 * w) = (m1 + Pv - b) % Pv →
       Outs B [(slot w 3, 8 * (w + 2)), (slot w 4, 8 * (w + 2))] s.mem t.mem →
       t.gpr .r10 = off B (slot w 0) → Keep [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20, .r24] s t → WP isa c t Q) :
-    WP isa (.seq (.block (PublicChecked.base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
-      .store .d .r0 .r14 0] ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
-      PublicChecked.base .r10 1)) (.seq subMod (.seq (.block ([.addi .r10 .r21 0] ++
+    WP isa (.seq (.block (PublicChecked.base .r14 4 ++ ([.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
+      .store .d .r0 .r14 0] : List Instr) ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
+      PublicChecked.base .r10 1)) (.seq subMod (.seq (.block (([.addi .r10 .r21 0] : List Instr) ++
       PublicChecked.base .r15 3 ++ PublicChecked.base .r16 0)) (.seq addMask c)))) s Q := by
   have hnw := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl

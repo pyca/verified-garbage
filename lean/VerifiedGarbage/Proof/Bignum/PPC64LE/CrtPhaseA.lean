@@ -72,7 +72,7 @@ theorem checks_ok {s : State} {BX Na : Addr} {Z w k : Nat} {nb : List Byte}
           (Mont.val32 s.mem BX (slot w 5) (2 * w)) (Mont.val32 s.mem BX (slot w 7) (2 * w))
           then Mont.val32 s.mem BX (slot w 7) (2 * w) else 0) ∧
         Outside BX (slot w 2) (6 * (8 * (w + 2))) s.mem t.mem ∧ t.gpr .r10 = off BX (slot w 0)) ∧
-      Keep (checkRegs ++ [.r0, .r3, .r4, .r14, .r17]) s t := by
+      Keep (checkRegs ++ ([.r0, .r3, .r4, .r14, .r17] : List Reg)) s t := by
   have hn := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e2 := e 2; have e3 := e 3; have e4 := e 4; have e5 := e 5; have e6 := e 6; have e7 := e 7
@@ -146,7 +146,7 @@ theorem phaseA_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z k pL qL : Nat}
           then Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem QIa pL) else 0) ∧
         Outside BX 256 (slot (2 * ((k + 7) / 8)) 8 - 256) s.mem t.mem ∧
         t.gpr .r10 = off BX (slot (2 * ((k + 7) / 8)) 0)) ∧
-      Keep (loadXRegs ++ checkRegs ++ [.r0, .r3, .r4, .r14, .r17]) s t := by
+      Keep (loadXRegs ++ checkRegs ++ ([.r0, .r3, .r4, .r14, .r17] : List Reg)) s t := by
   have hn := hs.nowrap
   have e : ∀ j, slot (2 * ((k + 7) / 8)) j = hdrBytes + j * (8 * (2 * ((k + 7) / 8) + 2)) := fun _ => rfl
   have e0 := e 0; have e2 := e 2; have e8 := e 8

@@ -80,8 +80,8 @@ theorem xval {m m' : Mem} {B : Addr} {a n d w : Nat} (h : Outside B a n m m') (h
   rw [Pre.val32_eq_wv, Pre.val32_eq_wv, h.wv hd hd']
 
 /-- The registers of `mid1`. -/
-def mid1Regs : List Reg := loadXRegs ++ checkRegs ++ [.r0, .r3, .r4, .r14, .r17] ++
-  ([.r0, .r3, .r4, .r10, .r11, .r21, .r29] ++ powerRegs)
+def mid1Regs : List Reg := loadXRegs ++ checkRegs ++ ([.r0, .r3, .r4, .r14, .r17] : List Reg) ++
+  (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs)
 
 /-- What `X` holds after `loadX` and `checks`. -/
 structure XA (s₀ s t : State) : Prop where
@@ -96,7 +96,7 @@ structure XA (s₀ s t : State) : Prop where
 /-- `loadX` and `checks`, after the front. -/
 theorem mid1A_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
     (hc : ∀ t, XA s₀ s t → t.gpr .r10 = off (cS s₀) (slot (cwX s₀) 0) →
-      Keep (loadXRegs ++ checkRegs ++ [.r0, .r3, .r4, .r14, .r17]) s t → WP isa c t Q) :
+      Keep (loadXRegs ++ checkRegs ++ ([.r0, .r3, .r4, .r14, .r17] : List Reg)) s t → WP isa c t Q) :
     WP isa (.seq loadX (.seq checks c)) s Q := by
   have hn := hP.nw
   have room := hP.room
@@ -141,7 +141,7 @@ structure XP (s₀ s t : State) extends XA s₀ s t where
 theorem mid1B_ok {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
     (X : XA s₀ s t₁) {rs : List Reg} (k1 : Keep rs s t₁) (h23 : Reg.r23 ∉ rs) (h27 : Reg.r27 ∉ rs)
     (h28 : Reg.r28 ∉ rs)
-    (hc : ∀ t, XP s₀ s t → Keep (rs ++ ([.r0, .r3, .r4, .r10, .r11, .r21, .r29] ++ powerRegs)) s t →
+    (hc : ∀ t, XP s₀ s t → Keep (rs ++ (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs)) s t →
       WP isa c t Q) :
     WP isa (.seq (.block (setupP oBP oPLen)) (.seq (power 4 oDP oPLen) c)) t₁ Q := by
   have hn := hP.nw

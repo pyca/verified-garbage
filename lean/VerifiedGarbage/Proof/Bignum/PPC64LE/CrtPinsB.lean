@@ -236,7 +236,7 @@ theorem pins204 : Pins (At C0 crtF 204) [.r10, .r11, .r21, .r23, .r27, .r28, .r2
 theorem pre_rec {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : State} {c : Prog isa}
     {Q : State → Prop} (h : C0 d s₀)
     (hc : ∀ s u, PF s₀ → Front s₀ s → XR s₀ s u →
-      Keep (mid1Regs ++ ([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] ++ recRegs)) s u → WP isa c u Q) :
+      Keep (mid1Regs ++ (([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] : List Reg) ++ recRegs)) s u → WP isa c u Q) :
     WP isa (NE (.seq recombineP c)) s₀ Q :=
   WP.seq (WP.mono (front_ok s₀ h.1) fun s F =>
     mid1_ok (pre_facts h.1) F fun _ t26 v0 w0 v5 v7 p0 p4 q4 t10 t29 O1 k1 =>

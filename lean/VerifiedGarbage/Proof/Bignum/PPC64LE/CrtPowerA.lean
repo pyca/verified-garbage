@@ -72,8 +72,8 @@ theorem powerA_ok {s : State} {BX I D : Addr} {Z oA wA wX xj k L Pv oD oLen : Na
       val32 t.mem (off BX oA) (slot wA 1) (2 * wA) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem I k) % Pv →
       Outside BX oA (slot wA 8) s.mem t.mem → t.gpr .r18 = off D 0 → t.gpr .r19 = BitVec.ofNat 64 L →
       Keep powerRegs s t → WP isa c t Q) :
-    WP isa (.seq (.block ([.load .d .r30 .r23 oIn, .load .d .r31 .r23 oNLen, .load .d .r18 .r23 oD,
-      .load .d .r19 .r23 oLen, .addi .r14 .r10 0] ++ xb .r15 xj)) (.seq copyN (.seq ModArith.reduce c))) s Q := by
+    WP isa (.seq (.block (([.load .d .r30 .r23 oIn, .load .d .r31 .r23 oNLen, .load .d .r18 .r23 oD,
+      .load .d .r19 .r23 oLen, .addi .r14 .r10 0] : List Instr) ++ xb .r15 xj)) (.seq copyN (.seq ModArith.reduce c))) s Q := by
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl

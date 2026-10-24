@@ -42,7 +42,7 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x : Nat}
     (hx : val32 s.mem (off BX oA) (slot wA 1) (2 * wA) = x) :
     WP isa (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 1)) (.seq copyN
       (.seq (.block (PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3))
-      (.seq Precompute.r2 (.seq (.block (PublicChecked.minv ++ [.addi .r30 .r18 0, .addi .r31 .r19 0]))
+      (.seq Precompute.r2 (.seq (.block (PublicChecked.minv ++ ([.addi .r30 .r18 0, .addi .r31 .r19 0] : List Instr)))
         ModExp.powSecret))))) s fun t =>
       (val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv ∧
         val32 t.mem (off BX oA) (slot wA 4) (2 * wA) = x ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧

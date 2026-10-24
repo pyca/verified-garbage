@@ -78,7 +78,7 @@ theorem mid2A_ok {s₀ s t : State} {c : Prog isa} {Q : State → Prop} (hP : PF
     (t29 : t.gpr .r29 = BitVec.ofNat 64 (8 * (cwQ s₀ + 2)))
     (O1 : Outside (cS s₀) 256 (cZ s₀ - 256) s.mem t.mem) (k1 : Keep mid1Regs s t)
     (hc : ∀ u, XR s₀ s u →
-      Keep (mid1Regs ++ ([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] ++ recRegs)) s u → WP isa c u Q) :
+      Keep (mid1Regs ++ (([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] : List Reg) ++ recRegs)) s u → WP isa c u Q) :
     WP isa (.seq exportM2 (.seq (.block (setupP oBP oPLen)) (.seq recombineP c))) t Q := by
   have hn := hP.nw
   have room := hP.room
