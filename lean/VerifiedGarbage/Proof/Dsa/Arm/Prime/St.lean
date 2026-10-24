@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint0
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.RvCand3
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: the operations as pieces
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont5
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: the call of the round (`round_vp`)
 

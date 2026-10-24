@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Setup
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
 public import VerifiedGarbage.Proof.Ecdh.Arm.Validate
 import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! # Reuse ARMv7's existing EC setup and point validation -/
 

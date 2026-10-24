@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top5
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top5
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 import VerifiedGarbage.Proof.Rsa.Arm.PrivAllocCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top3
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Body
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top4
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top1
 
 /-! # DSA's probable-prime test on ARMv7: constant time (`prime_ct`)
 

@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.MdStream.Arm.Common
@@ -14,6 +11,7 @@ public import VerifiedGarbage.Impl.Sm4.Arm.Prepared
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Sm4.Arm.Core
 
 /-! # Preparing decryption keys for the batched CBC mode -/
 

@@ -1,10 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombWord
-import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Weierstrass.Arm.TComb
 public import VerifiedGarbage.Proof.Mont.Arm.Words

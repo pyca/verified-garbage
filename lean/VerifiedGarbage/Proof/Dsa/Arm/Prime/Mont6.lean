@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont3
 
 /-! # A candidate on ARMv7: Montgomery multiplication modulo `c` ready (`montA_vp`)
 

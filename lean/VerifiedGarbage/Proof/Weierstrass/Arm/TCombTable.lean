@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Mont.Arm.Words
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.CallLay

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.TagCheck
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
@@ -13,7 +13,9 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.Arm

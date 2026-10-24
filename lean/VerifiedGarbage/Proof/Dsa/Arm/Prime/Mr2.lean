@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr1
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint7
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: Miller–Rabin's start (`mrInit_vp`)
 

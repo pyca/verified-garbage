@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # DSA on 32-bit ARM: signing is correct

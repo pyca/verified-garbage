@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top4
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Body
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top4
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Body
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,7 +10,9 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.MillerRabin.Arm.Run
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Fin
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top3
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top1
 
 /-! # DSA's probable-prime test on ARMv7: a call's result (`prime_ok`)
 

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.TCombBody
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 public import VerifiedGarbage.Impl.Weierstrass.Arm
 public import VerifiedGarbage.Impl.Weierstrass.Arm.TComb

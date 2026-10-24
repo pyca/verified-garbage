@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSOps
-public import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.Zero
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 
 /-! # DSA parameter generation on ARMv7: the key working space set up
 

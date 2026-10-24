@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
+import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -11,6 +11,14 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.Arm
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.Arm
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
+public import VerifiedGarbage.Impl.EcKey.Compressed.Arm
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.Arm
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.TCB.Arm.Target
 
 @[expose] public section
 

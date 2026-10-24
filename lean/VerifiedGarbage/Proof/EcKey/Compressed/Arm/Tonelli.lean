@@ -6,11 +6,11 @@ import VerifiedGarbage.Proof.EcKey.Compressed.Arm.TonelliSetup
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DescentLoop
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DescentRound
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
-import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
 import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.RootPow
 
 /-! # P-224's machine candidate refines its functional root algorithm -/
 

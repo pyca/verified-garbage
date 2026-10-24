@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Call
 
 import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # The randomized signer is constant time (32-bit ARM)

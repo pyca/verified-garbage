@@ -1,6 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 
 /-! # DSA parameter generation on ARMv7: a stage's pure facts as hypotheses -/
 

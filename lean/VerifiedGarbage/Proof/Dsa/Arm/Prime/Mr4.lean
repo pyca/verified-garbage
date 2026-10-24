@@ -13,10 +13,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Words
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: the witness (`witnessFix_vp`)
 

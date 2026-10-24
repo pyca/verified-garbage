@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcReverse
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # CBC decryption inputs and the ciphertext saved for continuation -/

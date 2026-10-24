@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcCore
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
 import VerifiedGarbage.Proof.Sm4.Arm.SerialOfbGroup
 import VerifiedGarbage.Proof.Sm4.Arm.Group
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc

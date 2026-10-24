@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-public import VerifiedGarbage.Proof.EcKey.Compressed.Parity
+import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.TCB.Code
 
 /-! # Choose the canonical root matching the SEC 1 parity bit -/
 

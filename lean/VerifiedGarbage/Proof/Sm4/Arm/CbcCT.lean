@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Sm4.Arm.CbcHead
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcLoop
 import VerifiedGarbage.Proof.Sm4.Arm.BatchTaint
 import VerifiedGarbage.Proof.Sm4.Arm.CbcTaint
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT

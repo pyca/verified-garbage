@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # Calling the supplied-nonce signer (32-bit ARM)

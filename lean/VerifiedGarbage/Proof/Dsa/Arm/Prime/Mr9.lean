@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr2
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint7
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
 
 /-! # A candidate on ARMv7: a witness that passed (`St.ponPass`)
 

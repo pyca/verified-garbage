@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 
 /-! # Select the correction factor of the P-224 descent -/
 

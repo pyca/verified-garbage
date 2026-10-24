@@ -1,13 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PrimeIface
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Tape
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Tape
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 
 /-! # DSA parameter generation on ARMv7: calling the probable-prime test
 

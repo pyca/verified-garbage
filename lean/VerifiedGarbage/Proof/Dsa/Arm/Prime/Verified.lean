@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top7
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Dsa.ProbablePrime
 meta import VerifiedGarbage.TCB.Arm.Target

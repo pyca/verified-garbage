@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 import VerifiedGarbage.Proof.Rsa.Arm.RvStage
 
 /-! # A candidate on ARMv7: tools for Montgomery multiplication's stages

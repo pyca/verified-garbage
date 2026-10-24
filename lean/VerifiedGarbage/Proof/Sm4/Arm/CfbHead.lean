@@ -8,9 +8,7 @@ import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
 import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
-import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
 public import VerifiedGarbage.Proof.Framework.Covers

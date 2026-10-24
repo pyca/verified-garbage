@@ -2,8 +2,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
 
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
-import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 
 /-! # A candidate on ARMv7: the halvings (`halving_vp`)
 

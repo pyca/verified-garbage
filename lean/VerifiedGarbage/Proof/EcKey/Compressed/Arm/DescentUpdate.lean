@@ -4,9 +4,11 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The field updates in one P-224 descent round -/
 

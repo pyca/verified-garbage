@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
+import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.P224
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 import VerifiedGarbage.Proof.P224.Sqrt
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Tonelli
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.RootCT
@@ -15,6 +15,15 @@ meta import VerifiedGarbage.Impl.EcKey.Compressed.Arm
 meta import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.P224.Arm
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
+public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
+public import VerifiedGarbage.Impl.Ecdsa.P224.Arm
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMiddle
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Tonelli
 
 @[expose] public section
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Shared input and workspace setup for ARMv7 point conversion -/

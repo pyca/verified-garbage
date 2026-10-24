@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.RvCand2
-import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
 
 /-! # A candidate on ARMv7: the halvings (`halving_vp`) -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.RootPow
-import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
 
