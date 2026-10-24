@@ -106,7 +106,7 @@ theorem x448_correct {s : State} (hp : XPre s) :
     rw [hst6.rest.gpr _ (by decide), hr2.gpr _ (by decide), hr1.gpr _ (by decide)]
   have hwr6 : s6.wr = s.wr := by rw [hst6.rest.wr, hr2.wr, hr1.wr]
   have hc6 : Ctx (s.gpr .r6) s6 := hc5.of_rest hr6 (by decide)
-  refine WP.mono (freeze_ok hc6 h3' (by rw [hwr6, hp.wr]; simp) (disj4096 hp.out_ws).symm)
+  refine WP.mono (freeze_ok hc6 h3' (Nat.le_refl _) (by rw [hwr6, hp.wr]; simp) (disj4096 hp.out_ws).symm)
     fun s7 ⟨hbytes, _, _⟩ => ?_
   -- The result.
   show bytesAt s7.mem _ 56 = _

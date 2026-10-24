@@ -68,9 +68,9 @@ def invV (v : Nat → Fe) (n : Nat) : Nat → Fe := upd v R (VG.Proof.X448.pw (v
 
 /-- The loop invariant of the inversion from `sI`, before the step for the bit
 `n - 1`. -/
-structure InvInv (b : Addr) (sI : State) (a : BitVec 64) (v : Nat → Fe) (n : Nat) (s : State) :
-    Prop where
-  cur : Cur b sI a (BitVec.ofNat 64 n) IQ (invV v n) s
+structure InvInv (b : Addr) (sI : State) (a : BitVec 64) (qs : List Nat) (v : Nat → Fe) (n : Nat)
+    (s : State) : Prop where
+  cur : Cur b sI a (BitVec.ofNat 64 n) qs (invV v n) s
 
 theorem sub_beq {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
     (BitVec.ofNat 64 x - BitVec.ofNat 64 y == 0) = decide (x = y) := by
@@ -97,32 +97,33 @@ theorem cmp_ok {s0 s : State} {a : BitVec 64} {qs : List Nat} {v : Nat → Fe} {
     (by rw [u1.mem]; exact Frame.refl _ _) (by rw [u1.mem]; exact h.slots), ?_⟩
   rw [eval_zero, u1.gpr, h.r12, sub_beq (by omega_using [hm]) (by omega_using [hd])]
 
-theorem invStep_ok {sI : State} {a : BitVec 64} {v : Nat → Fe} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 448)
-    {s : State} (h : InvInv b sI a v n s) :
-    WP isa invStep s fun s' => InvInv b sI a v (n - 1) s' ∧ (s'.gpr .r12 != 0) = decide (n - 1 ≠ 0) := by
+theorem invStep_ok {sI : State} {a : BitVec 64} {qs : List Nat} (hq : Sep1 R qs = true) (hR : R ∈ qs)
+    (hZ : Z2 ∈ qs) {v : Nat → Fe} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 448)
+    {s : State} (h : InvInv b sI a qs v n s) :
+    WP isa invStep s fun s' => InvInv b sI a qs v (n - 1) s' ∧ (s'.gpr .r12 != 0) = decide (n - 1 ≠ 0) := by
   obtain ⟨hcur⟩ := h
   have hb := pbits (n - 1) (by omega_using [hn'])
   have he := shr_step (P - 2) (n - 1)
   rw [Nat.sub_add_cancel hn] at he
   unfold invStep
   refine WP.seq (wp_subi (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
-  have h1 : Cur b sI a (BitVec.ofNat 64 (n - 1)) IQ (invV v n) s1 := by
+  have h1 : Cur b sI a (BitVec.ofNat 64 (n - 1)) qs (invV v n) s1 := by
     refine ⟨hcur.ctx.of_rest (u1.rest (ws := [.r12]) (by decide)) (by decide),
       hcur.stp.trans (Stp.of_rest (u1.rest (ws := [.r12]) (by decide)) (by decide) u1.mem),
       by rw [u1.other _ (by decide), hcur.r0], ?_, by rw [u1.mem]; exact hcur.slots⟩
     rw [u1.gpr, hcur.r12, ofNat_sub_one hn (by omega_using [hn'])]
-  refine WP.seq (WP.mono (opMul (o := R) (x := R) (y := R) (by decide) (by decide) (by decide) (by decide) h1)
+  refine WP.seq (WP.mono (opMul (o := R) (x := R) (y := R) hq (by decide) hR hR h1)
     fun s2 h2 => ?_)
   -- After the square.
-  have hsq : ∀ q ∈ IQ, upd (invV v n) R (invV v n R * invV v n R) q =
+  have hsq : ∀ q ∈ qs, upd (invV v n) R (invV v n R * invV v n R) q =
       upd v R (VG.Proof.X448.pw (v Z2) (2 * ((P - 2) >>> n))) q := by
     intro q _
     by_cases hq : q = R
     · subst hq; rw [upd_self, invV, upd_self, upd_self, Nat.two_mul, ← VG.Proof.X448.pw_mul]
     · rw [upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq, upd_of_ne _ _ hq]
-  have h2' := h2.congr (qs' := IQ) (by decide) hsq
+  have h2' := h2.congr (qs' := qs) (fun q hq' => List.mem_cons_of_mem _ hq') hsq
   refine WP.seq (WP.mono (cmp_ok (d := 224) (by omega_using [hn']) (by decide) h2') fun s3 ⟨h3, hz3⟩ => ?_)
-  refine WP.seq (WP.mono (Q := Cur b sI a (BitVec.ofNat 64 (n - 1)) IQ (invV v (n - 1))) ?_ fun s4 h4 =>
+  refine WP.seq (WP.mono (Q := Cur b sI a (BitVec.ofNat 64 (n - 1)) qs (invV v (n - 1))) ?_ fun s4 h4 =>
     WP.block_nil ⟨⟨h4⟩, by rw [h4.r12, ofNat_ne_zero (by omega_using [hn'])]⟩)
   refine WP.ite _ hz3 (fun ht => WP.block_nil (h3.congr (fun q hq => hq) fun q _ => ?_)) (fun hf => ?_)
   · have h4 : n - 1 = 224 := by simpa using ht
@@ -137,8 +138,8 @@ theorem invStep_ok {sI : State} {a : BitVec 64} {v : Nat → Fe} {n : Nat} (hn :
       · subst hq; rw [upd_self, invV, upd_self, he, hb, iteT (.inr h2), Nat.add_zero]
       · rw [upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq]
     · have h2 : n - 1 ≠ 1 := by simpa using hf
-      refine WP.mono (opMul (o := R) (x := R) (y := Z2) (by decide) (by decide) (by decide) (by decide) h4')
-        fun s5 h5 => h5.congr (by decide) fun q _ => ?_
+      refine WP.mono (opMul (o := R) (x := R) (y := Z2) hq (by decide) hR hZ h4')
+        fun s5 h5 => h5.congr (fun q hq' => List.mem_cons_of_mem _ hq') fun q _ => ?_
       by_cases hq : q = R
       · subst hq
         rw [upd_self, upd_self, upd_of_ne _ _ (by decide : Z2 ≠ R), invV, upd_self, he, hb,
@@ -146,10 +147,13 @@ theorem invStep_ok {sI : State} {a : BitVec 64} {v : Nat → Fe} {n : Nat} (hn :
           VG.Proof.X448.pw_one]
       · rw [upd_of_ne _ _ hq, upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq]
 
-theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
-    (hS : SlotsOk s.mem b [Z2, X2] v) (h0 : s.gpr .r0 = a) :
+/-- The inversion of the element at `Z2` into `R`, keeping the slots `qs`
+other than `R` (which may be any slots separate from `R`). -/
+theorem invertQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR' : R ∈ qs) (hZ : Z2 ∈ qs)
+    {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
+    (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) (h0 : s.gpr .r0 = a) :
     WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
-      SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) := by
+      SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) := by
   have hR : R = 840 := rfl
   unfold Impl.X448.PPC64LE.invert
   refine WP.seq ?_
@@ -186,31 +190,41 @@ theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
   have hc5 : Ctx b s5 := hc.of_rest hr5 (by decide)
   have hst5 : Stp b s s5 := ⟨hr5.mono (by decide), hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by decide)⟩⟩
-  have hS5 : SlotsOk s5.mem b IQ (invV v 448) := by
-    have hZ2 : Z2 = 112 := rfl
-    have hX2 : X2 = 56 := rfl
-    intro q hq
-    simp only [IQ, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl
-    · have e := limb_frame (o := Z2) hf5 fun r hr k hk => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hZ2, hR, hk])) (by omega_using [hZ2, hk]) (by omega_using [hR])
-      rw [FS, V, val32_congr e, invV, upd_of_ne _ _ (by decide)]; exact hS Z2 (by decide)
-    · rw [FS, V, val32_congr hlimb, invV, upd_self, p448, pw_zero, val32_single _ (by decide)]
+  have hS5 : SlotsOk s5.mem b qs (invV v 448) := by
+    have hA := ACC_eq
+    intro q hq'
+    by_cases hqR : q = R
+    · subst hqR
+      rw [FS, V, val32_congr hlimb, invV, upd_self, p448, pw_zero, val32_single _ (by decide)]
       rfl
-    · have e := limb_frame (o := X2) hf5 fun r hr k hk => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hX2, hR, hk])) (by omega_using [hX2, hk]) (by omega_using [hR])
-      rw [FS, V, val32_congr e, invV, upd_of_ne _ _ (by decide)]; exact hS X2 (by decide)
-  have h448 : InvInv b s5 a v 448 s5 :=
+    · obtain ⟨h1, h3⟩ := sep1_get hq hq'
+      have e := limb_frame (o := q) hf5 fun r hr k hk => by
+        rw [List.mem_singleton.mp hr]
+        exact Offset.disjoint _ (by omega_using [hqR, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hR])
+      rw [FS, V, val32_congr e, invV, upd_of_ne _ _ hqR]; exact hS q hq' hqR
+  have h448 : InvInv b s5 a qs v 448 s5 :=
     ⟨⟨hc5, Stp.refl _ _, by rw [hr5.gpr _ (by decide), h0], u5.gpr, hS5⟩⟩
-  refine WP.mono (Q := InvInv b s5 a v 0) (WP.loop (M := isa)
-    (fun m s' => 1 ≤ m ∧ m ≤ 448 ∧ InvInv b s5 a v m s') ?_ 448 s5 ⟨by decide, Nat.le_refl _, h448⟩)
+  refine WP.mono (Q := InvInv b s5 a qs v 0) (WP.loop (M := isa)
+    (fun m s' => 1 ≤ m ∧ m ≤ 448 ∧ InvInv b s5 a qs v m s') ?_ 448 s5 ⟨by decide, Nat.le_refl _, h448⟩)
     fun s' ⟨h'⟩ => ⟨hst5.trans h'.stp, h'.ctx, h'.slots.congr fun q _ => by
       simp only [invV, Nat.shiftRight_zero]⟩
   rintro m s' ⟨h1, h2, hl⟩
-  refine WP.mono (invStep_ok h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
+  refine WP.mono (invStep_ok hq hR' hZ h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
   · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega_using [hm], by omega_using [hm], by omega_using [h2], hl'⟩
+
+
+theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
+    (hS : SlotsOk s.mem b [Z2, X2] v) (h0 : s.gpr .r0 = a) :
+    WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
+      SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
+  invertQ_ok (by decide) (by decide) (by decide) hc (fun q hq hqR => hS q (by
+    simp only [IQ, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl
+    · decide
+    · exact absurd rfl hqR
+    · decide)) h0
 
 end
 
