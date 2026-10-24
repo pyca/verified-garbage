@@ -241,6 +241,88 @@ theorem SS.of_scrs {ws : List Reg} (h : SS G STK σ c s) (r : Keep ws s t) (sp :
   · rw [num_frame h.lens f kd (h.liveOk j hj)]; exact h.arrs j hj
   · rw [slot_frame h.lens f kd (h.kslOk d hd)]; exact h.ksl d hd
 
+/-- The volatile registers, which a call may change. -/
+abbrev volatile : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
+
+theorem keep_of_preserved {s t : State} (g : ∀ r ∈ preserved, t.gpr r = s.gpr r) (rd : t.rd = s.rd)
+    (wr : t.wr = s.wr) : Keep volatile s t :=
+  ⟨fun r hr => g r (by revert hr; cases r <;> decide), rd, wr⟩
+
+/-- A step that writes the ranges `os` of `scratch` (past the header, apart
+from the key working space), the header words `hw` (variable, not among
+`LS`) and the stack below the stack pointer: the claims `cl'`, each kept and
+apart from the ranges, or holding. -/
+theorem SS.of_hdrScrs {ws : List Reg} (h : SS G STK σ c s) (r : Keep ws s t) (sp : t.sp = s.sp)
+    {os : List (Nat × Nat)} (hon : ∀ p ∈ os, ClOk G (p.1, List.replicate p.2 0)) {hw : List Nat}
+    (hhw : ∀ o ∈ hw, VarOk G o ∧ ∀ o' ∈ c.LS, o + 8 ≤ o' ∨ o' + 8 ≤ o)
+    (f : Frame (G.rss os ++ hw.map (fun o => G.rs o 8) ++ [rBelow σ STK]) s.mem t.mem) {cl' : Claims}
+    (hcl : ∀ x ∈ cl', x ∈ c.cl ∧ ∀ p ∈ os, Apart p.1 p.2 x)
+    (h28 : .r28 ∉ ws := by decide) : SS G STK σ { c with cl := cl' } t := by
+  have gi := h.gi
+  have big := gi.wBig
+  have kb := gi.kBig
+  have fit := gi.scrFit
+  have hE := gi.hEnd_le
+  have hon' : ∀ p ∈ os, hEnd ≤ p.1 ∧ (p.1 + p.2 ≤ kB G.pLen ∨ wB G.pLen ≤ p.1) ∧ p.1 + p.2 ≤ G.scrLen * 8 :=
+    fun p hp => by have := hon p hp; simp only [ClOk, List.length_replicate] at this; exact this
+  have hw' : ∀ o ∈ hw, o + 8 ≤ fSave := fun o ho => (hhw o ho).1.1
+  have mem : ∀ r' ∈ G.rss os ++ hw.map (fun o => G.rs o 8) ++ [rBelow σ STK],
+      (∃ p ∈ os, r' = G.rs p.1 p.2) ∨ (∃ o ∈ hw, r' = G.rs o 8) ∨ r' = rBelow σ STK := fun r' hr' => by
+    simp only [GP.rss, List.mem_append, List.mem_map, List.mem_singleton] at hr'
+    rcases hr' with (⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩) | rfl
+    · exact .inl ⟨p, hp, rfl⟩
+    · exact .inr (.inl ⟨o, ho, rfl⟩)
+    · exact .inr (.inr rfl)
+  have kd : ∀ r' ∈ G.rss os ++ hw.map (fun o => G.rs o 8) ++ [rBelow σ STK],
+      (⟨G.KB, kz G.pLen⟩ : Region).Disjoint r' := fun r' hr' => by
+    rcases mem r' hr' with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
+    · obtain ⟨_, a, b⟩ := hon' p hp; exact gi.kdisj a b
+    · have := hw' o ho
+      exact gi.kdisj (.inl (by simp only [kB, pB, fSave] at this ⊢; omega)) (by simp only [hEnd] at hE; omega)
+    · exact gi.scr_below (by omega)
+  -- The header word at `q`, apart from those written.
+  have hd : ∀ q, q + 8 ≤ hEnd → (∀ o ∈ hw, o + 8 ≤ q ∨ q + 8 ≤ o) →
+      ∀ r' ∈ G.rss os ++ hw.map (fun o => G.rs o 8) ++ [rBelow σ STK], (G.rs q 8).Disjoint r' :=
+    fun q hq hq' r' hr' => by
+      rcases mem r' hr' with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
+      · obtain ⟨a, _, b⟩ := hon' p hp; exact gi.sdisj (.inl (by omega)) (by omega) b
+      · have := hw' o ho
+        exact gi.sdisj (hq' o ho).symm (by omega) (by simp only [hEnd] at hE; omega)
+      · exact gi.scr_below (by omega)
+  have fixedFar : ∀ p ∈ fixedWords G, ∀ o ∈ hw, o + 8 ≤ p.1 ∨ p.1 + 8 ≤ o := fun p hp o ho => by
+    obtain ⟨_, a8, _, af⟩ := (hhw o ho).1
+    obtain ⟨b, b8⟩ := fixed_ok G p hp
+    have := af p hp; omega
+  have gi' : GI G STK σ c.V c.LS t := by
+    refine ⟨gi.pre, gi.hG, sp.trans gi.sp, r.2.1.trans gi.rd, r.2.2.trans gi.wr, (r.gpr h28).trans gi.r28,
+      fun i hi => ?_, ?_, fun p hp => ?_, fun p hp => ?_, gi.ls, gi.frame.trans (f.sub fun x hx => ?_)⟩
+    · rw [fw_frame f (hd _ (by simp only [hEnd]; omega) fun o ho => by have := hw' o ho; simp only [fSave] at *; omega)]
+      exact gi.saved i hi
+    · rw [fw_frame f (hd _ (by decide) fun o ho => by
+        obtain ⟨_, a8, aL, _⟩ := (hhw o ho).1; simp only [fLR] at aL ⊢; omega)]
+      exact gi.lr
+    · rw [fw_frame f (hd _ (by have := (fixed_ok G p hp).1; simp only [hEnd]; omega) (fixedFar p hp))]
+      exact gi.fixed p hp
+    · rw [fw_frame f (hd _ (by have := (gi.ls p hp).1; simp only [hEnd]; omega) fun o ho => (hhw o ho).2 p hp)]
+      exact gi.slots p hp
+    · rcases mem x hx with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
+      · exact ⟨G.rScr, List.mem_cons_self, sw G (hon' p hp).2.2⟩
+      · exact ⟨G.rScr, List.mem_cons_self, sw G (by have := hw' o ho; simp only [hEnd] at hE; omega)⟩
+      · exact ⟨rBelow σ STK, by simp, fun _ h => h⟩
+  refine ⟨gi', fun x hx => ?_, fun x hx => h.clOk x (hcl x hx).1, fun j hj => ?_, h.liveOk, fun d hd' => ?_,
+    h.kslOk⟩
+  · obtain ⟨hm, ha⟩ := hcl x hx
+    obtain ⟨xE, _, xb⟩ := h.clOk x hm
+    rw [VG.Proof.Dsa.Generation.frame_bytesAt f (fun r' hr' => by
+      rcases mem r' hr' with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
+      · exact gi.sdisj (ha p hp) xb (hon' p hp).2.2
+      · have := hw' o ho
+        exact gi.sdisj (.inr (by simp only [hEnd] at xE; omega)) xb (by simp only [hEnd] at hE; omega)
+      · exact gi.scr_below xb) (by omega)]
+    exact h.sb x hm
+  · rw [num_frame h.lens f kd (h.liveOk j hj)]; exact h.arrs j hj
+  · rw [slot_frame h.lens f kd (h.kslOk d hd')]; exact h.ksl d hd'
+
 /-- `c` with the header word `o` := `v`. -/
 abbrev Cfg.setV (c : Cfg) (o : Nat) (v : BitVec 64) : Cfg := { c with V := upd c.V o v, LS := o :: c.LS }
 
