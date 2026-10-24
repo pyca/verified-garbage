@@ -34,6 +34,11 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE
 
+/-- The bytes at the frame's top for a digest of `dn` bytes and scalars of
+`q`: `extra`, wide if `dn < q`, else `h` there if `48 < q`. -/
+def extraOf (dn q : Nat) : Nat :=
+  Impl.Ecdsa.Rfc6979.PPC64LE.extra (!decide (dn < q) && decide (48 < q)) (decide (dn < q))
+
 /-- The buffers and the lowest byte of the stack used (`sp - (400 + e)` on
 entry, for `e` bytes at the frame's top), for a digest of `dn` bytes and
 scalars of `q`. -/
@@ -49,11 +54,16 @@ namespace Lay
 
 variable {dn : Nat} (L : Lay dn)
 
-/-- Whether `h` is at the frame's top: scalars of more than 48 bytes. -/
-def hHigh : Bool := decide (48 < L.q)
+/-- Whether scalars are longer than the digest: two `V`s make a candidate,
+and the frame's top holds the digest for `core` and the candidate. -/
+def wide : Bool := decide (dn < L.q)
+
+/-- Whether `h` is at the frame's top: scalars of more than 48 bytes, unless
+`wide`. -/
+def hHigh : Bool := !L.wide && decide (48 < L.q)
 
 /-- The bytes at the frame's top (`extra`). -/
-def e : Nat := Impl.Ecdsa.Rfc6979.PPC64LE.extra L.hHigh
+def e : Nat := Impl.Ecdsa.Rfc6979.PPC64LE.extra L.hHigh L.wide
 
 /-- Where `h` is in the frame. -/
 def ho : Nat := if L.hHigh then Impl.Ecdsa.Rfc6979.PPC64LE.fX else Impl.Ecdsa.Rfc6979.PPC64LE.fH
@@ -97,20 +107,42 @@ scalars of at most 48 bytes, or at its top (`fX`, from `B + 352`) within the
 `e` bytes there, for scalars of at most 64. -/
 def HOk : Prop := L.q ≤ 64 ∧ (L.ho = 160 ∧ L.q ≤ 48 ∨ L.ho = 256 ∧ L.q ≤ L.e)
 
-theorem e_le : L.e ≤ 64 := by
-  simp only [e, Impl.Ecdsa.Rfc6979.PPC64LE.extra]; split <;> omega
+/-- Where `h` is, as the steps on `K` and `V` need it: above them, within the
+frame. -/
+def HFar : Prop := 160 ≤ L.ho ∧ L.ho + L.q ≤ 304 + L.e
+
+theorem e_le : L.e ≤ 144 := by
+  simp only [e, Impl.Ecdsa.Rfc6979.PPC64LE.extra]; split <;> [omega; split <;> omega]
 
 theorem e_mod : L.e % 16 = 0 := by
-  simp only [e, Impl.Ecdsa.Rfc6979.PPC64LE.extra]; split <;> omega
+  simp only [e, Impl.Ecdsa.Rfc6979.PPC64LE.extra]; split <;> [omega; split <;> omega]
+
+/-- The code is wide as the layout is. -/
+theorem wide_eq {c : Impl.Ecdsa.Rfc6979.PPC64LE.Cfg} (hcl : c.len = L.q) (hcD : c.H.D = dn) :
+    c.wide = L.wide := by
+  unfold Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.wide wide; rw [hcl, hcD]
+
+theorem hHigh_eq {c : Impl.Ecdsa.Rfc6979.PPC64LE.Cfg} (hcl : c.len = L.q) (hcD : c.H.D = dn) :
+    c.hHigh = L.hHigh := by
+  unfold Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.hHigh hHigh; rw [L.wide_eq hcl hcD, hcl]
 
 /-- Where the code has `h`, as the layout has it. -/
-theorem fHo_eq {c : Impl.Ecdsa.Rfc6979.PPC64LE.Cfg} (hcl : c.len = L.q) : c.fHo = L.ho := by
-  unfold Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.fHo Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.hHigh ho hHigh; rw [hcl]
+theorem fHo_eq {c : Impl.Ecdsa.Rfc6979.PPC64LE.Cfg} (hcl : c.len = L.q) (hcD : c.H.D = dn) : c.fHo = L.ho := by
+  unfold Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.fHo ho; rw [L.hHigh_eq hcl hcD]
 
-theorem hOk (h : L.q ≤ 64) : L.HOk := by
+theorem HOk.far {L : Lay dn} (h : L.HOk) : L.HFar := by
+  obtain ⟨-, ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩⟩ := h <;> exact ⟨by omega, by omega⟩
+
+theorem hFar_wide (hw : L.wide = true) (hq : L.q ≤ 72) : L.HFar := by
+  simp only [HFar, ho, e, hHigh, hw, Impl.Ecdsa.Rfc6979.PPC64LE.extra, Impl.Ecdsa.Rfc6979.PPC64LE.fH,
+    Bool.not_true, Bool.false_and, Bool.false_eq_true, ite_false, ite_true]
+  omega
+
+theorem hOk (h : L.q ≤ 64) (hw : L.wide = false) : L.HOk := by
   refine ⟨h, ?_⟩
-  simp only [ho, e, hHigh, Impl.Ecdsa.Rfc6979.PPC64LE.extra, Impl.Ecdsa.Rfc6979.PPC64LE.fX,
-    Impl.Ecdsa.Rfc6979.PPC64LE.fH, decide_eq_true_eq]
+  simp only [ho, e, hHigh, hw, Impl.Ecdsa.Rfc6979.PPC64LE.extra, Impl.Ecdsa.Rfc6979.PPC64LE.fX,
+    Impl.Ecdsa.Rfc6979.PPC64LE.fH, decide_eq_true_eq, Bool.not_false, Bool.true_and, Bool.false_eq_true,
+    ite_false]
   split <;> omega
 
 end Lay
@@ -242,7 +274,7 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m₀ 
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 336) 64 = L.out
   lr : t.mem.readW (L.B + BitVec.ofNat 64 (384 + L.e)) 64 = lr
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
-  ne : L.e ≤ 64
+  ne : L.e ≤ 144
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -319,11 +351,11 @@ theorem inScrW (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions t.wr (L.scr + BitVec.ofNat 64 o) n :=
   ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
 
-theorem inD (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ L.q) (ho : o ≤ 64) :
+theorem inD (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ L.q) (ho : o ≤ 128) :
     InRegions (t.rd ++ t.wr) (L.d + BitVec.ofNat 64 o) n :=
   ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
 
-theorem inDg (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ dn) (ho : o ≤ 64) :
+theorem inDg (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ dn) (ho : o ≤ 128) :
     InRegions (t.rd ++ t.wr) (L.dg + BitVec.ofNat 64 o) n :=
   ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
 
@@ -354,10 +386,10 @@ end Ctx
 `q` and `e` bytes at the frame's top. -/
 def lay (dn q : Nat) (s : State) : Lay dn :=
   ⟨s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r6,
-    s.sp - BitVec.ofNat 64 (400 + Impl.Ecdsa.Rfc6979.PPC64LE.extra (decide (48 < q))), q⟩
+    s.sp - BitVec.ofNat 64 (400 + extraOf dn q), q⟩
 
 theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State}
-    (h : (rfcPPC I (400 + Impl.Ecdsa.Rfc6979.PPC64LE.extra (decide (48 < I.ecdsa.curve.len)))).pre s) :
+    (h : (rfcPPC I (400 + extraOf I.hashLen I.ecdsa.curve.len)).pre s) :
     (lay I.hashLen I.ecdsa.curve.len s).Ok := by
   obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp⟩ := h
   have nB : (lay I.hashLen I.ecdsa.curve.len s).B.toNat + 400 + (lay I.hashLen I.ecdsa.curve.len s).e ≤ 2 ^ 64 := by

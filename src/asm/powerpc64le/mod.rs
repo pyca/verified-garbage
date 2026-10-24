@@ -86,6 +86,9 @@ pub(crate) mod camellia_ctr;
 pub(crate) mod camellia_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod cast5;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
@@ -98,7 +101,13 @@ pub(crate) mod cmac_aes;
 pub(crate) mod cmac_triple_des;
 
 #[rustfmt::skip]
+pub(crate) mod consts;
+
+#[rustfmt::skip]
 pub(crate) mod ct;
+
+#[rustfmt::skip]
+pub(crate) mod dsa;
 
 #[rustfmt::skip]
 pub(crate) mod ec_brainpoolp256r1;
@@ -228,6 +237,9 @@ pub(crate) mod ecdsa_p384_sha384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p521_sha512;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_secp256k1;
@@ -372,6 +384,9 @@ pub(crate) mod rsa;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_mont;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pkcs1_sig;
 
 #[rustfmt::skip]
 pub(crate) mod scrypt;

@@ -80,7 +80,7 @@ theorem toBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
       exact ⟨by omega, rfl⟩)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hso
-  have hk : ∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r := fun r hr => o' r (writes_tmp (by decide +kernel) r hr)
+  have hk : ∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r := fun r hr => o' r (writes_tmp (by lit_decide) r hr)
   have hb' : s'.gpr sb = s.gpr sb := hk _ (by decide)
   refine ⟨s', h', hc.bs rd' wr' hk f', fun w hw b hb i hi j hj => ?_⟩
   have hp8 : 8 * i + b < 32 := by omega
@@ -110,7 +110,7 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
       exact ⟨by omega_arith, by simp only [Nat.zero_add]; rfl⟩)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hso
-  have hk : ∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r := fun r hr => o' r (writes_tmp (by decide +kernel) r hr)
+  have hk : ∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r := fun r hr => o' r (writes_tmp (by lit_decide) r hr)
   have hb' : s'.gpr sb = s.gpr sb := hk _ (by decide)
   refine ⟨s', h', hc.bs rd' wr' hk f', hk _ (by decide), fun w hw => (hX w hw).congr fun j hj => ?_,
     fun b hb => ?_⟩

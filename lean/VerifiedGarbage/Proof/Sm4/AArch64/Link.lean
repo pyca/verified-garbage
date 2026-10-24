@@ -83,10 +83,10 @@ theorem modeAbi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa 
   ⟨Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he hv⟩
 
 theorem serial_prepare_keeps_x30 : KeepsReg .x30 Serial.core.prepare :=
-  Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)
+  Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
 
 theorem serial_crypt_keeps_x30 : KeepsReg .x30 Serial.core.crypt :=
-  Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)
+  Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
 
 /-- `KeepsReg .x30` of a mode's code: its structure, down to the core's code
 and blocks that do not write `x30`. -/

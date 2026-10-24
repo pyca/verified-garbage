@@ -77,11 +77,11 @@ def BlockMixSpec (c : Prog isa) : Prop :=
         bytesAt s'.mem dst (128 * r) = blockMix r (bytesAt s.mem src (128 * r)) → Q s') →
     WP isa (.call "vg_scrypt_blockmix" c) s Q
 
-theorem blockMix_depth : Impl.Scrypt.X86_64.blockMixFused.depth = 0 := by decide +kernel
+theorem blockMix_depth : Impl.Scrypt.X86_64.blockMixFused.depth = 0 := by lit_decide
 
 theorem blockMix_nosp : NoSp Impl.Scrypt.X86_64.blockMixFused := by
   have : ((instrs Impl.Scrypt.X86_64.blockMixFused).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]; decide +kernel
+    rw [← Code.allInstrs_eq]; lit_decide
   intro i hi
   simpa using List.all_eq_true.mp this i hi
 
@@ -1780,7 +1780,7 @@ theorem roMix_correct (s : State) (hs : Proof.Scrypt.roMixX86_64.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.X86_64.roMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.roMixX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct blockMixSpec (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixX86_64.pre Proof.Scrypt.roMixX86_64.pub
     Impl.Scrypt.X86_64.roMix := by

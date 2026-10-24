@@ -79,9 +79,9 @@ def tailRegs : List Reg :=
 
 /-- Everything `mul` does after loading the bases (`tail`): `[o] < m` and
 `[o] 2^(64 w) ≡ [a] [b] (mod m)`, with only arrays 2, 3 and `o` changed. -/
-theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
-    {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
-    (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    {n o a b : Nat} (hn : 4 ≤ n) (ho : o < n) (ha : a < n) (hb : b < n) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
+    (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w n ≤ Z)
     (i5 : s.gpr .r5 = off B (slot w o)) (i6 : s.gpr .r6 = off B (slot w a))
     (i7 : s.gpr .r7 = off B (slot w b)) (i8 : s.gpr .r8 = off B (slot w 2))
     (i9 : s.gpr .r9 = off B (slot w 3)) (i10 : s.gpr .r10 = off B (slot w 0))
@@ -97,13 +97,16 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
         Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))] s.mem t.mem) ∧
       Keep tailRegs s t := by
   have hnw := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  have sl : ∀ j < n, slot w j + 8 * (w + 2) ≤ Z := fun j hj => by
+    have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ n by omega_using [hj])
+    rw [Nat.add_mul, Nat.one_mul] at this
+    unfold slot at hZ ⊢; omega_using [this, hZ]
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hdr56 : 56 + 4 ≤ slot w 2 := by have := hdr_lt_slot w 2 (i := 7) (by decide); omega_arith
-  have s0 := sl 0 (by decide)
-  have s2 := sl 2 (by decide)
-  have s3 := sl 3 (by decide)
+  have s0 := sl 0 (by omega)
+  have s2 := sl 2 (by omega)
+  have s3 := sl 3 (by omega)
   have sa := sl a ha
   have sb := sl b hb
   have so := sl o ho
@@ -120,7 +123,7 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have hs₂ := hs.congr k₂.wr
   have g₂ : ∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], s₂.gpr r = s.gpr r := fun r hr =>
     k₂.gpr r (by revert r hr; decide)
-  have v₂ : ∀ {j}, j < 8 → j ≠ 2 → val32 s₂.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
+  have v₂ : ∀ {j}, j < n → j ≠ 2 → val32 s₂.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
     fun hj hne => out₂.val32 (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
   have w0₂ : w32 s₂.mem B (slot w 0) = w32 s.mem B (slot w 0) := out₂.w32 (by omega_arith) (by omega_arith)
   -- The rounds.
@@ -131,21 +134,21 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (by rw [g₂ .r12 (by decide), w0₂]; exact hinv) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (val32_zero fun j hj => hz j (by omega_arith))
-    (by rw [v₂ hb hb2, v₂ (by decide) (by decide)]; exact hB))
+    (by rw [v₂ hb hb2, v₂ (by omega) (by decide)]; exact hB))
     fun s₃ ⟨⟨tlt, teq, out₃⟩, k₃⟩ => ?_)
-  rw [v₂ (by decide) (by decide)] at tlt teq
+  rw [v₂ (by omega) (by decide)] at tlt teq
   rw [v₂ ha ha2, v₂ hb hb2] at teq
   have hs₃ := hs₂.congr k₃.wr
   have g₃ : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₃.gpr r = s.gpr r := fun r hr => by
     rw [k₃.gpr r (by revert r hr; decide), g₂ r (by revert r hr; decide)]
-  have v₃ : ∀ {j}, j < 8 → j ≠ 2 → val32 s₃.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
+  have v₃ : ∀ {j}, j < n → j ≠ 2 → val32 s₃.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
     fun hj hne => (out₃.val32 (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans (v₂ hj hne)
   -- `T - m`.
   refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 2) (dT := slot w 3) (dM := slot w 0) hs₃ (by rw [g₃ .r8 (by decide), i8])
     (by rw [g₃ .r9 (by decide), i9]) (by rw [g₃ .r10 (by decide), i10]) (by rw [g₃ .r11 (by decide), i11])
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₄ ⟨⟨c, hc, hD, h20⟩, out₄, k₄⟩ => ?_)
-  rw [v₃ (by decide) (by decide)] at hD
+  rw [v₃ (by omega) (by decide)] at hD
   have hs₄ := hs₃.congr k₄.wr
   have g₄ : ∀ r ∈ [Reg.r5, .r8, .r9, .r11], s₄.gpr r = s.gpr r := fun r hr => by
     rw [k₄.gpr r (by revert r hr; decide), g₃ r (by revert r hr; decide)]
@@ -179,5 +182,25 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       (out₄.mono (Nat.le_refl _) (by omega_arith)) (by simp)) ?_
     exact Outs.of_outside (o := slot w o) (n := 8 * (w + 2)) (out₅.mono (Nat.le_refl _) (by omega_arith)) (by simp)
   · exact (((k₂.trans k₃).trans k₄).trans k₅).mono
+
+/-- `tailN_ok` for arrays below 8. -/
+theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
+    (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+    (i5 : s.gpr .r5 = off B (slot w o)) (i6 : s.gpr .r6 = off B (slot w a))
+    (i7 : s.gpr .r7 = off B (slot w b)) (i8 : s.gpr .r8 = off B (slot w 2))
+    (i9 : s.gpr .r9 = off B (slot w 3)) (i10 : s.gpr .r10 = off B (slot w 0))
+    (i11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (i4 : s.gpr .r4 = BitVec.ofNat 64 (2 * w))
+    (i12 : (s.gpr .r12).toNat < 2 ^ 32)
+    (hinv : (w32 s.mem B (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
+    (hB : val32 s.mem B (slot w b) (2 * w) < val32 s.mem B (slot w 0) (2 * w)) :
+    WP isa tail s fun t =>
+      (val32 t.mem B (slot w o) (2 * w) < val32 s.mem B (slot w 0) (2 * w) ∧
+        val32 t.mem B (slot w o) (2 * w) * 2 ^ (64 * w) % val32 s.mem B (slot w 0) (2 * w) =
+          val32 s.mem B (slot w a) (2 * w) * val32 s.mem B (slot w b) (2 * w) %
+            val32 s.mem B (slot w 0) (2 * w) ∧
+        Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))] s.mem t.mem) ∧
+      Keep tailRegs s t :=
+  tailN_ok hs (by decide) ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ i5 i6 i7 i8 i9 i10 i11 i4 i12 hinv hB
 
 end VG.Proof.Bignum.PPC64LE

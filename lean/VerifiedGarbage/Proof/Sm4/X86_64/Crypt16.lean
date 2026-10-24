@@ -80,7 +80,7 @@ theorem toBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkp
   have hall : ([Reg.rdx, .rsp, .rsi, .rdi, .r8, .r9].all fun r => toBs.all fun i => i.dst != some r) = true := by
-    decide +kernel
+    lit_decide
   have hkeep : ∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_sboxWrites r hr))
   refine ⟨s', h', hc.bs rd' wr' hkeep f' (fun kv hkv => ?_), hkeep _ (by decide), fun w hw b hb i hi j hj => ?_⟩
@@ -117,7 +117,7 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkp
   have hall : ([Reg.rdx, .rsp, .rsi, .rdi, .r8, .r9].all fun r => fromBs.all fun i => i.dst != some r) = true := by
-    decide +kernel
+    lit_decide
   have hkeep : ∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_sboxWrites r hr))
   have keep : ∀ k ∈ keyMaskSlots ++ stateSlots, slotW s' k = slotW s k := fun k hk => by

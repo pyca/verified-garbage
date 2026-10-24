@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainVerified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
@@ -39,6 +40,15 @@ def artifacts : List Artifact := [
         computed by RSA's bit-serial exponentiation (`R² mod p` by doublings) and compared with 1. The \
         nonvolatile registers are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.Domain.checkDomain
-    verified := Proof.Ffdh.PPC64LE.Domain.cd_verified }]
+    verified := Proof.Ffdh.PPC64LE.Domain.cd_verified },
+  Spec.Ffdh.exchangeApi.artifact PPC64LE.target {
+    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
+        working space of `w = ⌈p_len / 8⌉` words, whose address is the second argument on the stack; \
+        `z = y^x mod p` is computed by a Montgomery square and a multiplication selected by a mask for \
+        every bit of all `x_len` octets of x (`R² mod p` by doublings), compared with 0, 1 and p − 1 by equality masks over all the words, and \
+        written to `out` or replaced by zeros under the mask. The nonvolatile registers, and x's and \
+        `out`'s addresses and x's length, are saved in the working space's header."]
+    code := Impl.Ffdh.PPC64LE.Domain.exchange
+    verified := Proof.Ffdh.PPC64LE.Domain.ex_verified }]
 
 end VG.Artifacts.Ffdh.PPC64LE

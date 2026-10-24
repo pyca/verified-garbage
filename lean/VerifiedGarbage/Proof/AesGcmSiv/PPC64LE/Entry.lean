@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Fn
 import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.AddrArith
 public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec

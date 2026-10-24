@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.ChainPath
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
-import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Common
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract

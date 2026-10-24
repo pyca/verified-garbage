@@ -38,7 +38,7 @@ theorem Ctx.kp (hL : L.Ok) {t t' : State} (hc : Ctx L g lr m₀ t) {rs : List Re
 
 /-- The arguments saved in the frame: `Ctx` holds. -/
 theorem entry_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State}
-    (h : (rfcPPC I (400 + Impl.Ecdsa.Rfc6979.PPC64LE.extra (decide (48 < I.ecdsa.curve.len)))).pre s) :
+    (h : (rfcPPC I (400 + extraOf I.hashLen I.ecdsa.curve.len)).pre s) :
     WP isa (.block Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.saveArgs) (entered (lay I.hashLen I.ecdsa.curve.len s).e s)
       (Ctx (lay I.hashLen I.ecdsa.curve.len s) s.gpr s.lr s.mem) := by
   have hL := lay_ok h

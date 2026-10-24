@@ -44,12 +44,12 @@ def pack (hL : Weierstrass.Law Spec.P224.curve) : Rfc where
   hcl := rfl
   hcn := rfl
   hct := rfl
-  hk := rfl
-  hk16 := by decide
-  hbits := p224_nBits
-  hn₁ := by decide +kernel
-  hn₂ := by decide +kernel
-  hQD := by decide
+  hk := fun _ => rfl
+  hk16 := fun _ => by decide
+  hbits := fun _ => p224_nBits
+  hn₁ := fun _ => by decide +kernel
+  hn₂ := fun _ => by decide +kernel
+  hW := fun h => absurd h (by decide)
   hT := by decide
   hT' := by decide
 
@@ -64,7 +64,8 @@ theorem blks : Blks sha224K cfg where
   m₀ := ⟨_, by taint_decide⟩
   m₁ := ⟨_, by taint_decide⟩
   mR := ⟨_, by taint_decide⟩
-  red := ⟨_, by taint_decide⟩
+  red := by intro; exact ⟨_, by taint_decide⟩
+  wide := fun h => absurd h (by decide)
   cnt := ⟨_, by taint_decide⟩
 
 theorem implies :

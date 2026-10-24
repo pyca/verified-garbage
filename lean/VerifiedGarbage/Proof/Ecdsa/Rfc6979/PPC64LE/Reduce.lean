@@ -143,7 +143,7 @@ structure SubInv (N k : Nat) (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m
 
 /-- A word written in the frame, within `HW`. -/
 theorem hw_frame {m : Mem} {o : Nat} (ho : 128 ≤ o ∧ o + 4 ≤ 304 ∨ 352 ≤ o ∧ o + 4 ≤ 352 + L.e)
-    (hne : L.e ≤ 64) (v : BitVec 32) : Frame (HW L) m (m.writeW (L.B + BitVec.ofNat 64 o) v) := by
+    (hne : L.e ≤ 144) (v : BitVec 32) : Frame (HW L) m (m.writeW (L.B + BitVec.ofNat 64 o) v) := by
   rcases ho with ⟨ho₁, ho₂⟩ | ⟨ho₁, ho₂⟩
   · exact (Frame.refl _ _).writeW (r := ⟨L.B + BitVec.ofNat 64 128, 176⟩) (by simp) _
       (Offset.contains _ ho₁ (by omega) (by omega))
@@ -163,7 +163,7 @@ theorem ctx_word (hL : L.Ok) {u u' : State} (hc : Ctx L g lr m₀ u) (k : Kp [] 
       · exact safe_ext L ho₁ ho₂)
 
 /-- Words apart in the frame. -/
-theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x + 4 ≤ 464) (hy : y + 4 ≤ 464) :
+theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x + 4 ≤ 544) (hy : y + 4 ≤ 544) :
     Mem.Sep (B + BitVec.ofNat 64 x) (32 / 8) (B + BitVec.ofNat 64 y) (32 / 8) :=
   Offset.sep B h (by omega) (by omega)
 
@@ -292,14 +292,14 @@ theorem sel_val (x d : BitVec 32) (p : Prop) [Decidable p] :
     rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.and_zero, BitVec.xor_zero, lo32_ext]
 
 theorem selDigit_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 : k ≤ 16)
-    (hql : c.len = L.q) (hq : L.HOk)
+    (hql : c.len = L.q) (hcD : c.H.D = dn) (hq : L.HOk)
     {M : Mem} {j : Nat} (hj : j < k) {u : State} (h : SelInv c.n k L g lr m₀ M j u) :
     WP isa (.block (c.selDigit j)) u (SelInv c.n k L g lr m₀ M (j + 1)) := by
   have hnB := hL.nB
   have hc := h.ctx
   have hne := hc.ne
   have ⟨hq₁, hq₂⟩ := hq
-  have hho : c.fHo = L.ho := L.fHo_eq hql
+  have hho : c.fHo = L.ho := L.fHo_eq hql hcD
   simp only [Cfg.selDigit]
   refine stepLwz (a := L.B + BitVec.ofNat 64 (192 + 4 * j)) (by decide) (by simp only [fV]; omega)
     (by rw [h.r11, fr_add, show 96 + (fV + 4 * j) = 192 + 4 * j by simp only [fV]; omega])
@@ -341,14 +341,14 @@ theorem selDigit_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 :
   · rw [hm, Mem.readW_writeW_sep (fr_sep _ (by omega) (by omega) (by omega)) (by decide)]; exact h.d i hi
 
 theorem sels_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 : k ≤ 16)
-    (hql : c.len = L.q) (hq : L.HOk) {M : Mem} :
+    (hql : c.len = L.q) (hcD : c.H.D = dn) (hq : L.HOk) {M : Mem} :
     ∀ i ≤ k, ∀ u, SelInv c.n k L g lr m₀ M 0 u →
       WP isa (.block ((List.range i).flatMap c.selDigit)) u (SelInv c.n k L g lr m₀ M i)
   | 0, _, u, h => wp_nil h
   | i + 1, hi, u, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (sels_ok hL hk hk16 hql hq i (by omega) u h) fun u' h' =>
-      selDigit_ok hL hk hk16 hql hq (by omega) h'
+    exact WP.mono (sels_ok hL hk hk16 hql hcD hq i (by omega) u h) fun u' h' =>
+      selDigit_ok hL hk hk16 hql hcD hq (by omega) h'
 
 theorem mask_val {c : BitVec 64} (h : c.toNat ≤ 1) :
     BitVec.ofNat 64 0 - c = if c.toNat = 1 then BitVec.allOnes 64 else 0 := by
@@ -358,7 +358,7 @@ theorem mask_val {c : BitVec 64} (h : c.toNat ≤ 1) :
 
 /-- `h`: the digest modulo `n`, big-endian in the frame at `h`'s place. -/
 theorem reduce_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 : k ≤ 16) (hdn : 4 * k ≤ dn)
-    (hql : c.len = L.q) (hq : L.HOk)
+    (hql : c.len = L.q) (hcD : c.H.D = dn) (hq : L.HOk)
     (hn₁ : c.n < 2 ^ (32 * k)) (hn₂ : 2 ^ (32 * k) < 2 * c.n) {t : State} (hc : Ctx L g lr m₀ t) :
     WP isa (.block c.reduce) t fun t' => Ctx L g lr m₀ t' ∧ Frame (HW L) t.mem t'.mem ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 (96 + L.ho)) (4 * k)) =
@@ -391,7 +391,7 @@ theorem reduce_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 : k
   have hn₂' : u₂.mem = u.mem := by rw [n₂, n₁]
   have h10 : u₂.gpr .r10 = mask c.n k L t.mem := by
     rw [w₂, w₁, l₁.gpr _ (by decide), mask_val (by rw [hu.r10]; exact cc_le _ _ _), hu.r10]
-  refine WP.mono (sels_ok (M := t.mem) hL hk hk16 hql hq k (Nat.le_refl _) u₂
+  refine WP.mono (sels_ok (M := t.mem) hL hk hk16 hql hcD hq k (Nat.le_refl _) u₂
     ⟨hu.ctx.kp hL L₂ hn₂', by rw [L₂.gpr _ (by decide), hu.r11], h10, by rw [hn₂']; exact hu.frame,
       fun i hi => absurd hi (Nat.not_lt_zero _), fun i hi => by rw [hn₂']; exact hu.x i hi,
       fun i hi => by rw [hn₂']; exact hu.d i hi⟩) fun t' h' => ⟨h'.ctx, h'.frame, ?_⟩

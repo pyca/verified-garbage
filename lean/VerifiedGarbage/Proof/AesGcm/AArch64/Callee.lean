@@ -99,10 +99,10 @@ namespace GhashImpl
 /-- `vg_ghash`, in the baseline ISA. -/
 def scalar : GhashImpl where
   fn := ⟨"vg_ghash", Impl.Gcm.AArch64.ghash⟩
-  noFrames := by decide +kernel
+  noFrames := by lit_decide
   ok := Proof.Gcm.AArch64.ghash_correct
   ct := Proof.Gcm.AArch64.ghash_ct
-  keepsV := by decide +kernel
+  keepsV := by lit_decide
   suffix := ""
   features := []
 
@@ -113,18 +113,18 @@ namespace KeyImpl
 /-- `vg_aes_expand_key_scratch`, in the baseline ISA. -/
 def scalar : KeyImpl where
   fn := ⟨"vg_aes_expand_key_scratch", Impl.Aes.AArch64.expandKey⟩
-  noFrames := by decide +kernel
+  noFrames := by lit_decide
   ok := Proof.Aes.AArch64.expandKey_correct
   ct := Proof.Aes.AArch64.expandKey_ct
-  keepsV := by decide +kernel
+  keepsV := by lit_decide
 
 /-- `vg_aes_expand_key_scratch_aes`. -/
 def aese : KeyImpl where
   fn := ⟨"vg_aes_expand_key_scratch_aes", Impl.Aes.AArch64.Aese.expandKey⟩
-  noFrames := by decide +kernel
+  noFrames := by lit_decide
   ok := Proof.Aes.AArch64.Aese.Key.expandKey_correct
   ct := Proof.Aes.AArch64.Aese.Key.expandKey_ct
-  keepsV := by decide +kernel
+  keepsV := by lit_decide
 
 end KeyImpl
 

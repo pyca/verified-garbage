@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Sm4Gcm.X86.StreamEncrypt
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sm4.X86.Lit
+import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # SM4-GCM on x86: `Verified`
@@ -280,41 +283,41 @@ variable (vg : GcmImpl)
 theorem init_spSafe : init.all (fun i => !X86.isa.writesSp i) = true := by
   simp only [init, keyCall, ctrCall, entry, Code.all, ctr_spSafe, key_spSafe,
     Bool.true_and, Bool.and_true]
-  decide +kernel
+  lit_decide
 
 theorem streamEncrypt_spSafe : (streamEncrypt vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
     ghash1, textAbsorb, streamEncrypt, Code.all, GcmImpl.callees, ctr_spSafe, vg.gh.spSafe, Bool.true_and,
     Bool.and_true]
-  decide +kernel
+  lit_decide
 
 theorem streamDecrypt_spSafe : (streamDecrypt vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
     ghash1, textAbsorb, streamDecrypt, Code.all, GcmImpl.callees, ctr_spSafe, vg.gh.spSafe, Bool.true_and,
     Bool.and_true]
-  decide +kernel
+  lit_decide
 
 theorem streamFinish_spSafe : (streamFinish vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, tagOut, streamFinish, Code.all, GcmImpl.callees,
     ctr_spSafe, vg.gh.spSafe, Bool.true_and, Bool.and_true]
-  decide +kernel
+  lit_decide
 
 theorem streamVerify_spSafe : (streamVerify vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamVerify, Code.all, GcmImpl.callees,
     ctr_spSafe, vg.gh.spSafe, Bool.true_and, Bool.and_true]
-  decide +kernel
+  lit_decide
 
 theorem seal_spSafe : («seal» vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
     j0hash, lens, oneAad, oneCrypt, oneTag, tag, tagOut, «seal», Code.all, GcmImpl.callees, ctr_spSafe,
     vg.gh.spSafe, Bool.true_and, Bool.and_true]
-  decide +kernel
+  lit_decide
 
 theorem open_spSafe : («open» vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
     j0hash, lens, oneAad, oneCrypt, oneTag, tag, «open», Code.all, GcmImpl.callees, ctr_spSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
-  decide +kernel
+  lit_decide
 
 end
 
