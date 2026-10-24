@@ -349,9 +349,10 @@ def pPart : Prog isa := seqs [
       (.block []),
     .block (cmpF fP 4)]) (.zero .d .r0)]
 
-/-- An `h`: `fG` := 1 with `g` at `sG` if `1 < h < p − 1` and `1 < g`. -/
+/-- An `h` (into array `aH`, zeroed first, as `load` needs): `fG` := 1 with
+`g` at `sG` if `1 < h < p − 1` and `1 < g`. -/
 def gStep : Prog isa := seqs [
-  .block (ksRegs g.pLen ++ [ld .r6 fH, .li .r8 g.pLen]),
+  .block (ksRegs g.pLen), copy aH aZero, .block [ld .r6 fH, .li .r8 g.pLen],
   VG.Impl.Rsa.PPC64LE.CrtValues.load aH,
   seqs (ltS slLo aOne aH), seqs (ltS slHi aH aPm1),
   .block (andS slLo slLo slHi ++ [.load .w .r0 .r31 slLo]),

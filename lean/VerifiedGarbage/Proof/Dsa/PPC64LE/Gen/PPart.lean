@@ -232,7 +232,7 @@ abbrev pFound (c : Cfg) (HO : HashOk Gh) (G : GP) (k p : Nat) : Cfg :=
     cl := (sE, Spec.Rsa.i2osp ((p - 1) / Spec.Dsa.decodeBE (qBytes G k)) (eBytes G.pLen G.qLen)) ::
       (sPBE, Spec.Rsa.i2osp p G.pLen) :: pRest HO.md G k
     A := pAp p (Spec.Dsa.decodeBE (qBytes G k))
-    live := [aE, aP, aPm1, aOne]
+    live := [aE, aP, aPm1, aOne, aZero]
     kls := [] }
 
 abbrev pNone (c : Cfg) (HO : HashOk Gh) (G : GP) : Cfg :=

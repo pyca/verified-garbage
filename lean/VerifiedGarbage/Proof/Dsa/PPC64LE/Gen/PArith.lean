@@ -56,7 +56,7 @@ abbrev pOut (c : Cfg) (G : GP) (x q : Nat) (rest : Claims) : Cfg :=
     cl := (sE, Spec.Rsa.i2osp ((pVal x q - 1) / q) (eBytes G.pLen G.qLen)) ::
       (sPBE, Spec.Rsa.i2osp (pVal x q) G.pLen) :: rest
     A := pA x q
-    live := [aE, aP, aPm1, aOne]
+    live := [aE, aP, aPm1, aOne, aZero]
     kls := [] }
 
 /-- Simplifies the arrays' values of a stage. -/
@@ -100,7 +100,7 @@ variable {G : GP} {c : Cfg} {X : State → Prop}
 abbrev cL (c : Cfg) (x q : Nat) : Cfg := { c with A := aL x q, live := [aDv, aX, aQt, aOne, aZero] }
 abbrev cD (c : Cfg) (x q : Nat) : Cfg :=
   { c with A := aD x q, live := [aQt, aRm, aDv, aX, aOne, aZero] }
-abbrev cM (c : Cfg) (x q : Nat) : Cfg := { c with A := aM x q, live := [aPm1, aQt, aOne], kls := [] }
+abbrev cM (c : Cfg) (x q : Nat) : Cfg := { c with A := aM x q, live := [aPm1, aQt, aOne, aZero], kls := [] }
 
 theorem pLoads_vp {xb qb : List Byte}
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
@@ -160,7 +160,7 @@ theorem pPm1_vp {x q : Nat} :
         omega)).mono (fun _ _ h => h) fun σ s ⟨⟨h, xx⟩, kr⟩ => ⟨⟨h.mono (fun o ho => ⟨ho, rfl⟩)
       (fun y hy => hy) (fun j hj => ?_) (fun d hd => absurd hd (by simp)), xx⟩, kr⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-  rcases hj with rfl | rfl | rfl <;> exact ⟨by simp [aPm1, aQt, aOne], by arr_simp⟩
+  rcases hj with rfl | rfl | rfl | rfl <;> exact ⟨by simp [aPm1, aQt, aOne, aZero], by arr_simp⟩
 
 theorem pTail_vp {x q : Nat} (hq : 2 ^ (8 * G.qLen - 1) ≤ q)
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
@@ -218,7 +218,7 @@ theorem pTail_vp {x q : Nat} (hq : 2 ^ (8 * G.qLen - 1) ≤ q)
       rw [hE, Nat.mod_eq_of_lt elt]
     · exact List.mem_cons_of_mem _ hy
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-    rcases hj with rfl | rfl | rfl | rfl <;> refine ⟨by simp [aE, aP, aPm1, aOne, aQt], ?_⟩ <;> arr_simp
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> refine ⟨by simp [aE, aP, aPm1, aOne, aQt, aZero], ?_⟩ <;> arr_simp
     · exact hE
     · exact hP
     · exact hM
