@@ -28,6 +28,17 @@ namespace VG.Proof.AesOcb.PPC64LE
 open VG VG.PPC64LE VG.Impl.AesOcb.PPC64LE
 open VG.Proof.AesGcm.PPC64LE (frozen covers_off in_off in_left covers_left)
 
+theorem runBlock_append (a b : List Instr) (s : State) :
+    runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
+  induction a generalizing s with
+  | nil => rfl
+  | cons x a ih =>
+    show (exec x s).bind (runBlock isa (a ++ b)) = ((exec x s).bind (runBlock isa a)).bind (runBlock isa b)
+    rw [Option.bind_assoc]
+    congr 1
+    funext u
+    exact ih u
+
 /-! ## The regions -/
 
 /-- The key context and `W`. -/
