@@ -269,21 +269,29 @@ abbrev D (s₀ : State) : List Byte := bytesAt s₀.mem (pSeed s₀) 32
 /-- `z`, the second half of the seed. -/
 abbrev Z (s₀ : State) : List Byte := bytesAt s₀.mem (pSeed s₀ + BitVec.ofNat 64 32) 32
 
+theorem g_ins {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ s) :
+    ∀ p ∈ [(⟨.r30, 0, 32⟩ : Piece), ⟨.r31, oK, 1⟩], PieceOk (lay s₀ K) kidx s false p := by
+  have hK := hp.wf
+  intro p hp'
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+  rcases hp' with rfl | rfl
+  · exact pieceK hp h (.inl rfl) (by simp) (by decide) (by decide) (by decide) (by ldecide)
+  · exact pieceK hp h (.inr (.inr (.inr rfl))) (by simp) (by decide) (by decide) (by decide) (by ldecide)
+
+theorem g_outs {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ s) :
+    ∀ p ∈ [(⟨.r31, oG, 64⟩ : Piece)], PieceOk (lay s₀ K) kidx s true p := by
+  have hK := hp.wf
+  intro p hp'; rw [List.mem_singleton] at hp'; subst hp'
+  exact pieceK hp h (.inr (.inr (.inr rfl))) (by simp) (by decide) (by decide) (by decide) (by ldecide)
+
 theorem g_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ s)
     (h3 : s.mem ((lay s₀ K).A 0 oK) = BitVec.ofNat 8 K.k) :
     WP isa (hash 72 0x06 [⟨.r30, 0, 32⟩, ⟨.r31, oK, 1⟩] [⟨.r31, oG, 64⟩]) s fun s' =>
       KEnv K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oG) 32 = VG.Proof.MlKem.KPke.kgRho K.p (D s₀) ∧
       bytesAt s'.mem ((lay s₀ K).A 0 oSigma) 32 = VG.Proof.MlKem.KPke.kgSigma K.p (D s₀) := by
   have hK := hp.wf
-  have hin : ∀ p ∈ [(⟨.r30, 0, 32⟩ : Piece), ⟨.r31, oK, 1⟩], PieceOk (lay s₀ K) kidx s false p := by
-    intro p hp'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl
-    · exact pieceK hp h (.inl rfl) (by simp) (by decide) (by decide) (by decide) (by ldecide)
-    · exact pieceK hp h (.inr (.inr (.inr rfl))) (by simp) (by decide) (by decide) (by decide) (by ldecide)
-  have hout : ∀ p ∈ [(⟨.r31, oG, 64⟩ : Piece)], PieceOk (lay s₀ K) kidx s true p := by
-    intro p hp'; rw [List.mem_singleton] at hp'; subst hp'
-    exact pieceK hp h (.inr (.inr (.inr rfl))) (by simp) (by decide) (by decide) (by decide) (by ldecide)
+  have hin := g_ins hp h
+  have hout := g_outs hp h
   have hD : bytesAt s.mem ((lay s₀ K).A 2 0) 32 = D s₀ := by
     have := congrArg (List.take 32) h.seed
     rw [bytesAt_take _ _ (by decide), bytesAt_take _ _ (by decide)] at this
@@ -756,6 +764,53 @@ theorem end_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ 
   have scr := hK.scr
   have hb : o + 8 ≤ (lay s₀ K).size 0 := by simp only [lay, Lay.size, List.getD_cons_zero]; omega
   exact mem_rd_wr' (Lay.covers w0 hb _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+
+/-! What each step of the end keeps, for the proof of constant time. -/
+
+section
+variable {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ s)
+include hp h
+
+theorem cpRho_env : WP isa (copy .r31 oSeed .r29 (384 * K.k) 32) s (KEnv K s₀) := by
+  have hK := hp.wf
+  have k4 := hK.k4
+  obtain ⟨w0, w3, -, -⟩ := buf_wr hp
+  obtain ⟨f1, f2, -⟩ := tail_facts hK
+  exact WP.mono (copyL (lay_ok hp) (i := 0) (j := 3) (by decide) (by decide) h.ctx.r31 h.r29
+    (by decide) (by show 384 * K.k < 32768; omega) (by decide) (by decide) f1
+    (by rw [h.rd, h.wr]; exact mem_rd_wr w0) (by rw [h.wr]; exact w3)) fun _ ⟨k, _⟩ =>
+    h.keep hp (k.x []) (by simp) f2
+
+theorem cpEk_env : WP isa (copy .r29 0 .r28 (384 * K.k) K.ekLen) s (KEnv K s₀) := by
+  have hK := hp.wf
+  have k4 := hK.k4
+  obtain ⟨-, w3, w4, -⟩ := buf_wr hp
+  obtain ⟨-, -, -, f4, f5, -⟩ := tail_facts hK
+  exact WP.mono (copyL (lay_ok hp) (i := 3) (j := 4) (so := 0) (dO := 384 * K.k) (len := K.ekLen)
+    (by decide) (by decide) h.r29 h.r28 (by decide) (by show 384 * K.k < 32768; omega)
+    (by show K.ekLen < 32768; simp only [KemLay.ekLen]; omega) (by simp only [KemLay.ekLen]; omega) f4
+    (by rw [h.rd, h.wr]; exact mem_rd_wr w3) (by rw [h.wr]; exact w4)) fun _ ⟨k, _⟩ =>
+    h.keep hp (k.x []) (by simp) f5
+
+theorem hashH_env :
+    WP isa (hash 136 0x06 [⟨.r29, 0, K.ekLen⟩] [⟨.r28, 768 * K.k + 32, 32⟩]) s (KEnv K s₀) := by
+  have hK := hp.wf
+  obtain ⟨-, -, -, -, -, -, f7, -⟩ := tail_facts hK
+  exact WP.mono (hash_ok (idx := kidx) VG.Proof.MlKem.rate136 (by decide) h.ctx
+    (List.cons_ne_nil _ _) (h_ins hp h) (h_outs hp h) (List.pairwise_singleton _ _)) fun _ ⟨k, _⟩ =>
+    h.keep hp (k.x []) (by simp) f7
+
+theorem cpZ_env : WP isa (copy .r30 32 .r28 (768 * K.k + 64) 32) s (KEnv K s₀) := by
+  have hK := hp.wf
+  have k4 := hK.k4
+  obtain ⟨-, -, w4, w2⟩ := buf_wr hp
+  obtain ⟨-, -, -, -, -, -, -, f8, f9, -⟩ := tail_facts hK
+  exact WP.mono (copyL (lay_ok hp) (i := 2) (j := 4) (so := 32) (dO := 768 * K.k + 64) (len := 32)
+    (by decide) (by decide) h.r30 h.r28 (by decide) (by show 768 * K.k + 64 < 32768; omega) (by decide)
+    (by decide) f8 (by rw [h.rd, h.wr]; exact w2) (by rw [h.wr]; exact w4)) fun _ ⟨k, _⟩ =>
+    h.keep hp (k.x []) (by simp) f9
+
+end
 
 theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KS K s₀ K.k s) :
     WP isa (.seq (copy .r31 oSeed .r29 (384 * K.k) 32) <| .seq (copy .r29 0 .r28 (384 * K.k) K.ekLen) <|
