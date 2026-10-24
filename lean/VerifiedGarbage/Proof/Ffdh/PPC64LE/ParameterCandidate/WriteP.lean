@@ -17,6 +17,7 @@ namespace VG.Proof.Ffdh.PPC64LE.ParameterCandidate
 
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
+open VG.Impl.MillerRabin.PPC64LE.Search (ldh)
 
 /-- `writeP`'s first block: `out`, `out_len`, and the address of p's last
 octet. -/
@@ -24,12 +25,12 @@ theorem writeHead_ok {s : State} {B O : Addr} {Z k : Nat} (hs : Scr s B Z)
     (h31 : s.gpr .r31 = B) (h10 : s.gpr .r10 = off B 256)
     (hO : s.mem.readW (B + BitVec.ofNat 64 16) 64 = O) (hL : s.mem.readW (B + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 k)
     (hk : 1 ≤ k) (hZ : 256 + k ≤ Z) :
-    WP isa (.block [Impl.MillerRabin.PPC64LE.Search.ldh .r4 hOut, Impl.MillerRabin.PPC64LE.Search.ldh .r5 hLen, .add .r6 .r10 .r5, .subi .r6 .r6 1]) s fun s₂ =>
+    WP isa (.block [ldh .r4 hOut, ldh .r5 hLen, .add .r6 .r10 .r5, .subi .r6 .r6 1]) s fun s₂ =>
       (s₂.gpr .r6 = off B (256 + (k - 1)) ∧ s₂.gpr .r4 = O ∧ s₂.gpr .r5 = BitVec.ofNat 64 k ∧ s₂.mem = s.mem) ∧
         Keep [.r4, .r5, .r6] s s₂ := by
   have hnw := hs.nowrap
   refine WP.keep [.r4, .r5, .r6] ?_ (by decide)
-  simp only [Impl.MillerRabin.PPC64LE.Search.ldh, hOut, hLen]
+  simp only [ldh, hOut, hLen]
   prun [h31, h10, hO, hL, hs.ld (d := 16) (n := 8) (by omega), hs.ld (d := 24) (n := 8) (by omega),
     off_add, BitVec.add_zero]
   rw [off_sub1 _ (by omega)]; congr 2; omega
