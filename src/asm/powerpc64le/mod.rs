@@ -20,6 +20,9 @@ pub(crate) mod aes_cfb8;
 pub(crate) mod aes_ctr;
 
 #[rustfmt::skip]
+pub(crate) mod aes_gcm_siv;
+
+#[rustfmt::skip]
 pub(crate) mod aes_ofb;
 
 #[rustfmt::skip]
@@ -233,7 +236,13 @@ pub(crate) mod idea_ofb;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod miller_rabin;
+
+#[rustfmt::skip]
 pub(crate) mod mlkem;
+
+#[rustfmt::skip]
+pub(crate) mod mlkem1024;
 
 #[rustfmt::skip]
 pub(crate) mod mlkem768;
