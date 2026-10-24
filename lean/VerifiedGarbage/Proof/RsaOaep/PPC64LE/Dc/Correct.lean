@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Main
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfArith
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Label

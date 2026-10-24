@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Shift
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Out
 public import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mgf1.Bytes
