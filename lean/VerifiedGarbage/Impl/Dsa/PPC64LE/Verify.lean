@@ -44,7 +44,7 @@ the signature and the digest into `r27`, `r28` and `r26`, and the lengths into
 def entry : List Instr :=
   [.addSp .r11 96, .load .d .r11 .r11 0] ++ save .r11 ++
     [.addi .r27 .r3 0, .addi .r28 .r7 0, .addi .r26 .r9 0] ++ capD ++
-    [.lsl .r4 .r4 48, .lsl .r0 .r6 16, .logic .or .r2 .r5 .r0, .logic .or .r2 .r2 .r4]
+    [.lsl .r4 .r4 48, .lsl .r0 .r6 16, .add .r2 .r5 .r0, .add .r2 .r2 .r4]
 
 /-- r's octets: the signature, `q_len`. -/
 def ptrR : List Instr := [.addi .r12 .r28 0] ++ getQ .r6
@@ -67,12 +67,13 @@ def inRange (a : Nat) : Prog isa :=
     (.block (clear19 ++ [.logic .and .r22 .r22 .r20]))))
 
 /-- In the Q space: q in array 0; r into array 5 and s into array 6, and
-the header's word `hMask` := the mask of both in range (secret: it stays in
-memory). -/
+`r22 :=` the mask of both in range. -/
 def ranges : Prog isa :=
   .seq (.block (enterQ ++ ptrR)) (.seq (loadArr 5) (.seq (.block ptrS) (.seq (loadArr 6)
-    (.seq (zeroArr 7) (.seq (.block [.li .r22 0, .subi .r22 .r22 1]) (.seq (inRange 5) (.seq (inRange 6)
-      (.block [.store .d .r22 .r21 hMask]))))))))
+    (.seq (zeroArr 7) (.seq (.block [.li .r22 0, .subi .r22 .r22 1]) (.seq (inRange 5) (inRange 6)))))))
+
+/-- The mask into the header's word `hMask` (secret: it stays in memory). -/
+def keepMask : List Instr := [.store .d .r22 .r21 hMask]
 
 /-- `R² mod q` into array 1 and array 8. -/
 def rrQ : Prog isa :=
@@ -134,7 +135,7 @@ def compare : Prog isa :=
 
 /-- The verification, after the check of the key. -/
 def body : Prog isa :=
-  .seq ranges (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products (.seq combine compare)))))
+  .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products (.seq combine compare))))))
 
 /-- `vg_dsa_verify`. -/
 def verify : Prog isa :=

@@ -171,7 +171,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {D : Nat}
   have k₁₂ := k1.trans k₂
   have q0₂ : arrQ s₂.mem L 0 = q := qa₂.arr0.trans q0₁
   -- `R² mod q`.
-  refine WP.seq (WP.mono (rrQ_ok Q₂ hL (by rw [q0₂]; omega)) fun s₃ ⟨⟨Q₃, h8₃, qa₃⟩, k₃⟩ => ?_)
+  refine WP.seq (WP.mono (rrQ_ok Q₂ (by rw [q0₂]; omega)) fun s₃ ⟨⟨Q₃, h8₃, qa₃⟩, k₃⟩ => ?_)
   rw [q0₂] at h8₃
   have q0₃ : arrQ s₃.mem L 0 = q := qa₃.arr0.trans q0₂
   -- `q − 2`.

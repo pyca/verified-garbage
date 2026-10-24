@@ -206,35 +206,35 @@ theorem ofNat_sub_eq_zero {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
   rwa [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff] at this
 
 /-- `pairOk P Q`: `r0 := 0` if `(a, b) = (P, Q)`. -/
-theorem pairOk_ok {s : State} {a b P Q : Nat} {R : Prop} (h27 : s.gpr .r27 = BitVec.ofNat 64 a)
-    (h28 : s.gpr .r28 = BitVec.ofNat 64 b) (ha : a ≤ 1024) (hb : b ≤ 1024) (hP : P ≤ 2 ^ 15)
+theorem pairOk_ok {s : State} {a b P Q : Nat} {R : Prop} (h24 : s.gpr .r24 = BitVec.ofNat 64 a)
+    (h25 : s.gpr .r25 = BitVec.ofNat 64 b) (ha : a ≤ 1024) (hb : b ≤ 1024) (hP : P ≤ 2 ^ 15)
     (hQ : Q ≤ 2 ^ 15) (h0 : s.gpr .r0 = 0 ↔ R) :
     WP isa (pairOk P Q) s fun t =>
-      ((t.gpr .r0 = 0 ↔ R ∨ (a = P ∧ b = Q)) ∧ t.gpr .r27 = BitVec.ofNat 64 a ∧
-        t.gpr .r28 = BitVec.ofNat 64 b ∧ t.mem = s.mem) ∧ Keep [.r0, .r3, .r4] s t := by
+      ((t.gpr .r0 = 0 ↔ R ∨ (a = P ∧ b = Q)) ∧ t.gpr .r24 = BitVec.ofNat 64 a ∧
+        t.gpr .r25 = BitVec.ofNat 64 b ∧ t.mem = s.mem) ∧ Keep [.r0, .r3, .r4] s t := by
   refine WP.keep _ ?_ rfl
   unfold pairOk
   refine WP.seq (WP.mono (WP.keep [.r3, .r4] (Q := fun t => t.gpr .r3 =
       (BitVec.ofNat 64 a - BitVec.ofNat 64 P ||| BitVec.ofNat 64 b - BitVec.ofNat 64 Q) ∧ t.mem = s.mem)
-    (by prun [h27, h28, hP, hQ]) rfl) fun t ⟨⟨t3, tm⟩, kt⟩ => ?_)
+    (by prun [h24, h25, hP, hQ]) rfl) fun t ⟨⟨t3, tm⟩, kt⟩ => ?_)
   have e : (t.gpr .r3 == 0) = decide (a = P ∧ b = Q) := by
     rw [t3, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff,
       show ∀ x y : BitVec 64, (x ||| y = 0 ↔ x = 0 ∧ y = 0) from fun _ _ => BitVec.or_eq_zero_iff,
       ofNat_sub_eq_zero (by omega) (by omega), ofNat_sub_eq_zero (by omega) (by omega)]
-  have t27 : t.gpr .r27 = BitVec.ofNat 64 a := (kt.gpr _ (by decide)).trans h27
-  have t28 : t.gpr .r28 = BitVec.ofNat 64 b := (kt.gpr _ (by decide)).trans h28
+  have t24 : t.gpr .r24 = BitVec.ofNat 64 a := (kt.gpr _ (by decide)).trans h24
+  have t25 : t.gpr .r25 = BitVec.ofNat 64 b := (kt.gpr _ (by decide)).trans h25
   refine WP.ite _ (by rw [eval_zero, e]) (fun hz => ?_) (fun hz => ?_)
   · have hz := of_decide_eq_true hz
-    prun [t27, t28, tm]
+    prun [t24, t25, tm]
     exact ⟨fun _ => .inr hz, fun _ => rfl⟩
   · have hz := of_decide_eq_false hz
-    refine wp_nil ⟨?_, t27, t28, tm⟩
+    refine wp_nil ⟨?_, t24, t25, tm⟩
     rw [kt.gpr _ (by decide), h0]
     exact ⟨.inl, fun h => h.resolve_right hz⟩
 
 /-- `pairs`: `r0 = 0` exactly when `(8 a, 8 b)` are supported sizes. -/
-theorem pairs_ok {s : State} {a b : Nat} (h27 : s.gpr .r27 = BitVec.ofNat 64 a)
-    (h28 : s.gpr .r28 = BitVec.ofNat 64 b) (ha : a ≤ 1024) (hb : b ≤ 1024) :
+theorem pairs_ok {s : State} {a b : Nat} (h24 : s.gpr .r24 = BitVec.ofNat 64 a)
+    (h25 : s.gpr .r25 = BitVec.ofNat 64 b) (ha : a ≤ 1024) (hb : b ≤ 1024) :
     WP isa pairs s fun t =>
       ((t.gpr .r0 = 0 ↔ Spec.Dsa.supportedSizes (8 * a) (8 * b)) ∧ t.mem = s.mem) ∧
         Keep [.r0, .r3, .r4] s t := by
@@ -243,8 +243,8 @@ theorem pairs_ok {s : State} {a b : Nat} (h27 : s.gpr .r27 = BitVec.ofNat 64 a)
   refine WP.seq (WP.mono (WP.keep [.r0] (Q := fun t => t.gpr .r0 = 1#64 ∧ t.mem = s.mem) (by prun)
     (by decide)) fun t₀ ⟨⟨a0, m0⟩, k0⟩ => ?_)
   have h0 : t₀.gpr .r0 = 0 ↔ False := ⟨fun h => absurd (a0.symm.trans h) (by decide), False.elim⟩
-  refine WP.seq (WP.mono (pairOk_ok (P := 128) (Q := 20) ((k0.gpr _ (by decide)).trans h27)
-    ((k0.gpr _ (by decide)).trans h28) ha hb (by decide) (by decide) h0)
+  refine WP.seq (WP.mono (pairOk_ok (P := 128) (Q := 20) ((k0.gpr _ (by decide)).trans h24)
+    ((k0.gpr _ (by decide)).trans h25) ha hb (by decide) (by decide) h0)
     fun t₁ ⟨⟨a1, b1, c1, m1⟩, _⟩ => ?_)
   refine WP.seq (WP.mono (pairOk_ok (P := 256) (Q := 20) b1 c1 ha hb (by decide) (by decide) a1)
     fun t₂ ⟨⟨a2, b2, c2, m2⟩, _⟩ => ?_)
@@ -279,27 +279,24 @@ theorem odd_ok {s : State} {N : Addr} {k : Nat} (h12 : s.gpr .r12 = N) (h6 : s.g
   rw [odd_xor, bytesAt_last s.mem N hk, Proof.Dsa.decodeBE_last_mod_two]
 
 /-- The registers `sizes` and `odds` write before `rest` or `fail`. -/
-def sizesRegs : List Reg := [.r0, .r3, .r4, .r6, .r12, .r14, .r15, .r16, .r17, .r27, .r28]
+def sizesRegs : List Reg := [.r0, .r2, .r3, .r4, .r6, .r12, .r14, .r15, .r16, .r17, .r24, .r25]
 
 /-- The sizes are supported. -/
 abbrev SizesOk (m : Mem) (L : Lay) (key : Addr) : Prop :=
   Spec.Dsa.supportedSizes (Spec.Dsa.bitLength (pOf m L key)) (Spec.Dsa.bitLength (qOf m L key))
 
 /-- `sizes rest fail`: `rest` with q's significant octets (`bitLength q / 8`)
-in the header's word `hQb`, if the sizes are supported; else `fail`, with at
-most that word changed. -/
-theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop} {rest fail : Prog isa}
-    (hL : L.Ok) (hs : ScrL s L) (hh : Hdr s.mem L key sig dig) (h21 : s.gpr .r21 = L.S)
+added to `r2`'s third field, if the sizes are supported; else `fail`. -/
+theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State → Prop} {rest fail : Prog isa}
+    (hL : L.Ok) (hr : Regs s L key sig dig) (h2 : s.gpr .r2 = pack L.pl L.ql 0 d)
     (hk : Src s L key (3 * L.pl + L.ql))
-    (hrest : ∀ t, SizesOk s.mem L key →
-      t.mem = s.mem.writeW (off L.S hQb) (BitVec.ofNat 64 (Spec.Dsa.bitLength (qOf s.mem L key) / 8)) →
+    (hrest : ∀ t, SizesOk s.mem L key → t.mem = s.mem →
+      t.gpr .r2 = pack L.pl L.ql (Spec.Dsa.bitLength (qOf s.mem L key) / 8) d →
       Keep sizesRegs s t → WP isa rest t Q)
-    (hfail : ∀ t, ¬ SizesOk s.mem L key → Outside L.S hQb 8 s.mem t.mem → Keep sizesRegs s t →
-      WP isa fail t Q) :
+    (hfail : ∀ t, ¬ SizesOk s.mem L key → t.mem = s.mem → Keep sizesRegs s t → WP isa fail t Q) :
     WP isa (sizes rest fail) s Q := by
   have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega
   have hql := hL.ql
-  have hZ : 128 * L.pl ≤ L.Z := hL.room
   have hnw := hL.nowrap
   have fp := significant_fits (Spec.Rsa.bytesAt s.mem key L.pl)
   have fq := significant_fits (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)
@@ -312,26 +309,24 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop}
     Proof.Dsa.supported_scans _ _
   unfold sizes andThen
   -- p's octets
-  refine WP.seq (WP.seq (WP.mono (ptrP_ok hL hs hh h21) fun t₁ ⟨⟨a12, a6, am⟩, k1⟩ =>
+  refine WP.seq (WP.seq (WP.mono (ptrP_ok hr) fun t₁ ⟨⟨a12, a6, am⟩, k1⟩ =>
     WP.mono (bytesBits_ok a12 a6 (by omega) (by omega) fun i hi => by
       rw [k1.rd, k1.wr]; exact hk.rd i (by omega)) fun t₂ ⟨⟨b16, b0, bm⟩, k2⟩ => ?_))
   rw [am] at b16 b0
   have m2 : t₂.mem = s.mem := by rw [bm, am]
   refine WP.ite _ (eval_zero _ _) (fun hz => ?ok) (fun hz => ?bad)
   case bad =>
-    refine hfail t₂ (fun h => ?_) (by rw [m2]; exact Outside.refl _ _ _ _) (k1.trans k2).mono
+    refine hfail t₂ (fun h => ?_) m2 (k1.trans k2).mono
     rw [b0.mpr (hSz.mp h).1] at hz
     exact absurd hz (by decide)
   have hp := b0.mp (beq_iff_eq.mp hz)
-  refine WP.seq (WP.mono (WP.keep [.r27] (Q := fun t =>
-    t.gpr .r27 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1 ∧ t.mem = t₂.mem)
-    (by prun [b16, BitVec.add_zero]) (by decide)) fun t₃ ⟨⟨c27, cm⟩, k3⟩ => ?_)
+  refine WP.seq (WP.mono (WP.keep [.r24] (Q := fun t =>
+    t.gpr .r24 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1 ∧ t.mem = t₂.mem)
+    (by prun [b16, BitVec.add_zero]) (by decide)) fun t₃ ⟨⟨c24, cm⟩, k3⟩ => ?_)
   have kA := (k1.trans k2).trans k3
-  have hs₃ : ScrL t₃ L := hs.congr kA.wr
-  have hh₃ : Hdr t₃.mem L key sig dig := by rw [cm, m2]; exact hh
-  have h21₃ : t₃.gpr .r21 = L.S := (kA.gpr _ (by decide)).trans h21
+  have hr₃ : Regs t₃ L key sig dig := hr.keep kA
   -- q's octets
-  refine WP.seq (WP.seq (WP.mono (ptrQ_ok hL hs₃ hh₃ h21₃) fun t₄ ⟨⟨d12, d6, dm⟩, k4⟩ =>
+  refine WP.seq (WP.seq (WP.mono (ptrQ_ok hr₃) fun t₄ ⟨⟨d12, d6, dm⟩, k4⟩ =>
     WP.mono (bytesBits_ok d12 d6 (by omega) (by omega) fun i hi => by
       rw [k4.rd, k4.wr, kA.rd, kA.wr]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega)).rd i hi)
       fun t₅ ⟨⟨e16, e0, em⟩, k5⟩ => ?_))
@@ -340,21 +335,22 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop}
   have kB := (kA.trans k4).trans k5
   refine WP.ite _ (eval_zero _ _) (fun hz' => ?ok2) (fun hz' => ?bad2)
   case bad2 =>
-    refine hfail t₅ (fun h => ?_) (by rw [m5]; exact Outside.refl _ _ _ _) kB.mono
+    refine hfail t₅ (fun h => ?_) m5 kB.mono
     rw [e0.mpr (hSz.mp h).2.1] at hz'
     exact absurd hz' (by decide)
   have hq := e0.mp (beq_iff_eq.mp hz')
-  have hst : InRegions t₅.wr (off L.S 72) 8 := (hs.congr kB.wr).st (by omega)
-  have h21₅ : t₅.gpr .r21 = L.S := (kB.gpr _ (by decide)).trans h21
-  refine WP.seq (WP.mono (WP.keep [.r28] (Q := fun t =>
-    t.gpr .r28 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 ∧
-      t.mem = s.mem.writeW (off L.S hQb)
-        (BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1))
-    (by prun [e16, h21₅, hst, hQb, m5, BitVec.add_zero]) (by decide)) fun t₆ ⟨⟨f28, fm⟩, k6⟩ => ?_)
+  have hqb : (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 < 2 ^ 16 := by
+    simp only [Nat.reducePow]; omega
+  have h2₅ : t₅.gpr .r2 = pack L.pl L.ql 0 d := (kB.gpr _ (by decide)).trans h2
+  refine WP.seq (WP.mono (WP.keep [.r25, .r0, .r2] (Q := fun t =>
+    t.gpr .r25 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 ∧
+      t.gpr .r2 = pack L.pl L.ql (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 d ∧
+      t.mem = s.mem)
+    (by prun [e16, h2₅, m5, BitVec.add_zero, pack_add hqb]) (by decide)) fun t₆ ⟨⟨f25, f2, fm⟩, k6⟩ => ?_)
   -- the pair
-  have g27 : t₆.gpr .r27 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1 :=
-    (((k4.trans k5).trans k6).gpr _ (by decide)).trans c27
-  refine WP.seq (WP.mono (pairs_ok g27 f28 (by omega) (by omega)) fun t₇ ⟨⟨g0, gm⟩, k7⟩ => ?_)
+  have g24 : t₆.gpr .r24 = BitVec.ofNat 64 (significant (Spec.Rsa.bytesAt s.mem key L.pl)).1 :=
+    (((k4.trans k5).trans k6).gpr _ (by decide)).trans c24
+  refine WP.seq (WP.mono (pairs_ok g24 f25 (by omega) (by omega)) fun t₇ ⟨⟨g0, gm⟩, k7⟩ => ?_)
   have kC := (kB.trans k6).trans k7
   have m7 := gm.trans fm
   refine WP.ite _ (eval_zero _ _) (fun hz'' => ?_) (fun hz'' => ?_)
@@ -364,14 +360,14 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop}
       rw [show qOf s.mem L key = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql) from rfl,
         Proof.Dsa.subgroup_scan_width (p := Spec.Rsa.bytesAt s.mem key L.pl) hok]
       omega
-    exact hrest t₇ hok (by rw [m7, hb]) kC.mono
-  · refine hfail t₇ (fun h => ?_) (by rw [m7]; exact writeW_outside s.mem L.S _ (by decide)) kC.mono
+    exact hrest t₇ hok m7 (by rw [k7.gpr _ (by decide), f2, hb]) kC.mono
+  · refine hfail t₇ (fun h => ?_) m7 kC.mono
     rw [g0.mpr (hSz.mp h).2.2] at hz''
     exact absurd hz'' (by decide)
 
 /-- `odds rest fail`: `rest` if p and q are odd, else `fail`. -/
 theorem odds_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop} {rest fail : Prog isa}
-    (hL : L.Ok) (hs : ScrL s L) (hh : Hdr s.mem L key sig dig) (h21 : s.gpr .r21 = L.S)
+    (hL : L.Ok) (hr : Regs s L key sig dig)
     (hk : Src s L key (3 * L.pl + L.ql))
     (hrest : ∀ t, pOf s.mem L key % 2 = 1 → qOf s.mem L key % 2 = 1 → t.mem = s.mem → Keep sizesRegs s t →
       WP isa rest t Q)
@@ -381,17 +377,15 @@ theorem odds_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop} 
   have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega
   have hql := hL.ql
   unfold odds andThen
-  refine WP.seq (WP.block_append (WP.mono (ptrP_ok hL hs hh h21) fun t₁ ⟨⟨a12, a6, am⟩, k1⟩ =>
+  refine WP.seq (WP.block_append (WP.mono (ptrP_ok hr) fun t₁ ⟨⟨a12, a6, am⟩, k1⟩ =>
     WP.mono (odd_ok a12 a6 (by omega) (by omega) fun i hi => by
       rw [k1.rd, k1.wr]; exact hk.rd i (by omega)) fun t₂ ⟨⟨b0, bm⟩, k2⟩ => ?_))
   rw [am] at b0
   have kA := k1.trans k2
-  have hs₂ : ScrL t₂ L := hs.congr kA.wr
-  have hh₂ : Hdr t₂.mem L key sig dig := by rw [bm, am]; exact hh
-  have h21₂ : t₂.gpr .r21 = L.S := (kA.gpr _ (by decide)).trans h21
+  have hr₂ : Regs t₂ L key sig dig := hr.keep kA
   refine WP.ite _ (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   · have hp : pOf s.mem L key % 2 = 1 := b0.mp (beq_iff_eq.mp hz)
-    refine WP.seq (WP.block_append (WP.mono (ptrQ_ok hL hs₂ hh₂ h21₂) fun t₃ ⟨⟨c12, c6, cm⟩, k3⟩ =>
+    refine WP.seq (WP.block_append (WP.mono (ptrQ_ok hr₂) fun t₃ ⟨⟨c12, c6, cm⟩, k3⟩ =>
       WP.mono (odd_ok c12 c6 (by omega) (by omega) fun i hi => by
         rw [k3.rd, k3.wr, kA.rd, kA.wr]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega)).rd i hi)
         fun t₄ ⟨⟨d0, dm⟩, k4⟩ => ?_))

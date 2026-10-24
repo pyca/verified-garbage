@@ -79,7 +79,7 @@ def combRegs : List Reg :=
 
 /-- `combine`: `g^u1 y^u2 mod p` to the buffer's first `p_len` octets. -/
 theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hh : Hdr s.mem L key sig dig) (h21 : s.gpr .r21 = L.S) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hk : Src s L key (3 * L.pl + L.ql))
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
     WP isa combine s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) =
@@ -104,19 +104,16 @@ theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   -- Into the P space; g's octets and the buffer.
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (enterP_ok hL hs hh h21) fun s₁ ⟨⟨in1, m1⟩, k1⟩ => ?_
-  have hs1 : ScrL s₁ L := hs.congr k1.wr
-  have hh1 : Hdr s₁.mem L key sig dig := by rw [m1]; exact hh
-  refine WP.mono (ptrG_ok (key := key) (sig := sig) (dig := dig) hL hs1 hh1 in1.h21) fun s₂ ⟨⟨a12, a6, m2⟩, k2⟩ => ?_
-  refine WP.mono (WP.keep [.r24] (Q := fun t => t.gpr .r24 = off L.Buf 0 ∧ t.mem = s₂.mem) (by
-      have hld := hdr_rd hL (hs.congr (k1.trans k2).wr) (d := 32) (by decide)
-      have hr : s₂.mem.readW (L.S + BitVec.ofNat 64 32) 64 = L.Buf := by rw [m2, m1]; exact hh.buf
-      prun [(k2.gpr .r21 (by decide)).trans in1.h21, hld, hr, hBuf]) (by decide)) fun s₃ ⟨⟨a24, m3⟩, k3⟩ => ?_
+  refine WP.mono (enterP_ok hL hs hr) fun s₁ ⟨⟨in1, m1⟩, k1⟩ => ?_
+  refine WP.mono (ptrG_ok (hr.keep k1)) fun s₂ ⟨⟨a12, a6, m2⟩, k2⟩ => ?_
+  refine WP.mono (bufBase_ok hL (hr.keep (k1.trans k2)) (rd := .r24) (t := .r0) (by decide))
+    fun s₃ ⟨⟨a24, m3⟩, k3⟩ => ?_
+  replace a24 : s₃.gpr .r24 = off L.Buf 0 := by rw [a24, off, BitVec.add_zero]
   have k13 := (k1.trans k2).trans k3
   have hm3 : s₃.mem = s.mem := by rw [m3, m2, m1]
   have in3 : InP s₃ L := in1.keep (k2.trans k3) (by decide)
   -- `g^u1 mod p` into array 4.
-  refine WP.seq (WP.mono (combPowP_ok (o := 0) (p := p) hL (hs.congr k13.wr) (by rw [hm3]; exact hh) in3
+  refine WP.seq (WP.mono (combPowP_ok (o := 0) (p := p) hL (hs.congr k13.wr) (hr.keep k13) in3
     ((hk.keep k13.rd k13.wr).sub (o := L.pl + L.ql) (k := L.pl) (by omega))
     ((k3.gpr .r12 (by decide)).trans a12) a24 (by omega) (by rw [hm3]; exact hp0) hp hpo
     (by rw [hm3]; exact hrr)) fun s₄ ⟨⟨v4, in4, o4⟩, k4⟩ => ?_)
@@ -126,16 +123,13 @@ theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
     fun s₅ ⟨⟨v9, o5⟩, k5⟩ => ?_)
   have pb5 : PArr L s.mem s₅.mem := (o4.mono (by omega) (by omega)).trans (o5.mono (by omega) (by omega))
   have k15 := (k13.trans k4).trans k5
-  have hh5 := hh.body (pb5.pbody.body hL) hL
-  have g21 : s₅.gpr .r21 = L.S := (k15.gpr .r21 (by decide)).trans h21
   -- The second exponent and y's octets.
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (ptrBuf2_ok (key := key) (sig := sig) (dig := dig) hL (hs.congr k15.wr) hh5 g21) fun s₆ ⟨⟨b12, b6, m6⟩, k6⟩ => ?_
+  refine WP.mono (ptrBuf2_ok hL (hr.keep k15)) fun s₆ ⟨⟨b12, b6, m6⟩, k6⟩ => ?_
   refine WP.mono (WP.keep [.r24] (Q := fun t => t.gpr .r24 = off L.Buf L.ql ∧ t.mem = s₆.mem)
     (by prun [b12, BitVec.add_zero]) (by decide)) fun s₇ ⟨⟨c24, m7⟩, k7⟩ => ?_
-  refine WP.mono (ptrY_ok (key := key) (sig := sig) (dig := dig) hL (hs.congr ((k15.trans k6).trans k7).wr) (by rw [m7, m6]; exact hh5)
-    ((k7.gpr .r21 (by decide)).trans ((k6.gpr .r21 (by decide)).trans g21))) fun s₈ ⟨⟨d12, d6, m8⟩, k8⟩ => ?_
+  refine WP.mono (ptrY_ok (hr.keep ((k15.trans k6).trans k7))) fun s₈ ⟨⟨d12, d6, m8⟩, k8⟩ => ?_
   have k58 := (k6.trans k7).trans k8
   have k18 := k15.trans k58
   have hm8 : s₈.mem = s₅.mem := by rw [m8, m7, m6]
@@ -147,7 +141,7 @@ theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
     exact hrr
   have pb8 : PArr L s.mem s₈.mem := by rw [hm8]; exact pb5
   -- `y^u2 mod p` into array 4.
-  refine WP.seq (WP.mono (combPowP_ok (o := L.ql) (p := p) hL (hs.congr k18.wr) (by rw [hm8]; exact hh5) in8
+  refine WP.seq (WP.mono (combPowP_ok (o := L.ql) (p := p) hL (hs.congr k18.wr) (hr.keep k18) in8
     ((hk.keep k18.rd k18.wr).sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega)) d12
     ((k8.gpr .r24 (by decide)).trans c24) (by omega) a0 hp hpo a8) fun s₉ ⟨⟨w4, in9, o9⟩, k9⟩ => ?_)
   rw [(hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega)).bytes (pb8.pbody.body hL) hZ,
@@ -222,16 +216,15 @@ theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
       (by rw [← m11]; exact o12'.mono (by omega) (by omega))).trans (o13.mono (by omega) (by omega))).trans
       (o14'.mono (by omega) (by omega))
   have k114 := (((((k18.trans k9).trans k10).trans k11).trans k12).trans k13').trans k14
-  have hh14 := hh.body (pb14.pbody.body hL) hL
   have hs14 : ScrL s₁₄ L := hs.congr k114.wr
   -- To the buffer.
-  refine WP.seq (WP.mono (WP.keep [.r12, .r6] (Q := fun t => t.gpr .r12 = L.Buf ∧
-      t.gpr .r6 = BitVec.ofNat 64 L.pl ∧ t.mem = s₁₄.mem) (by
-      have hld32 := hdr_rd hL hs14 (d := 32) (by decide)
-      have hld8 := hdr_rd hL hs14 (d := 8) (by decide)
-      have hr32 : s₁₄.mem.readW (L.S + BitVec.ofNat 64 32) 64 = L.Buf := hh14.buf
-      have hr8 : s₁₄.mem.readW (L.S + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 L.pl := hh14.pl
-      prun [(k114.gpr .r21 (by decide)).trans h21, hld32, hld8, hr32, hr8, hBuf, hP]) (by decide))
+  have hr14 := hr.keep k114
+  refine WP.seq (WP.mono (show WP isa (.block (bufBase .r12 .r0 ++ getP .r6)) s₁₄ fun t =>
+      (t.gpr .r12 = L.Buf ∧ t.gpr .r6 = BitVec.ofNat 64 L.pl ∧ t.mem = s₁₄.mem) ∧ Keep [.r12, .r0, .r6] s₁₄ t by
+      rw [WP.block_append_iff]
+      exact WP.mono (bufBase_ok hL hr14 (by decide)) fun u ⟨⟨a, mu⟩, ku⟩ =>
+        WP.mono (getP_ok (hr14.keep ku) .r6) fun v ⟨⟨b, mv⟩, kv⟩ =>
+          ⟨⟨(kv.gpr .r12 (by decide)).trans a, b, mv.trans mu⟩, (ku.trans kv).mono (by decide)⟩)
     fun s₁₅ ⟨⟨c12, c6, m15⟩, k15'⟩ => ?_)
   refine WP.mono (storeBE_ok (j := 7) (O := L.Buf) (k := L.pl) (en14.keep k15' (by decide)) (by decide)
     (ScrL.bufN (hs14.congr k15'.wr) hL (by omega)) c12 c6 (by omega) (by omega) (combBufPastP hL))

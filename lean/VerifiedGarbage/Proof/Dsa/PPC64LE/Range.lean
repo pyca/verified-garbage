@@ -14,7 +14,7 @@ In a working space (`Env`) with the modulus in array 0:
 
 * `subLt_ok`: `r20 :=` the mask of `[a] < [0]` (`subMod`'s borrow into array
   3), for an array `a` whose word `w` is zero;
-* `inRange_ok`: `r26 &=` the mask of `0 < [a] < [0]`, with 0 in array 7.
+* `inRange_ok`: `r22 &=` the mask of `0 < [a] < [0]`, with 0 in array 7.
 -/
 
 @[expose] public section
@@ -85,15 +85,15 @@ theorem subLt_ok {s : State} {B : Addr} {Z w a : Nat} (h : Env s B Z w) (ha : a 
   simp only [hlt]
 
 /-- The registers `inRange` writes. -/
-def inRangeRegs : List Reg := subLtRegs ++ [.r4, .r19, .r26]
+def inRangeRegs : List Reg := subLtRegs ++ [.r4, .r19, .r22]
 
-/-- `inRange a`: `r26 &=` the mask of `0 < [a] < [0]`, with 0 in array 7 and
+/-- `inRange a`: `r22 &=` the mask of `0 < [a] < [0]`, with 0 in array 7 and
 `[a]`'s word `w` zero; array 3 changes. -/
 theorem inRange_ok {s : State} {B : Addr} {Z w a : Nat} {b : Bool} (h : Env s B Z w) (ha : a < 28)
     (ha3 : a ≠ 3) (top : word s.mem B (slot w a + 8 * w) = 0) (h7 : arr s.mem B w 7 = 0)
-    (h26 : s.gpr .r26 = mask b) :
+    (h22 : s.gpr .r22 = mask b) :
     WP isa (inRange a) s fun t =>
-      (t.gpr .r26 = mask (b && decide (0 < arr s.mem B w a ∧ arr s.mem B w a < arr s.mem B w 0)) ∧
+      (t.gpr .r22 = mask (b && decide (0 < arr s.mem B w a ∧ arr s.mem B w a < arr s.mem B w 0)) ∧
         Outside B (slot w 3) (8 * (w + 2)) s.mem t.mem) ∧ Keep inRangeRegs s t := by
   unfold inRange
   refine subLt_ok h ha ha3 top fun s₁ h20 o1 k1 => ?_
@@ -103,15 +103,15 @@ theorem inRange_ok {s : State} {B : Addr} {Z w a : Nat} {b : Bool} (h : Env s B 
     Outside.arrEq o1 hj h3 hn
   refine WP.seq (WP.mono (eqMask_ok e1 .r19 (a := a) (b := 7) ha (by decide)) fun s₂ ⟨⟨a19, m2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
-  refine WP.mono (WP.keep [.r20, .r26] (Q := fun t => t.gpr .r26 = mask (b && decide
+  refine WP.mono (WP.keep [.r20, .r22] (Q := fun t => t.gpr .r22 = mask (b && decide
       (0 < arr s.mem B w a ∧ arr s.mem B w a < arr s.mem B w 0)) ∧ t.mem = s₂.mem) ?_ (by decide))
     fun t ⟨⟨t26, tm⟩, kt⟩ => ⟨⟨t26, by rw [tm, m2]; exact o1⟩, (k12.trans kt).mono (by decide)⟩
   have b20 : s₂.gpr .r20 = mask (decide (arr s.mem B w a < arr s.mem B w 0)) :=
     (k2.gpr .r20 (by decide)).trans h20
-  have b26 : s₂.gpr .r26 = mask b := (k12.gpr .r26 (by decide)).trans h26
+  have b22 : s₂.gpr .r22 = mask b := (k12.gpr .r22 (by decide)).trans h22
   rw [← arr, ← arr, q1 a ha ha3, q1 7 (by decide) (by decide), h7] at a19
   unfold clear19
-  prun [b20, b26, a19, mask_clear, mask_and]
+  prun [b20, b22, a19, mask_clear, mask_and]
   congr 1
   cases b <;> by_cases h0 : arr s.mem B w a = 0 <;> by_cases hl : arr s.mem B w a < arr s.mem B w 0 <;>
     simp [h0, hl] <;> omega

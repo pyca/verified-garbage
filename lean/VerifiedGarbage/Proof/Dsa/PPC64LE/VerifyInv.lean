@@ -33,7 +33,7 @@ open VG.Proof.Bignum (slot slot_sep)
 def rrRegs : List Reg := [.r5, .r8, .r9, .r0, .r3, .r4, .r14, .r15, .r16, .r17, .r20] ++ copyRegs
 
 /-- `rrQ`: `R² mod q` into arrays 1 and 8. -/
-theorem rrQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key sig dig) (hL : L.Ok)
+theorem rrQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key sig dig)
     (hq : 2 ≤ arrQ s.mem L 0) :
     WP isa rrQ s fun t =>
       (QS t L key sig dig ∧ arrQ t.mem L 8 = 2 ^ (128 * 4) % arrQ s.mem L 0 ∧ QArr L s.mem t.mem) ∧
@@ -60,7 +60,7 @@ theorem rrQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key sig di
     (QArr.of o4 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega)).trans
       (QArr.of o5 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega))
   have kt := (k13.trans k4).trans k5
-  refine ⟨⟨h.step hL kt (by decide) qa, ?_, qa⟩, kt.mono (by decide)⟩
+  refine ⟨⟨h.step kt (by decide), ?_, qa⟩, kt.mono (by decide)⟩
   generalize (2 : Nat) ^ (128 * 4) = R at v1 ⊢
   exact v8.trans v1
 
@@ -154,8 +154,8 @@ theorem qMinus2_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
   have Q11 : QS s₁₁ L key sig dig :=
     ⟨⟨e11, (k110.trans k11 |>.gpr .r21 (by decide)).trans h.inq.h21,
       (k110.trans k11 |>.gpr .r23 (by decide)).trans h.inq.h23⟩, h.scr.congr (k110.trans k11).wr,
-      h.hdr.body (by rw [m11]; exact qa10.qbody.body hL) hL⟩
-  refine WP.mono (ptrBuf_ok hL Q11.scr Q11.hdr Q11.inq.h21) fun s₁₂ ⟨⟨c12, c6, m12⟩, k12⟩ => ?_
+      h.regs.keep (k110.trans k11)⟩
+  refine WP.mono (ptrBuf_ok hL Q11.regs) fun s₁₂ ⟨⟨c12, c6, m12⟩, k12⟩ => ?_
   have e12 := e11.keep k12 (by decide)
   refine WP.mono (storeBE_ok (j := 6) (O := L.Buf) (k := L.ql) e12 (by decide)
     (ScrL.bufN (s := s₁₂) (Q11.scr.congr k12.wr) hL (by have := hL.pl; omega)) c12 c6 (by omega) (by omega)
@@ -164,7 +164,7 @@ theorem qMinus2_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
   have kall := ((k110.trans k11).trans k12).trans kt
   have qb : QBuf L s.mem t.mem := qa10.qbuf.trans (QBuf.ofBuf hL ot (by have := hL.pl; omega))
   refine ⟨⟨⟨⟨e12.keep kt (by decide), (kall.gpr .r21 (by decide)).trans h.inq.h21,
-      (kall.gpr .r23 (by decide)).trans h.inq.h23⟩, h.scr.congr kall.wr, h.hdr.body (qb.body hL) hL⟩,
+      (kall.gpr .r23 (by decide)).trans h.inq.h23⟩, h.scr.congr kall.wr, h.regs.keep kall⟩,
     ?_, ?_, qb⟩, kall.mono (by decide)⟩
   · rw [vt, read_low (w := 4) _ _ (by omega) (by rw [v6]; omega), v6]
   · have ot' : Outside (off L.Q 1600) 0 L.ql s₁₀.mem t.mem := by rw [← buf_eq]; exact ot
@@ -234,8 +234,8 @@ theorem inverse_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
   have e74 : slot 4 4 = 448 := rfl
   have e78 : slot 4 8 = 640 := rfl
   unfold inverse
-  refine WP.seq (WP.mono (ptrS_ok hL h.scr h.hdr h.inq.h21) fun s₁ ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
-  have Q1 := h.step hL k1 (by decide) (by rw [m1]; exact QArr.refl _ _)
+  refine WP.seq (WP.mono (ptrS_ok h.regs) fun s₁ ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
+  have Q1 := h.step k1 (by decide)
   refine WP.seq (WP.mono (loadQ_ok (j := 4) Q1 hL (by decide) (by decide)
       ((hsg.keep k1.rd k1.wr).sub (o := L.ql) (k := L.ql) (by omega)) a12 a6 (by omega) (by omega))
     fun s₂ ⟨⟨Q2, v4, _, o2, qa2⟩, k2⟩ => ?_)
@@ -243,7 +243,7 @@ theorem inverse_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
   refine WP.seq (WP.mono (copy_ok Q2.inq.env (o := 1) (a := 8) (by decide) (by decide) (by decide))
     fun s₃ ⟨⟨v1, o3⟩, k3⟩ => ?_)
   have qa3 : QArr L s₂.mem s₃.mem := QArr.of o3 (by rw [e71]) (by rw [e71]; decide)
-  have Q3 := Q2.step hL k3 (by decide) qa3
+  have Q3 := Q2.step k3 (by decide)
   have a8s : arr s₂.mem L.Q 4 8 = arrQ s.mem L 8 := Outside.val32 o2 (by rw [e74, e78]; omega) (by decide)
   have a0s : arr s₃.mem L.Q 4 0 = arrQ s.mem L 0 := (qa2.trans qa3).arr0
   have a4s : arr s₃.mem L.Q 4 4 = sOf s.mem L sig := by
@@ -253,7 +253,7 @@ theorem inverse_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
   -- The exponent's pointer and length, and `-q⁻¹`.
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (ptrBuf_ok hL Q3.scr Q3.hdr Q3.inq.h21) fun s₄ ⟨⟨b12, b6, m4⟩, k4⟩ => ?_
+  refine WP.mono (ptrBuf_ok hL Q3.regs) fun s₄ ⟨⟨b12, b6, m4⟩, k4⟩ => ?_
   refine WP.mono (WP.keep [.r30, .r31] (Q := fun u => u.gpr .r30 = L.Buf ∧
       u.gpr .r31 = BitVec.ofNat 64 L.ql ∧ u.mem = s₄.mem) (by prun [b12, b6, BitVec.add_zero]) (by decide))
     fun s₅ ⟨⟨c30, c31, m5⟩, k5⟩ => ?_
@@ -301,7 +301,7 @@ theorem inverse_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
       (kall.gpr .r29 (by decide)).trans h.inq.env.h29, (kall.gpr .r11 (by decide)).trans h.inq.env.h11, t31,
       by decide, by decide, by decide⟩, (kall.gpr .r21 (by decide)).trans h.inq.h21,
       (kall.gpr .r23 (by decide)).trans h.inq.h23⟩, h.scr.congr kall.wr,
-      h.hdr.body (by rw [mt]; exact (qa2.trans (qa3.trans qa7)).qbody.body hL) hL⟩, ?_, ?_,
+      h.regs.keep kall⟩, ?_, ?_,
     by rw [mt]; exact qa2.trans (qa3.trans qa7)⟩, kall.mono (by decide)⟩
   · rw [arrQ, mt]
     have rr : val32 s₃.mem L.Q (slot 4 1) (2 * 4) = 2 ^ (64 * 4) * 2 ^ (64 * 4) % val32 s₃.mem L.Q (slot 4 0) (2 * 4) := by

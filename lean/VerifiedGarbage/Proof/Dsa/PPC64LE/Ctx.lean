@@ -259,6 +259,51 @@ structure Regs (s : State) (L : Lay) (key sig dig : Addr) : Prop where
   pl : (s.gpr .r2).toNat % 2 ^ 16 = L.pl
   ql : (s.gpr .r2).toNat / 2 ^ 16 % 2 ^ 16 = L.ql
 
+/-- `r2`'s fields: `p_len`, `q_len`, q's significant octets and the digest's
+length, 16 bits each. -/
+def pack (pl ql qb d : Nat) : BitVec 64 := BitVec.ofNat 64 (pl + 2 ^ 16 * ql + 2 ^ 32 * qb + 2 ^ 48 * d)
+
+theorem pack_toNat {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
+    (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat = pl + 2 ^ 16 * ql + 2 ^ 32 * qb + 2 ^ 48 * d := by
+  rw [pack, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
+  simp only [Nat.reducePow] at *
+  omega
+
+theorem pack_pl {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
+    (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat % 2 ^ 16 = pl := by
+  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega
+
+theorem pack_ql {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
+    (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat / 2 ^ 16 % 2 ^ 16 = ql := by
+  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega
+
+theorem pack_qb {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
+    (h4 : d < 2 ^ 16) : (pack pl ql qb d).toNat / 2 ^ 32 % 2 ^ 16 = qb := by
+  rw [pack_toNat h1 h2 h3 h4]; simp only [Nat.reducePow] at *; omega
+
+theorem pack_d {pl ql qb d : Nat} (h1 : pl < 2 ^ 16) (h2 : ql < 2 ^ 16) (h3 : qb < 2 ^ 16)
+    (h4 : d < 2 ^ 16) : pack pl ql qb d >>> 48 = BitVec.ofNat 64 d := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, pack_toNat h1 h2 h3 h4, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat]
+  simp only [Nat.reducePow] at *; omega
+
+/-- `sizes` adds q's significant octets. -/
+theorem pack_add {pl ql qb d : Nat} (h3 : qb < 2 ^ 16) :
+    pack pl ql 0 d + BitVec.ofNat 64 qb <<< 32 = pack pl ql qb d := by
+  apply BitVec.eq_of_toNat_eq
+  rw [pack, pack, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (a := qb) (by simp only [Nat.reducePow] at *; omega)]
+  simp only [Nat.reducePow] at *
+  omega
+
+/-- `Regs` for `r2` holding `pack`. -/
+theorem Regs.of_pack {s : State} {L : Lay} {key sig dig : Addr} {qb d : Nat} (hL : L.Ok)
+    (h21 : s.gpr .r21 = L.S) (h27 : s.gpr .r27 = key) (h28 : s.gpr .r28 = sig) (h26 : s.gpr .r26 = dig)
+    (h2 : s.gpr .r2 = pack L.pl L.ql qb d) (h3 : qb < 2 ^ 16) (h4 : d < 2 ^ 16) : Regs s L key sig dig := by
+  have hp : L.pl < 2 ^ 16 := by rcases hL.pl with e | e | e <;> omega
+  have hq : L.ql < 2 ^ 16 := by have := hL.ql; omega
+  exact ⟨h21, h27, h28, h26, by rw [h2]; exact pack_pl hp hq h3 h4, by rw [h2]; exact pack_ql hp hq h3 h4⟩
+
 /-- The registers `Regs` reads. -/
 def regsRegs : List Reg := [.r2, .r21, .r26, .r27, .r28]
 
@@ -284,6 +329,17 @@ theorem getP_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig
   prun [shl_shr_ofNat _ 48 (by decide)]
   rw [← h.pl]
   simp only [Nat.reduceSub, Nat.reducePow, Nat.pow_zero, Nat.div_one]
+
+theorem Regs.p_eq {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig dig) :
+    s.gpr .r2 <<< 48 >>> 48 = BitVec.ofNat 64 L.pl := by
+  rw [shl_shr_ofNat _ 48 (by decide), ← h.pl]
+  simp only [Nat.reduceSub, Nat.reducePow, Nat.pow_zero, Nat.div_one]
+
+theorem Regs.q_eq {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig dig) :
+    s.gpr .r2 <<< 32 >>> 48 = BitVec.ofNat 64 L.ql := by
+  rw [shl_shr_ofNat _ 32 (by decide), ← h.ql]
+  congr 1
+  omega
 
 /-- `getQ rd`: `rd := q_len`. -/
 theorem getQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig dig) (rd : Reg) :

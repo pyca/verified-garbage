@@ -178,7 +178,7 @@ def ptrY : List Instr := ptrG ++ [.add .r12 .r12 .r6]
 def sizes (rest fail : Prog isa) : Prog isa :=
   andThen (.seq (.block ptrP) bytesBits)
     (.seq (.block [.addi .r24 .r16 0]) (andThen (.seq (.block ptrQ) bytesBits)
-      (.seq (.block [.addi .r25 .r16 0, .lsl .r0 .r16 32, .logic .or .r2 .r2 .r0]) (andThen pairs rest fail))
+      (.seq (.block [.addi .r25 .r16 0, .lsl .r0 .r16 32, .add .r2 .r2 .r0]) (andThen pairs rest fail))
       fail)) fail
 
 /-- p and q odd. -/

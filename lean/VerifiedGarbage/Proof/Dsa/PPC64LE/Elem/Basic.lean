@@ -46,17 +46,12 @@ theorem clear20_ok (s : State) {a b : Bool} (h20 : s.gpr .r20 = mask a) (h19 : s
   prun [h20, h19, mask_clear]
 
 /-- The key and `p_len`, for `reduce` and the like. -/
-theorem keyLen_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hh : Hdr s.mem L key sig dig) (h21 : s.gpr .r21 = L.S) :
-    WP isa (.block [.load .d .r30 .r21 hKey, .load .d .r31 .r21 hP]) s fun t =>
+theorem keyLen_ok {s : State} {L : Lay} {key sig dig : Addr} (hr : Regs s L key sig dig) :
+    WP isa (.block ([.addi .r30 .r27 0] ++ getP .r31)) s fun t =>
       (t.gpr .r30 = key ∧ t.gpr .r31 = BitVec.ofNat 64 L.pl ∧ t.mem = s.mem) ∧ Keep [.r30, .r31] s t := by
-  have hZ := hL.hdr
   refine WP.keep _ ?_ (by decide)
-  have hld0 : InRegions (s.rd ++ s.wr) (L.S + BitVec.ofNat 64 0) 8 := hs.ld (show 0 + 8 ≤ L.Z by omega)
-  have hld8 : InRegions (s.rd ++ s.wr) (L.S + BitVec.ofNat 64 8) 8 := hs.ld (show 8 + 8 ≤ L.Z by omega)
-  have hr0 : s.mem.readW (L.S + BitVec.ofNat 64 0) 64 = key := hh.key
-  have hr8 : s.mem.readW (L.S + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 L.pl := hh.pl
-  prun [h21, hld0, hld8, hr0, hr8, hKey, hP]
+  unfold getP
+  prun [hr.r27, Regs.p_eq hr, BitVec.add_zero]
 
 /-- The first `k` bytes of a buffer, unchanged by a change in the body. -/
 theorem Src.bytesPre {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {k : Nat} (hk : k ≤ n)

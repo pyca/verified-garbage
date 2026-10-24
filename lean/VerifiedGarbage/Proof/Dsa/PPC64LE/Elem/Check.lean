@@ -116,8 +116,8 @@ def elemOrderRegs : List Reg := copyRegs ++ [.r4, .r6, .r12, .r30, .r31] ++ ModE
 /-- `elemOrder`, in the P space with p (odd, at least 2) in array 0 and
 `R² mod p` in array 8: `r0 = 0` exactly when `[4]^q mod p = 1`; arrays 1–7
 change. -/
-theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hh : Hdr s.mem L key sig dig) (hin : InP s L) (hk : Src s L key (3 * L.pl + L.ql))
+theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.Ok)
+    (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (3 * L.pl + L.ql))
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
     WP isa elemOrder s fun t =>
       ((t.gpr .r0 = 0 ↔ arrP s.mem L 4 ^ qOf s.mem L key % p = 1) ∧ InP t L ∧
@@ -138,8 +138,7 @@ theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : 
   have pb1 : PBody L s.mem s₁.mem := o1.mono (by omega) (by omega)
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (ptrQ_ok (key := key) (sig := sig) (dig := dig) hL (hs.congr k1.wr) (hh.body (pb1.body hL) hL)
-    ((k1.gpr .r21 (by decide)).trans hin.h21)) fun s₂ ⟨⟨a12, a6, m2⟩, k2⟩ => ?_
+  refine WP.mono (ptrQ_ok (hr.keep k1)) fun s₂ ⟨⟨a12, a6, m2⟩, k2⟩ => ?_
   refine WP.mono (WP.keep [.r30, .r31] (Q := fun t => t.gpr .r30 = off (off key L.pl) 0 ∧
     t.gpr .r31 = BitVec.ofNat 64 L.ql ∧ t.mem = s₂.mem) (by prun [a12, a6, BitVec.add_zero]) (by decide))
     fun s₃ ⟨⟨a30, a31, m3⟩, k3⟩ => ?_

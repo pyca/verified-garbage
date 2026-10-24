@@ -72,7 +72,7 @@ def combPowRegs : List Reg :=
 /-- `powP`: the `p_len` octets at `N` (`r12`) to the power of the `q_len`
 octets at `off L.Buf o` (`r24`), modulo p, into array 4. -/
 theorem combPowP_ok {s : State} {L : Lay} {key sig dig N : Addr} {o p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hh : Hdr s.mem L key sig dig) (hin : InP s L) (hN : Src s L N L.pl) (h12 : s.gpr .r12 = N)
+    (hr : Regs s L key sig dig) (hin : InP s L) (hN : Src s L N L.pl) (h12 : s.gpr .r12 = N)
     (h24 : s.gpr .r24 = off L.Buf o) (ho : o + L.ql ≤ 2 * L.pl)
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
     WP isa powP s fun t =>
@@ -93,10 +93,7 @@ theorem combPowP_ok {s : State} {L : Lay} {key sig dig N : Addr} {o p : Nat} (hL
   have en := hin.env
   unfold powP
   -- `p_len`.
-  refine WP.seq (WP.mono (WP.keep [.r6] (Q := fun t => t.gpr .r6 = BitVec.ofNat 64 L.pl ∧ t.mem = s.mem) (by
-      have hld : InRegions (s.rd ++ s.wr) (L.S + BitVec.ofNat 64 8) 8 := hdr_rd hL hs (by decide)
-      have hr : s.mem.readW (L.S + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 L.pl := hh.pl
-      prun [hin.h21, hld, hr, hP]) (by decide)) fun s₁ ⟨⟨a6, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (getP_ok hr .r6) fun s₁ ⟨⟨a6, m1⟩, k1⟩ => ?_)
   have en1 := en.keep k1 (by decide)
   -- The number into array 4.
   refine WP.seq (WP.mono (loadArr_ok en1 (j := 4) (by decide) ((k1.gpr .r12 (by decide)).trans h12) a6
@@ -109,19 +106,15 @@ theorem combPowP_ok {s : State} {L : Lay} {key sig dig N : Addr} {o p : Nat} (hL
     fun s₃ ⟨⟨v1, o3⟩, k3⟩ => ?_)
   have o23 : Outside L.S (slot L.wp 1) (slot L.wp 8 - slot L.wp 1) s.mem s₃.mem :=
     (o2.mono (by omega) (by omega)).trans (o3.mono (by omega) (by omega))
-  have b3 : Body L s.mem s₃.mem := Body.ofP hL o23 (by omega) (by omega)
   have k13 := (k1.trans k2).trans k3
-  have hs3 : ScrL s₃ L := hs.congr k13.wr
-  have hh3 := hh.body b3 hL
+  have hr3 := hr.keep k13
   -- The exponent's pointer and length, and `-p⁻¹`.
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r30, .r31] (Q := fun t => t.gpr .r30 = off L.Buf o ∧
       t.gpr .r31 = BitVec.ofNat 64 L.ql ∧ t.mem = s₃.mem) (by
-      have hld : InRegions (s₃.rd ++ s₃.wr) (L.S + BitVec.ofNat 64 16) 8 := hdr_rd hL hs3 (by decide)
-      have hr : s₃.mem.readW (L.S + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 L.ql := hh3.ql
-      prun [(k13.gpr .r21 (by decide)).trans hin.h21, (k13.gpr .r24 (by decide)).trans h24, hld, hr, hQ,
-        BitVec.add_zero]) (by decide)) fun s₄ ⟨⟨a30, a31, m4⟩, k4⟩ => ?_
+      unfold getQ
+      prun [(k13.gpr .r24 (by decide)).trans h24, Regs.q_eq hr3, BitVec.add_zero]) (by decide)) fun s₄ ⟨⟨a30, a31, m4⟩, k4⟩ => ?_
   have k24 := k3.trans k4
   have g10 : s₄.gpr .r10 = off L.S (slot L.wp 0) := (k24.gpr .r10 (by decide)).trans a10
   have p4 : val32 s₄.mem L.S (slot L.wp 0) (2 * L.wp) = p := by

@@ -180,8 +180,8 @@ theorem compare_ok {s : State} {L : Lay} {key sig dig : Addr} {b : Bool} (hL : L
     ((k2.trans (k3.trans k4)).gpr .r21 (by decide)).trans q1.h21,
     ((k2.trans (k3.trans k4)).gpr .r23 (by decide)).trans q1.h23⟩
   have Q4 : QS s₄ L key sig dig := ⟨q4, hs.congr (k13.trans k4).wr, hh.body (by rw [m4]; exact qa3.qbody.body hL) hL⟩
-  refine WP.mono (ptrR_ok hL Q4.scr Q4.hdr Q4.inq.h21) fun s₅ ⟨⟨b12, b6, m5⟩, k5⟩ => ?_
-  have Q5 := Q4.step hL k5 (by decide) (by rw [m5]; exact QArr.refl _ _)
+  refine WP.mono (ptrR_ok Q4.regs) fun s₅ ⟨⟨b12, b6, m5⟩, k5⟩ => ?_
+  have Q5 := Q4.step k5 (by decide)
   have k15 := (k13.trans k4).trans k5
   refine WP.seq (WP.mono (loadQ_ok (j := 5) Q5 hL (by decide) (by decide)
       ((hsg.keep k15.rd k15.wr).sub (o := 0) (k := L.ql) (by omega)) (by rw [b12, off, BitVec.add_zero]) b6
