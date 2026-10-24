@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.ModExp
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Math

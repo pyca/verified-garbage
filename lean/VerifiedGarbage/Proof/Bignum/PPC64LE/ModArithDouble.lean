@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreDouble

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithDouble
+import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithDouble
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
@@ -12,6 +12,10 @@ import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.ModArith
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-!
 # Modular arithmetic on PPC64LE: reduction
@@ -152,7 +156,7 @@ theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 
     WP isa reduce s fun t =>
       (val32 t.mem B (slot w 1) (2 * w) =
           Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % val32 s.mem B (slot w 0) (2 * w) ∧
-        Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem) ∧ Keep (redRegs ++ [.r5, .r8, .r9]) s t := by
+        Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem) ∧ Keep (redRegs ++ ([.r5, .r8, .r9] : List Reg)) s t := by
   have hnw := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e4 := e 4
