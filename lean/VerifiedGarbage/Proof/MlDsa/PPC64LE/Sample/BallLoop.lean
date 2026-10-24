@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.Pro
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sample.Ball
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
-import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.MlKem.Mem
