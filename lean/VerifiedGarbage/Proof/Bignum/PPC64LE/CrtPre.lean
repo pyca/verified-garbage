@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
-public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFront
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # The RSA private-key operation on PPC64LE: what the precondition gives

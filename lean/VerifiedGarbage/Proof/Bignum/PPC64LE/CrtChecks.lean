@@ -5,12 +5,14 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtMask
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # The RSA private-key operation on PPC64LE: the checks

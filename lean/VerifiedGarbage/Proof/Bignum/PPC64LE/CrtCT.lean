@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
+import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsA
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
+public import VerifiedGarbage.Proof.Framework.Flat
 
 /-!
 # The RSA private-key operation on PPC64LE: constant time

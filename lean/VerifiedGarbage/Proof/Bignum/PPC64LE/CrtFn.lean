@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
-public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # The RSA private-key operation on PPC64LE: the function

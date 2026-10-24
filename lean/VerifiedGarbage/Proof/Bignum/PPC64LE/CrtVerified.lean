@@ -2,8 +2,12 @@ module
 
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtImplies
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtImplies
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # `vg_rsa_private_crt` on PPC64LE: verified against the shared contract

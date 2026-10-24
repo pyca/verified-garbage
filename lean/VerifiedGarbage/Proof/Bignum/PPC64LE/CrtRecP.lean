@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecP1
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecP2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecP3
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
-import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

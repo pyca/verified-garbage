@@ -6,13 +6,16 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
+import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # The RSA private-key operation on PPC64LE: a prime's power, the input

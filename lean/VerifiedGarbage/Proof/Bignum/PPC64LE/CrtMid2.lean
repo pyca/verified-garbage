@@ -5,18 +5,21 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtMid1
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseE
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseE
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecP1
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseD
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVals
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX1
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.CrtNatural
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtChecks
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Rsa
 
 /-!
 # The RSA private-key operation on PPC64LE: the recombination

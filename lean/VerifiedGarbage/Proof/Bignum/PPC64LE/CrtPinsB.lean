@@ -8,11 +8,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseD
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX1
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVals
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
-import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 
 /-!

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
-public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # The RSA private-key operation on PPC64LE: the checks

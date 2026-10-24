@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # The RSA private-key operation on PPC64LE: the result

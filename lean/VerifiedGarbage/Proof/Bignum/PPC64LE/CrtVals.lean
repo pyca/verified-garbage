@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Spec.Rsa
 
 /-!
 # The RSA private-key operation on PPC64LE: what the mask gives

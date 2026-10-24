@@ -5,13 +5,15 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecP1
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecP1
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtAdd
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # The RSA private-key operation on PPC64LE: `m₁ - m₂ mod p`

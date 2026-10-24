@@ -8,10 +8,10 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseP
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseP
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVals
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtLoadX
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPowerA
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPowerA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
