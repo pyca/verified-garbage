@@ -82,12 +82,9 @@
 //! H¹⁵` on 128-bit registers), the first 512 bytes of the same context, which
 //! `vg_aes_gcm_prepare16` writes in a third of the time or less. The `_vaes_vpclmul_avx512` loops also
 //! load the AES round keys into `zmm16`–`zmm31` once per block call and
-//! reuse them across batches. A key computes the
-//! prepared context once, after it has encrypted or decrypted
-//! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
-//! it, so that one used for a few messages never pays for it. Once it has,
-//! every message uses it, shorter ones too, which never count towards it:
-//! each `_prepared` instance chooses its path for every length itself (the
+//! reuse them across batches. `AesGcm::new` computes the prepared context,
+//! and every message and streaming update uses it, whatever its length: each
+//! `_prepared` instance chooses its path for every length itself (the
 //! `_vaes_vpclmul_avx512` short path copies its powers from the context; the
 //! others have a path for TLS records, a 12-byte nonce and at most 16 bytes
 //! of additional data, or loops that take two blocks or more).
@@ -511,8 +508,8 @@ macro_rules! on_key_ctx {
 /// The functions a key calls: one backend's instances, chosen once, in
 /// `AesGcm::new` (`Backend::fns`). On x86-64, for a backend whose
 /// `_prepared` instances the CPU runs (`Backend::prepared`), those in place
-/// of `seal`, `open` and `seal_gather`, and for long streaming updates, with
-/// the key setup `new` calls (`prepare`); on AArch64, for a backend with
+/// of `seal`, `open`, `seal_gather` and the streaming updates, with the key
+/// setup `new` calls (`prepare`); on AArch64, for a backend with
 /// `_with_powers` instances, those (`powers`).
 struct Fns {
     /// The backend whose instances these are.
@@ -526,12 +523,6 @@ struct Fns {
     stream_aad: StreamAadFn,
     stream_encrypt: StreamCryptFn,
     stream_decrypt: StreamCryptFn,
-    /// The streaming functions for updates of at least `POWERS_MIN_LEN`
-    /// bytes, which gain from the powers in a prepared context.
-    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    stream_encrypt_long: StreamCryptFn,
-    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    stream_decrypt_long: StreamCryptFn,
     stream_finish: StreamFinishFn,
     stream_verify: StreamVerifyFn,
     /// `vg_aes_gcm_prepare`, which makes the prepared context from the key
@@ -625,10 +616,6 @@ impl Backend {
                 aarch64: [vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_aad_aes_sha3]),
             stream_encrypt,
             stream_decrypt,
-            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-            stream_encrypt_long: stream_encrypt,
-            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-            stream_decrypt_long: stream_decrypt,
             stream_finish: instance!(self, vg_aes_gcm_stream_finish,
                 x86_64: [vg_aes_gcm_stream_finish_aesni, vg_aes_gcm_stream_finish_pclmul,
                     vg_aes_gcm_stream_finish_aesni_pclmul],
@@ -658,15 +645,15 @@ impl Backend {
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 impl Fns {
     /// These functions, with the `_prepared` instances `p` in place of
-    /// `seal`, `open`, `seal_gather` and the long streaming updates, and its
-    /// key setup.
+    /// `seal`, `open`, `seal_gather` and the streaming updates, and its key
+    /// setup.
     const fn with(self, p: &Prepared) -> Fns {
         Fns {
             seal: p.seal,
             open: p.open,
             seal_gather: p.seal_gather,
-            stream_encrypt_long: p.stream_encrypt,
-            stream_decrypt_long: p.stream_decrypt,
+            stream_encrypt: p.stream_encrypt,
+            stream_decrypt: p.stream_decrypt,
             prepare: Some(p.prepare),
             written: p.written,
             ..self
@@ -968,13 +955,6 @@ impl Backend {
         f.contains(p.features).then_some(p)
     }
 }
-
-/// The shortest text, in bytes, that gains from the powers of the hash
-/// subkey on x86-64: the shortest that reaches the interleaved loops (16
-/// blocks at a time), from which the streaming functions take the
-/// `_prepared` instances.
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-const POWERS_MIN_LEN: usize = 256;
 
 /// Why an AES-GCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1631,18 +1611,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             fns.stream_decrypt
         } else {
             fns.stream_encrypt
-        };
-        // On x86-64, a long update with the long ones, which, for a
-        // backend's `_prepared` instances, read the powers in the key
-        // context (`VG.Spec.Gcm.StreamRepr` depends on the hash subkey and
-        // key schedule alone, which both contexts hold).
-        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        let f = if data.len() < POWERS_MIN_LEN {
-            f
-        } else if DECRYPT {
-            fns.stream_decrypt_long
-        } else {
-            fns.stream_encrypt_long
         };
         // SAFETY: as in `new`, with `data` valid for reads and writes of
         // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
@@ -2476,8 +2444,8 @@ mod tests {
         assert!(fn_addr_eq(with.seal, p.seal));
         assert!(fn_addr_eq(with.open, p.open));
         assert!(fn_addr_eq(with.seal_gather, p.seal_gather));
-        assert!(fn_addr_eq(with.stream_encrypt_long, p.stream_encrypt));
-        assert!(fn_addr_eq(with.stream_decrypt_long, p.stream_decrypt));
+        assert!(fn_addr_eq(with.stream_encrypt, p.stream_encrypt));
+        assert!(fn_addr_eq(with.stream_decrypt, p.stream_decrypt));
         assert!(with.prepare.is_some_and(|f| fn_addr_eq(f, p.prepare)));
     }
 
