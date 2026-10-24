@@ -125,7 +125,8 @@ theorem topEnd_ok {s₀ s : State} {P : Addr} (h31 : s.gpr .r31 = P) (hsav : Top
     ⟨fun r hr => ?_, lr, r3, m, sp, rd, wr⟩
   by_cases hs : r ∈ savedTop
   · simp only [savedTop, List.mem_cons, List.not_mem_nil, or_false] at hs
-    rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+    rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [g24, g25, g26, g27, g28, g29, g30, g31]
   · exact (cs r hr hs).trans (hcs r hr hs)
 
 end VG.Proof.MlKem.PPC64LE

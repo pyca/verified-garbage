@@ -83,7 +83,8 @@ theorem seedArgs_ok (hK : K.WF) (transpose : Bool) (h31 : s.gpr .r31 = P) (h26 :
     (h25 : s.gpr .r25 = BitVec.ofNat 64 j) (hi : i < 256) (hj : j < 256)
     (w1 : InRegions s.wr (P + BitVec.ofNat 64 (oSeed + 32)) 1)
     (w2 : InRegions s.wr (P + BitVec.ofNat 64 (oSeed + 33)) 1) :
-    WP isa (.block (seedBytes transpose ++ [.addi .r3 .r31 oSeed, .addi .r4 .r31 K.oAhat, .addi .r5 .r31 K.oSample]))
+    WP isa (.block (seedBytes transpose ++ ([.addi .r3 .r31 oSeed, .addi .r4 .r31 K.oAhat,
+      .addi .r5 .r31 K.oSample] : List Instr)))
       s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
         s'.mem = (s.mem.writeW (P + BitVec.ofNat 64 (oSeed + 32)) (BitVec.ofNat 8 (if transpose then i else j))).writeW
           (P + BitVec.ofNat 64 (oSeed + 33)) (BitVec.ofNat 8 (if transpose then j else i)) ∧
@@ -123,7 +124,8 @@ theorem selF_ok (hK : K.WF) (h31 : s.gpr .r31 = P) :
   exact ⟨Only.of_writes rfl rfl rfl rfl (by pres_tac), trivial⟩
 
 theorem mulArgs_ok (hK : K.WF) (h31 : s.gpr .r31 = P) (h25 : s.gpr .r25 = BitVec.ofNat 64 j) :
-    WP isa (.block (.addi .r3 .r31 K.oTmp :: slotAt .r5 .r25 (oPoly K.k) ++ [.addi .r6 .r31 K.oNtt])) s fun s' =>
+    WP isa (.block (.addi .r3 .r31 K.oTmp :: slotAt .r5 .r25 (oPoly K.k) ++
+      ([.addi .r6 .r31 K.oNtt] : List Instr))) s fun s' =>
       Only s s' ∧ s'.gpr .r3 = P + BitVec.ofNat 64 K.oTmp ∧ s'.gpr .r4 = s.gpr .r4 ∧
       s'.gpr .r5 = P + BitVec.ofNat 64 j <<< 10 + BitVec.ofNat 64 (oPoly K.k) ∧
       s'.gpr .r6 = P + BitVec.ofNat 64 K.oNtt := by
@@ -300,7 +302,8 @@ theorem RS.step (hp : RowPre K L ρ v i fl s₀) {s s' : State} (h : RS K L tran
 
 theorem rowA_ok (hp : RowPre K L ρ v i fl s₀) (hj : j < K.k) {s : State}
     (h : RowInv K L transpose ρ v i fl s₀ j s) :
-    WP isa (.block (seedBytes transpose ++ [.addi .r3 .r31 oSeed, .addi .r4 .r31 K.oAhat, .addi .r5 .r31 K.oSample]))
+    WP isa (.block (seedBytes transpose ++ ([.addi .r3 .r31 oSeed, .addi .r4 .r31 K.oAhat,
+      .addi .r5 .r31 K.oSample] : List Instr)))
       s (RA K L transpose ρ v i fl s₀ j) := by
   have hK := hp.wf
   have k4 := hK.k4
@@ -395,8 +398,8 @@ theorem rowD_ok (hp : RowPre K L ρ v i fl s₀) (hj : j < K.k) {s : State} (h :
       exact h.ahat a e'
 
 theorem rowE_ok (hp : RowPre K L ρ v i fl s₀) (hj : j < K.k) {s : State} (h : RD K L transpose ρ v i fl s₀ j s) :
-    WP isa (.block (.addi .r3 .r31 K.oTmp :: slotAt .r5 .r25 (oPoly K.k) ++ [.addi .r6 .r31 K.oNtt])) s
-      (RE K L transpose ρ v i fl s₀ j) := by
+    WP isa (.block (.addi .r3 .r31 K.oTmp :: slotAt .r5 .r25 (oPoly K.k) ++
+      ([.addi .r6 .r31 K.oNtt] : List Instr))) s (RE K L transpose ρ v i fl s₀ j) := by
   have hK := hp.wf
   have hc := h.rs.ctx hp
   have eo : oPoly (K.k + j) = oPoly K.k + 1024 * j := by simp only [oPoly]; omega
@@ -488,7 +491,7 @@ theorem rowSum_ok {K : KemLay} {L : Lay} {transpose : Bool} {ρ : List Byte} {v 
 theorem dotArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P : BitVec 64} {j : Nat} (h31 : s.gpr .r31 = P)
     (h25 : s.gpr .r25 = BitVec.ofNat 64 j) :
     WP isa (.block (.addi .r3 .r31 K.oTmp :: slotAt .r4 .r25 (oPoly 0) ++ slotAt .r5 .r25 (oPoly K.k) ++
-      [.addi .r6 .r31 K.oNtt])) s fun s' =>
+      ([.addi .r6 .r31 K.oNtt] : List Instr))) s fun s' =>
       Only s s' ∧ s'.gpr .r3 = P + BitVec.ofNat 64 K.oTmp ∧
       s'.gpr .r4 = P + BitVec.ofNat 64 j <<< 10 + BitVec.ofNat 64 (oPoly 0) ∧
       s'.gpr .r5 = P + BitVec.ofNat 64 j <<< 10 + BitVec.ofNat 64 (oPoly K.k) ∧
@@ -536,8 +539,9 @@ variable {K : KemLay} (hK : K.WF) {L : Lay} {a v : Nat → Poly} {s₀ : State} 
 include hK hc₀ ha hv hj h
 
 omit ha hv in
-theorem dot1_ok : WP isa (.block (.addi .r3 .r31 K.oTmp :: slotAt .r4 .r25 (oPoly 0) ++ slotAt .r5 .r25 (oPoly K.k) ++
-      [.addi .r6 .r31 K.oNtt])) s fun s₁ => Only s s₁ ∧ s₁.gpr .r3 = L.A 0 K.oTmp ∧
+theorem dot1_ok : WP isa (.block (.addi .r3 .r31 K.oTmp :: slotAt .r4 .r25 (oPoly 0) ++
+      slotAt .r5 .r25 (oPoly K.k) ++ ([.addi .r6 .r31 K.oNtt] : List Instr))) s fun s₁ =>
+      Only s s₁ ∧ s₁.gpr .r3 = L.A 0 K.oTmp ∧
       s₁.gpr .r4 = L.A 0 (oPoly j) ∧ s₁.gpr .r5 = L.A 0 (oPoly (K.k + j)) ∧ s₁.gpr .r6 = L.A 0 K.oNtt := by
   have hc := h.kx.ctx (by decide) hc₀
   have eo : oPoly (K.k + j) = oPoly K.k + 1024 * j := by simp only [oPoly]; omega

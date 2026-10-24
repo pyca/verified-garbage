@@ -253,7 +253,8 @@ theorem cbdArgs_ok {s : State} {P : BitVec 64} {N : Nat} (h31 : s.gpr .r31 = P)
 
 theorem nttArgs_ok {s : State} {P : BitVec 64} {N : Nat} (h31 : s.gpr .r31 = P)
     (h26 : s.gpr .r26 = BitVec.ofNat 64 N) :
-    WP isa (.block (slotAt .r3 .r26 (oPoly K.k) ++ [.addi .r4 .r31 K.oNtt])) s fun s' => Only s s' ∧
+    WP isa (.block (slotAt .r3 .r26 (oPoly K.k) ++ ([.addi .r4 .r31 K.oNtt] : List Instr))) s fun s' =>
+      Only s s' ∧
       s'.gpr .r3 = P + BitVec.ofNat 64 N <<< 10 + BitVec.ofNat 64 (oPoly K.k) ∧
       s'.gpr .r4 = P + BitVec.ofNat 64 K.oNtt := by
   have e1 : K.oNtt < 32768 := by offs

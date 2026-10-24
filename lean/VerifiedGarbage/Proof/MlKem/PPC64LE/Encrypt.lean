@@ -567,7 +567,8 @@ theorem er5_ok {f : Poly} {s₄ : State} (r : RB K L b s₀ i s f s₄) (g3 : s�
 omit hp hi h in
 theorem cArgs_ok (hK : K.WF) {s : State} {P C : BitVec 64} {i : Nat} (h31 : s.gpr .r31 = P)
     (h27 : s.gpr .r27 = C) (h26 : s.gpr .r26 = BitVec.ofNat 64 i) :
-    WP isa (.block (atMul .r5 .r27 .r26 K.uLen ++ [.addi .r3 .r31 K.oAcc, .li .r4 K.du, .li .r6 K.uLen])) s
+    WP isa (.block (atMul .r5 .r27 .r26 K.uLen ++
+      ([.addi .r3 .r31 K.oAcc, .li .r4 K.du, .li .r6 K.uLen] : List Instr))) s
       fun s' => Only s s' ∧ s'.gpr .r3 = P + BitVec.ofNat 64 K.oAcc ∧ s'.gpr .r4 = BitVec.ofNat 64 K.du ∧
         s'.gpr .r5 = C + BitVec.ofNat 64 (K.uLen * i) ∧ s'.gpr .r6 = BitVec.ofNat 64 (32 * K.du) := by
   have e1 := oAcc_lt hK
@@ -587,7 +588,8 @@ theorem cArgs_ok (hK : K.WF) {s : State} {P C : BitVec 64} {i : Nat} (h31 : s.gp
 
 omit hi in
 theorem er6_ok {f : Poly} {s₅ : State} (r : RB K L b s₀ i s f s₅) :
-    WP isa (.block (atMul .r5 .r27 .r26 K.uLen ++ [.addi .r3 .r31 K.oAcc, .li .r4 K.du, .li .r6 K.uLen])) s₅
+    WP isa (.block (atMul .r5 .r27 .r26 K.uLen ++
+      ([.addi .r3 .r31 K.oAcc, .li .r4 K.du, .li .r6 K.uLen] : List Instr))) s₅
       fun s₆ => RB K L b s₀ i s f s₆ ∧ s₆.gpr .r3 = L.A 0 K.oAcc ∧
         s₆.gpr .r4 = BitVec.ofNat 64 K.du ∧ s₆.gpr .r5 = L.A b.iC (b.oC + K.uLen * i) ∧
         s₆.gpr .r6 = BitVec.ofNat 64 (32 * K.du) := by
