@@ -25,8 +25,8 @@ pub(crate) fn eq(a: &[u8], b: &[u8]) -> bool {
 /// the caller's code, never taken from a slice: PBKDF2's and scrypt's keys of
 /// different lengths share their prefixes, so a key checked at a length
 /// that came from elsewhere (a truncated stored key, or one an attacker sent)
-/// would be checked on as few bytes as that length. Its users (PBKDF2, scrypt
-/// and Argon2) are on these architectures (PBKDF2 alone on PPC64LE).
+/// would be checked on as few bytes as that length. Its users are PBKDF2,
+/// scrypt and Argon2.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
