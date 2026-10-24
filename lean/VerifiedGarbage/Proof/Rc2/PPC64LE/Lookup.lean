@@ -5,6 +5,8 @@ public import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Framework.AddrArith
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.Lookup
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # RC2 on PPC64LE: the lookups

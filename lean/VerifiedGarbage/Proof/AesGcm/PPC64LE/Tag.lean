@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 
 /-!
 # AES-GCM on PPC64LE: the tag (`tag o`)

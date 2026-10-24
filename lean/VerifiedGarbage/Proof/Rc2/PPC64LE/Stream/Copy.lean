@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Streaming RC2-CBC on PPC64LE: the byte copy

@@ -15,6 +15,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 
 /-!
 # AES-GCM on PPC64LE: `ghash1`, `absorb`, `flush` and `lens` are constant time

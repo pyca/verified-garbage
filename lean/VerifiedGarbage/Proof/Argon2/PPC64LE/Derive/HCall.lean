@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Contract
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Correct
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit
@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+import VerifiedGarbage.Proof.Blake2.Stream
 
 /-!
 # Argon2 on PPC64LE: the derivation's calls of H′

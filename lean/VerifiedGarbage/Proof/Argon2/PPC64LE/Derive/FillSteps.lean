@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Ops
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the steps of the filling loops

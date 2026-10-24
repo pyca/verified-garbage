@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-! # Streaming RC2-CBC on PPC64LE: `init` -/
 

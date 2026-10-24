@@ -32,6 +32,7 @@ public import VerifiedGarbage.Impl.Rc2.PPC64LE.Cbc
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-! # Verified RC2-CBC on PPC64LE -/
 

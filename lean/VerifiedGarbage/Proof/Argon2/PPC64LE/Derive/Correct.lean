@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Iterations
 import VerifiedGarbage.Proof.Argon2.FinalReduction
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the derivation is correct

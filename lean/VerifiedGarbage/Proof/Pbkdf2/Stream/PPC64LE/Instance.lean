@@ -1,6 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Shared
+import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Shared
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: an instance

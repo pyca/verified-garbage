@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
+import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
 import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
-import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
+public import VerifiedGarbage.Impl.Argon2.PPC64LE.HPrime
+public import VerifiedGarbage.Impl.MdStream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # H′ on PPC64LE: absorbing the length prefix, the previous digest or the input -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rc2.PPC64LE.Stream
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Streaming RC2-CBC on PPC64LE: `init`'s checks

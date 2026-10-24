@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Divide
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the reference lane, the window's start, and its base

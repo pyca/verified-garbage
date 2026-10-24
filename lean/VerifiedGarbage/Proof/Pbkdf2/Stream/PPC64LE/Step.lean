@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Xor
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
+import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Xor
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Save
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Copy
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Init
@@ -10,6 +9,12 @@ import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+public import VerifiedGarbage.Spec.Pbkdf2
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: a step of `iterate`

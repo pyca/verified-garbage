@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the filling loops

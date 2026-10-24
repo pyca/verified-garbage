@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Common
-public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
 import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Iterate
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: the calls

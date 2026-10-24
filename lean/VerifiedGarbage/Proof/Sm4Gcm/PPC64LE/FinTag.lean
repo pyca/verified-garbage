@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 
 /-!
 # SM4-GCM on PPC64LE: the tag after the last piece (`finTag o`)

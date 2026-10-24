@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 
 /-!
 # Argon2 on PPC64LE: the memory's initialization

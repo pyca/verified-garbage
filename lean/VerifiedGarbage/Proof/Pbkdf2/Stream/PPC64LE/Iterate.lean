@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: `iterate`

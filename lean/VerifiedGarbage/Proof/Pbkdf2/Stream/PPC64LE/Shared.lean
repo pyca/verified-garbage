@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Iterate
+import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Iterate
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Impl.Pbkdf2.Stream.PPC64LE
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: the shared contract
