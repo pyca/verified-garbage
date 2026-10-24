@@ -156,4 +156,46 @@ def checkDomain : Prog isa :=
   .seq (.block (save .r6 ++ setup)) (.seq loadP
     (.seq (.ite (.zero .d .r0) domainBody (.block [.li .r3 0])) (.block restore)))
 
+
+/-! ## `vg_ffdh_exchange` -/
+
+/-- `r26 :=` the mask of `z ∉ {0, 1, p − 1}` for z in array 4, with the
+constants of `consts`. -/
+def zMask : Prog isa :=
+  .seq consts (.seq (.block [.li .r26 0, .subi .r26 .r26 1]) (.seq (eqMask .r19 4 5) (.seq (.block clear19)
+    (.seq (eqMask .r19 4 7) (.seq (.block clear19) (.seq (eqMask .r19 4 6) (.block clear19)))))))
+
+/-- The scratch buffer (the second argument on the stack) into `r11`, the
+registers saved there; x, `x_len` and `out` into its header's words 8–10;
+the peer into `r9`; then `setup` for the domain (`r5`), `domain_len` (`r6`)
+and `p_len` (`r7`). -/
+def exFront : List Instr :=
+  [.addSp .r11 104, .load .d .r11 .r11 0] ++ save .r11 ++
+    [.store .d .r8 .r23 64, .store .d .r9 .r23 72, .store .d .r3 .r23 80, .addi .r9 .r10 0, .addi .r3 .r5 0,
+      .addi .r4 .r6 0, .addi .r5 .r7 0] ++ setup
+
+/-- y (at `r9`) into array 4, `R² mod p`, `-p⁻¹`, and x's address and
+length back from the header into `r30` and `r31`. -/
+def exPre : Prog isa :=
+  .seq PublicChecked.loadX (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
+    (.block (PublicChecked.minv ++ [.load .d .r30 .r23 64, .load .d .r31 .r23 72]))))
+
+/-- `z = y^x mod p` into array 4: `exPre`, then the power by x's `x_len`
+octets. -/
+def exPower : Prog isa := .seq exPre ModExp.powSecret
+
+/-- The mask of `1 < z < p − 1` into `r26`, and `out` back from the header
+into `r27`. -/
+def exOutPre : Prog isa :=
+  .seq (.block [.addi .r31 .r23 0]) (.seq zMask (.block [.load .d .r27 .r23 80]))
+
+/-- z's octets to `out`, masked by `1 < z < p − 1`; `r3 :=` 1 or 0. -/
+def exOut : Prog isa := .seq exOutPre PublicChecked.output
+
+/-- `vg_ffdh_exchange(out, out_len, domain, domain_len, p_len, x, x_len,
+peer, peer_len, scratch, scratch_len)`, the last three on the stack. -/
+def exchange : Prog isa :=
+  .seq (.block exFront) (.seq loadP
+    (.seq (.ite (.zero .d .r0) (.seq exPower exOut) (.block [.li .r3 0])) (.block restore)))
+
 end VG.Impl.Ffdh.PPC64LE.Domain
