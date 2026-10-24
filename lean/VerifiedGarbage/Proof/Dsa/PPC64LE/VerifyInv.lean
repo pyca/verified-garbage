@@ -32,11 +32,12 @@ open VG.Proof.Bignum (slot slot_sep)
 /-- The registers `rrQ` writes. -/
 def rrRegs : List Reg := [.r5, .r8, .r9, .r0, .r3, .r4, .r14, .r15, .r16, .r17, .r20] ++ copyRegs
 
-/-- `rrQ`: `R² mod q` into arrays 1 and 8. -/
+/-- `rrQ`: `R² mod q` into arrays 1 and 8; array 9 is kept. -/
 theorem rrQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key sig dig)
     (hq : 2 ≤ arrQ s.mem L 0) :
     WP isa rrQ s fun t =>
-      (QS t L key sig dig ∧ arrQ t.mem L 8 = 2 ^ (128 * 4) % arrQ s.mem L 0 ∧ QArr L s.mem t.mem) ∧
+      (QS t L key sig dig ∧ arrQ t.mem L 8 = 2 ^ (128 * 4) % arrQ s.mem L 0 ∧ QArr L s.mem t.mem ∧
+        arrQ t.mem L 9 = arrQ s.mem L 9) ∧
         Keep rrRegs s t := by
   have e := h.inq.env
   unfold rrQ
@@ -60,9 +61,12 @@ theorem rrQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key sig di
     (QArr.of o4 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega)).trans
       (QArr.of o5 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega))
   have kt := (k13.trans k4).trans k5
-  refine ⟨⟨h.step kt (by decide), ?_, qa⟩, kt.mono (by decide)⟩
-  generalize (2 : Nat) ^ (128 * 4) = R at v1 ⊢
-  exact v8.trans v1
+  refine ⟨⟨h.step kt (by decide), ?_, qa, ?_⟩, kt.mono (by decide)⟩
+  · generalize (2 : Nat) ^ (128 * 4) = R at v1 ⊢
+    exact v8.trans v1
+  · show val32 t.mem L.Q (slot 4 9) (2 * 4) = val32 s.mem L.Q (slot 4 9) (2 * 4)
+    rw [Outside.val32 o5 (by simp only [slot_eq]; omega) (by decide), Outside.val32 o4 (by simp only [slot_eq]; omega)
+      (by decide)]
 
 /-- A subtraction `[t] := [a] − [m]` without a borrow, `[a] ≥ [m]`. -/
 theorem sub_val {n A M T c : Nat} (hc : c ≤ 1) (hv : T + M = A + 2 ^ (32 * n) * c)
@@ -78,7 +82,8 @@ theorem qMinus2_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
     (hq : 2 ≤ arrQ s.mem L 0) (hql : arrQ s.mem L 0 < 2 ^ (8 * L.ql)) :
     WP isa qMinus2 s fun t =>
       (QS t L key sig dig ∧ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.ql) = arrQ s.mem L 0 - 2 ∧
-        arrQ t.mem L 8 = arrQ s.mem L 8 ∧ QBuf L s.mem t.mem) ∧ Keep qm2Regs s t := by
+        arrQ t.mem L 8 = arrQ s.mem L 8 ∧ QBuf L s.mem t.mem ∧ arrQ t.mem L 9 = arrQ s.mem L 9) ∧
+        Keep qm2Regs s t := by
   have e := h.inq.env
   have hn : slot 4 28 ≤ 2 ^ 64 := by decide
   have hq' := hL.ql
@@ -163,24 +168,21 @@ theorem qMinus2_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key si
   rw [m12, m11] at vt ot
   have kall := ((k110.trans k11).trans k12).trans kt
   have qb : QBuf L s.mem t.mem := qa10.qbuf.trans (QBuf.ofBuf hL ot (by have := hL.pl; omega))
+  have ot' : Outside (off L.Q 1600) 0 L.ql s₁₀.mem t.mem := by rw [← buf_eq]; exact ot
+  have otq := outside_shift ot' (by have := hL.buf_end; have := hL.nowrap; have := hL.pl; omega) (by decide)
   refine ⟨⟨⟨⟨e12.keep kt (by decide), (kall.gpr .r21 (by decide)).trans h.inq.h21,
       (kall.gpr .r23 (by decide)).trans h.inq.h23⟩, h.scr.congr kall.wr, h.regs.keep kall⟩,
-    ?_, ?_, qb⟩, kall.mono (by decide)⟩
+    ?_, ?_, qb, ?_⟩, kall.mono (by decide)⟩
   · rw [vt, read_low (w := 4) _ _ (by omega) (by rw [v6]; omega), v6]
-  · have ot' : Outside (off L.Q 1600) 0 L.ql s₁₀.mem t.mem := by rw [← buf_eq]; exact ot
-    have otq := outside_shift ot' (by have := hL.buf_end; have := hL.nowrap; have := hL.pl; omega) (by decide)
-    rw [arrQ, arr, Outside.val32 otq (by rw [e78]; omega) (by decide),
+  · rw [arrQ, arr, Outside.val32 otq (by rw [e78]; omega) (by decide),
       Outside.val32 o10 (by rw [e76, e78]; omega) (by decide),
       Outside.val32 o5 (by rw [e74, e78]; omega) (by decide),
       Outside.val32 o1 (by rw [e77, e78]; omega) (by decide)]
-
-end VG.Proof.Dsa.PPC64LE
-
-namespace VG.Proof.Dsa.PPC64LE
-
-open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.MillerRabin.PPC64LE
-open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE VG.Impl.Dsa.PPC64LE.Verify
-open VG.Proof.Bignum (slot slot_sep)
+  · have e79 : slot 4 9 = 688 := rfl
+    rw [arrQ, arr, Outside.val32 otq (by rw [e79]; omega) (by decide),
+      Outside.val32 o10 (by rw [e76, e79]; omega) (by decide),
+      Outside.val32 o5 (by rw [e74, e79]; omega) (by decide),
+      Outside.val32 o1 (by rw [e77, e79]; omega) (by decide)]
 
 /-- An odd number's low word is odd. -/
 theorem word_odd (m : Mem) (B : Addr) (d k : Nat) (hk : 1 ≤ k) (h : val32 m B d k % 2 = 1) :

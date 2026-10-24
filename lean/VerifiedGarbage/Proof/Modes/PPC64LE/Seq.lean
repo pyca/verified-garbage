@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
@@ -396,11 +397,11 @@ theorem setup_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : c
   have hb4 := buf_le4 hL
   have modeScr : Region.Sub (modeR c (S s₀)) (scrRegion c (S s₀)) := VG.Offset.sub_base _ (by omega_arith)
   have coreScr : Region.Sub (coreRegion c (S s₀)) (scrRegion c (S s₀)) := Region.sub_prefix (by omega_arith)
-  refine WP.seq (WP.mono (entry_wp hp) fun s₁ h₁ => ?_)
+  refine WP.seq (VG.PPC64LE.WP.of_syms (WP.mono (entry_wp hp) fun s₁ h₁ sy₁ => ?_))
   have hS₁ : ScrIn s₁ (S s₀) c.total := ⟨by rw [h₁.wr]; exact hp.scr.wr, hfit⟩
   have m1 : ∀ {a b : Region} {l : List Region}, b ∈ a :: b :: l := List.mem_cons_of_mem _ List.mem_cons_self
   refine WP.mono (cs.prepare_wp h₁.b hS₁ m1
-    (cs.keyArgs_congr hk h₁.keep h₁.rd h₁.wr
+    (cs.keyArgs_congr hk h₁.keep h₁.rd h₁.wr sy₁
       (h₁.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, m1, modeScr⟩)))
     fun s₂ ⟨ready₂, b₂, kept₂, f₂, rd₂, wr₂⟩ => ?_

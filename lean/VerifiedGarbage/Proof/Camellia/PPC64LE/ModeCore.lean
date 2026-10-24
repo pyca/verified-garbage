@@ -342,8 +342,8 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Ready := Ready d
   cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Camellia.cipher, Spec.Camellia.invCipher, dirCore]
   layout := ⟨by cases d <;> decide, .inr rfl, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide⟩
-  keyArgs_congr h e r _ f := keyArgs_congr h e r f
-  ready_frame h e _ _ f _ hd := ready_frame h e f hd
+  keyArgs_congr h e r _ _ f := keyArgs_congr h e r f
+  ready_frame h e _ _ _ f _ hd := ready_frame h e f hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
 
