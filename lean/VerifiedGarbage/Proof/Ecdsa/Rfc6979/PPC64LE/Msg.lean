@@ -49,16 +49,19 @@ theorem bytesAt_byte (m : Mem) (a : Addr) (v : BitVec 8) : Spec.Sha256.bytesAt (
     List.cons.injEq, and_true]
   exact BitVec.eq_of_toNat_eq (by simp)
 
-/-- The message at `scratch + 2256`. -/
-theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {D b : Nat} (full : Bool)
-    (hD4 : D % 4 = 0) (hD : D ≤ 64) (hQ4 : L.q % 4 = 0) (hQ : L.q ≤ 48) (hb : b < 2 ^ 15) :
-    WP isa (.block (Cfg.msgPtrs ++ Cfg.msg L.q D b full)) t fun u => Ctx L g lr m₀ u ∧
+/-- The message at `scratch + 2256`, with `h` at the frame's `ho`. -/
+theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {D b : Nat} (full : Bool) (ho : Nat)
+    (hD4 : D % 4 = 0) (hD : D ≤ 64) (hQ4 : L.q % 4 = 0) (hQ : L.q ≤ 64) (hho : 64 ≤ ho)
+    (hho' : ho + L.q ≤ 256 + L.e) (hb : b < 2 ^ 15) :
+    WP isa (.block (Cfg.msgPtrs ++ Cfg.msg L.q D b full ho)) t fun u => Ctx L g lr m₀ u ∧
       Frame [⟨L.scr + BitVec.ofNat 64 2256, D + 1 + 2 * L.q⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 2256) (D + 1 + (if full then 2 * L.q else 0)) =
         Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 192) D ++ [BitVec.ofNat 8 b] ++
-          (if full then Spec.Sha256.bytesAt t.mem L.d L.q ++ Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 256) L.q
+          (if full then Spec.Sha256.bytesAt t.mem L.d L.q ++
+            Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 (96 + ho)) L.q
           else []) := by
   have hnB := hL.nB
+  have hne := hc.ne
   have hnc := hL.nc
   have hnd := hL.nd
   rw [WP.block_append_iff]
@@ -139,7 +142,7 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {D b : Nat} (ful
       (fun r hr => k₅.gpr r (by intro h; simp at h; subst h; simp [preserved] at hr))
       f₅ (by simp only [List.mem_singleton]; rintro r rfl; exact safe_scr L (by omega))
     -- `h`.
-    refine WP.mono (copyW_ok (S := L.B + BitVec.ofNat 64 96) (D := L.scr) (so := 160) (d := 2256 + D + 1 + L.q)
+    refine WP.mono (copyW_ok (S := L.B + BitVec.ofNat 64 96) (D := L.scr) (so := ho) (d := 2256 + D + 1 + L.q)
       (K := L.q / 4) (by decide) (by decide) (by decide) (by decide)
       (by rw [fr_add]; exact hL.stk_scr (by omega) (by omega)) (by omega) (by omega) (by omega)
       (L.q / 4) (Nat.le_refl _) t₅
@@ -168,8 +171,8 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {D b : Nat} (ful
         rw [keepS f₄ ((hL.dc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by omega)))
           (by omega), m₃, keepS f₂ ((hL.dc.sub_left (Region.sub_prefix (by omega))).sub_right
           (Offset.sub_base _ (by omega))) (by omega), m₁]
-      have hh₅ : Spec.Sha256.bytesAt t₅.mem (L.B + BitVec.ofNat 64 256) L.q =
-          Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 256) L.q := by
+      have hh₅ : Spec.Sha256.bytesAt t₅.mem (L.B + BitVec.ofNat 64 (96 + ho)) L.q =
+          Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 (96 + ho)) L.q := by
         rw [keepS f₅ (hL.stk_scr (by omega) (by omega)) (by omega), keepS f₄ (hL.stk_scr (by omega) (by omega))
           (by omega), m₃, keepS f₂ (hL.stk_scr (by omega) (by omega)) (by omega), m₁]
       have e₁ : Spec.Sha256.bytesAt t₆.mem (L.scr + BitVec.ofNat 64 2256) D =
@@ -184,7 +187,7 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {D b : Nat} (ful
           Spec.Sha256.bytesAt t.mem L.d L.q := by
         rw [keep (o := 2256 + D + 1) (n := L.q) f₆ (by omega) (by omega) (by omega), v₅, BitVec.add_zero, hd₄]
       have e₄ : Spec.Sha256.bytesAt t₆.mem (L.scr + BitVec.ofNat 64 (2256 + D + 1 + L.q)) L.q =
-          Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 256) L.q := by
+          Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 (96 + ho)) L.q := by
         rw [v₆]; exact hh₅
       rw [show D + 1 + 2 * L.q = D + 1 + L.q + L.q by omega, bytesAt_add, bytesAt_add, bytesAt_add, Offset.add_add,
         Offset.add_add, Offset.add_add, show 2256 + (D + 1 + L.q) = 2256 + D + 1 + L.q by omega,

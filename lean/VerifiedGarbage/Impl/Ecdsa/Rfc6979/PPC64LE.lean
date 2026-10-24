@@ -14,18 +14,20 @@ HMAC `init` and `finalize` (with their working space as an argument) and
 its streaming `update`, and each candidate tried by calling `core`, the
 signature with a given `k` (`vg_ecdsa_<curve>_sign`), which reads `Q` bytes
 of the digest and of `k`. The order `n` has exactly `8 Q` bits and
-`2^(8 Q) < 2n` (P-192, P-224, P-256, P-384, secp256k1, brainpoolP256r1 and
-brainpoolP384r1): one `V` makes a candidate, its leftmost `Q` bytes,
+`2^(8 Q) < 2n` (P-192, P-224, P-256, P-384, secp256k1, brainpoolP256r1,
+brainpoolP384r1 and brainpoolP512r1): one `V` makes a candidate, its leftmost `Q` bytes,
 `bits2octets` is a conditional subtraction of `n` from the digest's leftmost
 `Q` bytes, and `core` reads the digest and `V` in place.
 
 The return address is moved to `r0` and pushed (the calls replace it), then
-a frame of 256 bytes is allocated: above its 32-byte header, `K` and `V` (64
-bytes each, of which the first `D` are used), `h` (48 bytes, of which `Q`
-are used), the number of candidates left, then `scratch`, `digest`, `d` and
-`out`. The calls use only `scratch`, which `core` overwrites entirely, and
-the stack below the frame; `K`, `V` and `h` are cleared before the frame is
-freed. In `scratch`: HMAC's inner and outer streaming states, the working
+a frame of 256 bytes is allocated, 320 if `hHigh` (scalars of more than 48
+bytes, brainpoolP512r1's 64, as on AArch64): above its 32-byte header, `K`
+and `V` (64 bytes each, of which the first `D` are used), `h` (48 bytes, of
+which `Q` are used, unless `hHigh`), the number of candidates left, then
+`scratch`, `digest`, `d` and `out`; and, if `hHigh`, `h` in the frame's top
+64 bytes. The calls use only `scratch`, which `core` overwrites entirely, and
+the stack below the frame; `K`, `V`, `h` and the frame's top are cleared
+before the frame is freed. In `scratch`: HMAC's inner and outer streaming states, the working
 space of HMAC's and `H`'s functions, and the message of steps d, f and h.3.
 
 1. `h = bits2octets(digest)`: the leftmost `Q` bytes, minus `n` if they are
@@ -66,8 +68,12 @@ def fScratch : Nat := 216
 def fDigest : Nat := 224
 def fD : Nat := 232
 def fOut : Nat := 240
+/-- If `hHigh`: `h` in 64 bytes, at the frame's top. -/
+def fX : Nat := 256
+/-- The bytes above `fX`: 64 if `hHigh`. -/
+def extra (hHigh : Bool) : Nat := if hHigh then 64 else 0
 /-- The frame's size, a multiple of 16. -/
-def frameBytes : Nat := 256
+def frameBytes (hHigh : Bool := false) : Nat := 256 + extra hHigh
 
 /-! Where things are in `scratch`. -/
 def sInner : Nat := 0
@@ -105,6 +111,13 @@ structure Cfg where
 namespace Cfg
 
 variable (c : Cfg)
+
+/-- Whether `h` is at the frame's top: scalars of more than 48 bytes
+(brainpoolP512r1's 64). -/
+abbrev hHigh : Bool := decide (48 < c.len)
+
+/-- Where `h` is. -/
+def fHo : Nat := if c.hHigh then fX else fH
 
 /-- `r12 ← scratch`, with the frame in `r11`. -/
 def scrBase : List Instr := [.addSp .r11 0, .load .d .r12 .r11 fScratch]
@@ -152,17 +165,17 @@ def copyW (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
 `d` in `r10`. -/
 def msgPtrs : List Instr := [.addSp .r11 0, .load .d .r9 .r11 fScratch, .load .d .r10 .r11 fD]
 
-/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each) at
-`scratch + sMsg`, for `V` of `D` bytes, with the frame in `r11`, `scratch`
-in `r9` and `d` in `r10`, a 32-bit word at a time. -/
-def msg (Q D b : Nat) (full : Bool) : List Instr :=
+/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each, `h` at
+the frame's `ho`) at `scratch + sMsg`, for `V` of `D` bytes, with the frame
+in `r11`, `scratch` in `r9` and `d` in `r10`, a 32-bit word at a time. -/
+def msg (Q D b : Nat) (full : Bool) (ho : Nat := fH) : List Instr :=
   copyW (D / 4) .r11 fV .r9 sMsg ++ ([.li .r8 b, .stb .r8 .r9 (sMsg + D)] : List Instr) ++
-    (if full then copyW (Q / 4) .r10 0 .r9 (sMsg + D + 1) ++ copyW (Q / 4) .r11 fH .r9 (sMsg + D + 1 + Q)
+    (if full then copyW (Q / 4) .r10 0 .r9 (sMsg + D + 1) ++ copyW (Q / 4) .r11 ho .r9 (sMsg + D + 1 + Q)
     else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block (msgPtrs ++ msg c.len c.H.D b true))
+  .seq (.block (msgPtrs ++ msg c.len c.H.D b true c.fHo))
     (.seq (c.hmac [.addi .r5 .r12 sMsg] (c.H.D + 2 * c.len + 1) fK) c.hmacV)
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
@@ -186,12 +199,12 @@ def subDigit (j : Nat) : List Instr :=
 
 /-- Digit `j` of the result, by the mask `r10` (all ones if subtracting `n`
 did not borrow): the difference's if so, the number's if not, big-endian to
-`h + Q - 4 (j + 1)`. -/
+`h + Q - 4 (j + 1)` (`h` at the frame's `fHo`). -/
 def selDigit (j : Nat) : List Instr :=
   [.load .w .r7 .r11 (fV + 4 * j), .load .w .r8 .r11 (fK + 4 * j),
     -- `x = d ^ ((d ^ x) & mask)`: the difference if it did not borrow.
     .logic .xor .r8 .r8 .r7, .logic .and .r8 .r8 .r10, .logic .xor .r7 .r7 .r8,
-    .li .r12 (fH + c.len - 4 * (j + 1)), .storeRev .w .r7 .r11 .r12]
+    .li .r12 (c.fHo + c.len - 4 * (j + 1)), .storeRev .w .r7 .r11 .r12]
 
 /-- `h`: the `Q` bytes at `digest`, as a big-endian number, minus `n` if
 that does not borrow, big-endian into the frame's `Q` bytes at `h`. -/
@@ -234,9 +247,11 @@ def tryOne : Prog isa :=
   (.seq (.block goOn)
     (.ite (.nonzero .d .r12) (.seq c.rekey (.block again)) (.block stop)))))
 
-/-- `K`, `V` and `h` cleared (`r3`, the result, kept). -/
-def wipe : List Instr :=
-  ([.addSp .r11 0, .li .r12 0] : List Instr) ++ (List.range 22).map fun j => .store .d .r12 .r11 (fK + 8 * j)
+/-- `K`, `V` and `h` cleared, and the bytes above `fX` (`r3`, the result,
+kept). -/
+def wipe (hHigh : Bool := false) : List Instr :=
+  ([.addSp .r11 0, .li .r12 0] : List Instr) ++ (List.range 22).map (fun j => .store .d .r12 .r11 (fK + 8 * j)) ++
+    (List.range (extra hHigh / 8)).map fun j => .store .d .r12 .r11 (fX + 8 * j)
 
 /-- `out`, `d`, `digest` and `scratch` into the frame. -/
 def saveArgs : List Instr :=
@@ -251,12 +266,12 @@ def body : Prog isa :=
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne (.nonzero .d .r12))
-    (.block wipe))))))
+    (.block (wipe c.hHigh)))))))
 
 /-- `vg_ecdsa_<curve>_<hash>_sign`. -/
 def sign : Prog isa :=
   .seq (.block [.mflr .r0])
-    (.seq (.frame (.push .r0) (.frame (.alloc frameBytes) c.body (.free frameBytes)) (.pop .r0))
+    (.seq (.frame (.push .r0) (.frame (.alloc (frameBytes c.hHigh)) c.body (.free (frameBytes c.hHigh))) (.pop .r0))
       (.block [.mtlr .r0]))
 
 end Cfg

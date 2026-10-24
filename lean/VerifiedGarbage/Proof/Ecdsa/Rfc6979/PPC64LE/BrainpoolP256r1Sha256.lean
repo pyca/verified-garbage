@@ -46,7 +46,7 @@ def pack (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : Rfc where
   hcn := rfl
   hct := rfl
   hk := rfl
-  hk12 := by decide
+  hk16 := by decide
   hbits := brainpoolp256r1_nBits
   hn₁ := by decide +kernel
   hn₂ := by decide +kernel
@@ -94,6 +94,6 @@ theorem implies :
 
 theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
     Verified PPC64LE.target (pack hL).c.sign (Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst.signContract PPC64LE.abi 400) :=
-  PPC64LE.sign_verified (pack hL) blks implies
+  PPC64LE.sign_verified (pack hL) blks rfl implies
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP256r1Sha256
