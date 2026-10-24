@@ -39,6 +39,17 @@ theorem vptr_ok {r : Reg} (hr : KeyGen.baseReg r = true) {o : Nat} (h : o < 2 ^ 
     KeyGen.argOk (.ptr (r, o)) = true := by
   simp only [KeyGen.argOk, Bool.and_eq_true, decide_eq_true_eq]; exact ⟨hr, h⟩
 
+/-- Proves that an offset into the buffers is below `2³¹`, for any parameter
+set with the facts `hF`. -/
+syntax "vlt " term:max : tactic
+macro_rules
+  | `(tactic| vlt $hF) => `(tactic| (
+      have := ($hF).k; have := ($hF).l; have := ($hF).w1; have := ($hF).w1l; have := ($hF).pk
+      have := ($hF).hint; have := ($hF).ct; have := ($hF).lz
+      try dsimp only [VG.Impl.MlDsa.PPC64LE.Verify.oP, VG.Impl.MlDsa.PPC64LE.Verify.oB,
+        VG.Impl.MlDsa.PPC64LE.Verify.oSS, VG.Impl.MlDsa.PPC64LE.Verify.oSB, VG.Impl.MlDsa.PPC64LE.Verify.oCT]
+      omega))
+
 /-! ## Two runs -/
 
 theorem vc_twoL {p : Params} {STK : Nat} {σ₁ σ₂ x y : State} (pub : vPub p σ₁ σ₂) (h₁ : VC p STK σ₁ x)
