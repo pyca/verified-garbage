@@ -170,4 +170,36 @@ theorem cut_ok {s : State} {R X : Addr} {k ld : Nat} {tb : Byte} (hk1 : 1 ≤ k)
   have e : (Spec.Rsa.bytesAt t.mem X k)[i] = t.mem (off X i) := by simp [Spec.Rsa.bytesAt, off]
   rw [e, tx i hi, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h2, Option.getD_some]
 
+/-! ## Zeros -/
+
+/-- The zeros' loop: `k` zeros (`r0`) from x (`r25`). -/
+theorem zeros_ok {s : State} {X : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k < 2 ^ 32) (hx : Scr s X k)
+    (h25 : s.gpr .r25 = off X 0) (h0 : s.gpr .r0 = 0#64) (h6 : s.gpr .r6 = BitVec.ofNat 64 k) :
+    WP isa (countLoop .r6 [.stb .r0 .r25 0, .addi .r25 .r25 1]) s fun t =>
+      (Spec.Rsa.bytesAt t.mem X k = List.replicate k 0 ∧ Outside X 0 k s.mem t.mem) ∧ Keep [.r6, .r25] s t := by
+  have hnw := hx.nowrap
+  let Inv : Nat → State → Prop := fun j t => t.gpr .r25 = off X j ∧ t.gpr .r0 = 0#64 ∧
+    Outside X 0 j s.mem t.mem ∧ (∀ i < j, t.mem (off X i) = 0) ∧ Keep [.r6, .r25] s t
+  refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega) (by omega) Inv
+    (fun j hj t ⟨t25, t0, tout, tz, tk⟩ _ => ?_) ⟨h25, h0, Outside.refl _ _ _ _, fun _ h => absurd h (by omega),
+      Keep.refl _ _⟩ h6) fun t ⟨_, _, tout, tz, kt⟩ => ⟨⟨?_, tout⟩, kt⟩
+  · have hst : InRegions t.wr (off X j) 1 := (hx.congr tk.wr).st (d := j) (n := 1) (by omega)
+    refine WP.mono (WP.keep [.r6, .r25] (Q := fun u => u.gpr .r25 = off X (j + 1) ∧ u.gpr .r0 = 0#64 ∧
+        u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1 ∧ u.mem = t.mem.write (off X j) 1 0#8) (by
+      prun [t25, t0, exec_stb (show Reg.r25 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hst, BitVec.add_zero]; rfl)
+      (by decide)) fun u ⟨⟨u25, u0, u6, um⟩, ku⟩ => ⟨⟨u25, u0, ?_, fun i hi => ?_, (tk.trans ku).mono (by decide)⟩, u6⟩
+    · rw [um]
+      exact (tout.mono (Nat.le_refl _) (by omega)).trans ((write1_outside t.mem X (d := j) _ (by omega)).mono
+        (by omega) (by omega))
+    · rw [um]
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+      · rw [write1_outside t.mem X (d := j) _ (by omega) _ (by rw [Bignum.PPC64LE.ofs_off0 X (by omega)]; omega)]
+        exact tz i hi
+      · exact write1_self _ _ _
+  · apply List.ext_getElem (by simp [Spec.Rsa.bytesAt])
+    intro i h1 _
+    have hi : i < k := by simpa [Spec.Rsa.bytesAt] using h1
+    have e : (Spec.Rsa.bytesAt t.mem X k)[i] = t.mem (off X i) := by simp [Spec.Rsa.bytesAt, off]
+    rw [e, tz i hi, List.getElem_replicate]
+
 end VG.Proof.Ffdh.PPC64LE.GenerateKey
