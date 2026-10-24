@@ -4,7 +4,7 @@
 //! The verified operations check domain and key algebraic consistency and
 //! scalar ranges. As with this crate's RSA operations, they do not prove
 //! primality: callers must obtain domain parameters from a trusted source
-//! or validate them separately. On x86-64 and AArch64, `Parameters::generate` runs
+//! or validate them separately. `Parameters::generate` runs
 //! probable-prime parameter generation entirely in verified assembly. FIPS 186-5 retains DSA for legacy verification.
 //!
 //! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 20)`, `(256, 28)`,
@@ -386,7 +386,6 @@ impl PrivateKey {
 mod keygen;
 mod parameters;
 
-#[cfg(not(target_arch = "powerpc64"))]
 pub use parameters::Parameters;
 
 #[cfg(test)]
