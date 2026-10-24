@@ -22,8 +22,8 @@ header's words 14–31.
   `eqMask`'s (as in the Miller–Rabin round);
 * with q: `R² mod p` into array 1 (`Precompute.r2`), `-p⁻¹ mod 2³²` into
   `r12` (`PublicChecked.minv`), `y^q mod p` into array 4 by
-  `ModExp.powSecret` over q's `p_len` octets, and `eqMask` with array 7
-  (which `powSecret` leaves 1).
+  `ModExp.powSecret` over q's `p_len` octets, and `eqMask` with 1, again in
+  array 7.
 
 Everything is public, and the code branches on p's validity, y's range and
 whether there is q.
@@ -90,12 +90,12 @@ def range : Prog isa :=
 def hasQ : List Instr := [.lsl .r0 .r28 1, .add .r0 .r0 .r28, .sub .r0 .r27 .r0]
 
 /-- `r3 := 1` if `y^q mod p = 1`, else 0: `R² mod p`, `-p⁻¹`, the power by
-q's octets (at `domain + 2 p_len`), compared with array 7. -/
+q's octets (at `domain + 2 p_len`), compared with 1 in array 7. -/
 def subgroup : Prog isa :=
   .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
     (.seq (.block (PublicChecked.minv ++ [.lsl .r30 .r28 1, .add .r30 .r30 .r21, .addi .r31 .r28 0]))
-      (.seq ModExp.powSecret (.seq (.block [.addi .r31 .r23 0]) (.seq (eqMask .r3 4 7)
-        (.block [.li .r0 1, .logic .and .r3 .r3 .r0]))))))
+      (.seq ModExp.powSecret (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
+        (.block [.li .r0 1, .logic .and .r3 .r3 .r0])))))))
 
 /-- The check of y, after p's. -/
 def checkY : Prog isa :=
