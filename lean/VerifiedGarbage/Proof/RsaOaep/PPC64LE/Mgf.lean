@@ -7,10 +7,10 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Em
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
 
 /-!
-# RSAES-OAEP encryption on PPC64LE: MGF1
+# RSA paddings on PPC64LE: MGF1
 
 Untrusted: everything here is checked by Lean. `round_ok`: a round of
 `mgfXor` XORs the next block of the mask into `dst` (`MgfI`, the invariant:
@@ -41,9 +41,9 @@ structure MFit (src srcLen dst dstLen : Nat) : Prop where
 /-- After `c` rounds: `Base`, MGF1's registers, and the first
 `min(c D, dstLen)` bytes of the mask `mk` XORed into `dst` in `EM`'s place,
 whose view was `V`. -/
-structure MgfI (s : State) (V : Nat → Byte) (mk : List Byte) (src srcLen dst dstLen D c : Nat) (v : State) :
+structure MgfI (S : State → Addr) (vf : State → Reg → BitVec 64) (s : State) (V : Nat → Byte) (mk : List Byte) (src srcLen dst dstLen D c : Nat) (v : State) :
     Prop where
-  base : Base s v
+  base : Base S vf s v
   r24 : v.gpr .r24 = off (S s) src
   r25 : v.gpr .r25 = BitVec.ofNat 64 srcLen
   r26 : v.gpr .r26 = off (S s) dst
@@ -63,16 +63,16 @@ theorem bytesAt_view (m : Mem) (S : Addr) (src n : Nat) :
   exact List.map_congr_left fun i _ => by rw [off_add]
 
 section
-variable {D : Nat} {s : State} (P : PreO D s)
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
 include P
 
 theorem round_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
     (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) {V : Nat → Byte} {src srcLen dst dstLen c : Nat}
     (hf : MFit src srcLen dst dstLen) {v : State}
-    (I : MgfI s V (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) src srcLen dst dstLen G.D c v)
+    (I : MgfI S vf s V (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) src srcLen dst dstLen G.D c v)
     (hc : c * G.D < dstLen) :
     WP isa (round G) v fun v' => (v'.gpr .r12 != 0) = decide ((c + 1) * G.D < dstLen) ∧
-      MgfI s V (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) src srcLen dst dstLen G.D (c + 1) v' := by
+      MgfI S vf s V (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) src srcLen dst dstLen G.D (c + 1) v' := by
   have F := hfits hG
   obtain ⟨_, hSt, hDg, hCt, hW, hRs⟩ := offs
   have hD0 := hG.hD0
@@ -177,7 +177,7 @@ theorem round_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, 
     (fun i hi j hj hij => by
       rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)))
     fun t₁₇ ⟨k₁₇, x₁₇⟩ => ?_
-  have b₁₇ : Base s t₁₇ := b₁₆.wb P k₁₇ (by rw [xorAt_length]; omega) x₁₇
+  have b₁₇ : Base S vf s t₁₇ := b₁₆.wb P k₁₇ (by rw [xorAt_length]; omega) x₁₇
   have m₁₇ : ∀ r ∈ mg, t₁₇.gpr r = v.gpr r := fun r hr => by
     rw [k₁₇.gpr r (by revert r; decide), k₁₆.gpr r (by revert r; decide), m₁₅ r hr]
   -- The next counter.
@@ -229,22 +229,22 @@ theorem round_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, 
 and `dstLen` in `r24`–`r27`. -/
 theorem mgfXor_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
     (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) {src srcLen dst dstLen : Nat}
-    (hf : MFit src srcLen dst dstLen) {t : State} (h : Base s t) (h24 : t.gpr .r24 = off (S s) src)
+    (hf : MFit src srcLen dst dstLen) {t : State} (h : Base S vf s t) (h24 : t.gpr .r24 = off (S s) src)
     (h25 : t.gpr .r25 = BitVec.ofNat 64 srcLen) (h26 : t.gpr .r26 = off (S s) dst)
     (h27 : t.gpr .r27 = BitVec.ofNat 64 dstLen) :
-    WP isa (mgfXor G) t fun t' => Base s t' ∧ ∀ o < oSt, view t'.mem (S s) o =
+    WP isa (mgfXor G) t fun t' => Base S vf s t' ∧ ∀ o < oSt, view t'.mem (S s) o =
       mixV (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) dst dstLen o := by
   have hpos := hf.pos
   have hD : 0 < G.D := hG.hD0
   refine WP.seq (wp_li (by decide) fun t₁ o₁ e₁ => wp_li (by decide) fun t₂ o₂ e₂ => wp_nil ?_)
   have k₂ : Only [.r28, .r29] t t₂ := (o₁.trans o₂).mono
-  have I0 : MgfI s (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) src srcLen
+  have I0 : MgfI S vf s (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) src srcLen
       dst dstLen G.D 0 t₂ :=
     ⟨h.only P k₂, by rw [k₂.get .r24, h24], by rw [k₂.get .r25, h25], by rw [k₂.get .r26, h26],
       by rw [k₂.get .r27, h27], by rw [o₂.get .r28, e₁], by rw [e₂, Nat.zero_mul],
       fun o _ => by rw [mixV, ifn (by omega), k₂.mem]⟩
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
-      MgfI s (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) src srcLen dst
+      MgfI S vf s (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) src srcLen dst
         dstLen G.D c w)
     ?_ (dstLen - 0 * G.D) t₂ ⟨0, rfl, by omega, I0⟩
   rintro n w ⟨c, rfl, hc, I⟩

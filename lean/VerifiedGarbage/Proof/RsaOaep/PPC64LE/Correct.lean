@@ -73,7 +73,7 @@ variable {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mgf1.Hash}
 include hH hG hHh hHl hGh hGl hGv P
 
 omit hH hG hHh hGh hGl hGv in
-theorem fail_done {t : State} (h : Base s t) (hl : kk s < 2 * H.D + 2 + mLen s) :
+theorem fail_done {t : State} (h : Base S vO s t) (hl : kk s < 2 * H.D + 2 + mLen s) :
     WP isa encFail t (Done Hs Gs s) :=
   WP.mono (fail_ok P h) fun t' ⟨sv, h3, hb⟩ => ⟨sv, fun _ => by
     rw [Proof.RsaOaep.encrypt_none (by rw [bytesAt_length, bytesAt_length, hHl]; exact hl), h3]
@@ -100,7 +100,7 @@ theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H G) t (Done 
   have b := E.base
   refine WP.seq (wp_li (by omega) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ => wp_lsr fun t₃ o₃ e₃ => wp_nil ?_)
   have k₃ : Only [.r3] t t₃ := (o₁.trans (o₂.trans o₃)).mono
-  have b₃ := b.only P k₃
+  have b₃ := b.only P.fits k₃
   have r3 : (t₃.gpr .r3 != 0) = decide (kk s < 2 * H.D + 2) := by
     rw [e₃, e₂, e₁, o₁.get .r15, b.r15, ← ofNat_toNat (s.gpr .r6)]
     exact ne_zero_ltBit (by omega) (by omega)
@@ -110,7 +110,7 @@ theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H G) t (Done 
   refine WP.seq (wp_li (by omega) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ => wp_sub fun t₆ o₆ e₆ =>
     wp_lsr fun t₇ o₇ e₇ => wp_lsr fun t₈ o₈ e₈ => wp_or fun t₉ o₉ e₉ => wp_nil ?_)
   have k₉ : Only [.r3, .r4] t₃ t₉ := (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans o₉))))).mono
-  have b₉ := b₃.only P k₉
+  have b₉ := b₃.only P.fits k₉
   have r3' : (t₉.gpr .r3 != 0) = decide (kk s - (2 * H.D + 2) < mLen s) := by
     rw [e₉, e₈, o₇.get .r10, o₆.get .r10, o₅.get .r10, o₄.get .r10, k₃.get .r10, E.r10, o₈.get .r4, e₇, e₆,
       o₅.get .r10, o₄.get .r10, k₃.get .r10, E.r10, e₅, o₄.get .r15, k₃.get .r15, b.r15, e₄,

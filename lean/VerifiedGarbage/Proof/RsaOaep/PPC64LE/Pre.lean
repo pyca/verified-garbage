@@ -4,9 +4,10 @@ public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Frame
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Base
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-OAEP encryption on PPC64LE: the precondition
@@ -21,7 +22,7 @@ stack of the frame and of the streaming hash functions, 304 bytes), by name
 
 namespace VG.Proof.RsaOaep.PPC64LE
 
-open VG VG.PPC64LE
+open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE
 
 theorem stackArgs_seven (s : State) :
     List.map (stackArg s) (List.range 7) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
@@ -98,5 +99,58 @@ theorem preO_of {H G : Spec.Mgf1.Hash} {s : State}
     ksd, ksc, kp, ka, wo, wn, we, wl, wm, wsd, wsc, wp, ⟨k1, k2⟩, ok, e1, e2, hs, hp⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, on, oe, ol, om, osd, osc, op, oa, ns, es, ls, ms, sds, sp, sa, ko, kn, ke, kl, km,
     ksd, ksc, kp, ka, wo, wn, we, wl, wm, wsd, wsc, wp, k1, k2, ok, e1, e2, hs, hp⟩
+
+/-- The working space. -/
+abbrev S (s : State) : Addr := stackArg s 3
+
+/-- The values `Base` fixes in `r15`–`r23`: `k`, `out`, `e` and its length,
+the label and its length, `pre` and its length, and `scratch_len`. -/
+def vO (s : State) : Reg → BitVec 64
+  | .r15 => s.gpr .r6
+  | .r16 => s.gpr .r3
+  | .r17 => s.gpr .r7
+  | .r18 => s.gpr .r8
+  | .r19 => s.gpr .r9
+  | .r20 => s.gpr .r10
+  | .r21 => stackArg s 5
+  | .r22 => stackArg s 6
+  | .r23 => stackArg s 4
+  | _ => 0
+
+section
+variable {D : Nat} {s : State} (P : PreO D s)
+include P
+
+theorem scLen : oRsa ≤ (stackArg s 4).toNat * 8 := by
+  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega
+
+theorem sc_sub : Region.Sub (SC S s) (scR s) := Region.sub_prefix (scLen P)
+
+theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (S s) o) n :=
+  Offset.contains_base _ (by have := scLen P; omega) (by unfold oRsa at h; omega)
+
+theorem PreO.fits : Fits S s where
+  sp1 := P.sp1
+  sc := ⟨scR s, by rw [P.hwr]; simp, rfl, scLen P⟩
+  ksc := P.ksc.sub_right (sc_sub P)
+  wS := by show (stackArg s 3).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+
+end
+
+section
+variable {s t : State} (h : Base S vO s t)
+include h
+
+theorem Base.r15 : t.gpr .r15 = s.gpr .r6 := h.vs .r15 (by decide)
+theorem Base.r16 : t.gpr .r16 = s.gpr .r3 := h.vs .r16 (by decide)
+theorem Base.r17 : t.gpr .r17 = s.gpr .r7 := h.vs .r17 (by decide)
+theorem Base.r18 : t.gpr .r18 = s.gpr .r8 := h.vs .r18 (by decide)
+theorem Base.r19 : t.gpr .r19 = s.gpr .r9 := h.vs .r19 (by decide)
+theorem Base.r20 : t.gpr .r20 = s.gpr .r10 := h.vs .r20 (by decide)
+theorem Base.r21 : t.gpr .r21 = stackArg s 5 := h.vs .r21 (by decide)
+theorem Base.r22 : t.gpr .r22 = stackArg s 6 := h.vs .r22 (by decide)
+theorem Base.r23 : t.gpr .r23 = stackArg s 4 := h.vs .r23 (by decide)
+
+end
 
 end VG.Proof.RsaOaep.PPC64LE

@@ -37,25 +37,25 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 /-- `hashLabel`: what `finalize` writes for the label, to `S + oDig`. -/
-theorem hashLabel_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) :
-    WP isa (hashLabel H) t fun t' => Base s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+theorem hashLabel_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vO s t) :
+    WP isa (hashLabel H) t fun t' => Base S vO s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
       Same (S s) t t' [(oSt, H.S), (oDig, H.FD), (oW, H.W)] ∧
       Spec.Rsa.bytesAt t'.mem (off (S s) oDig) H.FD =
         hH.fh (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat) := by
   have F := hfits hH
   obtain ⟨_, _, _, _, _, _⟩ := offs
   refine WP.seq (wp_addi fun t₁ o₁ e₁ => wp_nil ?_)
-  have b₁ := h.only P o₁
-  refine WP.seq (WP.mono (init_ok P hH b₁ (by rw [e₁, h.r14])) fun t₂ ⟨b₂, g₂, s₂, r₂⟩ => ?_)
+  have b₁ := h.only P.fits o₁
+  refine WP.seq (WP.mono (init_ok P.fits hH b₁ (by rw [e₁, h.r14])) fun t₂ ⟨b₂, g₂, s₂, r₂⟩ => ?_)
   refine WP.seq (wp_addi fun t₃ o₃ e₃ => wp_li (by decide) fun t₄ o₄ e₄ => wp_mov fun t₅ o₅ e₅ =>
     wp_mov fun t₆ o₆ e₆ => wp_addi fun t₇ o₇ e₇ => wp_nil ?_)
   have k₇ : Only [.r3, .r4, .r5, .r6, .r7] t₂ t₇ := (o₃.trans (o₄.trans (o₅.trans (o₆.trans o₇)))).mono
-  have b₇ := b₂.only P k₇
+  have b₇ := b₂.only P.fits k₇
   have hl : lR s ∈ s.rd := by rw [P.hrd]; simp
   have hb : Spec.Rsa.bytesAt t₇.mem (s.gpr .r9) (s.gpr .r10).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat :=
     bytes_entry b₇.mem P.kl ((P.ls.symm).sub_left (sc_sub P)) (by have := P.wl; omega)
-  refine WP.seq (WP.mono (upd_ok P hH b₇ (dat := s.gpr .r9) (len := (s.gpr .r10).toNat)
+  refine WP.seq (WP.mono (upd_ok P.fits hH b₇ (dat := s.gpr .r9) (len := (s.gpr .r10).toNat)
     (by rw [o₇.get .r3, o₆.get .r3, o₅.get .r3, o₄.get .r3, e₃, b₂.r14])
     (by rw [o₇.get .r5, o₆.get .r5, e₅, o₄.get .r19, o₃.get .r19, b₂.r19])
     (by rw [o₇.get .r6, e₆, o₅.get .r20, o₄.get .r20, o₃.get .r20, b₂.r20])
@@ -67,14 +67,14 @@ theorem hashLabel_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) :
   refine WP.seq (wp_addi fun t₉ o₉ e₉ => wp_mov fun t₁₀ o₁₀ e₁₀ => wp_addi fun t₁₁ o₁₁ e₁₁ =>
     wp_addi fun t₁₂ o₁₂ e₁₂ => wp_nil ?_)
   have k₁₂ : Only [.r3, .r4, .r5, .r6] t₈ t₁₂ := (o₉.trans (o₁₀.trans (o₁₁.trans o₁₂))).mono
-  have b₁₂ := b₈.only P k₁₂
+  have b₁₂ := b₈.only P.fits k₁₂
   have g4 : t₁₂.gpr .r4 = s.gpr .r10 := by
     rw [o₁₂.get .r4, o₁₁.get .r4, e₁₀, o₉.get .r20, b₈.r20]
   have hr : hH.SH.Repr t₁₂.mem (off (S s) oSt) (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat) := by
     rw [k₁₂.mem, ← hb]
     have := r₈ [] (by rw [k₇.mem]; exact r₂) (by rw [o₇.get .r4, o₆.get .r4, o₅.get .r4, e₄]; rfl)
     simp only [List.nil_append] at this; exact this
-  refine WP.mono (fin_ok P hH b₁₂ (by rw [o₁₂.get .r3, o₁₁.get .r3, o₁₀.get .r3, e₉, b₈.r14])
+  refine WP.mono (fin_ok P.fits hH b₁₂ (by rw [o₁₂.get .r3, o₁₁.get .r3, o₁₀.get .r3, e₉, b₈.r14])
     (by rw [o₁₂.get .r5, e₁₁, o₁₀.get .r14, o₉.get .r14, b₈.r14]) (by rw [e₁₂, o₁₁.get .r14, o₁₀.get .r14,
       o₉.get .r14, b₈.r14])) fun t' ⟨b', g', s', r'⟩ => ⟨b', fun r hr' => ?_, ?_, ?_⟩
   · rw [g' r hr', only_pres k₁₂ (by decide) r hr', g₈ r hr', only_pres k₇ (by decide) r hr', g₂ r hr',
@@ -86,8 +86,8 @@ theorem hashLabel_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) :
       (by rw [g4, bytesAt_length, BitVec.ofNat_toNat, BitVec.setWidth_eq])
 
 /-- `copyLh`: the first `hLen` bytes at `S + oDig` to `EM + 1 + hLen`. -/
-theorem copyLh_ok {H : Hash} (hH : HashOK H) (hD : H.D = D) {t : State} (h : Base s t) :
-    WP isa (copyLh H) t fun t' => Base s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+theorem copyLh_ok {H : Hash} (hH : HashOK H) (hD : H.D = D) {t : State} (h : Base S vO s t) :
+    WP isa (copyLh H) t fun t' => Base S vO s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
       t'.mem = writeBytes t.mem (off (S s) (1 + D)) (Spec.Rsa.bytesAt t.mem (off (S s) oDig) D) := by
   have F := hfits hH
   obtain ⟨_, _, _, _, _, _⟩ := offs
@@ -102,8 +102,8 @@ theorem copyLh_ok {H : Hash} (hH : HashOK H) (hD : H.D = D) {t : State} (h : Bas
     (by rw [e₃]) (fun j hj => by
       rw [k₃.rd, k₃.wr, h.wr]
       show InRegions _ (off (off (S s) oDig) j) 1
-      rw [off_off]; exact sc_inR P (by omega) _)
-    (sc_w P (by rw [k₃.wr, h.wr]) (d := 1 + H.D) (by omega))
+      rw [off_off]; exact sc_inR P.fits (by omega) _)
+    (sc_w P.fits (by rw [k₃.wr, h.wr]) (d := 1 + H.D) (by omega))
     (fun j hj i hi => by
       show off (off (S s) oDig) j ≠ off (off (S s) (1 + H.D)) i
       rw [off_off, off_off]
@@ -111,7 +111,7 @@ theorem copyLh_ok {H : Hash} (hH : HashOK H) (hD : H.D = D) {t : State} (h : Bas
   have hK : Keep [.r4, .r5, .r6, .r7] t t' := (k₃.keep.trans hk).mono
   have hm' : t'.mem = writeBytes t.mem (off (S s) (1 + H.D)) (Spec.Rsa.bytesAt t.mem (off (S s) oDig) H.D) := by
     rw [hm, k₃.mem]
-  exact ⟨h.wb P hK (by rw [bytesAt_length]; omega) hm', fun r hr => hK.gpr r (by revert r; decide), hm'⟩
+  exact ⟨h.wb P.fits hK (by rw [bytesAt_length]; omega) hm', fun r hr => hK.gpr r (by revert r; decide), hm'⟩
 
 end
 

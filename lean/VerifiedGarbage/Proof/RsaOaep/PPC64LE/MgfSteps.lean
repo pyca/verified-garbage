@@ -6,11 +6,11 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Em
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
 import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Encode
 
 /-!
-# RSAES-OAEP encryption on PPC64LE: MGF1's blocks
+# RSA paddings on PPC64LE: MGF1's blocks
 
 Untrusted: everything here is checked by Lean. The blocks of MGF1's round
 (`Impl.RsaOaep.PPC64LE.round`) between the calls: the counter written
@@ -34,7 +34,7 @@ def ctrV (V : Nat → Byte) (c : Nat) (o : Nat) : Byte :=
   if oCtr ≤ o ∧ o < oCtr + 4 then (Spec.Rsa.i2osp c 4).getD (o - oCtr) 0 else V o
 
 section
-variable {D : Nat} {s : State} (P : PreO D s)
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
 include P
 
 omit P in
@@ -46,8 +46,8 @@ theorem view_w8' (m : Mem) {S : Addr} {d j o : Nat} (b : Byte) (hd : d + j < oRs
   rw [off_add]; exact view_w8 m b hd ho
 
 /-- The counter, big-endian, to `S + oCtr`; then `update`'s arguments for it. -/
-theorem ctr_ok {t : State} (h : Base s t) {c : Nat} (h28 : t.gpr .r28 = BitVec.ofNat 64 c) (hc : c < 2 ^ 32) :
-    WP isa (.block updCtrArgs) t fun t' => Base s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+theorem ctr_ok {t : State} (h : Base S vf s t) {c : Nat} (h28 : t.gpr .r28 = BitVec.ofNat 64 c) (hc : c < 2 ^ 32) :
+    WP isa (.block updCtrArgs) t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
       (∀ o < oRsa, view t'.mem (S s) o = ctrV (view t.mem (S s)) c o) ∧
       t'.gpr .r3 = off (S s) oSt ∧ t'.gpr .r4 = t.gpr .r25 ∧ t'.gpr .r5 = off (S s) oCtr ∧
       t'.gpr .r6 = BitVec.ofNat 64 4 ∧ t'.gpr .r7 = off (S s) oW := by

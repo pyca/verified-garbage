@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTLabel
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Correct
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Em
@@ -62,11 +63,11 @@ variable {H G : Hash} (hH : HashOK H) (cH : HashCT hH) (hG : HashOK G) (cG : Has
 include cG hGh hGl hGv in
 /-- `mgfXor`, with its lengths and offsets the anchor's. -/
 theorem mgf_any (q : State → Nat × Nat × Nat × Nat) :
-    RelCT isa (Two fun a t => MgfA H.D (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2 a t ∧
+    RelCT isa (Two fun a t => MgfA S vO (PreO H.D) PubO (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2 a t ∧
       MFit (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2) (mgfXor G) fun _ _ => True :=
   (RelCT.exists_ (P := fun (x : {x : Nat × Nat × Nat × Nat // MFit x.1 x.2.1 x.2.2.1 x.2.2.2}) =>
-      Two (MgfA H.D x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2))
-    fun x => mgfXor_ct (H := H) hG cG x.2 hGh hGl hGv).mono
+      Two (MgfA S vO (PreO H.D) PubO x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2))
+    fun x => mgfXor_ct (oaepOk H.D) hG cG x.2 hGh hGl hGv).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨⟨q a, h₁.2⟩, a, h₁.1, h₂.1⟩) fun _ _ h => h
 
 /-- The checks passed, in terms of the anchor. -/
@@ -76,10 +77,10 @@ theorem hk_of {D : Nat} {a s : State} (p : PubO a s) (h : HK D a) : 2 * D + 2 + 
   simp only [mLen, kk, p.args 1 (by decide), p.g .r6 (by decide)]; exact h
 
 /-- `B` with the checks passed. -/
-def Bk (D : Nat) (a t : State) : Prop := B D a t ∧ HK D a
+def Bk (D : Nat) (a t : State) : Prop := BO D a t ∧ HK D a
 
-theorem bk_pins {D : Nat} {α : Type} {Φ : α → State → Prop} (A : α → State) (h : ∀ x t, Φ x t → B D (A x) t) :
-    Pins Φ [] := fun x t₁ t₂ h₁ h₂ => ⟨(h x t₁ h₁).sp.trans (h x t₂ h₂).sp.symm, fun _ h => nomatch h⟩
+theorem bk_pins {D : Nat} {α : Type} {Φ : α → State → Prop} (A : α → State) (h : ∀ x t, Φ x t → BO D (A x) t) :
+    Pins Φ [] := fun x t₁ t₂ h₁ h₂ => ⟨((h x t₁ h₁).sp (oaepOk D)).trans ((h x t₂ h₂).sp (oaepOk D)).symm, fun _ h => nomatch h⟩
 
 include cH cG hGh hGl hGv in
 theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreO H.D s ∧ PubO a s ∧ Entered s t ∧ HK H.D a)
@@ -92,25 +93,25 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreO H.D s ∧ PubO a s �
   refine two_seq (Ψ := Bk H.D) (encEm_taint H fun a t₁ t₂ ⟨s₁, _, p₁, E₁, _⟩ ⟨s₂, _, p₂, E₂, _⟩ => ?_)
     (fun a t ⟨s, P, p, E, hk⟩ => WP.mono (encEm_ok P rfl hD0 hD64 E (hk_of p hk)) fun t' ⟨b, _⟩ =>
       ⟨⟨s, P, p, b⟩, hk⟩) ?_
-  · have f₁ := E₁.base.fx p₁
-    have f₂ := E₂.base.fx p₂
+  · have f₁ := E₁.base.agree ((oaepOk H.D).agree p₁)
+    have f₂ := E₂.base.agree ((oaepOk H.D).agree p₂)
     refine ⟨f₁.1.trans f₂.1.symm, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [E₁.r9, E₂.r9, p₁.args 0 (by decide), p₂.args 0 (by decide)]
     · rw [E₁.r10, E₂.r10, p₁.args 1 (by decide), p₂.args 1 (by decide)]
     · rw [E₁.r11, E₂.r11, p₁.args 2 (by decide), p₂.args 2 (by decide)]
-    · exact (f₁.2 _ (by decide)).trans (f₂.2 _ (by decide)).symm
-    · exact (f₁.2 _ (by decide)).trans (f₂.2 _ (by decide)).symm
+    · exact f₁.2.1.trans f₂.2.1.symm
+    · exact (f₁.2.2 _ (by decide)).trans (f₂.2.2 _ (by decide)).symm
   -- The label's hash, and `lHash`.
   refine two_seq (Ψ := Bk H.D) ((hashLabel_ct hH cH).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩)
     fun _ _ h => h) (fun a t ⟨⟨s, P, p, b⟩, hk⟩ => WP.mono (hashLabel_ok P hH b) fun t' ⟨b', _⟩ =>
       ⟨⟨s, P, p, b'⟩, hk⟩) ?_
-  refine two_seq (Ψ := Bk H.D) (copyLh_taint H (pins_of (fun _ _ h => h.1) [.r14]))
+  refine two_seq (Ψ := Bk H.D) (copyLh_taint H (pins_of (oaepOk H.D) (fun _ _ h => h.1) [.r14]))
     (fun a t ⟨⟨s, P, p, b⟩, hk⟩ => WP.mono (copyLh_ok P hH rfl b) fun t' ⟨b', _⟩ => ⟨⟨s, P, p, b'⟩, hk⟩) ?_
   -- `DB` with MGF1 of the seed.
   let q₁ : State → Nat × Nat × Nat × Nat := fun a => (1, H.D, 1 + H.D, (a.gpr .r6).toNat - H.D - 1)
-  refine two_seq (Ψ := fun a t => (MgfA H.D (q₁ a).1 (q₁ a).2.1 (q₁ a).2.2.1 (q₁ a).2.2.2 a t ∧
+  refine two_seq (Ψ := fun a t => (MgfA S vO (PreO H.D) PubO (q₁ a).1 (q₁ a).2.1 (q₁ a).2.2.1 (q₁ a).2.2.2 a t ∧
       MFit (q₁ a).1 (q₁ a).2.1 (q₁ a).2.2.1 (q₁ a).2.2.2) ∧ HK H.D a)
     (dbArgs_taint H (bk_pins id fun _ _ h => h.1)) (fun a t ⟨⟨s, P, p, b⟩, hk⟩ => ?_) ?_
   · have k2 := P.k2
@@ -118,20 +119,20 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreO H.D s ∧ PubO a s �
     refine wp_addi (h := by omega) fun t₁ o₁ e₁ => wp_li (by omega) fun t₂ o₂ e₂ =>
       wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_subi (h := by omega) fun t₄ o₄ e₄ => wp_nil ?_
     have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-    show (MgfA H.D 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) a t₄ ∧
+    show (MgfA S vO (PreO H.D) PubO 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) a t₄ ∧
       MFit 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1)) ∧ HK H.D a
-    refine ⟨⟨⟨s, P, p, b.only P k₄, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inl (by omega), by omega⟩⟩, hk⟩
-    · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.a3, hE]
+    refine ⟨⟨⟨s, P, p, b.only P.fits k₄, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inl (by omega), by omega⟩⟩, hk⟩
+    · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.S, hE]
     · rw [o₄.get .r25, o₃.get .r25, e₂]
-    · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, b.r14, p.a3, hE, Nat.zero_add]
+    · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, b.r14, p.S, hE, Nat.zero_add]
     · rw [e₄, o₃.get .r15, o₂.get .r15, o₁.get .r15, b.r15, sub_k (by omega)]; congr 1; omega
   refine two_seq (Ψ := Bk H.D) ((mgf_any hG cG hGh hGl hGv q₁).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩)
     fun _ _ h => h) (fun a t ⟨⟨⟨s, P, p, b, h24, h25, h26, h27⟩, hf⟩, hk⟩ =>
-    WP.mono (mgfXor_ok P hG hGh hGl hGv hf b (by rw [h24, p.S]) h25 (by rw [h26, p.S]) h27)
+    WP.mono (mgfXor_ok P.fits hG hGh hGl hGv hf b (by rw [h24, p.S]) h25 (by rw [h26, p.S]) h27)
       fun t' ⟨b', _⟩ => ⟨⟨s, P, p, b'⟩, hk⟩) ?_
   -- The seed with MGF1 of `maskedDB`.
   let q₂ : State → Nat × Nat × Nat × Nat := fun a => (1 + H.D, (a.gpr .r6).toNat - H.D - 1, 1, H.D)
-  refine two_seq (Ψ := fun a t => (MgfA H.D (q₂ a).1 (q₂ a).2.1 (q₂ a).2.2.1 (q₂ a).2.2.2 a t ∧
+  refine two_seq (Ψ := fun a t => (MgfA S vO (PreO H.D) PubO (q₂ a).1 (q₂ a).2.1 (q₂ a).2.2.1 (q₂ a).2.2.2 a t ∧
       MFit (q₂ a).1 (q₂ a).2.1 (q₂ a).2.2.1 (q₂ a).2.2.2) ∧ HK H.D a)
     (seedArgs_taint H (bk_pins id fun _ _ h => h.1)) (fun a t ⟨⟨s, P, p, b⟩, hk⟩ => ?_) ?_
   · have k2 := P.k2
@@ -139,26 +140,26 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreO H.D s ∧ PubO a s �
     refine wp_addi (h := by omega) fun t₁ o₁ e₁ => wp_subi (h := by omega) fun t₂ o₂ e₂ =>
       wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_li (by omega) fun t₄ o₄ e₄ => wp_nil ?_
     have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-    show (MgfA H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) 1 H.D a t₄ ∧
+    show (MgfA S vO (PreO H.D) PubO (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) 1 H.D a t₄ ∧
       MFit (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) 1 H.D) ∧ HK H.D a
-    refine ⟨⟨⟨s, P, p, b.only P k₄, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inr (by omega), by omega⟩⟩, hk⟩
-    · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.a3, hE, Nat.zero_add]
+    refine ⟨⟨⟨s, P, p, b.only P.fits k₄, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inr (by omega), by omega⟩⟩, hk⟩
+    · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.S, hE, Nat.zero_add]
     · rw [o₄.get .r25, o₃.get .r25, e₂, o₁.get .r15, b.r15, sub_k (by omega)]; congr 1; omega
-    · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, b.r14, p.a3, hE]
+    · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, b.r14, p.S, hE]
     · rw [e₄]
   refine two_seq (Ψ := Bk H.D) ((mgf_any hG cG hGh hGl hGv q₂).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩)
     fun _ _ h => h) (fun a t ⟨⟨⟨s, P, p, b, h24, h25, h26, h27⟩, hf⟩, hk⟩ =>
-    WP.mono (mgfXor_ok P hG hGh hGl hGv hf b (by rw [h24, p.S]) h25 (by rw [h26, p.S]) h27)
+    WP.mono (mgfXor_ok P.fits hG hGh hGl hGv hf b (by rw [h24, p.S]) h25 (by rw [h26, p.S]) h27)
       fun t' ⟨b', _⟩ => ⟨⟨s, P, p, b'⟩, hk⟩) ?_
   -- The public-key operation.
   exact two_seq (pubArgs_taint (bk_pins id fun _ _ h => h.1)) (fun a t ⟨⟨s, P, p, b⟩, _⟩ =>
     WP.mono (pubArgs_ok P b rfl) fun t' h => ⟨s, P, p, _, h⟩) call_ct
 
 theorem entered_only {s t t' : State} {rs : List Reg} {D : Nat} (P : PreO D s) (E : Entered s t)
-    (o : Only rs t t') (hrs : ∀ r ∈ rs, r ∉ fx ++ hiRegs ++ ([.r9, .r10, .r11] : List Reg) := by decide) : Entered s t' := by
+    (o : Only rs t t') (hrs : ∀ r ∈ rs, r ∉ .r14 :: fx ++ hiRegs ++ ([.r9, .r10, .r11] : List Reg) := by decide) : Entered s t' := by
   have g : ∀ r ∈ [Reg.r9, .r10, .r11], t'.gpr r = t.gpr r := fun r hr =>
     o.gpr r fun h => hrs r h (List.mem_append_right _ hr)
-  exact ⟨E.base.only P o fun r h h' => hrs r h (List.mem_append_left _ h'), (g _ (by decide)).trans E.r9,
+  exact ⟨E.base.only P.fits o fun r h h' => hrs r h (List.mem_append_left _ h'), (g _ (by decide)).trans E.r9,
     (g _ (by decide)).trans E.r10, (g _ (by decide)).trans E.r11⟩
 
 include cH cG hGh hGl hGv in
@@ -178,7 +179,7 @@ theorem checks_ct : RelCT isa (Two fun a t => ∃ s, PreO H.D s ∧ PubO a s ∧
     rw [e₃, e₂, e₁, o₁.get .r15, E.base.r15, ← ofNat_toNat (s.gpr .r6), p.g .r6 (by decide)]
     exact ne_zero_ltBit (by omega) (by omega)
   refine two_ite (fun a t₁ t₂ ⟨_, _, _, _, c₁⟩ ⟨_, _, _, _, c₂⟩ => by rw [eval_nonzero, eval_nonzero, c₁, c₂])
-    (fail_taint (pins_of (fun _ _ ⟨⟨s, P, p, E, _⟩, _⟩ => ⟨s, P, p, E.base⟩) [.r15, .r16])) ?_
+    (fail_taint (pins_of (oaepOk H.D) (fun _ _ ⟨⟨s, P, p, E, _⟩, _⟩ => ⟨s, P, p, E.base⟩) [.r15, .r16])) ?_
   refine two_seq (Ψ := fun a t => ∃ s, PreO H.D s ∧ PubO a s ∧ Entered s t ∧ 2 * H.D + 2 ≤ K a ∧
       (t.gpr .r3 != 0) = decide (K a - (2 * H.D + 2) < (stackArg a 1).toNat))
     (chkMsg_taint H (bk_pins id fun _ _ ⟨⟨s, P, p, E, _⟩, _⟩ => ⟨s, P, p, E.base⟩))
@@ -199,7 +200,7 @@ theorem checks_ct : RelCT isa (Two fun a t => ∃ s, PreO H.D s ∧ PubO a s ∧
     exact msgBit (by omega) (stackArg a 1).isLt
   refine two_ite (fun a t₁ t₂ ⟨_, _, _, _, _, c₁⟩ ⟨_, _, _, _, _, c₂⟩ => by
       rw [eval_nonzero, eval_nonzero, c₁, c₂])
-    (fail_taint (pins_of (fun _ _ ⟨⟨s, P, p, E, _⟩, _⟩ => ⟨s, P, p, E.base⟩) [.r15, .r16])) ?_
+    (fail_taint (pins_of (oaepOk H.D) (fun _ _ ⟨⟨s, P, p, E, _⟩, _⟩ => ⟨s, P, p, E.base⟩) [.r15, .r16])) ?_
   refine (encMain_ct hH cH hG cG hGh hGl hGv).mono (fun _ _ h => ?_) fun _ _ h => h
   obtain ⟨a, ⟨⟨s₁, P₁, p₁, E₁, hk, c₁⟩, h₁⟩, ⟨⟨s₂, P₂, p₂, E₂, -, -⟩, -⟩⟩ := h
   rw [eval_nonzero, c₁] at h₁

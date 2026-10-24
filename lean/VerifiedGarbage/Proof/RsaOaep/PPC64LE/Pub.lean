@@ -40,7 +40,7 @@ abbrev rsaR (s : State) : Region := ⟨off (S s) oRsa, ((stackArg s 4).toNat - 1
 structure AtCall (s : State) (EM : List Byte) (t : State) : Prop where
   sv : Saves s t
   rd : t.rd = s.rd
-  mem : Frame [kR s, SC s] s.mem t.mem
+  mem : Frame [kR s, SC S s] s.mem t.mem
   em : Spec.Rsa.bytesAt t.mem (off (S s) 0) (kk s) = EM
   g3 : t.gpr .r3 = s.gpr .r3
   g4 : t.gpr .r4 = s.gpr .r6
@@ -64,7 +64,7 @@ theorem rsa_sub : Region.Sub (rsaR s) (scR s) := by
   have := scl P
   exact Offset.sub_base _ (by unfold oRsa; omega)
 
-theorem pubArgs_ok {t : State} {EM : List Byte} (h : Base s t) (he : Spec.Rsa.bytesAt t.mem (off (S s) 0) (kk s) = EM) :
+theorem pubArgs_ok {t : State} {EM : List Byte} (h : Base S vO s t) (he : Spec.Rsa.bytesAt t.mem (off (S s) 0) (kk s) = EM) :
     WP isa (.block pubArgs) t (AtCall s EM) := by
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
   have hsc := scl P
@@ -104,8 +104,8 @@ theorem pubArgs_ok {t : State} {EM : List Byte} (h : Base s t) (he : Spec.Rsa.by
   · rw [← he]
     exact bytes_entry (A := ⟨fb s + BitVec.ofNat 64 96, 16⟩) (B := ⟨fb s + BitVec.ofNat 64 96, 16⟩)
       (hfr.mono fun r hr => by simp at hr ⊢; exact hr)
-      ((k_sc P).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega)))
-      ((k_sc P).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega))) (by omega)
+      ((P.fits.ksc).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega)))
+      ((P.fits.ksc).sub_left (frame_sub s (by decide)) |>.sub_right (sc_in (by omega))) (by omega)
   · rw [o₁₄.get .r3, o₁₃.get .r3, o₁₂.get .r3, o₁₁.get .r3, o₁₀.get .r3, o₉.get .r3, o₈.get .r3, e₇, m₆.gpr,
       o₅.get .r16, m₄.gpr, k₃.get .r16, h.r16]
   · rw [o₁₄.get .r4, o₁₃.get .r4, o₁₂.get .r4, o₁₁.get .r4, o₁₀.get .r4, o₉.get .r4, e₈, o₇.get .r15, m₆.gpr,
@@ -137,7 +137,7 @@ theorem pdOk_of {t : State} {EM : List Byte} (ha : AtCall s EM t) : PdOk t := by
   have hsc := scl P
   have hsp : t.sp = fb s := ha.sv.sp
   have hsa : stackArgAddr t 0 = fb s + BitVec.ofNat 64 96 := by rw [stackArgAddr_in, hsp]
-  have hS := S_fits P
+  have hS := S_fits P.fits
   have hwsc := P.wsc
   have eS : (S s).toNat = (stackArg s 3).toNat := rfl
   have hko : (kR s).Disjoint ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [← oR_eq P]; exact P.ko
@@ -177,7 +177,7 @@ theorem pdOk_of {t : State} {EM : List Byte} (ha : AtCall s EM t) : PdOk t := by
     have hm : ∀ r ∈ s.rd, Covers [r] (s.rd ++ (fr s :: s.wr)) := fun r hr =>
       Covers.left (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; exact hr)
     refine Covers.cons (hm _ (by rw [P.hrd]; simp)) (Covers.cons (hm _ (by rw [P.hrd]; simp))
-      (Covers.cons (Covers.right (sc_cov P (by unfold oRsa; omega)))
+      (Covers.cons (Covers.right (sc_cov P.fits (by unfold oRsa; omega)))
         (Covers.one (in_fr' s _ _ (by decide) (by decide)) |>.cons Covers.nil)))
   case hwr =>
     simp only [pdWr]
@@ -234,7 +234,7 @@ theorem call_ok {t : State} {EM : List Byte} (ha : AtCall s EM t) :
   exact this
 
 /-- `encFail`: zeros to `out`, and 0. -/
-theorem fail_ok {t : State} (h : Base s t) :
+theorem fail_ok {t : State} (h : Base S vO s t) :
     WP isa encFail t fun t' => Saves s t' ∧ t'.gpr .r3 = 0 ∧
       Spec.Rsa.bytesAt t'.mem (s.gpr .r3) (kk s) = List.replicate (kk s) 0 := by
   have hk1 := P.k1; have hk2 := P.k2

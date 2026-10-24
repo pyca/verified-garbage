@@ -1,13 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Em
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Base
 
 /-!
-# RSAES-OAEP encryption on PPC64LE: the calls of the streaming hash functions
+# RSA paddings on PPC64LE: the calls of the streaming hash functions
 
 Untrusted: everything here is checked by Lean. The calls of a hash
 function's `init`, `update` and `finalize` (`HashOK.callInit_ok`, …) on the
@@ -51,7 +51,7 @@ theorem hfits {H : Hash} (hH : HashOK H) : H.S ≤ 192 ∧ H.FD ≤ 64 ∧ H.W �
   simp only [Hash.S]; omega
 
 section
-variable {D : Nat} {s : State} (P : PreO D s)
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
 include P
 
 /-- What a callee writing ranges of our part of the working space and the
@@ -73,13 +73,13 @@ theorem same_of_frame {t t' : State} (hsp : t.sp = fb s) {rgs : List (Nat × Nat
   · rw [List.mem_singleton.mp h', hsp] at hc
     exact cR_dis P (o := o) (n := 1) (by omega) _ hc (Region.contains_self _ _)
 
-theorem sp48 {t : State} (h : Base s t) : 48 ≤ t.sp.toNat := by
+theorem sp48 {t : State} (h : Base S vf s t) : 48 ≤ t.sp.toNat := by
   rw [h.sp]; have := P.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes]; omega
 
 /-- A call of the streaming `init` on the state at `S + oSt`. -/
-theorem init_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) (h3 : t.gpr .r3 = off (S s) oSt) :
-    WP isa H.callInit t fun t' => Base s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+theorem init_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vf s t) (h3 : t.gpr .r3 = off (S s) oSt) :
+    WP isa H.callInit t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
       Same (S s) t t' [(oSt, H.S)] ∧ hH.SH.Repr t'.mem (off (S s) oSt) [] := by
   have F := hfits hH
   obtain ⟨_, _, _, _, _, _⟩ := offs
@@ -91,12 +91,12 @@ theorem init_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) (h3 : t.gp
 
 /-- A call of the streaming `update` on the state at `S + oSt`, with the
 `len` bytes at `dat`. -/
-theorem upd_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) {dat : Addr} {len : Nat}
+theorem upd_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vf s t) {dat : Addr} {len : Nat}
     (h3 : t.gpr .r3 = off (S s) oSt) (h5 : t.gpr .r5 = dat) (h6 : (t.gpr .r6).toNat = len)
     (h7 : t.gpr .r7 = off (S s) oW) (hdc : Covers [⟨dat, len⟩] (t.rd ++ t.wr))
     (hd₁ : Region.Disjoint ⟨dat, len⟩ ⟨off (S s) oSt, H.S⟩) (hd₂ : Region.Disjoint ⟨dat, len⟩ ⟨off (S s) oW, H.W⟩)
     (hd₃ : (cR s).Disjoint ⟨dat, len⟩) :
-    WP isa H.callUpd t fun t' => Base s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+    WP isa H.callUpd t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
       Same (S s) t t' [(oSt, H.S), (oW, H.W)] ∧
       ∀ m, hH.SH.Repr t.mem (off (S s) oSt) m → t.gpr .r4 = BitVec.ofNat 64 m.length →
         hH.SH.Repr t'.mem (off (S s) oSt) (m ++ Spec.Sha256.bytesAt t.mem dat len) := by
@@ -116,9 +116,9 @@ theorem upd_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) {dat : Addr
 
 /-- A call of the streaming `finalize` on the state at `S + oSt`, its digest
 to `S + oDig`. -/
-theorem fin_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base s t) (h3 : t.gpr .r3 = off (S s) oSt)
+theorem fin_ok {H : Hash} (hH : HashOK H) {t : State} (h : Base S vf s t) (h3 : t.gpr .r3 = off (S s) oSt)
     (h5 : t.gpr .r5 = off (S s) oDig) (h6 : t.gpr .r6 = off (S s) oW) :
-    WP isa H.callFin t fun t' => Base s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+    WP isa H.callFin t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
       Same (S s) t t' [(oSt, H.S), (oDig, H.FD), (oW, H.W)] ∧
       ∀ m, hH.SH.Repr t.mem (off (S s) oSt) m → m.length < 2 ^ 64 → t.gpr .r4 = BitVec.ofNat 64 m.length →
         Spec.Sha256.bytesAt t'.mem (off (S s) oDig) H.FD = hH.fh m := by

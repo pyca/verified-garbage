@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Base
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Pre
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -36,7 +36,7 @@ theorem in_aR {s : State} {j : Nat} (hj : j < 7) : (aR s).Contains (stackArgAddr
 
 /-- After the saves and the prologue. -/
 structure Entered (s t : State) : Prop where
-  base : Base s t
+  base : Base S vO s t
   r9 : t.gpr .r9 = stackArg s 0
   r10 : t.gpr .r10 = stackArg s 1
   r11 : t.gpr .r11 = stackArg s 2
@@ -106,9 +106,17 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocated frameBytes s) (
         allocated_gpr],
     by rw [ow.mem, o₁₂.mem, o₁₁.mem, k10.mem, k₇.mem]; exact hsv,
     by rw [ow.mem, o₁₂.mem, o₁₁.mem, k10.mem, k₇.mem]; exact hls⟩
-  refine ⟨⟨sv, ow.rd.trans r12, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
+  refine ⟨⟨sv, ow.rd.trans r12, ?_, fun r hr => ?_, ?_⟩, ?_, ?_, ?_⟩
+  rotate_left 2
+  · rw [ow.mem, o₁₂.mem, o₁₁.mem]
+    exact m10.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp
+  · rw [ow.get .r9, o₁₂.get .r9]; exact e₁₁
+  · rw [ow.get .r10]; exact e₁₂
+  · exact ew
   · rw [kw.get .r14, k10.get .r14, o₇.get .r14, o₆.get .r14, o₅.get .r14, o₄.get .r14, o₃.get .r14,
       o₂.get .r14]; exact e₁
+  simp only [fx, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [vO]
   · rw [kw.get .r15, k10.get .r15, o₇.get .r15, o₆.get .r15, o₅.get .r15, o₄.get .r15, o₃.get .r15, e₂,
       o₁.get .r6, gs .r6 (by decide)]
   · rw [kw.get .r16, k10.get .r16, o₇.get .r16, o₆.get .r16, o₅.get .r16, o₄.get .r16, e₃, o₂.get .r3,
@@ -124,11 +132,6 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocated frameBytes s) (
   · rw [kw.get .r21, o₁₀.get .r21, o₉.get .r21, e₈]
   · rw [kw.get .r22, o₁₀.get .r22, e₉]
   · rw [ow.get .r23, o₁₂.get .r23, o₁₁.get .r23]; exact e₁₀
-  · rw [ow.mem, o₁₂.mem, o₁₁.mem]
-    exact m10.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp
-  · rw [ow.get .r9, o₁₂.get .r9]; exact e₁₁
-  · rw [ow.get .r10]; exact e₁₂
-  · exact ew
 
 end
 

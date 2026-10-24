@@ -52,7 +52,7 @@ include P
 theorem em_ok {H : Hash} (hH : HashOK H) {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
     (hD : H.D = D) {t : State} (E : Entered s t) (hk : 2 * D + 2 + mLen s ≤ kk s) {rest : Prog isa}
     {Q : State → Prop}
-    (k : ∀ t', Base s t' → EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) →
+    (k : ∀ t', Base S vO s t' → EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) →
       WP isa rest t' Q) :
     WP isa (.seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H) rest))) t Q := by
   have hD0 := hH.hD0
@@ -82,9 +82,9 @@ EME-OAEP's encoding at `S`. -/
 theorem mask_ok {H G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
     (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤ 64)
     {sd lh m : List Byte} (hsd : sd.length = D) (hlh : lh.length = D) (hm : m.length = mLen s)
-    (hk : 2 * D + 2 + mLen s ≤ kk s) {t : State} (h : Base s t)
+    (hk : 2 * D + 2 + mLen s ≤ kk s) {t : State} (h : Base S vO s t)
     (he : EmAt (view t.mem (S s)) (kk s) D sd lh m (mLen s)) {rest : Prog isa} {Q : State → Prop}
-    (k : ∀ t', Base s t' → Spec.Rsa.bytesAt t'.mem (off (S s) 0) (kk s) = emOf Gs D (kk s) (mLen s) sd lh m →
+    (k : ∀ t', Base S vO s t' → Spec.Rsa.bytesAt t'.mem (off (S s) 0) (kk s) = emOf Gs D (kk s) (mLen s) sd lh m →
       WP isa rest t' Q) :
     WP isa (.seq (.block (dbArgs H)) (.seq (mgfXor G) (.seq (.block (seedArgs H)) (.seq (mgfXor G) rest)))) t Q := by
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
@@ -95,8 +95,8 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x,
   refine WP.seq (wp_addi (h := by omega) fun t₁ o₁ e₁ => wp_li (by omega) fun t₂ o₂ e₂ =>
     wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_subi (h := by omega) fun t₄ o₄ e₄ => wp_nil ?_)
   have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  have b₄ := h.only P k₄
-  refine WP.seq (WP.mono (mgfXor_ok P hG hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
+  have b₄ := h.only P.fits k₄
+  refine WP.seq (WP.mono (mgfXor_ok P.fits hG hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
     (dstLen := kk s - H.D - 1) ⟨by omega, by omega, .inl (by omega), by omega⟩ b₄
     (by rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, h.r14, hE])
     (by rw [o₄.get .r25, o₃.get .r25, e₂])
@@ -107,8 +107,8 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x,
   refine WP.seq (wp_addi (h := by omega) fun t₆ o₆ e₆ => wp_subi (h := by omega) fun t₇ o₇ e₇ =>
     wp_addi (h := by omega) fun t₈ o₈ e₈ => wp_li (by omega) fun t₉ o₉ e₉ => wp_nil ?_)
   have k₉ : Only [.r24, .r25, .r26, .r27] t₅ t₉ := (o₆.trans (o₇.trans (o₈.trans o₉))).mono
-  have b₉ := b₅.only P k₉
-  refine WP.seq (WP.mono (mgfXor_ok P hG hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
+  have b₉ := b₅.only P.fits k₉
+  refine WP.seq (WP.mono (mgfXor_ok P.fits hG hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
     (dstLen := H.D) ⟨by omega, by omega, .inr (by omega), by omega⟩ b₉
     (by rw [o₉.get .r24, o₈.get .r24, o₇.get .r24, e₆, b₅.r14, hE, Nat.zero_add])
     (by rw [o₉.get .r25, o₈.get .r25, e₇, o₆.get .r15, b₅.r15, sub_k (by omega)]; congr 1)
