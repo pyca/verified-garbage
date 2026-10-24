@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Stream
 public import VerifiedGarbage.Spec.MlDsa.Poly
+import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_simple_bit_pack`

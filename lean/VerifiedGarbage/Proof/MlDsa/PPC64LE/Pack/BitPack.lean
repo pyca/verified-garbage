@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_bit_pack`

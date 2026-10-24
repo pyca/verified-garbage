@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Pack.Stream
+public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_simple_bit_pack`, `vg_mldsa_bit_pack`, `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Stream
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 
 /-!
 # ML-DSA on PPC64LE: the contracts of the encodings, for the proofs

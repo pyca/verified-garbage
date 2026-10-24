@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
-public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 
 /-!
 # ML-DSA on PPC64LE: packing and unpacking `d`-bit fields
