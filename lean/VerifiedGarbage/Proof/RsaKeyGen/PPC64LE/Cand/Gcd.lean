@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.ModE
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Copy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -199,5 +205,141 @@ theorem gcdE_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (h35 : sl
   · rw [a22, g₃, show Nat.gcd ((c - 1) % (s.gpr .r21).toNat) (s.gpr .r21).toNat = Nat.gcd (c - 1) (s.gpr .r21).toNat
       from by rw [← Nat.gcd_rec, Nat.gcd_comm]]
   · rw [m, m₃, m₂]; exact o₁
+
+
+theorem os2ip_bytes_lt (m : Mem) (E : Addr) : ∀ i, Spec.Rsa.os2ip (Spec.Rsa.bytesAt m E i) < 256 ^ i
+  | 0 => by simp [Spec.Rsa.bytesAt, Spec.Rsa.os2ip]
+  | i + 1 => by
+    rw [VG.Proof.Bignum.PPC64LE.Pub.bytesAt_succ, VG.Proof.Rsa.os2ip_snoc, Nat.pow_succ]
+    have := os2ip_bytes_lt m E i
+    have := (m (off E i)).isLt
+    omega
+
+/-- `loadE`: `e`'s `L` octets (`1 ≤ L ≤ 8`) at `E` (`r21`, `r30`) into `r21`. -/
+theorem loadE_ok {s : State} {E : Addr} {L : Nat} (h21 : s.gpr .r21 = off E 0)
+    (h30 : s.gpr .r30 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L ≤ 8)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off E i) 1) :
+    WP isa loadE s fun t =>
+      (t.gpr .r21 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L)) ∧ t.mem = s.mem) ∧
+        Keep [.r0, .r3, .r14, .r17, .r21] s t := by
+  unfold loadE
+  refine WP.seq ?_
+  have hpre : WP isa (.block [.li .r3 0, .addi .r14 .r21 0, .addi .r17 .r30 0]) s fun s₁ =>
+      (s₁.gpr .r3 = 0 ∧ s₁.gpr .r14 = off E 0 ∧ s₁.gpr .r17 = BitVec.ofNat 64 L ∧ s₁.mem = s.mem) ∧
+        Keep [.r3, .r14, .r17] s s₁ := by
+    refine WP.keep _ ?_ (by decide)
+    prun [h21, h30]
+    exact ⟨rfl, BitVec.add_zero _⟩
+  refine WP.mono hpre fun s₁ ⟨⟨i3, i14, i17, im⟩, k₁⟩ => ?_
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .r3 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i)) ∧
+      t.gpr .r14 = off E i ∧ t.mem = s.mem ∧ Keep [.r0, .r3, .r14, .r17] s t
+  refine WP.seq (WP.mono (wp_countdown (cnt := .r17) (N := L) (by omega) (by omega) Inv
+    (fun i hi t ⟨t3, t14, tm, tk⟩ hc => ?_)
+    ⟨by rw [i3]; rfl, i14, im, k₁.mono⟩ i17) fun t ⟨t3, _, tm, tk⟩ => ?_)
+  · have hb : InRegions (t.rd ++ t.wr) (off E i) 1 := by rw [tk.rd, tk.wr]; exact hrd i hi
+    refine WP.mono (WP.keep [.r0, .r3, .r14, .r17] (Q := fun t' =>
+      t'.gpr .r3 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E (i + 1))) ∧
+        t'.gpr .r14 = off E (i + 1) ∧ t'.mem = t.mem ∧ t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1) ?_ (by decide))
+      fun t' ⟨⟨a, b, c, d⟩, k⟩ => ⟨⟨a, b, c.trans tm, tk.trans' k⟩, d⟩
+    prun [t14, t3, exec_lbz' (show Reg.r14 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hb, read_byte64]
+    apply BitVec.eq_of_toNat_eq
+    rw [VG.Proof.Bignum.PPC64LE.Pub.bytesAt_succ, VG.Proof.Rsa.os2ip_snoc, tm, BitVec.toNat_add,
+      BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    have hbt := (s.mem (VG.Proof.Mont.off E i)).isLt
+    have hlt := os2ip_bytes_lt s.mem E i
+    have h256 : 256 ^ i ≤ 256 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
+    have : (256 : Nat) ^ 7 = 2 ^ 56 := by decide
+    rw [Nat.mod_eq_of_lt (show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i) < 2 ^ 64 by omega)]
+    omega
+  · have hfin : WP isa (.block [.addi .r21 .r3 0]) t fun t' =>
+        (t'.gpr .r21 = t.gpr .r3 ∧ t'.mem = t.mem) ∧ Keep [.r21] t t' := by
+      refine WP.keep _ ?_ (by decide)
+      prun
+      exact BitVec.add_zero _
+    exact WP.mono hfin fun t' ⟨⟨a, b⟩, k⟩ => ⟨⟨a.trans t3, b.trans tm⟩, (tk.trans k).mono (by decide)⟩
+
+
+/-- The registers `gcdCheck` writes. -/
+def gcRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r14, .r15, .r16, .r17, .r21, .r22]
+
+/-- `gcdCheck`: `r22 = 0` iff `gcd(c − 1, e) = 1`, for `e` the `L` octets at
+`E` (`r21`, `r30`). -/
+theorem gcdCheck_ok {s : State} {B E : Addr} {Z w c L : Nat} (h : Env s B Z w) (h35 : slot w nArr ≤ Z)
+    (hc : wv s.mem B (slot w 0) w = c) (hodd : c % 2 = 1) (h21 : s.gpr .r21 = off E 0)
+    (h30 : s.gpr .r30 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L ≤ 8)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off E i) 1) :
+    WP isa gcdCheck s fun t =>
+      ((t.gpr .r22 = 0 ↔ Nat.gcd (c - 1) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L)) = 1) ∧
+        Outside B (slot w aCm1) (8 * w) s.mem t.mem) ∧ Keep gcRegs s t := by
+  have hEl : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L) < 2 ^ 64 := by
+    have := os2ip_bytes_lt s.mem E L
+    have : 256 ^ L ≤ 256 ^ 8 := Nat.pow_le_pow_right (by decide) hL'
+    have : (256 : Nat) ^ 8 = 2 ^ 64 := by decide
+    omega
+  generalize hEv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L) = e at hEl ⊢
+  unfold gcdCheck
+  refine WP.seq (WP.mono (loadE_ok h21 h30 hL hL' hrd) fun t₁ ⟨⟨e₁, m₁⟩, k₁⟩ => ?_)
+  rw [hEv] at e₁
+  have hb : WP isa (.block [.li .r0 1, .logic .and .r5 .r21 .r0]) t₁ fun t =>
+      (t.gpr .r5 = BitVec.ofNat 64 (e % 2) ∧ t.gpr .r21 = t₁.gpr .r21 ∧ t.mem = t₁.mem) ∧ Keep [.r0, .r5] t₁ t := by
+    refine WP.keep _ ?_ (by decide)
+    prun [e₁, and1_val]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hEl]
+    split <;> (congr 1; omega)
+  refine WP.seq (WP.mono hb fun t₂ ⟨⟨a5, a21, m₂⟩, k₂⟩ => ?_)
+  have k12 := k₁.trans k₂
+  have hm2 : t₂.mem = s.mem := by rw [m₂, m₁]
+  refine WP.ite _ (eval_zero_ofNat _ _ (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)) a5)
+    (fun hz => ?_) (fun hz => ?_)
+  · -- `e` even.
+    have he2 : e % 2 = 0 := by simpa using hz
+    have hblk : WP isa (.block [.li .r22 1]) t₂ fun t =>
+        (t.gpr .r22 = BitVec.ofNat 64 1 ∧ t.mem = t₂.mem) ∧ Keep [.r22] t₂ t := by
+      refine WP.keep _ ?_ (by decide)
+      prun
+    refine WP.mono hblk fun t ⟨⟨a22, m⟩, k⟩ => ⟨⟨?_, by rw [m, hm2]; exact Outside.refl _ _ _ _⟩, (k12.trans k).mono (by decide)⟩
+    rw [a22]
+    refine ⟨fun h => absurd h (by decide), fun hg => ?_⟩
+    have : 2 ∣ Nat.gcd (c - 1) e := Nat.dvd_gcd (by omega) (by omega)
+    rw [hg] at this; exact absurd this (by decide)
+  · have he1 : e % 2 = 1 := by simp at hz; omega
+    have hsub : WP isa (.block [.subi .r5 .r21 1]) t₂ fun t =>
+        (t.gpr .r5 = BitVec.ofNat 64 (e - 1) ∧ t.mem = t₂.mem) ∧ Keep [.r5] t₂ t := by
+      refine WP.keep _ ?_ (by decide)
+      prun [a21, e₁]
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+      omega
+    refine WP.seq (WP.mono hsub fun t₃ ⟨⟨a5', m₃⟩, k₃⟩ => ?_)
+    have k13 := k12.trans k₃
+    refine WP.ite _ (eval_zero_ofNat _ _ (by omega) a5') (fun hz' => ?_) (fun hz' => ?_)
+    · have he' : e = 1 := by simp at hz'; omega
+      have hblk : WP isa (.block [.li .r22 0]) t₃ fun t =>
+          (t.gpr .r22 = 0 ∧ t.mem = t₃.mem) ∧ Keep [.r22] t₃ t := by
+        refine WP.keep _ ?_ (by decide)
+        prun
+        rfl
+      refine WP.mono hblk fun t ⟨⟨a22, m⟩, k⟩ =>
+        ⟨⟨?_, by rw [m, m₃, hm2]; exact Outside.refl _ _ _ _⟩, (k13.trans k).mono (by decide)⟩
+      rw [a22, he', Nat.gcd_one_right]; exact ⟨fun _ => rfl, fun _ => rfl⟩
+    · have he' : 1 < e := by simp at hz'; omega
+      have env3 : Env t₃ B Z w := h.keep k13 (by decide)
+      have hc3 : wv t₃.mem B (slot w 0) w = c := by rw [m₃, hm2]; exact hc
+      have r21 : t₃.gpr .r21 = BitVec.ofNat 64 e := (k₃.gpr .r21 (by decide)).trans (a21.trans e₁)
+      have hev : (t₃.gpr .r21).toNat = e := by rw [r21, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hEl]
+      refine WP.mono (gcdE_ok env3 h35 hc3 hodd (by rw [hev]; exact he') (by rw [hev]; exact he1))
+        fun t ⟨⟨a22, o⟩, k⟩ => ⟨⟨?_, by rw [m₃, hm2] at o; exact o⟩, (k13.trans k).mono (by decide)⟩
+      rw [a22, hev]
+      have hg1 : 1 ≤ Nat.gcd (c - 1) e := Nat.gcd_pos_of_pos_right _ (by omega)
+      have hg2 : Nat.gcd (c - 1) e ≤ e := Nat.gcd_le_right _ (by omega)
+      constructor
+      · intro hz0
+        have hn : (BitVec.ofNat 64 (Nat.gcd (c - 1) e) - BitVec.ofNat 64 1).toNat = Nat.gcd (c - 1) e - 1 := by
+          rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+        rw [hz0] at hn
+        have : (0 : BitVec 64).toNat = 0 := rfl
+        omega
+      · intro hg; rw [hg]; rfl
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand
