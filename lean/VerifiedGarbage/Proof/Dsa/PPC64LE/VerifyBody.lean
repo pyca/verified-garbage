@@ -72,12 +72,6 @@ theorem bytesAt_take (m : Mem) (D : Addr) (n k : Nat) :
     (Spec.Rsa.bytesAt m D n).take k = Spec.Rsa.bytesAt m D (min n k) := by
   simp only [Spec.Rsa.bytesAt, ← List.map_take, List.take_range, Nat.min_comm]
 
-
-/-- The first octets of a buffer apart from `scratch`. -/
-theorem Src.take {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {k : Nat} (hk : k ≤ n) :
-    Src s L D k :=
-  ⟨fun i hi => h.rd i (by omega), fun i hi => h.sep i (by omega)⟩
-
 /-- The store of the mask in the header. -/
 theorem Kept.ofMask {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.S hMask 8 m m') : Kept L m m' :=
   ⟨h.mono (Nat.zero_le _) (by have := hL.z256; simp only [hMask]; omega), fun i hi =>

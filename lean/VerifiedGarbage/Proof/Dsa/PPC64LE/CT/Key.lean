@@ -17,9 +17,9 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 /-!
 # DSA on PPC64LE: constant time of the checks of the key after the sizes
 
-`oddsTail_rel`: two runs of the checks after `sizes` (p and q odd,
-`p mod q = 1`, g and y in the subgroup) for the same public data leak the
-same trace. The taint analysis checks the code between the branches on the
+`paramsTail_rel`: two runs of the checks of the domain after `sizes` (p
+and q odd, `p mod q = 1`, g in the subgroup) for the same public data leak
+the same trace; `oddsTail_rel`, the same with y's check after them. The taint analysis checks the code between the branches on the
 checks' results (`t1`–`t8`, from the registers each phase fixes), and each
 phase states the result as a fact of the key's public part.
 -/
@@ -140,6 +140,7 @@ theorem ql_bounds {v : VD} {s : State} (h : Base v s) : 20 ≤ v.L.ql ∧ v.L.ql
 theorem w_O1 {v : VD} {s : State} (h : S5 v s) : WP isa (.block (ptrP ++ odd)) s (O1 v) := by
   obtain ⟨B, r2, -, hsz⟩ := h
   have hb := pl_bounds B
+  have := B.kn
   rw [WP.block_append_iff]
   refine WP.mono (ptrP_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
@@ -151,6 +152,7 @@ theorem w_O1 {v : VD} {s : State} (h : S5 v s) : WP isa (.block (ptrP ++ odd)) s
 theorem w_O2 {v : VD} {s : State} (h : O1 v s ∧ s.gpr .r0 = 0) : WP isa (.block (ptrQ ++ odd)) s (O2 v) := by
   obtain ⟨⟨B, r2, -, hsz, e0⟩, z⟩ := h
   have hb := ql_bounds B
+  have := B.kn
   rw [WP.block_append_iff]
   refine WP.mono (ptrQ_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
@@ -165,34 +167,41 @@ theorem w_OM {v : VD} {s : State} (h : O2 v s ∧ s.gpr .r0 = 0) : WP isa pModQ 
   obtain ⟨⟨B, r2, -, hsz, hpo, e0⟩, z⟩ := h
   have ko : KO v := ⟨hsz, hpo, e0.mp z⟩
   have bd := ko.bounds
-  refine WP.mono (pModQ_ok B.ok B.scr B.regs B.hk (by rw [B.q]; exact Nat.lt_trans (by decide) bd.2.1))
+  refine WP.mono (pModQ_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [B.q]; exact Nat.lt_trans (by decide) bd.2.1))
     fun t ⟨⟨_, q0, qtop, r0, qb⟩, k⟩ =>
       ⟨B.step k (qb.body B.ok), ?_, fixL_nil _, ⟨ko, by rw [q0, B.q]; rfl, qtop⟩, ?_⟩
   · rw [k.gpr .r2 (by decide), r2]
   · rw [r0, B.p, B.q]; rfl
 
-theorem w_P {v : VD} {s : State} (h : OM v s ∧ s.gpr .r0 = 0) : WP isa setupP s (PP KM v) := by
-  obtain ⟨⟨B, r2, -, ⟨ko, qf⟩, e0⟩, z⟩ := h
-  have bd := ko.bounds
-  refine WP.mono (setupP_ok B.ok B.scr B.regs B.hk (by rw [B.p]; exact bd.1))
+/-- `setupP`, from a state in the Q space with q in its array 0, for a key
+satisfying `K`. -/
+theorem w_setupP {K : VD → Prop} (hK : ∀ v, K v → KO v) {v : VD} {s : State} (B : Base v s)
+    (r2 : s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d) (qf : QF v s) (kv : K v) : WP isa setupP s (PP K v) := by
+  have bd := (hK v kv).bounds
+  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [B.p]; exact bd.1))
     fun t ⟨⟨ip, p0, ptop, p8, pb⟩, k⟩ => ⟨B.step k (pb.body B.ok), ?_, envP_of ip,
-      ⟨ip, ?_, ptop, ?_, (pb.arrQ B.ok 0 (by decide)).trans qf.1, (pb.qtop B.ok).trans qf.2⟩, ko, e0.mp z⟩
+      ⟨ip, ?_, ptop, ?_, (pb.arrQ B.ok 0 (by decide)).trans qf.1, (pb.qtop B.ok).trans qf.2⟩, kv⟩
   · rw [k.gpr .r2 (by decide), r2]
   · rw [p0, B.p]; rfl
   · rw [p8, B.p]; rfl
+
+theorem w_P {v : VD} {s : State} (h : OM v s ∧ s.gpr .r0 = 0) : WP isa setupP s (PP KM v) := by
+  obtain ⟨⟨B, r2, -, ⟨ko, qf⟩, e0⟩, z⟩ := h
+  exact w_setupP (K := KM) (fun _ h => h.1) B r2 qf ⟨ko, e0.mp z⟩
 
 /-! ## An element's check -/
 
 section Elem
 
-variable (ptr : List Instr) (o : Lay → Nat) (ho : ∀ L : Lay, o L + L.pl ≤ 3 * L.pl + L.ql)
+variable (ptr : List Instr) (o : Lay → Nat) {G : VD → Prop}
+  (ho : ∀ v s, Base v s → G v → o v.L + v.L.pl ≤ v.kn)
   (hptr : ∀ {s : State} {L : Lay} {key sig dig : Addr}, Regs s L key sig dig →
     WP isa (.block ptr) s fun t =>
       (t.gpr .r12 = off key (o L) ∧ t.gpr .r6 = BitVec.ofNat 64 L.pl ∧ t.mem = s.mem) ∧ Keep [.r0, .r6, .r12] s t)
 
 include ho hptr in
 /-- The pointer, the load and the range check. -/
-theorem w_pre {K : VD → Prop} {v : VD} {s : State} (h : PP K v s) :
+theorem w_pre {K : VD → Prop} {v : VD} {s : State} (h : PP K v s) (hg : G v) :
     WP isa (.seq (.seq (.block ptr) (loadArr 4)) elemRange) s (PE (ERange o) v) := by
   obtain ⟨B, r2, -, ⟨ip, p0, ptop, -, -⟩, -⟩ := h
   have hL := B.ok
@@ -201,7 +210,7 @@ theorem w_pre {K : VD → Prop} {v : VD} {s : State} (h : PP K v s) :
   have hnw := hL.nowrap
   have hqZ : v.L.qOff + 1600 ≤ v.L.Z := by have := hL.buf_end; simp only [Lay.bOff] at this; omega
   have hq28 : v.L.qOff = slot v.L.wp 28 := rfl
-  have hov := ho v.L
+  have hov := ho v s B hg
   have e0 := Lay.slot_eq v.L.wp 0; have e3 := Lay.slot_eq v.L.wp 3; have e4 := Lay.slot_eq v.L.wp 4
   have e8 := Lay.slot_eq v.L.wp 8; have e28 := Lay.slot_eq v.L.wp 28
   refine WP.seq (WP.seq (WP.mono (hptr B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_))
@@ -228,14 +237,14 @@ theorem w_pre {K : VD → Prop} {v : VD} {s : State} (h : PP K v s) :
 include ho hptr in
 /-- The pointer and `checkElem`. -/
 theorem w_elem {K : VD → Prop} (hK : ∀ v, K v → 2 ≤ v.p ∧ v.p % 2 = 1) {v : VD} {s : State}
-    (h : PP K v s) : WP isa (.seq (.block ptr) checkElem) s (CC K (EOk o) v) := by
+    (h : PP K v s) (hg : G v) : WP isa (.seq (.block ptr) checkElem) s (CC K (EOk o) v) := by
   obtain ⟨B, r2, -, ⟨ip, p0, ptop, p8, qf⟩, kv⟩ := h
   have hL := B.ok
-  have hov := ho v.L
+  have hov := ho v s B hg
   obtain ⟨hp, hpo⟩ := hK v kv
   refine WP.seq (WP.mono (hptr B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine WP.mono (checkElem_ok hL B1.regs (ip.keep k1 (by decide)) B1.hk (B1.hk.sub (o := o v.L) (k := v.L.pl) hov)
+  refine WP.mono (checkElem_ok hL B1.regs (ip.keep k1 (by decide)) (B1.hk.take B1.kn) (B1.hk.sub (o := o v.L) (k := v.L.pl) hov)
       a12 a6 (by rw [m1]; exact p0) (by rw [m1]; exact ptop) hp hpo (by rw [m1]; exact p8))
     fun u ⟨⟨ip', p0', ptop', p8', r0, pb⟩, k2⟩ =>
       ⟨B1.step k2 (pb.body hL), ?_, envP_of ip', ⟨ip', p0', ptop', ?_,
@@ -249,12 +258,13 @@ include ho hptr in
 theorem elem_rel
     (hT : RelCT isa (Two (FixR (coreRegs ++ envRegs'))) (.seq (.seq (.block ptr) (loadArr 4)) elemRange)
       fun _ _ => True)
-    {K : VD → Prop} (hK : ∀ v, K v → 2 ≤ v.p ∧ v.p % 2 = 1) {G : VD → Prop} :
+    {K : VD → Prop} (hK : ∀ v, K v → 2 ≤ v.p ∧ v.p % 2 = 1) :
     RelCT isa (Two fun v s => PP K v s ∧ G v) (.seq (.block ptr) checkElem)
       (Two fun v s => CC K (EOk o) v s ∧ G v) := by
-  refine two_postG ?_ fun _ _ h => w_elem ptr o ho hptr hK h
+  refine two_post ?_ fun _ _ h => (w_elem ptr o ho hptr hK h.1 h.2).mono fun _ x => ⟨x, h.2⟩
   unfold checkElem andThen
-  exact RelCT.assoc (RelCT.assoc (RelCT.seq (two_post (rel_pins (pins_PP K) hT) fun _ _ h => w_pre ptr o ho hptr h)
+  exact RelCT.assoc (RelCT.assoc (RelCT.seq (two_post (rel_pins (pins_and (pins_PP K)) hT)
+      fun _ _ h => w_pre ptr o ho hptr h.1 h.2)
     (rel_ite_zero (zero_iff_agree (ERange o) fun _ _ h => h.2.2.2) (rel_weaken (rel_pins (pins_PE _) t6))
       (rel_weaken (RelCT.block_nil fun _ _ _ => trivial)))))
 
@@ -264,16 +274,17 @@ end Elem
 
 theorem KM_p {v : VD} (h : KM v) : 2 ≤ v.p ∧ v.p % 2 = 1 := ⟨h.1.bounds.1, h.1.2.1⟩
 
-/-- The checks after the sizes, for public data satisfying `G`. -/
-theorem oddsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : VD → Prop}
-    (hrest : RelCT isa (Two fun v s => K9 v s ∧ G v) rest Q)
+/-- After g's check: the domain passed the checks. -/
+abbrev K8 : VD → State → Prop := PP fun v => KM v ∧ EOk (fun L => L.pl + L.ql) v
+
+/-- The checks of the domain after the sizes, for public data satisfying `G`. -/
+theorem paramsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : VD → Prop}
+    (hrest : RelCT isa (Two fun v s => K8 v s ∧ G v) rest Q)
     (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
     RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
-      checkElem) (andThen (.seq (.block ptrY) checkElem) rest fail) fail)) fail) fail) Q := by
-  have hG := elem_rel ptrG (fun L => L.pl + L.ql) (fun L => by omega) (fun h => ptrG_ok h) t5 (K := KM)
-    (fun _ => KM_p) (G := G)
-  have hY := elem_rel ptrY (fun L => 2 * L.pl + L.ql) (fun L => by omega) (fun h => ptrY_ok h) t8
-    (K := fun v => KM v ∧ EOk (fun L => L.pl + L.ql) v) (fun _ h => KM_p h.1) (G := G)
+      checkElem) rest fail)) fail) fail) Q := by
+  have hG := elem_rel ptrG (fun L => L.pl + L.ql) (G := G) (fun _ _ B _ => by have := B.kn; omega)
+    (fun h => ptrG_ok h) t5 (K := KM) (fun _ => KM_p)
   unfold odds andThen
   refine RelCT.seq (two_postG (rel_pins pins_S5' t1) fun _ _ h => w_O1 h)
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
@@ -283,8 +294,22 @@ theorem oddsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : 
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_OM) t4) fun _ _ h => w_P h) (RelCT.seq
     hG (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)))
-  refine RelCT.seq (hY.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, fx, pf, k, e⟩, z⟩, g⟩ =>
-      ⟨⟨B, r2, fx, pf, k, e.mp z⟩, g⟩) fun _ _ h => h)
+  exact hrest.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, fx, pf, k, e⟩, z⟩, g⟩ =>
+      ⟨⟨B, r2, fx, pf, k, e.mp z⟩, g⟩) fun _ _ h => h
+
+/-- The checks of the key after the sizes, for public data satisfying `G`, which
+names y among the public octets. -/
+theorem oddsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : VD → Prop}
+    (hy : ∀ v s, Base v s → G v → 3 * v.L.pl + v.L.ql ≤ v.kn)
+    (hrest : RelCT isa (Two fun v s => K9 v s ∧ G v) rest Q)
+    (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
+    RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
+      checkElem) (andThen (.seq (.block ptrY) checkElem) rest fail) fail)) fail) fail) Q := by
+  refine paramsTail_rel ?_ hfail
+  have hY := elem_rel ptrY (fun L => 2 * L.pl + L.ql) (G := G) (fun v s B g => by have := hy v s B g; omega)
+    (fun h => ptrY_ok h) t8 (K := fun v => KM v ∧ EOk (fun L => L.pl + L.ql) v) (fun _ h => KM_p h.1)
+  unfold andThen
+  refine RelCT.seq hY
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   exact hrest.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, _, pf, k, e⟩, z⟩, g⟩ =>
     ⟨⟨B, r2, fixL_nil _, pf, k, e.mp z⟩, g⟩) fun _ _ h => h

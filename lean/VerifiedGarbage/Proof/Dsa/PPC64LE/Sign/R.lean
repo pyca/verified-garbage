@@ -18,7 +18,7 @@ public import VerifiedGarbage.Spec.RsaPss
 /-!
 # DSA signing on PPC64LE: r and the masks of the ranges
 
-* `nonZero_ok`: `r22 &=` the mask of `[a] ≠ 0`, with 0 in array 7;
+* `nonZero_ok`: `r22 &=` the mask of `[a] ≠ c`, with c in array 7;
 * `rRanges_ok`: in the Q space, `r = (g^k mod p) mod q` (`reduce` of the
   buffer's `p_len` octets) into array 9, and the header's word `hMask &=` the
   masks of `0 < k < q`, `0 < x < q` and `r ≠ 0`.
@@ -35,17 +35,18 @@ open VG.Proof.Bignum (slot slot_sep)
 /-- The registers `nonZero` writes. -/
 def nonZeroRegs : List Reg := [.r20] ++ eqRegs .r19 ++ [.r20, .r22]
 
-/-- `nonZero a`: `r22 &=` the mask of `[a] ≠ 0`, with 0 in array 7. -/
-theorem nonZero_ok {s : State} {B : Addr} {Z w a : Nat} {b : Bool} (h : Env s B Z w) (ha : a < 28)
-    (h7 : arr s.mem B w 7 = 0) (h22 : s.gpr .r22 = mask b) :
+/-- `nonZero a`: `r22 &=` the mask of `[a] ≠ c`, with c in array 7 (0 for
+`[a] ≠ 0`). -/
+theorem nonZero_ok {s : State} {B : Addr} {Z w a c : Nat} {b : Bool} (h : Env s B Z w) (ha : a < 28)
+    (h7 : arr s.mem B w 7 = c) (h22 : s.gpr .r22 = mask b) :
     WP isa (nonZero a) s fun t =>
-      (t.gpr .r22 = mask (b && decide (arr s.mem B w a ≠ 0)) ∧ t.mem = s.mem) ∧ Keep nonZeroRegs s t := by
+      (t.gpr .r22 = mask (b && decide (arr s.mem B w a ≠ c)) ∧ t.mem = s.mem) ∧ Keep nonZeroRegs s t := by
   unfold nonZero
   refine WP.seq (WP.mono (ones_ok s) fun s₁ ⟨⟨a20, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (eqMask_ok (h.keep k1 (by decide)) .r19 (a := a) (b := 7) ha (by decide))
     fun s₂ ⟨⟨a19, m2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
-  refine WP.mono (WP.keep [.r20, .r22] (Q := fun t => t.gpr .r22 = mask (b && decide (arr s.mem B w a ≠ 0)) ∧
+  refine WP.mono (WP.keep [.r20, .r22] (Q := fun t => t.gpr .r22 = mask (b && decide (arr s.mem B w a ≠ c)) ∧
       t.mem = s₂.mem) ?_ (by decide)) fun t ⟨⟨t22, tm⟩, kt⟩ => ⟨⟨t22, by rw [tm, m2, m1]⟩, (k12.trans kt).mono (by decide)⟩
   have b20 : s₂.gpr .r20 = mask true := (k2.gpr .r20 (by decide)).trans a20
   have b22 : s₂.gpr .r22 = mask b := (k12.gpr .r22 (by decide)).trans h22
@@ -182,7 +183,7 @@ theorem rRanges_ok {s : State} {L : Lay} {key nonce dig : Addr} {b : Bool} (hL :
   refine WP.seq (WP.mono (inRange_ok Q12.inq.env (a := 5) (b := _) (by decide) (by decide) top5'
     (by rw [ae o12 (by omega) 7 (by decide) (by decide)]; exact z7') b22) fun s₁₃ ⟨⟨c22, o13⟩, k13'⟩ => ?_)
   have Q13 := Q12.step k13' (by decide)
-  refine WP.seq (WP.mono (nonZero_ok Q13.inq.env (a := 9) (by decide)
+  refine WP.seq (WP.mono (nonZero_ok Q13.inq.env (a := 9) (c := 0) (by decide)
     (by rw [ae o13 (by omega) 7 (by decide) (by decide), ae o12 (by omega) 7 (by decide) (by decide)]; exact z7')
     c22) fun s₁₄ ⟨⟨d22, m14⟩, k14'⟩ => ?_)
   have Q14 := Q13.step k14' (by decide)

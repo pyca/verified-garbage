@@ -30,7 +30,11 @@ open VG.Impl.Bignum VG.Impl.Dsa.PPC64LE
 def vdOf (s : State) : VD :=
   ⟨layOf s, s.gpr .r3, s.gpr .r7, s.gpr .r9, (s.gpr .r10).toNat,
     Spec.Rsa.bytesAt s.mem (s.gpr .r3) (3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat),
-    3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat, 2 * (s.gpr .r6).toNat, none⟩
+    3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat, 2 * (s.gpr .r6).toNat, none,
+    3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat⟩
+
+/-- The public octets name y. -/
+def KY (v : VD) : Prop := 3 * v.L.pl + v.L.ql ≤ v.kn
 
 /-- On entry. -/
 def C0 (v : VD) (s : State) : Prop := vContract.pre s ∧ vdOf s = v
@@ -89,7 +93,8 @@ theorem pre_src {s : State} {A : Addr} {n k : Nat} (hm : (⟨A, n⟩ : Region) �
   ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm, Offset.contains_base _ (by omega) (by omega)⟩,
     fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
 
-theorem front_S0 {v : VD} {s : State} (h : C0 v s) : WP isa (.block Verify.entry) s (S0 v) := by
+theorem front_S0 {v : VD} {s : State} (h : C0 v s) :
+    WP isa (.block Verify.entry) s fun t => S0 v t ∧ KY v := by
   obtain ⟨hp, rfl⟩ := h
   have hL := layOf_ok hp
   have hZ := hL.z256
@@ -100,14 +105,15 @@ theorem front_S0 {v : VD} {s : State} (h : C0 v s) : WP isa (.block Verify.entry
     fun hr hw => pre_src (A := s.gpr .r3) (by rw [hrd]; simp) dKS (s.gpr .r4).isLt
       (by simp only [layOf]; omega) hr hw
   have Out : Outside (layOf s).S 0 (layOf s).Z s.mem t.mem := out.mono (Nat.le_refl _) (by simp only [layOf] at hZ ⊢; omega)
-  refine ⟨⟨hL, hr, scr, hK k.rd k.wr,
+  refine ⟨⟨⟨hL, hr, scr, hK k.rd k.wr,
     pre_src (A := s.gpr .r7) (k := 2 * (layOf s).ql) (by rw [hrd]; simp) dGS (s.gpr .r8).isLt
       (by simp only [layOf]; omega) k.rd k.wr,
     pre_src (A := s.gpr .r9) (k := min (s.gpr .r10).toNat 64) (by rw [hrd]; simp) dDS (s.gpr .r10).isLt
       (Nat.min_le_left _ _) k.rd k.wr,
-    (hK rfl rfl).kept Out, hK k.rd k.wr, (fun _ h => nomatch h), (fun h => nomatch h)⟩, r2, fixL_nil t, trivial⟩
+    (hK rfl rfl).kept Out, hK k.rd k.wr, (fun _ h => nomatch h), (fun h => nomatch h),
+    (by simp only [vdOf, layOf]; omega)⟩, r2, fixL_nil t, trivial⟩, Nat.le_refl _⟩
 
-theorem entry_rel : RelCT isa (Two C0) (.block Verify.entry) (Two S0) := by
+theorem entry_rel : RelCT isa (Two C0) (.block Verify.entry) (Two fun v s => S0 v s ∧ KY v) := by
   refine two_post ?_ fun _ _ h => front_S0 h
   unfold Verify.entry
   rw [List.append_assoc, List.append_assoc, List.append_assoc]

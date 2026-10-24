@@ -56,7 +56,7 @@ theorem soutPre_ok {s : State} {L : Lay} {key nonce dig out : Addr} {b : Bool} (
     (by prun [exec_ld (by decide) hld]; rw [Q1.regs.r21, ← hw1]) (by decide)) fun s₂ ⟨⟨a22, m2⟩, k2⟩ => ?_)
   have Q2 := Q1.step k2 (by decide)
   -- `r22 &=` the mask of `s ≠ 0`.
-  refine WP.seq (WP.mono (nonZero_ok Q2.inq.env (a := 6) (by decide) (by rw [m2]; exact z7) a22)
+  refine WP.seq (WP.mono (nonZero_ok Q2.inq.env (a := 6) (c := 0) (by decide) (by rw [m2]; exact z7) a22)
     fun s₃ ⟨⟨b22, m3⟩, k3⟩ => ?_)
   have Q3 := Q2.step k3 (by decide)
   generalize (b && decide (arr s₂.mem L.Q 4 6 ≠ 0)) = c at b22

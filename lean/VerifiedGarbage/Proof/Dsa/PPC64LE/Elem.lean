@@ -21,8 +21,8 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 /-!
 # DSA on PPC64LE: `p mod q`, the P space, and the checks of g and y
 
-* `pModQ_ok`: q into the Q space's array 0, and `r0 = 0` exactly when
-  `p mod q = 1`;
+* `setupQ_ok`: q into the Q space's array 0; `pModQ_ok`: the same, and
+  `r0 = 0` exactly when `p mod q = 1`;
 * `setupP_ok`: p into the P space's array 0 and `R² mod p` into its array 8;
 * `checkElem_ok`: a number of `p_len` octets into the P space's array 4, and
   `r0 = 0` exactly when it is above 1, below p, and its q-th power modulo p
@@ -42,10 +42,36 @@ def pModQRegs : List Reg :=
   [.r0, .r3, .r4, .r5, .r6, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r20, .r23, .r24, .r25, .r29,
     .r30, .r31]
 
+/-- `setupQ`: into the Q space, and q into its array 0 (word 4 zero). -/
+theorem setupQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
+    (hr : Regs s L key sig dig) (hk : Src s L key (2 * L.pl + L.ql)) :
+    WP isa setupQ s fun t =>
+      (InQ t L ∧ arrQ t.mem L 0 = qOf s.mem L key ∧ word t.mem L.Q (slot 4 0 + 8 * 4) = 0 ∧
+        QBody L s.mem t.mem) ∧ Keep pModQRegs s t := by
+  have hbuf := hL.buf_end
+  have hnw := hL.nowrap
+  have hq0 := hL.qOff_eq
+  have hpl := hL.pl
+  have hql := hL.ql
+  have hsepK : ∀ i < 2 * L.pl + L.ql, ∀ x, ofs L.Q x < 1600 → off key i ≠ x :=
+    hk.sepIn (a := L.qOff) (by simp only [Lay.bOff] at hbuf; omega) hnw
+  unfold setupQ
+  refine WP.seq (WP.mono (enterQ_ok hL hs hr) fun s₁ ⟨⟨q1, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (ptrQ_ok (hr.keep k1)) fun s₂ ⟨⟨a12, a6, m2⟩, k2⟩ => ?_)
+  have k12 := k1.trans k2
+  have hkq := (hk.sub (o := L.pl) (k := L.ql) (by omega)).keep k12.rd k12.wr
+  refine WP.mono (loadArr_ok (q1.env.keep k2 (by decide)) (j := 0) (by decide) a12 a6 (by omega) (by omega)
+    hkq.rd (fun i hi => by rw [off_off]; exact hsepK _ (by omega))) fun s₃ ⟨⟨v0, top0, o3, a10⟩, k3⟩ => ?_
+  rw [m2, m1] at v0 o3
+  have k23 := k2.trans k3
+  exact ⟨⟨⟨env_keep10 (q1.env.keep k2 (by decide)) k3 (by decide) a10, (k23.gpr .r21 (by decide)).trans q1.h21,
+    (k23.gpr .r23 (by decide)).trans q1.h23⟩, v0, top0, o3.mono (by decide) (by decide)⟩,
+    (k12.trans k3).mono (by decide)⟩
+
 /-- `pModQ`: into the Q space, q into its array 0 (word 4 zero), and `r0 = 0`
 exactly when `p mod q = 1`. -/
 theorem pModQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig dig) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hk : Src s L key (2 * L.pl + L.ql))
     (hq : 0 < qOf s.mem L key) :
     WP isa pModQ s fun t =>
       (InQ t L ∧ arrQ t.mem L 0 = qOf s.mem L key ∧ word t.mem L.Q (slot 4 0 + 8 * 4) = 0 ∧
@@ -58,20 +84,11 @@ theorem pModQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : Sc
   have hpl := hL.pl
   have hql := hL.ql
   have e : ∀ j, slot 4 j = 256 + j * 48 := fun _ => rfl
-  have hsepK : ∀ i < 3 * L.pl + L.ql, ∀ x, ofs L.Q x < 1600 → off key i ≠ x :=
+  have hsepK : ∀ i < 2 * L.pl + L.ql, ∀ x, ofs L.Q x < 1600 → off key i ≠ x :=
     hk.sepIn (a := L.qOff) (by simp only [Lay.bOff] at hbuf; omega) hnw
   unfold pModQ
-  refine WP.seq (WP.mono (enterQ_ok hL hs hr) fun s₁ ⟨⟨q1, m1⟩, k1⟩ => ?_)
-  refine WP.seq (WP.seq (WP.mono (ptrQ_ok (hr.keep k1))
-    fun s₂ ⟨⟨a12, a6, m2⟩, k2⟩ => ?_))
-  have k12 := k1.trans k2
-  have hkq := (hk.sub (o := L.pl) (k := L.ql) (by omega)).keep k12.rd k12.wr
-  refine WP.mono (loadArr_ok (q1.env.keep k2 (by decide)) (j := 0) (by decide) a12 a6 (by omega) (by omega)
-    hkq.rd (fun i hi => by rw [off_off]; exact hsepK _ (by omega))) fun s₃ ⟨⟨v0, top0, o3, a10⟩, k3⟩ => ?_
-  rw [m2, m1] at v0 o3
-  have k13 := k12.trans k3
-  have e3 : Env s₃ L.Q 1600 4 := env_keep10 (q1.env.keep k2 (by decide)) k3 (by decide) a10
-  have qb3 : QBody L s.mem s₃.mem := o3.mono (by decide) (by decide)
+  refine WP.seq (WP.mono (setupQ_ok hL hs hr hk) fun s₃ ⟨⟨q3, v0, top0, qb3⟩, k13⟩ => ?_)
+  have e3 : Env s₃ L.Q 1600 4 := q3.env
   refine WP.seq (WP.mono (keyLen_ok (hr.keep k13)) fun s₄ ⟨⟨a30, a31, m4⟩, k4⟩ => ?_)
   have k14 := k13.trans k4
   have v0' : arr s₃.mem L.Q 4 0 = qOf s.mem L key := v0
@@ -83,9 +100,9 @@ theorem pModQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : Sc
     fun s₅ ⟨⟨r1, o5⟩, k5⟩ => ?_)
   rw [m4, hk.bytesPre (k := L.pl) (by omega) (qb3.body hL) hZ] at r1
   have k15 := k14.trans k5
-  have k25 := ((k2.trans k3).trans k4).trans k5
+  have k25 := k4.trans k5
   refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = L.Q ∧ t.mem = s₅.mem) (by
-      prun [(k25.gpr .r23 (by decide)).trans q1.h23, BitVec.add_zero]) (by decide)) fun s₆ ⟨⟨a31', m6⟩, k6⟩ => ?_)
+      prun [(k25.gpr .r23 (by decide)).trans q3.h23, BitVec.add_zero]) (by decide)) fun s₆ ⟨⟨a31', m6⟩, k6⟩ => ?_)
   have e6 := env_keep31 e3 ((k4.trans k5).trans k6) (by decide) a31'
   refine WP.seq (WP.mono (Pub.oneP_ok e6.hs (by decide) (by decide) (by decide) e6.h10 e6.h29 e6.h11)
     fun s₇ ⟨⟨v7, o7⟩, k7⟩ => ?_)
@@ -99,7 +116,7 @@ theorem pModQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : Sc
   have p1 : val32 s₇.mem L.Q (slot 4 1) (2 * 4) = pOf s.mem L key % qOf s.mem L key := by
     rw [Outside.val32 o7 (by rw [e, e]; omega) (by rw [e]; omega), m6, r1, ← arr, v0']; rfl
   refine ⟨⟨⟨e6.keep ((k7.trans k8).trans kt) (by decide),
-    (k25.trans k6t).gpr .r21 (by decide) |>.trans q1.h21, (k25.trans k6t).gpr .r23 (by decide) |>.trans q1.h23⟩,
+    (k25.trans k6t).gpr .r21 (by decide) |>.trans q3.h21, (k25.trans k6t).gpr .r23 (by decide) |>.trans q3.h23⟩,
     ?_, ?_, ?_, ?_⟩, (k15.trans k6t).mono (by decide)⟩
   · show val32 t.mem L.Q (slot 4 0) (2 * 4) = _
     rw [hmt, Outside.val32 o7 (by rw [e, e]; omega) (by rw [e]; omega), m6,
@@ -116,7 +133,7 @@ def setupPRegs : List Reg :=
 /-- `setupP`: into the P space, p into its array 0 (word `w` zero) and
 `R² mod p` (`R = 2^(64 w)`) into its array 8. -/
 theorem setupP_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig dig) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hk : Src s L key (2 * L.pl + L.ql))
     (hp : 2 ≤ pOf s.mem L key) :
     WP isa setupP s fun t =>
       (InP t L ∧ arrP t.mem L 0 = pOf s.mem L key ∧ word t.mem L.S (slot L.wp 0 + 8 * L.wp) = 0 ∧
@@ -177,7 +194,7 @@ the `p_len` octets at `E` (`r12`, `p_len` in `r6`) into array 4, and `r0 = 0`
 exactly when their number `e` has `1 < e < p` and `e^q mod p = 1`. Arrays 0
 and 8 are kept. -/
 theorem checkElem_ok {s : State} {L : Lay} {key sig dig E : Addr} {p : Nat} (hL : L.Ok)
-    (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
     (he : Src s L E L.pl) (h12 : s.gpr .r12 = E) (h6 : s.gpr .r6 = BitVec.ofNat 64 L.pl)
     (hp0 : arrP s.mem L 0 = p) (hz0 : word s.mem L.S (slot L.wp 0 + 8 * L.wp) = 0) (hp : 2 ≤ p)
     (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :

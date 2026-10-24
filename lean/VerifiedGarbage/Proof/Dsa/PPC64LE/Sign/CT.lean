@@ -26,7 +26,8 @@ open VG.Impl.Bignum VG.Impl.Dsa.PPC64LE
 
 theorem scheckKey_rel :
     RelCT isa (Two fun v s => S0 v s ∧ SG v) (checkKey Sign.body Sign.zeroOut) (Two End) :=
-  sizes_rel (oddsTail_rel sbody_rel fun _ h => zero_rel h) fun _ h => zero_rel h
+  sizes_rel (oddsTail_rel (fun _ _ B g => Nat.le_of_eq (B.sgn g).2.2.symm) sbody_rel fun _ h => zero_rel h)
+    fun _ h => zero_rel h
 
 theorem sign_rel : RelCT isa (Two SC0) Sign.sign fun _ _ => True := by
   unfold Sign.sign

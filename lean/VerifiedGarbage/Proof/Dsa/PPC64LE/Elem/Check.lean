@@ -117,7 +117,7 @@ def elemOrderRegs : List Reg := copyRegs ++ [.r4, .r6, .r12, .r30, .r31] ++ ModE
 `R² mod p` in array 8: `r0 = 0` exactly when `[4]^q mod p = 1`; arrays 1–7
 change. -/
 theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.Ok)
-    (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (3 * L.pl + L.ql))
+    (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
     WP isa elemOrder s fun t =>
       ((t.gpr .r0 = 0 ↔ arrP s.mem L 4 ^ qOf s.mem L key % p = 1) ∧ InP t L ∧

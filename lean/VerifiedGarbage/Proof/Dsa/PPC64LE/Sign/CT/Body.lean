@@ -49,14 +49,14 @@ def Mid : VD → State → Prop := Ph VD.qb fun v s => FixL (midL v) s ∧ True
 theorem pins_Mid : Pins Mid (coreRegs ++ ([.r12, .r6, .r10, .r29] : List Reg)) := pins_fixL _ _ fun _ => rfl
 
 /-- What the checks of the key leave: `checkKey_ok`'s `Checked` and `KeyOk`. -/
-theorem k9_checked {v : VD} {s : State} (h : K9 v s) :
+theorem k9_checked {v : VD} {s : State} (h : K9 v s) (h3 : 3 * v.L.pl + v.L.ql ≤ v.kn) :
     KeyOk s.mem v.L v.key ∧ Checked s s v.L v.key v.sig v.dig v.d := by
   obtain ⟨B, r2, -, ⟨ip, p0, ptop, p8, q0, qtop⟩, ⟨km, hg⟩, hy⟩ := h
   have bd := km.1.bounds
   have ep : pOf s.mem v.L v.key = v.p := B.p
   have eq : qOf s.mem v.L v.key = v.q := B.q
   have eg : gOf s.mem v.L v.key = v.e (v.L.pl + v.L.ql) := B.g
-  have ey : yOf s.mem v.L v.key = v.e (2 * v.L.pl + v.L.ql) := B.y
+  have ey : yOf s.mem v.L v.key = v.e (2 * v.L.pl + v.L.ql) := B.y h3
   refine ⟨?_, ⟨ip, B.scr, B.regs, p0.trans ep.symm, ptop, by rw [ep]; exact p8, q0.trans eq.symm, qtop, ?_⟩⟩
   · unfold KeyOk
     rw [ep, eq, eg, ey]
@@ -74,15 +74,15 @@ theorem k9_mid {v : VD} {s : State} (h : K9 v s ∧ SG v) : WP isa spre s (Mid v
   have B := hk9.1
   have r2 := hk9.2.1
   have hL := B.ok
-  obtain ⟨hK, hc⟩ := k9_checked hk9
-  obtain ⟨ekl, esl⟩ := B.sgn sg
+  obtain ⟨ekl, esl, ekn⟩ := B.sgn sg
+  obtain ⟨hK, hc⟩ := k9_checked hk9 (Nat.le_of_eq ekn.symm)
   have hx : Src s v.L v.key (3 * v.L.pl + 2 * v.L.ql) := by rw [← ekl]; exact B.hx
   have hn : Src s v.L v.sig v.L.ql := by rw [← esl]; exact B.hsg
   have hd : v.d < 2 ^ 16 := by have := Nat.min_le_right v.dl 64; simp only [VD.d] at this ⊢; omega
   refine WP.mono (spre_ok hL hK hc (Kept.refl _ _) hx hn hd B.hdg (B.hOut sg))
     fun t ⟨⟨Qt, Kt, ht, t12, t6⟩, kt⟩ => ?_
   refine ⟨⟨hL, Qt.regs, Qt.scr, B.hk.keep kt.rd kt.wr, B.hsg.keep kt.rd kt.wr, B.hdg.keep kt.rd kt.wr,
-    (B.hk.kept Kt.out).trans B.kb, B.hx.keep kt.rd kt.wr, fun o ho => ?_, B.sgn⟩,
+    (B.hk.kept Kt.out).trans B.kb, B.hx.keep kt.rd kt.wr, fun o ho => ?_, B.sgn, B.kn⟩,
     (kt.gpr .r2 (by decide)).trans r2, ?_, trivial⟩
   · rw [ht]
     have := B.hdr o ho

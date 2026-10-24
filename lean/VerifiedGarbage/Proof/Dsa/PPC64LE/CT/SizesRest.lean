@@ -42,7 +42,7 @@ theorem Base.step2 {v : VD} {s t : State} {rs : List Reg} {qb : Nat} (h : Base v
       ((k.gpr .r26 (hr _ (by decide))).trans h.regs.r26) h2 hqb (by simp only [VD.d]; omega),
     h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr, h.hdg.keep k.rd k.wr,
     (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb, h.hx.keep k.rd k.wr,
-    h.hdr_body ho, h.sgn⟩
+    h.hdr_body ho, h.sgn, h.kn⟩
 
 /-- p's octets into `r24`. -/
 theorem w_a24 {v : VD} {s : State} (h : S1 v s ∧ s.gpr .r0 = 0) :
@@ -60,6 +60,7 @@ theorem w_scanQ {v : VD} {s : State} (h : S2 v s) : WP isa (.seq (.block ptrQ) s
   obtain ⟨B, r2, f, tp⟩ := h
   have f24 : s.gpr .r24 = BitVec.ofNat 64 v.sP := f _ (List.mem_singleton_self _)
   have hq := B.ok.ql
+  have := B.kn
   refine WP.seq (WP.mono (ptrQ_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine WP.mono (sigLen_ok a12 a6 (by omega) (by omega)
@@ -76,6 +77,7 @@ theorem w_bitsQ {v : VD} {s : State} (h : S2 v s) : WP isa (.seq (.block ptrQ) b
   obtain ⟨B, r2, f, tp⟩ := h
   have f24 : s.gpr .r24 = BitVec.ofNat 64 v.sP := f _ (List.mem_singleton_self _)
   have hq := B.ok.ql
+  have := B.kn
   refine WP.seq (WP.mono (ptrQ_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine WP.mono (bytesBits_ok a12 a6 (by omega) (by omega)
