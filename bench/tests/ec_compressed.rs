@@ -64,7 +64,6 @@ differential!(p192, P192, 24, X9_62_PRIME192V1);
 differential!(p224, P224, 28, SECP224R1);
 differential!(p256, P256, 32, X9_62_PRIME256V1);
 differential!(p384, P384, 48, SECP384R1);
-#[cfg(not(all(target_arch = "powerpc64", target_endian = "little")))]
 differential!(p521, P521, 66, SECP521R1);
 differential!(secp256k1, Secp256k1, 32, SECP256K1);
 differential!(brainpoolp256r1, BrainpoolP256r1, 32, BRAINPOOL_P256R1);
