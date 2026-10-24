@@ -34,11 +34,11 @@ def ldf (t : Reg) (j : Nat) : Instr := .load .d t .r31 (8 * j)
 def stf (t : Reg) (j : Nat) : Instr := .store .d t .r31 (8 * j)
 
 /-- The stack arguments, then the caller's `r31` saved and the arguments
-stored. -/
+stored, the generator (a `u32`) zero-extended. -/
 def entry : List Instr :=
   [.addSp .r11 96, .load .d .r12 .r11 8, .load .d .r11 .r11 0, .store .d .r31 .r12 32, .addi .r31 .r12 0,
-    stf .r3 5, stf .r4 6, stf .r5 7, stf .r6 8, stf .r7 9, stf .r8 10, stf .r9 11, .li .r0 0, stf .r0 12,
-    stf .r10 13, stf .r11 15]
+    stf .r3 5, stf .r4 6, stf .r5 7, stf .r6 8, .lsr .w .r7 .r7 0, stf .r7 9, stf .r8 10, stf .r9 11, .li .r0 0,
+    stf .r0 12, stf .r10 13, stf .r11 15]
 
 /-- `vg_ffdh_parameter_candidate`'s arguments, for the tape's current
 pointer and length: its stack argument at offset 96 of the frame. -/
