@@ -118,7 +118,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
@@ -360,7 +361,13 @@ macro_rules! instance {
         }
     };
 }
-// `aes_gcm_siv` chooses its instances with it too.
+// `aes_gcm_siv` chooses its instances with it too, on its architectures.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 pub(crate) use instance;
 
 /// The features of the baseline ISA: none.
