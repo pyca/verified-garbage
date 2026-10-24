@@ -6,12 +6,15 @@ public import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModeCore
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
-public import VerifiedGarbage.Proof.Modes.Steps
+import VerifiedGarbage.Proof.Modes.Steps
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
+public import VerifiedGarbage.Impl.Modes.Ops
+public import VerifiedGarbage.Spec.Cfb
+public import VerifiedGarbage.Spec.Ofb
 
 /-!
 # SM4's modes on PPC64LE meet their contracts
