@@ -145,4 +145,166 @@ theorem ball_ok {t : Nat} {σ s : State} (h : ICd p STK t σ s) :
 
 end
 
+/-! ## The end of an iteration -/
+
+theorem SC2.of_regs {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s)
+    (hg : ∀ r, r ∉ [.r3, .r24, .r25, .r26, .r27] → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) : SC2 p STK σ s' := by
+  have hs := h.site
+  refine ⟨⟨hs.ok, hs.len, hs.w0, hs.w1, hs.sz0, hs.sz1, by rw [hsp]; exact hs.p1, hs.s48, by rw [hsp]; exact hs.spk,
+    by rw [hg .r31 (by decide)]; exact hs.r31, by rw [hg .r30 (by decide)]; exact hs.r30,
+    by rw [hg .r29 (by decide)]; exact hs.r29, by rw [hg .r28 (by decide)]; exact hs.r28,
+    by rw [hwr]; exact hs.cw, by rw [hwr, hrd]; exact hs.cr⟩, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
+    fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu⟩
+  have : r ∉ [.r3, .r24, .r25, .r26, .r27] := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro (rfl | rfl | rfl | rfl | rfl)
+    · simp [preserved] at hr
+    all_goals simp [savedTop] at hs'
+  rw [hg r this]; exact h.pres r hr hs'
+
+theorem IK.of_regs {p : Params} {STK : Nat} {σ s s' : State} (h : IK p STK σ s)
+    (hg : ∀ r, r ∉ [.r3, .r24, .r25, .r26, .r27] → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) : IK p STK σ s' :=
+  ⟨h.sc.of_regs hg hm hrd hwr hsp, h.ok, by rw [hm]; exact h.A, by rw [hm]; exact h.rpp, by rw [hm]; exact h.s1,
+    by rw [hm]; exact h.s2, by rw [hm]; exact h.t0⟩
+
+/-- A block that writes one register `d` (one of `r3`, `r24`–`r27`) with `v`. -/
+abbrev W1 (d : Reg) (v : BitVec 64) (s s' : State) : Prop :=
+  s'.gpr d = v ∧ (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
+
+theorem W1.of_regs {d : Reg} (hd : d ∈ [.r3, .r24, .r25, .r26, .r27]) {v : BitVec 64} {s s' : State}
+    (h : W1 d v s s') : ∀ r, r ∉ [.r3, .r24, .r25, .r26, .r27] → s'.gpr r = s.gpr r :=
+  fun r hr => h.2.1 r fun e => hr (e ▸ hd)
+
+theorem li_ok (d : Reg) {v : Nat} (hv : v < 2 ^ 15) (s : State) :
+    WP isa (.block [.li d v]) s (W1 d (BitVec.ofNat 64 v) s) := by
+  crun [hv]
+  exact ⟨by simp, fun r hr => by simp [hr], rfl, rfl, rfl, rfl⟩
+
+theorem addi_ok {d : Reg} (hd : d ≠ .r0) {v : Nat} (hv : v < 2 ^ 15) (s : State) :
+    WP isa (.block [.addi d d v]) s (W1 d (s.gpr d + BitVec.ofNat 64 v) s) := by
+  crun [hd, hv]
+  exact ⟨by simp, fun r hr => by simp [hr], rfl, rfl, rfl, rfl⟩
+
+theorem subi_ok {d : Reg} (hd : d ≠ .r0) {v : Nat} (hv : v ≤ 2 ^ 15) (s : State) :
+    WP isa (.block [.subi d d v]) s (W1 d (s.gpr d - BitVec.ofNat 64 v) s) := by
+  crun [hd, hv]
+  exact ⟨by simp, fun r hr => by simp [hr], rfl, rfl, rfl, rfl⟩
+
+theorem bit_pos {a : Prop} [Decidable a] (h : a) : bit a = 1 := ifp h _ _
+theorem bit_neg {a : Prop} [Decidable a] (h : ¬ a) : bit a = 0 := ifn h _ _
+
+theorem ofNat_sub_one {k : Nat} (h : 1 ≤ k) (hk : k < 2 ^ 64) :
+    BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  omega
+
+/-- Iteration `t` passed: `c̃`, `z` and `h`, and `r25 = 1`. -/
+structure EP (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
+  k : IK p STK σ s
+  ct : bytesAt s.mem ((slay2 p STK σ).A 0 oCT) (cLen p) = CTv p σ (p.ℓ * t)
+  z : ∀ r < p.ℓ, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)
+  h : ∀ i < p.k, HintIs s.mem (SL p STK σ (5 + i)) 1 [Hv p σ (p.ℓ * t) i]
+  some : (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome
+  pass : PassV p σ (p.ℓ * t)
+  r24 : s.gpr .r24 = 1
+  r25 : s.gpr .r25 = 1
+  t_lt : t < 814
+  rej : RejT p σ t
+
+/-- Iteration `t` was rejected: `κ = ℓ(t + 1)`, `r25 = 814 - t`. -/
+structure EF (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
+  k : IK p STK σ s
+  r27 : s.gpr .r27 = BitVec.ofNat 64 (p.ℓ * (t + 1))
+  r25 : s.gpr .r25 = BitVec.ofNat 64 (814 - t)
+  some : (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome
+  fail : ¬ PassV p σ (p.ℓ * t)
+  r24 : s.gpr .r24 = 0
+  t_lt : t < 814
+  rej : RejT p σ t
+
+/-- `SampleInBall` did not finish within `minBounds`: `r24 = 0`, `r25 = 1`. -/
+structure EB (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
+  k : IK p STK σ s
+  none : sampleInBall p.τ minBounds.ball (CTv p σ (p.ℓ * t)) = none
+  r24 : s.gpr .r24 = 0
+  r25 : s.gpr .r25 = 1
+  t_lt : t < 814
+  rej : RejT p σ t
+
+/-- The loop ended: in `r24`, whether an iteration passed (and its signature), or `signLoop` returns
+nothing within `minBounds`. -/
+structure XS (p : Params) (STK : Nat) (σ : State) (s : State) : Prop where
+  k : IK p STK σ s
+  r01 : s.gpr .r24 = 0 ∨ s.gpr .r24 = 1
+  pass : s.gpr .r24 = 1 → ∃ t < 814, RejT p σ t ∧
+    (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome ∧ PassV p σ (p.ℓ * t) ∧
+    bytesAt s.mem ((slay2 p STK σ).A 0 oCT) (cLen p) = CTv p σ (p.ℓ * t) ∧
+    (∀ r < p.ℓ, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)) ∧
+    ∀ i < p.k, HintIs s.mem (SL p STK σ (5 + i)) 1 [Hv p σ (p.ℓ * t) i]
+  fail : s.gpr .r24 = 0 → loopF p σ minBounds minBounds.sign 0 = none
+
+/-- After iteration `t`: the loop continues with iteration `t + 1`, or ends. -/
+def LP (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop :=
+  (s.gpr .r25 ≠ 0 ∧ IL p STK σ (t + 1) s) ∨ (s.gpr .r25 = 0 ∧ XS p STK σ s)
+
+theorem kbranch_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (hl : p.ℓ < 2 ^ 15)
+    (h : KO p STK σ t s) :
+    WP isa (ifOkElse (.block [.li .r25 1]) (.block [.addi .r27 .r27 p.ℓ])) s fun s' => EP p STK σ t s' ∨ EF p STK σ t s' := by
+  refine WP.ite _ (eval_nonzero s .r24) (fun hb => WP.mono (li_ok .r25 (by decide) s) fun s' w => ?_)
+    fun hb => WP.mono (addi_ok (by decide) hl s) fun s' w => ?_
+  · have hpass : PassV p σ (p.ℓ * t) := by
+      by_contra hc
+      rw [h.r24, bit_neg hc] at hb; exact absurd hb (by decide)
+    have e24 : s.gpr .r24 = 1 := by rw [h.r24, bit_pos hpass]
+    refine .inl ⟨h.b.l.k.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2,
+      by rw [w.2.2.1]; exact h.b.ct, fun r hr => by rw [w.2.2.1]; exact h.z r hr,
+      fun i hi => by rw [w.2.2.1]; exact h.h i hi, h.b.some, hpass,
+      by rw [w.2.1 .r24 (by decide)]; exact e24, w.1, h.b.l.t_lt, h.b.l.rej⟩
+  · have hfail : ¬ PassV p σ (p.ℓ * t) := fun hp => by
+      rw [h.r24, bit_pos hp] at hb; exact absurd hb (by decide)
+    refine .inr ⟨h.b.l.k.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2,
+      by rw [w.1, h.b.l.r27, ← BitVec.ofNat_add, Nat.mul_succ], by rw [w.2.1 .r25 (by decide)]; exact h.b.l.r25,
+      h.b.some, hfail, by rw [w.2.1 .r24 (by decide), h.r24, bit_neg hfail], h.b.l.t_lt, h.b.l.rej⟩
+
+theorem eb_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h : IB p STK σ t s)
+    (h0 : (s.gpr .r3).setWidth 32 = 0) : WP isa (.block [.li .r24 0, .li .r25 1]) s (EB p STK σ t) := by
+  rw [show ([.li .r24 0, .li .r25 1] : List Instr) = [.li .r24 0] ++ [.li .r25 1] from rfl, WP.block_append_iff]
+  refine WP.mono (li_ok .r24 (by decide) s) fun s1 w1 => WP.mono (li_ok .r25 (by decide) s1) fun s2 w2 => ?_
+  have k1 := h.c.1.l.k.of_regs (W1.of_regs (by decide) w1) w1.2.2.1 w1.2.2.2.1 w1.2.2.2.2.1 w1.2.2.2.2.2
+  exact ⟨k1.of_regs (W1.of_regs (by decide) w2) w2.2.2.1 w2.2.2.2.1 w2.2.2.2.2.1 w2.2.2.2.2.2, h.bad h0,
+    by rw [w2.2.1 .r24 (by decide)]; exact w1.1, w2.1, h.c.1.l.t_lt, h.c.1.l.rej⟩
+
+theorem dec_end {p : Params} {STK : Nat} (hp : ParamsOk p) {σ : State} {t : Nat} {s : State}
+    (h : EP p STK σ t s ∨ EF p STK σ t s ∨ EB p STK σ t s) :
+    WP isa (.block [.subi .r25 .r25 1]) s (LP p STK σ t) := by
+  refine WP.mono (subi_ok (by decide) (by decide) s) fun s' w => ?_
+  have hk : IK p STK σ s := by rcases h with h | h | h <;> exact h.k
+  have K := hk.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2
+  have e24 : s'.gpr .r24 = s.gpr .r24 := w.2.1 .r24 (by decide)
+  have em : s'.mem = s.mem := w.2.2.1
+  rcases h with h | h | h
+  · -- passed
+    have z : s'.gpr .r25 = 0 := by rw [w.1, h.r25]; decide
+    refine .inr ⟨z, K, .inr (e24.trans h.r24), fun _ => ⟨t, h.t_lt, h.rej, h.some, h.pass,
+      by rw [em]; exact h.ct, fun r hr => by rw [em]; exact h.z r hr, fun i hi => by rw [em]; exact h.h i hi⟩,
+      fun h0 => absurd (h0.symm.trans (e24.trans h.r24)) (by decide)⟩
+  · -- rejected
+    have ht := h.t_lt
+    have hr : RejT p σ (t + 1) := Rej.succ _ _ _ _ _ _ _ h.rej (by rw [Nat.zero_add]; exact iter_rej hp h.some h.fail)
+    have e25 : s'.gpr .r25 = BitVec.ofNat 64 (814 - (t + 1)) := by
+      rw [w.1, h.r25, ofNat_sub_one (by omega) (by omega)]; congr 1
+    by_cases ht' : t = 813
+    · subst ht'
+      refine .inr ⟨by rw [e25]; decide, K, .inl (e24.trans h.r24),
+        fun h1 => absurd (h1.symm.trans (e24.trans h.r24)) (by decide), fun _ => loop_none_exh hr⟩
+    · refine .inl ⟨by rw [e25]; intro e; have := congrArg BitVec.toNat e; simp at this; omega,
+        ⟨K, by rw [w.2.1 .r27 (by decide)]; exact h.r27, e25, by omega, hr⟩⟩
+  · -- `SampleInBall` failed
+    have z : s'.gpr .r25 = 0 := by rw [w.1, h.r25]; decide
+    exact .inr ⟨z, K, .inl (e24.trans h.r24), fun h1 => absurd (h1.symm.trans (e24.trans h.r24)) (by decide),
+      fun _ => loop_none_ball h.rej h.none⟩
+
 end VG.Proof.MlDsa.PPC64LE.Sign
