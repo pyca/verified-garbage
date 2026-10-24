@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Bignum.X86_64.R2SquaresCT
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
@@ -811,6 +813,6 @@ theorem choice_ct (M : Mont) : RelCT isa (Two R2Pre) (R2Adx.choice M.mm) fun _ _
       simp only [eval, hz, Option.some.injEq, decide_eq_true_eq] at hc
       exact ⟨h, hc.1, hc.2⟩) fast_ct
   · rw [R2w.old_eq]
-    exact two_map id (fun p s h => h.1.1) (r2_ct M)
+    exact two_map id (fun p s h => h.1.1) (r2_ct_with _ (rolled_sqs_ct M 5 (Or.inr rfl)))
 
 end VG.Proof.Bignum.X86_64.R2ax
