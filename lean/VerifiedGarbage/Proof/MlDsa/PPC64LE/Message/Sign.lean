@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlDsa.Message.Common
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Framework.PowLit
 
@@ -425,5 +426,43 @@ theorem signCall_ok {p : Params} {STK S : Nat} {s t : State} (hF : MFacts p) (hp
       rw [s_keep hi (R := skR p s) (by have := hF.skl; show p.skLen < 2 ^ 64; omega) hp.kg hp.kc hp.bk, h.mu,
         s_keep hi (R := rndR s) (show (32 : Nat) < 2 ^ 64 by decide) hp.rg hp.rc hp.br] at q
       exact q
+
+/-! ## `sign_message` -/
+
+/-- The result: 2 for a context string longer than 255 bytes, else the
+signature of the formatted message. -/
+theorem signMessage_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 48 ≤ STK) {f : Prog isa}
+    (hf : Callee f (fun stk => signContract p PPC64LE.abi stk) S) (hS : S ≤ STK) {n : String} {s : State}
+    (hp : MSPre p STK s) :
+    WP isa (signMessage n f p) s fun t => abiPreserved s t ∧ (signMessageContract p PPC64LE.abi STK).post s t := by
+  unfold signMessage top
+  refine WP.seq (WP.cons (exec_lsr_d (by decide)) (WP.block_nil ?_))
+  have hu := Upd.write s .r11 (s.gpr .r7 >>> 8)
+  refine wp_ite (decide ((s.gpr .r7).toNat < 256)) (by rw [eval_zero, hu.gpr]; exact congrArg some (shr8_zero _)) (fun hcl => ?_)
+    fun hcl => ?_
+  · have hcl' : (s.gpr .r7).toNat < 256 := of_decide_eq_true hcl
+    refine WP.seq (WP.mono (signSetup_ok hF hp hu.other hu.rd hu.wr hu.sp rfl hu.mem) fun t₁ h₁ => ?_)
+    refine WP.seq (WP.mono (signHash_ok hF hp h48 h₁) fun t₂ h₂ => ?_)
+    refine WP.seq (WP.mono (signCall_ok hF hp hf hS h₂) fun t₃ ⟨h₃, r₃⟩ => ?_)
+    have hrl : ∀ q ∈ restoreList oSV signRegs, q.2 + 8 ≤ 1024 := by decide
+    refine restore_ok h₃ (by decide) (s_e h₃) (by decide) (by decide) (by decide) (by decide)
+      (fun q hq => by
+        have := hrl q hq
+        have := e_len p (d := q.2) (n := 8) (by omega)
+        have := hF.e
+        rw [h₃.rd, h₃.wr, hp.rd, hp.wr, e_add]
+        exact ⟨scrR p s, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+      fun t₄ g₄ sp₄ lr₄ m₄ o₄ => ⟨⟨g₄, sp₄, lr₄⟩, ?_⟩
+    · sig_post [signMessageContract, signMessageSig, PPC64LE.abi, PPC64LE.argRegs]
+      rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl'), o₄ .r3 (by decide)
+        (by decide), m₄]
+      simp only [signInternal, Proof.MlKem.bytesAt_length]
+      exact r₃
+  · have hcl' : ¬ (s.gpr .r7).toNat < 256 := of_decide_eq_false hcl
+    refine WP.cons (exec_li (d := .r3) (imm := 2) (by decide)) (WP.block_nil ⟨⟨fun r hr => ?_, rfl, rfl⟩, ?_⟩)
+    · rw [(Upd.write _ _ _).other _ (Proof.Sha3.PPC64LE.Pieces.pres_ne hr).2.1, hu.other _ (by revert hr; cases r <;> decide)]
+    · sig_post [signMessageContract, signMessageSig, PPC64LE.abi, PPC64LE.argRegs]
+      rw [Proof.MlDsa.Message.formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega)]
+      rfl
 
 end VG.Proof.MlDsa.PPC64LE.Message

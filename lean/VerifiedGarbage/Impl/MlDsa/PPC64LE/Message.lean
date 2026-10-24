@@ -102,8 +102,8 @@ def signMs : List (Reg × Reg) :=
 function on `μ` `f`, named `n`. -/
 def signMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
   top <| .seq (.block (enter .r10 p signRegs signMs)) <| .seq (muHash ⟨.r22, 64, .imm 64⟩) <|
-  .seq (.block [mov .r3 .r22, .addi .r4 .r30 oMU, mov .r5 .r27, mov .r6 .r28, mov .r7 .r29]) <|
-  .seq (.call n f) (.block (restoreRegs .r30 oSV signRegs))
+  .seq (.seq (.block [mov .r3 .r22, .addi .r4 .r30 oMU, mov .r5 .r27, mov .r6 .r28, mov .r7 .r29]) (.call n f))
+    (.block (restoreRegs .r30 oSV signRegs))
 
 /-- The registers verification uses: `pk`, `msg`, `msg_len`, `ctx`,
 `ctx_len`, `sig`, `scratch` and `E`. -/
@@ -117,7 +117,7 @@ verification function on `μ` `f`, named `n`. -/
 def verifyMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
   top <| .seq (.block (enter .r9 p verifyRegs verifyMs)) <| .seq (trHash p) <|
   .seq (muHash ⟨.r30, oMU, .imm 64⟩) <|
-  .seq (.block [mov .r3 .r22, .addi .r4 .r30 oMU, mov .r5 .r27, mov .r6 .r29]) <|
-  .seq (.call n f) (.block (restoreRegs .r30 oSV verifyRegs))
+  .seq (.seq (.block [mov .r3 .r22, .addi .r4 .r30 oMU, mov .r5 .r27, mov .r6 .r29]) (.call n f))
+    (.block (restoreRegs .r30 oSV verifyRegs))
 
 end VG.Impl.MlDsa.PPC64LE.Message
