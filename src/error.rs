@@ -100,6 +100,8 @@ mod tests {
             crate::aes_xts::Error::DataUnitTooLong,
             crate::blowfish_cbc::Error::InvalidKeyLength,
             crate::blowfish_cbc::Error::IncompleteBlock,
+            crate::cast5_ecb::Error::InvalidKeyLength,
+            crate::cast5_ecb::Error::IncompleteBlock,
         );
         check!(
             crate::aes_ocb::Error::InvalidKeyLength,
@@ -136,8 +138,6 @@ mod tests {
             crate::aes_siv::Error::InvalidKeyLength,
             crate::aes_siv::Error::TooManyComponents,
             crate::aes_siv::Error::TagMismatch,
-            crate::cast5_ecb::Error::InvalidKeyLength,
-            crate::cast5_ecb::Error::IncompleteBlock,
             crate::chacha20poly1305::Error::InvalidTextLength,
             crate::chacha20poly1305::Error::TagMismatch,
             crate::chacha20poly1305::Error::InvalidOutputLength,
