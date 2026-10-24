@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawFn
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Witnesses
 
 /-!
 # An FFDH parameter candidate on PPC64LE: the witnesses of a modulus
@@ -113,5 +114,74 @@ theorem mrHead_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
     refine WP.mono (draw_ok R M₂ (by rw [m12]; exact h.used) hr (by rw [m12]; exact h.idx)
       (by rw [m12]; exact h.stat) (by have := h.ik; unfold Spec.Ffdh.primeChecks at this; split at this <;> omega))
       fun t ⟨mt, ut, st, it⟩ => ⟨mt, Or.inr ⟨hr, ut, st, it⟩⟩
+
+theorem wp_then {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP isa (.seq a b) s P)
+    (k : ∀ t, P t → WP isa c t Q) : WP isa (.seq a (.seq b c)) s Q := by
+  rw [WP.seq_iff] at h ⊢
+  exact WP.mono h fun t ht => WP.seq (WP.mono ht k)
+
+/-- An iteration: `hStat` tested after the head. -/
+theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i u : Nat} {s : State}
+    (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (h : MrSt p mb N res i u s) :
+    WP isa (.seq (.block (([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] : List Instr) ++
+        geFlag .r5 .r3 .r4))
+      (.seq (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw R.name R.code))
+        (.block [ldh .r3 hStat, .subi .r3 .r3 4]))) s fun t =>
+      (isa.eval (.zero .d .r3) t = some false ∧ MrEnd p mb N res t) ∨
+      (isa.eval (.zero .d .r3) t = some true ∧ ∃ i', MrSt p mb N res i' (u + (mb + 7) / 8) t) := by
+  have hm1 := h.m.mb1
+  have hik := h.ik
+  have hN3 := h.m.prep.c3
+  have hodd := h.m.prep.odd
+  have hK64 : Spec.Ffdh.primeChecks mb ≤ 128 := by unfold Spec.Ffdh.primeChecks; split <;> omega
+  have hres := h.rest
+  rw [show Spec.Ffdh.primeChecks mb - i = (Spec.Ffdh.primeChecks mb - i - 1) + 1 by omega] at hres
+  refine wp_then (mrHead_ok R h) fun t ⟨M, hmid⟩ => ?_
+  have l160 : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 160) 8 := M.st.ld (d := 160) (by decide)
+  refine WP.mono (WP.keep [.r3] (Q := fun v => v.gpr .r3 = word t.mem p.B 160 - BitVec.ofNat 64 4 ∧
+      v.mem = t.mem) (by simp only [ldh, hStat]; prun [M.st.r31, l160]) (by decide)) fun v ⟨⟨v3, vm⟩, vk⟩ => ?_
+  have M' : MSt p mb N v := M.frm (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) vk (by decide)
+    (vk.gpr _ (by decide)) (vk.gpr _ (by decide)) (vk.gpr _ (by decide))
+  have hw : ∀ d, word v.mem p.B d = word t.mem p.B d := fun d => by rw [vm]
+  have ev : ∀ k, k < 2 ^ 60 → word t.mem p.B 160 = BitVec.ofNat 64 k →
+      isa.eval (.zero .d .r3) v = some (decide (k = 4)) := fun k hk he => by
+    rw [eval_zero, v3, he, stat_zero hk]
+  have hm : 1 ≤ mb := by omega
+  rcases hmid with ⟨hr, h0⟩ | ⟨hr, hu, hs, hi⟩
+  · -- No room for a witness.
+    rw [cw_short hbl hm hr] at hres
+    refine Or.inl ⟨by rw [ev 0 (by decide) h0]; decide, M', fun _ => by rw [hw]; exact h0, fun b rest hb => ?_⟩
+    rw [← hres] at hb; cases hb
+  rw [cw_step hbl hm hr] at hres
+  have hround := mr_round_eq (wA mb p.r u) hN3 hodd
+  simp only [dStat, dIdx, hround] at hs hi
+  generalize wA mb p.r u = a at hs hi hres
+  by_cases hrg : 2 ≤ a ∧ a < N - 1
+  · simp only [hrg.1, hrg.2, and_self, true_and, ↓reduceIte] at hs hi hres
+    by_cases hmr : Spec.Ffdh.mrRound N a = true
+    · simp only [hmr, ↓reduceIte] at hs hi hres
+      by_cases hk : i + 1 < Spec.Ffdh.primeChecks mb
+      · simp only [hk, ↓reduceIte] at hs
+        refine Or.inr ⟨by rw [ev 4 (by decide) hs]; decide, i + 1,
+          ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hk, ?_⟩⟩
+        rw [show Spec.Ffdh.primeChecks mb - (i + 1) = Spec.Ffdh.primeChecks mb - i - 1 by omega]; exact hres
+      · simp only [hk, ↓reduceIte] at hs
+        rw [show Spec.Ffdh.primeChecks mb - i - 1 = 0 by omega, checkWitnesses] at hres
+        refine Or.inl ⟨by rw [ev 1 (by decide) hs]; decide, M', fun hn => (by rw [← hres] at hn; cases hn),
+          fun b rest hb => ?_⟩
+        rw [← hres, Option.some.injEq, Prod.mk.injEq] at hb
+        obtain ⟨rfl, rfl⟩ := hb
+        exact ⟨by rw [hw]; exact hs, u + (mb + 7) / 8, hr, rfl, by rw [hw]; exact hu⟩
+    · simp only [hmr, Bool.false_eq_true, ↓reduceIte] at hs hi hres
+      refine Or.inl ⟨by rw [ev 2 (by decide) hs]; decide, M', fun hn => (by rw [← hres] at hn; cases hn),
+        fun b rest hb => ?_⟩
+      rw [← hres, Option.some.injEq, Prod.mk.injEq] at hb
+      obtain ⟨rfl, rfl⟩ := hb
+      exact ⟨by rw [hw]; exact hs, u + (mb + 7) / 8, hr, rfl, by rw [hw]; exact hu⟩
+  · have hrg' : ¬(2 ≤ a ∧ a < N - 1 ∧ Spec.Ffdh.mrRound N a = true) := fun h => hrg ⟨h.1, h.2.1⟩
+    simp only [hrg, hrg', ↓reduceIte] at hs hi hres
+    refine Or.inr ⟨by rw [ev 4 (by decide) hs]; decide, i,
+      ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hik, ?_⟩⟩
+    rw [show Spec.Ffdh.primeChecks mb - i = Spec.Ffdh.primeChecks mb - i - 1 + 1 by omega]; exact hres
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
