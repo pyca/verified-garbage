@@ -22,7 +22,7 @@ namespace VG.Proof.AesOcb.PPC64LE
 
 open VG VG.PPC64LE
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Ocb (ctxCiph ctxInv ctxLstar encryptWith decryptWith lengthsOk zeros KeyRepr)
+open VG.Spec.Ocb (ctxCiph ctxInv ctxLstar encryptWith decryptWith lengthsOk zeros)
 
 /-- The arguments on the stack, `n` of them. -/
 abbrev args (s : State) (n : Nat) : Region := ⟨stackArgAddr s 0, 8 * n⟩
@@ -108,19 +108,5 @@ def openPPC64LE : Contract isa where
     | some pt => (s'.gpr .r3).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat = pt
     | none => (s'.gpr .r3).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat = zeros (s.gpr .r10).toNat
   pub s₁ s₂ := onePub s₁ s₂ ∧ openLeak s₁ = openLeak s₂
-
-/-- `vg_aes_ocb_init(key = r3, key_len = r4, ctx = r5, scratch = r6)`. -/
-def initPPC64LE : Contract isa where
-  pre s :=
-    let key : Region := ⟨s.gpr .r3, (s.gpr .r4).toNat⟩
-    let ctx : Region := ⟨s.gpr .r5, 256⟩
-    let scr : Region := ⟨s.gpr .r6, 2560⟩
-    s.rd = [key] ∧ s.wr = [ctx, scr] ∧
-      key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧
-      (s.gpr .r5).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 2560 ≤ 2 ^ 64 ∧
-      ((s.gpr .r4).toNat = 16 ∨ (s.gpr .r4).toNat = 24 ∨ (s.gpr .r4).toNat = 32)
-  post s s' := KeyRepr s'.mem (s.gpr .r5) (bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat)
-  pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
-    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
 
 end VG.Proof.AesOcb.PPC64LE
