@@ -468,8 +468,8 @@ theorem checkY_ok {s : State} {B D Y : Addr} {Z w k L : Nat} (h : Env s B Z w) (
     (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hwk : w = (k + 7) / 8) (hk : 64 ≤ k) (hk' : k ≤ 1024)
     (hL : L ≤ 3 * k) (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1)
     (hrdY : ∀ i < k, InRegions (s.rd ++ s.wr) (off Y i) 1) (hsepY : ∀ i < k, ∀ x, ofs B x < Z → off Y i ≠ x)
-    (hrdQ : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1)
-    (hsepQ : ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x) :
+    (hrdQ : L = 3 * k → ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1)
+    (hsepQ : L = 3 * k → ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x) :
     WP isa checkY s fun t =>
       (t.gpr .r3 = BitVec.ofNat 64 (if (1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) ∧
           Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) < arr s.mem B w 0 - 1) ∧
@@ -504,10 +504,10 @@ theorem checkY_ok {s : State} {B D Y : Addr} {Z w k L : Nat} (h : Env s B Z w) (
       have k12 := k1.trans k2
       have e2 := e1.keep k2 (by decide)
       have hqb : Spec.Rsa.bytesAt s₂.mem (off D (2 * k)) k = Spec.Rsa.bytesAt s.mem (off D (2 * k)) k := by
-        rw [m2]; exact b1.bytesAt hZ hsepQ
+        rw [m2]; exact b1.bytesAt hZ (hsepQ hb')
       refine WP.mono (subgroup_ok e2 ((k12.gpr .r23 (by decide)).trans h23) ((k12.gpr .r21 (by decide)).trans h21)
         ((k12.gpr .r28 (by decide)).trans h28) (by omega) hk' (by rw [m2, p1]; exact hp2)
-        (by rw [m2, p1]; exact hodd) (by rw [k12.rd, k12.wr]; exact hrdQ) hsepQ)
+        (by rw [m2, p1]; exact hodd) (by rw [k12.rd, k12.wr]; exact hrdQ hb') (hsepQ hb'))
         fun t ⟨⟨t3, bt⟩, kt⟩ => ⟨⟨?_, ?_⟩, (k12.trans kt).mono (by decide)⟩
       · rw [t3, hqb, hq, m2, y1, p1]
         congr 1
