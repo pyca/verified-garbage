@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
+import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseStep
 import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.ScalarBase
+public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
 
 /-!
 # Ed448 on PPC64LE: selections as updates of the slots

@@ -1,20 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeNeg
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeX
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeX
 public import VerifiedGarbage.Proof.Ed448.Ref
 import VerifiedGarbage.Proof.Ed448.Recover
 import VerifiedGarbage.Proof.Ed448.Root
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
 import VerifiedGarbage.Proof.X448.PPC64LE.Setup
-import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.X448.Invert
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
+public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeCheck
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeY
 
 /-!
 # Ed448's verification on PPC64LE: decoding a point

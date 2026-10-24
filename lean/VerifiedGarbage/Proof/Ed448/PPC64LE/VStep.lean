@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseStep
 public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
+import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 
 /-!
 # Ed448's verification on PPC64LE: one iteration of the loop
