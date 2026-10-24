@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 
 /-! # The candidate's window table, and the scan that reads its entries
 

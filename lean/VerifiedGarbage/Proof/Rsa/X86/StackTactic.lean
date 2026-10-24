@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 public import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
-public import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
+import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 public meta import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 public meta import VerifiedGarbage.Proof.Framework.Lit
 public meta import Lean.Elab.Tactic
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public meta import Lean.Elab.Tactic.Basic
 
 /-! # Compositional stack checks for RSA callers of the large square schedules
 

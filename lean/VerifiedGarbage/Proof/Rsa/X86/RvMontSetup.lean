@@ -1,11 +1,12 @@
 module
 public import Mathlib.Data.Int.ModEq
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
+import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
 
 /-! # Montgomery setup preserves the tracked prime-recovery workspace -/
 

@@ -14,6 +14,7 @@ public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import VerifiedGarbage.Proof.Mont.X86.WindowWords
 
 /-! # The candidate's power, one 4-bit window of the exponent per iteration
 

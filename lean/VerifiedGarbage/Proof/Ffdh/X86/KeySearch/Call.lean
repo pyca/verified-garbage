@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 
 /-! # The attempt's call (x86)
 

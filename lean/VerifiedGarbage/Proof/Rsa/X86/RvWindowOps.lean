@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-public import VerifiedGarbage.Proof.Mont.X86.WindowShift
+import VerifiedGarbage.Proof.Mont.X86.WindowShift
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Shift
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
 /-! # The window operations on the recovery workspace
 
