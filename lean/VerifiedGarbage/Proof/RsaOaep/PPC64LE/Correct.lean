@@ -31,25 +31,6 @@ open VG.Proof.Mgf1 (ifp ifn)
 
 theorem ofNat_toNat (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
 
-/-- The test of `chkMsg`: the top bit of `y`, or of `x - y`, for `x < 2⁶³`. -/
-theorem msgBit {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 64) :
-    ((BitVec.ofNat 64 y >>> 63 ||| (BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63) != 0) = decide (x < y) := by
-  by_cases h : y < 2 ^ 63
-  · rw [ltBit hx h]
-    have e : BitVec.ofNat 64 y >>> 63 = 0 := by
-      apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      rw [Nat.mod_eq_of_lt (by omega)]; simp; omega
-    rw [e]; split <;> rename_i hxy <;> simp only [hxy, decide_true, decide_false] <;> decide
-  · have e : BitVec.ofNat 64 y >>> 63 = 1 := by
-      apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      rw [Nat.mod_eq_of_lt hy]; simp; omega
-    rw [e, decide_eq_true (by omega), bne_iff_ne]
-    intro h0
-    have := congrArg (fun v : BitVec 64 => v.getLsbD 0) h0
-    simp at this
-
 /-- The result and `out`, from the entry state `s`: the octets `encrypt`
 returns, or zeros. -/
 def Post (Hs Gs : Spec.Mgf1.Hash) (s s' : State) : Prop :=

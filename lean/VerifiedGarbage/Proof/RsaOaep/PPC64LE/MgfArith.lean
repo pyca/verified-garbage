@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 # RSAES-OAEP encryption on PPC64LE: arithmetic
 
 Untrusted: everything here is checked by Lean. A comparison of values below
-`2⁶³` as the top bit of their difference (`ltBit`), the selection of
+`2⁶³` as the top bit of their difference (`ltBit`, `msgBit`), the selection of
 `min(a, b)` from it (`minSel`), the bytes of the counter (`trunc8`, `shr8`,
 `i2osp_four`) and of an exclusive-or (`byte_xor`).
 -/
@@ -30,6 +30,25 @@ theorem ltBit {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
 theorem ne_zero_ltBit {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
     ((BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63 != 0) = decide (x < y) := by
   rw [ltBit hx hy]; split <;> simp_all
+
+/-- The test of `chkMsg`: the top bit of `y`, or of `x - y`, for `x < 2⁶³`. -/
+theorem msgBit {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 64) :
+    ((BitVec.ofNat 64 y >>> 63 ||| (BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63) != 0) = decide (x < y) := by
+  by_cases h : y < 2 ^ 63
+  · rw [ltBit hx h]
+    have e : BitVec.ofNat 64 y >>> 63 = 0 := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+      rw [Nat.mod_eq_of_lt (by omega)]; simp; omega
+    rw [e]; split <;> rename_i hxy <;> simp only [hxy, decide_true, decide_false] <;> decide
+  · have e : BitVec.ofNat 64 y >>> 63 = 1 := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+      rw [Nat.mod_eq_of_lt hy]; simp; omega
+    rw [e, decide_eq_true (by omega), bne_iff_ne]
+    intro h0
+    have := congrArg (fun v : BitVec 64 => v.getLsbD 0) h0
+    simp at this
 
 /-- `b + ((a - b) ∧ -(a < b))`: `min(a, b)`. -/
 theorem minSel {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
