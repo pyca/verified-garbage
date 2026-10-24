@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 `smear_ok`: the bits of the octet in `r14` below its top one, that one too
 (`smearN`). `cut_ok`: `rand`'s `k` octets at `R` to x at `X`, zeros before
-the index `ld` in `r9`, and'ed with the octet in `r14` at it, kept after it
+the index `ld` in `r22`, and'ed with the octet in `r14` at it, kept after it
 (`KeyScalar.cut`), without a branch.
 -/
 
@@ -101,7 +101,7 @@ def cutRegs : List Reg := [.r0, .r4, .r6, .r16, .r17, .r18, .r19, .r20, .r24, .r
 
 /-- What the cut holds after `j` octets. -/
 def CutInv (s : State) (R X : Addr) (k ld : Nat) (tb : Byte) (j : Nat) (t : State) : Prop :=
-  t.gpr .r24 = off R j ∧ t.gpr .r25 = off X j ∧ t.gpr .r4 = BitVec.ofNat 64 j ∧ t.gpr .r9 = BitVec.ofNat 64 ld ∧
+  t.gpr .r24 = off R j ∧ t.gpr .r25 = off X j ∧ t.gpr .r4 = BitVec.ofNat 64 j ∧ t.gpr .r22 = BitVec.ofNat 64 ld ∧
     t.gpr .r14 = tb.setWidth 64 ∧ Outside X 0 j s.mem t.mem ∧
     (∀ i < j, t.mem (off X i) = (cut (Spec.Rsa.bytesAt s.mem R k) ld tb).getD i 0) ∧ Keep cutRegs s t
 
@@ -129,7 +129,7 @@ theorem cutBody_ok {s t : State} {R X : Addr} {k ld j : Nat} {tb : Byte} (hj : j
       hb, lt_mask (show j < 2 ^ 32 by omega) (show ld < 2 ^ 32 by omega),
       eq_mask (show j < 2 ^ 32 by omega) (show ld < 2 ^ 32 by omega), sel255, or_xor_mask]
     rw [BitVec.ofNat_add]
-  · rw [ku.gpr .r9 (by decide), t9]
+  · rw [ku.gpr .r22 (by decide), t9]
   · rw [ku.gpr .r14 (by decide), t14]
   · rw [um]
     exact (tout.mono (Nat.le_refl _) (by omega)).trans ((write1_outside t.mem X (d := j) _ (by omega)).mono
@@ -154,14 +154,14 @@ theorem cutBody_ok {s t : State} {R X : Addr} {k ld j : Nat} {tb : Byte} (hj : j
 theorem cut_ok {s : State} {R X : Addr} {k ld : Nat} {tb : Byte} (hk1 : 1 ≤ k) (hk : k < 2 ^ 32) (hld : ld < k)
     (hx : Scr s X k) (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off R i) 1)
     (hsep : ∀ i < k, ∀ y, ofs X y < k → off R i ≠ y) (h24 : s.gpr .r24 = off R 0) (h25 : s.gpr .r25 = off X 0)
-    (h4 : s.gpr .r4 = BitVec.ofNat 64 0) (h9 : s.gpr .r9 = BitVec.ofNat 64 ld) (h14 : s.gpr .r14 = tb.setWidth 64)
+    (h4 : s.gpr .r4 = BitVec.ofNat 64 0) (h22 : s.gpr .r22 = BitVec.ofNat 64 ld) (h14 : s.gpr .r14 = tb.setWidth 64)
     (h6 : s.gpr .r6 = BitVec.ofNat 64 k) :
     WP isa (countLoop .r6 cutBody) s fun t =>
       (Spec.Rsa.bytesAt t.mem X k = cut (Spec.Rsa.bytesAt s.mem R k) ld tb ∧ Outside X 0 k s.mem t.mem) ∧
         Keep cutRegs s t := by
   refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega) (by omega) (CutInv s R X k ld tb)
     (fun j hj t ht _ => cutBody_ok hj hk hld hx (hrd j hj) (hsep j hj) ht)
-    ⟨h24, h25, h4, h9, h14, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), Keep.refl _ _⟩ h6)
+    ⟨h24, h25, h4, h22, h14, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), Keep.refl _ _⟩ h6)
     fun t ⟨_, _, _, _, _, tout, tx, kt⟩ => ⟨⟨?_, tout⟩, kt⟩
   have hl : (Spec.Rsa.bytesAt s.mem R k).length = k := by simp [Spec.Rsa.bytesAt]
   apply List.ext_getElem (by rw [cut_length tb (by omega), hl]; simp [Spec.Rsa.bytesAt])

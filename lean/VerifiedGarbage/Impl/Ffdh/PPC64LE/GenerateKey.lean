@@ -37,11 +37,11 @@ open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Do
 rand, rand_len, scratch, scratch_len)`, the last three on the stack: the
 scratch buffer into `r11`, the registers saved there; x, `x_len`, `y` and
 `rand` into its header's words 8–11; then `setup` for the domain (`r7`),
-`domain_len` (`r8`) and `p_len` (`r9`). -/
+`domain_len` (`r8`) and `p_len` (`r9`); g's address into `r9`. -/
 def gkFront : List Instr :=
   [.addSp .r11 104, .load .d .r11 .r11 0] ++ save .r11 ++
     [.store .d .r3 .r23 64, .store .d .r4 .r23 72, .store .d .r5 .r23 80, .store .d .r10 .r23 88,
-      .addi .r3 .r7 0, .addi .r4 .r8 0, .addi .r5 .r9 0] ++ setup
+      .addi .r3 .r7 0, .addi .r4 .r8 0, .addi .r5 .r9 0] ++ setup ++ [.add .r9 .r21 .r28]
 
 /-- `r12 :=` the bound's octets: q's (`domain + 2 p_len`), or p's without q. -/
 def boundPtr : Prog isa :=
@@ -49,16 +49,16 @@ def boundPtr : Prog isa :=
     (.block [.addi .r12 .r21 0]))
 
 /-- The scan's start: `p_len` octets (`r6`) from index 0 (`r4`); the index
-`p_len − 1` (`r9`), the octet 0 (`r14`) and nothing found (`r15`). -/
+`p_len − 1` (`r22`), the octet 0 (`r14`) and nothing found (`r15`). -/
 def scanSetup : List Instr :=
-  [.addi .r6 .r28 0, .li .r4 0, .subi .r9 .r28 1, .li .r14 0, .li .r15 0]
+  [.addi .r6 .r28 0, .li .r4 0, .subi .r22 .r28 1, .li .r14 0, .li .r15 0]
 
 /-- One octet `b` of the scan: if it is the first nonzero one (`r17`, all
 ones, else 0), its index and itself are kept. -/
 def scanBody : List Instr :=
   [.lbz .r16 .r12 0, .li .r0 0, .sub .r17 .r0 .r16, .logic .or .r17 .r17 .r16, .lsr .d .r17 .r17 63,
     .sub .r17 .r0 .r17, .logic .or .r17 .r17 .r15, .logic .xor .r17 .r17 .r15,
-    .logic .xor .r18 .r9 .r4, .logic .and .r18 .r18 .r17, .logic .xor .r9 .r9 .r18,
+    .logic .xor .r18 .r22 .r4, .logic .and .r18 .r18 .r17, .logic .xor .r22 .r22 .r18,
     .logic .xor .r18 .r14 .r16, .logic .and .r18 .r18 .r17, .logic .xor .r14 .r14 .r18,
     .logic .or .r15 .r15 .r17, .addi .r12 .r12 1, .addi .r4 .r4 1]
 
@@ -67,24 +67,25 @@ def smear : List Instr :=
   [.lsr .d .r16 .r14 1, .logic .or .r14 .r14 .r16, .lsr .d .r16 .r14 2, .logic .or .r14 .r14 .r16,
     .lsr .d .r16 .r14 4, .logic .or .r14 .r14 .r16]
 
-/-- The cut's start: `rand` (`r24`) and x (`r25`) from the header, `p_len`
-octets (`r6`) from index 0 (`r4`). -/
-def cutSetup : List Instr :=
-  [.load .d .r24 .r23 88, .load .d .r25 .r23 64, .addi .r6 .r28 0, .li .r4 0]
+/-- `rand` (`r24`) and x (`r25`) from the header. -/
+def ptrs : List Instr := [.load .d .r24 .r23 88, .load .d .r25 .r23 64]
 
-/-- One octet of `rand` to x: and'ed with 0 before the index `r9`, with the
+/-- The cut's start: `p_len` octets (`r6`) from index 0 (`r4`). -/
+def cutSetup : List Instr := [.addi .r6 .r28 0, .li .r4 0]
+
+/-- One octet of `rand` to x: and'ed with 0 before the index `r22`, with the
 smeared octet `r14` at it, and with 255 after it. -/
 def cutBody : List Instr :=
-  [.lbz .r16 .r24 0, .li .r0 0, .sub .r17 .r4 .r9, .lsr .d .r17 .r17 63, .sub .r17 .r0 .r17,
-    .logic .xor .r18 .r4 .r9, .subi .r18 .r18 1, .lsr .d .r18 .r18 63, .sub .r18 .r0 .r18,
+  [.lbz .r16 .r24 0, .li .r0 0, .sub .r17 .r4 .r22, .lsr .d .r17 .r17 63, .sub .r17 .r0 .r17,
+    .logic .xor .r18 .r4 .r22, .subi .r18 .r18 1, .lsr .d .r18 .r18 63, .sub .r18 .r0 .r18,
     .li .r19 255, .logic .xor .r20 .r19 .r14, .logic .and .r20 .r20 .r18, .logic .xor .r20 .r20 .r19,
     .logic .or .r20 .r20 .r17, .logic .xor .r20 .r20 .r17, .logic .and .r16 .r16 .r20, .stb .r16 .r25 0,
     .addi .r24 .r24 1, .addi .r25 .r25 1, .addi .r4 .r4 1]
 
 /-- x := `rand`'s `p_len` octets cut to the bound's bit length. -/
 def scalar : Prog isa :=
-  .seq boundPtr (.seq (.block scanSetup) (.seq (countLoop .r6 scanBody)
-    (.seq (.block (smear ++ cutSetup)) (countLoop .r6 cutBody))))
+  .seq (.block ptrs) (.seq boundPtr (.seq (.block scanSetup) (.seq (countLoop .r6 scanBody)
+    (.seq (.block (smear ++ cutSetup)) (countLoop .r6 cutBody)))))
 
 /-- `r17 :=` all ones if the status `r3` is 1, else 0, without a branch. -/
 def statusMask : List Instr :=

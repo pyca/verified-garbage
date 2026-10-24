@@ -73,7 +73,7 @@ theorem gk_correct (s : State) (h : gkContract.pre s) :
   have sepRS := sep_of_disjoint dRS (by omega)
   have h4 : s.gpr .r4 = BitVec.ofNat 64 k := by rw [← hxl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   unfold generateKey
-  refine WP.seq (WP.mono (gk_front hpre) fun s₁ ⟨hb, w8, w9, w10, w11, hsav, hby, k1⟩ => ?_)
+  refine WP.seq (WP.mono (gk_front hpre) fun s₁ ⟨hb, _, w8, w9, w10, w11, hsav, hby, k1⟩ => ?_)
   have ek : (gcOf s).k = k := hkd
   have hk := hb.k64
   have hk' := hb.k1024

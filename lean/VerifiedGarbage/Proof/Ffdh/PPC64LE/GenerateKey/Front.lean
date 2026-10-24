@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 `gkFront` loads the working space's address from the stack, saves the
 nonvolatile registers in its header, stores x, `x_len`, `y` and `rand` in its
-words 8–11 (`gkHdr_ok`) and sets up the registers: `Base` of the domain's
+words 8–11 (`gkHdr_ok`) and sets up the registers and g's address in `r9`: `Base` of the domain's
 data `gcOf` (g as the `Y` of `Base`), keeping the bytes apart from the
 working space (`gk_front`).
 -/
@@ -38,7 +38,7 @@ def gcOf (s : State) : CD :=
     Spec.Rsa.bytesAt s.mem (off (s.gpr .r7) (s.gpr .r9).toNat) (s.gpr .r9).toNat⟩
 
 /-- The registers `gkFront` writes. -/
-def gkFrontRegs : List Reg := ([.r11, .r23, .r3, .r4, .r5] : List Reg) ++ setup0Regs
+def gkFrontRegs : List Reg := ([.r11, .r23, .r3, .r4, .r5] : List Reg) ++ setup0Regs ++ ([.r9] : List Reg)
 
 /-- x, `x_len`, `y` and `rand` into the header's words 8–11 at `S`, and the
 domain's arguments into `r3`–`r5`. -/
@@ -77,7 +77,7 @@ theorem gkHdr_ok {s : State} {S : Addr} (h23 : s.gpr .r23 = S)
 /-- `gkFront`: `Base` of `gcOf`, the header's words 8–11 and the saved
 registers, and the bytes apart from the working space kept. -/
 theorem gk_front {s : State} (h : gkContract.pre s) :
-    WP isa (.block gkFront) s fun t => Base (gcOf s) t ∧
+    WP isa (.block gkFront) s fun t => Base (gcOf s) t ∧ t.gpr .r9 = off (s.gpr .r7) (s.gpr .r9).toNat ∧
       word t.mem (stackArg s 1) 64 = s.gpr .r3 ∧ word t.mem (stackArg s 1) 72 = s.gpr .r4 ∧
       word t.mem (stackArg s 1) 80 = s.gpr .r5 ∧ word t.mem (stackArg s 1) 88 = s.gpr .r10 ∧
       (∀ i < 18, word t.mem (stackArg s 1) (112 + 8 * i) = s.gpr (Impl.Ffdh.PPC64LE.Domain.saved i)) ∧
@@ -118,10 +118,21 @@ theorem gk_front {s : State} (h : gkContract.pre s) :
   refine WP.block_append (WP.mono (gkHdr_ok h23₁ (by rw [k1.wr]; exact hinH))
     fun s₂ ⟨⟨w8, w9, w10, w11, b3, b4, b5, o2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
-  refine WP.mono (setup0_ok (D := D) (L := L) (k := k) (b3.trans ((k1.gpr .r7 (by decide)).trans hDd))
+  refine WP.block_append (WP.mono (setup0_ok (D := D) (L := L) (k := k) (b3.trans ((k1.gpr .r7 (by decide)).trans hDd))
     (by rw [b4, k1.gpr .r8 (by decide), ← hLd, VG.Proof.Bignum.ofNat_toNat64])
     (by rw [b5, k1.gpr .r9 (by decide), ← hkd, VG.Proof.Bignum.ofNat_toNat64])
-    ((k2.gpr .r23 (by decide)).trans h23₁) hk') fun t ⟨⟨a21, a27, a28, s11, a29, a10, a31, m3⟩, k3⟩ => ?_
+    ((k2.gpr .r23 (by decide)).trans h23₁) hk') fun s₃ ⟨⟨b21, b27, b28, b11, b29, b10, b31, m3'⟩, k3'⟩ => ?_)
+  refine WP.mono (WP.keep [.r9] (Q := fun t => t.gpr .r9 = off D k ∧ t.mem = s₃.mem) (by prun [b21, b28])
+    (by decide)) fun t ⟨⟨a9, mt⟩, kt⟩ => ?_
+  have m3 : t.mem = s₂.mem := mt.trans m3'
+  have k3 := k3'.trans kt
+  have a21 : t.gpr .r21 = D := (kt.gpr .r21 (by decide)).trans b21
+  have a27 : t.gpr .r27 = BitVec.ofNat 64 L := (kt.gpr .r27 (by decide)).trans b27
+  have a28 : t.gpr .r28 = BitVec.ofNat 64 k := (kt.gpr .r28 (by decide)).trans b28
+  have s11 : t.gpr .r11 = BitVec.ofNat 64 (2 * ((k + 7) / 8)) := (kt.gpr .r11 (by decide)).trans b11
+  have a29 : t.gpr .r29 = BitVec.ofNat 64 (8 * ((k + 7) / 8 + 2)) := (kt.gpr .r29 (by decide)).trans b29
+  have a10 : t.gpr .r10 = off S (slot ((k + 7) / 8) 0) := (kt.gpr .r10 (by decide)).trans b10
+  have a31 : t.gpr .r31 = S := (kt.gpr .r31 (by decide)).trans b31
   have kall := k12.trans k3
   have hb3 : ∀ (Q : Addr) n, (∀ i < n, ∀ x, ofs S x < Z → off Q i ≠ x) →
       Spec.Rsa.bytesAt t.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hsep => by
@@ -142,7 +153,7 @@ theorem gk_front {s : State} (h : gkContract.pre s) :
     show (k + 7) / 8 ≤ 128 by omega, hZw⟩, a21, (k3.gpr .r23 (by decide)).trans ((k2.gpr .r23 (by decide)).trans h23₁),
     a27, a28, hk, hk', by simp only [Spec.Ffdh.domainLenValid] at hL; omega, rdD, sepD,
     fun i (hi : i < k) => by rw [off_off']; exact rdD _ (by omega), sepG, hb3 D L sepD, hb3 (off D k) k sepG⟩,
-    ?_, ?_, ?_, ?_, fun i hi => ?_, hb3, kall.mono (by decide)⟩
+    a9, ?_, ?_, ?_, ?_, fun i hi => ?_, hb3, kall.mono (by decide)⟩
   · rw [hw3, w8, k1.gpr .r3 (by decide)]
   · rw [hw3, w9, k1.gpr .r4 (by decide)]
   · rw [hw3, w10, k1.gpr .r5 (by decide)]

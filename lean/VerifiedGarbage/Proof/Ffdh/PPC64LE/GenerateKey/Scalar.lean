@@ -33,7 +33,7 @@ def smeared (bd : List Byte) : Byte := BitVec.ofNat 8 (smearN (bd.getD (lead bd)
 
 /-- The registers `scalar` writes. -/
 def scalarRegs : List Reg :=
-  [.r0, .r4, .r6, .r9, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r24, .r25]
+  [.r0, .r4, .r6, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24, .r25]
 
 /-- `boundPtr`: `r12 :=` the bound's octets. -/
 theorem boundPtr_ok {s : State} {D : Addr} {k L : Nat} (h21 : s.gpr .r21 = D)
@@ -58,6 +58,69 @@ theorem boundPtr_ok {s : State} {D : Addr} {k L : Nat} (h21 : s.gpr .r21 = D)
         prun [(k1.gpr .r21 (by decide)).trans h21, BitVec.add_zero, bptr, hb]) (by decide)) fun t ⟨⟨a12, mt⟩, kt⟩ =>
       ⟨⟨a12, mt.trans m1⟩, (k1.trans kt).mono (by decide)⟩
 
+/-- `scalar` after `ptrs`. -/
+def scalarRest : Prog isa :=
+  .seq boundPtr (.seq (.block scanSetup) (.seq (countLoop .r6 scanBody)
+    (.seq (.block (smear ++ cutSetup)) (countLoop .r6 cutBody))))
+
+theorem scalar_eq : scalar = .seq (.block ptrs) scalarRest := rfl
+
+/-- `scalarRest`: x's `k` octets at `X` (`r25`) are `rand`'s at `R` (`r24`)
+cut at the bound's first nonzero octet. -/
+theorem scalarRest_ok {s : State} {D X R : Addr} {k L : Nat}
+    (h21 : s.gpr .r21 = D) (h27 : s.gpr .r27 = BitVec.ofNat 64 L) (h28 : s.gpr .r28 = BitVec.ofNat 64 k)
+    (hk : 64 ≤ k) (hk' : k ≤ 1024) (hL : L = 2 * k ∨ L = 3 * k)
+    (h24 : s.gpr .r24 = off R 0) (h25 : s.gpr .r25 = off X 0)
+    (hrdD : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1) (hrdR : ∀ i < k, InRegions (s.rd ++ s.wr) (off R i) 1)
+    (hx : Scr s X k) (hsepR : ∀ i < k, ∀ y, ofs X y < k → off R i ≠ y) :
+    WP isa scalarRest s fun t =>
+      (Spec.Rsa.bytesAt t.mem X k = cut (Spec.Rsa.bytesAt s.mem R k)
+          (lead (Spec.Rsa.bytesAt s.mem (bptr D k L) k)) (smeared (Spec.Rsa.bytesAt s.mem (bptr D k L) k)) ∧
+        Outside X 0 k s.mem t.mem) ∧ Keep scalarRegs s t := by
+  have hrdP : ∀ i < k, InRegions (s.rd ++ s.wr) (off (bptr D k L) i) 1 := fun i hi => by
+    unfold bptr
+    split
+    · rw [Domain.off_off']; exact hrdD _ (by omega)
+    · exact hrdD _ (by omega)
+  unfold scalarRest
+  refine WP.seq (WP.mono (boundPtr_ok h21 h27 h28 (by omega) (by omega)) fun s₁ ⟨⟨a12, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (scan_ok (k := k) (by omega) (by omega) (by rw [k1.rd, k1.wr]; exact hrdP) a12
+    ((k1.gpr .r28 (by decide)).trans h28)) fun s₁' hl => WP.seq (WP.mono hl fun s₂ ⟨⟨a22, a14, m2⟩, k2⟩ => ?_))
+  rw [m1] at a22 a14
+  have k12 := k1.trans k2
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (smear_ok s₂ a14) fun s₃ ⟨⟨b14, m3⟩, k3⟩ => ?_
+  have k13 := k12.trans k3
+  refine WP.mono (WP.keep [.r4, .r6] (Q := fun t => t.gpr .r6 = BitVec.ofNat 64 k ∧ t.gpr .r4 = BitVec.ofNat 64 0 ∧
+      t.mem = s₃.mem) (by
+    unfold cutSetup
+    prun [(k13.gpr .r28 (by decide)).trans h28, BitVec.add_zero]) (by decide))
+    fun s₄ ⟨⟨c6, c4, m4⟩, k4⟩ => ?_
+  have k14 := k13.trans k4
+  have hm4 : s₄.mem = s.mem := by rw [m4, m3, m2, m1]
+  refine WP.mono (cut_ok (R := R) (X := X) (k := k) (ld := lead (Spec.Rsa.bytesAt s.mem (bptr D k L) k))
+    (tb := smeared (Spec.Rsa.bytesAt s.mem (bptr D k L) k)) (by omega) (by omega) ?_ (hx.congr k14.wr)
+    (by rw [k14.rd, k14.wr]; exact hrdR) hsepR ((k14.gpr .r24 (by decide)).trans h24)
+    ((k14.gpr .r25 (by decide)).trans h25) c4 ?_ ?_ c6) fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
+  · have hl : (Spec.Rsa.bytesAt s.mem (bptr D k L) k).length = k := by simp [Spec.Rsa.bytesAt]
+    have hne : Spec.Rsa.bytesAt s.mem (bptr D k L) k ≠ [] := fun he => by rw [he] at hl; simp at hl; omega
+    have := Proof.Ffdh.lead_lt hne
+    omega
+  · rw [k4.gpr .r22 (by decide), k3.gpr .r22 (by decide), a22]
+  · rw [k4.gpr .r14 (by decide), b14]; rfl
+  · rw [hm4] at tb tout
+    exact ⟨⟨tb, tout⟩, (k14.trans kt).mono (by decide)⟩
+
+/-- `ptrs`: `rand`'s and x's addresses from the header's words 11 and 8. -/
+theorem ptrs_ok {s : State} {B X R : Addr} {Z : Nat} (hs : Scr s B Z) (hZ : 96 ≤ Z) (h23 : s.gpr .r23 = B)
+    (hX : s.mem.readW (off B 64) 64 = off X 0) (hR : s.mem.readW (off B 88) 64 = off R 0) :
+    WP isa (.block ptrs) s fun t =>
+      (t.gpr .r24 = off R 0 ∧ t.gpr .r25 = off X 0 ∧ t.mem = s.mem) ∧ Keep [.r24, .r25] s t := by
+  refine WP.keep _ ?_ (by decide)
+  unfold ptrs
+  prun [h23, hs.ld (d := 88) (n := 8) (by omega), hs.ld (d := 64) (n := 8) (by omega), BitVec.add_zero, hX, hR]
+
 /-- `scalar`: x's `k` octets at `X` are `rand`'s at `R` cut at the bound's
 first nonzero octet. -/
 theorem scalar_ok {s : State} {B D X R : Addr} {Z w k L : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
@@ -72,43 +135,13 @@ theorem scalar_ok {s : State} {B D X R : Addr} {Z w k L : Nat} (h : Env s B Z w)
         Outside X 0 k s.mem t.mem) ∧ Keep scalarRegs s t := by
   have hZ := h.hZ
   have e28 := Domain.slot_eq w 28
-  have hrdP : ∀ i < k, InRegions (s.rd ++ s.wr) (off (bptr D k L) i) 1 := fun i hi => by
-    unfold bptr
-    split
-    · rw [Domain.off_off']; exact hrdD _ (by omega)
-    · exact hrdD _ (by omega)
-  unfold scalar
-  refine WP.seq (WP.mono (boundPtr_ok h21 h27 h28 (by omega) (by omega)) fun s₁ ⟨⟨a12, m1⟩, k1⟩ => ?_)
-  refine WP.seq (WP.mono (scan_ok (k := k) (by omega) (by omega) (by rw [k1.rd, k1.wr]; exact hrdP) a12
-    ((k1.gpr .r28 (by decide)).trans h28)) fun s₁' hl => WP.seq (WP.mono hl fun s₂ ⟨⟨a9, a14, m2⟩, k2⟩ => ?_))
-  rw [m1] at a9 a14
-  have k12 := k1.trans k2
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (smear_ok s₂ a14) fun s₃ ⟨⟨b14, m3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
-  have hs3 := h.hs.congr k13.wr
-  refine WP.mono (WP.keep [.r4, .r6, .r24, .r25] (Q := fun t => t.gpr .r24 = off R 0 ∧ t.gpr .r25 = off X 0 ∧
-      t.gpr .r6 = BitVec.ofNat 64 k ∧ t.gpr .r4 = BitVec.ofNat 64 0 ∧ t.mem = s₃.mem) (by
-    unfold cutSetup
-    prun [(k13.gpr .r23 (by decide)).trans h23, (k13.gpr .r28 (by decide)).trans h28,
-      hs3.ld (d := 88) (n := 8) (by omega), hs3.ld (d := 64) (n := 8) (by omega), BitVec.add_zero,
-      show s₃.mem.readW (off B 88) 64 = off R 0 by rw [m3, m2, m1]; exact hR,
-      show s₃.mem.readW (off B 64) 64 = off X 0 by rw [m3, m2, m1]; exact hX]) (by decide))
-    fun s₄ ⟨⟨c24, c25, c6, c4, m4⟩, k4⟩ => ?_
-  have k14 := k13.trans k4
-  have hm4 : s₄.mem = s.mem := by rw [m4, m3, m2, m1]
-  refine WP.mono (cut_ok (R := R) (X := X) (k := k) (ld := lead (Spec.Rsa.bytesAt s.mem (bptr D k L) k))
-    (tb := smeared (Spec.Rsa.bytesAt s.mem (bptr D k L) k)) (by omega) (by omega) ?_ (hx.congr k14.wr)
-    (by rw [k14.rd, k14.wr]; exact hrdR) hsepR c24 c25 c4 ?_ ?_ c6) fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
-  · have hl : (Spec.Rsa.bytesAt s.mem (bptr D k L) k).length = k := by simp [Spec.Rsa.bytesAt]
-    have hne : Spec.Rsa.bytesAt s.mem (bptr D k L) k ≠ [] := fun he => by rw [he] at hl; simp at hl; omega
-    have := Proof.Ffdh.lead_lt hne
-    omega
-  · rw [k4.gpr .r9 (by decide), k3.gpr .r9 (by decide), a9]
-  · rw [k4.gpr .r14 (by decide), b14]; rfl
-  · rw [hm4] at tb tout
-    exact ⟨⟨tb, tout⟩, (k14.trans kt).mono (by decide)⟩
+  rw [scalar_eq]
+  refine WP.seq (WP.mono (ptrs_ok h.hs (by omega) h23 hX hR) fun s₁ ⟨⟨a24, a25, m1⟩, k1⟩ => ?_)
+  refine WP.mono (scalarRest_ok ((k1.gpr .r21 (by decide)).trans h21) ((k1.gpr .r27 (by decide)).trans h27)
+    ((k1.gpr .r28 (by decide)).trans h28) hk hk' hL a24 a25 (by rw [k1.rd, k1.wr]; exact hrdD)
+    (by rw [k1.rd, k1.wr]; exact hrdR) (hx.congr k1.wr) hsepR) fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
+  rw [m1] at tb tout
+  exact ⟨⟨tb, tout⟩, (k1.trans kt).mono (by decide)⟩
 
 theorem status_mask : ∀ n < 4, 1 ≤ n →
     (0#64 - (BitVec.ofNat 64 n - 1#64) ||| BitVec.ofNat 64 n - 1#64) >>> 63 - 1#64 = mask (decide (n = 1)) := by

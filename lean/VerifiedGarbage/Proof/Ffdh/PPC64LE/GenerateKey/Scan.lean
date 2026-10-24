@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 # `vg_ffdh_generate_key` on PPC64LE: the scan of the bound's octets
 
 `scanBody`, without a branch, keeps the first nonzero octet of the bound and
-its index: after `j` of the `k` octets at `P`, `r9`, `r14` and the mask in
+its index: after `j` of the `k` octets at `P`, `r22`, `r14` and the mask in
 `r15` hold `scanAt` of them (`scan_ok`).
 -/
 
@@ -60,12 +60,12 @@ theorem getD_bytesAt (m : Mem) (P : Addr) {n j : Nat} (hj : j < n) :
 /-! ## The loop -/
 
 /-- The registers the scan writes. -/
-def scanRegs : List Reg := [.r0, .r4, .r6, .r9, .r12, .r14, .r15, .r16, .r17, .r18]
+def scanRegs : List Reg := [.r0, .r4, .r6, .r22, .r12, .r14, .r15, .r16, .r17, .r18]
 
 /-- What the scan holds after `j` octets. -/
 def ScanInv (s : State) (P : Addr) (k j : Nat) (t : State) : Prop :=
   t.gpr .r12 = off P j ∧ t.gpr .r4 = BitVec.ofNat 64 j ∧
-    t.gpr .r9 = BitVec.ofNat 64 (scanAt (Spec.Rsa.bytesAt s.mem P k) j).2.1 ∧
+    t.gpr .r22 = BitVec.ofNat 64 (scanAt (Spec.Rsa.bytesAt s.mem P k) j).2.1 ∧
     t.gpr .r14 = (scanAt (Spec.Rsa.bytesAt s.mem P k) j).2.2.setWidth 64 ∧
     t.gpr .r15 = mask (scanAt (Spec.Rsa.bytesAt s.mem P k) j).1 ∧ t.mem = s.mem ∧ Keep scanRegs s t
 
@@ -84,11 +84,11 @@ theorem scanBody_ok {s t : State} {P : Addr} {k j : Nat} (hj : j < k)
   unfold scanBody
   have hst : WP isa (.block ([.lbz .r16 .r12 0, .li .r0 0, .sub .r17 .r0 .r16, .logic .or .r17 .r17 .r16,
       .lsr .d .r17 .r17 63, .sub .r17 .r0 .r17, .logic .or .r17 .r17 .r15, .logic .xor .r17 .r17 .r15,
-      .logic .xor .r18 .r9 .r4, .logic .and .r18 .r18 .r17, .logic .xor .r9 .r9 .r18,
+      .logic .xor .r18 .r22 .r4, .logic .and .r18 .r18 .r17, .logic .xor .r22 .r22 .r18,
       .logic .xor .r18 .r14 .r16, .logic .and .r18 .r18 .r17, .logic .xor .r14 .r14 .r18,
       .logic .or .r15 .r15 .r17, .addi .r12 .r12 1, .addi .r4 .r4 1] ++ ([.subi .r6 .r6 1] : List Instr))) t
       fun u => (u.gpr .r12 = off P (j + 1) ∧ u.gpr .r4 = BitVec.ofNat 64 (j + 1) ∧
-        u.gpr .r9 = (BitVec.ofNat 64 i ^^^ ((BitVec.ofNat 64 i ^^^ BitVec.ofNat 64 j) &&& mask (b != 0 && !f))) ∧
+        u.gpr .r22 = (BitVec.ofNat 64 i ^^^ ((BitVec.ofNat 64 i ^^^ BitVec.ofNat 64 j) &&& mask (b != 0 && !f))) ∧
         u.gpr .r14 = (o.setWidth 64 ^^^ ((o.setWidth 64 ^^^ b.setWidth 64) &&& mask (b != 0 && !f))) ∧
         u.gpr .r15 = (mask f ||| mask (b != 0 && !f)) ∧ u.mem = t.mem ∧
         u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1) ∧ Keep scanRegs t u := by
@@ -108,19 +108,19 @@ theorem scanBody_ok {s t : State} {P : Addr} {k j : Nat} (hj : j < k)
 theorem sub1_ofNat {k : Nat} (hk : 1 ≤ k) : BitVec.ofNat 64 k - 1#64 = BitVec.ofNat 64 (k - 1) := by
   rw [show k = (k - 1) + 1 by omega, BitVec.ofNat_add, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
-/-- `scanSetup` and the scan of the `k` octets at `P` (`r12`): `r9` and `r14`
+/-- `scanSetup` and the scan of the `k` octets at `P` (`r12`): `r22` and `r14`
 are `lead` of them and its octet. -/
 theorem scan_ok {s : State} {P : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k < 2 ^ 32)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off P i) 1) (h12 : s.gpr .r12 = off P 0)
     (h28 : s.gpr .r28 = BitVec.ofNat 64 k) :
     WP isa (.block scanSetup) s fun u => WP isa (countLoop .r6 scanBody) u fun t =>
-      (t.gpr .r9 = BitVec.ofNat 64 (lead (Spec.Rsa.bytesAt s.mem P k)) ∧
+      (t.gpr .r22 = BitVec.ofNat 64 (lead (Spec.Rsa.bytesAt s.mem P k)) ∧
         t.gpr .r14 = ((Spec.Rsa.bytesAt s.mem P k).getD (lead (Spec.Rsa.bytesAt s.mem P k)) 0).setWidth 64 ∧
         t.mem = s.mem) ∧ Keep scanRegs s t := by
   have hlen : (Spec.Rsa.bytesAt s.mem P k).length = k := by simp [Spec.Rsa.bytesAt]
   have hne : Spec.Rsa.bytesAt s.mem P k ≠ [] := fun h => by rw [h] at hlen; simp at hlen; omega
   refine (WP.mono (WP.keep scanRegs (Q := fun u => u.gpr .r12 = off P 0 ∧ u.gpr .r4 = BitVec.ofNat 64 0 ∧
-      u.gpr .r9 = BitVec.ofNat 64 (k - 1) ∧ u.gpr .r14 = BitVec.ofNat 64 0 ∧ u.gpr .r15 = BitVec.ofNat 64 0 ∧
+      u.gpr .r22 = BitVec.ofNat 64 (k - 1) ∧ u.gpr .r14 = BitVec.ofNat 64 0 ∧ u.gpr .r15 = BitVec.ofNat 64 0 ∧
       u.mem = s.mem ∧ u.gpr .r6 = BitVec.ofNat 64 k) ?_ (by decide)) fun u ⟨⟨u12, u4, u9, u14, u15, um, u6⟩, ku⟩ => ?_)
   · unfold scanSetup
     prun [h12, h28, sub1_ofNat hk1, BitVec.add_zero]
