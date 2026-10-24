@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldTest
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode

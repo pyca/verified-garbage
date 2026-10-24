@@ -2,16 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VSetup
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecode
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VCheckS
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VTab
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VStep
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VFinish
-public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VCheckS
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VTab
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VStep
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VFinish
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Ed448's verification equation on PPC64LE: the whole function

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Codec
 public import VerifiedGarbage.Spec.MlKem.Contract
@@ -28,6 +28,11 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem768_check_ek`

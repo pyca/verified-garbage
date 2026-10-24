@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeY
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeY
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarBit
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecode
 import VerifiedGarbage.Proof.Ed448.DecodeBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
 
 /-!
 # Ed448's verification on PPC64LE: `S < L`
