@@ -15,5 +15,9 @@ mod vg_cast5_s5678;
 pub(crate) use vg_cast5_s5678::VG_CAST5_S5678;
 
 #[rustfmt::skip]
+mod vg_ffdh_vetted_groups_ppc;
+pub(crate) use vg_ffdh_vetted_groups_ppc::VG_FFDH_VETTED_GROUPS_PPC;
+
+#[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
 pub(crate) use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
