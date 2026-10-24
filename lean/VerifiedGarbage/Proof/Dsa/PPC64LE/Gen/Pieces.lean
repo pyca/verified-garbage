@@ -53,6 +53,16 @@ theorem VP.pub {F Q : State → State → Prop} {c : Prog isa} (hp : Pub G F) (r
 
 end
 
+/-- `ld t, o(r28)` of a header word whose value `v` is known, keeping a stage. -/
+theorem SS.ldK {G : GP} {STK : Nat} {σ s : State} {c : Cfg} (h : SS G STK σ c s) {o : Nat} (ho : o + 8 ≤ hEnd)
+    (h8 : o % 8 = 0) {v : BitVec 64} (hv : fw s.mem G o = v) {t : Reg} (ht : t ≠ .r28) {rest : List Instr}
+    {Q : State → Prop} (k : ∀ s', SS G STK σ c s' → Upd s s' t v → WP isa (.block rest) s' Q) :
+    WP isa (.block (ld t o :: rest)) s Q := by
+  have hE := h.gi.hEnd_le
+  refine WP.cons (s' := s.write t v) ?_ (k _ (h.of_upd (Upd.write _ _ _) rfl ht) (Upd.write _ _ _))
+  rw [show ld t o = .load .d t .r28 o from rfl, exec_load_d (by decide) ⟨by simp only [hEnd, fSave] at ho; omega,
+    by omega⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega)), h.gi.r28, ← hv]
+
 /-! ## Header words as pieces -/
 
 section

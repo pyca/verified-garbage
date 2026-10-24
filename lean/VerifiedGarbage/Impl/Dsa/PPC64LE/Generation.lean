@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
-public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Arith
 
 /-!
 # DSA parameter generation on PPC64LE
@@ -47,7 +46,6 @@ the arithmetic, which use every other register.
 @[expose] public section
 namespace VG.Impl.Dsa.PPC64LE.Generation
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Keys
-open VG.Impl.MlDsa.PPC64LE.Arith (loadImm)
 
 /-! ## The state -/
 
@@ -178,6 +176,10 @@ structure Hash where
   name : String
   code : Prog isa
 
+/-- `r ← v`, for `v < 2³²`: `lis` of the high half and `ori` of the low one. -/
+def loadImm (r : Reg) (v : Nat) : List Instr :=
+  [.lis r (BitVec.ofNat 16 (v / 65536)), .ori r r (BitVec.ofNat 16 (v % 65536))]
+
 /-- The initial hash value at `sState`. -/
 def ivStore (iv : List (BitVec 32)) : List Instr :=
   iv.zipIdx.flatMap fun (v, i) => loadImm .r0 v.toNat ++ [.store .w .r0 .r28 (sState + 4 * i)]
@@ -209,9 +211,8 @@ result, zero-extended, into `fRes`, and the octets it read added to `fUsed`
 unless it ran out. -/
 def test (pLen c src n : Nat) (name : String) (callee : Prog isa) : Prog isa := seqs [
   copyS (wB pLen + c) src n,
-  .block ([scr .r3 (wB pLen)] ++ loadImm .r4 (wWords pLen) ++
-    [ld .r9 fUsed, ld .r5 fWit, ld .r6 fWitLen, .add .r5 .r5 .r9, .sub .r6 .r6 .r9,
-      scr .r7 fUsedOut]),
+  .block [scr .r3 (wB pLen), .li .r4 (wWords pLen), ld .r9 fUsed, ld .r5 fWit, ld .r6 fWitLen,
+    .add .r5 .r5 .r9, .sub .r6 .r6 .r9, scr .r7 fUsedOut],
   .ite (.zero .d .r6) (.block [ld .r5 fWit]) (.block []),
   .call name callee,
   .block [.lsr .w .r3 .r3 0, st .r3 fRes],
@@ -368,8 +369,8 @@ def gPart : Prog isa := seqs [
 def checkPart : Prog isa := seqs [
   copyS sPacked sPBE g.pLen, copyS (sPacked + g.pLen) sQ g.qLen,
   copyS (sPacked + g.pLen + g.qLen) sG g.pLen,
-  .block ([scr .r3 sPacked, .li .r4 (2 * g.pLen + g.qLen), .li .r5 g.pLen, .li .r6 g.qLen,
-    scr .r7 (wB g.pLen)] ++ loadImm .r8 (wWords g.pLen)),
+  .block [scr .r3 sPacked, .li .r4 (2 * g.pLen + g.qLen), .li .r5 g.pLen, .li .r6 g.qLen,
+    scr .r7 (wB g.pLen), .li .r8 (wWords g.pLen)],
   .call g.checkName g.checkCode,
   .block [.lsr .w .r3 .r3 0, .subi .r0 .r3 1],
   .ite (.zero .d .r0) (.block (stImm fStatus 1)) (.block [])]
