@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CorePair
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.RetryTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.KeyPartPublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarPublic
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DSelectTiming
 
 /-! # Complete native numeric key derivation is constant time modulo the released retry status -/
 

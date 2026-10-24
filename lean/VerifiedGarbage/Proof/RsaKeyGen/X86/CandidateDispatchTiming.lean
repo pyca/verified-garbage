@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWidthTiming
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Public size dispatch reveals no candidate or private-prime values -/
 
