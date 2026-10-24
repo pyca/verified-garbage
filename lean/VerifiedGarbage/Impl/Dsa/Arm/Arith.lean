@@ -6,12 +6,13 @@ public import VerifiedGarbage.Spec.Dsa.ModArith
 
 /-! # DSA's reductions and products as functions on 32-bit ARM
 
-`vg_dsa_reduce_{n}` and `vg_dsa_mulmod_{n}` (`Spec/Dsa/ModArith.lean`) set up
-the context of the modulus in slot 0, as `vg_dsa_pow_{n}_{e}` does
-(`Pow.lean`), with its register saves, then reduce the `r3` bytes at `r2`
-(`reduceStream`) or multiply slots 8 and 11 (`ordinaryMul`), into slot 9.
+`vg_dsa_reduce_{n}` and `vg_dsa_mulmod_{n}` (`Spec/Dsa/ModArith.lean`) reduce
+the `r3` bytes at `r2` (`reduceStream`) or multiply slots 8 and 11
+(`ordinaryMul`), into slot 9, with the register saves of `Pow.lean`.
+Multiplication sets up the complete Montgomery context; byte reduction
+needs only the modulus and inverse, so it avoids computing unused R².
 The reduction keeps the bytes' address in `r11` and their length in the
-header, at byte 44, across the setup, which writes `r0`–`r10` and `lr`.
+header, at byte 44, across the lightweight setup.
 -/
 
 @[expose] public section
@@ -23,7 +24,7 @@ def lenAt : Nat := 44
 
 def reduceBody (n : Nat) : Prog isa :=
   .seq (.block (save ++ [.mov .r11 (.reg .r2), .str .r3 .r12 lenAt])) <|
-  .seq (Context.call n) <|
+  .seq (Context.light n) <|
   .seq (.block [.ldr .lr .r12 lenAt, .dp .add .lr .lr (.reg .r11)]) <|
   .seq (reduceStream n) (.block restore)
 

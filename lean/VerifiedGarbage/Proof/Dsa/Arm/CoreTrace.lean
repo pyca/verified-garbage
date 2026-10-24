@@ -106,9 +106,10 @@ theorem setup_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m�
     (load_ok (n := n) (dst := modS n) P₂.ws (by omega) P₂.R (by simp only [modS]; omega)
       (by simp only [modS]; omega) (by omega) P₁.w.four hl P₁.w.word (by simp only [modS]; omega))
     fun u₁ u₂ ⟨w₁, V₁, _⟩ ⟨w₂, V₂, _⟩ => ?_
-  exact Context.call_trace w₁ w₂ (by omega) (by omega) n0 n48
-    (by rw [V₁, P₁.hm]; exact P₁.hodd) (by rw [V₁, P₁.hm]; exact P₁.hm1)
-    (by rw [V₂, P₂.hm]; exact P₂.hodd) (by rw [V₂, P₂.hm]; exact P₂.hm1)
+  have ct : RelCT isa (VG.Arm.Taint.Agree T0) (Context.light n) (VG.Arm.Taint.Agree T0) :=
+    erased_relCT (c₀ := .block (setupInverse 0))
+      (VG.Taint.hintOf taint T0 (.block (setupInverse 0))) rfl (wsT_noBase _ _) (by decide)
+  exact SameTrace.of_relCT ct (agree0 w₁ w₂)
 
 /-- After the setup of an operation, its operands' pointers are still the same. -/
 theorem ptrEq_setup {s₁ s₂ u₁ u₂ : State} {base : Addr} {p : Pointer} (hp : PtrOk p) (he : PtrEq base s₁ s₂ p)
@@ -265,7 +266,7 @@ theorem sum_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m₁ 
   dsimp only
   rw [← P₁.w.n_eq]
   refine SameTrace.seq (setup_trace P₁ P₂ hem) (setup_ok P₁.ws P₁.hz P₁.w P₁.R P₁.hm P₁.hm1 P₁.hodd)
-    (setup_ok P₂.ws P₂.hz P₁.w P₂.R P₂.hm P₂.hm1 P₂.hodd) fun u₁ u₂ ⟨c₁, _, _, O₁, R₁⟩ ⟨c₂, _, _, O₂, R₂⟩ => ?_
+    (setup_ok P₂.ws P₂.hz P₁.w P₂.R P₂.hm P₂.hm1 P₂.hodd) fun u₁ u₂ ⟨c₁, O₁, R₁⟩ ⟨c₂, O₂, R₂⟩ => ?_
   exact twoLoads_trace c₁.ws c₂.ws P₁.hz P₂.hz P₁.w (Ra₁.keep_rest R₁ (O := O₁) (hO := arith_hdr))
     (Ra₂.keep_rest R₂ (O := O₂) (hO := arith_hdr)) (Rb₁.keep_rest R₁ (O := O₁) (hO := arith_hdr))
     (ptrEq_setup Ra₁.ok hea R₁ O₁ R₂ O₂) (ptrEq_setup Rb₁.ok heb R₁ O₁ R₂ O₂)

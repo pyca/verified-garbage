@@ -4,9 +4,11 @@ public import VerifiedGarbage.Proof.Dsa.Arm.ContextBody
 public import VerifiedGarbage.Proof.Dsa.SameTrace
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
 
 /-! # Calls of shared ARMv7 Montgomery setup -/
 
@@ -17,6 +19,46 @@ open VG.Impl.Dsa.Arm.Context
 open VG.Proof.X25519.Arm (Rest wp_mov wp_movw op2_reg)
 
 abbrev callRanges (n : Nat) := Impl.Dsa.Arm.Context.scratch n
+
+/-- The lightweight setup establishes exactly the invariant needed by sums,
+subtractions and streaming reduction, without computing unused powers of two. -/
+theorem light_ok {s : State} {base : Addr} {size n m : Nat} (hs : Ws s base size)
+    (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48)
+    (hv : val32 s.mem base (modS n) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
+    WP isa (light n) s fun t => Context n m base size t ∧
+      Outs base (scratch n) s.mem t.mem ∧ Rest (.lr :: dclob) s t := by
+  have b0 := slot_bound (n := n) (i := 0) (by decide)
+  have h0 := slot_header n 0
+  have h16 : contextBytes n < 2 ^ 16 := by simp only [contextBytes, slot, stride]; omega
+  have low : w32 s.mem base (slot n 0) % 2 ^ 16 = m % 2 ^ 16 := by
+    rw [← hv, val32_mod16 _ _ _ _ (by omega)]
+    rfl
+  refine WP.mono (setupInverse_ok hs (mo := modS n)
+    (by simp only [modS, stride] at *; omega)
+    (by simp only [modS, stride] at *; omega) (by omega)
+    (by simp only [modS] at *; omega)) fun t ⟨wt, I, O, R, _⟩ => ?_
+  refine ⟨⟨wt, hz, h16, hn, ?_, hm1, ?_⟩, ?_, R.mono (by decide)⟩
+  · rw [O.val32 (by simp only [invO, modS] at *; omega)
+      (by have := hs.nowrap; simp only [modS, stride] at *; omega)]; exact hv
+  · rw [Nat.add_mod, Nat.mul_mod, ← low, ← Nat.mul_mod, ← Nat.add_mod]; exact I
+  · exact Outs.of_outside O (by simp [scratch, invO])
+
+theorem light_relCT (n : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT true false)) (light n)
+      (VG.Arm.Taint.Agree (wsT true false)) :=
+  erased_relCT (c₀ := .block (setupInverse 0))
+    (VG.Taint.hintOf taint (wsT true false) (.block (setupInverse 0)))
+    rfl (wsT_noBase _ _) (by decide)
+
+theorem light_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat}
+    (W₁ : Ws s₁ base size₁) (W₂ : Ws s₂ base size₂) (h11 : s₁.gpr .r11 = s₂.gpr .r11) :
+    SameTrace isa (light n) s₁ s₂ :=
+  SameTrace.of_relCT (light_relCT n) (VG.Arm.Taint.agree_ofRegs fun r hr => by
+    simp only [wsRegs, Bool.false_eq_true, ↓reduceIte, List.append_nil,
+      List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact BitVec.eq_of_toNat_eq (W₁.wb_toNat.trans W₂.wb_toNat.symm)
+    · exact h11)
 
 theorem body_noCalls (n : Nat) : (body n).noCalls = true := by
   simp only [body, contextSetup, one, powerTwo, addD, addDigits, csubD, Dynamic.zeros, ptrLoop,

@@ -1483,11 +1483,28 @@ cmp r10, r9
 bne 269b
 mov r4, #0
 str r4, [r10, #0]
-mov r4, r12
-mov r0, r12
-movw r1, #80
-bl {vg_dsa_context_3}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r11, #14880
 add r11, r12, r11
 movw r8, #16
@@ -3105,11 +3122,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2147b
-mov r4, r12
-mov r0, r12
-movw r1, #92
-bl {vg_dsa_context_4}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r11, #14880
 add r11, r12, r11
 movw r8, #28
@@ -4619,11 +4653,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2221b
-mov r4, r12
-mov r0, r12
-movw r1, #92
-bl {vg_dsa_context_4}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r11, #14880
 add r11, r12, r11
 movw r8, #28
@@ -6161,11 +6212,28 @@ cmp r10, r9
 bne 2295b
 mov r4, #0
 str r4, [r10, #0]
-mov r4, r12
-mov r0, r12
-movw r1, #92
-bl {vg_dsa_context_4}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r11, #14880
 add r11, r12, r11
 movw r8, #24
@@ -7494,11 +7562,28 @@ cmp r10, r9
 bne 2359b
 mov r4, #0
 str r4, [r10, #0]
-mov r4, r12
-mov r0, r12
-movw r1, #80
-bl {vg_dsa_context_3}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r11, #14880
 add r11, r12, r11
 movw r8, #16
@@ -7904,13 +7989,11 @@ bx lr",
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3,
         vg_dsa_pow_3_5 = sym super::dsa::vg_dsa_pow_3_5,
         vg_dsa_mulmod_3 = sym super::dsa::vg_dsa_mulmod_3,
-        vg_dsa_context_3 = sym super::dsa::vg_dsa_context_3,
         vg_dsa_public_validate_384_32 = sym super::dsa::vg_dsa_public_validate_384_32,
         vg_dsa_pow_48_8 = sym super::dsa::vg_dsa_pow_48_8,
         vg_dsa_reduce_4 = sym super::dsa::vg_dsa_reduce_4,
         vg_dsa_pow_4_8 = sym super::dsa::vg_dsa_pow_4_8,
         vg_dsa_mulmod_4 = sym super::dsa::vg_dsa_mulmod_4,
-        vg_dsa_context_4 = sym super::dsa::vg_dsa_context_4,
         vg_dsa_public_validate_256_32 = sym super::dsa::vg_dsa_public_validate_256_32,
         vg_dsa_pow_32_8 = sym super::dsa::vg_dsa_pow_32_8,
         vg_dsa_public_validate_256_28 = sym super::dsa::vg_dsa_public_validate_256_28,
@@ -14888,11 +14971,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 240b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -15935,11 +16035,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 287b
-mov r4, r12
-mov r0, r12
-movw r1, #620
-bl {vg_dsa_context_48}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #4176
 add r10, r12, r10
 movw r9, #4560
@@ -16888,11 +17005,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2130b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -17843,11 +17977,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2173b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -18575,11 +18726,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2206b
-mov r4, r12
-mov r0, r12
-movw r1, #236
-bl {vg_dsa_context_16}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #1616
 add r10, r12, r10
 movw r9, #1744
@@ -18927,15 +19095,12 @@ ldr r10, [r12, #152]
 ldr r11, [r12, #156]
 ldr lr, [r12, #160]
 bx lr",
-        vg_dsa_context_32 = sym super::dsa::vg_dsa_context_32,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3,
         vg_dsa_pow_32_5 = sym super::dsa::vg_dsa_pow_32_5,
-        vg_dsa_context_48 = sym super::dsa::vg_dsa_context_48,
         vg_dsa_reduce_4 = sym super::dsa::vg_dsa_reduce_4,
         vg_dsa_pow_48_8 = sym super::dsa::vg_dsa_pow_48_8,
         vg_dsa_pow_32_8 = sym super::dsa::vg_dsa_pow_32_8,
         vg_dsa_pow_32_7 = sym super::dsa::vg_dsa_pow_32_7,
-        vg_dsa_context_16 = sym super::dsa::vg_dsa_context_16,
         vg_dsa_pow_16_5 = sym super::dsa::vg_dsa_pow_16_5,
     )
 }
@@ -19537,11 +19702,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 240b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -20919,11 +21101,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2106b
-mov r4, r12
-mov r0, r12
-movw r1, #620
-bl {vg_dsa_context_48}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #4176
 add r10, r12, r10
 movw r9, #4560
@@ -22203,11 +22402,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2168b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -23489,11 +23705,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2230b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -24556,11 +24789,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 2282b
-mov r4, r12
-mov r0, r12
-movw r1, #236
-bl {vg_dsa_context_16}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #1616
 add r10, r12, r10
 movw r9, #1744
@@ -25243,15 +25493,12 @@ ldr r10, [r12, #152]
 ldr r11, [r12, #156]
 ldr lr, [r12, #160]
 bx lr",
-        vg_dsa_context_32 = sym super::dsa::vg_dsa_context_32,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3,
         vg_dsa_pow_32_5 = sym super::dsa::vg_dsa_pow_32_5,
-        vg_dsa_context_48 = sym super::dsa::vg_dsa_context_48,
         vg_dsa_reduce_4 = sym super::dsa::vg_dsa_reduce_4,
         vg_dsa_pow_48_8 = sym super::dsa::vg_dsa_pow_48_8,
         vg_dsa_pow_32_8 = sym super::dsa::vg_dsa_pow_32_8,
         vg_dsa_pow_32_7 = sym super::dsa::vg_dsa_pow_32_7,
-        vg_dsa_context_16 = sym super::dsa::vg_dsa_context_16,
         vg_dsa_pow_16_5 = sym super::dsa::vg_dsa_pow_16_5,
     )
 }
@@ -25596,11 +25843,28 @@ str r11, [r12, #36]
 str lr, [r12, #40]
 mov r11, r2
 str r3, [r12, #44]
-mov r4, r12
-mov r0, r12
-movw r1, #80
-bl {vg_dsa_context_3}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 ldr lr, [r12, #44]
 add lr, lr, r11
 movw r10, #544
@@ -25834,7 +26098,6 @@ ldr r10, [r12, #32]
 ldr r11, [r12, #36]
 ldr lr, [r12, #40]
 bx lr",
-        vg_dsa_context_3 = sym super::dsa::vg_dsa_context_3,
     )
 }
 
@@ -25868,11 +26131,28 @@ str r11, [r12, #36]
 str lr, [r12, #40]
 mov r11, r2
 str r3, [r12, #44]
-mov r4, r12
-mov r0, r12
-movw r1, #92
-bl {vg_dsa_context_4}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 ldr lr, [r12, #44]
 add lr, lr, r11
 movw r10, #616
@@ -26106,7 +26386,6 @@ ldr r10, [r12, #32]
 ldr r11, [r12, #36]
 ldr lr, [r12, #40]
 bx lr",
-        vg_dsa_context_4 = sym super::dsa::vg_dsa_context_4,
     )
 }
 
@@ -44370,11 +44649,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 212b
-mov r4, r12
-mov r0, r12
-movw r1, #236
-bl {vg_dsa_context_16}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #1616
 add r10, r12, r10
 movw r9, #1744
@@ -44549,11 +44845,28 @@ cmp r10, r9
 bne 220b
 mov r4, #0
 str r4, [r10, #0]
-mov r4, r12
-mov r0, r12
-movw r1, #80
-bl {vg_dsa_context_3}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #576
 add r10, r12, r10
 movw r9, #600
@@ -44978,9 +45291,7 @@ ldr r10, [r12, #192]
 ldr r11, [r12, #196]
 ldr lr, [r12, #200]
 bx lr",
-        vg_dsa_context_16 = sym super::dsa::vg_dsa_context_16,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3,
-        vg_dsa_context_3 = sym super::dsa::vg_dsa_context_3,
         vg_dsa_pow_16_5 = sym super::dsa::vg_dsa_pow_16_5,
     )
 }
@@ -45287,11 +45598,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 212b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -45466,11 +45794,28 @@ cmp r10, r9
 bne 220b
 mov r4, #0
 str r4, [r10, #0]
-mov r4, r12
-mov r0, r12
-movw r1, #80
-bl {vg_dsa_context_3}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #576
 add r10, r12, r10
 movw r9, #600
@@ -45895,9 +46240,7 @@ ldr r10, [r12, #192]
 ldr r11, [r12, #196]
 ldr lr, [r12, #200]
 bx lr",
-        vg_dsa_context_32 = sym super::dsa::vg_dsa_context_32,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3,
-        vg_dsa_context_3 = sym super::dsa::vg_dsa_context_3,
         vg_dsa_pow_32_5 = sym super::dsa::vg_dsa_pow_32_5,
     )
 }
@@ -46204,11 +46547,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 212b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -46383,11 +46743,28 @@ cmp r10, r9
 bne 220b
 mov r4, #0
 str r4, [r10, #0]
-mov r4, r12
-mov r0, r12
-movw r1, #92
-bl {vg_dsa_context_4}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #656
 add r10, r12, r10
 movw r9, #688
@@ -46812,9 +47189,7 @@ ldr r10, [r12, #192]
 ldr r11, [r12, #196]
 ldr lr, [r12, #200]
 bx lr",
-        vg_dsa_context_32 = sym super::dsa::vg_dsa_context_32,
         vg_dsa_reduce_4 = sym super::dsa::vg_dsa_reduce_4,
-        vg_dsa_context_4 = sym super::dsa::vg_dsa_context_4,
         vg_dsa_pow_32_7 = sym super::dsa::vg_dsa_pow_32_7,
     )
 }
@@ -47121,11 +47496,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 212b
-mov r4, r12
-mov r0, r12
-movw r1, #428
-bl {vg_dsa_context_32}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #2896
 add r10, r12, r10
 movw r9, #3152
@@ -47294,11 +47686,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 220b
-mov r4, r12
-mov r0, r12
-movw r1, #92
-bl {vg_dsa_context_4}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #656
 add r10, r12, r10
 movw r9, #688
@@ -47723,9 +48132,7 @@ ldr r10, [r12, #192]
 ldr r11, [r12, #196]
 ldr lr, [r12, #200]
 bx lr",
-        vg_dsa_context_32 = sym super::dsa::vg_dsa_context_32,
         vg_dsa_reduce_4 = sym super::dsa::vg_dsa_reduce_4,
-        vg_dsa_context_4 = sym super::dsa::vg_dsa_context_4,
         vg_dsa_pow_32_8 = sym super::dsa::vg_dsa_pow_32_8,
     )
 }
@@ -48032,11 +48439,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 212b
-mov r4, r12
-mov r0, r12
-movw r1, #620
-bl {vg_dsa_context_48}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #4176
 add r10, r12, r10
 movw r9, #4560
@@ -48205,11 +48629,28 @@ sub r8, r8, #4
 add r10, r10, #4
 cmp r10, r9
 bne 220b
-mov r4, r12
-mov r0, r12
-movw r1, #92
-bl {vg_dsa_context_4}
-mov r12, r4
+movw r1, #256
+add r1, r12, r1
+ldr r5, [r1, #0]
+movw r6, #65535
+and r5, r5, r6
+mov r7, r5
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mul r4, r5, r7
+movw r2, #2
+sub r4, r2, r4
+mul r7, r7, r4
+mov r4, #0
+sub r4, r4, r7
+and r4, r4, r6
+str r4, [r12, #0]
 movw r10, #656
 add r10, r12, r10
 movw r9, #688
@@ -48634,9 +49075,7 @@ ldr r10, [r12, #192]
 ldr r11, [r12, #196]
 ldr lr, [r12, #200]
 bx lr",
-        vg_dsa_context_48 = sym super::dsa::vg_dsa_context_48,
         vg_dsa_reduce_4 = sym super::dsa::vg_dsa_reduce_4,
-        vg_dsa_context_4 = sym super::dsa::vg_dsa_context_4,
         vg_dsa_pow_48_8 = sym super::dsa::vg_dsa_pow_48_8,
     )
 }

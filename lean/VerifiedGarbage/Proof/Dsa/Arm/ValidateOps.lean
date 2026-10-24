@@ -221,7 +221,7 @@ theorem minus_ok {s : State} {base : Addr} {size len n m amount output : Nat} {m
   unfold Validate.minus
   dsimp only
   rw [← w.n_eq]
-  refine WP.seq (WP.mono (setup_ok hs hz w Rq hm hm1 hodd) fun u ⟨cu, _, _, Ou, Ru⟩ => ?_)
+  refine WP.seq (WP.mono (setup_ok hs hz w Rq hm hm1 hodd) fun u ⟨cu, Ou, Ru⟩ => ?_)
   refine WP.seq (WP.mono (modulusMinus_ok cu ha (by omega)) fun v ⟨cv, Vv, Ov, Rv⟩ => ?_)
   refine WP.mono (store_ok (output := output) cv.ws w.n_eq.symm w.four w.word (by omega) (by omega) ho'
     h16o (by omega)) fun t ⟨Vt, Rt, Ot⟩ => ⟨?_, (Ru.trans (Rv.mono (by decide))).trans (Rt.mono (by decide)),

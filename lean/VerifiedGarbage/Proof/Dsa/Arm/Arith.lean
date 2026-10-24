@@ -214,8 +214,8 @@ theorem reduceBody_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec
   refine WP.seq (WP.mono (reduceHead_ok E (by omega)) fun s₂ ⟨w₂, S₂, O₂, R₂, P₂, L₂⟩ => ?_)
   have hv₂ : val32 s₂.mem base (slot n 0) (2 * n) = m := by
     rw [O₂.val32 (fun r hr => .inr (by have := len_apart r hr; omega)) (by omega)]; exact hv
-  refine WP.seq (WP.mono (Context.call_ok w₂ (by omega) hn hn48 hv₂ (by omega) hodd)
-    fun s₃ ⟨c₃, _, _, O₃, R₃⟩ => ?_)
+  refine WP.seq (WP.mono (Context.light_ok w₂ (by omega) hn hn48 hv₂ (by omega) hodd)
+    fun s₃ ⟨c₃, O₃, R₃⟩ => ?_)
   refine WP.seq (WP.mono (reduceEnd_ok c₃.ws (by omega)) fun s₄ ⟨L₄, R₄, M₄⟩ => ?_)
   have c₄ := ctx_of_rest c₃ R₄ (by decide) M₄
   have r11 : s₄.gpr .r11 = p := by rw [R₄.gpr .r11 (by decide), R₃.gpr .r11 (by decide), P₂, hp]
@@ -346,16 +346,12 @@ theorem reduceK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
       val32 u.mem base (slot n 0) (2 * n) = val32 s.mem base (slot n 0) (2 * n) := fun O =>
     O.val32 (fun r hr => .inr (by have := len_apart r hr; omega)) (by omega)
   have W₂ : Ws u₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [pb]; exact w₂
-  refine SameTrace.seq (Context.call_trace w₁ W₂ (by omega) (by omega) hn hn48
-    (by rw [modS, mod O₁]; exact h₁.2.2.2.2.2.2.1)
-    (by rw [modS, mod O₁]; have := h₁.2.2.2.2.2.2.2; omega)
-    (by rw [pb, modS, mod O₂]; exact h₂.2.2.2.2.2.2.1)
-    (by rw [pb, modS, mod O₂]; have := h₂.2.2.2.2.2.2.2; omega))
-    (Context.call_ok w₁ (by omega) hn hn48 (mod O₁) (by have := h₁.2.2.2.2.2.2.2; omega)
+  refine SameTrace.seq (Context.light_trace w₁ W₂ (by rw [P₁, P₂, p2]))
+    (Context.light_ok w₁ (by omega) hn hn48 (mod O₁) (by have := h₁.2.2.2.2.2.2.2; omega)
       h₁.2.2.2.2.2.2.1)
-    (Context.call_ok w₂ (by omega) hn hn48 (mod O₂) (by have := h₂.2.2.2.2.2.2.2; omega)
+    (Context.light_ok w₂ (by omega) hn hn48 (mod O₂) (by have := h₂.2.2.2.2.2.2.2; omega)
       h₂.2.2.2.2.2.2.1)
-    fun v₁ v₂ ⟨c₁, _, _, Q₁, R₁⟩ ⟨c₂, _, _, Q₂, R₂⟩ => ?_
+    fun v₁ v₂ ⟨c₁, Q₁, R₁⟩ ⟨c₂, Q₂, R₂⟩ => ?_
   refine SameTrace.seq (SameTrace.of_relCT (relCT_of_check (τ := wsT true false) (σ := wsT true false)
       (h := .block []) (by decide)) (VG.Arm.Taint.agree_ofRegs fun r hr => ?_))
     (reduceEnd_ok c₁.ws (by omega)) (reduceEnd_ok c₂.ws (by omega)) fun x₁ x₂ ⟨L₃, K₁, _⟩ ⟨L₄, K₂, _⟩ => ?_

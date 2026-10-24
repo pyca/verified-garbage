@@ -68,12 +68,11 @@ theorem operand_lt (base : Addr) (s : State) (p : Pointer) (len : Nat) :
 theorem pow256_words {len : Nat} (hw : len % 4 = 0) : 256 ^ len = 2 ^ (32 * (len / 4)) := by
   rw [show 32 * (len / 4) = 8 * len by omega, Nat.pow_mul]
 
-/-- The context of the modulus at a saved pointer, with one and `R² mod m`. -/
+/-- The context of the modulus at a saved pointer, without unused constants. -/
 theorem setup_ok {s : State} {base : Addr} {size len n m : Nat} {modulus : Field} (hs : Ws s base size)
     (hz : 4960 ≤ size) (w : Width len n) (R : Ready s base (.input modulus) len)
     (hm : operand base s (.input modulus) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
     WP isa (Core.setup len modulus) s fun t => Context n m base size t ∧
-      val32 t.mem base (slot n 6) (2 * n) = 1 ∧ val32 t.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m ∧
       Outs base arithRanges s.mem t.mem ∧ Rest coreClob s t := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
   have s0 := slot_lt (i := 0) n48 (by decide)
@@ -83,8 +82,8 @@ theorem setup_ok {s : State} {base : Addr} {size len n m : Nat} {modulus : Field
   refine WP.seq (WP.mono (load_ok (n := n) (dst := modS n) hs (by omega) R (by simp only [modS]; omega)
     (by simp only [modS]; omega) (by omega) w.four hl w.word (by simp only [modS]; omega))
     fun u ⟨wu, Vu, Ru, Ou⟩ => ?_)
-  refine WP.mono (Context.call_ok wu (by omega) n0 n48 (by rw [← hm]; exact Vu) hm1 hodd)
-    fun t ⟨ct, one, rr, Ot, Rt⟩ => ⟨ct, one, rr, ?_, (Ru.mono (by decide)).trans (Rt.mono (by decide))⟩
+  refine WP.mono (Context.light_ok wu (by omega) n0 n48 (by rw [← hm]; exact Vu) hm1 hodd)
+    fun t ⟨ct, Ot, Rt⟩ => ⟨ct, ?_, (Ru.mono (by decide)).trans (Rt.mono (by decide))⟩
   exact (Outs.of_slot (i := 0) Ou (by decide) n48).trans (Outs.arith Ot (setupRanges_arith n48))
 
 /-- The result slot of a context, below the modulus, in its `len` bytes. -/
@@ -230,7 +229,7 @@ theorem sum_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Poin
   unfold Core.sum
   dsimp only
   rw [← w.n_eq]
-  refine WP.seq (WP.mono (setup_ok hs hz w Rq hm hm1 hodd) fun u ⟨cu, _, _, Ou, Ru⟩ => ?_)
+  refine WP.seq (WP.mono (setup_ok hs hz w Rq hm hm1 hodd) fun u ⟨cu, Ou, Ru⟩ => ?_)
   have Rau := Ra.keep_rest Ru (O := Ou) (hO := arith_hdr)
   have Rbu := Rb.keep_rest Ru (O := Ou) (hO := arith_hdr)
   refine WP.seq (WP.seq (WP.mono (load_ok (n := n) (dst := baseS n) cu.ws (by omega) Rau
