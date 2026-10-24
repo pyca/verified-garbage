@@ -138,8 +138,8 @@ def coreSpec : CoreSpec core where
   Ready := Ready
   cipher_len _ _ := by simp [Spec.Idea.cipher, core]
   layout := layout
-  keyArgs_congr h e r w f := keyArgs_congr h e.r3 r w f
-  ready_frame h e r w f hs _ := ready_frame h e.r3 r w f hs
+  keyArgs_congr h e r w _ f := keyArgs_congr h e.r3 r w f
+  ready_frame h e r w _ f hs _ := ready_frame h e.r3 r w f hs
   prepare_wp := prepare_wp
   crypt_wp := crypt_wp
 
