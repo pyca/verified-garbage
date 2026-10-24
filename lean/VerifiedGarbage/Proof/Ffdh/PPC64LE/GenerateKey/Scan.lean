@@ -113,13 +113,13 @@ are `lead` of them and its octet. -/
 theorem scan_ok {s : State} {P : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k < 2 ^ 32)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off P i) 1) (h12 : s.gpr .r12 = off P 0)
     (h28 : s.gpr .r28 = BitVec.ofNat 64 k) :
-    WP isa (.seq (.block scanSetup) (countLoop .r6 scanBody)) s fun t =>
+    WP isa (.block scanSetup) s fun u => WP isa (countLoop .r6 scanBody) u fun t =>
       (t.gpr .r9 = BitVec.ofNat 64 (lead (Spec.Rsa.bytesAt s.mem P k)) ∧
         t.gpr .r14 = ((Spec.Rsa.bytesAt s.mem P k).getD (lead (Spec.Rsa.bytesAt s.mem P k)) 0).setWidth 64 ∧
         t.mem = s.mem) ∧ Keep scanRegs s t := by
   have hlen : (Spec.Rsa.bytesAt s.mem P k).length = k := by simp [Spec.Rsa.bytesAt]
   have hne : Spec.Rsa.bytesAt s.mem P k ≠ [] := fun h => by rw [h] at hlen; simp at hlen; omega
-  refine WP.seq (WP.mono (WP.keep scanRegs (Q := fun u => u.gpr .r12 = off P 0 ∧ u.gpr .r4 = BitVec.ofNat 64 0 ∧
+  refine (WP.mono (WP.keep scanRegs (Q := fun u => u.gpr .r12 = off P 0 ∧ u.gpr .r4 = BitVec.ofNat 64 0 ∧
       u.gpr .r9 = BitVec.ofNat 64 (k - 1) ∧ u.gpr .r14 = BitVec.ofNat 64 0 ∧ u.gpr .r15 = BitVec.ofNat 64 0 ∧
       u.mem = s.mem ∧ u.gpr .r6 = BitVec.ofNat 64 k) ?_ (by decide)) fun u ⟨⟨u12, u4, u9, u14, u15, um, u6⟩, ku⟩ => ?_)
   · unfold scanSetup
