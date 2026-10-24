@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Range
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeBody
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
@@ -84,7 +85,8 @@ def dpBodyRegs : List Reg :=
   xRangeRegs ++ exPowRegs ++ exOutRegs ++ ([.r0, .r3, .r9, .r15, .r16, .r17, .r27] : List Reg)
 
 /-- `dpBody`: zeros and 2 if x is out of range; else `z = g^x mod p` (g's `k`
-octets at `D + k`) or zeros at `O` and 1 or 3. -/
+octets at `D + k`) or zeros at `O` and 1 or 3; the header's words and the
+bytes apart from the working space and `O` are kept. -/
 theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : Env s B Z w)
     (h23 : s.gpr .r23 = B) (h21 : s.gpr .r21 = D) (h27 : s.gpr .r27 = BitVec.ofNat 64 L)
     (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hwk : w = (k + 7) / 8) (hk : 64 ≤ k) (hk' : k ≤ 1024)
@@ -101,7 +103,9 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
       (Spec.Rsa.bytesAt t.mem O k = (if (0 < x ∧ x < b) ∧ 1 < g ^ x % p ∧ g ^ x % p < p - 1 then
           Spec.Rsa.i2osp (g ^ x % p) k else List.replicate k 0) ∧
         t.gpr .r3 = BitVec.ofNat 64 (if ¬ (0 < x ∧ x < b) then 2 else if 1 < g ^ x % p ∧ g ^ x % p < p - 1 then 1 else 3) ∧
-        ∀ i < 18, word t.mem B (112 + 8 * i) = word s.mem B (112 + 8 * i)) ∧ Keep dpBodyRegs s t := by
+        (∀ d, d + 8 ≤ 256 → word t.mem B d = word s.mem B d) ∧
+        ∀ (Q : Addr) n, (∀ i < n, ∀ x, ofs B x < Z → off Q i ≠ x) → (∀ i < n, ∀ x, ofs O x < k → off Q i ≠ x) →
+          Spec.Rsa.bytesAt t.mem Q n = Spec.Rsa.bytesAt s.mem Q n) ∧ Keep dpBodyRegs s t := by
   have hs := h.hs
   have hZ := h.hZ
   have hw := h.hw
@@ -139,15 +143,16 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
       ((k2.gpr .r10 (by decide)).trans a10) ((k12.gpr .r29 (by decide)).trans h.h29)
       ((k2.gpr .r28 (by decide)).trans g28) a27 (by rw [k2.gpr .r26 (by decide), a26, decide_eq_false hv])
       (by omega) (by omega) (by omega) hsepO) fun s₃ ⟨⟨ob, ot, _⟩, k3⟩ => ?_)
-    refine WP.mono (li_ok s₃ 2 (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨⟨?_, ?_, fun i hi => ?_⟩,
+    refine WP.mono (li_ok s₃ 2 (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨⟨?_, ?_, fun d hd => ?_, fun Q n hB hO => ?_⟩,
       ((k12.trans k3).trans kt).mono (by decide)⟩
     · rw [tm, ite_eq_right fun hc => hv hc.1]
       exact Pub.zero_bytes fun i hi => by rw [ob i hi]; rfl
     · rw [t3, ite_eq_left hv]
     · rw [tm]
-      refine (Pub.Outside.word_apart (d := 112 + 8 * i) ot hsepB (by omega) (by omega) hs.nowrap).trans ?_
+      refine (Pub.Outside.word_apart (d := d) ot hsepB (by omega) (by omega) hs.nowrap).trans ?_
       show Mont.word s₂.mem B _ = _
       rw [m2, hw1 _ (by omega)]
+    · rw [tm, outside_bytesAt ot (by omega) hO, m2, b1.bytesAt hZ hB]
   · -- In range.
     rw [a26, mask_beq_zero, Bool.not_eq_false', decide_eq_true_eq] at hv
     unfold dpGood
@@ -174,15 +179,16 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
       fun s₄ ⟨⟨ob, o3, m, bm, om⟩, k4⟩ => ?_)
     rw [z3, p3] at ob o3
     refine WP.mono (status_ok s₄ (1 < g ^ x % p ∧ g ^ x % p < p - 1) o3) fun t ⟨⟨t3, tm⟩, kt⟩ =>
-      ⟨⟨?_, ?_, fun i hi => ?_⟩, ((k13.trans k4).trans kt).mono (by decide)⟩
+      ⟨⟨?_, ?_, fun d hd => ?_, fun Q n hB hO => ?_⟩, ((k13.trans k4).trans kt).mono (by decide)⟩
     · rw [tm, ob]
       by_cases hc : 1 < g ^ x % p ∧ g ^ x % p < p - 1
       · rw [ite_eq_left hc, ite_eq_left ⟨hv, hc⟩]
       · rw [ite_eq_right hc, ite_eq_right fun h' => hc h'.2]
     · rw [t3]; exact congrArg _ (ite_eq_right (fun h' => h' hv)).symm
     · rw [tm]
-      refine (Pub.Outside.word_apart (d := 112 + 8 * i) om hsepB (by omega) (by omega) hs.nowrap).trans ?_
+      refine (Pub.Outside.word_apart (d := d) om hsepB (by omega) (by omega) hs.nowrap).trans ?_
       show Mont.word m B _ = _
       rw [Outside.word bm (by omega) (by omega), Outside.word b3 (by omega) (by omega), m2, hw1 _ (by omega)]
+    · rw [tm, outside_bytesAt om (by omega) hO, bm.bytesAt hZ hB, b3.bytesAt hZ hB, m2, b1.bytesAt hZ hB]
 
 end VG.Proof.Ffdh.PPC64LE.Derive

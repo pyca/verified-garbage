@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
@@ -74,6 +75,15 @@ def artifacts : List Artifact := [
         subgroup. The nonvolatile registers, and x's and y's addresses and x's length, are saved in the \
         working space's header."]
     code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
-    verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified }]
+    verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified },
+  Spec.Ffdh.generateKeyApi.artifact PPC64LE.target {
+    notes := ["x is `rand`'s `p_len` octets cut, without a branch, at the first nonzero octet of q (of p \
+        without q, whose bit length is `p − 1`'s), found by a scan of all its octets: zeros before it, \
+        the bits up to its top bit at it. Then as `vg_ffdh_derive_public`: p's check, x's range, whose \
+        branch the status reveals, and `y = g^x mod p` or zeros under the mask of its range. x is \
+        masked by the status being 1, without a branch. The nonvolatile registers, and x's, `y`'s and \
+        `rand`'s addresses and x's length, are saved in the working space's header."]
+    code := Impl.Ffdh.PPC64LE.GenerateKey.generateKey
+    verified := Proof.Ffdh.PPC64LE.GenerateKey.gk_verified }]
 
 end VG.Artifacts.Ffdh.PPC64LE

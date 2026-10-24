@@ -23,6 +23,10 @@ mod vg_ed25519_verify_base;
 pub(crate) use vg_ed25519_verify_base::VG_ED25519_VERIFY_BASE;
 
 #[rustfmt::skip]
+mod vg_ffdh_vetted_groups_x64;
+pub(crate) use vg_ffdh_vetted_groups_x64::VG_FFDH_VETTED_GROUPS_X64;
+
+#[rustfmt::skip]
 mod vg_gcm_consts;
 pub(crate) use vg_gcm_consts::VG_GCM_CONSTS;
 

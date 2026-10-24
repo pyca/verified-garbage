@@ -1,5 +1,5 @@
 use super::*;
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 extern crate std;
 use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512};
 use alloc::{format, string::ToString};
@@ -8,7 +8,7 @@ use alloc::{format, string::ToString};
 pub(super) mod vectors;
 use vectors::{hex, vectors};
 
-#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86", target_arch = "arm", target_arch = "powerpc64"))]
 #[test]
 fn generation_domain_checks() {
     let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
@@ -59,7 +59,7 @@ fn generation_domain_checks() {
     }
 }
 
-#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86", target_arch = "arm", target_arch = "powerpc64"))]
 #[test]
 fn generation_derive_keys() {
     let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
@@ -485,7 +485,7 @@ fn legacy_2048_160_signatures() {
     }
 }
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 #[test]
 fn immutable_public_validation_cache() {
     let (key, digest, nonce) = sample();
