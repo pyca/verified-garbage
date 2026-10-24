@@ -27,6 +27,15 @@ abbrev oL (s0 : State) : Nat := (s0.gpr .r4).toNat
 /-- `rand_len`. -/
 abbrev rL (s0 : State) : Nat := (PPC64LE.stackArg s0 0).toNat
 
+/-- `e`'s octets. -/
+abbrev eB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r6) (s0.gpr .r7).toNat
+
+/-- `p`'s octets. -/
+abbrev pB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r8) (s0.gpr .r9).toNat
+
+/-- `rand`'s octets. -/
+abbrev rB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r10) (rL s0)
+
 /-- What the call computes. -/
 def cOp (s0 : State) : Option (Spec.RsaKeyGen.Candidate × Spec.RsaKeyGen.Rand) :=
   Spec.RsaKeyGen.candidateOp (oL s0) (Spec.Rsa.bytesAt s0.mem (s0.gpr .r6) (s0.gpr .r7).toNat)

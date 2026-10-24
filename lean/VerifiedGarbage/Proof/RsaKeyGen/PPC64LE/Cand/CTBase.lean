@@ -25,15 +25,6 @@ open VG VG.PPC64LE VG.Proof.Mont
 open VG.Spec.RsaKeyGen (Candidate)
 open VG.Proof.RsaKeyGen (schedOf leakOf seg afterDraw)
 
-/-- `e`'s octets. -/
-abbrev eB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r6) (s0.gpr .r7).toNat
-
-/-- `p`'s octets. -/
-abbrev pB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r8) (s0.gpr .r9).toNat
-
-/-- `rand`'s octets. -/
-abbrev rB (s0 : State) : List Byte := Spec.Rsa.bytesAt s0.mem (s0.gpr .r10) (rL s0)
-
 /-- What two runs share. -/
 structure CD where
   regs : List (BitVec 64)
