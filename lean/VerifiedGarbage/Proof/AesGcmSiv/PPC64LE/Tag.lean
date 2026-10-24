@@ -57,14 +57,18 @@ structure TagPost (c : Cx) (o : Nat) (t t' : State) : Prop where
   out : bytesAt t'.mem (c.W + BitVec.ofNat 64 o) 16 =
     Spec.GcmSiv.ctxCiph t.mem (c.W + BitVec.ofNat 64 256) c.R (bytesAt t.mem (c.W + BitVec.ofNat 64 96) 16)
 
-theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o = 0 ∨ o = 240) :
-    WP isa (tag o) t (TagPost c o t) := by
+/-- The block of `tag o`: the arguments of its call. -/
+theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o = 0 ∨ o = 240) :
+    WP isa (.block (copy16 cbO ccO ++ zero16 o ++ ctrArgs ++ ([.addi .r6 .r14 o, .li .r7 1] : List Instr))) t
+      fun t₁₃ => PK t t₁₃ ∧ t₁₃.mem = Proof.Cmac.zero2 (copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) ∧
+        CtrCall t₁₃ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 112) (c.W + BitVec.ofNat 64 o)
+          (c.W + BitVec.ofNat 64 1776) c.R 1 ∧ ∀ r ∈ [Reg.r23, .r24, .r25], t₁₃.gpr r = t.gpr r := by
   have hw := L.ww
   have o₁ : o + 16 ≤ 256 := by omega
-  unfold tag copy16 zero16 ctrArgs
+  unfold copy16 zero16 ctrArgs
   simp only [List.cons_append, List.nil_append]
-  refine WP.seq (wp_ld (a := c.W + BitVec.ofNat 64 96) (by decide) (by decide) (by rw [E.r14] <;> rfl)
-    (E.perm.wR (by decide)) fun t₁ u₁ => ?_)
+  refine wp_ld (a := c.W + BitVec.ofNat 64 96) (by decide) (by decide) (by rw [E.r14] <;> rfl)
+    (E.perm.wR (by decide)) fun t₁ u₁ => ?_
   refine wp_ld (a := c.W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) (by decide) (by decide)
     (by rw [u₁.other _ (by decide), E.r14, Offset.add_add] <;> rfl)
     (by rw [u₁.rd, u₁.wr, Offset.add_add]; exact E.perm.wR (by decide)) fun t₂ u₂ => ?_
@@ -99,9 +103,14 @@ theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o 
     rfl
   have dO : (⟨c.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩ :=
     L.w_w (by omega) (by omega) (by decide)
-  have cc : CtrCall t₁₃ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 112) (c.W + BitVec.ofNat 64 o)
-      (c.W + BitVec.ofNat 64 1776) c.R 1 :=
-    cargs L E₁₃ (E₁₃.perm.wCR (by decide)) (L.w_w (.inr (by decide)) (by decide) (by decide))
+  refine ⟨pk, hm, ?_, fun r hr => ?_⟩
+  swap
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;>
+    rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+      u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.gpr, u₅.other _ (by decide), u₄.gpr, u₃.gpr,
+      g₂ _ (by decide) (by decide)]
+  exact cargs L E₁₃ (E₁₃.perm.wCR (by decide)) (L.w_w (.inr (by decide)) (by decide) (by decide))
       (L.w_w (.inl (by decide)) (by decide) (by decide)) (L.w_w (.inr (by omega)) (by decide) (by omega)) dO.symm
       (L.w_w (.inl (by omega)) (by omega) (by decide)) (E₁₃.perm.wC (by omega))
       (by rw [L.wrapW (by omega)]; omega) (by decide)
@@ -116,6 +125,15 @@ theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o 
       u₁₃.gpr
       (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide),
         u₉.other _ (by decide), u₈.other _ (by decide), w14'] <;> rfl)
+
+theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o = 0 ∨ o = 240) :
+    WP isa (tag o) t (TagPost c o t) := by
+  have hw := L.ww
+  have o₁ : o + 16 ≤ 256 := by omega
+  unfold tag
+  refine WP.seq (WP.mono (tagArgs_wp L E ho) fun t₁₃ ⟨pk, hm, cc, reg₁⟩ => ?_)
+  have dO : (⟨c.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩ :=
+    L.w_w (by omega) (by omega) (by decide)
   have fZ := Proof.Cmac.frame_store2 (m := copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) 0 0
   have f₁ : Frame [⟨c.W + BitVec.ofNat 64 112, 16⟩, ⟨c.W + BitVec.ofNat 64 o, 16⟩] t.mem t₁₃.mem := by
     rw [hm, Proof.Cmac.zero2]
@@ -138,12 +156,7 @@ theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o 
   refine WP.mono (ctr_call cc) fun t₁₄ P => ?_
   have reg : ∀ r, r ∈ [Reg.r23, .r24, .r25] → t₁₄.gpr r = t.gpr r := fun r hr => by
     rw [P.saved r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;>
-      decide)]
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;>
-    rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
-      u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.gpr, u₅.other _ (by decide), u₄.gpr, u₃.gpr,
-      g₂ _ (by decide) (by decide)]
+      decide), reg₁ r hr]
   refine ⟨pk.trans (PK.ofSaved P.rd P.wr P.sp P.saved), reg _ (by simp), reg _ (by simp), reg _ (by simp),
     (f₁.mono fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
