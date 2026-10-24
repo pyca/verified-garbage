@@ -76,6 +76,46 @@ theorem polyIs_ibfly {m : Mem} {F : Addr} {f : Poly} (h : PolyIs m F f) {j len :
 section
 variable {s : State} {x y z c : BitVec 64}
 
+/-- The first part of the inverse butterfly: `f[j] + f[j + len]` stored, and
+`f[j] - f[j + len]` reduced in `r0`. -/
+def ibfly1 : List Instr :=
+  [.load .w .r12 .r5 0, .load .w .r0 .r6 0, .add .r14 .r12 .r0, .sub .r14 .r14 .r9] ++
+  fixup .r14 .r15 .r9 ++ [.store .w .r14 .r5 0, .sub .r0 .r12 .r0] ++ fixup .r0 .r15 .r9
+
+/-- The rest: `z · r0` reduced, stored to `f[j + len]`, and on. -/
+def ibfly2 : List Instr :=
+  [.mul .r0 .r7 .r0] ++ reduce .r0 .r14 ++
+  [.store .w .r0 .r6 0, .addi .r5 .r5 4, .addi .r6 .r6 4, .subi .r11 .r11 1]
+
+theorem ibflyBody_eq : ibflyBody = ibfly1 ++ ibfly2 := rfl
+
+theorem ibfly1_ok (h5 : s.gpr .r5 = x) (h6 : s.gpr .r6 = y) (h9 : s.gpr .r9 = 8380417)
+    (ia : InRegions (s.rd ++ s.wr) x 4) (ib : InRegions (s.rd ++ s.wr) y 4) (oa : InRegions s.wr x 4) :
+    WP isa (.block ibfly1) s fun s' =>
+      s'.gpr .r0 = fixd ((s.mem.readW x 32).setWidth 64 - (s.mem.readW y 32).setWidth 64) ∧
+      s'.gpr .r5 = x ∧ s'.gpr .r6 = y ∧ s'.gpr .r11 = s.gpr .r11 ∧ s'.gpr .r3 = s.gpr .r3 ∧
+      s'.gpr .r4 = s.gpr .r4 ∧ s'.gpr .r7 = s.gpr .r7 ∧ s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .r9 = 8380417 ∧
+      s'.gpr .r10 = s.gpr .r10 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.mem = s.mem.writeW x ((fixd ((s.mem.readW x 32).setWidth 64 + (s.mem.readW y 32).setWidth 64 -
+            8380417)).setWidth 32) := by
+  crun [ibfly1, fixup, fixd, kept, h5, h6, h9, ia, ib, oa,
+    List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
+  simp [Mem.writeW, Mem.readW, Mem.read]
+
+theorem ibfly2_ok {w : BitVec 64} (h0 : s.gpr .r0 = w) (h5 : s.gpr .r5 = x) (h6 : s.gpr .r6 = y)
+    (h7 : s.gpr .r7 = z) (h8 : s.gpr .r8 = M) (h9 : s.gpr .r9 = 8380417) (h11 : s.gpr .r11 = c)
+    (ob : InRegions s.wr y 4) :
+    WP isa (.block ibfly2) s fun s' =>
+      s'.gpr .r5 = x + 4 ∧ s'.gpr .r6 = y + 4 ∧ s'.gpr .r11 = c - 1 ∧ s'.gpr .r3 = s.gpr .r3 ∧
+      s'.gpr .r4 = s.gpr .r4 ∧ s'.gpr .r7 = z ∧ s'.gpr .r8 = M ∧ s'.gpr .r9 = 8380417 ∧
+      s'.gpr .r10 = s.gpr .r10 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.mem = s.mem.writeW y ((red (z * w)).setWidth 32) := by
+  crun [ibfly2, reduce, fixup, red, bar, fixd, kept, h0, h5, h6, h7, h8, h9, h11, ob,
+    List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
+  simp [Mem.writeW]
+
 theorem ibfly_ok (h5 : s.gpr .r5 = x) (h6 : s.gpr .r6 = y) (h7 : s.gpr .r7 = z) (h8 : s.gpr .r8 = M)
     (h9 : s.gpr .r9 = 8380417) (h11 : s.gpr .r11 = c)
     (ia : InRegions (s.rd ++ s.wr) x 4) (ib : InRegions (s.rd ++ s.wr) y 4)
@@ -88,9 +128,14 @@ theorem ibfly_ok (h5 : s.gpr .r5 = x) (h6 : s.gpr .r6 = y) (h7 : s.gpr .r7 = z) 
       s'.mem = (s.mem.writeW x ((fixd ((s.mem.readW x 32).setWidth 64 + (s.mem.readW y 32).setWidth 64 -
             8380417)).setWidth 32)).writeW y
           ((red (z * fixd ((s.mem.readW x 32).setWidth 64 - (s.mem.readW y 32).setWidth 64))).setWidth 32) := by
-  crun [ibflyBody, reduce, fixup, red, bar, fixd, kept, h5, h6, h7, h8, h9, h11, ia, ib, oa, ob,
-    List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
-  simp [Mem.writeW, Mem.readW, Mem.read]
+  rw [ibflyBody_eq, WP.block_append_iff]
+  refine WP.mono (ibfly1_ok h5 h6 h9 ia ib oa)
+    fun s₁ ⟨r0, r5, r6, r11, r3, r4, r7, r8, r9, r10, kp, lr, rd, wr, sp, m⟩ => ?_
+  refine WP.mono (ibfly2_ok r0 r5 r6 (r7.trans h7) (r8.trans h8) r9 (r11.trans h11) (by rw [wr]; exact ob))
+    fun s' ⟨q5, q6, q11, q3, q4, q7, q8, q9, q10, qk, qlr, qrd, qwr, qsp, qm⟩ =>
+      ⟨q5, q6, q11, q3.trans r3, q4.trans r4, q7, q8, q9, q10.trans r10,
+        fun r hr => (qk r hr).trans (kp r hr), qlr.trans lr, qrd.trans rd, qwr.trans wr, qsp.trans sp, by
+          rw [qm, m]⟩
 
 end
 
@@ -141,7 +186,7 @@ theorem fstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {Q : Poly} {len k st t
       apply BitVec.eq_of_toNat_eq
       rw [toNat_setWidth64, hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt ‹Zq›; omega)]
     rw [m, ea, eb, ← coeffAt_eq, ← coeffAt_eq, hv va, hv vb, blockN_succ]
-    exact polyIs_ibfly h.poly hl (by rw [n_eq]; omega) _ (ibfly_vals _ _ _).1 (ibfly_vals _ _ _).2
+    exact polyIs_ibfly h.poly hl (by rw [n_eq]; omega) _ (ibfly_vals _ _ (-zetas k)).1 (ibfly_vals _ _ (-zetas k)).2
   · rw [r11, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub ht]
     exact count_nz ht (by omega)
 
@@ -213,7 +258,7 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
     ⟨⟨⟨r3.trans h₂.env.r3, r8.trans h₂.env.r8, r9.trans h₂.env.r9,
       fun r hr => (kp r hr).trans (h₂.env.kept r hr), lr.trans h₂.env.lr, rd.trans h₂.env.rd,
       wr.trans h₂.env.wr, m ▸ h₂.env.frame⟩, ?_, ?_, r10.trans h₂.r10, ?_⟩, ?_⟩
-  · rw [r4, h₂.r4, hdiv]; congr 3; omega
+  · rw [r4, h₂.r4, hdiv, show 2 * nb - 1 - c - 1 = 2 * nb - 1 - (c + 1) by omega]
   · rw [r5]; congr 2; rw [Nat.mul_succ]; omega
   · rw [m, layerN_succ]; exact h₂.poly
   · rw [r0, h₂.env.r3, ptr_ne _ (by omega) (by omega)]
@@ -301,7 +346,7 @@ theorem scaleN_get (w : Poly) : ∀ i ≤ n, ∀ j < n, (scaleN w i)[j]! = if j 
   | 0, _, j, _ => by rw [ite_eq_right (Nat.not_lt_zero j)]; rfl
   | i + 1, hi, j, hj => by
     have ih := scaleN_get w i (by omega)
-    show ((scaleN w i).set! i ((scaleN w i)[i]! * 8347681))[j]! = _
+    rw [show scaleN w (i + 1) = (scaleN w i).set! i ((scaleN w i)[i]! * 8347681) from foldl_range_succ _ _ _]
     by_cases e : i = j
     · subst e; rw [getElem!_set!_self _ hj, ih i hj, ite_eq_right (Nat.lt_irrefl i), ite_eq_left (Nat.lt_succ_self i)]
     · rw [getElem!_set!_ne _ hj e, ih j hj]
@@ -312,6 +357,16 @@ theorem scaleN_get (w : Poly) : ∀ i ≤ n, ∀ j < n, (scaleN w i)[j]! = if j 
 theorem scaleN_full (w : Poly) : scaleN w 256 = w.map (· * 8347681) :=
   ext_getElem! fun j hj => by rw [scaleN_get w 256 (by rw [n_eq]) j hj, ite_eq_left (by rw [n_eq] at hj; exact hj),
     map_mul_get _ _ hj]
+
+theorem scaleN_zero (w : Poly) : scaleN w 0 = w := rfl
+
+/-- A reduced value times `8347681`, reduced. -/
+theorem scale_val (a : Zq) :
+    ((red (BitVec.ofNat 64 a.val * BitVec.ofNat 64 8347681)).setWidth 32).toNat = (a * 8347681).val := by
+  have e : (BitVec.ofNat 64 8347681 : BitVec 64) = BitVec.ofNat 64 (ofNat 8347681 : Zq).val := by
+    rw [ofNat_of_lt (by decide)]
+  rw [e, BitVec.toNat_setWidth, red_mul]
+  exact Nat.mod_eq_of_lt (by have := val_lt (a * ofNat 8347681); omega)
 
 /-- After `i` coefficients of `w` scaled. -/
 structure SInv (s₀ : State) (m₁ : Mem) (w : Poly) (i : Nat) (s : State) : Prop where
@@ -324,14 +379,14 @@ structure SInv (s₀ : State) (m₁ : Mem) (w : Poly) (i : Nat) (s : State) : Pr
 section
 variable {s : State} {x c : BitVec 64}
 
-theorem scale_ok (h5 : s.gpr .r5 = x) (h7 : s.gpr .r7 = BitVec.ofNat 64 8347681) (h8 : s.gpr .r8 = M)
+theorem scale_ok {k : BitVec 64} (h5 : s.gpr .r5 = x) (h7 : s.gpr .r7 = k) (h8 : s.gpr .r8 = M)
     (h9 : s.gpr .r9 = 8380417) (h11 : s.gpr .r11 = c)
     (ia : InRegions (s.rd ++ s.wr) x 4) (oa : InRegions s.wr x 4) :
     WP isa (.block scaleBody) s fun s' =>
       s'.gpr .r5 = x + 4 ∧ s'.gpr .r11 = c - 1 ∧ s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r7 = s.gpr .r7 ∧
       s'.gpr .r8 = M ∧ s'.gpr .r9 = 8380417 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      s'.mem = s.mem.writeW x ((red ((s.mem.readW x 32).setWidth 64 * BitVec.ofNat 64 8347681)).setWidth 32) := by
+      s'.mem = s.mem.writeW x ((red ((s.mem.readW x 32).setWidth 64 * k)).setWidth 32) := by
   crun [scaleBody, reduce, fixup, red, bar, fixd, kept, h5, h7, h8, h9, h11, ia, oa,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
@@ -343,22 +398,20 @@ theorem sstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {w : Poly} {i : Nat} (
     WP isa (.block scaleBody) s fun s' => SInv s₀ m₁ w (i + 1) s' ∧ (s'.gpr .r11 != 0) = decide (i + 1 ≠ 256) := by
   have ca := coeff_contains (F s₀) (i := i) (by rw [n_eq]; omega)
   have va := polyIs_toNat h.poly (i := i) (by rw [n_eq]; omega)
-  refine WP.mono (scale_ok h.r5 h.r7 h.env.r8 h.env.r9 h.r11 (by rw [h.r5]; exact h.env.inR hp ca)
-    (by rw [h.r5]; exact h.env.inW hp ca))
+  refine WP.mono (scale_ok h.r5 h.r7 h.env.r8 h.env.r9 h.r11 (h.env.inR hp ca) (h.env.inW hp ca))
     fun s' ⟨r5, r11, r3, r7, r8, r9, kp, lr, rd, wr, sp, m⟩ =>
       ⟨⟨⟨r3.trans h.env.r3, r8, r9, fun r hr => (kp r hr).trans (h.env.kept r hr), lr.trans h.env.lr,
         rd.trans h.env.rd, wr.trans h.env.wr, ?_⟩, ?_, r7.trans h.r7, ?_, ?_⟩, ?_⟩
-  · rw [m, h.r5]; exact h.env.frame.writeW (List.mem_singleton_self _) _ ca
-  · rw [r5, h.r5]; exact ptr_succ _ 4 _
+  · rw [m]; exact h.env.frame.writeW (List.mem_singleton_self _) _ ca
+  · rw [r5]; exact ptr_succ _ 4 _
   · rw [r11]; exact count_sub hi
   · have hv : (s.mem.readW (coeffAddr (F s₀) i) 32).setWidth 64 = BitVec.ofNat 64 ((scaleN w i)[i]!).val := by
       apply BitVec.eq_of_toNat_eq
       rw [toNat_setWidth64, ← coeffAt_eq, va, BitVec.toNat_ofNat,
         Nat.mod_eq_of_lt (by have := val_lt (scaleN w i)[i]!; omega)]
-    have e8 : BitVec.ofNat 64 8347681 = BitVec.ofNat 64 (8347681 : Zq).val := rfl
-    rw [m, h.r5, show F s₀ + BitVec.ofNat 64 (4 * i) = coeffAddr (F s₀) i from rfl, hv, e8]
-    exact polyIs_writeW h.poly (by rw [n_eq]; omega) _ (by
-      rw [BitVec.toNat_setWidth, red_mul, Nat.mod_eq_of_lt (by have := val_lt ((scaleN w i)[i]! * 8347681); omega)])
+    rw [m, show F s₀ + BitVec.ofNat 64 (4 * i) = coeffAddr (F s₀) i from rfl, hv,
+      show scaleN w (i + 1) = (scaleN w i).set! i ((scaleN w i)[i]! * 8347681) from foldl_range_succ _ _ _]
+    exact polyIs_writeW h.poly (by rw [n_eq]; omega) _ (scale_val ((scaleN w i)[i]!))
   · rw [r11, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]
     exact count_nz hi (by omega)
 
@@ -449,7 +502,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {s : State} (hs : BodyStart s₀ 
     fun r hr => (kp r hr).trans (h.env.kept r hr), lr.trans h.env.lr, rd.trans h.env.rd,
     wr.trans h.env.wr, m ▸ h.env.frame⟩, ?_, r7, r11, ?_⟩
   · rw [r5, h.env.r3, show (1024 : BitVec 64) = BitVec.ofNat 64 1024 from rfl, BitVec.add_sub_cancel]; simp
-  · rw [m]; exact h.poly
+  · rw [m, scaleN_zero]; exact h.poly
 
 theorem sdepth_body : sdepth (.seq (.block (table negZetaTab .r4 ++ consts ++
       ([.addi .r3 .r3 1024, .addi .r4 .r4 1020, .li .r10 4] : List Instr)))
