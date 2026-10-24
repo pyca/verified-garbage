@@ -171,11 +171,11 @@ theorem ivAreasOk {s₀ s : State} (hp : SeqPre c M s₀) (hb : s.gpr sb = S s�
     · exact dCB.symm
 
 theorem copyBlk_ok {bw : Nat} {dst src : Loc} {ws : List Loc} (hd : dst ∈ ws) {len : Loc → Nat}
-    (hl : ∀ l, len l = 4 * bw) : ∀ o ∈ copyBlk bw dst src, Plain o ∧ o.InBounds len ∧ o.dst ∈ ws := by
+    (hl : ∀ l, len l = 4 * bw) : ∀ o ∈ copyBlk bw dst src, o.InBounds len ∧ o.dst ∈ ws := by
   intro o ho
   simp only [copyBlk, List.mem_map, List.mem_range] at ho
   obtain ⟨w, hw, rfl⟩ := ho
-  refine ⟨⟨rfl, rfl⟩, ⟨?_, ?_, fun _ _ h => by cases h⟩, hd⟩ <;>
+  refine ⟨⟨?_, ?_, fun _ _ h => by cases h⟩, hd⟩ <;>
     simp only [Op.width, Bool.false_eq_true, ite_false, ite_true, hl] <;> omega_using [hw]
 
 /-! ## The entry -/
@@ -441,8 +441,8 @@ theorem setup_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : c
 /-! ## The function -/
 
 theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
-    (hpre : ∀ o ∈ M.pre, Plain o ∧ o.InBounds (lens c M.step))
-    (hpost : ∀ o ∈ M.post, Plain o ∧ o.InBounds (lens c M.step))
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step))
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step))
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
     WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧

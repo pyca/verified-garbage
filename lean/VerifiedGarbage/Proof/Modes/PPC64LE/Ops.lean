@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Modes.PPC64LE.Counter
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Isa
@@ -22,8 +23,8 @@ memory, and no register but `r8` and `r9`. It needs each area's address
 (`AreasOk.ea`: the base register and displacement of the area give the
 address `A l` plus the offset, with an encodable displacement), readable
 and writable bytes, and areas apart from each other. The operations are
-copies and XORs (not the counters' increments, which these modes do not
-use: `Plain`).
+copies and XORs (`opCode_wp_plain`) and the counters' increments
+(`Proof/Modes/PPC64LE/Counter.lean`).
 -/
 
 @[expose] public section
@@ -31,6 +32,7 @@ use: `Plain`).
 namespace VG.Proof.Modes.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Modes VG.Impl.Modes.PPC64LE
+open VG.Spec.Aes (bytesAt)
 
 /-- The areas' contents, from memory: byte `i` of area `l` at `A l + i`. -/
 def cont (A : Loc → Addr) (m : Mem) : Areas := fun l i => m (A l + BitVec.ofNat 64 i)
@@ -97,7 +99,7 @@ theorem loc_ne (c : Core) (l : Loc) : (c.loc l).1 ≠ .r8 ∧ (c.loc l).1 ≠ .r
 
 /-! ## One operation -/
 
-theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op}
+theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op}
     (hpl : Plain o) (ho : o.InBounds len)
     (hdst : o.dst ∈ ws) {s : State} (h : AreasOk c s len A ws) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', s'.mem = opMem A o s.mem → (∀ r, r ≠ .r8 → r ≠ .r9 → s'.gpr r = s.gpr r) → s'.rd = s.rd →
@@ -115,7 +117,7 @@ theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List L
   have dS := h.disp o.src o.sOff (by omega)
   have nD := (loc_ne c o.dst).2.2
   have nS := (loc_ne c o.src).2.2
-  simp only [Core.opCode, hinc, hi32, Bool.or_false, Bool.false_eq_true, ite_false]
+  simp only [Core.opCode, hinc, hi32, Bool.false_eq_true, ite_false]
   cases hwd : o.wide
   · -- A byte.
     have hW : o.width = 1 := by simp [Op.width, hinc, hi32, hwd]
@@ -202,6 +204,46 @@ theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List L
           VG.Offset.add_add, VG.Offset.add_add]
       · rfl
 
+/-- Any operation: a copy or an XOR (`opCode_wp_plain`), or an increment
+(`Counter.inc_wp`, `Counter.inc32_wp`). -/
+theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op}
+    (ho : o.InBounds len)
+    (hdst : o.dst ∈ ws) {s : State} (h : AreasOk c s len A ws) {is : List Instr} {Q : State → Prop}
+    (k : ∀ s', s'.mem = opMem A o s.mem → (∀ r, r ≠ .r8 → r ≠ .r9 → s'.gpr r = s.gpr r) → s'.rd = s.rd →
+      s'.wr = s.wr → WP isa (.block is) s' Q) :
+    WP isa (.block (c.opCode o ++ is)) s Q := by
+  have hd := ho.1
+  have nD := loc_ne c o.dst
+  have eb (n : Nat) : bytesAt s.mem (A o.dst + BitVec.ofNat 64 o.dOff) n =
+      (List.range n).map fun i => cont A s.mem o.dst (o.dOff + i) := by
+    simp only [bytesAt, cont, VG.Offset.add_add]
+  cases hinc : o.inc
+  · cases hi32 : o.inc32
+    · exact opCode_wp_plain c ⟨hinc, hi32⟩ ho hdst h k
+    · -- GCM's `inc₃₂`.
+      have hW : o.width = 4 := by simp [Op.width, hinc, hi32]
+      rw [hW] at hd
+      simp only [Core.opCode, hinc, hi32, Bool.false_eq_true, ite_false, ite_true]
+      refine Counter.inc32_wp nD.2.2 nD.1 nD.2.1 (h.disp o.dst o.dOff (by omega)) (h.ea o.dst o.dOff (by omega))
+        (h.rd _ _ _ (by decide) hd) (h.wr _ hdst _ _ (by decide) hd) fun s' m' g' rd' wr' => k s' ?_ g' rd' wr'
+      rw [m']
+      funext x
+      rw [Counter.inc32Mem_apply, eb]
+      simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, ite_true]
+  · -- The 128-bit increment.
+    have hW : o.width = 16 := by simp [Op.width, hinc]
+    rw [hW] at hd
+    simp only [Core.opCode, hinc, ite_true]
+    have hdisp := h.disp o.dst (o.dOff + 8) (by omega)
+    refine Counter.inc_wp nD.2.2 nD.1 nD.2.1 (by omega) (h.ea o.dst o.dOff (by omega))
+      (h.rd _ _ _ (by decide) (by omega)) (by rw [VG.Offset.add_add]; exact h.rd _ _ _ (by decide) (by omega))
+      (h.wr _ hdst _ _ (by decide) (by omega)) (by rw [VG.Offset.add_add]; exact h.wr _ hdst _ _ (by decide) (by omega))
+      fun s' m' g' rd' wr' => k s' ?_ g' rd' wr'
+    rw [m']
+    funext x
+    rw [Counter.incMem_apply, eb]
+    simp only [opMem, hW, Op.val, hinc, ite_true]
+
 /-! ## Areas -/
 
 /-- The regions of the areas `ws`. -/
@@ -251,7 +293,7 @@ theorem opMem_cont {c : Core} {s : State} {len : Loc → Nat} {A : Loc → Addr}
 /-! ## Lists of operations -/
 
 theorem opsCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} :
-    ∀ {os : List Op}, (∀ o ∈ os, Plain o ∧ o.InBounds len ∧ o.dst ∈ ws) → ∀ {s : State},
+    ∀ {os : List Op}, (∀ o ∈ os, o.InBounds len ∧ o.dst ∈ ws) → ∀ {s : State},
     AreasOk c s len A ws → ∀ {is : List Instr} {Q : State → Prop},
     (∀ s', Agree len (cont A s'.mem) (applyOps os (cont A s.mem)) →
       Frame (areaRegions len A ws) s.mem s'.mem →
@@ -264,7 +306,7 @@ theorem opsCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List 
     have ho := (hb o List.mem_cons_self)
     rw [show c.opsCode (o :: os) ++ is = c.opCode o ++ (c.opsCode os ++ is) by
       simp [Core.opsCode, List.append_assoc]]
-    refine opCode_wp c ho.1 ho.2.1 ho.2.2 h fun s₁ m₁ g₁ rd₁ wr₁ => ?_
+    refine opCode_wp c ho.1 ho.2 h fun s₁ m₁ g₁ rd₁ wr₁ => ?_
     have h₁ : AreasOk c s₁ len A ws :=
       h.congr (fun l => g₁ _ (loc_ne c l).1 (loc_ne c l).2.1) rd₁ wr₁
     refine opsCode_wp c (fun o' ho' => hb o' (List.mem_cons_of_mem _ ho')) h₁
@@ -272,9 +314,9 @@ theorem opsCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List 
     refine k s' (fun l i hi => ?_) ?_ (fun r h1 h2 => by rw [g' r h1 h2, g₁ r h1 h2])
       (by rw [rd', rd₁]) (by rw [wr', wr₁])
     · rw [a' l i hi, applyOps_cons]
-      refine applyOps_agree (fun o' ho' => (hb o' (List.mem_cons_of_mem _ ho')).2.1)
+      refine applyOps_agree (fun o' ho' => (hb o' (List.mem_cons_of_mem _ ho')).1)
         (fun l' i' hi' => ?_) l i hi
-      rw [m₁]; exact opMem_cont h ho.2.1 _ l' i' hi'
-    · rw [m₁] at f'; exact (opMem_frame ho.2.1 ho.2.2 h.fit _).trans f'
+      rw [m₁]; exact opMem_cont h ho.1 _ l' i' hi'
+    · rw [m₁] at f'; exact (opMem_frame ho.1 ho.2 h.fit _).trans f'
 
 end VG.Proof.Modes.PPC64LE
