@@ -3412,3 +3412,708 @@ bne %cr0, 23b
 blr",
     )
 }
+
+/// `RejNTTPoly` (FIPS 204 Algorithm 30): writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes `*seed` to `*a` (256 coefficients less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.rejNTTContract`. Not constant time in the seed: timing may depend on the pointers and on `*seed` (public in ML-DSA: the seed `ρ` of the matrix and two indices), but not on anything else.
+///
+/// It squeezes 1008 bytes of SHAKE128 output (6 blocks) and runs the loop of `RejNTTPoly` over them.
+///
+/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 34 bytes.
+/// * `a` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `a` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+    core::arch::naked_asm!(
+        r"mflr %r0
+std %r27, 2000(%r5)
+std %r28, 2008(%r5)
+std %r29, 2016(%r5)
+std %r30, 2024(%r5)
+std %r31, 2032(%r5)
+std %r0, 2040(%r5)
+addi %r31, %r5, 0
+addi %r30, %r4, 0
+addi %r29, %r3, 0
+li %r28, 34
+li %r0, 0
+std %r0, 0(%r31)
+std %r0, 8(%r31)
+std %r0, 16(%r31)
+std %r0, 24(%r31)
+std %r0, 32(%r31)
+std %r0, 40(%r31)
+std %r0, 48(%r31)
+std %r0, 56(%r31)
+std %r0, 64(%r31)
+std %r0, 72(%r31)
+std %r0, 80(%r31)
+std %r0, 88(%r31)
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+std %r0, 112(%r31)
+std %r0, 120(%r31)
+std %r0, 128(%r31)
+std %r0, 136(%r31)
+std %r0, 144(%r31)
+std %r0, 152(%r31)
+std %r0, 160(%r31)
+std %r0, 168(%r31)
+std %r0, 176(%r31)
+std %r0, 184(%r31)
+std %r0, 192(%r31)
+addi %r3, %r31, 0
+li %r4, 168
+li %r5, 0
+addi %r6, %r29, 0
+addi %r7, %r28, 0
+addi %r8, %r31, 200
+bl {vg_keccak_absorb_scratch}
+addi %r5, %r3, 0
+addi %r3, %r31, 0
+li %r4, 168
+li %r6, 31
+addi %r7, %r31, 200
+bl {vg_keccak_pad_scratch}
+addi %r3, %r31, 0
+li %r4, 168
+li %r5, 0
+addi %r6, %r31, 840
+li %r7, 1008
+addi %r8, %r31, 200
+bl {vg_keccak_squeeze_scratch}
+addi %r3, %r31, 840
+addi %r4, %r30, 0
+li %r5, 0
+li %r6, 336
+lis %r7, 127
+ori %r7, %r7, 57345
+20:
+lbz %r8, 0(%r3)
+lbz %r9, 1(%r3)
+lbz %r10, 2(%r3)
+rldicr %r9, %r9, 8, 55
+rldicr %r10, %r10, 57, 6
+rldicl %r10, %r10, 23, 41
+add %r10, %r10, %r9
+add %r10, %r10, %r8
+subf %r12, %r7, %r10
+rldicl %r12, %r12, 1, 63
+addi %r11, %r5, -256
+rldicl %r11, %r11, 1, 63
+and %r12, %r12, %r11
+cmpldi %cr0, %r12, 0
+beq %cr0, 21f
+stw %r10, 0(%r4)
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+b 22f
+21:
+22:
+addi %r3, %r3, 3
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 20b
+rldicl %r3, %r5, 56, 8
+ld %r0, 2040(%r31)
+mtlr %r0
+ld %r27, 2000(%r31)
+ld %r28, 2008(%r31)
+ld %r29, 2016(%r31)
+ld %r30, 2024(%r31)
+ld %r31, 2032(%r31)
+blr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// `RejBoundedPoly` (FIPS 204 Algorithm 31): writes the polynomial with coefficients in `[-eta, eta]` sampled from the SHAKE256 output of the 66 bytes `*seed` to `*a` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 481 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.rejBoundedContract`. Not constant time in which half-bytes of the SHAKE256 output it rejects: timing may depend on the pointers, `eta`, and whether each half-byte of the first 1088 bytes of output is rejected (`rejBoundedLeak`), which is independent of the coefficients sampled from those accepted; but not on anything else of the seed or the output.
+///
+/// It squeezes 544 bytes of SHAKE256 output (4 blocks) and runs the loop of `RejBoundedPoly` over them. The coefficient of an accepted half-byte is computed without a branch or a table, so only whether each half-byte is accepted affects timing.
+///
+/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 66 bytes.
+/// * `a` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `eta` must be 2 or 4.
+/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `a` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+    core::arch::naked_asm!(
+        r"mflr %r0
+std %r27, 2000(%r6)
+std %r28, 2008(%r6)
+std %r29, 2016(%r6)
+std %r30, 2024(%r6)
+std %r31, 2032(%r6)
+std %r0, 2040(%r6)
+addi %r31, %r6, 0
+addi %r30, %r5, 0
+addi %r29, %r3, 0
+li %r28, 66
+rldicr %r27, %r4, 32, 31
+rldicl %r27, %r27, 32, 32
+li %r0, 0
+std %r0, 0(%r31)
+std %r0, 8(%r31)
+std %r0, 16(%r31)
+std %r0, 24(%r31)
+std %r0, 32(%r31)
+std %r0, 40(%r31)
+std %r0, 48(%r31)
+std %r0, 56(%r31)
+std %r0, 64(%r31)
+std %r0, 72(%r31)
+std %r0, 80(%r31)
+std %r0, 88(%r31)
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+std %r0, 112(%r31)
+std %r0, 120(%r31)
+std %r0, 128(%r31)
+std %r0, 136(%r31)
+std %r0, 144(%r31)
+std %r0, 152(%r31)
+std %r0, 160(%r31)
+std %r0, 168(%r31)
+std %r0, 176(%r31)
+std %r0, 184(%r31)
+std %r0, 192(%r31)
+addi %r3, %r31, 0
+li %r4, 136
+li %r5, 0
+addi %r6, %r29, 0
+addi %r7, %r28, 0
+addi %r8, %r31, 200
+bl {vg_keccak_absorb_scratch}
+addi %r5, %r3, 0
+addi %r3, %r31, 0
+li %r4, 136
+li %r6, 31
+addi %r7, %r31, 200
+bl {vg_keccak_pad_scratch}
+addi %r3, %r31, 0
+li %r4, 136
+li %r5, 0
+addi %r6, %r31, 840
+li %r7, 544
+addi %r8, %r31, 200
+bl {vg_keccak_squeeze_scratch}
+addi %r12, %r27, -2
+cmpldi %cr0, %r12, 0
+beq %cr0, 20f
+addi %r3, %r31, 840
+addi %r4, %r30, 0
+li %r5, 0
+li %r6, 544
+lis %r7, 127
+ori %r7, %r7, 57345
+22:
+lbz %r8, 0(%r3)
+rldicr %r9, %r8, 60, 3
+rldicl %r9, %r9, 4, 60
+addi %r12, %r9, -9
+rldicl %r12, %r12, 1, 63
+addi %r11, %r5, -256
+rldicl %r11, %r11, 1, 63
+and %r12, %r12, %r11
+li %r10, 4
+subf %r10, %r9, %r10
+rldicl %r11, %r10, 1, 63
+mulld %r11, %r11, %r7
+add %r10, %r10, %r11
+cmpldi %cr0, %r12, 0
+beq %cr0, 23f
+stw %r10, 0(%r4)
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+b 24f
+23:
+24:
+rldicl %r9, %r8, 60, 4
+addi %r12, %r9, -9
+rldicl %r12, %r12, 1, 63
+addi %r11, %r5, -256
+rldicl %r11, %r11, 1, 63
+and %r12, %r12, %r11
+li %r10, 4
+subf %r10, %r9, %r10
+rldicl %r11, %r10, 1, 63
+mulld %r11, %r11, %r7
+add %r10, %r10, %r11
+cmpldi %cr0, %r12, 0
+beq %cr0, 25f
+stw %r10, 0(%r4)
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+b 26f
+25:
+26:
+addi %r3, %r3, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 22b
+b 21f
+20:
+addi %r3, %r31, 840
+addi %r4, %r30, 0
+li %r5, 0
+li %r6, 544
+lis %r7, 127
+ori %r7, %r7, 57345
+27:
+lbz %r8, 0(%r3)
+rldicr %r9, %r8, 60, 3
+rldicl %r9, %r9, 4, 60
+addi %r12, %r9, -15
+rldicl %r12, %r12, 1, 63
+addi %r11, %r5, -256
+rldicl %r11, %r11, 1, 63
+and %r12, %r12, %r11
+addi %r9, %r9, -10
+rldicl %r11, %r9, 1, 63
+rldicr %r10, %r11, 3, 60
+add %r9, %r9, %r10
+rldicr %r10, %r11, 1, 62
+add %r9, %r9, %r10
+addi %r9, %r9, -5
+rldicl %r11, %r9, 1, 63
+rldicr %r10, %r11, 2, 61
+add %r9, %r9, %r10
+add %r9, %r9, %r11
+li %r10, 2
+subf %r10, %r9, %r10
+rldicl %r11, %r10, 1, 63
+mulld %r11, %r11, %r7
+add %r10, %r10, %r11
+cmpldi %cr0, %r12, 0
+beq %cr0, 28f
+stw %r10, 0(%r4)
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+b 29f
+28:
+29:
+rldicl %r9, %r8, 60, 4
+addi %r12, %r9, -15
+rldicl %r12, %r12, 1, 63
+addi %r11, %r5, -256
+rldicl %r11, %r11, 1, 63
+and %r12, %r12, %r11
+addi %r9, %r9, -10
+rldicl %r11, %r9, 1, 63
+rldicr %r10, %r11, 3, 60
+add %r9, %r9, %r10
+rldicr %r10, %r11, 1, 62
+add %r9, %r9, %r10
+addi %r9, %r9, -5
+rldicl %r11, %r9, 1, 63
+rldicr %r10, %r11, 2, 61
+add %r9, %r9, %r10
+add %r9, %r9, %r11
+li %r10, 2
+subf %r10, %r9, %r10
+rldicl %r11, %r10, 1, 63
+mulld %r11, %r11, %r7
+add %r10, %r10, %r11
+cmpldi %cr0, %r12, 0
+beq %cr0, 210f
+stw %r10, 0(%r4)
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+b 211f
+210:
+211:
+addi %r3, %r3, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 27b
+21:
+rldicl %r3, %r5, 56, 8
+ld %r0, 2040(%r31)
+mtlr %r0
+ld %r27, 2000(%r31)
+ld %r28, 2008(%r31)
+ld %r29, 2016(%r31)
+ld %r30, 2024(%r31)
+ld %r31, 2032(%r31)
+blr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// A polynomial of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `*seed` and `c = 1 + bitlen (gamma1 - 1)`, to `*a` (each coefficient modulo `q` = 8380417).
+///
+/// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
+///
+/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks them with the loop of `vg_mldsa_bit_unpack`.
+///
+/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 66 bytes.
+/// * `a` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `gamma1` must be 2^17 or 2^19.
+/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `a` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
+    core::arch::naked_asm!(
+        r"mflr %r0
+std %r27, 2000(%r6)
+std %r28, 2008(%r6)
+std %r29, 2016(%r6)
+std %r30, 2024(%r6)
+std %r31, 2032(%r6)
+std %r0, 2040(%r6)
+addi %r31, %r6, 0
+addi %r30, %r5, 0
+addi %r29, %r3, 0
+li %r28, 66
+rldicr %r27, %r4, 32, 31
+rldicl %r27, %r27, 32, 32
+li %r0, 0
+std %r0, 0(%r31)
+std %r0, 8(%r31)
+std %r0, 16(%r31)
+std %r0, 24(%r31)
+std %r0, 32(%r31)
+std %r0, 40(%r31)
+std %r0, 48(%r31)
+std %r0, 56(%r31)
+std %r0, 64(%r31)
+std %r0, 72(%r31)
+std %r0, 80(%r31)
+std %r0, 88(%r31)
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+std %r0, 112(%r31)
+std %r0, 120(%r31)
+std %r0, 128(%r31)
+std %r0, 136(%r31)
+std %r0, 144(%r31)
+std %r0, 152(%r31)
+std %r0, 160(%r31)
+std %r0, 168(%r31)
+std %r0, 176(%r31)
+std %r0, 184(%r31)
+std %r0, 192(%r31)
+addi %r3, %r31, 0
+li %r4, 136
+li %r5, 0
+addi %r6, %r29, 0
+addi %r7, %r28, 0
+addi %r8, %r31, 200
+bl {vg_keccak_absorb_scratch}
+addi %r5, %r3, 0
+addi %r3, %r31, 0
+li %r4, 136
+li %r6, 31
+addi %r7, %r31, 200
+bl {vg_keccak_pad_scratch}
+addi %r3, %r31, 0
+li %r4, 136
+li %r5, 0
+addi %r6, %r31, 840
+li %r7, 640
+addi %r8, %r31, 200
+bl {vg_keccak_squeeze_scratch}
+lis %r12, 2
+subf %r12, %r12, %r27
+cmpldi %cr0, %r12, 0
+beq %cr0, 20f
+addi %r10, %r31, 840
+addi %r11, %r30, 0
+lis %r7, 127
+ori %r7, %r7, 57345
+lis %r4, 8
+li %r12, 128
+22:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+lbz %r9, 1(%r10)
+rldicr %r9, %r9, 8, 55
+add %r8, %r8, %r9
+lbz %r9, 2(%r10)
+rldicr %r9, %r9, 16, 47
+add %r8, %r8, %r9
+rldicr %r9, %r8, 44, 19
+rldicl %r9, %r9, 20, 44
+rldicl %r8, %r8, 44, 20
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 0(%r11)
+lbz %r9, 3(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+lbz %r9, 4(%r10)
+rldicr %r9, %r9, 12, 51
+add %r8, %r8, %r9
+rldicr %r9, %r8, 44, 19
+rldicl %r9, %r9, 20, 44
+rldicl %r8, %r8, 44, 20
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 4(%r11)
+addi %r10, %r10, 5
+addi %r11, %r11, 8
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 22b
+b 21f
+20:
+addi %r10, %r31, 840
+addi %r11, %r30, 0
+lis %r7, 127
+ori %r7, %r7, 57345
+lis %r4, 2
+li %r12, 64
+23:
+li %r8, 0
+lbz %r9, 0(%r10)
+add %r8, %r8, %r9
+lbz %r9, 1(%r10)
+rldicr %r9, %r9, 8, 55
+add %r8, %r8, %r9
+lbz %r9, 2(%r10)
+rldicr %r9, %r9, 16, 47
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 0(%r11)
+lbz %r9, 3(%r10)
+rldicr %r9, %r9, 6, 57
+add %r8, %r8, %r9
+lbz %r9, 4(%r10)
+rldicr %r9, %r9, 14, 49
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 4(%r11)
+lbz %r9, 5(%r10)
+rldicr %r9, %r9, 4, 59
+add %r8, %r8, %r9
+lbz %r9, 6(%r10)
+rldicr %r9, %r9, 12, 51
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 8(%r11)
+lbz %r9, 7(%r10)
+rldicr %r9, %r9, 2, 61
+add %r8, %r8, %r9
+lbz %r9, 8(%r10)
+rldicr %r9, %r9, 10, 53
+add %r8, %r8, %r9
+rldicr %r9, %r8, 46, 17
+rldicl %r9, %r9, 18, 46
+rldicl %r8, %r8, 46, 18
+subf %r9, %r9, %r4
+rldicl %r0, %r9, 1, 63
+mulld %r0, %r0, %r7
+add %r9, %r9, %r0
+stw %r9, 12(%r11)
+addi %r10, %r10, 9
+addi %r11, %r11, 16
+addi %r12, %r12, -1
+cmpldi %cr0, %r12, 0
+bne %cr0, 23b
+21:
+ld %r0, 2040(%r31)
+mtlr %r0
+ld %r27, 2000(%r31)
+ld %r28, 2008(%r31)
+ld %r29, 2016(%r31)
+ld %r30, 2024(%r31)
+ld %r31, 2032(%r31)
+blr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// `SampleInBall` (FIPS 204 Algorithm 29): writes the polynomial with `tau` coefficients 1 or -1 and the others 0 sampled from the SHAKE256 output of the `len` bytes at `ctilde` to `*c` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 221 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*c` is then unspecified, and the caller must destroy it and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.sampleInBallContract`. Not constant time in the seed: timing may depend on the pointers, `len`, `tau` and the seed `c̃` at `ctilde`, but not on anything else.
+///
+/// It squeezes 272 bytes of SHAKE256 output (2 blocks) and runs the loop of `SampleInBall` over the 264 after the sign bits.
+///
+/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
+///
+/// # Safety
+///
+/// * `ctilde` must be valid for reads of `len` bytes.
+/// * `c` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `(len, tau)` must be `(32, 39)`, `(48, 49)` or `(64, 60)`.
+/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `c` and `scratch` must not overlap each other or `ctilde` (distinct Rust objects never do).
+/// * None of `ctilde`, `c` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+    core::arch::naked_asm!(
+        r"mflr %r0
+std %r27, 2000(%r7)
+std %r28, 2008(%r7)
+std %r29, 2016(%r7)
+std %r30, 2024(%r7)
+std %r31, 2032(%r7)
+std %r0, 2040(%r7)
+addi %r31, %r7, 0
+addi %r30, %r6, 0
+addi %r29, %r3, 0
+addi %r28, %r4, 0
+rldicr %r27, %r5, 32, 31
+rldicl %r27, %r27, 32, 32
+li %r0, 0
+std %r0, 0(%r31)
+std %r0, 8(%r31)
+std %r0, 16(%r31)
+std %r0, 24(%r31)
+std %r0, 32(%r31)
+std %r0, 40(%r31)
+std %r0, 48(%r31)
+std %r0, 56(%r31)
+std %r0, 64(%r31)
+std %r0, 72(%r31)
+std %r0, 80(%r31)
+std %r0, 88(%r31)
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+std %r0, 112(%r31)
+std %r0, 120(%r31)
+std %r0, 128(%r31)
+std %r0, 136(%r31)
+std %r0, 144(%r31)
+std %r0, 152(%r31)
+std %r0, 160(%r31)
+std %r0, 168(%r31)
+std %r0, 176(%r31)
+std %r0, 184(%r31)
+std %r0, 192(%r31)
+addi %r3, %r31, 0
+li %r4, 136
+li %r5, 0
+addi %r6, %r29, 0
+addi %r7, %r28, 0
+addi %r8, %r31, 200
+bl {vg_keccak_absorb_scratch}
+addi %r5, %r3, 0
+addi %r3, %r31, 0
+li %r4, 136
+li %r6, 31
+addi %r7, %r31, 200
+bl {vg_keccak_pad_scratch}
+addi %r3, %r31, 0
+li %r4, 136
+li %r5, 0
+addi %r6, %r31, 840
+li %r7, 272
+addi %r8, %r31, 200
+bl {vg_keccak_squeeze_scratch}
+li %r12, 0
+addi %r4, %r30, 0
+li %r6, 256
+20:
+stw %r12, 0(%r4)
+addi %r4, %r4, 4
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 20b
+ld %r9, 840(%r31)
+li %r5, 256
+subf %r5, %r27, %r5
+rldicr %r4, %r5, 2, 61
+add %r4, %r30, %r4
+addi %r3, %r31, 848
+li %r6, 264
+lis %r7, 127
+ori %r7, %r7, 57343
+21:
+addi %r12, %r5, -256
+rldicl %r12, %r12, 1, 63
+cmpldi %cr0, %r12, 0
+beq %cr0, 22f
+lbz %r8, 0(%r3)
+subf %r11, %r8, %r5
+rldicl %r11, %r11, 1, 63
+cmpldi %cr0, %r11, 0
+beq %cr0, 24f
+b 25f
+24:
+rldicr %r10, %r8, 2, 61
+add %r10, %r30, %r10
+lwz %r11, 0(%r10)
+stw %r11, 0(%r4)
+rldicr %r12, %r9, 63, 0
+rldicl %r12, %r12, 1, 63
+mulld %r12, %r12, %r7
+addi %r12, %r12, 1
+stw %r12, 0(%r10)
+rldicl %r9, %r9, 63, 1
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+25:
+b 23f
+22:
+23:
+addi %r3, %r3, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 21b
+rldicl %r3, %r5, 56, 8
+ld %r0, 2040(%r31)
+mtlr %r0
+ld %r27, 2000(%r31)
+ld %r28, 2008(%r31)
+ld %r29, 2016(%r31)
+ld %r30, 2024(%r31)
+ld %r31, 2032(%r31)
+blr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+    )
+}
