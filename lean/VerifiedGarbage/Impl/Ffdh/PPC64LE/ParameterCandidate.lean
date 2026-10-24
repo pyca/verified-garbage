@@ -14,7 +14,8 @@ Miller–Rabin round takes it): a header of 32 words, then arrays of `w + 2`
 words, `w` set for each modulus. The arguments and the candidate's state are
 in header words that neither the working space nor the round changes; the
 link register and the nonvolatile registers are saved in the last 160 bytes
-of `scratch`, and `r23` keeps `scratch` throughout. The algorithm is
+of `scratch`, and `r31` keeps `scratch` throughout (as `Env`, the working
+space of the Miller–Rabin proofs, has it). The algorithm is
 AArch64's (`Impl/Ffdh/AArch64/ParameterCandidate.lean`), in the steps of
 `Proof.Ffdh.ParameterCandidate.checkedCandidate`:
 
@@ -79,16 +80,16 @@ def hMinv : Nat := 7
 def hStride : Nat := 28
 
 /-- `r := ` header word `i`, and its store. -/
-def ldh (r : Reg) (i : Nat) : Instr := .load .d r .r23 (8 * i)
-def sth (r : Reg) (i : Nat) : Instr := .store .d r .r23 (8 * i)
+def ldh (r : Reg) (i : Nat) : Instr := .load .d r .r31 (8 * i)
+def sth (r : Reg) (i : Nat) : Instr := .store .d r .r31 (8 * i)
 
 /-- The bytes of the save area, at the end of `scratch`. -/
 def saveBytes : Nat := 160
 
-/-- The nonvolatile registers saved, `r23` last. -/
+/-- The nonvolatile registers saved, `r31` last. -/
 def saved (i : Nat) : Reg :=
-  [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31,
-    .r23].getD i .r14
+  [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30,
+    .r31].getD i .r14
 
 /-! ## Comparisons -/
 
@@ -103,18 +104,18 @@ def geFlag (d a b t : Reg) : List Instr :=
 
 /-- `scratch_len` from the stack; the save area at the end of `scratch`,
 in `r11`; the link register and the nonvolatile registers saved there; then
-`r23 := scratch` and the arguments in the header, `used := out_len`. -/
+`r31 := scratch` and the arguments in the header, `used := out_len`. -/
 def entry : List Instr :=
   [.addSp .r11 96, .load .d .r12 .r11 0, .lsl .r11 .r12 3, .add .r11 .r10 .r11, .subi .r11 .r11 saveBytes,
     .mflr .r0, .store .d .r0 .r11 144] ++
   (List.range 18).map (fun i => .store .d (saved i) .r11 (8 * i)) ++
-  [.addi .r23 .r10 0, sth .r12 hWsLen, sth .r3 hOut, sth .r4 hLen, sth .r4 hUsed, sth .r5 hUsedP,
+  [.addi .r31 .r10 0, sth .r12 hWsLen, sth .r3 hOut, sth .r4 hLen, sth .r4 hUsed, sth .r5 hUsedP,
     sth .r6 hBits, sth .r7 hGen, sth .r8 hRand, sth .r9 hRandLen]
 
-/-- The registers back from the save area, `r23` last, and the result
+/-- The registers back from the save area, `r31` last, and the result
 `r3`. -/
 def exit : List Instr :=
-  [ldh .r11 hWsLen, .lsl .r11 .r11 3, .add .r11 .r23 .r11, .subi .r11 .r11 saveBytes, .load .d .r0 .r11 144,
+  [ldh .r11 hWsLen, .lsl .r11 .r11 3, .add .r11 .r31 .r11, .subi .r11 .r11 saveBytes, .load .d .r0 .r11 144,
     .mtlr .r0] ++ (List.range 18).map (fun i => .load .d (saved i) .r11 (8 * i))
 
 /-- `out`'s `out_len` octets := 0. -/
@@ -136,7 +137,7 @@ arrays 0–7 in the header, and the checks, 128 for `mb ≥ 2049`, else 64. -/
 def phaseHead (q : Bool) : List Instr :=
   [ldh .r3 hBits] ++ (if q then [.subi .r3 .r3 1] else []) ++
   [sth .r3 hMb, .addi .r4 .r3 7, .lsr .d .r4 .r4 3, sth .r4 hK, .addi .r4 .r3 63, .lsr .d .r4 .r4 6, sth .r4 hW,
-    .lsl .r11 .r4 1, .lsl .r29 .r4 3, .addi .r29 .r29 16, sth .r29 hStride, .addi .r10 .r23 hdrBytes,
+    .lsl .r11 .r4 1, .lsl .r29 .r4 3, .addi .r29 .r29 16, sth .r29 hStride, .addi .r10 .r31 hdrBytes,
     .addi .r5 .r10 0] ++
   (List.range 8).flatMap (fun j => [sth .r5 (8 + j), .add .r5 .r5 .r29]) ++
   [.subi .r5 .r3 2049, .lsr .d .r5 .r5 63, .lsl .r5 .r5 6, .li .r6 128, .sub .r5 .r6 .r5, sth .r5 hChecks]
@@ -221,22 +222,23 @@ def minv32 : List Instr := [ldh .r12 hMinv, .lsl .r12 .r12 32, .lsr .d .r12 .r12
 
 /-- `r10`, `r11` and `r29` from the header, after the round. -/
 def regsBack : List Instr :=
-  [.addi .r10 .r23 hdrBytes, ldh .r11 hW, .lsl .r11 .r11 1, ldh .r29 hStride] ++ minv32
+  [.addi .r10 .r31 hdrBytes, ldh .r11 hW, .lsl .r11 .r11 1, ldh .r29 hStride] ++ minv32
 
-/-- `−N⁻¹`, `R² mod N` into array 1, `R mod N` into array 9 (the product of
-`R² mod N` and 1, in array 7), `N − R mod N` into array 10, and the
-exponent. -/
+/-- `−N⁻¹`, `R² mod N` into array 1, `R mod N` into array 6 (the product of
+`R² mod N` and 1, in array 7), `N − R mod N` into array 10, `R mod N`
+copied into array 9, and the exponent. -/
 def montPrep : Prog isa :=
   .seq (.block (minv64 ++ base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
-    (.seq PublicChecked.one (.seq (montOp 9 1 7)
-      (.seq (.block (base .r8 0 ++ base .r9 10 ++ base .r10 9)) (.seq subMod
-        (.seq (.block [.addi .r10 .r23 hdrBytes]) Impl.MillerRabin.PPC64LE.expSetup))))))
+    (.seq PublicChecked.one (.seq (montOp 6 1 7)
+      (.seq (.block (base .r8 0 ++ base .r9 10 ++ base .r10 6)) (.seq subMod
+        (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r15 6 ++ base .r14 9)) (.seq copyWords
+          Impl.MillerRabin.PPC64LE.expSetup)))))))
 
 /-- An accepted witness: in Montgomery form into array 5, the round called;
 then `hStat := 2` if it failed, else the passing witnesses counted and
 `hStat := 1` once there are `hChecks` of them. -/
 def round (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (montOp 5 4 1) (.seq (.block [.addi .r3 .r23 0, ldh .r4 hWsLen]) (.seq (.call name roundCode)
+  .seq (montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen]) (.seq (.call name roundCode)
     (.seq (.block regsBack)
       (.ite (.zero .d .r3) (.block [.li .r3 2, sth .r3 hStat])
         (.block [ldh .r3 hIdx, ldh .r4 hChecks, .addi .r3 .r3 1, sth .r3 hIdx, .sub .r4 .r4 .r3, .subi .r4 .r4 1,
@@ -249,7 +251,7 @@ zeroed, and N, into array 6), else nothing (`hStat` stays 4). -/
 def draw (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK, .add .r3 .r3 .r6, sth .r3 hUsed] ++
       base .r10 4))
-    (.seq loadN (.seq (.block ([.addi .r10 .r23 hdrBytes] ++ base .r5 4 ++ [.lsl .r6 .r11 2, .add .r5 .r5 .r6,
+    (.seq loadN (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r5 4 ++ [.lsl .r6 .r11 2, .add .r5 .r5 .r6,
         .subi .r5 .r5 8, ldh .r4 hTop, .load .d .r6 .r5 0, .logic .and .r6 .r6 .r4, .store .d .r6 .r5 0] ++
         base .r5 4 ++ [.load .d .r24 .r5 0, .lsr .d .r24 .r24 1, .addi .r5 .r5 8, .lsr .d .r6 .r11 1, .subi .r6 .r6 1]))
       (.seq (countLoop .r6 [.load .d .r3 .r5 0, .logic .or .r24 .r24 .r3, .addi .r5 .r5 8])
