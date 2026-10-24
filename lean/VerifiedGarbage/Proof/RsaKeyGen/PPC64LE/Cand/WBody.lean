@@ -36,10 +36,18 @@ def Inv (s : State) (B : Addr) (L w c ch : Nat) (r : Spec.RsaKeyGen.Rand) (n : N
   ∃ k, MrAt c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 (8 * w) r k n ∧
     St s B L w c r k t
 
-/-- After an iteration, before its test. -/
-def Mid (s : State) (B : Addr) (L w c rl ch : Nat) (r : Spec.RsaKeyGen.Rand) (n : Nat) (t : State) : Prop :=
-  (∃ m < n, Inv s B L w c ch r m t) ∨
-    (∃ v < 4, word t.mem B (8 * hStat) = BitVec.ofNat 64 v ∧ MrOut s B L w c rl r t)
+/-- Whether the loop goes on after the iteration that draws at offset
+`8 w (k + 1)`, with `n + 1` iterations left: enough octets, the witness
+passes, and more iterations are left. -/
+def MC (c w : Nat) (r : Spec.RsaKeyGen.Rand) (k n : Nat) : Prop :=
+  8 * w * (k + 1) + 8 * w ≤ r.length ∧ Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1
+    (Spec.Rsa.splitTwos (c - 1)).2 (wit c (8 * w) r (8 * w * (k + 1))).1 = true ∧ 0 < n
+
+/-- After an iteration from `k` witnesses passed, before its test. -/
+def Mid (s : State) (B : Addr) (L w c rl ch : Nat) (r : Spec.RsaKeyGen.Rand) (k n : Nat) (t : State) : Prop :=
+  (MC c w r k n ∧ MrAt c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 (8 * w) r (k + 1) (n - 1) ∧
+      St s B L w c r (k + 1) t) ∨
+    (¬ MC c w r k n ∧ ∃ v < 4, word t.mem B (8 * hStat) = BitVec.ofNat 64 v ∧ MrOut s B L w c rl r t)
 
 theorem used_succ (w k : Nat) : 8 * w * (k + 1) + 8 * w = 8 * w * (k + 1 + 1) := by
   rw [Nat.mul_add (8 * w) (k + 1) 1, Nat.mul_one]
@@ -54,7 +62,7 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
     (hi : St s B L w c r k t)
     (h5 : t.gpr .r5 = BitVec.ofNat 64 (if 8 * w ≤ rl - 8 * w * (k + 1) then 1 else 0)) :
     WP isa (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw R.name R.code)) t
-      (Mid s B L w c rl ch r n) := by
+      (Mid s B L w c rl ch r k n) := by
   have e := hi.prep.env
   have hs := e.hs
   have hnw := hs.nowrap
@@ -74,7 +82,7 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
       simp only [sth, hStat]; prun [e.h31, hs.st (d := 160) (n := 8) (by omega)]) (by decide)) fun t' ⟨tm, kt⟩ => ?_
     have st0 : word t'.mem B (8 * hStat) = BitVec.ofNat 64 0 := by rw [tm]; exact word_writeW_self _ _ _ _
     have wo := writeW_outside t.mem B (d := 8 * hStat) (BitVec.ofNat 64 0) (by simp only [hStat]; omega)
-    refine .inr ⟨0, by decide, st0, hi.toLKeep.write (d := hStat) (by simp [lpWords, hStat]) (by omega) kt tm
+    refine .inr ⟨fun h => hav h.1, 0, by decide, st0, hi.toLKeep.write (d := hStat) (by simp [lpWords, hStat]) (by omega) kt tm
       (by decide), hi.prep.keep (e.keep kt (by decide)) (fun d hd => ?_) (fun j hj => ?_), ?_⟩
     · have s0' : slot w 0 + 8 ≤ 8 * L := by rw [slot_lin]; omega
       have s27' : slot w 27 + 8 * w + 8 ≤ 8 * L := by rw [slot_lin]; omega
@@ -129,13 +137,13 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
         have hg' : (mrS c (8 * w) r k).1 + 1 ≤ Spec.RsaKeyGen.blindedChecks ∨
             (mrS c (8 * w) r k).2 + (if (wit c (8 * w) r (8 * w * (k + 1))).2 then 1 else 0) < ch := hg
         simp only [hg', ↓reduceIte] at hst
-        refine .inl ⟨n - 1, by omega, k + 1, ha', K, hd.prep, ?_, hid, hun, hst⟩
+        refine .inl ⟨⟨hav, hp, hn⟩, ha', K, hd.prep, ?_, hid, hun, hst⟩
         rw [hd.used, used_succ]
-      · obtain ⟨_, hpt⟩ := VG.Proof.RsaKeyGen.mrAt_done ha hwb hL hav hp hg
+      · obtain ⟨hn0, hpt⟩ := VG.Proof.RsaKeyGen.mrAt_done ha hwb hL hav hp hg
         have hg' : ¬ ((mrS c (8 * w) r k).1 + 1 ≤ Spec.RsaKeyGen.blindedChecks ∨
             (mrS c (8 * w) r k).2 + (if (wit c (8 * w) r (8 * w * (k + 1))).2 then 1 else 0) < ch) := hg
         simp only [hg', ↓reduceIte] at hst
-        refine .inr ⟨1, by decide, hst, K, hd.prep, ?_⟩
+        refine .inr ⟨fun h => by have := h.2.2; omega, 1, by decide, hst, K, hd.prep, ?_⟩
         rw [hpt]
         refine ⟨hst, ?_⟩
         rw [hd.used, List.length_drop]
@@ -146,7 +154,7 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
         rw [round_eq]; exact hp'
       obtain ⟨_, hpt⟩ := VG.Proof.RsaKeyGen.mrAt_fail ha hwb hL hav hp'
       simp only [hr, Bool.false_eq_true, ↓reduceIte] at hst
-      refine .inr ⟨2, by decide, hst, K, hd.prep, ?_⟩
+      refine .inr ⟨fun h => hp h.2.1, 2, by decide, hst, K, hd.prep, ?_⟩
       rw [hpt]
       refine ⟨hst, ?_⟩
       rw [hd.used, List.length_drop]
@@ -181,35 +189,35 @@ theorem loop_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch n : Nat
     hi.used ((hwd hK (by decide) (by decide)).trans P.kk) (by omega) (by omega) (by omega))
     fun t₁ ⟨⟨a5, m₁⟩, k₁⟩ => ?_)
   refine WP.seq (WP.mono (mid_ok R P ha (hi.keep k₁ m₁) a5) fun t₂ hm => ?_)
-  rcases hm with ⟨m, hmn, k', ha', hi'⟩ | ⟨v, hv, hst, ho⟩
+  rcases hm with ⟨hc, ha', hi'⟩ | ⟨-, v, hv, hst, ho⟩
   · have e' := hi'.prep.env
     have hZ' := e'.hZ
     rw [slot_lin] at hZ'
     exact WP.mono (tail_ok e'.hs e'.h31 (by omega) hi'.stat (by decide)) fun t₃ ⟨⟨ev, m₃⟩, k₃⟩ =>
-      .inr ⟨ev, m, hmn, k', ha', hi'.keep k₃ m₃⟩
+      .inr ⟨ev, n - 1, by have := hc.2.2; omega, k + 1, ha', hi'.keep k₃ m₃⟩
   · have e' := ho.prep.env
     have hZ' := e'.hZ
     rw [slot_lin] at hZ'
     exact WP.mono (tail_ok e'.hs e'.h31 (by omega) hst (by omega)) fun t₃ ⟨⟨ev, m₃⟩, k₃⟩ =>
       .inl ⟨by rw [ev, decide_eq_false (by omega)], ho.keep k₃ m₃⟩
 
-theorem millerRabin_ok (R : RoundImpl) {s : State} {B Ra : Addr} {L w c rl ch : Nat} {r : Spec.RsaKeyGen.Rand}
-    (P : LIn s B Ra L w c rl ch r) (hp : Prep s B L w c)
-    (hu0 : word s.mem B (8 * hUsed) = BitVec.ofNat 64 (8 * w)) (h8 : 8 * w ≤ rl) :
-    WP isa (VG.Impl.RsaKeyGen.PPC64LE.Witness.millerRabin R.name R.code) s (MrOut s B L w c rl r) := by
+/-- The loop's counts set up. -/
+abbrev mrInit : List Instr :=
+  [.li .r3 1, sth .r3 hIdx, .li .r3 0, sth .r3 hUni, .li .r3 4, sth .r3 hStat]
+
+theorem init_ok {s : State} {B : Addr} {L w c : Nat} {r : Spec.RsaKeyGen.Rand} (hp : Prep s B L w c)
+    (hu0 : word s.mem B (8 * hUsed) = BitVec.ofNat 64 (8 * w)) :
+    WP isa (.block mrInit) s (St s B L w c r 0) := by
   have e := hp.env
   have hs := e.hs
   have hnw := hs.nowrap
   have hZ := e.hZ
   have hw4 := e.hw
   rw [slot_lin] at hZ
-  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega : 1 ≤ w) P.shape
-  have hrl := tape_len P
-  unfold VG.Impl.RsaKeyGen.PPC64LE.Witness.millerRabin
-  refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun t => t.mem =
+  refine (WP.mono (WP.keep [.r3] (Q := fun t => t.mem =
       ((s.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 1)).writeW (off B (8 * hUni)) (BitVec.ofNat 64 0)).writeW
         (off B (8 * hStat)) (BitVec.ofNat 64 4)) (by
-    simp only [sth, hIdx, hUni, hStat]
+    simp only [mrInit, sth, hIdx, hUni, hStat]
     prun [e.h31, hs.st (d := 176) (n := 8) (by omega), hs.st (d := 16) (n := 8) (by omega),
       hs.st (d := 160) (n := 8) (by omega)]) (by decide)) fun t₀ ⟨tm, k₀⟩ => ?_)
   have o : Outs B [(8 * hIdx, 8), (8 * hUni, 8), (8 * hStat, 8)] s.mem t₀.mem := by
@@ -222,10 +230,7 @@ theorem millerRabin_ok (R : RoundImpl) {s : State} {B Ra : Addr} {L w c rl ch : 
     o.word (fun x hx => by
       simp only [hIdx, hUni, hStat, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> simp only [] <;> omega) h0
-  have hc := VG.Proof.RsaKeyGen.primalityTest_cand (by omega) P.shape (r.drop (8 * w))
-  rw [← P.hch] at hc
-  have h0 := VG.Proof.RsaKeyGen.mrAt_zero (ch := ch) hc hwb (by omega) (by omega)
-  refine loop_ok R P ⟨0, h0, ⟨fun d hd hk => ow d (by omega) (hk 2 (by decide)) (hk 20 (by decide)) (hk 22 (by decide)),
+  refine ⟨⟨fun d hd hk => ow d (by omega) (hk 2 (by decide)) (hk 20 (by decide)) (hk 22 (by decide)),
     Frame.mono (frame_of_outs o (Z := 8 * L) (fun x hx => by
       simp only [hIdx, hUni, hStat, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> simp only [] <;> omega)) (by simp),
@@ -251,5 +256,19 @@ theorem millerRabin_ok (R : RoundImpl) {s : State} {B Ra : Addr} {L w c rl ch : 
       (by simp only [hStat, hUni]; omega) (by simp only [hUni]; omega), word_writeW_self]
     rfl
   · rw [tm, word_writeW_self]
+
+
+theorem millerRabin_ok (R : RoundImpl) {s : State} {B Ra : Addr} {L w c rl ch : Nat} {r : Spec.RsaKeyGen.Rand}
+    (P : LIn s B Ra L w c rl ch r) (hp : Prep s B L w c)
+    (hu0 : word s.mem B (8 * hUsed) = BitVec.ofNat 64 (8 * w)) (h8 : 8 * w ≤ rl) :
+    WP isa (VG.Impl.RsaKeyGen.PPC64LE.Witness.millerRabin R.name R.code) s (MrOut s B L w c rl r) := by
+  have hw4 := hp.env.hw
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega : 1 ≤ w) P.shape
+  have hrl := tape_len P
+  have hc := VG.Proof.RsaKeyGen.primalityTest_cand (by omega) P.shape (r.drop (8 * w))
+  rw [← P.hch] at hc
+  have h0 := VG.Proof.RsaKeyGen.mrAt_zero (ch := ch) hc hwb (by omega) (by omega)
+  unfold VG.Impl.RsaKeyGen.PPC64LE.Witness.millerRabin
+  exact WP.seq (WP.mono (init_ok hp hu0) fun t ht => loop_ok R P ⟨0, h0, ht⟩)
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand
