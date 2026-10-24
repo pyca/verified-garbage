@@ -28,6 +28,7 @@ namespace VG.Proof.Ffdh.PPC64LE.ParameterCandidate
 
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
+open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 
 /-- The registers `shapeP` writes. -/
 def shRegs : List Reg := [.r0, .r4, .r5, .r6, .r12, .r14, .r15, .r16, .r17]

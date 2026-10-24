@@ -21,6 +21,7 @@ namespace VG.Proof.Ffdh.PPC64LE.ParameterCandidate
 
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
+open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 
 theorem low_flag (x : BitVec 64) : (x &&& 1#64) ^^^ 1#64 = 0#64 ↔ x.toNat % 2 = 1 := by
   have e : x &&& 1#64 = BitVec.ofNat 64 (x.toNat % 2) := by

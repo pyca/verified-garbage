@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Prep
+public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Search
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 
 /-!
@@ -50,38 +50,18 @@ namespace VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE
 open VG.Impl.Bignum.PPC64LE.PublicChecked (base montOp)
 open VG.Impl.Bignum.PPC64LE.Precompute (zeroWords loadN copyWords)
+open VG.Impl.MillerRabin.PPC64LE.Search
 
 /-! ## Header words
 
-Those that neither RSA's Montgomery layout (`w` in word 6, `−N⁻¹` in word 7,
-the arrays' addresses in words 8–15, their size in word 28) nor the round
-(words 1, 23, 26, 29 and 30) uses. -/
+The prime search's words are `Impl.MillerRabin.PPC64LE.Search`'s; these are
+the candidate's own (the words it leaves to its caller). -/
 
-def hWsLen : Nat := 0
 def hOut : Nat := 2
 def hLen : Nat := 3
 def hUsedP : Nat := 4
 def hBits : Nat := 5
 def hGen : Nat := 16
-def hRand : Nat := 17
-def hRandLen : Nat := 18
-def hUsed : Nat := 19
-def hStat : Nat := 20
-def hChecks : Nat := 21
-def hIdx : Nat := 22
-def hTop : Nat := 24
-def hBad : Nat := 25
-def hK : Nat := 27
-def hMb : Nat := 31
-
-/-- Header words of the layout. -/
-def hW : Nat := 6
-def hMinv : Nat := 7
-def hStride : Nat := 28
-
-/-- `r := ` header word `i`, and its store. -/
-def ldh (r : Reg) (i : Nat) : Instr := .load .d r .r31 (8 * i)
-def sth (r : Reg) (i : Nat) : Instr := .store .d r .r31 (8 * i)
 
 /-- The bytes of the save area, at the end of `scratch`. -/
 def saveBytes : Nat := 160
@@ -90,15 +70,6 @@ def saveBytes : Nat := 160
 def saved (i : Nat) : Reg :=
   [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30,
     .r31].getD i .r14
-
-/-! ## Comparisons -/
-
-/-- `d := 1` if `a ≥ b` (unsigned), else 0, through `r0` and `t`: the
-borrow of `a − b` is the top bit of `(¬a ∧ b) ∨ (¬(a ⊕ b) ∧ (a − b))`
-(`t` other than `r0`). -/
-def geFlag (d a b t : Reg) : List Instr :=
-  [.li t 0, .subi t t 1, .logic .xor .r0 a t, .logic .and .r0 .r0 b, .logic .xor d a b, .logic .xor d d t,
-    .sub t a b, .logic .and d d t, .logic .or d d .r0, .lsr .d d d 63, .li t 1, .logic .xor d d t]
 
 /-! ## Entry and exit -/
 
@@ -160,18 +131,6 @@ def shapeP : Prog isa :=
       .logic .and .r6 .r6 .r4, .lsr .d .r4 .r4 1, .addi .r4 .r4 1, .logic .or .r6 .r6 .r4, .store .d .r6 .r5 0,
       .load .d .r6 .r10 0, .li .r4 1, .logic .or .r6 .r6 .r4, .store .d .r6 .r10 0]))
 
-/-- `r3 := ` array 0 mod `r4` (for `r4` in 2..2^62), bit-serially from the
-top of its `w` words: `r3 := 2 r3 + b`, less `r4` if that is not negative.
-It writes `r3`, `r5`–`r9` and `r14`. -/
-def smallMod : Prog isa :=
-  .seq (.block [.lsl .r5 .r11 2, .add .r5 .r10 .r5, .lsr .d .r6 .r11 1, .li .r3 0])
-    (.loop (.seq (.block [.subi .r5 .r5 8, .load .d .r7 .r5 0, .li .r8 64])
-        (.seq (countLoop .r8 [.lsr .d .r9 .r7 63, .lsl .r7 .r7 1, .add .r3 .r3 .r3, .add .r3 .r3 .r9,
-            .sub .r9 .r3 .r4, .lsr .d .r14 .r9 63, .subi .r14 .r14 1, .logic .xor .r9 .r9 .r3,
-            .logic .and .r9 .r9 .r14, .logic .xor .r3 .r3 .r9])
-          (.block [.subi .r6 .r6 1])))
-      (.nonzero .d .r6))
-
 /-- The generator's congruence: `r = p mod e` (`e` 24 for generator 2, 10
 for 5); `hBad := r ⊕ 11` for generator 2, `(r | 4) ⊕ 7` for 5, zero iff
 `r = 11` or `r ∈ {3, 7}`. -/
@@ -182,21 +141,9 @@ def residue : Prog isa :=
       (.seq (.block [.li .r4 10]) (.seq smallMod (.block [.li .r4 4, .logic .or .r3 .r3 .r4, .li .r4 7,
         .logic .xor .r3 .r3 .r4, sth .r3 hBad]))))
 
-/-- The odd primes below 256. -/
-def sievePrimes : List Nat :=
-  [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103,
-    107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
-    227, 229, 233, 239, 241, 251]
-
-/-- `r22 |= ` (array 0 mod `d = 0`). -/
-def trial (d : Nat) : Prog isa :=
-  .seq (.block [.li .r4 d]) (.seq smallMod (.block [.subi .r3 .r3 1, .lsr .d .r3 .r3 63,
-    .logic .or .r22 .r22 .r3]))
-
 /-- The sieve: `hBad |= ` the flag of an odd prime below 256 dividing
 array 0. -/
-def sieve : Prog isa :=
-  .seq (.block [ldh .r22 hBad]) (sievePrimes.foldr (fun d c => .seq (trial d) c) (.block [sth .r22 hBad]))
+def sieve : Prog isa := VG.Impl.MillerRabin.PPC64LE.Search.sieve oddPrimes256
 
 /-- `q := p / 2` in place over the `w` words of array 0, and `hBad |= ` its
 evenness. -/
@@ -206,70 +153,6 @@ def halveQ : Prog isa :=
         .logic .or .r3 .r3 .r4, .store .d .r3 .r5 0, .addi .r5 .r5 8])
       (.block [.load .d .r3 .r5 0, .lsr .d .r3 .r3 1, .store .d .r3 .r5 0, ldh .r5 hBad, .load .d .r3 .r10 0,
         .li .r4 1, .logic .and .r3 .r3 .r4, .logic .xor .r3 .r3 .r4, .logic .or .r5 .r5 .r3, sth .r5 hBad]))
-
-/-! ## Miller–Rabin -/
-
-/-- `−N⁻¹ mod 2⁶⁴` into the header by Newton's iteration `x := x (2 − N x)`
-from `x = N` (five steps from three correct bits), and its low half into
-`r12` for `montOp`. -/
-def minv64 : List Instr :=
-  [.load .d .r0 .r10 0, .load .d .r12 .r10 0] ++
-    (List.range 5).flatMap (fun _ => [.mul .r3 .r0 .r12, .li .r4 2, .sub .r3 .r4 .r3, .mul .r12 .r12 .r3]) ++
-    [.li .r3 0, .sub .r3 .r3 .r12, sth .r3 hMinv, .lsl .r12 .r3 32, .lsr .d .r12 .r12 32]
-
-/-- `r12 :=` the low half of `−N⁻¹`, from the header. -/
-def minv32 : List Instr := [ldh .r12 hMinv, .lsl .r12 .r12 32, .lsr .d .r12 .r12 32]
-
-/-- `r10`, `r11` and `r29` from the header, after the round. -/
-def regsBack : List Instr :=
-  [.addi .r10 .r31 hdrBytes, ldh .r11 hW, .lsl .r11 .r11 1, ldh .r29 hStride] ++ minv32
-
-/-- `−N⁻¹`, `R² mod N` into array 1, `R mod N` into array 6 (the product of
-`R² mod N` and 1, in array 7), `N − R mod N` into array 10, `R mod N`
-copied into array 9, and the exponent. -/
-def montPrep : Prog isa :=
-  .seq (.block (minv64 ++ base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
-    (.seq PublicChecked.one (.seq (montOp 6 1 7)
-      (.seq (.block (base .r8 0 ++ base .r9 10 ++ base .r10 6)) (.seq subMod
-        (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r15 6 ++ base .r14 9)) (.seq copyWords
-          Impl.MillerRabin.PPC64LE.expSetup)))))))
-
-/-- An accepted witness: in Montgomery form into array 5, the round called;
-then `hStat := 2` if it failed, else the passing witnesses counted and
-`hStat := 1` once there are `hChecks` of them. -/
-def round (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen]) (.seq (.call name roundCode)
-    (.seq (.block regsBack)
-      (.ite (.zero .d .r3) (.block [.li .r3 2, sth .r3 hStat])
-        (.block [ldh .r3 hIdx, ldh .r4 hChecks, .addi .r3 .r3 1, sth .r3 hIdx, .sub .r4 .r4 .r3, .subi .r4 .r4 1,
-          .lsr .d .r4 .r4 63, .li .r5 3, .mul .r4 .r4 .r5, .li .r5 4, .sub .r4 .r5 .r4, sth .r4 hStat])))))
-
-/-- A draw: the next `hK` octets of `rand` into array 4 (`hUsed` advanced),
-the top word and'ed with `hTop`; the round for `x ≥ 2` and `(x | 1) < N`
-(the borrow of `subMod` of a copy of `x | 1`, in array 3 with its word `w`
-zeroed, and N, into array 6), else nothing (`hStat` stays 4). -/
-def draw (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK, .add .r3 .r3 .r6, sth .r3 hUsed] ++
-      base .r10 4))
-    (.seq loadN (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r5 4 ++ [.lsl .r6 .r11 2, .add .r5 .r5 .r6,
-        .subi .r5 .r5 8, ldh .r4 hTop, .load .d .r6 .r5 0, .logic .and .r6 .r6 .r4, .store .d .r6 .r5 0] ++
-        base .r5 4 ++ [.load .d .r24 .r5 0, .lsr .d .r24 .r24 1, .addi .r5 .r5 8, .lsr .d .r6 .r11 1, .subi .r6 .r6 1]))
-      (.seq (countLoop .r6 [.load .d .r3 .r5 0, .logic .or .r24 .r24 .r3, .addi .r5 .r5 8])
-        (.seq (.block (base .r14 3 ++ base .r15 4))
-          (.seq copyWords (.seq (.block (base .r5 3 ++ [.load .d .r3 .r5 0, .li .r4 1, .logic .or .r3 .r3 .r4,
-              .store .d .r3 .r5 0, .lsl .r6 .r11 2, .add .r5 .r5 .r6, .li .r0 0, .store .d .r0 .r5 0] ++ base .r8 3 ++
-              base .r9 6)) (.seq subMod
-            (.ite (.zero .d .r24) (.block [])
-              (.ite (.zero .d .r20) (.block []) (round name roundCode))))))))))
-
-/-- Witnesses while `hStat = 4`; 0 when fewer than `hK` octets of `rand`
-are left (`rand_len − used`, which does not wrap). -/
-def millerRabin (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block [.li .r3 0, sth .r3 hIdx, .li .r3 4, sth .r3 hStat])
-    (.loop (.seq (.block ([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] ++ geFlag .r5 .r3 .r4 .r6))
-        (.seq (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw name roundCode))
-          (.block [ldh .r3 hStat, .subi .r3 .r3 4])))
-      (.zero .d .r3))
 
 /-- The test of q (in array 0) or of p (loaded again). -/
 def test (q : Bool) (name : String) (roundCode : Prog isa) : Prog isa :=

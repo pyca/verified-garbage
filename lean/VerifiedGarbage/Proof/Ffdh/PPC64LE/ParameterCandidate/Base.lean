@@ -28,6 +28,7 @@ namespace VG.Proof.Ffdh.PPC64LE.ParameterCandidate
 
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
+open VG.Impl.MillerRabin.PPC64LE.Search
 
 /-- What the candidate depends on: the working space (`n` words at `B`),
 `out`, `used`, `bits`, the generator, and the tape at `rp`. -/

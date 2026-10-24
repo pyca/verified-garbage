@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Phase
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.SmallMod
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Sieve
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -21,6 +21,7 @@ namespace VG.Proof.Ffdh.PPC64LE.ParameterCandidate
 
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
+open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 
 /-- The congruence the generator asks of p. -/
 def goodRes (g x : Nat) : Prop := if g = 2 then x % 24 = 11 else x % 10 = 3 ∨ x % 10 = 7
@@ -32,15 +33,6 @@ theorem res2 : ∀ r < 24, (BitVec.ofNat 64 r ^^^ BitVec.ofNat 64 11 = 0#64 ↔ 
 
 theorem res5 : ∀ r < 10, ((BitVec.ofNat 64 r ||| BitVec.ofNat 64 4) ^^^ BitVec.ofNat 64 7 = 0#64 ↔ r = 3 ∨ r = 7) := by
   decide
-
-/-- `hBad` stored over `m`. -/
-theorem bad_post {m : Mem} {p : PP} {t : State} {v : BitVec 64} {P : Prop}
-    (tm : t.mem = m.writeW (p.B + BitVec.ofNat 64 200) v) (hv : v = 0#64 ↔ P) :
-    (word t.mem p.B (8 * hBad) = 0#64 ↔ P) ∧ Frm p.B [(8 * hBad, 8)] m t.mem := by
-  refine ⟨?_, ?_⟩
-  · simp only [word, off, hBad, Nat.reduceMul, tm, rw_self]; exact hv
-  · rw [tm]
-    exact frm_writeW (a := 200) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩ (by decide)
 
 theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
     WP isa residue s fun t =>
