@@ -54,12 +54,13 @@ structure SI (ws : Reg) (s₀ : State) (n : Nat) (s : State) : Prop where
   frame : Frame [savR (s₀.gpr ws)] s₀.mem s.mem
   saved : ∀ i < n, s.mem.readW (off (savW (s₀.gpr ws)) (8 * i)) 64 = s₀.gpr (saved i)
 
-theorem save_step {ws : Reg} (hws : ws ≠ .r0) (s₀ : State) (hin : savR (s₀.gpr ws) ∈ s₀.wr) {n : Nat}
+theorem save_step {ws : Reg} (hws : ws ≠ .r0) (s₀ : State)
+    (hin : ∀ i < 18, InRegions s₀.wr (off (savW (s₀.gpr ws)) (8 * i)) 8) {n : Nat}
     (hn : n < 18) {s : State} (h : SI ws s₀ n s) :
     WP isa (.block [.store .d (saved n) ws (saveOff n)]) s (SI ws s₀ (n + 1)) := by
   have hw : s.gpr ws = s₀.gpr ws := by rw [h.gpr]
   have hout : InRegions s.wr (s.gpr ws + BitVec.ofNat 64 (saveOff n)) 8 := by
-    rw [h.wr, hw, saveOff_eq]; exact ⟨_, hin, sav_contains _ hn⟩
+    rw [h.wr, hw, saveOff_eq]; exact hin n hn
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     exec_store_d hws (show saveOff n < 2 ^ 15 ∧ (saveOff n) % 4 = 0 by simp only [saveOff]; omega_using [hn])
@@ -78,7 +79,8 @@ structure Saved (ws : Reg) (s₀ : State) (s : State) : Prop where
   frame : Frame [savR (s₀.gpr ws)] s₀.mem s.mem
   saved : ∀ i < 18, s.mem.readW (off (savW (s₀.gpr ws)) (8 * i)) 64 = s₀.gpr (saved i)
 
-theorem save_ok {ws : Reg} (hws : ws ≠ .r0) (s₀ : State) (hin : savR (s₀.gpr ws) ∈ s₀.wr) :
+theorem save_ok {ws : Reg} (hws : ws ≠ .r0) (s₀ : State)
+    (hin : ∀ i < 18, InRegions s₀.wr (off (savW (s₀.gpr ws)) (8 * i)) 8) :
     WP isa (.block (save ws)) s₀ (Saved ws s₀) := by
   rw [save]
   refine WP.block_append (WP.mono (wp_range_flatMap (M := isa) (SI ws s₀)
@@ -104,13 +106,15 @@ structure RI (sB : State) (S : Addr) (v : Nat → BitVec 64) (n : Nat) (s : Stat
   sp : s.sp = sB.sp
   lr : s.lr = sB.lr
 
-theorem restore_step (sB : State) {S : Addr} {v : Nat → BitVec 64} (hsin : savR S ∈ sB.wr)
+theorem restore_step (sB : State) {S : Addr} {v : Nat → BitVec 64}
+    (hsin : ∀ i < 18, InRegions sB.wr (off (savW S) (8 * i)) 8)
     (hsav : ∀ i < 18, sB.mem.readW (off (savW S) (8 * i)) 64 = v i)
     {n : Nat} (hn : n < 17) {s : State} (h : RI sB S v n s) :
     WP isa (.block [.load .d (saved n) .r23 (saveOff n)]) s (RI sB S v (n + 1)) := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 (saveOff n)) 8 := by
     rw [h.rd, h.wr, h.r23, saveOff_eq]
-    exact ⟨_, List.mem_append_right _ hsin, sav_contains _ (by omega_using [hn])⟩
+    obtain ⟨r, hr, hc⟩ := hsin n (by omega_using [hn])
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
   have hv : s.mem.readW (S + BitVec.ofNat 64 (saveOff n)) 64 = v n := by
     rw [h.mem, saveOff_eq]; exact hsav n (by omega_using [hn])
   have hn23 := saved_ne n hn
@@ -131,7 +135,8 @@ theorem restore_step (sB : State) {S : Addr} {v : Nat → BitVec 64} (hsin : sav
 
 /-- `restore`, from a state whose saved words, at `r23`, hold `v`. -/
 theorem restore_ok (sB : State) {S : Addr} {v : Nat → BitVec 64} (hw : sB.gpr .r23 = S)
-    (hsin : savR S ∈ sB.wr) (hsav : ∀ i < 18, sB.mem.readW (off (savW S) (8 * i)) 64 = v i) :
+    (hsin : ∀ i < 18, InRegions sB.wr (off (savW S) (8 * i)) 8)
+    (hsav : ∀ i < 18, sB.mem.readW (off (savW S) (8 * i)) 64 = v i) :
     WP isa (.block restore) sB fun s =>
       (∀ i < 18, s.gpr (saved i) = v i) ∧ (∀ r, (∀ i < 18, r ≠ saved i) → s.gpr r = sB.gpr r) ∧
       s.mem = sB.mem ∧ s.rd = sB.rd ∧ s.wr = sB.wr ∧ s.sp = sB.sp ∧ s.lr = sB.lr := by
@@ -141,7 +146,8 @@ theorem restore_ok (sB : State) {S : Addr} {v : Nat → BitVec 64} (hw : sB.gpr 
     ⟨hw, fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩) fun s h => ?_)
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 (saveOff 17)) 8 := by
     rw [h.rd, h.wr, h.r23, saveOff_eq]
-    exact ⟨_, List.mem_append_right _ hsin, sav_contains _ (i := 17) (by decide)⟩
+    obtain ⟨r, hr, hc⟩ := hsin 17 (by decide)
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
   have hv : s.mem.readW (S + BitVec.ofNat 64 (saveOff 17)) 64 = v 17 := by
     rw [h.mem, saveOff_eq]; exact hsav 17 (by decide)
   apply WP.of_runBlock
