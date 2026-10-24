@@ -282,6 +282,31 @@ theorem lo_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State}
   refine WP.mono hk fun s' ⟨g8, g9, g, m, rd, wr, sp⟩ =>
     ⟨h.keep hp m (fun r a b _ _ _ => g r a b) rd wr sp, g8, by rw [g9, lo_eq]⟩
 
+/-- The load of the byte and the block of its low half-byte. -/
+theorem loHalf_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq}
+    {s : State} (h : Base σ X t L s) :
+    WP isa (.block ([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] ++ rbHalf η)) s
+      (H1 η σ X t L ((zAt X t).toNat % 16) ((zAt X t).setWidth 64)) := by
+  rw [WP.block_append_iff]
+  exact WP.mono (lo_ok hp ht h) fun s1 ⟨b1, e8, e9⟩ => e8 ▸ half_ok hp hη b1 e9
+
+/-- The block of the high half-byte, from the byte in `r8`. -/
+theorem hiHalf_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} {L : List Zq} {s : State}
+    (h : Base σ X t L s) (h8 : s.gpr .r8 = (zAt X t).setWidth 64) :
+    WP isa (.block (.lsr .d .r9 .r8 4 :: rbHalf η)) s
+      (H1 η σ X t L ((zAt X t).toNat / 16) ((zAt X t).setWidth 64)) := by
+  rw [← List.singleton_append, WP.block_append_iff]
+  have hk : WP isa (.block [.lsr .d .r9 .r8 4]) s fun s4 => s4 = s.write .r9 (s.gpr .r8 >>> 4) := by prun []
+  refine WP.mono hk fun s4 e4 => ?_
+  subst e4
+  have b4 : Base σ X t L (s.write .r9 (s.gpr .r8 >>> 4)) :=
+    h.keep hp rfl (fun r _ a _ _ _ => RegUpd.gpr_write_of_ne _ _ a) rfl rfl rfl
+  have h9 : (s.write .r9 (s.gpr .r8 >>> 4)).gpr .r9 = BitVec.ofNat 64 ((zAt X t).toNat / 16) := by
+    rw [RegUpd.gpr_write_self, h8, hi_eq]
+  have e : (s.write .r9 (s.gpr .r8 >>> 4)).gpr .r8 = (zAt X t).setWidth 64 := by
+    rw [RegUpd.gpr_write_of_ne _ _ (by decide), h8]
+  exact e ▸ half_ok hp hη b4 h9
+
 /-- The tries of an iteration, from its start, then `rest`. -/
 theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq}
     {s : State} (h : Base σ X t L s) {rest : Prog isa} {Q : State → Prop}
@@ -289,22 +314,10 @@ theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} 
     WP isa (.seq (.block ([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] ++ rbHalf η))
       (.seq (accept .r10) (.seq (.block (.lsr .d .r9 .r8 4 :: rbHalf η)) (.seq (accept .r10) rest)))) s Q := by
   rw [rbStep_tryJ] at hr
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (lo_ok hp ht h) fun s1 ⟨b1, e8, e9⟩ => WP.mono (half_ok hp hη b1 e9) fun s2 h2 => ?_
+  refine WP.seq (WP.mono (loHalf_ok hp hη ht h) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (try_ok hp hη (Nat.mod_lt _ (by decide)) h2) fun s3 ⟨b3, f8⟩ => ?_)
-  refine WP.seq ?_
-  rw [← List.singleton_append, WP.block_append_iff]
-  have hk : WP isa (.block [.lsr .d .r9 .r8 4]) s3 fun s4 =>
-      s4 = s3.write .r9 (s3.gpr .r8 >>> 4) := by prun []
-  refine WP.mono hk fun s4 e4 => ?_
-  subst e4
-  have b4 : Base σ X t (tryJ η L ((zAt X t).toNat % 16)) (s3.write .r9 (s3.gpr .r8 >>> 4)) :=
-    b3.keep hp rfl (fun r _ a _ _ _ => RegUpd.gpr_write_of_ne _ _ a) rfl rfl rfl
-  have h9 : (s3.write .r9 (s3.gpr .r8 >>> 4)).gpr .r9 = BitVec.ofNat 64 ((zAt X t).toNat / 16) := by
-    rw [RegUpd.gpr_write_self, f8, e8, hi_eq]
-  exact WP.mono (half_ok hp hη b4 h9) fun s5 h5 =>
-    WP.seq (WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega) h5) fun s6 h6 => hr s6 h6.1)
+  refine WP.seq (WP.mono (hiHalf_ok hp hη b3 f8) fun s5 h5 => ?_)
+  exact WP.seq (WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega) h5) fun s6 h6 => hr s6 h6.1)
 
 /-- The step, to iteration `t + 1`: `r6` zero iff it is the last. -/
 theorem step_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State} (h : Base σ X t L s) :
