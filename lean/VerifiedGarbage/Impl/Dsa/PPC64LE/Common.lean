@@ -26,8 +26,9 @@ The arithmetic is `Impl/Bignum/PPC64LE`'s and the Miller–Rabin round's
 `r29`, `2 w` in `r11`, the space in `r23` and `r31`, and `-m⁻¹ mod 2³²` in
 `r12` (`PublicChecked.minv`, again after every load, which uses `r12`).
 
-The P space's header keeps the functions' values in its words 0–13 (`hKey`,
-…), and the nonvolatile registers in its words 14–31; `r21` keeps `S`.
+The addresses and the lengths stay in registers that no arithmetic writes
+(`r21`, `r2`, `r26`–`r28`), so they are public throughout; the P space's
+header keeps the nonvolatile registers in its words 13–31.
 
 `checkKey` checks the public part of the key, `parametersValid` and `y`'s
 part of `keyValid`, on public values only, and branches on them:
@@ -51,63 +52,63 @@ open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE
 open VG.Impl.Bignum.PPC64LE.PublicChecked (base)
 open VG.Impl.MillerRabin.PPC64LE (eqMask copy)
 
-/-! ## The values kept in the P space's header -/
+/-! ## The values kept in registers
 
-/-- The key. -/
-def hKey : Nat := 0
-/-- `p_len`. -/
-def hP : Nat := 8
-/-- `q_len`. -/
-def hQ : Nat := 16
-/-- The Q space. -/
-def hQws : Nat := 24
-/-- The buffer. -/
-def hBuf : Nat := 32
-/-- The signature (verification) or the nonce (signing). -/
-def hSig : Nat := 40
-/-- The digest. -/
-def hDig : Nat := 48
-/-- The digest's octets the scalar takes: `min(digest_len, bitLength q / 8)`. -/
-def hDlen : Nat := 56
-/-- The output (signing). -/
-def hOut : Nat := 64
-/-- q's significant octets, `bitLength q / 8`. -/
-def hQb : Nat := 72
+`r21` keeps `S`; `r2` the lengths, `p_len | q_len << 16 | qb << 32 | d << 48`
+(`qb` q's significant octets, set by `sizes`, and `d = min(digest_len, 64)`);
+`r27` the key, `r28` the signature (or the nonce), `r26` the digest. No
+arithmetic writes them, so the addresses and the lengths are public
+throughout. -/
+
+/-- `rd := p_len`. -/
+def getP (rd : Reg) : List Instr := [.lsl rd .r2 48, .lsr .d rd rd 48]
+
+/-- `rd := q_len`. -/
+def getQ (rd : Reg) : List Instr := [.lsl rd .r2 32, .lsr .d rd rd 48]
+
+/-- `rd :=` q's significant octets. -/
+def getQb (rd : Reg) : List Instr := [.lsl rd .r2 16, .lsr .d rd rd 48]
+
+/-- `rd := min(digest_len, 64)`. -/
+def getD (rd : Reg) : List Instr := [.lsr .d rd .r2 48]
+
+/-- The header's word that keeps verification's mask of r's and s's ranges. -/
+def hMask : Nat := 0
 
 /-! ## Saving the nonvolatile registers -/
 
 /-- The nonvolatile registers saved, `r21` (which keeps `S`) last. -/
 def saved (i : Nat) : Reg :=
   [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31,
-    .r21].getD i .r14
+    .r2, .r21].getD i .r14
 
 /-- The byte offset of saved register `i` in the header. -/
-def saveOff (i : Nat) : Nat := 112 + 8 * i
+def saveOff (i : Nat) : Nat := 104 + 8 * i
 
 /-- Save them in the P space at `ws`, and keep its address in `r21`. -/
 def save (ws : Reg) : List Instr :=
-  (List.range 18).flatMap (fun i => [.store .d (saved i) ws (saveOff i)]) ++ [.addi .r21 ws 0]
+  (List.range 19).flatMap (fun i => [.store .d (saved i) ws (saveOff i)]) ++ [.addi .r21 ws 0]
 
 /-- Restore them, through `r21`, which is restored last. -/
 def restore : List Instr :=
-  (List.range 17).flatMap (fun i => [.load .d (saved i) .r21 (saveOff i)]) ++ [.load .d .r21 .r21 (saveOff 17)]
+  (List.range 18).flatMap (fun i => [.load .d (saved i) .r21 (saveOff i)]) ++ [.load .d .r21 .r21 (saveOff 18)]
 
 /-! ## The working spaces -/
 
-/-- `p_len` (`r6`) into the header, the Q space's address `S + slot (p_len / 8) 28
-= S + 704 + 28 p_len` and the buffer's (1600 octets on) into the header. -/
-def layout : List Instr :=
-  [.store .d .r6 .r21 hP, .li .r4 28, .mul .r4 .r4 .r6, .addi .r4 .r4 704, .add .r4 .r4 .r21,
-    .store .d .r4 .r21 hQws, .addi .r4 .r4 1600, .store .d .r4 .r21 hBuf]
+/-- `rd :=` the Q space, `S + 704 + 28 p_len` (`slot (p_len / 8) 28` on), through `t`. -/
+def qBase (rd t : Reg) : List Instr := getP rd ++ [.li t 28, .mul rd rd t, .addi rd rd 704, .add rd rd .r21]
+
+/-- `rd :=` the buffer, 1600 octets past the Q space, through `t`. -/
+def bufBase (rd t : Reg) : List Instr := qBase rd t ++ [.addi rd rd 1600]
 
 /-- Into the P space: `w = p_len / 8`. -/
 def enterP : List Instr :=
-  [.addi .r23 .r21 0, .addi .r31 .r21 0, .addi .r10 .r21 hdrBytes, .load .d .r11 .r21 hP,
-    .lsr .d .r11 .r11 3, .lsl .r29 .r11 3, .addi .r29 .r29 16, .lsl .r11 .r11 1]
+  [.addi .r23 .r21 0, .addi .r31 .r21 0, .addi .r10 .r21 hdrBytes] ++ getP .r11 ++
+    [.lsr .d .r11 .r11 3, .lsl .r29 .r11 3, .addi .r29 .r29 16, .lsl .r11 .r11 1]
 
 /-- Into the Q space: `w = 4`. -/
 def enterQ : List Instr :=
-  [.load .d .r23 .r21 hQws, .addi .r31 .r23 0, .addi .r10 .r23 hdrBytes, .li .r11 8, .li .r29 48]
+  qBase .r23 .r11 ++ [.addi .r31 .r23 0, .addi .r10 .r23 hdrBytes, .li .r11 8, .li .r29 48]
 
 /-- The `k = r6` octets at `r12`, most significant first, into array `j`, and
 the array's word `w` := 0 (as `subMod` reads it); then `r10` back to array 0. -/
@@ -142,12 +143,12 @@ of 8 times its `r16` significant octets, which is not zero. -/
 def bytesBits : Prog isa :=
   .seq sigLen (.ite (.zero .d .r16) (.block [.li .r0 1]) (.block topBit))
 
-/-- `r0 := 0` if the significant octets `(r27, r28)` are `(P, Q)`. -/
+/-- `r0 := 0` if the significant octets `(r24, r25)` are `(P, Q)`. -/
 def pairOk (P Q : Nat) : Prog isa :=
-  .seq (.block [.subi .r3 .r27 P, .subi .r4 .r28 Q, .logic .or .r3 .r3 .r4])
+  .seq (.block [.subi .r3 .r24 P, .subi .r4 .r25 Q, .logic .or .r3 .r3 .r4])
     (.ite (.zero .d .r3) (.block [.li .r0 0]) (.block []))
 
-/-- `r0 := 0` exactly when `(8 r27, 8 r28)` are supported sizes of p and q. -/
+/-- `r0 := 0` exactly when `(8 r24, 8 r25)` are supported sizes of p and q. -/
 def pairs : Prog isa :=
   .seq (.block [.li .r0 1]) (.seq (pairOk 128 20) (.seq (pairOk 256 20) (.seq (pairOk 256 28)
     (.seq (pairOk 256 32) (pairOk 384 32)))))
@@ -161,24 +162,24 @@ def odd : List Instr :=
 def andThen (c rest fail : Prog isa) : Prog isa := .seq c (.ite (.zero .d .r0) rest fail)
 
 /-- p's octets: the key, `p_len`. -/
-def ptrP : List Instr := [.load .d .r12 .r21 hKey, .load .d .r6 .r21 hP]
+def ptrP : List Instr := [.addi .r12 .r27 0] ++ getP .r6
 
 /-- q's octets: the key plus `p_len`, `q_len`. -/
-def ptrQ : List Instr := [.load .d .r12 .r21 hKey, .load .d .r0 .r21 hP, .add .r12 .r12 .r0, .load .d .r6 .r21 hQ]
+def ptrQ : List Instr := getP .r0 ++ [.add .r12 .r27 .r0] ++ getQ .r6
 
 /-- g's octets: the key plus `p_len + q_len`, `p_len`. -/
-def ptrG : List Instr :=
-  [.load .d .r12 .r21 hKey, .load .d .r6 .r21 hP, .add .r12 .r12 .r6, .load .d .r0 .r21 hQ, .add .r12 .r12 .r0]
+def ptrG : List Instr := getP .r6 ++ getQ .r0 ++ [.add .r12 .r27 .r6, .add .r12 .r12 .r0]
 
 /-- y's octets: the key plus `2 p_len + q_len`, `p_len`. -/
 def ptrY : List Instr := ptrG ++ [.add .r12 .r12 .r6]
 
-/-- The sizes: p's significant octets into `r27`, q's into `r28` and `hQb`,
-each with its top bit set, and a supported pair. -/
+/-- The sizes: p's significant octets into `r24`, q's into `r25` and `r2`'s
+`qb`, each with its top bit set, and a supported pair. -/
 def sizes (rest fail : Prog isa) : Prog isa :=
   andThen (.seq (.block ptrP) bytesBits)
-    (.seq (.block [.addi .r27 .r16 0]) (andThen (.seq (.block ptrQ) bytesBits)
-      (.seq (.block [.addi .r28 .r16 0, .store .d .r16 .r21 hQb]) (andThen pairs rest fail)) fail)) fail
+    (.seq (.block [.addi .r24 .r16 0]) (andThen (.seq (.block ptrQ) bytesBits)
+      (.seq (.block [.addi .r25 .r16 0, .lsl .r0 .r16 32, .logic .or .r2 .r2 .r0]) (andThen pairs rest fail))
+      fail)) fail
 
 /-- p and q odd. -/
 def odds (rest fail : Prog isa) : Prog isa :=
@@ -191,7 +192,7 @@ def unmask : List Instr := [.li .r4 1, .logic .and .r3 .r3 .r4, .logic .xor .r0 
 (`reduce` into array 1, compared with 1 in array 7). -/
 def pModQ : Prog isa :=
   .seq (.block enterQ) (.seq (.seq (.block ptrQ) (loadArr 0))
-    (.seq (.block [.load .d .r30 .r21 hKey, .load .d .r31 .r21 hP]) (.seq ModArith.reduce
+    (.seq (.block ([.addi .r30 .r27 0] ++ getP .r31)) (.seq ModArith.reduce
       (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask)))))))
 
 /-- In the P space: p into array 0, `R² mod p` into array 8 (and array 1). -/

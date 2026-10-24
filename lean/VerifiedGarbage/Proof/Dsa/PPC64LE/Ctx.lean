@@ -247,30 +247,75 @@ theorem QArr.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.Q o n m m') (h
     (hn : o + n ≤ 1600) : QArr L m m' :=
   h.mono ho (by omega)
 
-/-! ## The header -/
+/-! ## The values kept in registers -/
 
-/-- The values the header keeps from the entry. -/
-structure Hdr (m : Mem) (L : Lay) (key sig dig : Addr) : Prop where
-  key : word m L.S hKey = key
-  pl : word m L.S hP = BitVec.ofNat 64 L.pl
-  ql : word m L.S hQ = BitVec.ofNat 64 L.ql
-  qws : word m L.S hQws = L.Q
-  buf : word m L.S hBuf = L.Buf
-  sig : word m L.S hSig = sig
-  dig : word m L.S hDig = dig
+/-- The values kept in registers: `S`, the key, the signature (or the
+nonce), the digest, and `p_len` and `q_len` in `r2`'s low 32 bits. -/
+structure Regs (s : State) (L : Lay) (key sig dig : Addr) : Prop where
+  r21 : s.gpr .r21 = L.S
+  r27 : s.gpr .r27 = key
+  r28 : s.gpr .r28 = sig
+  r26 : s.gpr .r26 = dig
+  pl : (s.gpr .r2).toNat % 2 ^ 16 = L.pl
+  ql : (s.gpr .r2).toNat / 2 ^ 16 % 2 ^ 16 = L.ql
 
-/-- A header word, unchanged by a change in the body. -/
-theorem Body.word {L : Lay} {m m' : Mem} (h : Body L m m') (hZ : 256 ≤ L.Z) {d : Nat} (hd : d + 8 ≤ 256)
-    (hw : L.S.toNat + L.Z ≤ 2 ^ 64) : word m' L.S d = word m L.S d :=
-  Outside.word h (Or.inl hd) (by have := hZ; have := hw; omega)
+/-- The registers `Regs` reads. -/
+def regsRegs : List Reg := [.r2, .r21, .r26, .r27, .r28]
 
-theorem Hdr.body {L : Lay} {m m' : Mem} {key sig dig : Addr} (h : Hdr m L key sig dig) (hb : Body L m m')
-    (hL : L.Ok) : Hdr m' L key sig dig := by
-  have hZ : 256 ≤ L.Z := by have := hL.room; rcases hL.pl with e | e | e <;> omega
-  have w := fun {d : Nat} (hd : d + 8 ≤ 256) => hb.word hZ hd hL.nowrap
-  exact ⟨(w (by decide)).trans h.key, (w (by decide)).trans h.pl, (w (by decide)).trans h.ql,
-    (w (by decide)).trans h.qws, (w (by decide)).trans h.buf, (w (by decide)).trans h.sig,
-    (w (by decide)).trans h.dig⟩
+theorem Regs.keep {s t : State} {L : Lay} {key sig dig : Addr} {rs : List Reg} (h : Regs s L key sig dig)
+    (k : Keep rs s t) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Regs t L key sig dig :=
+  ⟨(k.gpr _ (hr _ (by decide))).trans h.r21, (k.gpr _ (hr _ (by decide))).trans h.r27,
+    (k.gpr _ (hr _ (by decide))).trans h.r28, (k.gpr _ (hr _ (by decide))).trans h.r26,
+    by rw [k.gpr _ (hr _ (by decide))]; exact h.pl, by rw [k.gpr _ (hr _ (by decide))]; exact h.ql⟩
+
+theorem shl_shr_ofNat (x : BitVec 64) (a : Nat) (ha : a = 16 ∨ a = 32 ∨ a = 48) :
+    x <<< a >>> 48 = BitVec.ofNat 64 (x.toNat % 2 ^ (64 - a) / 2 ^ (48 - a)) := by
+  apply BitVec.eq_of_toNat_eq
+  have hx := x.isLt
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
+    BitVec.toNat_ofNat]
+  rcases ha with rfl | rfl | rfl <;> simp only [Nat.reducePow, Nat.reduceSub] <;> omega
+
+/-- `getP rd`: `rd := p_len`. -/
+theorem getP_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig dig) (rd : Reg) :
+    WP isa (.block (getP rd)) s fun t => (t.gpr rd = BitVec.ofNat 64 L.pl ∧ t.mem = s.mem) ∧ Keep [rd] s t := by
+  refine WP.keep _ ?_ (by cases rd <;> decide)
+  unfold getP
+  prun [shl_shr_ofNat _ 48 (by decide)]
+  rw [← h.pl]
+  simp only [Nat.reduceSub, Nat.reducePow, Nat.pow_zero, Nat.div_one]
+
+/-- `getQ rd`: `rd := q_len`. -/
+theorem getQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : Regs s L key sig dig) (rd : Reg) :
+    WP isa (.block (getQ rd)) s fun t => (t.gpr rd = BitVec.ofNat 64 L.ql ∧ t.mem = s.mem) ∧ Keep [rd] s t := by
+  refine WP.keep _ ?_ (by cases rd <;> decide)
+  unfold getQ
+  prun [shl_shr_ofNat _ 32 (by decide)]
+  rw [← h.ql]
+  congr 1
+  omega
+
+/-- `getQb rd`: `rd :=` the 16 bits of `r2` from bit 32. -/
+theorem getQb_ok (s : State) (rd : Reg) :
+    WP isa (.block (getQb rd)) s fun t =>
+      (t.gpr rd = BitVec.ofNat 64 ((s.gpr .r2).toNat / 2 ^ 32 % 2 ^ 16) ∧ t.mem = s.mem) ∧ Keep [rd] s t := by
+  refine WP.keep _ ?_ (by cases rd <;> decide)
+  unfold getQb
+  prun [shl_shr_ofNat _ 16 (by decide)]
+  congr 1
+  omega
+
+/-- `getD rd`: `rd :=` `r2`'s top 16 bits. -/
+theorem getD_ok (s : State) (rd : Reg) :
+    WP isa (.block (getD rd)) s fun t =>
+      (t.gpr rd = BitVec.ofNat 64 ((s.gpr .r2).toNat / 2 ^ 48) ∧ t.mem = s.mem) ∧ Keep [rd] s t := by
+  refine WP.keep _ ?_ (by cases rd <;> decide)
+  unfold getD
+  prun
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
+  have := (s.gpr .r2).isLt
+  omega
 
 /-- `scratch` is a working space. -/
 abbrev ScrL (s : State) (L : Lay) : Prop := Scr s L.S L.Z
@@ -289,42 +334,75 @@ def enterRegs : List Reg := [.r10, .r11, .r23, .r29, .r31]
 
 /-- `enterP`: into the P space. -/
 theorem enterP_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hh : Hdr s.mem L key sig dig) (h21 : s.gpr .r21 = L.S) :
+    (hr : Regs s L key sig dig) :
     WP isa (.block enterP) s fun t => (InP t L ∧ t.mem = s.mem) ∧ Keep enterRegs s t := by
   have hw := hL.wp_ge
   have hw8 := hL.wp_eq
-  refine WP.keep _ ?_ (by decide)
   unfold enterP
-  have hld : InRegions (s.rd ++ s.wr) (L.S + BitVec.ofNat 64 8) 8 := hs.ld (show 8 + 8 ≤ L.Z by
-    have := hL.room; rcases hL.pl with e | e | e <;> omega)
-  have hr : s.mem.readW (L.S + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 L.pl := hh.pl
-  prun [h21, hld, hr, BitVec.add_zero, hdrBytes, hP]
-  have e3 : BitVec.ofNat 64 L.pl >>> 3 = BitVec.ofNat 64 L.wp := by
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rcases hL.pl with e | e | e <;> simp [e, Lay.wp]
-  have e16 : BitVec.ofNat 64 (8 * L.wp) + 16#64 = BitVec.ofNat 64 (8 * (L.wp + 2)) := by
-    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]; congr 1
-  rw [e3, Pub.ofNat_shl3, Pub.ofNat_shl1, e16]
-  refine ⟨⟨Scr.congr (hs.p hL) rfl, ?_, ?_, ?_, ?_, by omega, by omega, Nat.le_refl _⟩, ?_, ?_⟩ <;>
-    simp only [gpr_write, reduceCtorEq, ite_true, ite_false]
-  · simp [off, Lay.slot_eq]
-  · exact h21
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (WP.keep [.r23, .r31, .r10] (Q := fun u => u.gpr .r23 = L.S ∧ u.gpr .r31 = L.S ∧
+      u.gpr .r10 = L.S + BitVec.ofNat 64 256 ∧ u.mem = s.mem) (by prun [hr.r21, BitVec.add_zero, hdrBytes])
+      (by decide)) fun u ⟨⟨a23, a31, a10, mu⟩, ku⟩ => ?_
+  refine WP.mono (getP_ok (hr.keep ku) .r11) fun v ⟨⟨b11, mv⟩, kv⟩ => ?_
+  refine WP.mono (WP.keep [.r11, .r29] (Q := fun t => t.gpr .r11 = BitVec.ofNat 64 (2 * L.wp) ∧
+      t.gpr .r29 = BitVec.ofNat 64 (8 * (L.wp + 2)) ∧ t.mem = v.mem) ?_ (by decide))
+    fun t ⟨⟨c11, c29, mt⟩, kt⟩ => ?_
+  · have e3 : BitVec.ofNat 64 L.pl >>> 3 = BitVec.ofNat 64 L.wp := by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+      rcases hL.pl with e | e | e <;> simp [e, Lay.wp]
+    have e16 : BitVec.ofNat 64 (8 * L.wp) + 16#64 = BitVec.ofNat 64 (8 * (L.wp + 2)) := by
+      rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]; congr 1
+    prun [b11, e3, Pub.ofNat_shl3, Pub.ofNat_shl1, e16]
+  · have k := (ku.trans kv).trans kt
+    refine ⟨⟨⟨⟨Scr.congr (hs.p hL) k.wr, ?_, c29, c11, ?_, by omega, by omega, Nat.le_refl _⟩,
+      (k.gpr .r21 (by decide)).trans hr.r21, ?_⟩, by rw [mt, mv, mu]⟩, k.mono (by decide)⟩
+    · rw [kt.gpr .r10 (by decide), kv.gpr .r10 (by decide), a10]; simp [off, Lay.slot_eq]
+    · rw [kt.gpr .r31 (by decide), kv.gpr .r31 (by decide), a31]
+    · rw [kt.gpr .r23 (by decide), kv.gpr .r23 (by decide), a23]
+
+theorem q_addr {L : Lay} (hL : L.Ok) :
+    BitVec.ofNat 64 L.pl * BitVec.ofNat 64 28 + BitVec.ofNat 64 704 + L.S = L.Q := by
+  rw [Lay.Q, off, hL.qOff_eq, BitVec.ofNat_mul_ofNat, BitVec.ofNat_add_ofNat, BitVec.add_comm]
+  congr 2
+  omega
+
+/-- The registers `qBase` is used with. -/
+def qPairs : List (Reg × Reg) := [(.r23, .r11), (.r24, .r0), (.r30, .r0), (.r12, .r0)]
+
+/-- `qBase rd t`: `rd :=` the Q space. -/
+theorem qBase_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hr : Regs s L key sig dig) {rd t : Reg}
+    (hp : (rd, t) ∈ qPairs) :
+    WP isa (.block (qBase rd t)) s fun u => (u.gpr rd = L.Q ∧ u.mem = s.mem) ∧ Keep [rd, t] s u := by
+  unfold qBase
+  rw [WP.block_append_iff]
+  refine WP.mono (getP_ok hr rd) fun v ⟨⟨a, mv⟩, kv⟩ => ?_
+  have h21 : v.gpr .r21 = L.S := (kv.gpr .r21 (by simp [qPairs] at hp; rcases hp with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide)).trans hr.r21
+  have hq := q_addr hL
+  refine WP.mono (WP.keep [rd, t] (Q := fun u => u.gpr rd = L.Q ∧ u.mem = v.mem) ?_ ?_)
+    fun u ⟨⟨b, mu⟩, ku⟩ => ⟨⟨b, by rw [mu, mv]⟩, (kv.trans ku).mono (by
+      intro r hr; simp at hr ⊢; omega)⟩
+  all_goals simp only [qPairs, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp
+  all_goals rcases hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  all_goals first | decide | prun [a, h21, exec_mul, hq]
 
 /-- `enterQ`: into the Q space. -/
 theorem enterQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hh : Hdr s.mem L key sig dig) (h21 : s.gpr .r21 = L.S) :
+    (hr : Regs s L key sig dig) :
     WP isa (.block enterQ) s fun t => (InQ t L ∧ t.mem = s.mem) ∧ Keep enterRegs s t := by
-  refine WP.keep _ ?_ (by decide)
   unfold enterQ
-  have hld : InRegions (s.rd ++ s.wr) (L.S + BitVec.ofNat 64 24) 8 := hs.ld (show 24 + 8 ≤ L.Z by
-    have := hL.room; rcases hL.pl with e | e | e <;> omega)
-  have hr : s.mem.readW (L.S + BitVec.ofNat 64 24) 64 = L.Q := hh.qws
-  prun [h21, hld, hr, BitVec.add_zero, hdrBytes, hQws]
-  refine ⟨⟨Scr.congr (hs.q hL) rfl, ?_, ?_, ?_, ?_, by decide, by decide, by decide⟩, ?_, ?_⟩ <;>
-    simp only [gpr_write, reduceCtorEq, ite_true, ite_false]
-  · simp only [Lay.Q, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; rfl
-  · exact h21
+  rw [WP.block_append_iff]
+  refine WP.mono (qBase_ok hL hr (by decide)) fun v ⟨⟨a, mv⟩, kv⟩ => ?_
+  have h21 : v.gpr .r21 = L.S := (kv.gpr .r21 (by decide)).trans hr.r21
+  refine WP.mono (WP.keep [.r31, .r10, .r11, .r29] (Q := fun t => t.gpr .r31 = L.Q ∧
+      t.gpr .r10 = L.Q + BitVec.ofNat 64 256 ∧ t.gpr .r11 = BitVec.ofNat 64 8 ∧
+      t.gpr .r29 = BitVec.ofNat 64 48 ∧ t.mem = v.mem) (by prun [a, BitVec.add_zero, hdrBytes]) (by decide))
+    fun t ⟨⟨c31, c10, c11, c29, mt⟩, kt⟩ => ?_
+  have k := kv.trans kt
+  refine ⟨⟨⟨⟨Scr.congr (hs.q hL) k.wr, ?_, c29, c11, c31, by decide, by decide, by decide⟩,
+    (k.gpr .r21 (by decide)).trans hr.r21, (kt.gpr .r23 (by decide)).trans a⟩, by rw [mt, mv]⟩,
+    k.mono (by decide)⟩
+  rw [c10]; simp [off, Lay.slot_eq]
 
 /-! ## Buffers apart from `scratch` -/
 

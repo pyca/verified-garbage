@@ -10,7 +10,7 @@ signature = r7, signature_len = r8, digest = r9, digest_len = r10,
 scratch, scratch_len)`, `scratch` and `scratch_len` on the stack. After
 `checkKey` (`Common.lean`), which branches on the public key only:
 
-* in the Q space, the mask `r26` of `0 < r < q` and `0 < s < q` (`subMod`'s
+* in the Q space, the mask of `0 < r < q` and `0 < s < q` (`subMod`'s
   borrow and `eqMask` with 0), `R² mod q` (into array 8 too), `q − 2`
   (two `subMod`s of 1) to the buffer, `w = s^(q − 2) mod q` (`powSecret` over its
   octets), then `u1 = z w mod q` and `u2 = r w mod q` (two Montgomery
@@ -32,31 +32,28 @@ open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE
 open VG.Impl.Bignum.PPC64LE.PublicChecked (base montOp minv one)
 open VG.Impl.MillerRabin.PPC64LE (eqMask copy)
 
-/-- The working space from the stack, the registers saved there, and the
-arguments kept in the header: the key, `q_len`, the signature, the digest
-and its length; then the layout from `p_len`. -/
+/-- `min(digest_len, 64)` into `r4`, without a branch: `r10` unless
+`r10 >> 6` is not zero. -/
+def capD : List Instr :=
+  [.lsr .d .r4 .r10 6, .li .r0 0, .sub .r4 .r0 .r4, .lsr .d .r4 .r4 63, .sub .r4 .r0 .r4, .li .r0 64,
+    .logic .xor .r0 .r10 .r0, .logic .and .r0 .r0 .r4, .logic .xor .r4 .r10 .r0]
+
+/-- The working space from the stack, the registers saved there, the key,
+the signature and the digest into `r27`, `r28` and `r26`, and the lengths into
+`r2`. -/
 def entry : List Instr :=
   [.addSp .r11 96, .load .d .r11 .r11 0] ++ save .r11 ++
-    [.store .d .r3 .r21 hKey, .store .d .r6 .r21 hQ, .store .d .r7 .r21 hSig, .store .d .r9 .r21 hDig,
-      .store .d .r10 .r21 hDlen, .addi .r6 .r5 0] ++ layout
-
-/-- `hDlen := min(digest_len, q's significant octets)`: `digest_len` if it is
-below 64 and below them, else them. -/
-def digestLen : Prog isa :=
-  .seq (.block [.load .d .r3 .r21 hDlen, .load .d .r4 .r21 hQb, .lsr .d .r0 .r3 6])
-    (.ite (.zero .d .r0)
-      (.seq (.block [.sub .r0 .r4 .r3, .lsr .d .r0 .r0 63])
-        (.ite (.zero .d .r0) (.block []) (.block [.store .d .r4 .r21 hDlen])))
-      (.block [.store .d .r4 .r21 hDlen]))
+    [.addi .r27 .r3 0, .addi .r28 .r7 0, .addi .r26 .r9 0] ++ capD ++
+    [.lsl .r4 .r4 48, .lsl .r0 .r6 16, .logic .or .r2 .r5 .r0, .logic .or .r2 .r2 .r4]
 
 /-- r's octets: the signature, `q_len`. -/
-def ptrR : List Instr := [.load .d .r12 .r21 hSig, .load .d .r6 .r21 hQ]
+def ptrR : List Instr := [.addi .r12 .r28 0] ++ getQ .r6
 
 /-- s's octets: the signature plus `q_len`, `q_len`. -/
 def ptrS : List Instr := ptrR ++ [.add .r12 .r12 .r6]
 
 /-- The buffer, `q_len` octets. -/
-def ptrBuf : List Instr := [.load .d .r12 .r21 hBuf, .load .d .r6 .r21 hQ]
+def ptrBuf : List Instr := bufBase .r12 .r0 ++ getQ .r6
 
 /-- The buffer from `q_len` on, `q_len` octets. -/
 def ptrBuf2 : List Instr := ptrBuf ++ [.add .r12 .r12 .r6]
@@ -64,16 +61,18 @@ def ptrBuf2 : List Instr := ptrBuf ++ [.add .r12 .r12 .r6]
 /-- 0 into array `j`. -/
 def zeroArr (j : Nat) : Prog isa := .seq (.block (base .r14 j)) Precompute.zeroWords
 
-/-- `r26 &=` the mask of `0 < [a] < q`, with 0 in array 7. -/
+/-- `r22 &=` the mask of `0 < [a] < q`, with 0 in array 7. -/
 def inRange (a : Nat) : Prog isa :=
   .seq (.block (base .r8 a ++ base .r9 3)) (.seq subMod (.seq (eqMask .r19 a 7)
-    (.block (clear19 ++ [.logic .and .r26 .r26 .r20]))))
+    (.block (clear19 ++ [.logic .and .r22 .r22 .r20]))))
 
 /-- In the Q space: q in array 0; r into array 5 and s into array 6, and
-`r26 :=` the mask of both in range. -/
+the header's word `hMask` := the mask of both in range (secret: it stays in
+memory). -/
 def ranges : Prog isa :=
   .seq (.block (enterQ ++ ptrR)) (.seq (loadArr 5) (.seq (.block ptrS) (.seq (loadArr 6)
-    (.seq (zeroArr 7) (.seq (.block [.li .r26 0, .subi .r26 .r26 1]) (.seq (inRange 5) (inRange 6)))))))
+    (.seq (zeroArr 7) (.seq (.block [.li .r22 0, .subi .r22 .r22 1]) (.seq (inRange 5) (.seq (inRange 6)
+      (.block [.store .d .r22 .r21 hMask]))))))))
 
 /-- `R² mod q` into array 1 and array 8. -/
 def rrQ : Prog isa :=
@@ -93,11 +92,16 @@ def inverse : Prog isa :=
     (.seq (.block (ptrBuf ++ [.addi .r30 .r12 0, .addi .r31 .r6 0] ++ minv)) (.seq ModExp.powSecret
       (.block [.addi .r31 .r23 0])))))
 
-/-- The digest's scalar into array 6: its first `hDlen` octets, or 0 if there
-are none. -/
+/-- `r6 := min(digest_len, qb)`: `min(digest_len, 64)` unless above `qb`
+(both at most 64). -/
+def scalarLen : Prog isa :=
+  .seq (.block (getQb .r6 ++ getD .r0 ++ [.sub .r3 .r6 .r0, .lsr .d .r3 .r3 63]))
+    (.ite (.zero .d .r3) (.block [.logic .or .r6 .r0 .r0]) (.block []))
+
+/-- The digest's scalar into array 6: its first `min(digest_len, qb)`
+octets, or 0 if there are none. -/
 def scalar : Prog isa :=
-  .seq (.block [.load .d .r12 .r21 hDig, .load .d .r6 .r21 hDlen])
-    (.ite (.zero .d .r6) (zeroArr 6) (loadArr 6))
+  .seq scalarLen (.seq (.block [.addi .r12 .r26 0]) (.ite (.zero .d .r6) (zeroArr 6) (loadArr 6)))
 
 /-- `u1 = z w mod q` into array 6 and `u2 = r w mod q` into array 5, then both
 to the buffer. -/
@@ -109,28 +113,28 @@ def products : Prog isa :=
 /-- In the P space, the power of the number at `r12` (`p_len` octets) by the
 `q_len` octets at `r24`, into array 4. -/
 def powP : Prog isa :=
-  .seq (.block [.load .d .r6 .r21 hP]) (.seq (loadArr 4) (.seq (copy 1 8)
-    (.seq (.block ([.addi .r30 .r24 0, .load .d .r31 .r21 hQ] ++ minv)) (.seq ModExp.powSecret
+  .seq (.block (getP .r6)) (.seq (loadArr 4) (.seq (copy 1 8)
+    (.seq (.block ([.addi .r30 .r24 0] ++ getQ .r31 ++ minv)) (.seq ModExp.powSecret
       (.block [.addi .r31 .r23 0])))))
 
 /-- `v = g^u1 y^u2 mod p` into array 7, then to the buffer (`p_len` octets). -/
 def combine : Prog isa :=
-  .seq (.block (enterP ++ ptrG ++ [.load .d .r24 .r21 hBuf])) (.seq powP (.seq (copy 9 4)
+  .seq (.block (enterP ++ ptrG ++ bufBase .r24 .r0)) (.seq powP (.seq (copy 9 4)
     (.seq (.block (ptrBuf2 ++ [.addi .r24 .r12 0] ++ ptrY)) (.seq powP (.seq (copy 1 8)
       (.seq (.block minv) (.seq (montOp 5 4 1) (.seq (copy 6 9) (.seq (montOp 7 6 5)
-        (.seq (.block [.load .d .r12 .r21 hBuf, .load .d .r6 .r21 hP]) (storeBE 7)))))))))))
+        (.seq (.block (bufBase .r12 .r0 ++ getP .r6)) (storeBE 7)))))))))))
 
 /-- In the Q space, `v mod q` (`reduce` of the buffer's `p_len` octets) into
-array 1, r into array 5, and `r3 :=` 1 if they are equal and `r26` is all
-ones, else 0. -/
+array 1, r into array 5, and `r3 :=` 1 if they are equal and the mask in
+`hMask` is all ones, else 0. -/
 def compare : Prog isa :=
-  .seq (.block (enterQ ++ [.load .d .r30 .r21 hBuf, .load .d .r31 .r21 hP])) (.seq ModArith.reduce
+  .seq (.block (enterQ ++ bufBase .r30 .r0 ++ getP .r31)) (.seq ModArith.reduce
     (.seq (.block ([.addi .r31 .r23 0] ++ ptrR)) (.seq (loadArr 5) (.seq (eqMask .r3 1 5)
-      (.block [.logic .and .r3 .r3 .r26, .li .r0 1, .logic .and .r3 .r3 .r0])))))
+      (.block [.load .d .r4 .r21 hMask, .logic .and .r3 .r3 .r4, .li .r0 1, .logic .and .r3 .r3 .r0])))))
 
 /-- The verification, after the check of the key. -/
 def body : Prog isa :=
-  .seq digestLen (.seq ranges (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products (.seq combine compare))))))
+  .seq ranges (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products (.seq combine compare)))))
 
 /-- `vg_dsa_verify`. -/
 def verify : Prog isa :=

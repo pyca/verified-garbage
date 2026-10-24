@@ -92,14 +92,16 @@ theorem sig_kept {s : State} {L : Lay} {sig dig : Addr} {D : Nat} (hsg : Src s L
     simp only [rOf]; rw [e]
   · simp only [sOf]; rw [(hsg.sub (o := L.ql) (k := L.ql) (by omega)).kept h hZ]
 
-/-- Every register but `r21` (which keeps `S`). -/
+/-- Every register but `r2` (the TOC pointer, never written) and `r21` (which keeps `S`). -/
 def notR21 : List Reg :=
-  [.r0, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20,
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20,
     .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
 
-theorem keep_but21 {rs : List Reg} {s t : State} (h : Keep rs s t) (hr : Reg.r21 ∉ rs) : Keep notR21 s t :=
+theorem keep_but21 {rs : List Reg} {s t : State} (h : Keep rs s t) (hr : Reg.r21 ∉ rs) (hr2 : Reg.r2 ∉ rs) :
+    Keep notR21 s t :=
   h.mono fun r hm => by
     have : r ≠ .r21 := fun e => hr (e ▸ hm)
+    have : r ≠ .r2 := fun e => hr2 (e ▸ hm)
     cases r <;> simp_all [notR21]
 
 /-- The registers `Verify.body` writes: all but `r21`. -/
@@ -219,7 +221,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {D : Nat}
     fun t ⟨⟨r3, Bt⟩, kt⟩ => ?_
   rw [q0₇, v₇, (sig_kept hsg hdg K₇ (by omega) (Nat.zero_le D)).1] at r3
   refine ⟨⟨?_, K₁.trans (Kept.ofBody hL ((B₁₆.trans B₇).trans Bt)), (kt.gpr .r21 (by decide)).trans ip₇.h21,
-    scr.congr (k₁₇.trans kt).wr⟩, keep_but21 (k₁₇.trans kt) (by decide)⟩
+    scr.congr (k₁₇.trans kt).wr⟩, keep_but21 (k₁₇.trans kt) (by decide) (by decide)⟩
   rw [r3]
   refine congrArg (BitVec.ofNat 64) (ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl))
   unfold vComp
