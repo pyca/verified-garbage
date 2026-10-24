@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
 import VerifiedGarbage.Proof.Rsa.X86.RvMontPower
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
-import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase

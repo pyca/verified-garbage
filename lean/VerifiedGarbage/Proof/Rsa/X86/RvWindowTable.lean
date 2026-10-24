@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
-public import VerifiedGarbage.Proof.Rsa.X86.RvMont
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
+import VerifiedGarbage.Proof.Rsa.X86.RvMont
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # The candidate's window table, and the scan that reads its entries
 

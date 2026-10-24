@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvMont
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 
 /-! # Arithmetic preparation supplies the candidate search's public context -/
 
