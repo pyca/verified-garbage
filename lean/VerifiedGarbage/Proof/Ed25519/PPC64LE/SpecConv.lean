@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Ed25519.Point32
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Power
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
 # Ed25519 on PPC64LE: the elements as the contracts read them

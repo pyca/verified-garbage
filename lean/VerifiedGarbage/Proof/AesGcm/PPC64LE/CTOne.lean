@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: the pieces of `seal` and `open` are constant time

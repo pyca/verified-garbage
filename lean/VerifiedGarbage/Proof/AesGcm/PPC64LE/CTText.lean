@@ -15,6 +15,8 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+meta import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: `textAbsorb` is constant time

@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Spec.Pbkdf2
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: a step of `iterate`

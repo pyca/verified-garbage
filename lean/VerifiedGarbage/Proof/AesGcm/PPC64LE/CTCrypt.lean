@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+meta import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: `crypt` is constant time

@@ -7,6 +7,7 @@ public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
 # Ed25519 on PPC64LE: adding a power if its bit is set

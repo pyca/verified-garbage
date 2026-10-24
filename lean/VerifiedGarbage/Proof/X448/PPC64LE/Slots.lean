@@ -1,11 +1,12 @@
 module
 public import VerifiedGarbage.Proof.X448.PPC64LE.Field
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
+import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
 
 import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.X448.PPC64LE.Cswap
 import VerifiedGarbage.Proof.X448.PPC64LE.AddSub
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 
 /-!
 # X448 on PPC64LE: the field elements the working space holds

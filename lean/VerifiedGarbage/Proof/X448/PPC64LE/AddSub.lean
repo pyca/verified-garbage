@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.PPC64LE.Field
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.PPC64LE.Pass
 
 /-!
 # X448 on PPC64LE: sums and differences

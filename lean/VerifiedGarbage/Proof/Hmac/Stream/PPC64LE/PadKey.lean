@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!

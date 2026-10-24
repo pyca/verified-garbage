@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+import VerifiedGarbage.Impl.AesGcm.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Aes.Circuit
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+public meta import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # AES-GCM on PPC64LE: where everything is
