@@ -11,8 +11,8 @@
 //! replaces with the counter block to continue from, in constant time: its
 //! timing depends on none of the key, the counter block and the data. It
 //! uses bitsliced SM4 in general-purpose registers, with no table lookups:
-//! sixteen counter blocks at a time on 64-bit targets, eight on ARMv7,
-//! and one on x86. This module holds the key schedule and
+//! sixteen counter blocks at a time on x86-64 and AArch64, eight on ARMv7,
+//! and one on x86 and PPC64LE. This module holds the key schedule and
 //! handles a partial last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the
 //! last bytes padded to a block XORs them with the first bytes of the next
 //! output block.
@@ -24,7 +24,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
