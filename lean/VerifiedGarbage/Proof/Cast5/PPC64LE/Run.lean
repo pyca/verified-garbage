@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Impl.Cast5.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # CAST5 on PPC64LE: running blocks

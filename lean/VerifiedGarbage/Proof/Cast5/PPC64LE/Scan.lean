@@ -4,7 +4,10 @@ public import VerifiedGarbage.Proof.Cast5.PPC64LE.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # CAST5 on PPC64LE: the scan of a table

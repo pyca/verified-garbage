@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.Round
-public import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Spec.Cast5
 
 /-!
 # CAST5 on PPC64LE: the block function
@@ -167,7 +172,7 @@ theorem load_ok {s : State} {pr : Reg} {p kb : Addr} {n : Nat} (h : BPre s pr p 
     (k : ∀ u, Keep [xL, tmp, xR] s u → u.mem = s.mem →
       lo (u.gpr xL) = (Spec.Cast5.decodeBlock (Spec.Cast5.blockAt s.mem p)).1 →
       lo (u.gpr xR) = (Spec.Cast5.decodeBlock (Spec.Cast5.blockAt s.mem p)).2 → WP isa (.block is) u Q) :
-    WP isa (.block ([.loadRev .w xL pr zero, .addi tmp pr 4, .loadRev .w xR tmp zero] ++ is)) s Q := by
+    WP isa (.block (([.loadRev .w xL pr zero, .addi tmp pr 4, .loadRev .w xR tmp zero] : List Instr) ++ is)) s Q := by
   have in0 : InRegions (s.rd ++ s.wr) p 4 := by
     obtain ⟨g, hg, hc⟩ := h.inP' (off := 0) (by decide)
     exact ⟨g, List.mem_append_right _ hg, by simpa using hc⟩

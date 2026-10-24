@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.PPC64LE.Scan
-public import VerifiedGarbage.Proof.Cast5.Rotate
+import VerifiedGarbage.Proof.Cast5.PPC64LE.Scan
+import VerifiedGarbage.Proof.Cast5.Rotate
 public import VerifiedGarbage.Proof.Cast5.Round
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Cast5.PPC64LE.Run
+public import VerifiedGarbage.Proof.Cast5.Table
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # CAST5 on PPC64LE: a round

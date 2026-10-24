@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cast5.Contract
 import VerifiedGarbage.Proof.Cast5.PPC64LE.Lit
-import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -22,6 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # CAST5 ECB on PPC64LE: verified

@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.KeySteps
-public import VerifiedGarbage.Proof.Cast5.PPC64LE.Ecb
+import VerifiedGarbage.Proof.Cast5.PPC64LE.Ecb
 public import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Cast5.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 
 /-!
 # CAST5 key expansion on PPC64LE: a step
