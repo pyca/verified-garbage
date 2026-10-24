@@ -2,11 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Contract
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Fn
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesCcm.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # AES-CCM on PPC64LE: the arguments and the entry

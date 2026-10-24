@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
 import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCount
 import VerifiedGarbage.Proof.Argon2.Reference
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: the reference block's column and the block pointers

@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Rc2.PPC64LE.Lookup
+import VerifiedGarbage.Impl.Rc2.PPC64LE.Lookup
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # RC2 on PPC64LE: running blocks

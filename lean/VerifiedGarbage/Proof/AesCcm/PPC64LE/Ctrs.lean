@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CCM on PPC64LE: `Ctr₀` (`ctrs`) and the tag out (`tagOut`)

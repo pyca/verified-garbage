@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's verification on PPC64LE: the checks of the candidate x-coordinate

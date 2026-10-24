@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Blowfish.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Blowfish on PPC64LE, key expansion: the encryptions

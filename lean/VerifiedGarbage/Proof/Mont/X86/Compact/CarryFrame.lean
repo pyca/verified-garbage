@@ -1,7 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.Rt.Row
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # Propagating the carry changes only its two product words -/
 

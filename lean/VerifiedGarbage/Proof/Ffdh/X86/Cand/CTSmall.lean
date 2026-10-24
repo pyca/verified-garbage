@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialLoopTiming
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
+import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialLoopTiming
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
@@ -15,6 +15,11 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Base
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialReadControl
 
 /-!
 # The FFDH candidate on i686: the timing of a division by a small prime

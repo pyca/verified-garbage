@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.PPC64LE.Schedule
+import VerifiedGarbage.Proof.Rc4.PPC64LE.Schedule
 public import VerifiedGarbage.Proof.Rc4.Memory
 import VerifiedGarbage.Proof.Rc4.Stream
+public import VerifiedGarbage.Impl.Rc4.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rc4.PPC64LE.Lookup
+public import VerifiedGarbage.Spec.Rc4
 
 /-! # RC4 on PPC64LE: checked initialization -/
 

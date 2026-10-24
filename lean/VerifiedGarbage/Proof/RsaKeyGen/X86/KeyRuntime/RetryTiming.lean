@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRetryFlag
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.SmallMask
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.SmallPublic
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DSelectTiming
 
 /-! # The native retry branch is public through the shared released result -/
 

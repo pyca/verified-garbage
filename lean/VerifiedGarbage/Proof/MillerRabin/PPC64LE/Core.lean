@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Last
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Last
 public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Exp
 
 /-!
 # The Miller–Rabin round on PPC64LE: the round

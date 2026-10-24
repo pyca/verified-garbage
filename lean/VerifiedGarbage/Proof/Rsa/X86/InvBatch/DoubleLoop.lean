@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatch.Twice
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import Mathlib.Tactic.Ring
 

@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Save
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Init
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Copy
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Copy
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 
 /-!
 # HMAC over any streaming hash function on PPC64LE: `finalize`

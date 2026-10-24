@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
 import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
 public import VerifiedGarbage.Proof.RsaKeyGen.MrLoopAt
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessChecks
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedDataGap
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
+public import VerifiedGarbage.TCB.X86.State
 
 /-! # Exact entropy and counter invariants of the blinded witness loop -/
 

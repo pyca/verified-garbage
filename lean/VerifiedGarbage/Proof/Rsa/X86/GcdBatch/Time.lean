@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Body
 public import VerifiedGarbage.Proof.Rsa.X86.WorkspaceTaint
-import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Taint
 public import Init.Data.Option.Basic
 public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch

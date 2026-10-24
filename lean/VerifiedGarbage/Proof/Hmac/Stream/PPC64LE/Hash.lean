@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Calls
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Spec.Sha256
 
 /-!
 # HMAC over any streaming hash function on PPC64LE: the hash function

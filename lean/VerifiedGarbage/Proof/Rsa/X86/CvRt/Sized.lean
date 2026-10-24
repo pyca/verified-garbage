@@ -1,8 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.CvRt.Store
 import VerifiedGarbage.Proof.Bignum.MemoryFrame

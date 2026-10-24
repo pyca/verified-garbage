@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarBit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448 on PPC64LE: constants in slots

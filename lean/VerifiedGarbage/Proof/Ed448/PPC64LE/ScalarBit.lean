@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.X448.PPC64LE.Cswap
 import VerifiedGarbage.Proof.Ed448.Binary
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.PPC64LE.Pass
 
 /-!
 # Ed448 on PPC64LE: one bit of the reduction modulo `L`

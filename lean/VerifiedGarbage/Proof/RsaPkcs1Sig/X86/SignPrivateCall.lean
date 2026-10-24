@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.Proof.Rsa.X86.PrivCall
-import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 import VerifiedGarbage.Proof.Framework.Sig
 

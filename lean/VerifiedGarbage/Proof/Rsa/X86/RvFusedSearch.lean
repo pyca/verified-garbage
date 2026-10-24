@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedCandidate
 public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
-import VerifiedGarbage.Proof.Rsa.RecoverTries
 
 /-! The bounded candidate search using the fused pass. -/
 @[expose] public section

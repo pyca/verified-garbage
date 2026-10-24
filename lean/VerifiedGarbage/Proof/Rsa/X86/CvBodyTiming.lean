@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
-public import VerifiedGarbage.Proof.Rsa.X86.CvBody
+import VerifiedGarbage.Proof.Rsa.X86.CvBody
 public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 
 import VerifiedGarbage.Proof.Rsa.X86.CvModulusTiming
@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86.CvFailureTiming
 import VerifiedGarbage.Proof.Rsa.X86.CvRt.Time
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 
 /-! # CRT branches reveal only the declared public modulus
 

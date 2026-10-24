@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 import all Init.Data.Nat.Bitwise.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # ChaCha20 on PPC64LE: the shared contracts

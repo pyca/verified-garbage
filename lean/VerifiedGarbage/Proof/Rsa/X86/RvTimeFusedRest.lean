@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedPrepared
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
-import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData

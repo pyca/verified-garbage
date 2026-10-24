@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: the functions' entry and exit

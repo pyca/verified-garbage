@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_open`

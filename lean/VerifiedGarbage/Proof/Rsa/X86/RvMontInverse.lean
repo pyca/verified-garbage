@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
 import VerifiedGarbage.Proof.Mont.X86.Inverse
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
-import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

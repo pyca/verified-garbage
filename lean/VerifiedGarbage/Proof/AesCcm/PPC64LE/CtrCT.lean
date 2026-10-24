@@ -13,6 +13,8 @@ public import VerifiedGarbage.Impl.AesCcm.PPC64LE
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Chunk
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 public import VerifiedGarbage.Spec.Ccm
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 
 /-!
 # AES-CCM on PPC64LE: the tag and counter mode in two runs

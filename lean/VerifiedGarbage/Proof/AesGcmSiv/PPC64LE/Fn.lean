@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # AES-GCM-SIV on PPC64LE: the tags in and out, the comparison and the mask

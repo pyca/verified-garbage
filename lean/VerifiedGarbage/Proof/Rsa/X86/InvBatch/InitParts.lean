@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86.InvSetWord
 import VerifiedGarbage.Proof.Mont.X86.Inverse
 import VerifiedGarbage.Proof.Mont.X86.Instr

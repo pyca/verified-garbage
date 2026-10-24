@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Data
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Words
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Steps of the key search (x86)
 

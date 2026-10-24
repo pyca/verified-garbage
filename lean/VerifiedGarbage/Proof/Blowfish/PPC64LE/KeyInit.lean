@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Blowfish.PPC64LE
+public import VerifiedGarbage.Impl.Blowfish.Table
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Blowfish on PPC64LE, key expansion: the initial schedule

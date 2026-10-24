@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Impl.Rsa.X86.InvBatch
-import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Framework.PlainSimp

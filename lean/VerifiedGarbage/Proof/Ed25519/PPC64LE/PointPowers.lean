@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
 # Ed25519 on PPC64LE: doublings and tables of powers

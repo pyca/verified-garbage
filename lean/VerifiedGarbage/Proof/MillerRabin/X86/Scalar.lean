@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
-import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words

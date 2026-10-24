@@ -3,7 +3,6 @@ import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 public import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Rsa.X86.RvABI
 import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
 public import Init.Prelude
 public import VerifiedGarbage.TCB.X86.State

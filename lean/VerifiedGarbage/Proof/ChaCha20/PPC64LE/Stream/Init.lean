@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.Stream
 meta import VerifiedGarbage.Proof.ChaCha20.Stream
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Stream
 meta import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Stream
@@ -11,6 +11,16 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 import all Init.Data.Nat.Bitwise.Basic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Streaming ChaCha20 on PPC64LE: `init` and `set_nonce`

@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
 public import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
-import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # AES-CCM on PPC64LE: instructions and bytes

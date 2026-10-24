@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86.InvBatch.Csub
 import VerifiedGarbage.Proof.Rsa.X86.InvBatch.SelfAdd
 import VerifiedGarbage.Proof.Weierstrass.X86.InvSetWord
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32

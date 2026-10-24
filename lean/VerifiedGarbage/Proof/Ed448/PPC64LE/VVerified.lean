@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VMain
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VMain
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VCT
 import VerifiedGarbage.Proof.Framework.Contract
@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # `vg_ed448_verify_equation` on PPC64LE, verified
