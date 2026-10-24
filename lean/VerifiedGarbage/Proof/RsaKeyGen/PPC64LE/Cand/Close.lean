@@ -168,8 +168,8 @@ theorem lis_eq : BitVec.signExtend 64 ((4096 : BitVec 16) ++ (0 : BitVec 16)) = 
 
 /-- The bound `2^(64 w − 100)` into `aBnd`: word `w − 2` := `2^28`. -/
 theorem bound_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (h35 : slot w nArr ≤ Z) :
-    WP isa (.block (base .r5 aBnd ++ [.lsl .r6 .r11 2, .add .r5 .r5 .r6, .subi .r5 .r5 16, .lis .r0 0x1000,
-      .store .d .r0 .r5 0])) s fun t =>
+    WP isa (.block (base .r5 aBnd ++ ([.lsl .r6 .r11 2, .add .r5 .r5 .r6, .subi .r5 .r5 16, .lis .r0 0x1000,
+      .store .d .r0 .r5 0] : List Instr))) s fun t =>
       (t.mem = s.mem.writeW (off B (slot w aBnd + 8 * (w - 2))) (BitVec.ofNat 64 (2 ^ 28))) ∧
         Keep [.r0, .r5, .r6] s t := by
   have hw4 := h.hw
