@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
 # A candidate on PPC64LE: the frames and the entry
@@ -341,7 +342,8 @@ theorem wp_seq3 {a b c d : Prog isa} {s : State} {P Q : State → Prop} (h : WP 
 /-- The whole function, from what the body between the entry and the
 restore does. -/
 theorem code_ok {s0 : State} (h : CIn s0) {trial round : Prog isa} {name : String} {Q : BitVec 64 → Mem → Prop}
-    (hm : ∀ s, Bx s0 s → Regs s0 s → WP isa (mid trial name round) s fun u => Bx s0 u ∧ Q (u.gpr .r3) u.mem) :
+    (hm : ∀ s, Bx s0 s → Regs s0 s → s.syms = s0.syms →
+      WP isa (mid trial name round) s fun u => Bx s0 u ∧ Q (u.gpr .r3) u.mem) :
     WP isa (VG.Impl.RsaKeyGen.PPC64LE.Candidate.code trial name round) s0
       fun t => abiPreserved s0 t ∧ Q (t.gpr .r3) t.mem := by
   have st := started_ok h
@@ -355,8 +357,8 @@ theorem code_ok {s0 : State} (h : CIn s0) {trial round : Prog isa} {name : Strin
         rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; show 48 ≤ s0.sp.toNat; omega)]
         show 176 ≤ s0.sp.toNat - 48; omega) ?_))
   show WP isa (.seq (.block VG.Impl.RsaKeyGen.PPC64LE.Candidate.entry) (.seq _ (.seq _ (.seq _ _)))) (started s0) _
-  refine WP.seq (WP.mono (entry_ok st) fun s ⟨bs, rs⟩ => ?_)
-  refine wp_seq3 (hm s bs rs) fun u ⟨bu, qu⟩ => ?_
+  refine WP.seq (WP.mono_syms (entry_ok st) fun s ⟨bs, rs⟩ sy => ?_)
+  refine wp_seq3 (hm s bs rs sy) fun u ⟨bu, qu⟩ => ?_
   refine WP.mono (restore_ok bu) fun v ⟨sv, vm, v3, v2, vsp, _, _, _⟩ => ?_
   -- The frames' pops and `mtlr`.
   refine WP.of_runBlock ⟨_, (by simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mtlr]; rfl), ?_⟩
