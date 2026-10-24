@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
@@ -171,6 +173,83 @@ theorem pw_rel (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y D S P : Addr} {n
     (WP.of_runBlock ⟨s₁, run₁, rfl⟩) (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun τ₁ τ₂ e₁ e₂ => ?_
   subst e₁ e₂
   exact gw_rel g c₁ w₁ x5₁ c₂ w₂ x5₂ (by rw [sp₁, sp₂, qsp])
+
+/-! ## `vg_ghash` for at most one block, else the call with `pw` -/
+
+/-- `lsr x9, x3, #1`, with `n` blocks in `x3`. -/
+theorem selLsr_ok {s : State} {n : Nat} (h3 : s.gpr .x3 = BitVec.ofNat 64 n) (hn : n < 2 ^ 64) :
+    ∃ s₁, runBlock isa [.lsr .x .x9 .x3 1] s = some s₁ ∧ s₁.gpr .x9 = BitVec.ofNat 64 (n / 2 ^ 1) ∧
+      Others [.x9] s s₁ ∧ s₁.mem = s.mem ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  refine ⟨_, by arun [], ?_⟩
+  exact ⟨by simp [RegUpd.gpr_write, h3, lsr_ofNat n 1 hn], by others_tac, rfl, rfl, rfl, rfl⟩
+
+theorem GhCall.of_x9 {s s₁ : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n)
+    (o : Others [.x9] s s₁) (rd : s₁.rd = s.rd) (wr : s₁.wr = s.wr) : GhCall s₁ H Y D S n :=
+  ⟨(o _ (by decide)).trans h.x0, (o _ (by decide)).trans h.x1, (o _ (by decide)).trans h.x2,
+    (o _ (by decide)).trans h.x3, (o _ (by decide)).trans h.x4, h.n_lt, h.hy, h.hs, h.yd, h.ys, h.ds,
+    by rw [rd, wr]; exact h.reads, by rw [wr]; exact h.writes⟩
+
+theorem GhWCall.of_x9 {s s₁ : State} {Ctx Y S P : Addr} (p : GhWCall s Ctx Y S P) (m : s₁.mem = s.mem)
+    (rd : s₁.rd = s.rd) (wr : s₁.wr = s.wr) : GhWCall s₁ Ctx Y S P :=
+  ⟨by rw [rd, wr]; exact p.reads, p.yp, p.sp, by rw [m]; exact p.repr⟩
+
+theorem GhPost.of_x9 {s s₁ s' : State} {H Y D S : Addr} {n : Nat} (q : GhPost s₁ H Y D S n s')
+    (o : Others [.x9] s s₁) (m : s₁.mem = s.mem) (sp : s₁.sp = s.sp) (rd : s₁.rd = s.rd) (wr : s₁.wr = s.wr) :
+    GhPost s H Y D S n s' :=
+  ⟨q.rd.trans rd, q.wr.trans wr, q.sp.trans sp, fun r hr h30 => by
+    rw [q.saved r hr h30, o r (by simp only [List.mem_singleton]; rintro rfl; simp [preserved] at hr)],
+    by rw [← m]; exact q.frame, by rw [q.out, m]⟩
+
+/-- `Fast.pwSel k g`: `vg_ghash` for at most one block, else `pw` loaded
+from `sp + k` and the call of `g`; either hashes as `vg_ghash`. -/
+theorem pwSel_call (v : GcmImpl) (g : GhashWithImpl) {s : State} {Ctx Y D S P : Addr} {n k : Nat}
+    (hk : k % 8 = 0 ∧ k < 32768) (hP : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = P)
+    (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8)
+    (h : GhCall s (Ctx + BitVec.ofNat 64 240) Y D S n) (p : GhWCall s Ctx Y S P) :
+    WP isa (Impl.AesGcm.AArch64.Fast.pwSel v.callees k g.fn) s (GhPost s (Ctx + BitVec.ofNat 64 240) Y D S n) := by
+  have hn : n < 2 ^ 64 := by have := h.n_lt; omega
+  obtain ⟨s₁, run, x9, o, m, sp, rd, wr⟩ := selLsr_ok h.x3 hn
+  have h₁ := h.of_x9 o rd wr
+  refine WP.seq (WP.of_runBlock ⟨s₁, run, ?_⟩)
+  refine WP.ite _ (eval_zero x9 (by omega)) (fun _ => ?_) (fun _ => ?_)
+  · exact WP.mono (gh_call v.gh h₁) fun _ q => q.of_x9 o m sp rd wr
+  · exact WP.mono (pw_call g hk (by rw [sp, m]; exact hP) (by rw [rd, wr, sp]; exact hsp) h₁ (p.of_x9 m rd wr))
+      fun _ q => q.of_x9 o m sp rd wr
+
+/-- `Fast.pwSel k g` in two runs, with the same public arguments. -/
+theorem pwSel_rel (v : GcmImpl) (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y D S P : Addr} {n k : Nat}
+    (hk : k = 8 ∨ k = 16)
+    (hP₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 k) 64 = P) (hsp₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 k) 8)
+    (hP₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 k) 64 = P) (hsp₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 k) 8)
+    (h₁ : GhCall σ₁ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₁ : GhWCall σ₁ Ctx Y S P)
+    (h₂ : GhCall σ₂ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₂ : GhWCall σ₂ Ctx Y S P) (qsp : σ₁.sp = σ₂.sp) :
+    RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcm.AArch64.Fast.pwSel v.callees k g.fn) TT := by
+  have hn : n < 2 ^ 64 := by have := h₁.n_lt; omega
+  obtain ⟨s₁, run₁, x9₁, o₁, m₁, sp₁, rd₁, wr₁⟩ := selLsr_ok h₁.x3 hn
+  obtain ⟨s₂, run₂, x9₂, o₂, m₂, sp₂, rd₂, wr₂⟩ := selLsr_ok h₂.x3 hn
+  have t : ∃ h, (taint.check (Taint.ofRegs [.x3]) (.block [.lsr .x .x9 .x3 1]) h).isSome = true :=
+    ⟨_, by taint_decide⟩
+  refine rel_seq (rel_taint [.x3] qsp (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.x3, h₂.x3]) t)
+    (F₁ := fun u => u = s₁) (F₂ := fun u => u = s₂)
+    (WP.of_runBlock ⟨s₁, run₁, rfl⟩) (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun τ₁ τ₂ e₁ e₂ => ?_
+  subst e₁ e₂
+  have c₁ := h₁.of_x9 o₁ rd₁ wr₁
+  have c₂ := h₂.of_x9 o₂ rd₂ wr₂
+  have q : τ₁.sp = τ₂.sp := by rw [sp₁, sp₂, qsp]
+  refine rel_ite (eval_zero x9₁ (by omega)) (eval_zero x9₂ (by omega)) (fun _ => ?_) (fun _ => ?_)
+  · exact gh_rel v.gh fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨_, Y, D, S, n, c₁, c₂, q⟩
+  · exact pw_rel g hk (by rw [sp₁, m₁]; exact hP₁) (by rw [rd₁, wr₁, sp₁]; exact hsp₁)
+      (by rw [sp₂, m₂]; exact hP₂) (by rw [rd₂, wr₂, sp₂]; exact hsp₂) c₁ (p₁.of_x9 m₁ rd₁ wr₁) c₂
+      (p₂.of_x9 m₂ rd₂ wr₂) q
+
+/-- Every instruction of `Fast.pwSel k g` keeps the vector registers the ABI
+preserves, if `vg_ghash`'s and `g`'s do. -/
+theorem pwSel_keepsV (v : GcmImpl) (g : GhashWithImpl) {k : Nat} (hk : k = 8 ∨ k = 16) :
+    (Impl.AesGcm.AArch64.Fast.pwSel v.callees k g.fn).allInstrs keepsV = true := by
+  rcases hk with rfl | rfl <;>
+  simp only [Impl.AesGcm.AArch64.Fast.pwSel, Impl.AesGcm.AArch64.Fast.pwCall, Code.allInstrs, GcmImpl.callees,
+    v.gh.keepsV, g.keepsV, Bool.and_true] <;> decide
 
 /-! ## `vg_ghash_store_powers`, called with `pw` from the stack -/
 
