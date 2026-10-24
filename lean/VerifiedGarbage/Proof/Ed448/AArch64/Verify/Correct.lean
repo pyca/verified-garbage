@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Hash
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -20,9 +21,11 @@ namespace VG.Proof.Ed448.AArch64.Verify
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64.Verify
 open VG.Impl.Ed448.AArch64.Whole (Src setupS callS)
-open VG.Proof.Ed448.AArch64.Whole (Env WCtx srcValue srcValid ScrOk wsetup_ok reduce_call equation_call
+open VG.Proof.Ed448.AArch64.Whole (Env WCtx srcValue srcValid ScrOk wsetup_ok reduce_call
   Readable Writable Apart)
 open VG.Proof.Ed25519.AArch64.Whole (Within FR CK)
+
+attribute [local irreducible] VG.Impl.X448.AArch64.Base.combWords VG.Impl.Ed448.AArch64.Sparse.baseWords
 
 variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
@@ -53,9 +56,9 @@ theorem reduce_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) :
   refine WP.mono (reduce_call hV hu h0 h1 h2 (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
     (.inl (k_apart L)) (scr_writable L)) fun w ⟨hw, _, hk⟩ => ⟨hw, by rw [hk, hm]⟩
 
-theorem equation_step (hQ : Proof.Ed448.AArch64.EqOk) (hL : L.Ok)
+theorem equation_step (hQ : Proof.Ed448.AArch64.Sparse.EqOk) (hL : L.Ok)
     (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
-    WP isa (callS equationArgs "vg_ed448_verify_equation" Impl.Ed448.AArch64.verifyEquation) t fun u =>
+    WP isa (callS equationArgs "vg_ed448_verify_equation" Impl.Ed448.AArch64.Sparse.verifyEquation) t fun u =>
       WCtx L.env g vec m₀ u ∧ u.gpr .x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt m₀ L.pk 57)
         (Spec.Ed448.bytesAt m₀ L.sig 114) (Spec.Ed448.bytesAt t.mem (L.E + BitVec.ofNat 64 fK) 57) then 1 else 0 := by
   have hV := env_ok hL
@@ -69,7 +72,7 @@ theorem equation_step (hQ : Proof.Ed448.AArch64.EqOk) (hL : L.Ok)
   have h2 : u.gpr .x2 = L.E + BitVec.ofNat 64 fK := hv (.x2, .val (.frame fK)) (List.mem_of_getElem? (i := 2) rfl)
   have h3 : u.gpr .x3 = L.scr := by
     rw [hv (.x3, .loc fScr 0) (List.mem_of_getElem? (i := 3) rfl), (scrOk hL).loc hc, BitVec.add_zero]
-  refine WP.mono (equation_call hQ hV hu h0 h1 h2 h3 hL.pc hL.sc (fr_scr hL (by decide)) hL.nc
+  refine WP.mono (equation_call hQ hV ⟨rfl,rfl⟩ hu h0 h1 h2 h3 hL.pc hL.sc (fr_scr hL (by decide)) hL.nc
     (in_readable L.PK (by simp [Lay.inputs])) (in_readable L.SIG (by simp [Lay.inputs]))
     (.inl ⟨fK, rfl, show fK + 57 ≤ 256 by decide⟩) (scr_writable L) ha.2) fun w ⟨hw, _, hx⟩ => ⟨hw, ?_⟩
   have eP : Spec.Ed448.bytesAt u.mem L.pk 57 = Spec.Ed448.bytesAt m₀ L.pk 57 :=
@@ -80,9 +83,9 @@ theorem equation_step (hQ : Proof.Ed448.AArch64.EqOk) (hL : L.Ok)
 
 /-- The frame's body: `x0` is the verification equation's result for the
 reduced hash. -/
-theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk)
+theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.Sparse.EqOk)
     (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.scr)
-    (hsy : t.syms Impl.X448.AArch64.Base.combSym = L.T) :
+    (hsy : t.syms Impl.Ed448.AArch64.Sparse.baseSym = L.T) :
     WP isa (body v.callee) t fun u => Ctx0 L g vec m₀ u ∧
       u.gpr .x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt m₀ L.pk 57) (Spec.Ed448.bytesAt m₀ L.sig 114)
         (Spec.Ed448.scalarReduce (Spec.Sha3.shake256 (hashIn L m₀) 114)) then 1 else 0 := by

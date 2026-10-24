@@ -260,7 +260,7 @@ theorem reduce_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg 
     (fun _ _ hsp hg _ => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
       entry_eq hg (hm .x2 (by simp))⟩) hok
 
-theorem base_ct (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂)
+theorem base_ct (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (hcfg:V.sym=Impl.X448.AArch64.Base.combSym ∧ V.words=Impl.X448.AArch64.Base.combWords) (h₁ : M m₁) (h₂ : M m₂)
     {args : List (Reg × Src)}
     (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, srcValid p.2) (hret : retOk args = true)
     (hr : ∀ p ∈ args, p.1 ∉ preserved) (hl : ∀ p ∈ args, p.1 ∉ linkRegs)
@@ -286,13 +286,14 @@ theorem base_ct (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (h₁ : M m₁) (h
   exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval hb.ok
     hb.ct
     (fun hM hc hs => base_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
-      (regs_get hs (hm .x2 (by simp))) hos hss hnc hc.2.2 (combHeld_of hV hc (hMT hM) hw _ _))
+      (regs_get hs (hm .x2 (by simp))) hos hss hnc (by simpa only [hcfg.1] using hc.2.2) (combHeld_of hV hcfg hc (hMT hM) hw _ _))
     (covers_rw (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      exacts [hrd, tbl_readable hV]) hw) hw
+      exact hrd
+      · simpa only [hcfg.2] using tbl_readable hV) hw) hw
     (fun _ _ hsp hg hsy => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
-      entry_eq hg (hm .x2 (by simp)), hsy⟩) hok
+      entry_eq hg (hm .x2 (by simp)), by simpa only [State.withRegions,State.callEntry,VG.AArch64.call,State.write,hcfg.1] using hsy⟩) hok
 
 theorem mulAdd_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg × Src)}
     (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, srcValid p.2) (hret : retOk args = true)
@@ -329,7 +330,7 @@ theorem mulAdd_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg 
     (fun _ _ hsp hg _ => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
       entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), entry_eq hg (hm .x4 (by simp))⟩) hok
 
-theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
+theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok) (hcfg:V.sym=Impl.X448.AArch64.Base.combSym ∧ V.words=Impl.X448.AArch64.Base.combWords)
     (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg × Src)}
     (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, srcValid p.2) (hret : retOk args = true)
     (hr : ∀ p ∈ args, p.1 ∉ preserved) (hl : ∀ p ∈ args, p.1 ∉ linkRegs)
@@ -356,14 +357,17 @@ theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
   have hrd : ∀ r ∈ [(⟨val .x0, 57⟩ : Region), ⟨val .x1, 114⟩, ⟨val .x2, 57⟩, TBL V.T], Readable V r := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
-    exacts [hrp, hrs, hrc, tbl_readable hV]
+    exact hrp
+    · exact hrs
+    · exact hrc
+    · simpa only [hcfg.2] using tbl_readable hV
   exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval (hQ.ok)
     hQ.ct
     (fun hM hc hs => equation_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
-      (regs_get hs (hm .x2 (by simp))) (regs_get hs (hm .x3 (by simp))) hdp hds hdc hnc hc.2.2
-      (combHeld_of hV hc (hMT hM) hw _ _))
+      (regs_get hs (hm .x2 (by simp))) (regs_get hs (hm .x3 (by simp))) hdp hds hdc hnc (by simpa only [hcfg.1] using hc.2.2)
+      (combHeld_of hV hcfg hc (hMT hM) hw _ _))
     (covers_rw hrd hw) hw
     (fun _ _ hsp hg hsy => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
-      entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), hsy⟩) hok
+      entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), by simpa only [State.withRegions,State.callEntry,VG.AArch64.call,State.write,hcfg.1] using hsy⟩) hok
 
 end VG.Proof.Ed448.AArch64.Whole

@@ -92,4 +92,22 @@ theorem bnd_of_words {m : Mem} {base : Addr} {o : Nat} {v : Spec.X448.Fe}
   show (word m base (o + 8 * w)).toNat < _
   rw [h w hw]; exact Nat.lt_of_lt_of_le (limb_lt v w) (by decide)
 
+/-- The environment after `addAffine x1 y1 z1 x2 y2`, in the order it computes: the
+temporaries are slots 10–18, and slot 19 is zero. -/
+def affEnv (x1 y1 z1 x2 y2 : Index) (e : Env) : Env :=
+  let e := Function.update e 10 (e z1 * e z1)
+  let e := Function.update (Function.update e 11 (e x1 * e x2)) 12 (e y1 * e y2)
+  let e := Function.update e 13 (e 11 * e 12)
+  let e := Function.update e 14 (e 10 + Spec.X448.a24 * e 13)
+  let e := Function.update e 15 (e 19 - e 13)
+  let e := Function.update e 10 (e 10 + Spec.X448.a24 * e 15)
+  let e := Function.update (Function.update e 16 (e x1 * e y2)) 17 (e y1 * e x2)
+  let e := Function.update (Function.update e 13 (e 16 + e 17)) 15 (e 16 - e 17)
+  let e := Function.update (Function.update e 16 (e 12 + e 11)) 17 (e 12 - e 11)
+  let e := Function.update e 18 (e 14 * e 10)
+  let e := Function.update (Function.update e 11 (e z1 * e 14)) 12 (e z1 * e 10)
+  let e := opCopy z1 18 e
+  Function.update (Function.update e x1 (e 11 * e 13)) y1 (e 12 * e 17)
+
+
 end VG.Proof.X448.AArch64.Base

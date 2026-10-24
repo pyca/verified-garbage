@@ -32,10 +32,6 @@ open VG VG.AArch64
 open VG.Impl.Curve448.AArch64.Neon
 open VG.Proof.X448.AArch64 (Scr off ofs Outside word limbs)
 
-theorem read16_write (m : Mem) (p : Addr) (v : BitVec 128) : (m.write p 16 v).read p 16 = v := by
-  have := Mem.readW_writeW_self m p 16 v (by decide)
-  simpa [Mem.readW, Mem.writeW] using this
-
 theorem word_st (m : Mem) (base : Addr) (d : Nat) (v : BitVec 128) {e : Nat} (he : e < 2) :
     word (m.write (off base d) 16 v) base (d + 8 * e) = vdword v e := by
   simp only [word]

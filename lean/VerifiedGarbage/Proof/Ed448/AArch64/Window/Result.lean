@@ -1,7 +1,15 @@
 module
 
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
+import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Block
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Move
+
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
@@ -17,7 +25,8 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.SaveX
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -45,17 +54,6 @@ open VG.Proof.X448.AArch64.Fast (SavedX SavedV restoreX_ok)
 open VG.Proof.Ed448.AArch64 (CFrame CKeep eqSlotsF_ok isZero_ok or_eq_zero64)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
-
-/-- `d := r`. -/
-theorem mov_ok (d r : Reg) (s : State) :
-    WP isa (.block [.addImm .x d r 0]) s fun t => t.gpr d = s.gpr r ∧ t.mem = s.mem ∧ Keeps [d] s t := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
-    Nat.reduceLT, BitVec.setWidth_eq, BitVec.add_zero, RegUpd.gpr_write_self,
-    ite_true, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, rfl, (fun r' hr => ?_), rfl, rfl⟩
-  simp only [List.mem_singleton] at hr
-  exact RegUpd.gpr_write_of_ne _ _ _ hr
 
 /-! ## What the comparisons write -/
 

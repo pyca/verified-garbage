@@ -79,7 +79,7 @@ theorem callS_ct (hV : V.Ok) {M : Mem → Prop} (h₁ : M m₁) (h₂ : M m₂) 
       k.pre (t.callEntry.withRegions rd wr))
     (hcov : Covers (rd ++ wr) (V.ins ++ FR V.E :: V.outs)) (hw : ∀ r ∈ wr, Writable V r)
     (kp : ∀ a b : State, a.sp = b.sp → (∀ p ∈ args, a.callEntry.gpr p.1 = b.callEntry.gpr p.1) →
-      a.syms Impl.X448.AArch64.Base.combSym = b.syms Impl.X448.AArch64.Base.combSym →
+      a.syms V.sym = b.syms V.sym →
       k.pub (a.callEntry.withRegions rd wr) (b.callEntry.withRegions rd wr))
     {Q : State → Prop}
     (hok : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → P t →

@@ -179,7 +179,8 @@ structure BInvAt (base k : Addr) (src : Reg) (so D : Nat) (s₀ s : State) (i : 
 theorem bitsAtLoop_ok {s₀ : State} {base k : Addr} {src : Reg} (hsrc : src ∉ .x8 :: bitAtRegs)
     {so d1 d2 : Nat} (hso : so + 57 ≤ 4096) (hd1 : d1 < 4096) (hd2 : d2 + 8 ≤ 4096) (hD : d1 + d2 + 456 ≤ 8192)
     (hkr : ∀ q < 57, InRegions (s₀.rd ++ s₀.wr) (k + BitVec.ofNat 64 (so + q)) 1)
-    (hkd : ∀ q < 57, 8192 ≤ ofs base (k + BitVec.ofNat 64 (so + q))) :
+    (hkd : ∀ q < 57, ofs base (k + BitVec.ofNat 64 (so + q)) < d1+d2 ∨
+      d1+d2+456 ≤ ofs base (k + BitVec.ofNat 64 (so + q))) :
     ∀ i, ∀ s, i < 57 → BInvAt base k src so (d1 + d2) s₀ s i →
       WP isa (.loop (.block (bitsBodyAt src so d1 d2)) (.nonzero .x .x11)) s
         fun s' => BInvAt base k src so (d1 + d2) s₀ s' 57 := by
@@ -213,11 +214,12 @@ theorem bitsAtLoop_ok {s₀ : State} {base k : Addr} {src : Reg} (hsrc : src ∉
     exact .inl ⟨rfl, inv⟩
 
 /-- `bitsAt src so d1 d2`: byte `t` at `d1 + d2` is bit `t` of the 57 bytes at `src + so`. -/
-theorem bitsAt_ok {s : State} {base k : Addr} (hs : Scr s base) {src : Reg} (hk : s.gpr src = k)
+theorem bitsAt_disjoint_ok {s : State} {base k : Addr} (hs : Scr s base) {src : Reg} (hk : s.gpr src = k)
     (hsrc : src ∉ .x8 :: bitAtRegs)
     {so d1 d2 : Nat} (hso : so + 57 ≤ 4096) (hd1 : d1 < 4096) (hd2 : d2 + 8 ≤ 4096) (hD : d1 + d2 + 456 ≤ 8192)
     (hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (k + BitVec.ofNat 64 (so + q)) 1)
-    (hkd : ∀ q < 57, 8192 ≤ ofs base (k + BitVec.ofNat 64 (so + q))) :
+    (hkd : ∀ q < 57, ofs base (k + BitVec.ofNat 64 (so + q)) < d1+d2 ∨
+      d1+d2+456 ≤ ofs base (k + BitVec.ofNat 64 (so + q))) :
     WP isa (bitsAt src so d1 d2) s fun s' =>
       (∀ r, r ∉ .x8 :: bitAtRegs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Outside base (d1 + d2) 456 s.mem s'.mem ∧
@@ -245,5 +247,19 @@ theorem bitsAt_ok {s : State} {base k : Addr} (hs : Scr s base) {src : Reg} (hk 
   refine WP.mono (bitsAtLoop_ok hsrc hso hd1 hd2 hD hkr hkd 0 s₁ (by omega) h₁) fun s₂ h₂ => ?_
   refine ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => ?_⟩
   rw [h₂.bits t (by omega), ← scalar_bit s.mem (k + BitVec.ofNat 64 so) ht, Offset.add_add]
+
+theorem bitsAt_ok {s : State} {base k : Addr} (hs : Scr s base) {src : Reg} (hk : s.gpr src = k)
+    (hsrc : src ∉ .x8 :: bitAtRegs)
+    {so d1 d2 : Nat} (hso : so + 57 ≤ 4096) (hd1 : d1 < 4096) (hd2 : d2 + 8 ≤ 4096) (hD : d1 + d2 + 456 ≤ 8192)
+    (hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (k + BitVec.ofNat 64 (so + q)) 1)
+    (hkd : ∀ q < 57, 8192 ≤ ofs base (k + BitVec.ofNat 64 (so + q))) :
+    WP isa (bitsAt src so d1 d2) s fun s' =>
+      (∀ r, r ∉ .x8 :: bitAtRegs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Outside base (d1 + d2) 456 s.mem s'.mem ∧
+      ∀ t < 456, s'.mem (off base (d1 + d2 + t)) =
+        BitVec.ofNat 8 ((decodeLE (bytesAt s.mem (k + BitVec.ofNat 64 so) 57) >>> t) &&& 1) := by
+  exact bitsAt_disjoint_ok hs hk hsrc hso hd1 hd2 hD hkr (fun q hq => .inr (by
+    have h := hkd q hq
+    omega))
 
 end VG.Proof.Ed448.AArch64

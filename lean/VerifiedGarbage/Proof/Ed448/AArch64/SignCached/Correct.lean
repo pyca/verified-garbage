@@ -27,6 +27,8 @@ open VG.Proof.Ed448.AArch64.Whole (Env WCtx srcValue srcValid ScrOk wsetup_ok re
   mulAdd_call Readable Writable Apart kept_frame prune_run sha3_bytesAt_length)
 open VG.Proof.Ed25519.AArch64.Whole (Within FR CK ck_frame)
 
+attribute [local irreducible] VG.Impl.X448.AArch64.Base.combWords
+
 variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
 theorem ed448_bytesAt (m : Mem) (p : Addr) (n : Nat) :
@@ -122,7 +124,7 @@ theorem base_step (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok) (hc : WCtx L.env
     (hv (.x1, aR) (List.mem_of_getElem? (i := 1) rfl)).trans (outS_src hL hc ha _)
   have h2 : u.gpr .x2 = L.scr := by
     rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
-  refine WP.mono (base_call hb hV hu h0 h1 h2 (hL.oc.sub_left (outR_within L).sub)
+  refine WP.mono (base_call hb hV ⟨rfl,rfl⟩ hu h0 h1 h2 (hL.oc.sub_left (outR_within L).sub)
     (hL.oc.sub_left (outS_within L).sub) hL.nc (.inr ⟨L.OUT, by simp [Lay.env], outS_within L⟩)
     (outR_writable L) (scr_writable L) ha.2) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
 
