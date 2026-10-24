@@ -175,7 +175,7 @@ structure RcPost (s : State) (B : Addr) (L w c a : Nat) (t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   sp : t.sp = s.sp
-  cs : ∀ r ∈ preserved, t.gpr r = s.gpr r
+  cs : ∀ r ∈ preserved, r ∉ Pub.montRegs → t.gpr r = s.gpr r
 
 theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
     (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
@@ -226,6 +226,100 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
     fun j hd hk => Outs.val32 o₁ (by have := sep₁ _ _ (by omega) hk; simpa only [show 4 * (2 * w) = 8 * w by omega])
       (by omega)
   have p₁ : Prep s₁ B L w c := h.transfer (e.keep k₁ (by decide)) (k₁.gpr .r12 (by decide)) w₁ v₁
-  sorry
+  -- The arguments.
+  have h31₁ : s₁.gpr .r31 = B := (k₁.gpr .r31 (by decide)).trans e.h31
+  have l0 : InRegions (s₁.rd ++ s₁.wr) B 8 := by
+    have := (e.hs.congr k₁.wr).ld (d := 0) (n := 8) (by omega)
+    simpa only [off, BitVec.add_zero] using this
+  have r0 : s₁.mem.readW B 64 = BitVec.ofNat 64 L := by
+    have := p₁.len
+    simpa only [word, off, BitVec.add_zero] using this
+  refine WP.seq (WP.mono (WP.keep [.r3, .r4] (Q := fun u => u.gpr .r3 = B ∧ u.gpr .r4 = BitVec.ofNat 64 L ∧
+      u.mem = s₁.mem) (by simp only [ldh, hWsLen]; prun [h31₁, BitVec.add_zero, l0, r0]) (by decide))
+    fun s₂ ⟨⟨r3₂, r4₂, m₂⟩, k₂⟩ => ?_)
+  have p₂ : Prep s₂ B L w c := p₁.transfer (p₁.env.keep k₂ (by decide)) (k₂.gpr .r12 (by decide))
+    (fun d _ _ => by rw [m₂]) (fun j _ _ => by rw [m₂])
+  have k12 := k₁.trans k₂
+  have hL64 : L < 2 ^ 64 := by omega
+  have hwr₂ : (⟨B, 8 * L⟩ : Region) ∈ s₂.wr := by rw [k12.wr]; exact hwr
+  -- The round.
+  refine WP.seq (WP.callAny (k := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176) R.verified.1
+    (rd := []) (wr := [⟨B, 8 * L⟩]) ?_ ?_ ?_ (fun s₃ hrd hwr₃ hsp₃ hf hcs hpost => ?_) (by have := R.stack; omega))
+  · sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
+    simp only [r3₂, r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm L 8, k12.sp]
+    exact ⟨hsp, trivial, hstk, by omega, p₂.layout, p₂.prepared (by
+      show val32 s₂.mem B (slot w 5) (2 * w) < c; rw [m₂, h5]; exact Nat.mod_lt _ (by have := h.c3; omega))⟩
+  · exact fun x n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ (by
+      simp only [List.nil_append, List.mem_singleton] at hr; rw [hr]; exact hwr₂), hc⟩
+  · exact fun x n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton] at hr; rw [hr]; exact hwr₂, hc⟩
+  sig_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs] at hpost
+  obtain ⟨hres, hk3⟩ := hpost
+  rw [r3₂, p₂.width] at hres hk3
+  rw [r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64] at hk3
+  have hn₂ : Spec.Rsa.Mont.numAt s₂.mem B w 0 = c := (numAt_eq _ _ _ _).trans p₂.n
+  have h5₂ : Spec.Rsa.Mont.numAt s₂.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
+    rw [numAt_eq, m₂]; exact h5
+  rw [hn₂] at hres
+  have hr3 := hres a h5₂
+  have h31₃ : s₃.gpr .r31 = B := (hcs .r31 (by decide)).trans ((k12.gpr .r31 (by decide)).trans e.h31)
+  have kw : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s₃.mem B d = word s₂.mem B d :=
+    fun d hd hk => keeps_word hk3 hd hk
+  have kv : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
+      val32 s₃.mem B (slot w j) (2 * w) = val32 s₂.mem B (slot w j) (2 * w) :=
+    fun j hd hk => keeps_val32 hk3 hd hk
+  have hs₃ : Scr s₃ B (8 * L) := e.hs.congr (hwr₃.trans k12.wr)
+  have rd48 : s₃.mem.readW (B + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 w := (kw 48 (by omega) (by kept_tac)).trans p₂.wW
+  have rd224 : s₃.mem.readW (B + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 (8 * (w + 2)) :=
+    (kw 224 (by omega) (by kept_tac)).trans p₂.strideW
+  have rd56 : s₃.mem.readW (B + BitVec.ofNat 64 56) 64 = word s₂.mem B 56 := kw 56 (by omega) (by kept_tac)
+  -- The result and the registers back.
+  refine WP.mono (WP.keep [.r3, .r10, .r11, .r29, .r12] (Q := fun u =>
+      u.gpr .r3 = (s₃.gpr .r3 <<< 32) >>> 32 ∧ u.gpr .r10 = off B (slot w 0) ∧
+      u.gpr .r11 = BitVec.ofNat 64 (2 * w) ∧ u.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) ∧
+      u.gpr .r12 = (word s₂.mem B 56 <<< 32) >>> 32 ∧ u.mem = s₃.mem) ?_ (by decide))
+    fun t ⟨⟨t3, t10, t11, t29, t12, tm⟩, kt⟩ => ?_
+  · simp only [regsBack, minv32, ldh, hW, hStride, hMinv, hdrBytes]
+    prun [h31₃, hs₃.ld (d := 48) (n := 8) (by omega), hs₃.ld (d := 224) (n := 8) (by omega),
+      hs₃.ld (d := 56) (n := 8) (by omega), rd48, rd224, rd56, shl1_ofNat]
+    simp only [es, Nat.zero_mul, Nat.add_zero]
+  have ofs_add : ∀ i, i < 2 ^ 64 → ofs B (B + BitVec.ofNat 64 i) = i := fun i hi => ofs_off0 B hi
+  have env_t : Env t B (8 * L) w := ⟨e.hs.congr (kt.wr.trans (hwr₃.trans k12.wr)), t10, t29, t11,
+    (kt.gpr .r31 (by decide)).trans h31₃, hw4, hw128, hZ⟩
+  refine ⟨p₂.transfer env_t (by rw [t12, p₂.r12]) (fun d hd hk => by rw [tm]; exact kw d hd hk)
+    (fun j hd hk => by rw [tm]; exact kv j hd hk), ?_, ?_, ?_, kt.rd.trans (hrd.trans k12.rd),
+    kt.wr.trans (hwr₃.trans k12.wr), kt.sp.trans (hsp₃.trans k12.sp), fun r hr hm => ?_⟩
+  · have hx : ((s₃.gpr .r3 <<< 32) >>> 32).toNat = (s₃.gpr .r3).toNat % 2 ^ 32 := by
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+      have := (s₃.gpr .r3).isLt
+      omega
+    rw [t3]
+    apply BitVec.eq_of_toNat_eq
+    rw [hx, ← BitVec.toNat_setWidth, hr3]
+    split <;> rfl
+  · intro i hi hk hj ht
+    rw [tm, hk3 i hi hk hj ht, m₂]
+    refine o₁ _ fun r hr => ?_
+    rw [ofs_add i (by omega)]
+    have := sep₁ i 1 (by decide) (fun i' h1 h2 => by
+      rw [show i' = i by omega]; exact ⟨hk, hj, ht⟩) r hr
+    omega
+  · intro x hx
+    have hx1 : ¬ (⟨B, 8 * L⟩ : Region).Contains x 1 := hx _ (List.mem_cons_self)
+    have hx2 : ¬ (below s.sp 176).Contains x 1 := hx _ (List.mem_cons_of_mem _ List.mem_cons_self)
+    rw [tm, hf x fun r hr => ?_, m₂]
+    · refine o₁ _ fun r hr => ?_
+      simp only [Region.Contains] at hx1
+      simp only [ofs]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp only [es] <;> omega
+    · rcases List.mem_append.mp hr with hr | hr
+      · rw [List.mem_singleton] at hr; subst hr; exact hx1
+      · rw [List.mem_singleton] at hr; subst hr
+        exact fun hc => hx2 (below_sub (by have := R.stack; omega) (by decide) _ (by rw [← k12.sp]; exact hc))
+  · by_cases h29 : r = .r29
+    · subst h29; rw [t29, e.h29]
+    have p1 : ∀ r ∈ preserved, r ≠ .r29 → r ∉ ([.r3, .r10, .r11, .r29, .r12] : List Reg) := by decide
+    have p2 : ∀ r ∈ preserved, r ∉ Pub.montRegs → r ∉ Pub.montRegs ++ ([.r3, .r4] : List Reg) := by decide
+    rw [kt.gpr r (p1 r hr h29), hcs r hr, k12.gpr r (p2 r hr hm)]
 
 end VG.Proof.MillerRabin.PPC64LE.Search
