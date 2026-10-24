@@ -196,7 +196,7 @@ theorem phRanges_mut (n : Nat) : ∀ r ∈ phRanges ++ [(8 * hTop, 8)], InMut n 
 
 /-- `phase`: `Ph` for the modulus of `mbOf p q` bits. -/
 theorem phase_ok {p : PP} {s : State} (h : St p s) (q : Bool) :
-    WP isa (phase q) s fun t => (St p t ∧ Ph p (mbOf p q) t ∧ Frm p.B (mutR p.n) s.mem t.mem) ∧
+    WP isa (phase q) s fun t => (St p t ∧ Ph p (mbOf p q) t ∧ Frm p.B (phRanges ++ [(8 * hTop, 8)]) s.mem t.mem) ∧
       Keep phaseRegs s t := by
   unfold phase
   refine WP.seq (WP.mono (phaseHead_ok h q) fun u ⟨⟨u10, u11, u29, um, uk, uw, us, ua, uc, uf⟩, ku⟩ => ?_)
@@ -212,6 +212,8 @@ theorem phase_ok {p : PP} {s : State} (h : St p s) (q : Bool) :
     (kt.gpr .r29 (by decide)).trans u29, (e (by simp only [hMb]; omega)).trans um,
     (e (by simp only [hK]; omega)).trans uk, (e (by simp only [hW]; omega)).trans uw,
     (e (by simp only [hStride]; omega)).trans us, fun j hj => (e (by omega)).trans (ua j hj),
-    (e (by simp only [hChecks]; omega)).trans uc, tt⟩, fu.trans ft⟩, (ku.trans kt).mono (by decide)⟩
+    (e (by simp only [hChecks]; omega)).trans uc, tt⟩,
+    (uf.mono fun r hr => List.mem_append_left _ hr).trans (tf.mono fun r hr => List.mem_append_right _ hr)⟩,
+    (ku.trans kt).mono (by decide)⟩
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
