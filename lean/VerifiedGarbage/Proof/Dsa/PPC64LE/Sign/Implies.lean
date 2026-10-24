@@ -27,7 +27,7 @@ theorem pairFacts_three (a b c : Region) :
 `0x4000`, the key at `0x1000`, the nonce at `0x2000`, the digest at `0x3000`
 and the working space at `0x10000`; `digest_len`, its address and size on the
 stack at `0x9060`. -/
-def satState : State where
+def signSatState : State where
   gpr r := match r with
     | .r3 => 0x4000 | .r4 => 40 | .r5 => 0x1000 | .r6 => 424 | .r7 => 128 | .r8 => 0x2000 | .r9 => 20
     | .r10 => 0x3000 | _ => 0
@@ -43,6 +43,6 @@ theorem sign_implies : sContract.Implies (Spec.Dsa.signContract abi) := by
     List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts, List.filterMap_cons,
     List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false, List.cons_append,
     List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_three]
-    [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
+    [signSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using signSatState
 
 end VG.Proof.Dsa.PPC64LE
