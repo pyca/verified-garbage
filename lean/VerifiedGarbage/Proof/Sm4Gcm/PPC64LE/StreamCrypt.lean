@@ -48,6 +48,7 @@ structure SC1 (s₀ s₁ : State) : Prop where
   r22 : s₁.gpr .r22 = s₀.gpr .r5
   r20 : s₁.gpr .r20 = s₀.gpr .r7
   r19 : s₁.gpr .r19 = s₀.gpr .r8
+  r28 : s₁.gpr .r28 = s₀.gpr .r10
 
 theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr) :
     WP isa (.block cryptEntry) s₀ (SC1 s₀) := by
@@ -58,9 +59,10 @@ theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr) :
   have e6 : s₁.gpr .r6 = s₀.gpr .r6 := hg _ (by decide) (by decide)
   have e7 : s₁.gpr .r7 = s₀.gpr .r7 := hg _ (by decide) (by decide)
   have e8 : s₁.gpr .r8 = s₀.gpr .r8 := hg _ (by decide) (by decide)
-  crun [mov, BitVec.or_self, e3, e4, e5, e6, e7, e8, h31]
+  have e10 : s₁.gpr .r10 = s₀.gpr .r10 := hg _ (by decide) (by decide)
+  crun [mov, BitVec.or_self, e3, e4, e5, e6, e7, e8, e10, h31]
   refine ⟨⟨fun r hr => by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hg],
-    ⟨hk.rd, hk.wr, hk.sp, hk.lr⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ⟨hk.rd, hk.wr, hk.sp, hk.lr⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp [h31]
 
 section
@@ -68,21 +70,22 @@ variable {s₀ : State} (h : streamCryptPre s₀)
 include h
 
 theorem scLay : Lay (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) := by
-  obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw⟩ := h
-  have fw' : (s₀.gpr .r9).toNat + 5824 ≤ 2 ^ 64 := fw
+  obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
+  have fw' : (s₀.gpr .r9).toNat + 2560 ≤ 2 ^ 64 := fw
   exact Lay.of fc fs (by omega) dcs (dcw.sub_right (Region.sub_prefix (by decide)))
     (dsw.sub_right (Region.sub_prefix (by decide)))
 
-theorem scX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) := by
-  obtain ⟨-, -, -, -, dcw, -, dsw, -, -, -, -, fw⟩ := h
-  exact ⟨fw, dcw.sub_right (Offset.sub_base _ (by decide)), dsw.sub_right (Offset.sub_base _ (by decide))⟩
+theorem scX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) (s₀.gpr .r10) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, dcx, dsx, -, dwx, fx⟩ := h
+  exact ⟨fx, dcx, dsx, dwx⟩
 
 theorem sc_W' : Covers [⟨s₀.gpr .r9, scrBytes⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
 theorem sc_W : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr := covers_prefix (sc_W' h) (by decide)
 
-theorem sc_X : Covers [xR (s₀.gpr .r9)] s₀.wr := covers_off (sc_W' h) (by decide) (by decide)
+theorem sc_X : Covers [xR (s₀.gpr .r10)] s₀.wr := by
+  rw [h.2.1]; exact covers_mem (by simp)
 
 /-- The environment after the entry. -/
 theorem sc_env {s₁ : State} (h1 : SC1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ := by
@@ -96,14 +99,14 @@ theorem sc_env {s₁ : State} (h1 : SC1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ :
 /-- The data, as `crypt` needs it. -/
 theorem sc_dataW {s : State} (hwr' : s.wr = s₀.wr) :
     DataW (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) s (s₀.gpr .r7) (s₀.gpr .r8).toNat := by
-  obtain ⟨-, hwr, -, dcd, -, dsd, -, ddw, -, -, fd, -⟩ := h
+  obtain ⟨-, hwr, -, dcd, -, dsd, -, ddw, -, -, fd, -, -⟩ := h
   have hD : Covers [⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩] s.wr := by rw [hwr', hwr]; exact covers_mem (by simp)
   exact ⟨⟨covers_left hD, (s₀.gpr .r8).isLt, fd, dsd.symm, ddw.sub_right (Region.sub_prefix (by decide))⟩, hD, dcd⟩
 
 /-- The data are apart from SM4's working space. -/
-theorem sc_dx : (⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩ : Region).Disjoint (xR (s₀.gpr .r9)) := by
-  obtain ⟨-, -, -, -, -, -, -, ddw, -⟩ := h
-  exact ddw.sub_right (Offset.sub_base _ (by decide))
+theorem sc_dx : (⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩ : Region).Disjoint (xR (s₀.gpr .r10)) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, ddx, -⟩ := h
+  exact ddx
 
 end
 
@@ -132,13 +135,12 @@ theorem ctx_crFrame' {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) 
 
 theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) :
     ∀ r ∈ crFrame st x D n, (savedR w).Disjoint r := by
-  have hf : w.toNat + 5824 ≤ 2 ^ 64 := X.fit
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
   · exact L.saved_st (by decide)
-  · exact Offset.disjoint _ (.inl (by simp only [sO]; omega)) (by omega) (by simp only [sO, sBytes]; omega)
+  · exact X.wx.sub_left (Lay.wSub (by decide))
 
 end
 
@@ -175,7 +177,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   refine WP.seq (WP.block_append (WP.mono (sc1_wp (sc_W h)) fun s₁ h1 => ?_))
   have he₁ := sc_env h h1
   have L := L₀.v h1.r29 h1.r30 h1.r31
-  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31, h1.r28]; exact X₀
   refine WP.mono textArgs_ok fun s₂ ⟨h24, h25, h26, hg₂, hk₂⟩ => ?_
   have he₂ : Env s₁.gpr s₀.sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
@@ -184,12 +186,12 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
     rw [h1.r29, h1.r30, h1.r31, h1.r20, h1.r19]; exact hd₂₀
   have ci : CrIn s₁.gpr s₀.sp icb ct.length (s₁.gpr .r20) (s₁.gpr .r19).toNat s₂ :=
     ⟨he₂, h24, by rw [h25, BitVec.ofNat_toNat, BitVec.setWidth_eq], by rw [h26, h1.r23, hP],
-      hd₂, by rw [h1.r31, hk₂.wr, h1.en.keeps.wr]; exact sc_X h, by rw [h1.r20, h1.r19, h1.r31]; exact sc_dx h⟩
+      hd₂, by rw [h1.r28, hk₂.wr, h1.en.keeps.wr]; exact sc_X h, by rw [h1.r20, h1.r19, h1.r28]; exact sc_dx h⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L X ci)) fun s₃ ⟨co, rd₃, wr₃, _⟩ => ?_)
   have hd₃ := hd₂.ok.of_eq rd₃ wr₃
   have f₂ : Frame [savedR (s₀.gpr .r9)] s₀.mem s₂.mem := by rw [hk₂.mem]; exact h1.en.frame
   have cf := co.frame
-  rw [h1.r30, h1.r31, h1.r20, h1.r19] at cf
+  rw [h1.r30, h1.r28, h1.r20, h1.r19] at cf
   have hH₃ : blockAt s₃.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
     rw [h1.r29, blockAt_frame cf (fun r hr => (ctx_crFrame' L₀ X₀ hd₂₀ r hr).sub_left (Lay.ctxSub (by decide))),
       ctxH_keep f₂ (ctx_saved L₀)]
@@ -254,7 +256,7 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   refine WP.seq (WP.mono (sc1_wp (sc_W h)) fun s₁ h1 => ?_)
   have he₁ := sc_env h h1
   have L := L₀.v h1.r29 h1.r30 h1.r31
-  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31]; exact X₀
+  have X : XOk (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) (s₁.gpr .r28) := by rw [h1.r29, h1.r30, h1.r31, h1.r28]; exact X₀
   have f₁ : Frame [savedR (s₀.gpr .r9)] s₀.mem s₁.mem := h1.en.frame
   have hd₁₀ := sc_dataW h (s := s₁) h1.en.keeps.wr
   have hd₁ : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by
@@ -277,10 +279,10 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   have ci : CrIn s₁.gpr s₀.sp icb ct.length (s₁.gpr .r20) (s₁.gpr .r19).toNat s₅ :=
     ⟨he₅, by rw [h24, e20], by rw [h25, e19, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       by rw [h26, e23, h1.r23, hP], hd₅,
-      by rw [h1.r31, hk₅.wr, wr₄, h1.en.keeps.wr]; exact sc_X h, by rw [h1.r20, h1.r19, h1.r31]; exact sc_dx h⟩
+      by rw [h1.r28, hk₅.wr, wr₄, h1.en.keeps.wr]; exact sc_X h, by rw [h1.r20, h1.r19, h1.r28]; exact sc_dx h⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L X ci)) fun s₆ ⟨co, rd₆, wr₆, _⟩ => ?_)
   have cf := co.frame
-  rw [h1.r30, h1.r31, h1.r20, h1.r19] at cf
+  rw [h1.r30, h1.r28, h1.r20, h1.r19] at cf
   have sv₆ : SavedAt s₆.mem (s₀.gpr .r9) s₀ :=
     ((h1.en.saved.frame tf (saved_taFrame L₀)) : SavedAt s₄.mem (s₀.gpr .r9) s₀) |>.frame
       (hk₅.mem ▸ cf) (saved_crFrame L₀ X₀ hd₅₀)
