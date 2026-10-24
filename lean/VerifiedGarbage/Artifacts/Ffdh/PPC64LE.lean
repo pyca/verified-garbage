@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
@@ -62,6 +63,17 @@ def artifacts : List Artifact := [
         needs only its range check. The nonvolatile registers, and x's and `y`'s addresses and x's \
         length, are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.Derive.derivePublic
-    verified := Proof.Ffdh.PPC64LE.Derive.dp_verified }]
+    verified := Proof.Ffdh.PPC64LE.Derive.dp_verified },
+  Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target {
+    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
+        working space of `w = ⌈p_len / 8⌉` words; x's range is checked as `vg_ffdh_derive_public` checks \
+        it, and the only branch on x is on its range. `g^x mod p` is computed as `vg_ffdh_exchange` \
+        computes the shared value, over all `x_len` octets of x, and compared with 0, 1, p − 1 and y by \
+        equality masks over all the words: for x in range, y is valid and `y = g^x mod p` exactly when \
+        `g^x mod p` is in `2..p − 2` and equals y, since powers of a checked generator remain in its q \
+        subgroup. The nonvolatile registers, and x's and y's addresses and x's length, are saved in the \
+        working space's header."]
+    code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
+    verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified }]
 
 end VG.Artifacts.Ffdh.PPC64LE
