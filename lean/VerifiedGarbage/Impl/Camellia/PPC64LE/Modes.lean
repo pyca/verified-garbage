@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Modes.PPC64LE.Seq
 public import VerifiedGarbage.Impl.Modes.CbcChained
+public import VerifiedGarbage.Impl.Modes.Ctr
 public import VerifiedGarbage.Impl.Camellia.PPC64LE.Prepared
 
 /-!
@@ -35,8 +36,8 @@ The core's slots are the functions' 414 (`slots`), the modes' six after
 them, `wrap`'s one, and one more for alignment: 422 in all
 (`[u64; 422]`).
 
-`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
-`cfbDecrypt` are the modes over it.
+`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt`,
+`cfbDecrypt` and `ctr` are the modes over it.
 -/
 
 @[expose] public section
@@ -108,5 +109,8 @@ def cfbEncrypt : Prog isa := wrap ((dirCore .encrypt).seq (Modes.Mode.cfbEnc 4))
 
 /-- `vg_camellia_cfb128_decrypt`, with its scratch buffer as the sixth argument. -/
 def cfbDecrypt : Prog isa := wrap ((dirCore .encrypt).seq (Modes.Mode.cfbDec 4))
+
+/-- `vg_camellia_ctr`, with its scratch buffer as the sixth argument. -/
+def ctr : Prog isa := wrap ((dirCore .encrypt).seq Modes.Mode.ctr)
 
 end VG.Impl.Camellia.PPC64LE

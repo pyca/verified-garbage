@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
 public import VerifiedGarbage.Proof.Camellia.FbScratch
+public import VerifiedGarbage.Proof.Camellia.CtrScratch
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Spec.Camellia.Cfb
@@ -118,5 +119,21 @@ theorem cfbDec_framed {c : Prog isa}
     (bytes := 3408) (words := 422) (by rw [← Proof.Camellia.cfbDecScratchContract_eq]; exact h)
     (by decide) (by decide) (by decide) (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbDecryptPost_local _) (Proof.Camellia.cfbDecryptPostOut_local _) cfbDecFrameSat_pre
+
+theorem ctrFrameSat_pre : ∃ s, (Spec.Camellia.ctrContract PPC64LE.abi 3408).pre s := by
+  implies_sat [Spec.Camellia.ctrContract, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
+    Spec.Camellia.ctrPost, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+
+/-- CTR, in its frame. -/
+theorem ctr_framed {c : Prog isa}
+    (h : Verified PPC64LE.target c (Proof.Camellia.ctrScratchContract PPC64LE.abi 422)) :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 c)
+      (Spec.Camellia.ctrContract PPC64LE.abi 3408) :=
+  PPC64LE.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
+    (n := 422) (pre := Spec.Camellia.ctrPre PPC64LE.abi.ptrBits)
+    (post := Spec.Camellia.ctrPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3408) (words := 422) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact h)
+    (by decide) (by decide) (by decide) (Proof.Camellia.ctrPre_local _)
+    (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre
 
 end VG.Proof.Camellia.PPC64LE
