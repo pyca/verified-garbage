@@ -173,15 +173,21 @@ theorem w_OM {v : VD} {s : State} (h : O2 v s ∧ s.gpr .r0 = 0) : WP isa pModQ 
   · rw [k.gpr .r2 (by decide), r2]
   · rw [r0, B.p, B.q]; rfl
 
-theorem w_P {v : VD} {s : State} (h : OM v s ∧ s.gpr .r0 = 0) : WP isa setupP s (PP KM v) := by
-  obtain ⟨⟨B, r2, -, ⟨ko, qf⟩, e0⟩, z⟩ := h
-  have bd := ko.bounds
+/-- `setupP`, from a state in the Q space with q in its array 0, for a key
+satisfying `K`. -/
+theorem w_setupP {K : VD → Prop} (hK : ∀ v, K v → KO v) {v : VD} {s : State} (B : Base v s)
+    (r2 : s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d) (qf : QF v s) (kv : K v) : WP isa setupP s (PP K v) := by
+  have bd := (hK v kv).bounds
   refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [B.p]; exact bd.1))
     fun t ⟨⟨ip, p0, ptop, p8, pb⟩, k⟩ => ⟨B.step k (pb.body B.ok), ?_, envP_of ip,
-      ⟨ip, ?_, ptop, ?_, (pb.arrQ B.ok 0 (by decide)).trans qf.1, (pb.qtop B.ok).trans qf.2⟩, ko, e0.mp z⟩
+      ⟨ip, ?_, ptop, ?_, (pb.arrQ B.ok 0 (by decide)).trans qf.1, (pb.qtop B.ok).trans qf.2⟩, kv⟩
   · rw [k.gpr .r2 (by decide), r2]
   · rw [p0, B.p]; rfl
   · rw [p8, B.p]; rfl
+
+theorem w_P {v : VD} {s : State} (h : OM v s ∧ s.gpr .r0 = 0) : WP isa setupP s (PP KM v) := by
+  obtain ⟨⟨B, r2, -, ⟨ko, qf⟩, e0⟩, z⟩ := h
+  exact w_setupP (K := KM) (fun _ h => h.1) B r2 qf ⟨ko, e0.mp z⟩
 
 /-! ## An element's check -/
 

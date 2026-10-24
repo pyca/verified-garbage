@@ -189,12 +189,15 @@ def odds (rest fail : Prog isa) : Prog isa :=
 /-- `r0 := 0` exactly when the masks `r3` is all ones (else 0). -/
 def unmask : List Instr := [.li .r4 1, .logic .and .r3 .r3 .r4, .logic .xor .r0 .r3 .r4]
 
-/-- In the Q space: q into array 0, then `r0 := 0` exactly when `p mod q = 1`
-(`reduce` into array 1, compared with 1 in array 7). -/
+/-- Into the Q space, and q into its array 0. -/
+def setupQ : Prog isa := .seq (.block enterQ) (.seq (.block ptrQ) (loadArr 0))
+
+/-- In the Q space: q into array 0 (`setupQ`), then `r0 := 0` exactly when
+`p mod q = 1` (`reduce` into array 1, compared with 1 in array 7). -/
 def pModQ : Prog isa :=
-  .seq (.block enterQ) (.seq (.seq (.block ptrQ) (loadArr 0))
+  .seq setupQ
     (.seq (.block ([.addi .r30 .r27 0] ++ getP .r31)) (.seq ModArith.reduce
-      (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask)))))))
+      (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask))))))
 
 /-- In the P space: p into array 0, `R² mod p` into array 8 (and array 1). -/
 def setupP : Prog isa :=

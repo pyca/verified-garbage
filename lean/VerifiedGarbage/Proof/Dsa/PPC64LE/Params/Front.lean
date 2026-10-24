@@ -46,11 +46,16 @@ def pcContract : Contract isa where
 /-- A call's layout. -/
 def playOf (s : State) : Lay := ⟨s.gpr .r7, (s.gpr .r8).toNat * 8, (s.gpr .r5).toNat, (s.gpr .r6).toNat⟩
 
-theorem playOf_ok {s : State} (h : pcContract.pre s) : (playOf s).Ok := by
-  obtain ⟨-, -, -, -, nw, hv, -, hsw⟩ := h
+/-- The layout of a call with `scratch` in `r7` and `r8`, and the lengths in `r5` and `r6`. -/
+theorem playOf_ok_of {s : State} (nw : (s.gpr .r7).toNat + (s.gpr .r8).toNat * 8 ≤ 2 ^ 64)
+    (hv : Spec.Dsa.lengthsValid (s.gpr .r5).toNat (s.gpr .r6).toNat)
+    (hsw : Spec.Dsa.scratchWords (s.gpr .r5).toNat ≤ (s.gpr .r8).toNat) : (playOf s).Ok := by
   simp only [Spec.Dsa.scratchWords] at hsw
   simp only [Spec.Dsa.lengthsValid] at hv
   exact ⟨by simp only [playOf]; omega, by simp only [playOf]; omega, by simp only [playOf]; omega, nw⟩
+
+theorem playOf_ok {s : State} (h : pcContract.pre s) : (playOf s).Ok :=
+  playOf_ok_of h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2.2
 
 /-- The lengths into `r2`. -/
 theorem pack_entry0 (x y : BitVec 64) (hx : x.toNat < 2 ^ 16) (hy : y.toNat < 2 ^ 16) :
@@ -69,17 +74,16 @@ theorem pfront_saved_ne11 : ∀ i < 19, saved i ≠ .r11 := by decide
 /-- `entry`: `scratch` into `r21`, the nonvolatile registers saved in its
 header, and the domain and the lengths into registers (`Regs`, `r2`). Memory
 changes only in the header. -/
-theorem pfront_ok {s : State} (h : pcContract.pre s) :
+theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .r7, (s.gpr .r8).toNat * 8⟩])
+    (nw : (s.gpr .r7).toNat + (s.gpr .r8).toNat * 8 ≤ 2 ^ 64) :
     WP isa (.block Params.entry) s fun t =>
       (Regs t (playOf s) (s.gpr .r3) 0 0 ∧ ScrL t (playOf s) ∧
         t.gpr .r2 = pack (playOf s).pl (playOf s).ql 0 0 ∧
         (∀ i < 19, word t.mem (s.gpr .r7) (saveOff i) = s.gpr (saved i)) ∧
         Outside (s.gpr .r7) 0 256 s.mem t.mem) ∧ Keep pentryRegs s t := by
-  have hL := playOf_ok h
   have hZ := hL.z256
   have hpl : (s.gpr .r5).toNat < 2 ^ 16 := by have := hL.pl; simp only [playOf] at this; omega
   have hql : (s.gpr .r6).toNat < 2 ^ 16 := by have := hL.ql; simp only [playOf] at this; omega
-  obtain ⟨-, hwr, -, -, nw, -⟩ := h
   unfold Params.entry
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (WP.keep [.r11] (Q := fun u => u.gpr .r11 = s.gpr .r7 ∧ u.mem = s.mem)
@@ -115,5 +119,13 @@ theorem pfront_ok {s : State} (h : pcContract.pre s) :
       VG.Proof.Bignum.frame_outside (by rw [← a11]; exact hS.frame) (by decide)
     rw [mt, ← m1]
     exact f2.mono (Nat.zero_le _) (by decide)
+
+theorem pfront_ok {s : State} (h : pcContract.pre s) :
+    WP isa (.block Params.entry) s fun t =>
+      (Regs t (playOf s) (s.gpr .r3) 0 0 ∧ ScrL t (playOf s) ∧
+        t.gpr .r2 = pack (playOf s).pl (playOf s).ql 0 0 ∧
+        (∀ i < 19, word t.mem (s.gpr .r7) (saveOff i) = s.gpr (saved i)) ∧
+        Outside (s.gpr .r7) 0 256 s.mem t.mem) ∧ Keep pentryRegs s t :=
+  pfront_ok_of (playOf_ok h) h.2.1 h.2.2.2.2.1
 
 end VG.Proof.Dsa.PPC64LE
