@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Calls
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.KemLay
 import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
@@ -18,6 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
 
 /-!
 # ML-KEM on PPC64LE: calling the primitives in constant time

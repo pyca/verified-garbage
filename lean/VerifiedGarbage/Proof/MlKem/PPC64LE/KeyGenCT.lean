@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGen
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
+import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
 
 import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.PrfCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
-import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGen
@@ -19,6 +18,10 @@ meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.KemLay
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.Lay
 
 /-!
 # ML-KEM on PPC64LE: key generation in constant time

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
 
 import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
-import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Prf

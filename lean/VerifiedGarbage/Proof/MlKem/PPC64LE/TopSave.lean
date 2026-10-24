@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

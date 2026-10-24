@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Sha3.PPC64LE.Contract
 public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
-import VerifiedGarbage.Proof.Framework.Covers
 
 /-!
 # ML-KEM on PPC64LE: calling the SHA-3 sponge

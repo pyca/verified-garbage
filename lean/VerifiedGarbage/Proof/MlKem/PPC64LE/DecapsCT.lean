@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Decaps
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.EncryptCT
+import VerifiedGarbage.Proof.MlKem.PPC64LE.EncryptCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
 
 import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
-import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -21,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.Encrypt
 
 /-!
 # ML-KEM on PPC64LE: decapsulation, constant time and `Verified`

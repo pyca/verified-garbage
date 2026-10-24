@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
-public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 public import VerifiedGarbage.Proof.Framework.Covers
 
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Prims
@@ -19,6 +19,8 @@ meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # ML-KEM on PPC64LE: the hash routine in constant time

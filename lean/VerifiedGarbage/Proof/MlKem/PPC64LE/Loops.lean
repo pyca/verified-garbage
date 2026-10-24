@@ -7,9 +7,8 @@ import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
 
 /-!
 # ML-KEM on PPC64LE: copying bytes and zeroing a polynomial

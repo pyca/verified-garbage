@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
+import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Prims
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Ntt
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Cbd2
@@ -20,6 +20,9 @@ import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
+public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
+public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.Lay
 
 /-!
 # ML-KEM on PPC64LE: calling the primitives on buffers
