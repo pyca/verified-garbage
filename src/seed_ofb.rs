@@ -6,8 +6,8 @@
 //! whole blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at
 //! `iv`, which it replaces with the last output block, in constant time: its
 //! timing depends on none of the key, the chaining value and the data. It is
-//! the modes' generic OFB over `vg_seed_ecb_encrypt`: on x86-64 and AArch64
-//! over its batch of sixteen blocks, on ARMv7 and x86 calling it once per block (a
+//! the modes' generic OFB over `vg_seed_ecb_encrypt`: on x86-64, AArch64 and
+//! PPC64LE over its batch of sixteen blocks, on ARMv7 and x86 calling it once per block (a
 //! batch of eight, so about eight times ECB's cost). This module holds the
 //! key schedule and handles a partial last block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is
 //! the next output block, whose first bytes it XORs into the rest of the
@@ -17,7 +17,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::seed::vg_seed_expand_key;
