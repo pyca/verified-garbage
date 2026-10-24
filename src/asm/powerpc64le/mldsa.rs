@@ -1880,3 +1880,485 @@ bne %cr0, 20b
 blr",
     )
 }
+
+/// `Power2Round` (FIPS 204 Algorithm 35) of each coefficient of `*t`: writes the `r1`s to `*t1` and the `r0`s, modulo `q` = 8380417, to `*t0`.
+///
+/// Contract: `VG.Spec.MlDsa.power2RoundContract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `t` must be valid for reads of 1024 bytes.
+/// * `t1` must be valid for reads and writes of 1024 bytes.
+/// * `t0` must be valid for reads and writes of 1024 bytes.
+/// * Each of the 256 `u32`s of `t` must be less than `q` = 8380417.
+/// * `t1` and `t0` must not overlap each other or `t` (distinct Rust objects never do).
+/// * None of `t`, `t1` and `t0` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"li %r6, 256
+lis %r7, 127
+ori %r7, %r7, 57345
+20:
+lwz %r8, 0(%r3)
+addi %r8, %r8, 4095
+rldicl %r9, %r8, 51, 13
+stw %r9, 0(%r4)
+rldicr %r10, %r9, 13, 50
+subf %r8, %r10, %r8
+addi %r8, %r8, -4095
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r7
+add %r8, %r8, %r9
+stw %r8, 0(%r5)
+addi %r3, %r3, 4
+addi %r4, %r4, 4
+addi %r5, %r5, 4
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 20b
+blr",
+    )
+}
+
+/// `HighBits` (FIPS 204 Algorithm 37) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r1`s to `*out`.
+///
+/// Contract: `VG.Spec.MlDsa.highBitsContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `r` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `gamma2` must be (q - 1)/88 = 95232 or (q - 1)/32 = 261888.
+/// * Each of the 256 `u32`s of `r` must be less than `q` = 8380417.
+/// * `out` must not overlap `r` (distinct Rust objects never do).
+/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"lis %r7, 3
+ori %r7, %r7, 65280
+subf %r0, %r7, %r4
+cmplwi %cr0, %r0, 0
+beq %cr0, 20f
+lis %r10, 0
+ori %r10, %r10, 11275
+lis %r11, 128
+ori %r11, %r11, 0
+li %r12, 44
+li %r6, 256
+22:
+lwz %r8, 0(%r3)
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 40, 24
+addi %r8, %r8, -44
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+stw %r8, 0(%r5)
+addi %r3, %r3, 4
+addi %r5, %r5, 4
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 22b
+b 21f
+20:
+lis %r10, 0
+ori %r10, %r10, 1025
+lis %r11, 32
+ori %r11, %r11, 0
+li %r12, 16
+li %r6, 256
+23:
+lwz %r8, 0(%r3)
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 42, 22
+addi %r8, %r8, -16
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+stw %r8, 0(%r5)
+addi %r3, %r3, 4
+addi %r5, %r5, 4
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 23b
+21:
+blr",
+    )
+}
+
+/// `LowBits` (FIPS 204 Algorithm 38) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r0`s, modulo `q` = 8380417, to `*out`.
+///
+/// Contract: `VG.Spec.MlDsa.lowBitsContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `r` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `gamma2` must be (q - 1)/88 = 95232 or (q - 1)/32 = 261888.
+/// * Each of the 256 `u32`s of `r` must be less than `q` = 8380417.
+/// * `out` must not overlap `r` (distinct Rust objects never do).
+/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"lis %r7, 3
+ori %r7, %r7, 65280
+subf %r0, %r7, %r4
+cmplwi %cr0, %r0, 0
+beq %cr0, 20f
+lis %r10, 0
+ori %r10, %r10, 11275
+lis %r11, 128
+ori %r11, %r11, 0
+li %r12, 44
+lis %r4, 2
+ori %r4, %r4, 59392
+lis %r7, 127
+ori %r7, %r7, 57345
+li %r6, 256
+22:
+lwz %r8, 0(%r3)
+lwz %r0, 0(%r3)
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 40, 24
+addi %r8, %r8, -44
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+mulld %r8, %r8, %r4
+subf %r0, %r8, %r0
+rldicl %r9, %r0, 1, 63
+mulld %r9, %r9, %r7
+add %r0, %r0, %r9
+stw %r0, 0(%r5)
+addi %r3, %r3, 4
+addi %r5, %r5, 4
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 22b
+b 21f
+20:
+lis %r10, 0
+ori %r10, %r10, 1025
+lis %r11, 32
+ori %r11, %r11, 0
+li %r12, 16
+lis %r4, 7
+ori %r4, %r4, 65024
+lis %r7, 127
+ori %r7, %r7, 57345
+li %r6, 256
+23:
+lwz %r8, 0(%r3)
+lwz %r0, 0(%r3)
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 42, 22
+addi %r8, %r8, -16
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+mulld %r8, %r8, %r4
+subf %r0, %r8, %r0
+rldicl %r9, %r0, 1, 63
+mulld %r9, %r9, %r7
+add %r0, %r0, %r9
+stw %r0, 0(%r5)
+addi %r3, %r3, 4
+addi %r5, %r5, 4
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 23b
+21:
+blr",
+    )
+}
+
+/// Returns 1 if the infinity norm of the polynomial `*f` (FIPS 204 §2.3: the largest `|fᵢ mod± q|`) is less than `bound`, and 0 otherwise.
+///
+/// Contract: `VG.Spec.MlDsa.normLtContract`. Constant time: only the pointer and `bound` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads of 1024 bytes.
+/// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
+/// * `f` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
+    core::arch::naked_asm!(
+        r"rlwinm %r4, %r4, 0, 0, 31
+li %r9, 1
+li %r10, 256
+lis %r5, 127
+ori %r5, %r5, 57345
+20:
+lwz %r6, 0(%r3)
+subf %r7, %r4, %r6
+rldicl %r7, %r7, 1, 63
+subf %r8, %r6, %r5
+subf %r8, %r4, %r8
+rldicl %r8, %r8, 1, 63
+or %r7, %r7, %r8
+and %r9, %r9, %r7
+addi %r3, %r3, 4
+addi %r10, %r10, -1
+cmpldi %cr0, %r10, 0
+bne %cr0, 20b
+or %r3, %r9, %r9
+blr",
+    )
+}
+
+/// `MakeHint` (FIPS 204 Algorithm 39) of each pair of coefficients of `*z` and `*r`, with `gamma2` = `γ₂`: writes 1 for true and 0 for false to `*h`, and returns the number of 1s.
+///
+/// Contract: `VG.Spec.MlDsa.makeHintContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `z` must be valid for reads of 1024 bytes.
+/// * `r` must be valid for reads of 1024 bytes.
+/// * `h` must be valid for reads and writes of 1024 bytes.
+/// * `gamma2` must be (q - 1)/88 = 95232 or (q - 1)/32 = 261888.
+/// * Each of the 256 `u32`s of `z` must be less than `q` = 8380417.
+/// * Each of the 256 `u32`s of `r` must be less than `q` = 8380417.
+/// * `h` must not overlap `z` or `r` (distinct Rust objects never do).
+/// * None of `z`, `r` and `h` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
+    core::arch::naked_asm!(
+        r"lis %r7, 3
+ori %r7, %r7, 65280
+subf %r0, %r7, %r5
+cmplwi %cr0, %r0, 0
+beq %cr0, 20f
+lis %r10, 0
+ori %r10, %r10, 11275
+lis %r11, 128
+ori %r11, %r11, 0
+li %r12, 44
+lis %r5, 127
+ori %r5, %r5, 57345
+li %r7, 256
+li %r0, 0
+22:
+lwz %r8, 0(%r4)
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 40, 24
+addi %r8, %r8, -44
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+stw %r8, 0(%r6)
+lwz %r8, 0(%r4)
+lwz %r9, 0(%r3)
+add %r8, %r8, %r9
+subf %r8, %r5, %r8
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r5
+add %r8, %r8, %r9
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 40, 24
+addi %r8, %r8, -44
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+lwz %r9, 0(%r6)
+xor %r8, %r8, %r9
+addi %r8, %r8, 63
+rldicl %r8, %r8, 58, 6
+stw %r8, 0(%r6)
+add %r0, %r0, %r8
+addi %r3, %r3, 4
+addi %r4, %r4, 4
+addi %r6, %r6, 4
+addi %r7, %r7, -1
+cmpldi %cr0, %r7, 0
+bne %cr0, 22b
+or %r3, %r0, %r0
+b 21f
+20:
+lis %r10, 0
+ori %r10, %r10, 1025
+lis %r11, 32
+ori %r11, %r11, 0
+li %r12, 16
+lis %r5, 127
+ori %r5, %r5, 57345
+li %r7, 256
+li %r0, 0
+23:
+lwz %r8, 0(%r4)
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 42, 22
+addi %r8, %r8, -16
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+stw %r8, 0(%r6)
+lwz %r8, 0(%r4)
+lwz %r9, 0(%r3)
+add %r8, %r8, %r9
+subf %r8, %r5, %r8
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r5
+add %r8, %r8, %r9
+addi %r8, %r8, 127
+rldicl %r8, %r8, 57, 7
+mulld %r8, %r8, %r10
+add %r8, %r8, %r11
+rldicl %r8, %r8, 42, 22
+addi %r8, %r8, -16
+rldicl %r9, %r8, 1, 63
+mulld %r9, %r9, %r12
+add %r8, %r8, %r9
+lwz %r9, 0(%r6)
+xor %r8, %r8, %r9
+addi %r8, %r8, 63
+rldicl %r8, %r8, 58, 6
+stw %r8, 0(%r6)
+add %r0, %r0, %r8
+addi %r3, %r3, 4
+addi %r4, %r4, 4
+addi %r6, %r6, 4
+addi %r7, %r7, -1
+cmpldi %cr0, %r7, 0
+bne %cr0, 23b
+or %r3, %r0, %r0
+21:
+blr",
+    )
+}
+
+/// `UseHint` (FIPS 204 Algorithm 40) of each pair of coefficients of `*h` (a hint bit: true if it is not 0) and `*r`, with `gamma2` = `γ₂`: writes the results to `*out`.
+///
+/// Contract: `VG.Spec.MlDsa.useHintContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `h` must be valid for reads of 1024 bytes.
+/// * `r` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `gamma2` must be (q - 1)/88 = 95232 or (q - 1)/32 = 261888.
+/// * Each of the 256 `u32`s of `r` must be less than `q` = 8380417.
+/// * `out` must not overlap `h` or `r` (distinct Rust objects never do).
+/// * None of `h`, `r` and `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"lis %r7, 3
+ori %r7, %r7, 65280
+subf %r0, %r7, %r5
+cmplwi %cr0, %r0, 0
+beq %cr0, 20f
+lis %r10, 0
+ori %r10, %r10, 11275
+lis %r11, 128
+ori %r11, %r11, 0
+li %r12, 44
+lis %r5, 2
+ori %r5, %r5, 59392
+li %r7, 256
+22:
+lwz %r8, 0(%r4)
+lwz %r9, 0(%r4)
+addi %r9, %r9, 127
+rldicl %r9, %r9, 57, 7
+mulld %r9, %r9, %r10
+add %r9, %r9, %r11
+rldicl %r9, %r9, 40, 24
+mulld %r0, %r9, %r5
+subf %r0, %r8, %r0
+rldicl %r0, %r0, 1, 63
+rldicr %r0, %r0, 1, 62
+lwz %r8, 0(%r3)
+addi %r8, %r8, -1
+rldicl %r8, %r8, 1, 63
+add %r9, %r9, %r0
+mulld %r0, %r0, %r8
+subf %r9, %r0, %r9
+add %r9, %r9, %r8
+addi %r9, %r9, -1
+rldicl %r8, %r9, 1, 63
+mulld %r8, %r8, %r12
+add %r9, %r9, %r8
+addi %r9, %r9, -44
+rldicl %r8, %r9, 1, 63
+mulld %r8, %r8, %r12
+add %r9, %r9, %r8
+stw %r9, 0(%r6)
+addi %r3, %r3, 4
+addi %r4, %r4, 4
+addi %r6, %r6, 4
+addi %r7, %r7, -1
+cmpldi %cr0, %r7, 0
+bne %cr0, 22b
+b 21f
+20:
+lis %r10, 0
+ori %r10, %r10, 1025
+lis %r11, 32
+ori %r11, %r11, 0
+li %r12, 16
+lis %r5, 7
+ori %r5, %r5, 65024
+li %r7, 256
+23:
+lwz %r8, 0(%r4)
+lwz %r9, 0(%r4)
+addi %r9, %r9, 127
+rldicl %r9, %r9, 57, 7
+mulld %r9, %r9, %r10
+add %r9, %r9, %r11
+rldicl %r9, %r9, 42, 22
+mulld %r0, %r9, %r5
+subf %r0, %r8, %r0
+rldicl %r0, %r0, 1, 63
+rldicr %r0, %r0, 1, 62
+lwz %r8, 0(%r3)
+addi %r8, %r8, -1
+rldicl %r8, %r8, 1, 63
+add %r9, %r9, %r0
+mulld %r0, %r0, %r8
+subf %r9, %r0, %r9
+add %r9, %r9, %r8
+addi %r9, %r9, -1
+rldicl %r8, %r9, 1, 63
+mulld %r8, %r8, %r12
+add %r9, %r9, %r8
+addi %r9, %r9, -16
+rldicl %r8, %r9, 1, 63
+mulld %r8, %r8, %r12
+add %r9, %r9, %r8
+stw %r9, 0(%r6)
+addi %r3, %r3, 4
+addi %r4, %r4, 4
+addi %r6, %r6, 4
+addi %r7, %r7, -1
+cmpldi %cr0, %r7, 0
+bne %cr0, 23b
+21:
+blr",
+    )
+}
