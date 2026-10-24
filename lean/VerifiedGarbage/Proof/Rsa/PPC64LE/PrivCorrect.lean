@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivRestore
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivFinal
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCmp
+import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivResult
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: correctness

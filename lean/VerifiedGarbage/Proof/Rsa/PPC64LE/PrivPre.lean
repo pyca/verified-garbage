@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Priv
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: the precondition

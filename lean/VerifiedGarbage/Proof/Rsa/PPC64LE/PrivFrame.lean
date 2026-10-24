@@ -3,9 +3,12 @@ module
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPre
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: the frame

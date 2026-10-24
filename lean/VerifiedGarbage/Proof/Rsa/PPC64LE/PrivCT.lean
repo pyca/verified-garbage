@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
+import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPubCall
+public import VerifiedGarbage.Proof.Rsa.PrivCheck
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: constant time

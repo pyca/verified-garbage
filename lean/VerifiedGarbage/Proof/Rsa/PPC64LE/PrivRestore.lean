@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivResult
+import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivResult
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPubCall
+public import VerifiedGarbage.Proof.Rsa.PrivCheck
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: the restores

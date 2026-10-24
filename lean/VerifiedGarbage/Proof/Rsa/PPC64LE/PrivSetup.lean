@@ -142,8 +142,8 @@ theorem arg_in {s t : State} (h : PreP s) (hrd : t.rd = s.rd) {j : Nat} (hj : j 
 registers. -/
 theorem head_ok {s v : State} (h : PreP s) (F : Fr s v) (h12 : v.gpr .r12 = fb s)
     (hg : ∀ r, r ≠ .r12 → r ≠ .r0 → v.gpr r = s.gpr r) :
-    WP isa (.block ([.logic .or .r24 .r3 .r3, .logic .or .r25 .r5 .r5, .logic .or .r26 .r6 .r6,
-      .logic .or .r27 .r7 .r7, .logic .or .r28 .r8 .r8, .logic .or .r29 .r9 .r9] ++
+    WP isa (.block (([.logic .or .r24 .r3 .r3, .logic .or .r25 .r5 .r5, .logic .or .r26 .r6 .r6,
+      .logic .or .r27 .r7 .r7, .logic .or .r28 .r8 .r8, .logic .or .r29 .r9 .r9] : List Instr) ++
       ([.addi .r3 .r12 oM, .logic .or .r4 .r26 .r26, .logic .or .r7 .r29 .r29, .logic .or .r8 .r26 .r26,
         .load .d .r9 .r12 (arg 0), .load .d .r10 .r12 (arg 1)] : List Instr))) v fun w =>
       (w.gpr .r3 = fb s + BitVec.ofNat 64 oM ∧ w.gpr .r4 = s.gpr .r6 ∧ w.gpr .r7 = s.gpr .r9 ∧
