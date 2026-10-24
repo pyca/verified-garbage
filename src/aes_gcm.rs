@@ -2676,16 +2676,16 @@ mod tests {
                     assert_eq!(k.written_ctx(), &want_powers[..k.written() / 8]);
                 }
                 // On AArch64, the powers are those `new` stores for the
-                // backend `new` chose, if it reads them.
+                // backend `new` chose.
                 #[cfg(target_arch = "aarch64")]
                 {
                     assert!(k.fns.powers.is_some());
                     assert_eq!(k.clone().key(), k.key());
                     assert_ne!(k.powers, [0; 16]);
                     assert_eq!(k.clone().powers, k.powers);
-                    if fresh.fns.powers.is_some() {
-                        assert_eq!(fresh.powers, k.powers);
-                    }
+                    // This CPU runs `b`, so `new` chose a backend with
+                    // powers too, which are the same.
+                    assert_eq!(fresh.powers, k.powers);
                 }
                 for len in [0, 1, 15, 16, 17, 63, 64, 255, 256, 300, 512, 700] {
                     let mut want = msg;
