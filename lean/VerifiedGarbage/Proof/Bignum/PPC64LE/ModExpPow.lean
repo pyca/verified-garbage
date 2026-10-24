@@ -129,7 +129,7 @@ theorem byteScan_ok {s t : State} {B D : Addr} {Z w N R X XM RR c i : Nat} {rs :
   have hin : ScanInv s B w N R X XM RR rs c t₁ := by
     obtain ⟨_, ot, t6, t7, tA, hcA⟩ := ht
     refine ⟨kt.trans' (k1.mono fun r hr => hrs r (by simp at hr ⊢; rcases hr with h | h | h <;> simp [h])),
-      ?_, ?_, ?_, ?_, ?_⟩ <;> rw [m1] <;> assumption
+      ?_, ?_, ?_, ?_, ?_⟩ <;> rw [m1] <;> with_reducible assumption
   let Inv : Nat → State → Prop := fun j u =>
     (∃ c', c' * 2 ^ 64 + (u.gpr .r24).toNat = (256 * c + b) * 2 ^ 56 * 2 ^ j ∧
       ScanInv s B w N R X XM RR rs c' u) ∧ u.gpr .r30 = off D (i + 1) ∧ u.gpr .r31 = t.gpr .r31
