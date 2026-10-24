@@ -184,4 +184,46 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
       ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hik, ?_⟩⟩
     rw [show Spec.Ffdh.primeChecks mb - i = Spec.Ffdh.primeChecks mb - i - 1 + 1 by omega]; exact hres
 
+/-- The witnesses of `N`, drawn from octet `u` of the tape. -/
+theorem millerRabin_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State}
+    (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (h : MSt p mb N s)
+    (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
+    WP isa (millerRabin R.name R.code) s
+      (MrEnd p mb N (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u))) := by
+  have hm1 := h.mb1
+  have l160 : InRegions s.wr (p.B + BitVec.ofNat 64 160) 8 := h.st.st (d := 160) (by decide)
+  have l176 : InRegions s.wr (p.B + BitVec.ofNat 64 176) 8 := h.st.st (d := 176) (by decide)
+  refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun t => t.mem = (s.mem.writeW (p.B + BitVec.ofNat 64 176)
+      (BitVec.ofNat 64 0)).writeW (p.B + BitVec.ofNat 64 160) (BitVec.ofNat 64 4))
+      (by simp only [sth, hIdx, hStat]; prun [h.st.r31, l160, l176]) (by decide)) fun t ⟨tm, kt⟩ => ?_)
+  have hf : Frm p.B [(176, 8), (160, 8)] s.mem t.mem := by
+    rw [tm]
+    exact frm_writeW (frm_writeW (Frm.refl _ _ _) _ ⟨(176, 8), by simp, by decide, by decide⟩ (by decide)) _
+      ⟨(160, 8), by simp, by decide, by decide⟩ (by decide)
+  have hfr : ∀ r ∈ [((176 : Nat), (8 : Nat)), (160, 8)], Free (wOf mb) r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Or.inl ⟨by simp, rfl⟩
+  have M := h.frm hf hfr kt (by decide) (kt.gpr _ (by decide)) (kt.gpr _ (by decide)) (kt.gpr _ (by decide))
+  have t152 : word t.mem p.B 152 = BitVec.ofNat 64 u := by
+    simp only [word, off] at hu ⊢
+    rw [tm, rw_off _ _ _ (by omega) (by omega) (by omega), rw_off _ _ _ (by omega) (by omega) (by omega)]
+    exact hu
+  have t160 : word t.mem p.B 160 = BitVec.ofNat 64 4 := by
+    simp only [word, off]; rw [tm, rw_self]
+  have t176 : word t.mem p.B 176 = BitVec.ofNat 64 0 := by
+    simp only [word, off]; rw [tm, rw_off _ _ _ (by omega) (by omega) (by omega), rw_self]
+  show WP isa (.loop _ _) t _
+  refine WP.loop (fun m v => ∃ i u', m = p.r.length + 1 - u' ∧
+      MrSt p mb N (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u)) i u' v) ?_ (p.r.length + 1 - u) t ?_
+  · rintro m v ⟨i, u', rfl, hv⟩
+    have hit := mrIter_ok R hbl hv
+    refine WP.mono hit fun w hw => ?_
+    rcases hw with hw | ⟨he, i', hw⟩
+    · exact Or.inl hw
+    · have hul' := hw.ul
+      have hlt : p.r.length + 1 - (u' + (mb + 7) / 8) < p.r.length + 1 - u' := by omega_using [hul', hm1]
+      exact Or.inr ⟨he, p.r.length + 1 - (u' + (mb + 7) / 8), hlt, i', u' + (mb + 7) / 8, rfl, hw⟩
+  · have hK : 0 < Spec.Ffdh.primeChecks mb := by unfold Spec.Ffdh.primeChecks; split <;> omega
+    exact ⟨0, u, rfl, M, t152, t176, t160, hul, hK, by rw [Nat.sub_zero]⟩
+
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
