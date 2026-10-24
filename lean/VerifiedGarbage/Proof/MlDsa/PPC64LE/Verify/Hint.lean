@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Control
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.CallV
-public import VerifiedGarbage.Proof.MlDsa.Verify.Final
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Control
@@ -10,6 +9,7 @@ meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.CallV
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Final
 meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 
 /-!
 # ML-DSA verification on PPC64LE: the primitives, and the hint

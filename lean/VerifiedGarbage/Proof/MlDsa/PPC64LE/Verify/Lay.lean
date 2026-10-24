@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Lay
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Verify.Verify
-public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA verification on PPC64LE: its parameters, precondition and buffers

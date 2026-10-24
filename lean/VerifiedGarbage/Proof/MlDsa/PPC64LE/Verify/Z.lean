@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Hint
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Steps
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Hint
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Steps
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Site
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 /-!
 # ML-DSA verification on PPC64LE: `z`

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.RestRow
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.RestRow
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.RestPack
 
 /-!
 # ML-DSA key generation on PPC64LE: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

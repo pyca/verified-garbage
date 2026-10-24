@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Cmp
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Final
 
 /-!
 # ML-DSA verification on PPC64LE: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Compute
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Seeds
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Site
 
 /-!
 # ML-DSA verification on PPC64LE: `c̃′`

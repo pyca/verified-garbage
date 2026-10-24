@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.SampA
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.SampA
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
