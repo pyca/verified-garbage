@@ -52,4 +52,8 @@ open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE
 
 theorem kl768_wf : kl768.WF := .of (by decide)
 
+/-- The parameter set with `k` changed, for the facts about offsets that the
+proofs decide for every `k ≤ 4`. -/
+def kOf (k : Nat) : KemLay := { kl768 with p := { kl768.p with k := k } }
+
 end VG.Proof.MlKem.PPC64LE
