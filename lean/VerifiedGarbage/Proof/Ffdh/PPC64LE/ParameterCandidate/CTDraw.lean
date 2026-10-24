@@ -109,11 +109,11 @@ theorem round_ct (R : RoundImpl) : RelCT isa (Two fun d s => (DMd d s ∧ decide
     rintro d s ⟨⟨⟨sv, toc, h, _⟩, h2⟩, hN⟩
     simp only [decide_eq_false_iff_not, Decidable.not_not] at h2 hN
     have hsp := h.m.st.sp
-    exact ⟨h.m.prep, h.a4, show wA d.mb d.q.r d.u < d.N by omega, h.m.st.ws, by rw [hsp]; exact h.m.st.stk, by rw [hsp]; exact h.m.st.stkB⟩
+    exact ⟨h.m.prep, h.a4, show wA d.mb d.q.r d.u < d.N by omega, by rw [hsp]; exact h.m.st.stk, by rw [hsp]; exact h.m.st.stkB⟩
   unfold Impl.MillerRabin.PPC64LE.Search.round
   refine RelCT.seq (two_post (two_map rcOf hrc (roundCall_ct R)) (Ψ := DR) fun d s h => ?_) ?_
-  · obtain ⟨hp, ha, hac, hwr, hsp, hstk⟩ := hrc d s h
-    exact WP.mono (roundCall_ok R hp ha hac hwr hsp hstk) fun t ht => ⟨ht.r3, ht.prep.env.h31⟩
+  · obtain ⟨hp, ha, hac, hsp, hstk⟩ := hrc d s h
+    exact WP.mono (roundCall_ok R hp ha hac hsp hstk) fun t ht => ⟨ht.r3, ht.prep.env.h31⟩
   refine two_ite' (fun d => !Spec.MillerRabin.round d.N (wA d.mb d.q.r d.u)) (fun d s h => ?_)
     (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_DR d s₁ s₂ h₁.1 h₂.1) (by taint_decide))
     (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_DR d s₁ s₂ h₁.1 h₂.1) (by taint_decide))

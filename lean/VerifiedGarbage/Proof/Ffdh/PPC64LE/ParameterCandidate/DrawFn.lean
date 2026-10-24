@@ -230,7 +230,7 @@ theorem drawTail_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {t₄ : State} (h 
     rw [hb'] at this; exact absurd this (by decide)
   have hK : Spec.Ffdh.primeChecks mb < 2 ^ 62 := by unfold Spec.Ffdh.primeChecks; split <;> omega
   have hsp₄ := M₄.st.sp
-  refine WP.mono (roundCount_ok R M₄.prep ha₄ (show wA mb p.r u < N by omega) M₄.st.ws (by rw [hsp₄]; exact M₄.st.stk)
+  refine WP.mono (roundCount_ok R M₄.prep ha₄ (show wA mb p.r u < N by omega) (by rw [hsp₄]; exact M₄.st.stk)
     (by rw [hsp₄]; exact M₄.st.stkB) hI M₄.ph.checksW hi hK)
     fun t ht => ⟨M₄.round ht, ?_⟩
   obtain ⟨v, hv, tm, -⟩ := ht
