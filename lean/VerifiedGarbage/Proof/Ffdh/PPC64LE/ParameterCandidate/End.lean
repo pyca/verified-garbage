@@ -32,13 +32,14 @@ structure ESt (p : PP) (s : State) : Prop where
   save : ∀ i < 20, word s.mem p.B (8 * p.n - saveBytes + 8 * i) = p.sv i
   sp : s.sp = p.sp
   dims : Dims p
+  r2 : s.gpr .r2 = p.toc
 
 theorem St.toE {p : PP} {s : State} (h : St p s) : ESt p s :=
-  ⟨h.scr, h.r31, h.args.wsLen, h.save, h.sp, h.dims⟩
+  ⟨h.scr, h.r31, h.args.wsLen, h.save, h.sp, h.dims, h.r2⟩
 
 /-- `ESt` survives a change outside the working space. -/
 theorem ESt.frame {p : PP} {s t : State} (h : ESt p s) (hm : ∀ x, ofs p.B x < p.Z → t.mem x = s.mem x)
-    {regs : List Reg} (k : Keep regs s t) (h31 : Reg.r31 ∉ regs) : ESt p t := by
+    {regs : List Reg} (k : Keep regs s t) (h31 : Reg.r31 ∉ regs) (h2 : Reg.r2 ∉ regs := by decide) : ESt p t := by
   have hnw := h.scr.nowrap
   have hdn := h.dims.n
   have hb := h.dims.b1
@@ -50,7 +51,7 @@ theorem ESt.frame {p : PP} {s t : State} (h : ESt p s) (hm : ∀ x, ofs p.B x < 
     hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl hd) (by omega)
   exact ⟨h.scr.congr k.wr, (k.gpr _ h31).trans h.r31, (wd 0 (by simp only [PP.Z, PP.L] at *; omega)).trans h.len,
     fun i hi => (wd _ (by simp only [PP.Z, PP.L, saveBytes] at *; omega)).trans (h.save i hi), k.sp.trans h.sp,
-    h.dims⟩
+    h.dims, (k.gpr _ h2).trans h.r2⟩
 
 /-- `out` as the contract states it. -/
 def outOf (p : PP) : Option (Option Nat × List Byte) → List Byte

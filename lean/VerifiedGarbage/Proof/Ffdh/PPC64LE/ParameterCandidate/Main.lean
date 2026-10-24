@@ -38,7 +38,8 @@ theorem Ph.keepBad {p : PP} {mb : Nat} {s t : State} (h : Ph p mb s)
 theorem shapeStep {p : PP} {s t : State} (h : St p s) (hp : Ph p p.bits s)
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 p.L) {rs : List (Nat × Nat)} (hf : Frm p.B rs s.mem t.mem)
     (hr : ∀ r ∈ rs, r = (200, 8) ∨ r = (256, 8 * wOf p.bits)) {regs : List Reg} (k : Keep regs s t)
-    (h10 : Reg.r10 ∉ regs) (h11 : Reg.r11 ∉ regs) (h29 : Reg.r29 ∉ regs) (h31 : Reg.r31 ∉ regs) :
+    (h10 : Reg.r10 ∉ regs) (h11 : Reg.r11 ∉ regs) (h29 : Reg.r29 ∉ regs) (h31 : Reg.r31 ∉ regs)
+    (h2 : Reg.r2 ∉ regs := by decide) :
     St p t ∧ Ph p p.bits t ∧ word t.mem p.B 152 = BitVec.ofNat 64 p.L := by
   have hdn := h.dims.n
   have hb2 := h.dims.b2
@@ -48,7 +49,7 @@ theorem shapeStep {p : PP} {s t : State} (h : St p s) (hp : Ph p p.bits s)
   have st := h.step (Frm.toMut hf fun r hr' => by
     rcases hr r hr' with rfl | rfl
     · exact InMut.hdr (i := 25) (by decide)
-    · exact InMut.arrays (by omega) (by simp only [saveBytes]; omega)) k h31
+    · exact InMut.arrays (by omega) (by simp only [saveBytes]; omega)) k h31 h2
   have wd : ∀ d, d + 8 ≤ 200 ∨ (208 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d := fun d hd =>
     hf.word_eq (fun r hr' => by rcases hr r hr' with rfl | rfl <;> dsimp only <;> omega) (by omega)
   exact ⟨st, hp.keepBad (k.gpr _ h10) (k.gpr _ h11) (k.gpr _ h29) wd, (wd 152 (by decide)).trans hu⟩

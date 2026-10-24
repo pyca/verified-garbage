@@ -107,14 +107,14 @@ theorem Read.le {w d : Nat} (hd : Read w d) : d + 8 ≤ slot w 28 := by
 theorem MSt.frm {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N s) {rs : List (Nat × Nat)}
     (hf : Frm p.B rs s.mem t.mem) (hr : ∀ r ∈ rs, Free (wOf mb) r) {regs : List Reg} (k : Keep regs s t)
     (h31 : Reg.r31 ∉ regs) (r10 : t.gpr .r10 = s.gpr .r10) (r11 : t.gpr .r11 = s.gpr .r11)
-    (r29 : t.gpr .r29 = s.gpr .r29) : MSt p mb N t := by
+    (r29 : t.gpr .r29 = s.gpr .r29) (h2 : Reg.r2 ∉ regs := by decide) : MSt p mb N t := by
   obtain ⟨hw2, hw128, hZ⟩ := h.w
   have hnw := h.st.scr.nowrap
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (wOf mb + 2)) + saveBytes ≤ p.Z := by rw [← es]; exact hZ
   have hw : ∀ d, Read (wOf mb) d → word t.mem p.B d = word s.mem p.B d := fun d hd =>
     hf.word_eq (fun r hr' => (hr r hr').word hd) (by have := hd.le; omega)
-  refine ⟨h.st.step (Frm.toMut hf fun r hr' => Free.mut h (hr r hr')) k h31,
+  refine ⟨h.st.step (Frm.toMut hf fun r hr' => Free.mut h (hr r hr')) k h31 h2,
     h.ph.keep r10 r11 r29 hw, ?_, h.mb1, h.mb2⟩
   refine h.prep.keep ⟨h.prep.env.hs.congr k.wr, r10.trans h.prep.env.h10,
     r29.trans h.prep.env.h29, r11.trans h.prep.env.h11,
@@ -154,7 +154,7 @@ theorem MSt.round {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N s)
   obtain ⟨u, hu, tm, kt⟩ := hR
   obtain ⟨hw2, -, hZ⟩ := h.w
   have stu : St p u := h.st.call hu.keeps (by have := hu.frame; rw [h.st.sp] at this; exact this) hu.rd hu.wr
-    hu.sp hu.prep.env.h31 hZ
+    hu.sp hu.prep.env.h31 hZ (hu.cs .r2 (by decide) (by decide))
   have phu : Ph p mb u := h.ph.keep (hu.prep.env.h10.trans h.ph.r10.symm) (hu.prep.env.h11.trans h.ph.r11.symm)
     (hu.prep.env.h29.trans h.ph.r29.symm) fun d hd => keeps_word hu.keeps (by
       have := hd.le; simp only [PP.Z, saveBytes] at hZ; omega) hd.kept

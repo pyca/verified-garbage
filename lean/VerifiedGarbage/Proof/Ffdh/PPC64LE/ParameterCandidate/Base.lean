@@ -47,6 +47,8 @@ structure PP where
   /-- The save area's words on entry: the nonvolatile registers and the
   link register. -/
   sv : Nat → BitVec 64
+  /-- `r2` on entry, which no piece writes. -/
+  toc : BitVec 64
 
 /-- `out_len`. -/
 abbrev PP.L (p : PP) : Nat := (p.bits + 7) / 8
@@ -175,11 +177,12 @@ structure St (p : PP) (s : State) : Prop where
   stk : 176 ≤ p.sp.toNat
   stkB : (below p.sp 176).Disjoint ⟨p.B, p.Z⟩
   save : ∀ i < 20, word s.mem p.B (8 * p.n - saveBytes + 8 * i) = p.sv i
+  r2 : s.gpr .r2 = p.toc
 
 /-- `St` survives a piece that keeps `r31` and changes only `mutR` ranges of
 the working space. -/
 theorem St.step {p : PP} {s t : State} {regs : List Reg} (h : St p s) (hf : Frm p.B (mutR p.n) s.mem t.mem)
-    (k : Keep regs s t) (h31 : Reg.r31 ∉ regs := by decide) : St p t where
+    (k : Keep regs s t) (h31 : Reg.r31 ∉ regs := by decide) (h2 : Reg.r2 ∉ regs := by decide) : St p t where
   scr := h.scr.congr k.wr
   r31 := (k.gpr .r31 h31).trans h.r31
   args := h.args.frm hf rfl
@@ -197,6 +200,7 @@ theorem St.step {p : PP} {s t : State} {regs : List Reg} (h : St p s) (hf : Frm 
     refine (hf.word_eq (fun r hr => .inr ?_) (by simp only [saveBytes]; omega)).trans (h.save i hi)
     simp only [mutR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [saveBytes, PP.L] at * <;> omega
+  r2 := (k.gpr .r2 h2).trans h.r2
 
 /-- A header word of `St`'s working space: its load and its store. -/
 theorem St.ld {p : PP} {s : State} (h : St p s) {d : Nat} (hd : d + 8 ≤ 256) :
