@@ -29,7 +29,7 @@ structure ESt (p : PP) (s : State) : Prop where
   scr : Scr s p.B p.Z
   r31 : s.gpr .r31 = p.B
   len : word s.mem p.B 0 = BitVec.ofNat 64 p.n
-  save : ∀ i < 20, word s.mem p.B (8 * p.n - saveBytes + 8 * i) = p.sv i
+  save : ∀ i < 19, word s.mem p.B (8 * p.n - saveBytes + 8 * i) = p.sv i
   sp : s.sp = p.sp
   dims : Dims p
   r2 : s.gpr .r2 = p.toc

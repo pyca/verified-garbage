@@ -176,7 +176,7 @@ structure St (p : PP) (s : State) : Prop where
   sp : s.sp = p.sp
   stk : 176 ≤ p.sp.toNat
   stkB : (below p.sp 176).Disjoint ⟨p.B, p.Z⟩
-  save : ∀ i < 20, word s.mem p.B (8 * p.n - saveBytes + 8 * i) = p.sv i
+  save : ∀ i < 19, word s.mem p.B (8 * p.n - saveBytes + 8 * i) = p.sv i
   r2 : s.gpr .r2 = p.toc
 
 /-- `St` survives a piece that keeps `r31` and changes only `mutR` ranges of

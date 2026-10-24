@@ -50,7 +50,7 @@ structure SV (B : Addr) (n : Nat) (s₀ : State) (k : Nat) (s : State) : Prop wh
   lrW : word s.mem B (8 * n - 160 + 144) = word s₀.mem B (8 * n - 160 + 144)
 
 theorem save_step {B : Addr} {n : Nat} {s₀ : State} (h11 : s₀.gpr .r11 = off B (8 * n - 160))
-    (hn160 : 160 ≤ 8 * n) (hn : 8 * n < 2 ^ 63)
+    (hn160 : 160 ≤ 8 * n) (hn : 8 * n ≤ 2 ^ 64)
     (hin : ∀ i < 18, InRegions s₀.wr (off B (8 * n - 160 + 8 * i)) 8) {k : Nat} (hk : k < 18) {s : State}
     (h : SV B n s₀ k s) : WP isa (.block [.store .d (Impl.Ffdh.PPC64LE.ParameterCandidate.saved k) .r11 (8 * k)]) s (SV B n s₀ (k + 1)) := by
   have hw : s.gpr .r11 = off B (8 * n - 160) := by rw [h.gpr, h11]
@@ -77,7 +77,7 @@ theorem map_flatMap {α β : Type} (g : α → β) (l : List α) : l.map g = l.f
   | cons a l ih => simp [ih]
 
 theorem saves_ok {B : Addr} {n : Nat} {s₀ : State} (h11 : s₀.gpr .r11 = off B (8 * n - 160))
-    (hn160 : 160 ≤ 8 * n) (hn : 8 * n < 2 ^ 63)
+    (hn160 : 160 ≤ 8 * n) (hn : 8 * n ≤ 2 ^ 64)
     (hin : ∀ i < 18, InRegions s₀.wr (off B (8 * n - 160 + 8 * i)) 8) :
     WP isa (.block ((List.range 18).map fun i => .store .d (Impl.Ffdh.PPC64LE.ParameterCandidate.saved i) .r11 (8 * i))) s₀ (SV B n s₀ 18) := by
   rw [map_flatMap]
