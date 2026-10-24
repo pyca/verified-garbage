@@ -115,4 +115,147 @@ theorem GI.randBytes (h : GI G STK σ V LS s) {u : Nat} (hu : u ≤ G.witLen) :
 
 end
 
+/-! ## The test's contract, as facts -/
+
+/-- The test's contract. -/
+abbrev primeK (L : Spec.Dsa.ProbablePrime.Layout) : Contract isa := Spec.Dsa.ProbablePrime.contract L abi 176
+
+/-- The candidate at `ws`. -/
+abbrev candOf (L : Spec.Dsa.ProbablePrime.Layout) (s : State) : Nat :=
+  Spec.Dsa.ProbablePrime.candidateAt L s.mem (s.gpr .r3)
+
+/-- The precondition, as facts. -/
+structure PIn (L : Spec.Dsa.ProbablePrime.Layout) (s : State) : Prop where
+  spLo : 176 ≤ s.sp.toNat
+  rd : s.rd = [⟨s.gpr .r5, (s.gpr .r6).toNat⟩]
+  wr : s.wr = [⟨s.gpr .r3, (s.gpr .r4).toNat * 8⟩, ⟨s.gpr .r7, 8⟩]
+  wR : Region.Disjoint ⟨s.gpr .r3, (s.gpr .r4).toNat * 8⟩ ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
+  wU : Region.Disjoint ⟨s.gpr .r3, (s.gpr .r4).toNat * 8⟩ ⟨s.gpr .r7, 8⟩
+  rU : Region.Disjoint ⟨s.gpr .r5, (s.gpr .r6).toNat⟩ ⟨s.gpr .r7, 8⟩
+  bW : Region.Disjoint ⟨s.sp - 176#64, 176⟩ ⟨s.gpr .r3, (s.gpr .r4).toNat * 8⟩
+  bR : Region.Disjoint ⟨s.sp - 176#64, 176⟩ ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
+  bU : Region.Disjoint ⟨s.sp - 176#64, 176⟩ ⟨s.gpr .r7, 8⟩
+  fw : (s.gpr .r3).toNat + (s.gpr .r4).toNat * 8 ≤ 2 ^ 64
+  fr : (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
+  fu : (s.gpr .r7).toNat + 8 ≤ 2 ^ 64
+  size : L.size ≤ 8 * (s.gpr .r4).toNat
+  odd : candOf L s % 2 = 1
+  bl : Spec.Dsa.bitLength (candOf L s) = L.bits
+
+theorem pre_of_pin {L : Spec.Dsa.ProbablePrime.Layout} {s : State} (h : PIn L s) : (primeK L).pre s := by
+  sig_pre [primeK, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  exact ⟨h.spLo, h.rd, h.wr, h.wR, h.wU, h.rU, h.bW, h.bR, h.bU, h.fw, h.fr, h.fu, h.size, h.odd, h.bl⟩
+
+/-- The test's result. -/
+abbrev resOf (L : Spec.Dsa.ProbablePrime.Layout) (s : State) : Option (Bool × Spec.RsaKeyGen.Rand) :=
+  Spec.Dsa.probablePrime (candOf L s) (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
+
+/-- The postcondition, as facts. -/
+def PPost (L : Spec.Dsa.ProbablePrime.Layout) (s t : State) : Prop :=
+  ((t.gpr .r3).setWidth 32).toNat = Spec.Dsa.ProbablePrime.status (resOf L s) ∧
+    Spec.Dsa.ModPow.Keeps (s.gpr .r3) (s.gpr .r4).toNat L.scratch s.mem t.mem ∧
+    ∀ b rest, resOf L s = some (b, rest) →
+      Spec.Rsa.wordsAt t.mem (s.gpr .r7) 1 = [BitVec.ofNat 64 ((s.gpr .r6).toNat - rest.length)]
+
+theorem ppost_of_post {L : Spec.Dsa.ProbablePrime.Layout} {s t : State} (h : (primeK L).post s t) : PPost L s t := by
+  sig_post [primeK, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs] at h
+  exact h
+
+/-- Two calls with the same public arguments, candidate and tape. -/
+theorem pub_of {L : Spec.Dsa.ProbablePrime.Layout} {s t : State} (sp : s.sp = t.sp)
+    (p3 : s.gpr .r3 = t.gpr .r3) (p4 : s.gpr .r4 = t.gpr .r4) (p5 : s.gpr .r5 = t.gpr .r5)
+    (p6 : s.gpr .r6 = t.gpr .r6) (p7 : s.gpr .r7 = t.gpr .r7) (hc : candOf L s = candOf L t)
+    (hr : Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat = Spec.Rsa.bytesAt t.mem (t.gpr .r5) (t.gpr .r6).toNat) :
+    (primeK L).pub s t := by
+  sig_pub [primeK, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  exact ⟨sp, by simp only [candOf] at hc; rw [hc, hr], p3, p4, p5, p6, p7⟩
+
+/-! ## The call -/
+
+/-- The test's arguments, in `r3`–`r7`. -/
+abbrev TArgs (G : GP) (u : Nat) (s : State) : Prop :=
+  s.gpr .r3 = G.sa (wB G.pLen) ∧ s.gpr .r4 = BitVec.ofNat 64 (wWords G.pLen) ∧ s.gpr .r5 = G.randP u ∧
+    s.gpr .r6 = BitVec.ofNat 64 (G.witLen - u) ∧ s.gpr .r7 = G.sa fUsedOut
+
+/-- The regions the test is given. -/
+abbrev tRd (G : GP) (u : Nat) : List Region := [⟨G.randP u, (BitVec.ofNat 64 (G.witLen - u)).toNat⟩]
+abbrev tWr (G : GP) : List Region :=
+  [⟨G.sa (wB G.pLen), (BitVec.ofNat 64 (wWords G.pLen)).toNat * 8⟩, ⟨G.sa fUsedOut, 8⟩]
+
+/-- The test's entry. -/
+abbrev tEntry (G : GP) (u : Nat) (s : State) : State := s.callEntry.withRegions (tRd G u) (tWr G)
+
+section
+variable {G : GP} {σ s : State} {c : Cfg}
+
+theorem GI.witLt {V : Nat → BitVec 64} {LS : List Nat} (h : GI G 176 σ V LS s) : G.witLen < 2 ^ 64 := by
+  rw [← h.hG]; exact (stackArg σ 1).isLt
+
+theorem wWords_lt {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) : wWords L < 2 ^ 15 := by
+  rcases hL with rfl | rfl | rfl <;> decide
+
+/-- The test's arguments meet its precondition. -/
+theorem SS.tEntry_pin (h : SS G 176 σ c s) {L : Spec.Dsa.ProbablePrime.Layout} {u : Nat} (regs : TArgs G u s)
+    (hu : u ≤ G.witLen) (hsize : L.size ≤ 8 * wWords G.pLen) {cb : List Byte}
+    (hcb : Spec.Rsa.bytesAt s.mem (G.sa (wB G.pLen) + BitVec.ofNat 64 L.candidate) (L.bits / 8) = cb)
+    (hodd : Spec.Dsa.decodeBE cb % 2 = 1) (hbl : Spec.Dsa.bitLength (Spec.Dsa.decodeBE cb) = L.bits) :
+    PIn L (tEntry G u s) := by
+  have gi := h.gi
+  have big := gi.wBig
+  have kb := gi.kBig
+  have fit := gi.scrFit
+  have wl := gi.witLt
+  have lens := gi.lens3
+  have wBl : wB G.pLen < 2 ^ 15 := by rcases lens with e | e | e <;> rw [e] <;> decide
+  have wWp : 0 < wWords G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
+  obtain ⟨r3, r4, r5, r6, r7⟩ := regs
+  have e4 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wWords_lt lens; omega)]
+  have e6 : (BitVec.ofNat 64 (G.witLen - u)).toNat = G.witLen - u := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have g : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], (tEntry G u s).gpr r = s.gpr r := fun r hr => by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
+  have W8 : wB G.pLen + wWords G.pLen * 8 ≤ G.scrLen * 8 := by omega
+  have hwW : (G.rs (wB G.pLen) (wWords G.pLen * 8)).Disjoint G.rWit := by
+    have := gi.pre.wC; rw [gi.hG] at this; exact this.symm.sub_left (sw G W8)
+  have hRand := gi.randSub hu
+  have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [fUsedOut]; have := gi.hEnd_le; simp only [hEnd] at this; omega
+  have hbS : (rBelow σ 176).Disjoint G.rScr := by have := gi.pre.bC; rw [gi.hG] at this; exact this
+  have hbW : (rBelow σ 176).Disjoint G.rWit := by have := gi.pre.bW; rw [gi.hG] at this; exact this
+  have sp : (tEntry G u s).sp = σ.sp := by rw [State.withRegions_sp, State.callEntry_sp, gi.sp]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [sp]; exact gi.pre.spLo
+  · rw [State.withRegions_rd, g _ (by simp), g _ (by simp), r5, r6]
+  · rw [State.withRegions_wr, g .r3 (by simp), g .r4 (by simp), g .r7 (by simp), r3, r4, r7]
+  · rw [g _ (by simp), g _ (by simp), g _ (by simp), g _ (by simp), r3, r4, r5, r6, e4, e6]
+    exact hwW.sub_right hRand
+  · rw [g _ (by simp), g _ (by simp), g _ (by simp), r3, r4, r7, e4]
+    exact gi.sdisj (.inr (by simp only [fUsedOut, wB, kB, pB]; omega)) W8 hfU
+  · rw [g _ (by simp), g _ (by simp), g _ (by simp), r5, r6, r7, e6]
+    have := gi.pre.wC; rw [gi.hG] at this
+    exact (this.sub_left hRand).sub_right (sw G hfU)
+  · rw [sp, g _ (by simp), g _ (by simp), r3, r4, e4]; exact hbS.sub_right (sw G W8)
+  · rw [sp, g _ (by simp), g _ (by simp), r5, r6, e6]; exact hbW.sub_right hRand
+  · rw [sp, g _ (by simp), r7]; exact hbS.sub_right (sw G hfU)
+  · rw [g _ (by simp), g _ (by simp), r3, r4, e4]
+    show (G.scr + BitVec.ofNat 64 (wB G.pLen)).toNat + _ ≤ _
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := wB G.pLen) (by omega),
+      Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [g _ (by simp), g _ (by simp), r5, r6, e6]; exact gi.randFit hu
+  · rw [g _ (by simp), r7]
+    show (G.scr + BitVec.ofNat 64 fUsedOut).toNat + 8 ≤ _
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := fUsedOut) (by simp only [fUsedOut]; omega),
+      Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [g _ (by simp), r4, e4]; exact hsize
+  · simp only [candOf, Spec.Dsa.ProbablePrime.candidateAt, State.withRegions_mem, State.callEntry_mem]
+    rw [g _ (by simp), r3, hcb]; exact hodd
+  · simp only [candOf, Spec.Dsa.ProbablePrime.candidateAt, State.withRegions_mem, State.callEntry_mem]
+    rw [g _ (by simp), r3, hcb]; exact hbl
+
+end
+
 end VG.Proof.Dsa.PPC64LE.Gen
