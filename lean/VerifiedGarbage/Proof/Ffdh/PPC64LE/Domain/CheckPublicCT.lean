@@ -293,4 +293,90 @@ theorem TL {d : CD} {s : State} (h : C1a d s) : WP isa Precompute.loadN s (C2 d)
     (k.gpr .r6 (by decide)).trans h6⟩, ?_⟩
   rw [arr, hv, ← Proof.Ffdh.take_bytesAt _ _ (show d.k ≤ d.L by rcases hb.hL with h | h <;> omega), hb.bD]
 
+theorem getD_of_lt' {l : List Byte} {i : Nat} (h : i < l.length) : l.getD i 0 = l[i] := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h, Option.getD_some]
+
+theorem Base.kL {d : CD} {s : State} (h : Base d s) : d.k ≤ d.L := by rcases h.hL with h | h <;> omega
+
+theorem Base.take_len {d : CD} {s : State} (h : Base d s) : (d.db.take d.k).length = d.k := by
+  have := h.kL
+  rw [List.length_take, ← h.bD, bytesAt_length]; omega
+
+theorem Base.take_byte {d : CD} {s : State} (h : Base d s) {i : Nat} (hi : i < d.k) :
+    s.mem (off d.D i) = (d.db.take d.k)[i]'(by rw [h.take_len]; exact hi) := by
+  have := h.kL
+  rw [List.getElem_take]
+  exact byte_of_bytesAt h.bD (by omega)
+
+theorem TC1 {d : CD} {s : State} (h : C2 d s) : WP isa (.block Precompute.check1) s (C3 d) := by
+  obtain ⟨⟨⟨hb, h26⟩, h12, h6⟩, hp⟩ := h
+  have hl := hb.take_len
+  have hk := hb.k64
+  refine WP.mono (check1_ok (N := d.D) (nb := d.db.take d.k) h12 h6 hk hl
+    (fun i hi => hb.rdD i (by have := hb.kL; omega)) fun i hi => hb.take_byte hi)
+    fun t ⟨⟨i0, i15, i18, im⟩, k⟩ => ⟨⟨hb.same k im, (k.gpr .r26 (by decide)).trans h26⟩, by rw [arr, im]; exact hp,
+      (k.gpr .r6 (by decide)).trans h6, by rw [i15, getD_of_lt' (by omega)], i18,
+      by rw [i0, getD_of_lt' (by omega)]⟩
+
+theorem TC2 {d : CD} {s : State} (h : C3 d s) : WP isa Precompute.check2 s (C4 d) := by
+  obtain ⟨⟨hb, h26⟩, hp, h6, h15, h18, h0⟩ := h
+  have hl := hb.take_len
+  have hk := hb.k64
+  refine WP.mono (check2_ok (nb := d.db.take d.k) h6 hk hb.k1024 hl (by rw [h0, getD_of_lt' (by omega)])
+    (by rw [h15, getD_of_lt' (by omega)]) h18) fun t ⟨a, m, k⟩ =>
+    ⟨⟨hb.same k m, (k.gpr .r26 (by decide)).trans h26⟩, by rw [arr, m]; exact hp, a⟩
+
+theorem modulus_facts {p k : Nat} (h : Spec.Rsa.modulusValid p k = true) : 2 ≤ p ∧ p % 2 = 1 := by
+  simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+  omega
+
+theorem TR {d : CD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) : WP isa range s (C5 d) := by
+  obtain ⟨⟨⟨hb, h26⟩, hp, h0⟩, hz⟩ := h
+  have hv := h0.mp hz
+  have hf := modulus_facts hv
+  have hwd : d.w = (d.k + 7) / 8 := rfl
+  have hk := hb.k64
+  refine WP.mono (range_ok hb.env hb.r23 h26 hb.r28 (by omega) (by omega) hb.rdY hb.sepY (by rw [hp]; omega))
+    fun t ⟨⟨_, p4, _, a26, bt, a10⟩, k⟩ => ⟨hb.of (fun r hr => ?_) k.rd k.wr bt, by rw [p4, hp], hv, ?_⟩
+  · simp only [baseRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [a10, hb.env.h10]
+    all_goals exact k.gpr _ (by decide)
+  · rw [a26, mask_eq_zero, hp, hb.bY, decide_eq_false_iff_not]
+
+/-- 0 into `r3`. -/
+theorem TK0 {Φ : CD → State → Prop} (hΦ : ∀ d s, Φ d s → Base d s) {d : CD} {s : State}
+    (h : Φ d s) : WP isa (.block [.li .r3 0]) s (CF d) := by
+  refine WP.mono (WP.keep [.r3] (Q := fun _ => True) (by prun; exact ⟨_, rfl⟩) (by decide)) fun t ⟨_, k⟩ => ?_
+  show t.gpr .r23 = d.S
+  rw [k.gpr .r23 (by decide), (hΦ d s h).r23]
+
+/-- 1 into `r3`. -/
+theorem TK1 {Φ : CD → State → Prop} (hΦ : ∀ d s, Φ d s → Base d s) {d : CD} {s : State}
+    (h : Φ d s) : WP isa (.block [.li .r3 1]) s (CF d) := by
+  refine WP.mono (WP.keep [.r3] (Q := fun _ => True) (by prun; exact ⟨_, rfl⟩) (by decide)) fun t ⟨_, k⟩ => ?_
+  show t.gpr .r23 = d.S
+  rw [k.gpr .r23 (by decide), (hΦ d s h).r23]
+
+theorem TQ {d : CD} {s : State} (h : C5 d s ∧ s.gpr .r26 ≠ 0) : WP isa (.block hasQ) s (C6 d) := by
+  obtain ⟨⟨hb, hp, hv, _⟩, _⟩ := h
+  refine WP.mono (WP.keep [.r0] (Q := fun t => (t.gpr .r0 == 0) = decide (d.L = 3 * d.k) ∧ t.mem = s.mem) (by
+      unfold hasQ
+      prun [hb.r27, hb.r28]
+      exact sub_3k_zero (by rcases hb.hL with h | h <;> have := hb.k1024 <;> omega) (by have := hb.k1024; omega))
+    (by decide)) fun t ⟨⟨a0, m⟩, k⟩ => ⟨hb.same k m, by rw [arr, m]; exact hp, hv, ?_⟩
+  rw [← beq_iff_eq, a0, decide_eq_true_iff]
+
+theorem TS {d : CD} {s : State} (h : C6 d s ∧ s.gpr .r0 = 0) : WP isa subgroup s (CF d) := by
+  obtain ⟨⟨hb, hp, hv, h0⟩, hz⟩ := h
+  have h3k := h0.mp hz
+  have hf := modulus_facts hv
+  have hk := hb.k64
+  refine WP.mono (subgroup_ok hb.env hb.r23 hb.r21 hb.r28 (by omega) hb.k1024 (by rw [hp]; omega)
+    (by rw [hp]; exact hf.2)
+    (fun i hi => by rw [off_off']; exact hb.rdD _ (by omega))
+    (fun i hi => by rw [off_off']; exact hb.sepD _ (by omega))) fun t ⟨_, k⟩ => ?_
+  show t.gpr .r23 = d.S
+  rw [k.gpr .r23 (by decide), hb.r23]
+
 end VG.Proof.Ffdh.PPC64LE.Domain
