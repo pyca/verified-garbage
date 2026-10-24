@@ -130,15 +130,21 @@ def montPrep : Prog isa :=
         (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r15 6 ++ base .r14 9)) (.seq copyWords
           VG.Impl.MillerRabin.PPC64LE.expSetup)))))))
 
-/-- An accepted witness: in Montgomery form into array 5, the round called;
-then `hStat := 2` if it failed, else the passing witnesses counted and
-`hStat := 1` once there are `hChecks` of them. -/
-def round (name : String) (roundCode : Prog isa) : Prog isa :=
+/-- An accepted witness (array 4) in Montgomery form into array 5, and the
+round called; its result (a `u32`) zero-extended in `r3`, and `r10`, `r11`,
+`r29` and `r12` from the header. -/
+def roundCall (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen]) (.seq (.call name roundCode)
-    (.seq (.block regsBack)
-      (.ite (.zero .d .r3) (.block [.li .r3 2, sth .r3 hStat])
-        (.block [ldh .r3 hIdx, ldh .r4 hChecks, .addi .r3 .r3 1, sth .r3 hIdx, .sub .r4 .r4 .r3, .subi .r4 .r4 1,
-          .lsr .d .r4 .r4 63, .li .r5 3, .mul .r4 .r4 .r5, .li .r5 4, .sub .r4 .r5 .r4, sth .r4 hStat])))))
+    (.block ([.lsl .r3 .r3 32, .lsr .d .r3 .r3 32] ++ regsBack))))
+
+/-- An accepted witness's round; then `hStat := 2` if it failed, else the
+passing witnesses counted and `hStat := 1` once there are `hChecks` of
+them. -/
+def round (name : String) (roundCode : Prog isa) : Prog isa :=
+  .seq (roundCall name roundCode)
+    (.ite (.zero .d .r3) (.block [.li .r3 2, sth .r3 hStat])
+      (.block [ldh .r3 hIdx, ldh .r4 hChecks, .addi .r3 .r3 1, sth .r3 hIdx, .sub .r4 .r4 .r3, .subi .r4 .r4 1,
+        .lsr .d .r4 .r4 63, .li .r5 3, .mul .r4 .r4 .r5, .li .r5 4, .sub .r4 .r5 .r4, sth .r4 hStat]))
 
 /-- A draw: the next `hK` octets of `rand` into array 4 (`hUsed` advanced),
 the top word and'ed with `hTop`; the round for `x ≥ 2` and `(x | 1) < N`
