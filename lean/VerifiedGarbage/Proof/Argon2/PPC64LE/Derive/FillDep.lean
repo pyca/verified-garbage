@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 
 /-!
 # Argon2 on PPC64LE: the filling state, and data-dependent addressing

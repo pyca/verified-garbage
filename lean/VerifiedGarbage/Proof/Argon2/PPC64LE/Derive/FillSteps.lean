@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Ops
 import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!

@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 
 /-!
 # Argon2 on PPC64LE: the final block and the tag

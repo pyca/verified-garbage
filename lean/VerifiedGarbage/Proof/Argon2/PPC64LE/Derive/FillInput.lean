@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.AddressInput
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillSteps
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 
 /-!
 # Argon2 on PPC64LE: the address-generation input block

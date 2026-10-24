@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 
 /-!
 # Argon2 on PPC64LE: the memory's initialization
