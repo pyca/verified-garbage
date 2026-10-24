@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # ML-KEM on PPC64LE: saving and restoring our caller's registers
 
 The top-level functions save our caller's `r24`–`r31` and our return address
-in `scratch`, at 840 (`topSave_ok`: `Saved`), and restore them at the end
+in `scratch`, at 840 (`topSave_ok`: `TopSaved`), and restore them at the end
 (`topEnd_ok`), returning `r24`.
 -/
 
@@ -23,11 +23,14 @@ namespace VG.Proof.MlKem.PPC64LE
 open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE
 open VG.Impl.Sha3.PPC64LE.Stream (mov)
 
+theorem mem_rd_wr' {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n :=
+  let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
+
 /-- The registers the top-level functions save. -/
 def savedTop : List Reg := [.r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
 
 /-- Our caller's `r24`–`r31` and return address, saved at `P + 840`. -/
-structure Saved (m : Mem) (P : Addr) (s₀ : State) : Prop where
+structure TopSaved (m : Mem) (P : Addr) (s₀ : State) : Prop where
   s24 : m.readW (P + BitVec.ofNat 64 840) 64 = s₀.gpr .r24
   s25 : m.readW (P + BitVec.ofNat 64 848) 64 = s₀.gpr .r25
   s26 : m.readW (P + BitVec.ofNat 64 856) 64 = s₀.gpr .r26
@@ -45,9 +48,9 @@ theorem saveR_contains (P : Addr) {o : Nat} (h₁ : 840 ≤ o) (h₂ : o + 8 ≤
     (saveR P).Contains (P + BitVec.ofNat 64 o) 8 :=
   Offset.contains _ h₁ (by omega) (by decide)
 
-/-- `Saved` through a change of memory apart from where they are saved. -/
-theorem Saved.keep {m m' : Mem} {P : Addr} {s₀ : State} (h : Saved m P s₀) {rs : List Region}
-    (hf : Frame rs m m') (hd : ∀ r ∈ rs, (saveR P).Disjoint r) : Saved m' P s₀ := by
+/-- `TopSaved` through a change of memory apart from where they are saved. -/
+theorem TopSaved.keep {m m' : Mem} {P : Addr} {s₀ : State} (h : TopSaved m P s₀) {rs : List Region}
+    (hf : Frame rs m m') (hd : ∀ r ∈ rs, (saveR P).Disjoint r) : TopSaved m' P s₀ := by
   have k : ∀ o, 840 ≤ o → o + 8 ≤ 912 → m'.readW (P + BitVec.ofNat 64 o) 64 = m.readW (P + BitVec.ofNat 64 o) 64 :=
     fun o h₁ h₂ => hf.readW (saveR_contains P h₁ h₂) hd (by decide)
   exact ⟨(k 840 (by decide) (by decide)).trans h.s24, (k 848 (by decide) (by decide)).trans h.s25,
@@ -67,7 +70,7 @@ theorem topEnd_eq : topEnd = [mov .r3 .r24, .load .d .r0 .r31 904, .mtlr .r0, .l
 /-- Our caller's registers and return address saved, with `scratch` in `b`. -/
 theorem topSave_ok {s : State} {b : Reg} {P : Addr} (hb : b = .r6 ∨ b = .r7) (hP : s.gpr b = P)
     (hw : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions s.wr (P + BitVec.ofNat 64 o) 8) :
-    WP isa (.block (topSave b)) s fun s' => Saved s'.mem P s ∧ Frame [saveR P] s.mem s'.mem ∧
+    WP isa (.block (topSave b)) s fun s' => TopSaved s'.mem P s ∧ Frame [saveR P] s.mem s'.mem ∧
       (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have w840 := hw 840 (by decide) (by decide)
   have w848 := hw 848 (by decide) (by decide)
@@ -89,7 +92,7 @@ theorem topSave_ok {s : State} {b : Reg} {P : Addr} (hb : b = .r6 ∨ b = .r7) (
           refine Frame.writeW ?_ (List.mem_singleton_self _) _ (saveR_contains _ (by decide) (by decide)))); done)
 
 /-- The return value, and our caller's registers and return address restored. -/
-theorem topEnd_ok {s₀ s : State} {P : Addr} (h31 : s.gpr .r31 = P) (hsav : Saved s.mem P s₀)
+theorem topEnd_ok {s₀ s : State} {P : Addr} (h31 : s.gpr .r31 = P) (hsav : TopSaved s.mem P s₀)
     (hin : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 o) 8)
     (hcs : ∀ r ∈ preserved, r ∉ savedTop → s.gpr r = s₀.gpr r) :
     WP isa (.block topEnd) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.lr = s₀.lr ∧
