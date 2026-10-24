@@ -61,6 +61,13 @@ theorem out_sub {B : Addr} {o d n S : Nat} {m m' : Mem} (h : Outside (off B o) d
   outs_sub (rs := [(d, n)]) (fun x hx => h x (hx _ (List.mem_singleton.mpr rfl)))
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hS) hS' hS0
 
+/-- Frames of the whole are frames of a part. -/
+theorem out_super {B : Addr} {o d n : Nat} {m m' : Mem} (h : Outside B (o + d) n m m') (ho : o < 2 ^ 64) :
+    Outside (off B o) d n m m' := by
+  intro x hx
+  refine h x ?_
+  rcases ofs_rebase B x ho with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
+
 /-- `copyWords`, `w` words from `a` to `b` of the working space (`r15`,
 `r14`), apart, with `2 w` in `r11`. -/
 theorem copySub_ok {s : State} {B : Addr} {Z a b w : Nat} (hs : Scr s B Z)
