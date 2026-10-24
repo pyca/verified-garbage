@@ -110,6 +110,8 @@ structure Bufs (p : PP) (s : State) : Prop where
   rdR : ∀ i < p.r.length, InRegions (s.rd ++ s.wr) (off p.rp i) 1
   sepR : ∀ i < p.r.length, ∀ x, ofs p.B x < p.Z → off p.rp i ≠ x
   bR : Spec.Rsa.bytesAt s.mem p.rp p.r.length = p.r
+  /-- `out` is zeroed first. -/
+  bO : Spec.Rsa.bytesAt s.mem p.op p.L = List.replicate p.L 0
   scrO : Scr s p.op p.L
   sepO : ∀ x, ofs p.op x < p.L → p.Z ≤ ofs p.B x
   scrU : Scr s p.up 8
@@ -130,11 +132,23 @@ theorem bytes_frm {p : PP} {m m' : Mem} {rs : List (Nat × Nat)} (hf : Frm p.B r
   by_contra hc
   exact this (by omega) rfl
 
+/-- `out`'s bytes are kept by a change in the working space. -/
+theorem out_frm {p : PP} {m m' : Mem} {rs : List (Nat × Nat)} (hf : Frm p.B rs m m')
+    (hr : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z) (hsep : ∀ x, ofs p.op x < p.L → p.Z ≤ ofs p.B x) (hL : p.L ≤ 2 ^ 64) :
+    Spec.Rsa.bytesAt m' p.op p.L = Spec.Rsa.bytesAt m p.op p.L := by
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => hf _ fun r hr' => Or.inr ?_
+  have hi' := List.mem_range.mp hi
+  have := hsep (p.op + BitVec.ofNat 64 i) (by simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hi')
+  have h2 := hr r hr'
+  omega
+
 theorem Bufs.step {p : PP} {s t : State} {rs : List (Nat × Nat)} {regs : List Reg} (h : Bufs p s)
     (hf : Frm p.B rs s.mem t.mem) (hr : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z) (k : Keep regs s t) : Bufs p t where
   rdR := by rw [k.rd, k.wr]; exact h.rdR
   sepR := h.sepR
   bR := by rw [bytes_frm hf hr h.sepR]; exact h.bR
+  bO := by rw [out_frm hf hr h.sepO (by have := h.scrO.nowrap; omega)]; exact h.bO
   scrO := h.scrO.congr k.wr
   sepO := h.sepO
   scrU := h.scrU.congr k.wr

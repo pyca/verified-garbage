@@ -39,7 +39,7 @@ theorem St.call {p : PP} {s t : State} {w : Nat} (h : St p s)
       word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun hi hk' =>
     keeps_hdr hk hi hk' (by simp only [PP.L] at hn; omega)
   have ha := h.args
-  refine ⟨h.scr.congr hwr, h31, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨?_, h.bufs.sepR, ?_, h.bufs.scrO.congr hwr,
+  refine ⟨h.scr.congr hwr, h31, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨?_, h.bufs.sepR, ?_, ?_, h.bufs.scrO.congr hwr,
     h.bufs.sepO, h.bufs.scrU.congr hwr, h.bufs.sepU, h.bufs.stkR, h.bufs.stkO, h.bufs.stkU⟩, h.dims,
     by rw [hwr]; exact h.ws, hsp.trans h.sp, h.stk, h.stkB⟩
   · rw [e (by decide) (by decide)]; exact ha.wsLen
@@ -67,5 +67,19 @@ theorem St.call {p : PP} {s t : State} {w : Nat} (h : St p s)
         simp only [Region.Contains] at hc'; simp only [ofs]; omega)
       exact this rfl
     · exact fun hc' => h.bufs.stkR _ hc' hc
+  · refine Eq.trans ?_ h.bufs.bO
+    simp only [Spec.Rsa.bytesAt]
+    refine List.map_congr_left fun i hi => hf _ fun r hr => ?_
+    have hi' : i < p.L := List.mem_range.mp hi
+    have hnw := h.bufs.scrO.nowrap
+    have ho : ofs p.op (p.op + BitVec.ofNat 64 i) = i := by simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]
+    have hc : (⟨p.op, p.L⟩ : Region).Contains (p.op + BitVec.ofNat 64 i) 1 := by
+      simp only [Region.Contains]; simp only [ofs] at ho; omega
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · intro hc'
+      have := h.bufs.sepO _ (by rw [ho]; exact hi')
+      simp only [Region.Contains, ofs] at hc' this; omega
+    · exact fun hc' => h.bufs.stkO _ hc' hc
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
