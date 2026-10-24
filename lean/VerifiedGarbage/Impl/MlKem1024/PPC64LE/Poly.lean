@@ -94,6 +94,11 @@ def compressEncode1024 : Prog isa :=
 /-- Byte `off` of the group, added into `r8` at bit `sh`. -/
 def ddByteAt (off sh : Nat) : List Instr := [.lbz .r7 .r3 off, .lsl .r7 .r7 sh, .add .r8 .r8 .r7]
 
+/-- Byte `off` of the group, added into `r12` at bit `sh`: the last six
+bytes of a group of 11-bit fields are loaded apart from the first six, so
+that the group is read before any coefficient is stored. -/
+def ddByteAtHi (off sh : Nat) : List Instr := [.lbz .r7 .r3 off, .lsl .r7 .r7 sh, .add .r12 .r12 .r7]
+
 /-- The 5-bit field at bit `p` of `r8`, decompressed into coefficient `k`. -/
 def dd5Field (k p : Nat) : List Instr :=
   [.lsl .r7 .r8 (59 - p), .lsr .d .r7 .r7 59] ++ decompressTo 5 (4 * k)
@@ -108,13 +113,17 @@ def dd5Body : List Instr :=
 def dd11Field (k p : Nat) : List Instr :=
   [.lsl .r7 .r8 (53 - p), .lsr .d .r7 .r7 53] ++ decompressTo 11 (4 * k)
 
+/-- The 11-bit field at bit `p` of `r12`, decompressed into coefficient `k`. -/
+def dd11FieldHi (k p : Nat) : List Instr :=
+  [.lsl .r7 .r12 (53 - p), .lsr .d .r7 .r7 53] ++ decompressTo 11 (4 * k)
+
 def dd11Body : List Instr :=
   [.lbz .r8 .r3 0] ++ ddByteAt 1 8 ++ ddByteAt 2 16 ++ ddByteAt 3 24 ++ ddByteAt 4 32 ++
   ddByteAt 5 40 ++
+  [.lbz .r12 .r3 5] ++ ddByteAtHi 6 8 ++ ddByteAtHi 7 16 ++ ddByteAtHi 8 24 ++ ddByteAtHi 9 32 ++
+  ddByteAtHi 10 40 ++
   dd11Field 0 0 ++ dd11Field 1 11 ++ dd11Field 2 22 ++ dd11Field 3 33 ++
-  [.lbz .r8 .r3 5] ++ ddByteAt 6 8 ++ ddByteAt 7 16 ++ ddByteAt 8 24 ++ ddByteAt 9 32 ++
-  ddByteAt 10 40 ++
-  dd11Field 4 4 ++ dd11Field 5 15 ++ dd11Field 6 26 ++ dd11Field 7 37 ++
+  dd11FieldHi 4 4 ++ dd11FieldHi 5 15 ++ dd11FieldHi 6 26 ++ dd11FieldHi 7 37 ++
   [.addi .r3 .r3 11, .addi .r6 .r6 32, .subi .r11 .r11 1]
 
 def decodeDecompress1024 : Prog isa :=
