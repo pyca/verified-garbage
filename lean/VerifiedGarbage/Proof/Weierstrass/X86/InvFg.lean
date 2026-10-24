@@ -1,18 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvLayout
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
+import VerifiedGarbage.Proof.Weierstrass.X86.InvLayout
+import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
+public import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
+public import VerifiedGarbage.Proof.Divstep.Word32Def
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+public import VerifiedGarbage.TCB.Mem
 
 /-! # Applying both matrix rows to the signed divstep values -/
 

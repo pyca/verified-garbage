@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Front
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Rhs
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.Rhs
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
 
 /-! # Prepare the curve polynomial and retain the input checks on 32-bit x86 -/
 

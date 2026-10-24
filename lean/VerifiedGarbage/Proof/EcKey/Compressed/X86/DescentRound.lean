@@ -5,13 +5,14 @@ import VerifiedGarbage.Proof.EcKey.Compressed.X86.DescentChoose
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.DescentUpdate
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Counter
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootPow
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Impl.Ecdh.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
 
 /-! # One machine round refines the functional P-224 root descent -/
 

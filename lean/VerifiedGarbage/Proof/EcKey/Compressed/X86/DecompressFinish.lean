@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
-public import VerifiedGarbage.Proof.EcKey.X86.Finish
+import VerifiedGarbage.Proof.EcKey.X86.Finish
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86

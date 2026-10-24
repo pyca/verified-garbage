@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressFront
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Select
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Check

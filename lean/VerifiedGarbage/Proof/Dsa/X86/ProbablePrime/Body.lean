@@ -1,14 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Test
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Test
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Load
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Sieve
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinish
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Finish
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Memory
+public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
 
 /-! # Trial division, then the blinded loop -/
 

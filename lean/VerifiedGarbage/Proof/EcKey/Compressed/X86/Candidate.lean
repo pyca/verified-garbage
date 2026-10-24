@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootPow
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootPow
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Impl.Ecdh.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
 
 /-! # The machine root candidate's shared refinement interface -/
 

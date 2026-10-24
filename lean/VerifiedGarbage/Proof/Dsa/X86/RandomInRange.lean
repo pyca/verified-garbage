@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Dsa.Zero
 import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Dsa.X86.Checks
 
 /-!
 # Whether a candidate is in range (x86)

@@ -1,17 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.LoadStore
+import VerifiedGarbage.Proof.Dsa.X86.Generation.LoadStore
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Rsa.X86.DivContext
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Rsa.X86.DivLoop
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.X86.WordConst
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Impl.Dsa.X86.Generation
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # p from `X` and q (A.1.1.2 steps 11.4–11.5)
 

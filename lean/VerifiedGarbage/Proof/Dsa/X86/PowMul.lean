@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.RtCall
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # A multiplication of DSA's exponentiation, by a call

@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
-public import VerifiedGarbage.Proof.Framework.X86.CallReturn
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Framework.X86.CallReturn
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCTChain
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCall
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # The domain check: `vg_dsa_check_parameters` on p||q||g -/
 

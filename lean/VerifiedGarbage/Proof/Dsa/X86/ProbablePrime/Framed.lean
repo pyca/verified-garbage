@@ -1,12 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Body
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Body
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.NoSp
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpWords
 import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Finish
+public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
+public import VerifiedGarbage.Spec.MillerRabin
 
 /-! # The four saved registers and the return address survive the test -/
 

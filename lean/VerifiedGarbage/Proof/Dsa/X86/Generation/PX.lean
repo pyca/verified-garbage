@@ -7,13 +7,13 @@ import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
 import VerifiedGarbage.Proof.Dsa.Digest
-import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Dsa.X86.Generation.AddBE
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # p's `X`: the hashes, shaped (A.1.1.2 steps 11.1–11.3) -/
 

@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Dsa.X86.DerivingInstalled
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.ReturnFrame
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
-import VerifiedGarbage.Proof.Dsa.X86.DerivingDispatch
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.X86.DerivingEntry

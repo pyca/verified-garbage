@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Parameters
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Finish
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Memory
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinOutcome
+import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinOutcome
 public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Load
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Ranges
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTest
@@ -16,6 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
 
 /-! # The blinded loop and its result -/
 

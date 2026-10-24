@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.ABI
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The precondition gives a valid environment -/
 

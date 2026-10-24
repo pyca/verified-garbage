@@ -2,14 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
 public import VerifiedGarbage.Proof.Dsa.Generation.Search
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Dsa.Generation.PCandidate
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # p's search over `4 L` counters (A.1.1.2 steps 11–15) -/
 

@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.FinishCT
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Entry
+import VerifiedGarbage.Proof.Dsa.X86.Generation.FinishCT
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Entry
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Correct
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # Parameter generation's trace depends only on its public inputs -/
 

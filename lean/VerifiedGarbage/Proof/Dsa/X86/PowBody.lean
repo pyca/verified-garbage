@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
-public import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Mont.X86.ContextInit
 public import VerifiedGarbage.Proof.Dsa.X86.PowCore
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # IA-32 DSA exponentiation with its callee-saved registers restored -/
 

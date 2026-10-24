@@ -1,14 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Ecdh.X86.Validate
-public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
+public import VerifiedGarbage.Impl.Weierstrass.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Weierstrass.Unch
 
 /-! # The curve polynomial used by coordinate recovery -/
 

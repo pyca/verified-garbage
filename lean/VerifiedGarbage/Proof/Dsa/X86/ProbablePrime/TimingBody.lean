@@ -1,19 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingTest
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Body
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingTest
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Sieve
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingBranch
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.NoSp
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoopTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Framework.X86.AllocFrame
-import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingFront
+public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
+public import VerifiedGarbage.Spec.MillerRabin
 
 /-! # The whole test leaks only what the contract releases -/
 

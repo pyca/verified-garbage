@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.Correct
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Stack
 import VerifiedGarbage.Proof.Dsa.X86.WorkspaceCall
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.WordsCanonical
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Body
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout

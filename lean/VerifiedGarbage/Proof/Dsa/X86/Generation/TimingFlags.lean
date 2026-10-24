@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+public import VerifiedGarbage.Impl.Dsa.X86.Generation
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.TaintErase
+public import VerifiedGarbage.Proof.Mont.Words
 
 /-! # Two runs at a branch on a state word -/
 

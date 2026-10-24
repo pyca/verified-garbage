@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSubsetTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicColumnTiming
 public import VerifiedGarbage.Proof.Mont.X86.CombSubsets
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable

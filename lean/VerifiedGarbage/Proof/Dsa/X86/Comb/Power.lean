@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerInit
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerLoop
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
 import VerifiedGarbage.Proof.Mont.X86.ContextMath
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math

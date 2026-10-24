@@ -8,7 +8,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 
 /-! # Leave Montgomery form and choose between the two canonical roots -/
 

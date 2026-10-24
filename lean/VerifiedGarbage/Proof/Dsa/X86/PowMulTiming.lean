@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowOuts
+import VerifiedGarbage.Proof.Dsa.X86.PowOuts
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 import VerifiedGarbage.Proof.Dsa.X86.PowMul
 import VerifiedGarbage.Proof.Bignum.X86.RtCall
@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import VerifiedGarbage.Proof.Mont.X86.OutsZ
 
 /-! # The trace of a multiplication of DSA's exponentiation, by a call
 

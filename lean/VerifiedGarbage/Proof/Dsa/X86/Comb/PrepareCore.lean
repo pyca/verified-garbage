@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Power
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Setup
 import VerifiedGarbage.Proof.Mont.X86.CombCanonical
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 public import VerifiedGarbage.Proof.Mont.X86.ContextInit
 public import VerifiedGarbage.Proof.Mont.X86.CombBuild

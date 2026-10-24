@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
-public import VerifiedGarbage.Proof.EcKey.Compressed.Parity
+import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.TCB.Code
 
 /-! # Match the recovered root's low bit on 32-bit x86 -/
 

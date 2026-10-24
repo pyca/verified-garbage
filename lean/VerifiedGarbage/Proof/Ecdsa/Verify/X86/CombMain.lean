@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFinal
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
 import VerifiedGarbage.Proof.Ecdh.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 @[expose] public section
 

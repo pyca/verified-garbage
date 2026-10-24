@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Main
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.Main
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Impl.EcKey.Compressed.X86
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+public import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86

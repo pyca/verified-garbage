@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.Generate
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 
-import VerifiedGarbage.Proof.Dsa.X86.WidthMatch
 
 /-! # Selecting supported public component widths -/
 

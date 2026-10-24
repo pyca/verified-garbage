@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Attempt
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
-import VerifiedGarbage.Proof.Dsa.Generation.Search
 import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # The seeds in turn (A.1.1.2 step 1, the caller's retries) -/
 

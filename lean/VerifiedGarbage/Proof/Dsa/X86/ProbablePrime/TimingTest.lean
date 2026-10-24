@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Test
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Test
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingFront
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrepareInput
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
@@ -11,11 +11,11 @@ import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Sieve
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Parameters
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Load
 
 /-! # The prepared test leaks only the candidate, the tape and public pointers -/
 

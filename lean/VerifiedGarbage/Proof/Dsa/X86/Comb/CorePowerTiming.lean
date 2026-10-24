@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
-import VerifiedGarbage.Proof.Dsa.X86.Comb.CorePower
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CallTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Call

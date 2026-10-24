@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCall
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCall
+import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Dsa.X86.Generation.ABIEnv
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # Two runs of a probable-prime test of the same candidate leak the same -/
 

@@ -1,11 +1,14 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
 
 import VerifiedGarbage.Proof.Dsa.X86.DigestClamp
 import VerifiedGarbage.Proof.Dsa.X86.DigestWidth
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Ecdsa.X86
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The DSA digest-prefix length from validated subgroup masks -/
 

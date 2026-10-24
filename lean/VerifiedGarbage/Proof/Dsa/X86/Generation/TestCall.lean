@@ -1,14 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
-public import VerifiedGarbage.Proof.Framework.X86.CallReturn
+import VerifiedGarbage.Proof.Framework.X86.CallReturn
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # A probable-prime test: its status, and the witnesses it read -/
 

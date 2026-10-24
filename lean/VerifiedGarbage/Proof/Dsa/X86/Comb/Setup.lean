@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.CombSetup
 import VerifiedGarbage.Proof.Mont.X86.ContextSquares
 import VerifiedGarbage.Proof.Mont.X86.PublicPower
-import VerifiedGarbage.Proof.Mont.X86.PowerHighBounds
-import VerifiedGarbage.Proof.Mont.X86.PowerTwo
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Mont.X86.ContextInit

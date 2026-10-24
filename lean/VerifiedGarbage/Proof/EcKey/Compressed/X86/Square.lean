@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootPow
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Counter
@@ -10,6 +10,12 @@ import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Impl.Ecdsa.X86
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Weierstrass.Unch
 
 /-! # Repeated squaring for the P-224 root descent
 

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 
 /-! # Accept exactly SEC 1 tags 02 and 03 on 32-bit x86 -/
 
