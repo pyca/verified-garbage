@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Square
+import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Square
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Counter
-import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 
 /-! # The tested power in a P-224 descent round -/
 

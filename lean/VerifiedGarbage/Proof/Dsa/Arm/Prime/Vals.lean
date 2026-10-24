@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Base
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
-import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp

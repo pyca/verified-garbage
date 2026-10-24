@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP

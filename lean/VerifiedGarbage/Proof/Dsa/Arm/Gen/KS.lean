@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 
 /-! # DSA parameter generation on ARMv7: steps in the key working space
 

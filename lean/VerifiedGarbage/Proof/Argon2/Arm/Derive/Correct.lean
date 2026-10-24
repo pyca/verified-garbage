@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillLoops
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
-import VerifiedGarbage.Proof.Argon2.Arm.Compress
 
 /-!
 # Argon2 on ARMv7: the derivation is correct

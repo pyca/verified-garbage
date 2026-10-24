@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KS
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 
 /-! # DSA parameter generation on ARMv7: the operations on the arrays as pieces
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Offset

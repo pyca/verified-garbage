@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCache
 
 /-!
 # Argon2 on ARMv7: the filling loops

@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!

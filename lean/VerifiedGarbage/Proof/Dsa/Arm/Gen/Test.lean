@@ -3,12 +3,15 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PrimeCall
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 
 /-! # DSA parameter generation on ARMv7: a probable-prime test (`test_vp`)
 

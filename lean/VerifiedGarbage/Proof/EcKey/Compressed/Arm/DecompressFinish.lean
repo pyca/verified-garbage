@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
-public import VerifiedGarbage.Proof.EcKey.Arm.Finish
+import VerifiedGarbage.Proof.EcKey.Arm.Finish
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 
 @[expose] public section
 

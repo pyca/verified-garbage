@@ -1,9 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcLoop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead

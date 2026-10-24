@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MillerRabin.Arm.Win
 import VerifiedGarbage.Proof.Rsa.Arm.RvCand1
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: the round on the witness (`mrCall_vp`)
 

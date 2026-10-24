@@ -8,7 +8,8 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 
 /-! # Leave Montgomery form and choose between the two canonical roots -/
 

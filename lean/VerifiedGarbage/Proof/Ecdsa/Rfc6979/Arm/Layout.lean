@@ -3,13 +3,16 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.Arm
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.SymsInstr
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: where everything is

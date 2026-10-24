@@ -5,8 +5,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr2
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint7
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: the pieces of an iteration of Miller–Rabin
 

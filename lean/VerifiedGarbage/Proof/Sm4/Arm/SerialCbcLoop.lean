@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
-import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Sm4.Ctr
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.Core
-import VerifiedGarbage.Spec.Sm4.Cfb
 import VerifiedGarbage.Proof.Modes.CbcNext
 public import VerifiedGarbage.Proof.Modes.CbcEnc
 import VerifiedGarbage.Proof.Framework.Arm.Exec

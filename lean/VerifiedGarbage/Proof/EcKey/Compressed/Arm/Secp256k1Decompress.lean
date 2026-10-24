@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
+import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
@@ -12,6 +12,13 @@ meta import VerifiedGarbage.Impl.EcKey.Compressed.Arm
 meta import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
+public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMiddle
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.TCB.Arm.Target
 
 @[expose] public section
 

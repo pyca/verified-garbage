@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.TCombSelectTable
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombSign
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombNegate
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.CombPointW
 

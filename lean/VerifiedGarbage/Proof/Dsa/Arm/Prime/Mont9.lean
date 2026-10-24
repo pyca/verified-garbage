@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont3
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint6
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
 
 /-! # A candidate on ARMv7: the Montgomery forms of 1 and −1 (`montB_vp`)
 

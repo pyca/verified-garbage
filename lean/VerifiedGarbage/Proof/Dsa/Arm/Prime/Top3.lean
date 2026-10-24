@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top1
 
 /-! # DSA's probable-prime test on ARMv7: the body's start (`in_c`)
 

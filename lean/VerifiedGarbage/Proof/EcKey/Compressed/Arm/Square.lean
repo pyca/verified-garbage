@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Counter
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+public import VerifiedGarbage.Impl.Ecdsa.Arm
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Weierstrass.Unch
 
 /-! # Repeated squaring for the P-224 root descent
 

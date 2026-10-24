@@ -1,13 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSStore
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSStore
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Rsa.Arm.CvStore
-import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
+public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSOps
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 
 /-! # DSA parameter generation on ARMv7: copies between the arrays and `scratch`
 

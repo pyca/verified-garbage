@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 
 /-! # Initialize P-224's descent from its two computed powers -/

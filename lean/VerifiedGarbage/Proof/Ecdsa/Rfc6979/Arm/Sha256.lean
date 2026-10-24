@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-256 on 32-bit ARM

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
-import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # DSA parameter generation on ARMv7: frame words in pieces

@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top1
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top1
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Base
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # DSA's probable-prime test on ARMv7: the arguments to the allocation (`pre_ok`)
 

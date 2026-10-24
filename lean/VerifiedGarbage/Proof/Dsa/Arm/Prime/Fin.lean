@@ -6,20 +6,17 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint8
 public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.Generation.Primality
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr11
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp7
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont5
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint8
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Trial2
-import VerifiedGarbage.Proof.Rc2.Word32
 import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # DSA's probable-prime test on ARMv7: the result
 

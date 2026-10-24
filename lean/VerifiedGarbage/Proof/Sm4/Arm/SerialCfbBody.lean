@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCfb
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Spec.Sm4.Cfb
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry

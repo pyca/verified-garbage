@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RandomCopy
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Dsa.Arm.Bytes
 import VerifiedGarbage.Impl.Dsa.Arm.Context
 
 /-!

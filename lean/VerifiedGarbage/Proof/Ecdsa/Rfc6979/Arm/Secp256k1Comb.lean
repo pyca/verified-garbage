@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombMain
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombCT
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombContract

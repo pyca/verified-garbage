@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombInputs
-import VerifiedGarbage.Proof.Weierstrass.CombPointW
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Weierstrass.Env
 

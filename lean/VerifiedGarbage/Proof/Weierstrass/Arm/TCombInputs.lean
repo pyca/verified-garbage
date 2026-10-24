@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombLayout
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombTable
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 
 /-! Scalar bits, curve coefficients, and ROM survive every comb iteration. -/
 

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr2
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint7
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.MillerRabin.Arm.Body
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: Miller–Rabin (`millerRabin_vp`)
 

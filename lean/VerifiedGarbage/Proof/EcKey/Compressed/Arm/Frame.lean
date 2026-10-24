@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
-import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.TCB.Mem
 
 /-! # Frames for the converter's scratch slots -/
 

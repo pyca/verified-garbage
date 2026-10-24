@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
 public import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 

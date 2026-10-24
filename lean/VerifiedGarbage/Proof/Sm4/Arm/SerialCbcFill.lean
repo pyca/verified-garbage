@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
 import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # CBC encryption's input and output copies -/
 

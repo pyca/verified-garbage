@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
@@ -9,6 +9,12 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.Arm.Generation
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # DSA parameter generation on ARMv7: `seed + offset + j`
 

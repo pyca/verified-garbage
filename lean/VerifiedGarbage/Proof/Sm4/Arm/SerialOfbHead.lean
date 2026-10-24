@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialOfbLoop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Public registers across prepared-key OFB encryption -/

@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 
 /-! # DSA parameter generation on ARMv7: calling the domain check
 

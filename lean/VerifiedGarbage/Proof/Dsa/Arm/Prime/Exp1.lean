@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Stage
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
-import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: the exponent of 2 in `c − 1` (`halving_vp`)
 

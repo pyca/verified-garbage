@@ -9,10 +9,10 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 
 /-! # One machine round refines the functional P-224 root descent -/
 

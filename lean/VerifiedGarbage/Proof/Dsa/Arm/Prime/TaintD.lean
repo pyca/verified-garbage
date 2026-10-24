@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint0
-public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
+import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint0
 meta import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 
 /-! # DSA's probable-prime test on ARMv7: the taint analysis of the pieces RSA's candidate lacks -/
 

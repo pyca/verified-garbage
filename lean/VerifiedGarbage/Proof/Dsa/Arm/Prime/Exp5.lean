@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp4
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 
 /-! # A candidate on ARMv7: `sigMasks` and `powWord` as a piece (`St.psigPow`) -/
 

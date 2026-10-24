@@ -3,14 +3,11 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Load1
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Inv
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint3
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # DSA's probable-prime test on ARMv7: the stages before Miller–Rabin
 

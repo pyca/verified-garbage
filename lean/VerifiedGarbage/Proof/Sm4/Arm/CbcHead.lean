@@ -4,15 +4,12 @@ public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 import VerifiedGarbage.Proof.Sm4.Arm.CbcPrepare
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcGroup
-import VerifiedGarbage.Proof.Sm4.Arm.CbcPrologue
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcLoop
 import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
-import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Public registers across the CBC decryption cipher phase -/
 

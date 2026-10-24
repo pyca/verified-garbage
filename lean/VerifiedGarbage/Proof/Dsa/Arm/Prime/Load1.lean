@@ -1,17 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint1
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Math
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
-import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvNumbers
+public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Base
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # A candidate on ARMv7: the working space and the candidate (`loadC_vp`)
 

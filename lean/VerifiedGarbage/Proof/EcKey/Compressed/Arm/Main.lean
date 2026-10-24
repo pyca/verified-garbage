@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Front
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Finish
 import VerifiedGarbage.Proof.EcKey.Compressed.Encode
 import VerifiedGarbage.Proof.Ecdh.Arm.Main
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-! # Compression meets the merged API contract -/
 

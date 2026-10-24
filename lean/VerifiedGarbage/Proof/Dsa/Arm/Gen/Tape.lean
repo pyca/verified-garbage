@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 
 /-! # DSA parameter generation on ARMv7: copies from the tapes
 

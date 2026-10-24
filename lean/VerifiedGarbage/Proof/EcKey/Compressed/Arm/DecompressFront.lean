@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Front
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Rhs
+import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Rhs
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Peer
 import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-! # Prepare the curve polynomial and retain the input checks on ARMv7 -/
 

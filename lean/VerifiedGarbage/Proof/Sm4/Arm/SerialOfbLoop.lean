@@ -5,8 +5,6 @@ public import VerifiedGarbage.Spec.Sm4.Ctr
 import VerifiedGarbage.Proof.Sm4.Arm.SerialOfbGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.Core
-import VerifiedGarbage.Spec.Sm4.Ofb
-import VerifiedGarbage.Proof.Modes.CbcNext
 public import VerifiedGarbage.Proof.Modes.Fb
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

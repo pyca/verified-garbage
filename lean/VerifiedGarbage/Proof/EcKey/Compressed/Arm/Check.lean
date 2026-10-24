@@ -10,9 +10,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
 import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Check the recovered root's square and parity -/
 

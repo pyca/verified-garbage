@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # A candidate on ARMv7: `−c⁻¹` and `R² mod c`
 
