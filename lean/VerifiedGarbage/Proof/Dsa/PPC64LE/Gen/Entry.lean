@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Frame
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on PPC64LE: entry and exit

@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pieces
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pieces
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Inline
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.St
+public import VerifiedGarbage.Proof.Framework.Covers
 
 /-! # DSA parameter generation on PPC64LE: steps in the key working space
 

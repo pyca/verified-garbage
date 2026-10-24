@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.QPart
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PLoop
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.GPart
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.CheckPart
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.CheckPart
 public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 public import VerifiedGarbage.Proof.Dsa.Generation.PDomain
 import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
@@ -14,8 +14,10 @@ import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.CheckCall
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Hash
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 
 /-! # DSA parameter generation on PPC64LE: a seed
 

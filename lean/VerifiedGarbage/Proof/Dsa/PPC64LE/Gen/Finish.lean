@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Entry
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Entry
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pre
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Frame
 
 /-! # DSA parameter generation on PPC64LE: the exit
 

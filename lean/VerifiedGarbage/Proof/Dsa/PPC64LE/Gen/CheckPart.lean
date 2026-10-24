@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.CheckCall
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pieces
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.GPow
@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Hash
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
+public import VerifiedGarbage.Spec.Ffdh
 
 /-! # DSA parameter generation on PPC64LE: checking p‖q‖g
 

@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Search
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Search
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Finish
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Entry
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
 
 /-! # DSA parameter generation on PPC64LE: the body
 

@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 public import VerifiedGarbage.Spec.Dsa.Derive
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.St
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
+public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 
 /-! # DSA parameter generation on PPC64LE: calling the domain check
 

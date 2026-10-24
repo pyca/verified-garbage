@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Bytes
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSLoad
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSStore
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 
 /-! # DSA parameter generation on PPC64LE: `h^((p − 1) / q) mod p` as a piece
 

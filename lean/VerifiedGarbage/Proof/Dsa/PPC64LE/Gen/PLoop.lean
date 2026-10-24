@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter generation on PPC64LE: an iteration of the search for p

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSStore
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSStore
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
@@ -13,6 +13,13 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generation
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.St
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # DSA parameter generation on PPC64LE: the power in the P space
 

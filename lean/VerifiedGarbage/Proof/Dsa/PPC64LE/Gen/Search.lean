@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pre
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pre
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Hash
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 
 /-! # DSA parameter generation on PPC64LE: the search
 
