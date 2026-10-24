@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCandidate
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquareInit
-import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 import VerifiedGarbage.Proof.Rsa.RecoverTries
 import VerifiedGarbage.Proof.Bignum.Math

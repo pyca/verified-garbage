@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
 public import VerifiedGarbage.Spec.Rsa.Contract
 
-import VerifiedGarbage.Proof.Rsa.X86.CvStore
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Mont.X86.Instr
