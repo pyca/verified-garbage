@@ -44,8 +44,7 @@ structure BPre (s : State) (pr : Reg) (p kb : Addr) (n : Nat) : Prop where
   c255 : s.gpr c255 = 255#64
   trd : (⟨s.gpr tbl, 4096⟩ : Region) ∈ s.rd ++ s.wr
   held : Held s.mem (s.gpr tbl) Impl.Cast5.s1234
-  inP : (⟨p, 8⟩ : Region) ∈ s.wr
-  pfit : p.toNat + 8 ≤ 2 ^ 64
+  inP : ∃ r ∈ s.wr, ∀ off, off + 4 ≤ 8 → r.Contains (p + BitVec.ofNat 64 off) 4
   inK : (⟨kb, 128⟩ : Region) ∈ s.rd ++ s.wr
   kfit : kb.toNat + 128 ≤ 2 ^ 64
 
@@ -57,8 +56,8 @@ theorem BPre.inK' {off w : Nat} (hw : off + w ≤ 128) :
     InRegions (s.rd ++ s.wr) (kb + BitVec.ofNat 64 off) w :=
   ⟨_, h.inK, Offset.contains_base _ hw (by have := h.kfit; omega)⟩
 
-theorem BPre.inP' {off w : Nat} (hw : off + w ≤ 8) : InRegions s.wr (p + BitVec.ofNat 64 off) w :=
-  ⟨_, h.inP, Offset.contains_base _ hw (by have := h.pfit; omega)⟩
+theorem BPre.inP' {off : Nat} (hw : off + 4 ≤ 8) : InRegions s.wr (p + BitVec.ofNat 64 off) 4 :=
+  let ⟨r, hr, hc⟩ := h.inP; ⟨r, hr, hc off hw⟩
 
 end
 
@@ -170,10 +169,10 @@ theorem load_ok {s : State} {pr : Reg} {p kb : Addr} {n : Nat} (h : BPre s pr p 
       lo (u.gpr xR) = (Spec.Cast5.decodeBlock (Spec.Cast5.blockAt s.mem p)).2 → WP isa (.block is) u Q) :
     WP isa (.block ([.loadRev .w xL pr zero, .addi tmp pr 4, .loadRev .w xR tmp zero] ++ is)) s Q := by
   have in0 : InRegions (s.rd ++ s.wr) p 4 := by
-    obtain ⟨g, hg, hc⟩ := h.inP' (off := 0) (w := 4) (by decide)
+    obtain ⟨g, hg, hc⟩ := h.inP' (off := 0) (by decide)
     exact ⟨g, List.mem_append_right _ hg, by simpa using hc⟩
   have in4 : InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 4) 4 := by
-    obtain ⟨g, hg, hc⟩ := h.inP' (off := 4) (w := 4) (by decide)
+    obtain ⟨g, hg, hc⟩ := h.inP' (off := 4) (by decide)
     exact ⟨g, List.mem_append_right _ hg, hc⟩
   have dec := Proof.Cast5.decodeBlock_blockAt s.mem p
   refine wp_lwbrx (ea := p) h.prOk.2 (by rw [h.ptr, h.zero]; simp) in0 fun u₁ h₁ => ?_
@@ -245,7 +244,7 @@ theorem finish_ok {s u : State} {pr : Reg} {p kb : Addr} {n : Nat} (h : BPre s p
   have g (q : Reg) (hq : q ∉ roundRegs) : u.gpr q = s.gpr q := hu.keep.gpr hq
   have hp : u.gpr pr = p := by rw [g _ h.prOk.1, h.ptr]
   have h0 : u.gpr .r0 = 0 := by rw [g _ (by decide), h.zero]
-  have o0 : InRegions u.wr p 4 := by rw [hu.keep.2.2]; simpa using h.inP' (off := 0) (w := 4) (by decide)
+  have o0 : InRegions u.wr p 4 := by rw [hu.keep.2.2]; simpa using h.inP' (off := 0) (by decide)
   have o4 : InRegions u.wr (p + BitVec.ofNat 64 4) 4 := by rw [hu.keep.2.2]; exact h.inP' (by decide)
   refine wp_stwbrx (ea := p) h.prOk.2 (by rw [hp, h0]; simp) o0 fun u₁ h₁ => ?_
   refine wp_addi h.prOk.2 (by decide) fun u₂ h₂ => ?_
