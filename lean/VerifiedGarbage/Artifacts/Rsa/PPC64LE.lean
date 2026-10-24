@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on PPC64LE -/
@@ -73,6 +74,21 @@ def artifacts : List Artifact := [
         which are the only branches on the key; then every check of the private key is computed \
         whatever its outcome and and'ed into a mask."]
     code := Impl.Rsa.PPC64LE.CheckCrtKey.code
-    verified := Proof.Rsa.PPC64LE.KeyCheck.cck_verified }]
+    verified := Proof.Rsa.PPC64LE.KeyCheck.cck_verified },
+  Spec.Rsa.recoverPrimesApi.artifact PPC64LE.target {
+    notes := ["`n` is checked as `vg_rsa_public_precompute` checks it, the only branch on the key \
+        but for the number of candidates tried, which is public. `m = d e - 1` is computed by \
+        schoolbook multiplication and halved bit by bit `8 (e_len + d_len)` times, each halving \
+        selected by a mask of the low bit, so its count `t` of factors 2 takes no branch. Each \
+        candidate `g = 2, 3, …` is raised to `r = m / 2^t` by Montgomery multiplication over all \
+        `8 (e_len + d_len)` bits of `r`'s bound, the multiplicand selected by a mask of each bit, \
+        and squared as many times, each squaring's result kept or dropped by masks of `done`, \
+        `ok` and `k < t`. `p = gcd(y - 1, n)` by `64 w` steps of the binary extended Euclidean \
+        algorithm, `q = n / p` by bit-serial division, the order by a subtraction's borrow, and \
+        the factors stored masked by `ok`. The model has no carry bit, so numbers are 32-bit \
+        digits. The pointers and lengths stay in nonvolatile registers, saved with the others it \
+        uses in the working space's arrays 44–45."]
+    code := Impl.Rsa.PPC64LE.Recover.code
+    verified := Proof.Rsa.PPC64LE.Recover.rv_verified }]
 
 end VG.Artifacts.Rsa.PPC64LE
