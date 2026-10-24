@@ -62,10 +62,10 @@ def save : List Instr :=
     .store .d .r29 .r12 (oSave + 24), .store .d .r30 .r12 (oSave + 32), .mflr .r0, .store .d .r0 .r12 oLr,
     mov .r26 .r3, mov .r27 .r5, mov .r28 .r6, mov .r29 .r7, mov .r30 .r8]
 
-/-- `encode`'s arguments: `EM`, `k`, `hash`, `digest` and `digest_len` (our
-stack argument 0). -/
+/-- `encode`'s arguments: `EM`, `k`, `hash` (zero-extended, since only its
+low word is an argument), `digest` and `digest_len` (our stack argument 0). -/
 def encArgs : List Instr :=
-  [.addi .r4 .r12 oEM, mov .r5 .r28, mov .r6 .r9, mov .r7 .r10, .load .d .r8 .r12 (arg 0)]
+  [.addi .r4 .r12 oEM, mov .r5 .r28, .lsr .w .r6 .r9 0, mov .r7 .r10, .load .d .r8 .r12 (arg 0)]
 
 /-- `r8` (at least 1) bytes `r0` from `[r7]` on. -/
 def zeroLoop : Prog isa :=

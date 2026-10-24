@@ -61,6 +61,25 @@ theorem freed_lr (b : Nat) (s : State) : (freed b s).lr = s.lr := rfl
 theorem freed_gpr (b : Nat) (s : State) : (freed b s).gpr = s.gpr := rfl
 theorem freed_mem (b : Nat) (s : State) : (freed b s).mem = s.mem := rfl
 
+/-- After the encoding: zeros and 0 if it failed, else the signature, and `EM`
+overwritten. -/
+theorem afterEnc_ok {s u : State} (h : SPre s) (B : AtAft s u) :
+    WP isa afterEnc u fun v => Fr2 s v ∧ fnPost s v := by
+  unfold afterEnc fnPost
+  rw [signId_eq]
+  have he := B.enc
+  revert he
+  cases encOut s with
+  | none =>
+    intro h3
+    refine WP.ite true (by rw [eval_zero, h3]; rfl) (fun _ => WP.mono (zeroOut_ok h B h3)
+      fun v ⟨F, v3, vb⟩ => ⟨F, by rw [v3]; exact ⟨rfl, vb⟩⟩) (fun h => absurd h (by decide))
+  | some em =>
+    intro ⟨h3, hb⟩
+    refine WP.ite false (by rw [eval_zero, h3]; rfl) (fun h => absurd h (by decide)) fun _ => ?_
+    refine WP.seq (WP.mono (callArgs_ok h B hb) fun t₃ C => ?_)
+    refine WP.seq (call_ok h C fun t₄ R => WP.mono (wipe_ok h R) fun v ⟨F, o⟩ => ⟨F, o⟩)
+
 theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Sig.signContract abi stackBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
@@ -73,20 +92,7 @@ theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Sig.signContract abi stac
   refine WP.seq (WP.mono (enc_ok h A) fun t₂ B => ?_)
   refine WP.seq (Q := fun _ => _) (WP.mono (Q := fun v => Fr2 s v ∧ fnPost s v) ?_ fun v ⟨F, hp⟩ =>
     WP.mono (restore_ok F) fun w ⟨wp, wl, ws, wm, w3⟩ => ?_)
-  · unfold afterEnc fnPost
-    rw [signId_eq]
-    have he := B.enc
-    revert he
-    cases encOut s with
-    | none =>
-      intro h3
-      refine WP.ite true (by rw [eval_zero, h3]; rfl) (fun _ => WP.mono (zeroOut_ok h B h3)
-        fun v ⟨F, v3, vb⟩ => ⟨F, by rw [v3]; exact ⟨rfl, vb⟩⟩) (fun h => absurd h (by decide))
-    | some em =>
-      intro ⟨h3, hb⟩
-      refine WP.ite false (by rw [eval_zero, h3]; rfl) (fun h => absurd h (by decide)) fun _ => ?_
-      refine WP.seq (WP.mono (callArgs_ok h B hb) fun t₃ C => ?_)
-      refine WP.seq (call_ok h C fun t₄ R => WP.mono (wipe_ok h R) fun v ⟨F, o⟩ => ⟨F, o⟩)
+  · exact afterEnc_ok h B
   · refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
     · rw [freed_gpr]; exact wp r hr
     · rw [freed_sp, ws]; exact BitVec.sub_add_cancel _ _

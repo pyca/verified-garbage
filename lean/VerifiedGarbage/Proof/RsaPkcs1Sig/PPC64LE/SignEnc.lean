@@ -50,7 +50,7 @@ theorem bytes_of_frame {s : State} {rs : List Region} {m : Mem} (hf : Frame rs s
 
 theorem AtEnc.epre {s t : State} (h : SPre s) (A : AtEnc s t) :
     EPre t ((s.gpr .r9).setWidth 32) (s.gpr .r6).toNat := by
-  refine ⟨by rw [A.r6], by rw [A.r5], h.k2, fun i hi => ?_, fun j hj => ?_, fun j hj i hi e => ?_⟩
+  refine ⟨by rw [A.r6, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq], by rw [A.r5], h.k2, fun i hi => ?_, fun j hj => ?_, fun j hj i hi e => ?_⟩
   · rw [A.r4, A.wr]; exact em_in h _ hi
   · rw [A.r7, A.rd, h.hrd]
     rw [A.r8] at hj

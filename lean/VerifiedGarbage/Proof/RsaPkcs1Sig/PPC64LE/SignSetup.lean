@@ -41,7 +41,7 @@ structure Fr (s t : State) : Prop where
 structure AtEnc (s t : State) : Prop extends Fr s t where
   r4 : t.gpr .r4 = fb s + BitVec.ofNat 64 oEM
   r5 : t.gpr .r5 = s.gpr .r6
-  r6 : t.gpr .r6 = s.gpr .r9
+  r6 : t.gpr .r6 = ((s.gpr .r9).setWidth 32).setWidth 64
   r7 : t.gpr .r7 = s.gpr .r10
   r8 : t.gpr .r8 = stackArg s 0
   r12 : t.gpr .r12 = fb s
@@ -150,7 +150,7 @@ theorem setup_ok {s : State} (h : SPre s) :
   have d0 : arg 0 % 4 = 0 := by decide
   have c1 : oEM < 2 ^ 15 := by decide
   refine WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r26, .r27, .r28, .r29, .r30, .r4, .r5, .r6, .r7, .r8]
-    (Q := fun w => w.gpr .r4 = fb s + BitVec.ofNat 64 oEM ∧ w.gpr .r5 = s.gpr .r6 ∧ w.gpr .r6 = s.gpr .r9 ∧
+    (Q := fun w => w.gpr .r4 = fb s + BitVec.ofNat 64 oEM ∧ w.gpr .r5 = s.gpr .r6 ∧ w.gpr .r6 = ((s.gpr .r9).setWidth 32).setWidth 64 ∧
       w.gpr .r7 = s.gpr .r10 ∧ w.gpr .r8 = stackArg s 0 ∧ w.gpr .r26 = s.gpr .r3 ∧ w.gpr .r27 = s.gpr .r5 ∧
       w.gpr .r28 = s.gpr .r6 ∧ w.gpr .r29 = s.gpr .r7 ∧ w.gpr .r30 = s.gpr .r8 ∧ w.mem = v.mem) ?_ rfl)
     fun w ⟨⟨w4, w5, w6, w7, w8, w26, w27, w28, w29, w30, wm⟩, kw⟩ => ?_
@@ -158,7 +158,8 @@ theorem setup_ok {s : State} (h : SPre s) :
     prun [c0, d0, c1, i0, a0, h12, hg .r3 (by decide) (by decide), hg .r5 (by decide) (by decide),
       hg .r6 (by decide) (by decide), hg .r7 (by decide) (by decide), hg .r8 (by decide) (by decide),
       hg .r9 (by decide) (by decide), hg .r10 (by decide) (by decide), BitVec.or_self,
-      exec_addi (show Reg.r12 ≠ .r0 by decide) c1, Impl.AesGcm.PPC64LE.mov]
+      exec_addi (show Reg.r12 ≠ .r0 by decide) c1, Impl.AesGcm.PPC64LE.mov,
+      exec_lsr_w (show 0 < 32 by decide), BitVec.ushiftRight_zero]
   · refine ⟨⟨kw.sp.trans F.sp, kw.rd.trans F.rd, kw.wr.trans F.wr, kw.lr.trans F.lr,
       fun r hr => (kw.gpr _ (by revert r; decide)).trans (F.hi r hr), wm ▸ F.mem, wm ▸ F.sv, wm ▸ F.ls⟩,
       w4, w5, w6, w7, w8, (kw.gpr _ (by decide)).trans h12, w26, w27, w28, w29, w30⟩
