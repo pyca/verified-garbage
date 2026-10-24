@@ -1,0 +1,183 @@
+module
+
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Body
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
+import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+
+/-!
+# FFDH's domain check on PPC64LE: q's checks and g's
+
+In the working space of `Body.lean`, p in array 0: `qOdd_ok`, the mask of q
+being odd from its last octet; `qDiv_ok`, the mask of `p mod q = 1` (q in
+array 0, p's octets reduced modulo q, then p back in array 0).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.PPC64LE.Domain
+
+open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.MillerRabin.PPC64LE
+open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain
+open VG.Proof.Bignum (slot slot_sep bytesAt_length)
+
+theorem os2ip_odd (m : Mem) (P : Addr) {k : Nat} (hk : 1 ≤ k) :
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt m P k) % 2 = (m (off P (k - 1))).toNat % 2 := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  have e : Spec.Rsa.bytesAt m P (j + 1) = Spec.Rsa.bytesAt m P j ++ [m (off P j)] := by
+    simp [Spec.Rsa.bytesAt, List.range_succ, off]
+  rw [e, VG.Proof.Rsa.os2ip_snoc, Nat.add_sub_cancel]
+  omega
+
+theorem odd_mask (x : Nat) :
+    BitVec.ofNat 64 0 - (BitVec.ofNat 64 x &&& BitVec.ofNat 64 1) = mask (decide (x % 2 = 1)) := by
+  have e : BitVec.ofNat 64 x &&& BitVec.ofNat 64 1 = BitVec.ofNat 64 (x % 2) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_and, show (BitVec.ofNat 64 1).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+    simp only [BitVec.toNat_ofNat]
+    omega
+  rw [e]
+  rcases (show x % 2 = 0 ∨ x % 2 = 1 by omega) with h | h <;> rw [h] <;> decide
+
+theorem mask_and' (p q : Bool) : mask p &&& mask q = mask (p && q) := by cases p <;> cases q <;> rfl
+
+/-- `qOdd`: `r26 &=` the mask of q (`k` octets at `D + 2 k`) being odd. -/
+theorem qOdd_ok {s : State} {D : Addr} {k : Nat} {b : Bool} (h21 : s.gpr .r21 = D)
+    (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (h26 : s.gpr .r26 = mask b) (hk : 1 ≤ k) (hk' : k ≤ 1024)
+    (hrd : InRegions (s.rd ++ s.wr) (off D (3 * k - 1)) 1) :
+    WP isa (.block qOdd) s fun t =>
+      (t.gpr .r26 = mask (b && decide (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) % 2 = 1)) ∧
+        t.mem = s.mem) ∧ Keep [.r0, .r3, .r16, .r26] s t := by
+  refine WP.keep _ ?_ (by decide)
+  have ea : BitVec.ofNat 64 (2 * k) + BitVec.ofNat 64 k + D - BitVec.ofNat 64 1 = off D (3 * k - 1) := by
+    have e1 := off_sub1 D (show 1 ≤ 2 * k + k by omega)
+    rw [BitVec.add_comm _ D, ← BitVec.add_assoc, Offset.add_add]
+    exact e1.trans (by rw [show 2 * k + k - 1 = 3 * k - 1 by omega])
+  have hodd := os2ip_odd s.mem (off D (2 * k)) hk
+  rw [off_off', show 2 * k + (k - 1) = 3 * k - 1 by omega] at hodd
+  unfold qOdd
+  prun [h21, h28, h26, shl1_ofNat, ea, hrd, read_byte64,
+    exec_lbz' (show Reg.r16 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), BitVec.add_zero, odd_mask, mask_and', hodd]
+
+/-- Loading `k` octets at `r12` into array 0, within `Env`. -/
+theorem loadA0_ok {s : State} {B N : Addr} {Z w k : Nat} (h : Env s B Z w) (h12 : s.gpr .r12 = off N 0)
+    (h6 : s.gpr .r6 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off N i) 1) (hsep : ∀ i < k, ∀ x, ofs B x < Z → off N i ≠ x) :
+    WP isa Precompute.loadN s fun t =>
+      (arr t.mem B w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem N k) ∧ Body B w s.mem t.mem) ∧
+        Keep [.r0, .r14, .r15, .r16, .r17] s t := by
+  have hZ := h.hZ
+  have hw' := h.hw'
+  have e0 := slot_eq w 0; have e28 := slot_eq w 28
+  refine WP.mono (loadN_ok (dA := slot w 0) h.hs h.h10 h12 h6 h.h11 hk hkw (by omega) (by omega) (by omega) hrd hsep)
+    fun t ⟨hv, out, k⟩ => ⟨⟨hv, Body.of out (Nat.le_refl _) (by omega)⟩, k⟩
+
+/-- `reloadP`: p's `k` octets (at `r21`) into array 0. -/
+theorem reloadP_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h21 : s.gpr .r21 = D)
+    (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off D i) 1) (hsep : ∀ i < k, ∀ x, ofs B x < Z → off D i ≠ x) :
+    WP isa reloadP s fun t =>
+      (arr t.mem B w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k) ∧ Body B w s.mem t.mem) ∧
+        Keep [.r0, .r6, .r12, .r14, .r15, .r16, .r17] s t := by
+  unfold reloadP
+  refine WP.seq (WP.mono (WP.keep [.r6, .r12] (Q := fun t => t.gpr .r12 = off D 0 ∧
+    t.gpr .r6 = BitVec.ofNat 64 k ∧ t.mem = s.mem) (by prun [h21, h28, BitVec.add_zero]) (by decide))
+    fun s₁ ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
+  refine WP.mono (loadA0_ok (h.keep k1 (by decide)) a12 a6 hk hkw (by rw [k1.rd, k1.wr]; exact hrd) hsep)
+    fun t ⟨⟨hv, b⟩, k⟩ => ⟨⟨by rw [hv, m1], by rw [← m1]; exact b⟩, (k1.trans k).mono (by decide)⟩
+
+/-- The registers `qDiv` writes. -/
+def qDivRegs : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r8, .r9, .r12, .r14, .r15, .r16, .r17, .r20, .r24, .r25, .r30, .r31]
+
+/-- `qDiv`: `r25 :=` the mask of `p mod q = 1` (p's `k` octets at `D`, q's
+at `D + 2 k`), and p back in array 0. -/
+theorem qDiv_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+    (h21 : s.gpr .r21 = D) (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hrd : ∀ i < 3 * k, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < 3 * k, ∀ x, ofs B x < Z → off D i ≠ x)
+    (hq : 0 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k)) :
+    WP isa qDiv s fun t =>
+      (t.gpr .r25 = mask (decide (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k) %
+          Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) = 1)) ∧
+        arr t.mem B w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k) ∧ Body B w s.mem t.mem) ∧
+        Keep qDivRegs s t := by
+  have hZ := h.hZ
+  have hw := h.hw
+  have hw' := h.hw'
+  have e0 := slot_eq w 0; have e1 := slot_eq w 1; have e4 := slot_eq w 4; have e7 := slot_eq w 7
+  have e8 := slot_eq w 8; have e28 := slot_eq w 28
+  have rdQ : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1 := fun i hi => by
+    rw [off_off']; exact hrd _ (by omega)
+  have sepQ : ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x := fun i hi => by
+    rw [off_off']; exact hsep _ (by omega)
+  have sepP : ∀ i < k, ∀ x, ofs B x < Z → off D i ≠ x := fun i hi => hsep i (by omega)
+  generalize hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k) = p
+  generalize hqd : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) = q at hq
+  unfold qDiv
+  refine WP.seq (WP.mono (WP.keep [.r6, .r12] (Q := fun t => t.gpr .r12 = off (off D (2 * k)) 0 ∧
+    t.gpr .r6 = BitVec.ofNat 64 k ∧ t.mem = s.mem) (by
+      prun [h21, h28, shl1_ofNat, BitVec.add_zero]
+      exact BitVec.add_comm _ _) (by decide)) fun s₁ ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
+  have e1' := h.keep k1 (by decide)
+  refine WP.seq (WP.mono (loadA0_ok e1' a12 a6 hk hkw (by rw [k1.rd, k1.wr]; exact rdQ) sepQ)
+    fun s₂ ⟨⟨q2, b2⟩, k2⟩ => ?_)
+  rw [m1, hqd] at q2
+  have e2 := e1'.keep k2 (by decide)
+  have k12 := k1.trans k2
+  refine WP.seq (WP.mono (WP.keep [.r30, .r31] (Q := fun t => t.gpr .r30 = off D 0 ∧
+    t.gpr .r31 = BitVec.ofNat 64 k ∧ t.mem = s₂.mem) (by
+      prun [(k12.gpr .r21 (by decide)).trans h21, (k12.gpr .r28 (by decide)).trans h28, BitVec.add_zero]) (by decide))
+    fun s₃ ⟨⟨a30, a31, m3⟩, k3⟩ => ?_)
+  have k13 := k12.trans k3
+  refine WP.seq (WP.mono (ModArith.reduce_ok (hs := h.hs.congr k13.wr) (by omega) (by omega) (by omega)
+    ((k3.gpr .r10 (by decide)).trans e2.h10) ((k3.gpr .r29 (by decide)).trans e2.h29)
+    ((k3.gpr .r11 (by decide)).trans e2.h11) (by rw [m3]; show 0 < arr s₂.mem B w 0; rw [q2]; exact hq)
+    a30 a31 hk (by omega) (fun i hi => by rw [k13.rd, k13.wr]; exact hrd i (by omega)) sepP)
+    fun s₄ ⟨⟨r1, o4⟩, k4⟩ => ?_)
+  have hbP : Spec.Rsa.bytesAt s₃.mem D k = Spec.Rsa.bytesAt s.mem D k := by
+    rw [m3, b2.bytesAt hZ sepP, m1]
+  rw [hbP, hp, m3] at r1
+  change val32 s₄.mem B (slot w 1) (2 * w) = p % arr s₂.mem B w 0 at r1
+  rw [q2] at r1
+  have k14 := k13.trans k4
+  refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = B ∧ t.mem = s₄.mem) (by
+      prun [(k14.gpr .r23 (by decide)).trans h23, BitVec.add_zero]) (by decide)) fun s₅ ⟨⟨a31', m5⟩, k5⟩ => ?_)
+  have k15 := k14.trans k5
+  have e5 : Env s₅ B Z w := ⟨h.hs.congr k15.wr, (k15.gpr .r10 (by decide)).trans h.h10,
+    (k15.gpr .r29 (by decide)).trans h.h29, (k15.gpr .r11 (by decide)).trans h.h11, a31', hw, hw', hZ⟩
+  refine WP.seq (WP.mono (Pub.oneP_ok e5.hs (by omega) (by omega) (by omega) e5.h10 e5.h29 e5.h11)
+    fun s₆ ⟨⟨v7, o6⟩, k6⟩ => ?_)
+  have e6 := e5.keep k6 (by decide)
+  refine WP.seq (WP.mono (eqMask_ok e6 .r25 (a := 1) (b := 7) (by decide) (by decide)) fun s₇ ⟨⟨a25, m7⟩, k7⟩ => ?_)
+  have v1 : val32 s₆.mem B (slot w 1) (2 * w) = p % q := by
+    rw [Outside.val32 o6 (by omega) (by omega), m5]
+    exact r1
+  rw [v1, v7] at a25
+  have k17 := (k15.trans k6).trans k7
+  refine WP.mono (reloadP_ok (e6.keep k7 (by decide)) ((k17.gpr .r21 (by decide)).trans h21)
+    ((k17.gpr .r28 (by decide)).trans h28) hk hkw (fun i hi => by rw [k17.rd, k17.wr]; exact hrd i (by omega))
+    sepP) fun t ⟨⟨vt, bt⟩, kt⟩ => ⟨⟨(kt.gpr .r25 (by decide)).trans a25, ?_, ?_⟩, (k17.trans kt).mono (by decide)⟩
+  · have hb7 : Body B w s.mem s₇.mem := by
+      rw [m7]
+      refine Outside.trans (m₂ := s₅.mem) ?_ (Body.of o6 (by omega) (by omega))
+      rw [m5]
+      refine Outside.trans (m₂ := s₃.mem) ?_ (Body.of o4 (by omega) (by omega))
+      rw [m3, ← m1]; exact b2
+    rw [vt, hb7.bytesAt hZ sepP, hp]
+  · refine Outside.trans (m₂ := s₇.mem) ?_ bt
+    rw [m7]
+    refine Outside.trans (m₂ := s₅.mem) ?_ (Body.of o6 (by omega) (by omega))
+    rw [m5]
+    refine Outside.trans (m₂ := s₃.mem) ?_ (Body.of o4 (by omega) (by omega))
+    rw [m3, ← m1]; exact b2
+
+end VG.Proof.Ffdh.PPC64LE.Domain
