@@ -74,6 +74,9 @@ theorem Ok.wp_eq {L : Lay} (h : L.Ok) : 8 * L.wp = L.pl := by
 theorem Ok.wp_ge {L : Lay} (h : L.Ok) : 16 ≤ L.wp ∧ L.wp ≤ 48 := by
   rcases h.pl with e | e | e <;> simp [Lay.wp, e]
 
+theorem Ok.z256 {L : Lay} (h : L.Ok) : 256 ≤ L.Z := by
+  have := h.room; rcases h.pl with e | e | e <;> omega
+
 /-- The buffer ends within `scratch`. -/
 theorem Ok.buf_end {L : Lay} (h : L.Ok) : L.bOff + 2 * L.pl ≤ L.Z := by
   have := h.qOff_eq; have := h.room; rcases h.pl with e | e | e <;> simp only [bOff] <;> omega
@@ -178,6 +181,71 @@ theorem Body.ofBuf {L : Lay} (hL : L.Ok) {n : Nat} {m m' : Mem} (h : Outside L.B
   have := hL.wp_eq
   simp only [Lay.bOff, Lay.qOff, Lay.slot_eq] at hb
   exact (outside_shift h (by omega) (by omega)).mono (by omega) (by omega)
+
+/-- Memory changed only in the P space's arrays. -/
+abbrev PBody (L : Lay) (m m' : Mem) : Prop := Outside L.S 256 (L.qOff - 256) m m'
+
+/-- Memory changed only in the Q space's arrays. -/
+abbrev QBody (L : Lay) (m m' : Mem) : Prop := Outside L.Q 256 1344 m m'
+
+theorem PBody.refl (L : Lay) (m : Mem) : PBody L m m := Outside.refl _ _ _ _
+
+theorem PBody.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : PBody L m₁ m₂) (h₂ : PBody L m₂ m₃) : PBody L m₁ m₃ :=
+  Outside.trans h₁ h₂
+
+theorem QBody.refl (L : Lay) (m : Mem) : QBody L m m := Outside.refl _ _ _ _
+
+theorem QBody.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : QBody L m₁ m₂) (h₂ : QBody L m₂ m₃) : QBody L m₁ m₃ :=
+  Outside.trans h₁ h₂
+
+/-- A change in the P space's arrays is one in the body. -/
+theorem PBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') : Body L m m' :=
+  Body.ofP hL h (Nat.le_refl _) (by simp only [Lay.qOff, Lay.slot_eq]; omega)
+
+/-- A change in the Q space's arrays is one in the body. -/
+theorem QBody.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBody L m m') : Body L m m' :=
+  Body.ofQ hL h (by decide)
+
+/-- A change in the P space's arrays keeps the Q space and the buffer. -/
+theorem PBody.outQ {L : Lay} {m m' : Mem} (h : PBody L m m') :
+    Outside L.S 0 L.qOff m m' :=
+  h.mono (Nat.zero_le _) (by simp only [Lay.qOff, Lay.slot_eq]; omega)
+
+/-- A change in the P space's arrays, seen from the Q space: none at its own offsets. -/
+theorem PBody.q {L : Lay} {m m' : Mem} (h : PBody L m m') : ∀ x, L.qOff ≤ ofs L.S x → m' x = m x :=
+  fun x hx => h x (Or.inr (by simp only [Lay.qOff, Lay.slot_eq] at hx ⊢; omega))
+
+/-- Memory changed only in the P space's arrays from array 1 on. -/
+abbrev PArr (L : Lay) (m m' : Mem) : Prop := Outside L.S (slot L.wp 1) (L.qOff - slot L.wp 1) m m'
+
+/-- Memory changed only in the Q space's arrays from array 1 on. -/
+abbrev QArr (L : Lay) (m m' : Mem) : Prop := Outside L.Q (slot 4 1) (1600 - slot 4 1) m m'
+
+theorem PArr.refl (L : Lay) (m : Mem) : PArr L m m := Outside.refl _ _ _ _
+
+theorem PArr.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : PArr L m₁ m₂) (h₂ : PArr L m₂ m₃) : PArr L m₁ m₃ :=
+  Outside.trans h₁ h₂
+
+theorem QArr.refl (L : Lay) (m : Mem) : QArr L m m := Outside.refl _ _ _ _
+
+theorem QArr.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : QArr L m₁ m₂) (h₂ : QArr L m₂ m₃) : QArr L m₁ m₃ :=
+  Outside.trans h₁ h₂
+
+theorem PArr.pbody {L : Lay} {m m' : Mem} (h : PArr L m m') : PBody L m m' :=
+  h.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.qOff, Lay.slot_eq]; omega)
+
+theorem QArr.qbody {L : Lay} {m m' : Mem} (h : QArr L m m') : QBody L m m' :=
+  h.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)
+
+/-- A change in arrays `1 ≤ j < 28` of the P space. -/
+theorem PArr.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.S o n m m') (ho : slot L.wp 1 ≤ o)
+    (hn : o + n ≤ L.qOff) : PArr L m m' :=
+  h.mono ho (by omega)
+
+/-- A change in arrays `1 ≤ j < 28` of the Q space. -/
+theorem QArr.of {L : Lay} {o n : Nat} {m m' : Mem} (h : Outside L.Q o n m m') (ho : slot 4 1 ≤ o)
+    (hn : o + n ≤ 1600) : QArr L m m' :=
+  h.mono ho (by omega)
 
 /-! ## The header -/
 

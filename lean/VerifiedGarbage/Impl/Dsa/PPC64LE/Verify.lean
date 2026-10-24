@@ -12,7 +12,7 @@ scratch, scratch_len)`, `scratch` and `scratch_len` on the stack. After
 
 * in the Q space, the mask `r26` of `0 < r < q` and `0 < s < q` (`subMod`'s
   borrow and `eqMask` with 0), `R² mod q` (into array 8 too), `q − 2`
-  (`subMod` of 2) to the buffer, `w = s^(q − 2) mod q` (`powSecret` over its
+  (two `subMod`s of 1) to the buffer, `w = s^(q − 2) mod q` (`powSecret` over its
   octets), then `u1 = z w mod q` and `u2 = r w mod q` (two Montgomery
   multiplications each, by w and by R²), for the digest's scalar `z` (its
   first `min(digest_len, bitLength q / 8)` octets), to the buffer;
@@ -79,11 +79,12 @@ def ranges : Prog isa :=
 def rrQ : Prog isa :=
   .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2 (copy 8 1))
 
-/-- `q − 2` to the buffer: 2 into array 7, `[4] := [0] − [7]` (`subMod`). -/
+/-- `q − 2` to the buffer: 1 into array 7, `[4] := [0] − [7]` and `[6] := [4] − [7]`
+(`subMod`). -/
 def qMinus2 : Prog isa :=
-  .seq (zeroArr 7) (.seq (.block (base .r14 7 ++ [.li .r0 2, .store .w .r0 .r14 0] ++ base .r8 0 ++
-      base .r9 4 ++ base .r10 7))
-    (.seq subMod (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ ptrBuf)) (storeBE 4))))
+  .seq one (.seq (.block (base .r8 0 ++ base .r9 4 ++ base .r10 7)) (.seq subMod
+    (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r8 4 ++ base .r9 6 ++ base .r10 7)) (.seq subMod
+      (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ ptrBuf)) (storeBE 6))))))
 
 /-- `w = s^(q − 2) mod q` into array 4: s again into array 4, `R² mod q` into
 array 1, the power over the buffer's `q_len` octets. -/
@@ -96,8 +97,7 @@ def inverse : Prog isa :=
 are none. -/
 def scalar : Prog isa :=
   .seq (.block [.load .d .r12 .r21 hDig, .load .d .r6 .r21 hDlen])
-    (.ite (.zero .d .r6) (.seq (zeroArr 6) (.block (base .r14 6 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16,
-      .li .r0 0, .store .d .r0 .r14 0]))) (loadArr 6))
+    (.ite (.zero .d .r6) (zeroArr 6) (loadArr 6))
 
 /-- `u1 = z w mod q` into array 6 and `u2 = r w mod q` into array 5, then both
 to the buffer. -/
