@@ -78,6 +78,49 @@ theorem slot_rd {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (hc : P
     (h₁ : 32 ≤ d) (h₂ : d + 8 ≤ frameBytes) : InRegions (t.rd ++ t.wr) (fb s + BitVec.ofNat 64 d) 8 :=
   slotIn hc.wr h₁ h₂
 
+theorem shaInitArgs_ok {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (hc : Post s R EM t) :
+    WP isa (.block shaInitArgs) t fun u => (u.mem = t.mem ∧ u.gpr .r3 = scA s sSt) ∧ Keep [.r12, .r3] t u := by
+  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
+  have c2 : sSt < 2 ^ 15 := by decide
+  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
+  refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
+  unfold shaInitArgs scr
+  prun [fp, exec_addSp0, hc.sp, c1, c2, i1, hc.sl.scr, exec_addi (show Reg.r3 ≠ .r0 by decide) c2]
+
+theorem shaUpdArgs_ok {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (hc : Post s R EM t) :
+    WP isa (.block shaUpdArgs) t fun u => (u.mem = t.mem ∧ u.gpr .r3 = scA s sSt ∧ u.gpr .r4 = 0 ∧
+      u.gpr .r5 = scA s sD ∧ u.gpr .r6 = s.gpr .r7 ∧ u.gpr .r7 = scA s sWork) ∧
+      Keep [.r12, .r3, .r4, .r5, .r6, .r7] t u := by
+  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
+  have c2 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
+  have c3 : sSt < 2 ^ 15 := by decide
+  have c4 : sD < 2 ^ 15 := by decide
+  have c5 : sWork < 2 ^ 15 := by decide
+  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
+  have i2 := slot_rd hc (d := oK) (by decide) (by decide)
+  refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
+  unfold shaUpdArgs scr
+  prun [fp, exec_addSp0, hc.sp, c1, c2, c3, c4, c5, i1, i2, hc.sl.scr, hc.sl.k,
+    exec_addi (show Reg.r3 ≠ .r0 by decide) c3, exec_addi (show Reg.r5 ≠ .r0 by decide) c4,
+    exec_addi (show Reg.r7 ≠ .r0 by decide) c5]
+  rfl
+
+theorem shaFinArgs_ok {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (hc : Post s R EM t) :
+    WP isa (.block shaFinArgs) t fun u => (u.mem = t.mem ∧ u.gpr .r3 = scA s sSt ∧ u.gpr .r4 = s.gpr .r7 ∧
+      u.gpr .r5 = scA s sDH ∧ u.gpr .r6 = scA s sWork) ∧ Keep [.r12, .r3, .r4, .r5, .r6] t u := by
+  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
+  have c2 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
+  have c3 : sSt < 2 ^ 15 := by decide
+  have c4 : sDH < 2 ^ 15 := by decide
+  have c5 : sWork < 2 ^ 15 := by decide
+  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
+  have i2 := slot_rd hc (d := oK) (by decide) (by decide)
+  refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
+  unfold shaFinArgs scr
+  prun [fp, exec_addSp0, hc.sp, c1, c2, c3, c4, c5, i1, i2, hc.sl.scr, hc.sl.k,
+    exec_addi (show Reg.r3 ≠ .r0 by decide) c3, exec_addi (show Reg.r5 ≠ .r0 by decide) c4,
+    exec_addi (show Reg.r6 ≠ .r0 by decide) c5]
+
 section
 variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
 include h
@@ -86,13 +129,7 @@ theorem init_step {t : State} (hc : Post s R EM t) {rest : Prog isa} {Q : State 
     (hQ : ∀ u, Post s R EM u → hH.SH.Repr u.mem (scA s sSt) [] →
       Frame ([⟨scA s sSt, H.S⟩] ++ [below (fb s) 48]) t.mem u.mem → WP isa rest u Q) :
     WP isa (.seq (.block shaInitArgs) (.seq initCall rest)) t Q := by
-  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
-  have c2 : sSt < 2 ^ 15 := by decide
-  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
-  refine WP.seq (WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r12, .r3]
-    (Q := fun u => u.mem = t.mem ∧ u.gpr .r3 = scA s sSt) ?_ rfl) fun u ⟨⟨um, u3⟩, ku⟩ => ?_)
-  · unfold shaInitArgs scr
-    prun [fp, exec_addSp0, hc.sp, c1, c2, i1, hc.sl.scr, exec_addi (show Reg.r3 ≠ .r0 by decide) c2]
+  refine WP.seq (WP.mono (shaInitArgs_ok hc) fun u ⟨⟨um, u3⟩, ku⟩ => ?_)
   have hu : Post s R EM u := hc.regs ku.rd ku.wr ku.sp um fun r hr => ku.gpr r (by revert r; decide)
   have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
   refine WP.seq <| hH.callInit_ok u3 ⟨hs, by rw [hu.sp]; exact lowD h (by decide) (by decide)⟩
@@ -108,21 +145,7 @@ theorem upd_step {t : State} (hc : Post s R EM t) {rest : Prog isa} {Q : State �
       Frame ([⟨scA s sSt, H.S⟩, ⟨scA s sWork, H.W⟩] ++ [below (fb s) 48]) t.mem u.mem → WP isa rest u Q) :
     WP isa (.seq (.block shaUpdArgs) (.seq updCall rest)) t Q := by
   have hk := h.k2
-  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
-  have c2 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
-  have c3 : sSt < 2 ^ 15 := by decide
-  have c4 : sD < 2 ^ 15 := by decide
-  have c5 : sWork < 2 ^ 15 := by decide
-  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
-  have i2 := slot_rd hc (d := oK) (by decide) (by decide)
-  refine WP.seq (WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r12, .r3, .r4, .r5, .r6, .r7]
-    (Q := fun u => u.mem = t.mem ∧ u.gpr .r3 = scA s sSt ∧ u.gpr .r4 = 0 ∧ u.gpr .r5 = scA s sD ∧
-      u.gpr .r6 = s.gpr .r7 ∧ u.gpr .r7 = scA s sWork) ?_ rfl) fun u ⟨⟨um, u3, u4, u5, u6, u7⟩, ku⟩ => ?_)
-  · unfold shaUpdArgs scr
-    prun [fp, exec_addSp0, hc.sp, c1, c2, c3, c4, c5, i1, i2, hc.sl.scr, hc.sl.k,
-      exec_addi (show Reg.r3 ≠ .r0 by decide) c3, exec_addi (show Reg.r5 ≠ .r0 by decide) c4,
-      exec_addi (show Reg.r7 ≠ .r0 by decide) c5]
-    rfl
+  refine WP.seq (WP.mono (shaUpdArgs_ok hc) fun u ⟨⟨um, u3, u4, u5, u6, u7⟩, ku⟩ => ?_)
   have hu : Post s R EM u := hc.regs ku.rd ku.wr ku.sp um fun r hr => ku.gpr r (by revert r; decide)
   have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
   have lk : sD + (s.gpr .r7).toNat ≤ scrBytes := by unfold sD scrBytes; omega
@@ -146,20 +169,7 @@ theorem fin_step {t : State} (hc : Post s R EM t) {Q : State → Prop}
         Spec.Rsa.bytesAt u.mem (scA s sDH) 32 = Spec.Sha256.hash m) → Q u) :
     WP isa (.seq (.block shaFinArgs) finCall) t Q := by
   have hk := h.k2
-  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
-  have c2 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
-  have c3 : sSt < 2 ^ 15 := by decide
-  have c4 : sDH < 2 ^ 15 := by decide
-  have c5 : sWork < 2 ^ 15 := by decide
-  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
-  have i2 := slot_rd hc (d := oK) (by decide) (by decide)
-  refine WP.seq (WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r12, .r3, .r4, .r5, .r6]
-    (Q := fun u => u.mem = t.mem ∧ u.gpr .r3 = scA s sSt ∧ u.gpr .r4 = s.gpr .r7 ∧ u.gpr .r5 = scA s sDH ∧
-      u.gpr .r6 = scA s sWork) ?_ rfl) fun u ⟨⟨um, u3, u4, u5, u6⟩, ku⟩ => ?_)
-  · unfold shaFinArgs scr
-    prun [fp, exec_addSp0, hc.sp, c1, c2, c3, c4, c5, i1, i2, hc.sl.scr, hc.sl.k,
-      exec_addi (show Reg.r3 ≠ .r0 by decide) c3, exec_addi (show Reg.r5 ≠ .r0 by decide) c4,
-      exec_addi (show Reg.r6 ≠ .r0 by decide) c5]
+  refine WP.seq (WP.mono (shaFinArgs_ok hc) fun u ⟨⟨um, u3, u4, u5, u6⟩, ku⟩ => ?_)
   have hu : Post s R EM u := hc.regs ku.rd ku.wr ku.sp um fun r hr => ku.gpr r (by revert r; decide)
   have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
   refine hH.callFin_ok u3 u5 u6 (scD h (by decide) (by decide) (by decide))
