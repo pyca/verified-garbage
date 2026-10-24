@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.AesCcm.PPC64LE
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
+meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
 
 /-!
 # AES-CCM on PPC64LE: the CBC-MAC in two runs

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.B0
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.B0
 import VerifiedGarbage.Proof.AesCcm.BytesAt
-import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Absorb
 
 /-!
 # AES-CCM on PPC64LE: the CBC-MAC (`mac y`)

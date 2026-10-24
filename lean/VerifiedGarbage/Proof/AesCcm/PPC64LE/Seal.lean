@@ -1,14 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Exit
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Ctrs
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Exit
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Ctrs
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Tag
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Impl.AesCcm.PPC64LE
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Absorb
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Entry
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 
 /-!
 # AES-CCM on PPC64LE: `vg_aes_ccm_seal`
