@@ -113,6 +113,104 @@ theorem targs_vp {u : Nat} (hu : u ≤ G.witLen) (hU : fUsed ∈ c.LS) (hUv : c.
     have hu' : u ≠ G.witLen := by simp at e; omega
     rw [r5, GP.randP, ite_eq_right hu']
 
+/-! ## The call -/
+
+/-- After the call: the count's word known when the tape sufficed. -/
+def callCfg (c : Cfg) (cl : Claims) (witLen u : Nat) : Option (Bool × Spec.RsaKeyGen.Rand) → Cfg
+  | none => { c with cl := cl }
+  | some (_, rest) => { c with cl := cl }.setV fUsedOut (BitVec.ofNat 64 (witLen - u - rest.length))
+
+/-- One more known header word. -/
+theorem GI.addSlot {STK : Nat} {σ t : State} {V : Nat → BitVec 64} {LS : List Nat} (h : GI G STK σ V LS t) {o : Nat}
+    (ho : VarOk G o) {v : BitVec 64} (hv : fw t.mem G o = v) : GI G STK σ (upd V o v) (o :: LS) t := by
+  refine ⟨h.pre, h.hG, h.sp, h.rd, h.wr, h.r28, h.saved, h.lr, h.fixed, fun o' ho' => ?_, fun o' ho' => ?_, h.frame⟩
+  · by_cases e : o' = o
+    · subst e; rw [upd_self]; exact hv
+    · rw [upd_ne _ _ e]; exact h.slots o' (List.mem_of_ne_of_mem e ho')
+  · rcases List.mem_cons.mp ho' with rfl | ho'
+    · exact ho
+    · exact h.ls o' ho'
+
+/-- The call of the test on the candidate `cb` at byte `L.candidate` of the
+working space, with the witnesses from `u` on. -/
+theorem primeCall_vp {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {name : String} {u : Nat}
+    {cb : List Byte} {cl' : Claims} (ok : PrimeOk L code) (hu : u ≤ G.witLen)
+    (hsize : L.size ≤ 8 * wWords G.pLen) (hL : ∀ r ∈ L.scratch, r.1 + r.2 ≤ 8 * wWords G.pLen)
+    (hcb : (wB G.pLen + L.candidate, cb) ∈ c.cl) (hcbl : cb.length = L.bits / 8)
+    (hodd : Spec.Dsa.decodeBE cb % 2 = 1) (hbl : Spec.Dsa.bitLength (Spec.Dsa.decodeBE cb) = L.bits)
+    (hU : ∀ o ∈ c.LS, fUsedOut + 8 ≤ o ∨ o + 8 ≤ fUsedOut)
+    (hcl : ∀ x ∈ cl', x ∈ c.cl ∧ ∀ r ∈ L.scratch, Apart (wB G.pLen + r.1) r.2 x) :
+    VP (fun σ s => St G c X σ s ∧ TArgs G u s) (.call name code)
+      (fun σ t => St G (callCfg c cl' G.witLen u (tRes G cb u)) X σ t ∧
+        ((t.gpr .r3).setWidth 32).toNat = Spec.Dsa.ProbablePrime.status (tRes G cb u)) := by
+  have bytes : ∀ σ s, SS G 176 σ c s →
+      Spec.Rsa.bytesAt s.mem (G.sa (wB G.pLen) + BitVec.ofNat 64 L.candidate) (L.bits / 8) = cb := fun σ s h => by
+    have := h.sb _ hcb; rw [hcbl, ← GP.sa_add] at this; exact this
+  refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s ⟨⟨h, x⟩, regs⟩ => ?_
+  · refine (RelCT.call ok.verified.1 ok.verified.2.1 (tRd G u) (tWr G) fun s₁ s₂ ⟨⟨⟨h₁, _⟩, g₁⟩, ⟨⟨h₂, _⟩, g₂⟩⟩ =>
+      ?_).mono (fun _ _ h => h) fun _ _ _ => trivial
+    have p₁ := pre_of_pin (h₁.tEntry_pin g₁ hu hsize (bytes _ _ h₁) hodd hbl)
+    have p₂ := pre_of_pin (h₂.tEntry_pin g₂ hu hsize (bytes _ _ h₂) hodd hbl)
+    obtain ⟨cr₁, cw₁⟩ := h₁.tCovers hu
+    obtain ⟨cr₂, cw₂⟩ := h₂.tCovers hu
+    have eg : ∀ {s : State}, ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], (tEntry G u s).gpr r = s.gpr r := fun r hr => by
+      rw [State.withRegions_gpr, State.callEntry_gpr _ (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
+    obtain ⟨a3, a4, a5, a6, a7⟩ := g₁
+    obtain ⟨b3, b4, b5, b6, b7⟩ := g₂
+    refine ⟨p₁, p₂, pub_of ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_, Covers.append cr₁ cw₁, cw₁, Covers.append cr₂ cw₂, cw₂⟩
+    · have e₁ : s₁.sp = G.sp := by rw [h₁.gi.sp, ← h₁.gi.hG]; rfl
+      have e₂ : s₂.sp = G.sp := by rw [h₂.gi.sp, ← h₂.gi.hG]; rfl
+      show s₁.sp = s₂.sp
+      rw [e₁, e₂]
+    · rw [eg _ (by simp), eg _ (by simp), a3, b3]
+    · rw [eg _ (by simp), eg _ (by simp), a4, b4]
+    · rw [eg _ (by simp), eg _ (by simp), a5, b5]
+    · rw [eg _ (by simp), eg _ (by simp), a6, b6]
+    · rw [eg _ (by simp), eg _ (by simp), a7, b7]
+    · simp only [candOf, Spec.Dsa.ProbablePrime.candidateAt, State.withRegions_mem, State.callEntry_mem]
+      rw [eg _ (by simp), eg _ (by simp), a3, b3, bytes _ _ h₁, bytes _ _ h₂]
+    · have wl := h₁.gi.witLt
+      have e6 : (BitVec.ofNat 64 (G.witLen - u)).toNat = G.witLen - u := by
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      simp only [State.withRegions_mem, State.callEntry_mem]
+      rw [eg _ (by simp), eg _ (by simp), eg _ (by simp), eg _ (by simp), a5, a6, b5, b6, e6, h₁.gi.randBytes hu,
+        h₂.gi.randBytes hu]
+  have hU' : ∀ o ∈ c.LS, fUsedOut + 8 ≤ o ∨ o + 8 ≤ fUsedOut := hU
+  refine h.primeCall_ok (name := name) ok regs hu hsize hL (bytes _ _ h) hodd hbl
+    fun t g rd wr sp f st used => ⟨⟨?_, x⟩, st⟩
+  have big := h.gi.wBig
+  have kb := h.gi.kBig
+  have hE := h.gi.hEnd_le
+  have h' : SS G 176 σ { c with cl := cl' } t := by
+    refine h.of_hdrScrs (keep_of_preserved g rd wr) sp (os := L.scratch.map fun r => (wB G.pLen + r.1, r.2))
+      (fun p hp => ?_) (hw := [fUsedOut]) (fun o ho => ?_) (by
+        refine f.sub fun x hx => ?_
+        rcases List.mem_append.mp hx with h1 | h2
+        · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h1
+          exact ⟨G.rs (wB G.pLen + q.1) q.2, List.mem_append_left _ (List.mem_append_left _
+            (List.mem_map.mpr ⟨(wB G.pLen + q.1, q.2), List.mem_map.mpr ⟨q, hq, rfl⟩, rfl⟩)), fun _ h => h⟩
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h2
+          rcases h2 with rfl | rfl
+          · exact ⟨G.rs fUsedOut 8, List.mem_append_left _ (List.mem_append_right _ (by simp)), fun _ h => h⟩
+          · exact ⟨rBelow σ 176, List.mem_append_right _ (by simp), fun _ h => h⟩) fun y hy => ⟨(hcl y hy).1, fun p hp => ?_⟩
+    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+      have := hL q hq
+      refine ⟨by simp only [hEnd, wB, kB, pB, fSave] at hE ⊢; omega, .inr (by omega), by simp; omega⟩
+    · simp only [List.mem_singleton] at ho; subst ho; exact ⟨varOk_fUsedOut, hU'⟩
+    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+      exact (hcl y hy).2 q hq
+  unfold callCfg
+  split
+  · exact h'
+  · rename_i b rest e
+    refine ⟨h'.gi.addSlot varOk_fUsedOut ?_, h'.sb, h'.clOk, h'.arrs, h'.liveOk, h'.ksl, h'.kslOk⟩
+    have := used b rest e
+    simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
+      List.cons.injEq, and_true] at this
+    exact this
+
 end
 
 end VG.Proof.Dsa.PPC64LE.Gen

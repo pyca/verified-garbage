@@ -256,6 +256,40 @@ theorem SS.tEntry_pin (h : SS G 176 σ c s) {L : Spec.Dsa.ProbablePrime.Layout} 
   · simp only [candOf, Spec.Dsa.ProbablePrime.candidateAt, State.withRegions_mem, State.callEntry_mem]
     rw [g _ (by simp), r3, hcb]; exact hbl
 
+/-- The test's regions are the search's. -/
+theorem SS.tCovers (h : SS G 176 σ c s) {u : Nat} (hu : u ≤ G.witLen) :
+    Covers (tRd G u) s.rd ∧ Covers (tWr G) s.wr := by
+  have gi := h.gi
+  have big := gi.wBig
+  have wl := gi.witLt
+  have lens := gi.lens3
+  have e4 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wWords_lt lens; omega)]
+  have e6 : (BitVec.ofNat 64 (G.witLen - u)).toNat = G.witLen - u := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [fUsedOut]; have := gi.hEnd_le; simp only [hEnd] at this; omega
+  refine ⟨?_, ?_⟩
+  · rw [gi.rd, gi.pre.rd, gi.hG]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    rcases Nat.lt_or_ge u G.witLen with hl | hl
+    · refine ⟨G.rWit, by simp, u, ?_, ?_⟩
+      · show G.randP u = G.wit + BitVec.ofNat 64 u
+        rw [GP.randP, ite_eq_right (by omega)]
+      · show u + (BitVec.ofNat 64 (G.witLen - u)).toNat ≤ G.witLen
+        rw [e6]; omega
+    · refine ⟨G.rWit, by simp, 0, ?_, ?_⟩
+      · show G.randP u = G.wit + BitVec.ofNat 64 0
+        rw [GP.randP, ite_eq_left (by omega)]; simp
+      · show 0 + (BitVec.ofNat 64 (G.witLen - u)).toNat ≤ G.witLen
+        rw [e6]; omega
+  · rw [gi.wr, gi.pre.wr, gi.hG]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨G.rScr, by simp, wB G.pLen, rfl, by show wB G.pLen + (BitVec.ofNat 64 (wWords G.pLen)).toNat * 8 ≤ G.scrLen * 8; rw [e4]; omega⟩
+    · exact ⟨G.rScr, by simp, fUsedOut, rfl, hfU⟩
+
 /-- The test's result on the candidate `cb` with the witnesses from `u` on. -/
 abbrev tRes (G : GP) (cb : List Byte) (u : Nat) : Option (Bool × Spec.RsaKeyGen.Rand) :=
   Spec.Dsa.probablePrime (Spec.Dsa.decodeBE cb) (G.witB.drop u)
@@ -291,35 +325,13 @@ theorem SS.primeCall_ok {L : Spec.Dsa.ProbablePrime.Layout} {code : Prog isa} {n
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have W8 : wB G.pLen + wWords G.pLen * 8 ≤ G.scrLen * 8 := by omega
   have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [fUsedOut]; have := gi.hEnd_le; simp only [hEnd] at this; omega
-  have sw' : s.wr = σ.wr := gi.wr
   have wWp : 0 < wWords G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
   have hBfit : (G.sa (wB G.pLen)).toNat + 8 * wWords G.pLen ≤ 2 ^ 64 := by
     show (G.scr + BitVec.ofNat 64 (wB G.pLen)).toNat + _ ≤ _
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := wB G.pLen) (by omega),
       Nat.mod_eq_of_lt (by omega)]
     omega
-  have hcovW : Covers (tWr G) s.wr := by
-    rw [sw', gi.pre.wr, gi.hG]
-    refine Covers.of_sub fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨G.rScr, by simp, wB G.pLen, rfl, by rw [e4]; omega⟩
-    · exact ⟨G.rScr, by simp, fUsedOut, rfl, hfU⟩
-  have hcovR : Covers (tRd G u) s.rd := by
-    rw [gi.rd, gi.pre.rd, gi.hG]
-    refine Covers.of_sub fun r hr => ?_
-    simp only [List.mem_singleton] at hr; subst hr
-    rcases Nat.lt_or_ge u G.witLen with hl | hl
-    · refine ⟨G.rWit, by simp, u, ?_, ?_⟩
-      · show G.randP u = G.wit + BitVec.ofNat 64 u
-        rw [GP.randP, ite_eq_right (by omega)]
-      · show u + (BitVec.ofNat 64 (G.witLen - u)).toNat ≤ G.witLen
-        rw [e6]; omega
-    · refine ⟨G.rWit, by simp, 0, ?_, ?_⟩
-      · show G.randP u = G.wit + BitVec.ofNat 64 0
-        rw [GP.randP, ite_eq_left (by omega)]; simp
-      · show 0 + (BitVec.ofNat 64 (G.witLen - u)).toNat ≤ G.witLen
-        rw [e6]; omega
+  obtain ⟨hcovR, hcovW⟩ := h.tCovers hu
   refine WP.callAny ok.verified.1 (pre_of_pin pin) (Covers.append hcovR hcovW)
     hcovW (fun t rd wr sp f g post => ?_) (by have := ok.stack; omega)
   have pp := ppost_of_post post
