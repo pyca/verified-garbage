@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.SignCT
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.VerifyCT
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
 
 /-!
 # ML-DSA on PPC64LE, `sign_message` and `verify_message`: their contracts

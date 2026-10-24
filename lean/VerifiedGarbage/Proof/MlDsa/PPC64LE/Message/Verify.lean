@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.Message.Common
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
 
 /-!
 # ML-DSA on PPC64LE, `verify_message`: correctness

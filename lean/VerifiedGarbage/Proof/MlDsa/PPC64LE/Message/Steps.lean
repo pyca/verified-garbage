@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
+import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Pieces
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlDsa.Message.Common
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Whole
+public import VerifiedGarbage.Impl.Sha3.PPC64LE.Pieces
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on PPC64LE, `sign_message` and `verify_message`: the steps
@@ -165,7 +168,7 @@ theorem hdr_ok {s : State} {f cr : Reg} (hf0 : f ≠ .r0) (hc0 : cr ≠ .r0) {o 
     {is : List Instr} {Q : State → Prop}
     (k : ∀ t, t.mem = hdrMem s.mem (s.gpr f + BitVec.ofNat 64 o) (s.gpr cr) → t.rd = s.rd → t.wr = s.wr →
       t.sp = s.sp → (∀ r, r ≠ .r0 → t.gpr r = s.gpr r) → WP isa (.block is) t Q) :
-    WP isa (.block ([.li .r0 0, .stb .r0 f o, .stb cr f (o + 1)] ++ is)) s Q := by
+    WP isa (.block (([.li .r0 0, .stb .r0 f o, .stb cr f (o + 1)] : List Instr) ++ is)) s Q := by
   simp only [List.cons_append, List.nil_append]
   refine wp_li (by decide) fun u₁ h₁ => ?_
   have g : u₁.gpr f = s.gpr f := h₁.other _ hf0

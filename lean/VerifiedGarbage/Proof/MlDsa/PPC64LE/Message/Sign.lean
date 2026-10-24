@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
 
 /-!
 # ML-DSA on PPC64LE, `sign_message`: correctness

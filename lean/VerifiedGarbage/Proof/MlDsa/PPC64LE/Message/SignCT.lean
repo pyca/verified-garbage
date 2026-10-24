@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.MlDsa.Message.Common
+meta import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
 
 /-!
 # ML-DSA on PPC64LE, `sign_message`: constant time
