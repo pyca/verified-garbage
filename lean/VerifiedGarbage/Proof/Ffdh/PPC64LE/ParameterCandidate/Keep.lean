@@ -106,19 +106,20 @@ theorem Read.le {w d : Nat} (hd : Read w d) : d + 8 ≤ slot w 28 := by
 
 theorem MSt.frm {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N s) {rs : List (Nat × Nat)}
     (hf : Frm p.B rs s.mem t.mem) (hr : ∀ r ∈ rs, Free (wOf mb) r) {regs : List Reg} (k : Keep regs s t)
-    (hk : Reg.r10 ∉ regs ∧ Reg.r11 ∉ regs ∧ Reg.r29 ∉ regs ∧ Reg.r12 ∉ regs ∧ Reg.r31 ∉ regs) : MSt p mb N t := by
+    (h31 : Reg.r31 ∉ regs) (r10 : t.gpr .r10 = s.gpr .r10) (r11 : t.gpr .r11 = s.gpr .r11)
+    (r29 : t.gpr .r29 = s.gpr .r29) : MSt p mb N t := by
   obtain ⟨hw2, hw128, hZ⟩ := h.w
   have hnw := h.st.scr.nowrap
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (wOf mb + 2)) + saveBytes ≤ p.Z := by rw [← es]; exact hZ
   have hw : ∀ d, Read (wOf mb) d → word t.mem p.B d = word s.mem p.B d := fun d hd =>
     hf.word_eq (fun r hr' => (hr r hr').word hd) (by have := hd.le; omega)
-  refine ⟨h.st.step (Frm.toMut hf fun r hr' => Free.mut h (hr r hr')) k hk.2.2.2.2,
-    h.ph.keep (k.gpr _ hk.1) (k.gpr _ hk.2.1) (k.gpr _ hk.2.2.1) hw, ?_, h.mb1, h.mb2⟩
-  refine h.prep.keep ⟨h.prep.env.hs.congr k.wr, (k.gpr _ hk.1).trans h.prep.env.h10,
-    (k.gpr _ hk.2.2.1).trans h.prep.env.h29, (k.gpr _ hk.2.1).trans h.prep.env.h11,
-    (k.gpr _ hk.2.2.2.2).trans h.prep.env.h31, h.prep.env.hw, h.prep.env.hw', h.prep.env.hZ⟩
-    (k.gpr _ hk.2.2.2.1) (fun d hd => hw d (by
+  refine ⟨h.st.step (Frm.toMut hf fun r hr' => Free.mut h (hr r hr')) k h31,
+    h.ph.keep r10 r11 r29 hw, ?_, h.mb1, h.mb2⟩
+  refine h.prep.keep ⟨h.prep.env.hs.congr k.wr, r10.trans h.prep.env.h10,
+    r29.trans h.prep.env.h29, r11.trans h.prep.env.h11,
+    (k.gpr _ h31).trans h.prep.env.h31, h.prep.env.hw, h.prep.env.hw', h.prep.env.hZ⟩
+    (fun d hd => hw d (by
       rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl
       · unfold Read; simp
       · unfold Read; simp
@@ -168,6 +169,7 @@ theorem MSt.round {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N s)
         ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by decide, by decide⟩ (by decide)
   exact mu.frm hf (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Or.inl ⟨by simp, rfl⟩) kt (by decide)
+    rcases hr with rfl | rfl <;> exact Or.inl ⟨by simp, rfl⟩) kt (by decide) (kt.gpr _ (by decide))
+    (kt.gpr _ (by decide)) (kt.gpr _ (by decide))
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
