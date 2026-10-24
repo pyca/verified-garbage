@@ -46,13 +46,6 @@ theorem AbsPost.trans {c : Cx} (L : Lay c) {xs ys : List Spec.GcmSiv.Elem} {t t�
     (h₁ : AbsPost c xs t t₁) (h₂ : AbsPost c ys t₁ t₂) : AbsPost c (xs ++ ys) t t₂ :=
   Absorbed.trans (absorbR_H L) h₁ h₂
 
-/-- What the copy and XOR loops keep. -/
-theorem PK.ofLoop {s s' : State} {S D : Addr} {n : Nat} (O : LoopOut s S D n s') : PK s s' :=
-  ⟨O.keeps.1, O.keeps.2.1, O.keeps.2.2.1, fun r hr => by
-    have h : r ≠ .r0 ∧ r ≠ .r3 ∧ r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 := by
-      revert r; decide
-    exact O.other r h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2⟩
-
 /-! ## The last bytes -/
 
 /-- The last bytes copied over a zeroed block. -/

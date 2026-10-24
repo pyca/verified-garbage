@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Stream
@@ -50,6 +51,13 @@ theorem ofNat_add (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.o
 theorem PK.ofKeep {rs : List Reg} {s s' : State} (h : Keep rs s s') (hsp : s'.sp = s.sp)
     (hd : ∀ r ∈ keepRegs, r ∉ rs := by decide) : PK s s' :=
   ⟨h.2.1, h.2.2, hsp, fun r hr => h.gpr (hd r hr)⟩
+
+/-- What the copy and XOR loops keep. -/
+theorem PK.ofLoop {s s' : State} {S D : Addr} {n : Nat} (O : Proof.AesGcm.PPC64LE.LoopOut s S D n s') : PK s s' :=
+  ⟨O.keeps.1, O.keeps.2.1, O.keeps.2.2.1, fun r hr => by
+    have h : r ≠ .r0 ∧ r ≠ .r3 ∧ r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 := by
+      revert r; decide
+    exact O.other r h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2⟩
 
 /-- Two writes of the same register. -/
 theorem upd2 {s t u : State} {d : Reg} {v w w' : BitVec 64} (u₁ : Proof.ChaCha20Poly1305.PPC64LE.Upd s t d v)
