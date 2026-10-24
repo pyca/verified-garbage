@@ -20,7 +20,7 @@ proves `CoreSpec` of its own.
   key `k`. It survives what a mode does before `prepare`
   (`keyArgs_congr`): keeping `r3` and the other registers the caller
   expects preserved but the mode's `r29`–`r31` (`KeptBut`), the regions,
-  and memory outside `rs`, writable regions. (A key with more than one
+  the statics' addresses, and memory outside `rs`, writable regions. (A key with more than one
   argument may thus keep the others in callee-saved registers.)
 * `Ready s B ws k`: the key `k` is ready in `s`, with the scratch buffer at
   `B`, for a mode that writes within the regions `ws` (its data and the
@@ -89,10 +89,10 @@ structure CoreSpec (c : Core) where
   cipher_len : ∀ k b, (cipher k b).length = 4 * c.bw
   layout : Layout c
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
-    KeptBut s s' → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    KeptBut s s' → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms → Frame rs s.mem s'.mem →
     KeyArgs s' rs k
   ready_frame : ∀ {s s' : State} {B : Addr} {ws : List Region} {k : Key} {rs : List Region},
-    Ready s B ws k → KeptBut s s' → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    Ready s B ws k → KeptBut s s' → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms → Frame rs s.mem s'.mem →
     (∀ r ∈ rs, ∃ r' ∈ ws, Region.Sub r r') →
     (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (blkRegion c B)) → Ready s' B ws k
   prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
