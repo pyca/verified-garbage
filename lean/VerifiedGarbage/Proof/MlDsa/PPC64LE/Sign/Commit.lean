@@ -35,7 +35,7 @@ namespace VG.Proof.MlDsa.PPC64LE.Sign
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of taint31 polyIs_keepW
-  bytes_keepW copyS)
+  bytes_keepW copyS hashLay hashLay_ptr hashS hashS_tr pieceS ix_ne1 shake31)
 open VG.Impl.MlDsa.PPC64LE.Sign
 open VG.Impl.MlDsa.PPC64LE.KeyGen (seqR callAt)
 open VG.Impl.MlKem.PPC64LE (copy hash)
@@ -498,6 +498,171 @@ theorem rowW_piece {t i : Nat} (hi : i < p.k) :
     fun j h1 h2 => mulAddW_piece hP hF hS hi (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_).seq
     (invW_piece hP hF hS hi))
   rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+
+end
+
+/-! ## `w₁` and `c̃` -/
+
+theorem natPolyIs_coeff {m : Mem} {a : Addr} {f : Vector Nat n} (h : NatPolyIs m a f) {j : Nat} (hj : j < 256) :
+    (coeffAt m a j).toNat = f[j] := by
+  have := congrArg (·[j]) h
+  simp only [natPolyAt, Vector.getElem_ofFn] at this
+  exact this
+
+/-- `w₁[i]` in `T1`. -/
+abbrev H1 (p : Params) (STK t i : Nat) (σ s : State) : Prop :=
+  IC p STK σ t p.ℓ p.ℓ p.k i s ∧ NatPolyIs s.mem ((slay2 p STK σ).A 0 (oP 1)) (w1F p (Am p σ) (rppOf p σ) (p.ℓ * t) i)
+
+/-- The commitment: `y`, `ŷ`, `w`, and `c̃` at `CT`. -/
+abbrev ICd (p : Params) (STK t : Nat) (σ s : State) : Prop :=
+  IC p STK σ t p.ℓ p.ℓ p.k p.k s ∧ bytesAt s.mem ((slay2 p STK σ).A 0 oCT) (cLen p) = CTv p σ (p.ℓ * t)
+
+/-- The buffers of the sponge: `mu` and `scratch`. -/
+abbrev Kmu : Nat → Bool := fun i => i == 3
+
+theorem kmu : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → Kmu i = true → Kmu j = true → i ∈ sWb2 ∨ j ∈ sWb2 :=
+  fun i _ j _ hij _ _ hi hj => by
+    simp only [Kmu, beq_iff_eq] at hi hj; omega
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+omit hP hS in
+theorem hb_m {σ : State} {i : Nat} (hi : i < p.k) : KeyGen.BitsOk (slay2 p STK σ) sWb2 (wP p i) p.γ₂ t1P := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  have hg := hF.g2
+  exact ⟨⟨sptr_ok rfl (by slt hF), by ssep hF⟩, ⟨sptr_ok rfl (by decide), by ssep hF⟩,
+    show ix Reg.r31 ∈ sWb2 by decide, by ssep hF, hg,
+    by simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg; rcases hg with e | e <;> rw [e] <;> decide⟩
+
+omit hP hS in
+theorem w1_off {i : Nat} (hi : i < p.k) : w1Len p * i + w1Len p ≤ 1024 := by
+  have hw := hF.w1
+  have := Nat.mul_le_mul_left (w1Len p) (show i + 1 ≤ p.k from hi)
+  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm (w1Len p) p.k] at this; omega
+
+omit hP hS in
+theorem sbpW_m {σ : State} {i : Nat} (hi : i < p.k) :
+    KeyGen.SbpOk (slay2 p STK σ) sWb2 t1P (w1Max p) (sc (oW1 + w1Len p * i)) (w1Len p) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  have := w1_off hF hi
+  exact ⟨⟨sptr_ok rfl (by decide), by ssep hF⟩, ⟨sptr_ok rfl (by slt hF), by ssep hF⟩,
+    show ix Reg.r31 ∈ sWb2 by decide, by ssep hF, hF.sbp, rfl⟩
+
+theorem hbW_piece {t i : Nat} (hi : i < p.k) :
+    SPiece p STK (fun σ s => IC p STK σ t p.ℓ p.ℓ p.k i s) (H1 p STK t i) (highBitsAt P (wP p i) p.γ₂ t1P) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  refine ⟨fun σ s _ h => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.hb_tr hP.highBits hS (hb_m hF (σ := σ) hi)
+    (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (wBase p + i))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (wBase p + i))))
+      fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2.1, h.2.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.l.k.sc h₂.l.k.sc, (h₁.w i hi).1, by
+      rw [slay2_pub pub]; exact (h₂.w i hi).1⟩⟩
+  have := w1_off hF hi
+  unfold highBitsAt
+  refine KeyGen.hb_ok hP.highBits h.l.k.sc.site hS (hb_m hF hi) (h.w i hi).1 fun s' k' hq => ?_
+  refine ⟨h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+    (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide)), ?_⟩
+  have e : polyAt s.mem (lpa (slay2 p STK σ) (wP p i)) = Wv p σ (p.ℓ * t) i := (h.w i hi).2
+  rw [e] at hq
+  exact hq
+
+theorem sbpW_piece {t i : Nat} (hi : i < p.k) :
+    SPiece p STK (H1 p STK t i) (fun σ s => IC p STK σ t p.ℓ p.ℓ p.k (i + 1) s)
+      (simpleBitPackAt P t1P (w1Max p) (sc (oW1 + w1Len p * i)) (w1Len p)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  have hw := w1_off hF hi
+  have hcf : ∀ {σ x : State}, H1 p STK t i σ x → ∀ j < n,
+      (coeffAt x.mem ((slay2 p STK σ).A 0 (oP 1)) j).toNat ≤ w1Max p := fun h j hj => by
+    rw [natPolyIs_coeff h.2 hj]
+    simp only [w1F, Vector.getElem_map]
+    exact Proof.MlDsa.Sign.highBits_le hF.g2 _
+  refine ⟨fun σ s _ h => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.sbp_tr hP.simpleBitPack hS (sbpW_m hF (σ := σ) hi)
+    (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      (∀ j < n, (coeffAt x.mem ((slay2 p STK σ).A 0 (oP 1)) j).toNat ≤ w1Max p) ∧
+      (∀ j < n, (coeffAt y.mem ((slay2 p STK σ).A 0 (oP 1)) j).toNat ≤ w1Max p))
+      fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2.1, h.2.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.1.l.k.sc h₂.1.l.k.sc, hcf h₁, by
+      rw [slay2_pub pub]; exact hcf h₂⟩⟩
+  unfold simpleBitPackAt
+  refine KeyGen.sbp_ok hP.simpleBitPack h.1.l.k.sc.site hS (sbpW_m hF hi) (hcf h) fun s' k' hq => ?_
+  have I := h.1.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+    (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide))
+  refine ⟨I.l, I.y, I.yh, I.w, ?_, by rw [Nat.mul_succ]; exact hw⟩
+  have e : natPolyAt s.mem (lpa (slay2 p STK σ) t1P) = w1F p (Am p σ) (rppOf p σ) (p.ℓ * t) i := h.2
+  rw [e] at hq
+  have b2 : bytesAt s'.mem ((slay2 p STK σ).A 0 oW1 + BitVec.ofNat 64 (w1Len p * i)) (w1Len p) =
+      simpleBitPack (w1F p (Am p σ) (rppOf p σ) (p.ℓ * t) i) (w1Max p) := by
+    simp only [lpa, Lay.A, ix, BitVec.add_assoc, ← BitVec.ofNat_add] at hq ⊢; exact hq
+  rw [Nat.mul_succ, Proof.MlKem.bytesAt_add, I.w1, b2, List.range_succ, List.flatMap_append,
+    List.flatMap_singleton]
+
+omit hP hS in
+theorem ctPieces {σ s : State} (hs : Site (slay2 p STK σ) sWb2 STK s) :
+    (∀ pc ∈ ([⟨.r29, 0, 64⟩, ⟨.r31, oW1, p.k * w1Len p⟩] : List Impl.MlKem.PPC64LE.Piece),
+      PieceOk (hashLay (slay2 p STK σ) s Kmu) ix s false pc) ∧
+    PieceOk (hashLay (slay2 p STK σ) s Kmu) ix s true (⟨.r31, oCT, cLen p⟩ : Impl.MlKem.PPC64LE.Piece) := by
+  have hk := hF.k
+  obtain ⟨w1a, w1b⟩ := hF.w1
+  refine ⟨fun pc hpc => ?_, pieceS hs rfl (show oCT < 32768 by decide)
+    (show cLen p < 32768 by rcases hF.ct with e | e | e <;> omega)
+    (show 0 < cLen p by rcases hF.ct with e | e | e <;> omega)
+    (by rcases hF.ct with e | e | e <;> ssep hF [hashLay, Lay.size, e]) (.inl rfl)
+    fun _ => show ix Reg.r31 ∈ sWb2 by decide⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hpc
+  rcases hpc with rfl | rfl
+  · exact pieceS hs rfl (show (0 : Nat) < 32768 by decide) (show 64 < 32768 by decide) (by decide)
+      (by ssep hF [hashLay, Lay.size]) (.inr rfl) fun h => absurd h (by decide)
+  · exact pieceS hs rfl (show oW1 < 32768 by decide) (show p.k * w1Len p < 32768 by omega) w1b
+      (by rcases hF.w1l with e | ⟨e, _⟩ <;> ssep hF [hashLay, Lay.size, e]) (.inl rfl) fun h => absurd h (by decide)
+
+omit hP hS in
+theorem ctHash_piece {t : Nat} :
+    SPiece p STK (fun σ s => IC p STK σ t p.ℓ p.ℓ p.k p.k s) (ICd p STK t)
+      (hash 136 0x1f [⟨.r29, 0, 64⟩, ⟨.r31, oW1, p.k * w1Len p⟩] [⟨.r31, oCT, cLen p⟩]) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  refine ⟨fun σ s _ h => ?_, rel_of (RelCT.exists_ fun σ => hashS_tr kmu (rate := 136) (sfx := 0x1f) (by decide)
+    (by decide) (by simp) (fun s hs => (ctPieces hF (σ := σ) hs).1) (fun s hs => (ctPieces hF hs).2) fun _ _ h => h)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.l.k.sc h₂.l.k.sc⟩⟩
+  have hs := h.l.k.sc.site
+  obtain ⟨hin, hq⟩ := ctPieces hF hs
+  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hb := h.w1b
+  refine WP.mono (hashS hs kmu (rate := 136) (sfx := 0x1f) (by decide) (by decide) (by simp) hin hq)
+    fun s' ⟨k', o'⟩ => ⟨h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+      (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide)), ?_⟩
+  have o₃ : bytesAt s'.mem ((slay2 p STK σ).A 0 oCT) (cLen p) = _ := o'
+  rw [o₃]
+  simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Lay.pb,
+    hashLay_ptr _ _ _ (ix_ne1 _)]
+  have e1 : bytesAt s.mem ((slay2 p STK σ).ptr (ix Reg.r29) + BitVec.ofNat 64 0) 64 = muOf σ := h.l.k.sc.mu
+  have e2 : bytesAt s.mem ((slay2 p STK σ).ptr (ix Reg.r31) + BitVec.ofNat 64 oW1) (p.k * w1Len p) =
+      w1Encode p ((List.range p.k).map (w1F p (Am p σ) (rppOf p σ) (p.ℓ * t))) := by
+    rw [Nat.mul_comm]
+    exact h.w1.trans (by simp only [w1Encode, List.flatMap_map])
+  rw [e1, e2, shake31]
+  exact (Proof.MlKem.shake256_eq _ _).symm
+
+theorem w1R_piece {t i : Nat} (hi : i < p.k) :
+    SPiece p STK (fun σ s => IC p STK σ t p.ℓ p.ℓ p.k i s) (fun σ s => IC p STK σ t p.ℓ p.ℓ p.k (i + 1) s)
+      (w1R P p i) :=
+  (hbW_piece hP hF hS hi).seq (sbpW_piece hP hF hS hi)
+
+/-- The commitment of iteration `t`. -/
+theorem commit_piece {t : Nat} :
+    SPiece p STK (IL p STK · t) (ICd p STK t) (commit P p) := by
+  unfold commit
+  refine Piece.mono ((Piece.mono (Piece.seqR (I := fun r σ s => IC p STK σ t r r 0 0 s) p.ℓ 0
+    fun r _ hr => maskR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+    ((Piece.mono (Piece.seqR (I := fun i σ s => IC p STK σ t p.ℓ p.ℓ i 0 s) p.k 0
+      fun i _ hi => rowW_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+    ((Piece.mono (Piece.seqR (I := fun i σ s => IC p STK σ t p.ℓ p.ℓ p.k i s) p.k 0
+      fun i _ hi => w1R_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+      (ctHash_piece hF)))) (fun σ s _ h => ?_) fun _ _ _ h => h
+  exact ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
+    fun _ h => absurd h (Nat.not_lt_zero _), by simp only [Nat.mul_zero, List.range_zero, List.flatMap_nil]; rfl, by simp⟩
 
 end
 
