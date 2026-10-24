@@ -135,7 +135,7 @@ structure Fr (rs : List Reg) (s₀ s : State) (B : Addr) (Z w c : Nat) : Prop wh
   muts : Mut B w s₀.mem s.mem
   keep : Keep rs s₀ s
 
-theorem Fr.trans {rs : List Reg} {s₀ s t : State} {B : Addr} {Z w c : Nat} (h : Fr rs s₀ s B Z w c)
+theorem Fr.trans {rs rs' : List Reg} {s₀ s t : State} {B : Addr} {Z w c : Nat} (h : Fr rs s₀ s B Z w c)
     (hm : Mut B w s.mem t.mem) (k : Keep rs' s t) (hrs : ∀ r ∈ rs', r ∈ rs) (hmr : ∀ r ∈ mctxRegs, r ∉ rs)
     (h0 : w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0)) : Fr rs s₀ t B Z w c := by
   have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega
