@@ -45,7 +45,7 @@ abbrev fieldAt (c : Cfg) (base : Addr) (s : State) (i : Nat) : Fe c.C :=
 /-! ## `T3 = T0^(2^(j-1))` -/
 
 theorem descentStart_eq (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.descentStart c =
-    copy c.n (c.sl T3) (c.sl T0) ++ [.lsr .d .r4 .r31 32, .subi .r4 .r4 1, .logic .or .r31 .r31 .r4] := rfl
+    copy c.n (c.sl T3) (c.sl T0) ++ ([.lsr .d .r4 .r31 32, .subi .r4 .r4 1, .logic .or .r31 .r31 .r4] : List Instr) := rfl
 
 /-- `j - 1` to the low word of `r31`, through `r4`. -/
 theorem startCtr_ok {s : State} {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 32) (h31 : s.gpr .r31 = ctr j 0) :
