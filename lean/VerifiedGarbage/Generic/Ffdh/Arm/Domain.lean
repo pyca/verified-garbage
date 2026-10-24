@@ -11,12 +11,14 @@ open VG
 
 def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
   [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
+    consts := Impl.Ffdh.Arm.VettedGroups.tableConsts
     suffix := v.suffix
     features := v.features
     stack := 128
     code := v.checkDomain
     verified := v.checkDomain_verified
-    notes := ["ARMv7: RSA's packed-u64 working space and native 32-bit arithmetic check the \
+    notes := ["ARMv7: exact recognition certifies the ten standard MODP/FFDHE domains. \
+      All other parameters use RSA's packed-u64 working space and native 32-bit arithmetic check the \
       modulus, generator, subgroup bound, divisibility and subgroup relation. Exponentiation \
       uses fixed three-bit windows; every selected Montgomery row is verified."] },
   Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
