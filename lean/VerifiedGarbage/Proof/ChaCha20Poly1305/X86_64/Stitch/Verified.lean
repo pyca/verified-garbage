@@ -735,12 +735,6 @@ def wipeS (fold extra w : Nat) : Prog isa :=
 def postS (fold w : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (wipeS fold 512 w) (.seq (macPadLengths b .rbx .rbp) (.seq finalizeTag (.block restore)))
 
-/-- The prologue's choice: the one-time key's block alone (the call) or with
-the tail's three blocks (`fourKs`) or one (`twoKs`). -/
-def xsel (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (.block xTest) (.ite .b (.call x.name x.code)
-    (.seq (.block fTest) (.ite .b (fourKs x.vl) (twoKs x.vl))))
-
 theorem sealS_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (sealStitched x b) s t s') :
     Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code)
@@ -1017,6 +1011,15 @@ theorem twoKs_taint (vl : Bool) : ∃ h, (taintS.check (τR [.r15, .rdi, .rsp]) 
 
 theorem fourKs_taint (vl : Bool) : ∃ h, (taintS.check (τR [.r15, .rdi, .rsp]) (fourKs vl) h).isSome = true := by
   cases vl <;> taint_decide_sum []
+
+theorem xTestV_taint : ∃ h, (taintS.check (τR []) (.block xTestV) h).isSome = true := by
+  taint_decide_sum []
+
+theorem twoKsB_taint (vl : Bool) : ∃ h, (taintS.check (τR [.r15, .rdi, .rsp]) (twoKsB vl) h).isSome = true := by
+  cases vl <;> taint_decide_sum []
+
+theorem cmpRax64_taint : ∃ h, (taintS.check (τR []) (.block [.alu .cmp .rax (.imm 64)]) h).isSome = true := by
+  taint_decide_sum []
 
 theorem fTest_taint : ∃ h, (taintS.check (τR []) (.block fTest) h).isSome = true := by
   taint_decide_sum []
@@ -1521,9 +1524,9 @@ include hv
 
 /-- The prologue's choice of the call, `twoKs` or `fourKs`: by the length,
 which is public. -/
-theorem xsel_rel {pass : Nat} (hpass : XPass pass) (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀') :
+theorem xselA_rel {pass : Nat} (hpass : XPass pass) (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀') :
     RelCT isa (fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂)
-      (xsel { v.callee with pass := pass }) fun s₁ s₂ =>
+      (xselA { v.callee with pass := pass }) fun s₁ s₂ =>
         (AfterF v.callee.fold pass s₀ s₁ ∧ TailKs s₀ s₁.mem) ∧ (AfterF v.callee.fold pass s₀' s₂ ∧ TailKs s₀' s₂.mem) := by
   have hq' := hq
   obtain ⟨-, -, -, -, -, p6, p7, -, p9⟩ := hq'
@@ -1572,7 +1575,7 @@ theorem xsel_rel {pass : Nat} (hpass : XPass pass) (hp : APre e s₀) (hp' : APr
     (F₂ := fun t => FArgs v.callee.fold pass s₀' t ∧ isa.eval .b t = some (decide (L s₀' < 449)) ∧
       (1 ≤ L s₀' → (t.gpr .rax).toNat = (L s₀' - 1) % 512))
     fun _ _ h => ⟨tOk h.1, tOk h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  unfold xsel
+  unfold xselA
   refine t.seq (RelCT.ite (fun s₁ s₂ h => by rw [h.1.2.1, h.2.2.1, eL]) ?_ ?_)
   · by_cases hx : L s₀ < 449
     · have hx' : L s₀' < 449 := by rw [eL]; exact hx
@@ -1618,6 +1621,106 @@ theorem xsel_rel {pass : Nat} (hpass : XPass pass) (hp : APre e s₀) (hp' : APr
           exact ((RelCT.taint (A := taintS) (τR [.r15, .rdi, .rsp]) (fun s₁ s₂ h => agK h.1.1.1 h.1.2.1) hK).wp
             fun _ _ h => ⟨twoKs_ok v hv hpass hp h.1.1.1 hl hF, twoKs_ok v hv hpass hp' h.1.2.1 hl' hF'⟩).mono
             (fun _ _ h => h) fun _ _ h => h.2
+
+/-- The prologue's choice of `twoKs` or the call: by the length, which is
+public. -/
+theorem xselV_rel {pass : Nat} (hpass : XPass pass) (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂)
+      (xselV { v.callee with pass := pass }) fun s₁ s₂ =>
+        (AfterF v.callee.fold pass s₀ s₁ ∧ TailKs s₀ s₁.mem) ∧ (AfterF v.callee.fold pass s₀' s₂ ∧ TailKs s₀' s₂.mem) := by
+  have hq' := hq
+  obtain ⟨-, -, -, -, -, p6, p7, -, p9⟩ := hq'
+  have eL : L s₀' = L s₀ := by simp only [L, p6]
+  have tOk : ∀ {σ₀ s}, FArgs v.callee.fold pass σ₀ s → WP isa (.block xTestV) s fun t =>
+      FArgs v.callee.fold pass σ₀ t ∧ isa.eval .b t = some (decide (XLen (L σ₀))) ∧
+        (513 ≤ L σ₀ → (t.gpr .rax).toNat = (L σ₀ - 1) % 512) := by
+    intro σ₀ s h
+    refine WP.mono (xTestV_ok s) fun s₁ ⟨cf₁, rax₁, g₁, m₁, rd₁, wr₁, _⟩ =>
+      ⟨?_, by rw [cf₁, h.r13], fun hl => by rw [rax₁ (by rw [h.r13]; exact hl), h.r13]⟩
+    exact ⟨by rw [g₁ _ (by decide) (by decide), h.rdi], by rw [g₁ _ (by decide) (by decide), h.rsi],
+      by rw [g₁ _ (by decide) (by decide), h.rdx], by rw [g₁ _ (by decide) (by decide), h.rcx],
+      by rw [g₁ _ (by decide) (by decide), h.r15], by rw [g₁ _ (by decide) (by decide), h.r14],
+      by rw [g₁ _ (by decide) (by decide), h.r13], by rw [g₁ _ (by decide) (by decide), h.r12],
+      by rw [g₁ _ (by decide) (by decide), h.rbx], by rw [g₁ _ (by decide) (by decide), h.rbp],
+      by rw [g₁ _ (by decide) (by decide), h.rsp], by rw [rd₁, h.rd], by rw [wr₁, h.wr],
+      by rw [m₁]; exact h.saved, by rw [m₁]; exact h.fine, by rw [m₁]; exact h.st, by rw [m₁]; exact h.st',
+      fun k hk => by rw [m₁]; exact h.zero k hk, fun hps => by rw [m₁]; exact h.mslot hps⟩
+  have cOk : ∀ {σ₀ s}, XLen (L σ₀) → FArgs v.callee.fold pass σ₀ s →
+      (513 ≤ L σ₀ → (s.gpr .rax).toNat = (L σ₀ - 1) % 512) →
+      WP isa (.block [.alu .cmp .rax (.imm 64)]) s fun t =>
+        FArgs v.callee.fold pass σ₀ t ∧ isa.eval .b t = some (decide (XLen1 (L σ₀))) := by
+    intro σ₀ s hx h hr
+    refine WP.mono (cmpRax64_ok s) fun s₁ ⟨cf₁, g₁, m₁, rd₁, wr₁, _⟩ => ⟨?_, by rw [cf₁, hr hx.1]⟩
+    exact ⟨by rw [g₁]; exact h.rdi, by rw [g₁]; exact h.rsi, by rw [g₁]; exact h.rdx, by rw [g₁]; exact h.rcx,
+      by rw [g₁]; exact h.r15, by rw [g₁]; exact h.r14, by rw [g₁]; exact h.r13, by rw [g₁]; exact h.r12,
+      by rw [g₁]; exact h.rbx, by rw [g₁]; exact h.rbp, by rw [g₁]; exact h.rsp, by rw [rd₁]; exact h.rd,
+      by rw [wr₁]; exact h.wr, by rw [m₁]; exact h.saved, by rw [m₁]; exact h.fine, by rw [m₁]; exact h.st,
+      by rw [m₁]; exact h.st', fun k hk => by rw [m₁]; exact h.zero k hk, fun hps => by rw [m₁]; exact h.mslot hps⟩
+  have agK : ∀ {s₁ s₂ : State}, FArgs v.callee.fold pass s₀ s₁ → FArgs v.callee.fold pass s₀' s₂ →
+      X86_64.Taint.Agree (τR [.r15, .rdi, .rsp]) s₁ s₂ := fun h₁ h₂ => agree_regs _ fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · rw [h₁.r15, h₂.r15, cx, cx, p9]
+    · rw [h₁.rdi, h₂.rdi, cx, cx, p9]
+    · rw [h₁.rsp, h₂.rsp, p7]
+  obtain ⟨_, hT⟩ := xTestV_taint
+  have t := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧
+      FArgs v.callee.fold pass s₀' s₂) (τR []) (fun _ _ _ => agree_regs [] fun _ h => by simp at h) hT).wp
+    (F₁ := fun t => FArgs v.callee.fold pass s₀ t ∧ isa.eval .b t = some (decide (XLen (L s₀))) ∧
+      (513 ≤ L s₀ → (t.gpr .rax).toNat = (L s₀ - 1) % 512))
+    (F₂ := fun t => FArgs v.callee.fold pass s₀' t ∧ isa.eval .b t = some (decide (XLen (L s₀'))) ∧
+      (513 ≤ L s₀' → (t.gpr .rax).toNat = (L s₀' - 1) % 512))
+    fun _ _ h => ⟨tOk h.1, tOk h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  unfold xselV
+  refine t.seq (RelCT.ite (fun s₁ s₂ h => by rw [h.1.2.1, h.2.2.1, eL]) ?_ ?_)
+  · by_cases hx : XLen (L s₀)
+    · have hx' : XLen (L s₀') := by rw [eL]; exact hx
+      obtain ⟨_, hC⟩ := cmpRax64_taint
+      have c := ((RelCT.taint (A := taintS) (τR []) (P := fun s₁ s₂ =>
+          ((FArgs v.callee.fold pass s₀ s₁ ∧ isa.eval .b s₁ = some (decide (XLen (L s₀))) ∧
+            (513 ≤ L s₀ → (s₁.gpr .rax).toNat = (L s₀ - 1) % 512)) ∧
+          (FArgs v.callee.fold pass s₀' s₂ ∧ isa.eval .b s₂ = some (decide (XLen (L s₀'))) ∧
+            (513 ≤ L s₀' → (s₂.gpr .rax).toNat = (L s₀' - 1) % 512))) ∧ isa.eval .b s₁ = some true)
+          (fun _ _ _ => agree_regs [] fun _ h => by simp at h) hC).wp
+        (F₁ := fun t => FArgs v.callee.fold pass s₀ t ∧ isa.eval .b t = some (decide (XLen1 (L s₀))))
+        (F₂ := fun t => FArgs v.callee.fold pass s₀' t ∧ isa.eval .b t = some (decide (XLen1 (L s₀'))))
+        fun _ _ h => ⟨cOk hx h.1.1.1 h.1.1.2.2, cOk hx' h.1.2.1 h.1.2.2.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+      refine c.seq (RelCT.ite (fun s₁ s₂ h => by rw [h.1.2, h.2.2, eL]) ?_ ?_)
+      · by_cases h1 : XLen1 (L s₀)
+        · obtain ⟨_, hK⟩ := twoKsB_taint v.callee.vl
+          have h1' : XLen1 (L s₀') := by rw [eL]; exact h1
+          exact ((RelCT.taint (A := taintS) (τR [.r15, .rdi, .rsp]) (fun s₁ s₂ h => agK h.1.1.1 h.1.2.1) hK).wp
+            fun _ _ h => ⟨twoKsB_ok v hv hpass hp h.1.1.1 (by omega_using [hx.1])
+                fun hf => absurd hf.1 (Nat.not_le.mpr h1),
+              twoKsB_ok v hv hpass hp' h.1.2.1 (by omega_using [hx'.1])
+                fun hf => absurd hf.1 (Nat.not_le.mpr h1')⟩).mono
+            (fun _ _ h => h) fun _ _ h => h.2
+        · refine RelCT.of_false fun s₁ _ h => ?_
+          have e := h.1.1.2.symm.trans h.2
+          simp [h1] at e
+      · obtain ⟨_, hK⟩ := fourKs_taint v.callee.vl
+        exact ((RelCT.taint (A := taintS) (τR [.r15, .rdi, .rsp]) (fun s₁ s₂ h => agK h.1.1.1 h.1.2.1) hK).wp
+          fun _ _ h => ⟨fourKs_ok v hv hpass hp h.1.1.1 hx, fourKs_ok v hv hpass hp' h.1.2.1 hx'⟩).mono
+          (fun _ _ h => h) fun _ _ h => h.2
+    · refine RelCT.of_false fun s₁ _ h => ?_
+      have e := h.1.1.2.1.symm.trans h.2
+      simp [hx] at e
+  · by_cases hx : XLen (L s₀)
+    · refine RelCT.of_false fun s₁ _ h => ?_
+      have e := h.1.1.2.1.symm.trans h.2
+      simp [hx] at e
+    · have hx' : ¬ XLen (L s₀') := by rw [eL]; exact hx
+      exact (call1_rel hp hp' hq v).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩)
+        fun _ _ h => ⟨⟨h.1, TailKs.of_xlen hx⟩, ⟨h.2, TailKs.of_xlen hx'⟩⟩
+
+/-- The prologue's choice, either way. -/
+theorem xsel_rel {pass : Nat} (hpass : XPass pass) (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂)
+      (xsel { v.callee with pass := pass }) fun s₁ s₂ =>
+        (AfterF v.callee.fold pass s₀ s₁ ∧ TailKs s₀ s₁.mem) ∧ (AfterF v.callee.fold pass s₀' s₂ ∧ TailKs s₀' s₂.mem) := by
+  unfold xsel; split
+  · exact xselV_rel v hv hpass hp hp' hq
+  · exact xselA_rel v hv hpass hp hp' hq
 
 theorem sealS_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealStitched { v.callee with pass := 512 } v.poly)
@@ -1751,6 +1854,8 @@ theorem bulk_xdepth (vl : Bool) : (bulk vl).x86_64Depth = 0 := by cases vl <;> l
 theorem bigS_xdepth (vl : Bool) : (bigS vl).x86_64Depth = 0 := by cases vl <;> lit_decide
 theorem bulkP_xdepth (vl : Bool) : (bulkP vl).x86_64Depth = 0 := by cases vl <;> lit_decide
 theorem twoKs_xdepth (vl : Bool) : (twoKs vl).x86_64Depth = 0 := by cases vl <;> lit_decide
+
+theorem twoKsB_xdepth (vl : Bool) : (twoKsB vl).x86_64Depth = 0 := by cases vl <;> lit_decide
 
 theorem fourKs_xdepth (vl : Bool) : (fourKs vl).x86_64Depth = 0 := by cases vl <;> lit_decide
 theorem tailP_xdepth (vl : Bool) : (tailP vl).x86_64Depth = 0 := by cases vl <;> lit_decide
@@ -4844,6 +4949,9 @@ open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 theorem twoKs_spSafe (vl : Bool) : (twoKs vl).all (fun i => !X86_64.isa.writesSp i) = true := by
   cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
 
+theorem twoKsB_spSafe (vl : Bool) : (twoKsB vl).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+
 theorem fourKs_spSafe (vl : Bool) : (fourKs vl).all (fun i => !X86_64.isa.writesSp i) = true := by
   cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
 
@@ -4859,11 +4967,14 @@ theorem openS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
   have hk := twoKs_spSafe v.callee.vl
   have hk4 := fourKs_spSafe v.callee.vl
   have hwo := wholeO_spSafe v.callee.vl
-  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ho hk hk4 hwo ⊢
+  have hkB := twoKsB_spSafe v.callee.vl
+  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ho hk hk4 hwo hkB ⊢
   rw [hv] at hb ⊢
-  simp only [dataCopy, openStitched, prologueX, cryptO, decRest, xorTail, Code.all, hc, hb, ho, hk, hk4, hwo, hf, hpass, hw,
-    macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
-  subst hP; lit_decide
+  rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;> rw [hl] at ho hk hk4 hwo hkB <;>
+  simp only [dataCopy, openStitched, prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, cryptO,
+    decRest, xorTail, Code.all, hc, hb, ho, hk, hk4, hkB, hwo, hf, hpass, hw, macPad, macPadLengths, Code.iteCold,
+    wholeBlocks, padRest, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and] <;>
+  subst hP <;> lit_decide
 
 theorem openS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State) (hs : openX86_64.pre s) :
     ∃ t s', Exec isa (openStitched v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' :=
@@ -4932,10 +5043,12 @@ theorem openS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
-  simp only [openStitched, prologueX, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
+  rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
+  simp only [openStitched, prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, twoKsB_xdepth,
+    prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, padCopy, padTail, cryptO, decRest, xorTail, absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     xorTail_xdepth, foldM_xdepth, wipeL_xdepth, init_xdepth,
-    finalize_xdepth, bulkO_xdepth, wholeO_xdepth, twoKs_xdepth, fourKs_xdepth, Nat.max_le] at hc ha ⊢
+    finalize_xdepth, bulkO_xdepth, wholeO_xdepth, twoKs_xdepth, fourKs_xdepth, Nat.max_le] at hc ha ⊢ <;>
   omega_arith
 
 theorem openS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
