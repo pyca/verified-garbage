@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecMac
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 
