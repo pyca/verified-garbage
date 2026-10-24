@@ -13,6 +13,9 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Domain
 
 /-!
 # `vg_ffdh_check_public` on PPC64LE: constant time
@@ -225,5 +228,69 @@ theorem pins_C3 : Pins C3 (baseRegs ++ [.r26, .r6, .r15, .r18]) := by
 theorem pins_CF : Pins CF [.r23] := by
   rintro d s₁ s₂ h₁ h₂ r hr
   rw [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]
+
+/-! ## The steps, by correctness -/
+
+theorem T01 {d : CD} {s : State} (h : C0 d s) :
+    WP isa (.block (save .r8 ++ setup ++ [.addi .r26 .r6 0])) s (C1 d) := by
+  obtain ⟨⟨hrd, hwr, dDS, dYS, nwD, nwY, nwS, ⟨hk, hk'⟩, hL, hyl, hsl⟩, rfl⟩ := h
+  simp only [Spec.Rsa.scratchWords] at hsl
+  simp only [domR, yR, scrR] at hrd hwr dDS dYS
+  simp only [cdOf]
+  rw [hyl]
+  rw [hyl] at hrd dYS nwY
+  generalize hDd : s.gpr .r3 = D at hrd dDS nwD ⊢
+  generalize hLd : (s.gpr .r4).toNat = L at hrd dDS nwD hL ⊢
+  generalize hkd : (s.gpr .r5).toNat = k at hk hk' hL hyl hsl hrd dYS nwY ⊢
+  generalize hYd : s.gpr .r6 = Y at hrd dYS nwY ⊢
+  generalize hSd : s.gpr .r8 = S at hwr dDS dYS nwS ⊢
+  generalize hZd : (s.gpr .r9).toNat * 8 = Z at hwr dDS dYS nwS ⊢
+  have hZ256 : 256 ≤ Z := by omega
+  have hZw : slot ((k + 7) / 8) 28 ≤ Z := by rw [slot_eq]; omega_using [hsl, hZd, hk', hk]
+  have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS
+  have hin : ∀ i < 18, InRegions s.wr (off (savW S) (8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp, by
+    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega) (by omega)⟩
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (save_ok (ws := .r8) (by decide) s (by rw [hSd]; exact hin)) fun s₁ hS => ?_
+  have k1 := hS.keep
+  have hfr₁ : Frame [savR S] s.mem s₁.mem := hSd ▸ hS.frame
+  refine WP.mono (setup_ok (D := D) (Y := Y) (L := L) (k := k) ((k1.gpr .r3 (by decide)).trans hDd)
+    (by rw [k1.gpr .r4 (by decide), ← hLd, VG.Proof.Bignum.ofNat_toNat64])
+    (by rw [k1.gpr .r5 (by decide), ← hkd, VG.Proof.Bignum.ofNat_toNat64])
+    ((k1.gpr .r6 (by decide)).trans hYd) (hS.r23.trans hSd) hk')
+    fun s₂ ⟨⟨a21, a27, a28, a11, a29, a10, a31, a26, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  refine ⟨⟨⟨hs.congr k12.wr, a10, a29, a11, a31, show 4 ≤ (k + 7) / 8 by omega, show (k + 7) / 8 ≤ 128 by omega,
+    hZw⟩, a21,
+    (k2.gpr .r23 (by decide)).trans (hS.r23.trans hSd), a27, a28, hk, hk',
+    by simp only [Spec.Ffdh.domainLenValid] at hL; omega,
+    fun i hi => by rw [k12.rd, k12.wr]; exact rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega) i hi,
+    sep_of_disjoint (L := L) dDS (by omega),
+    fun i hi => by rw [k12.rd, k12.wr]; exact rd_of_mem (s := s) (D := Y) (L := k) (by rw [hrd]; simp) (by omega) i hi,
+    sep_of_disjoint (L := k) dYS (by omega), ?_, ?_⟩, a26⟩
+  · rw [m2]; exact bytes_frame (L := L) hfr₁ dDS (by omega) hZ256
+  · rw [m2]; exact bytes_frame (L := k) hfr₁ dYS (by omega) hZ256
+
+theorem TA {d : CD} {s : State} (h : C1 d s) : WP isa (.block [.addi .r12 .r21 0, .addi .r6 .r28 0]) s (C1a d) := by
+  refine WP.mono (WP.keep [.r6, .r12] (Q := fun t => t.gpr .r12 = off d.D 0 ∧ t.gpr .r6 = BitVec.ofNat 64 d.k ∧
+    t.mem = s.mem) (by prun [h.1.r21, h.1.r28, BitVec.add_zero]) (by decide)) fun t ⟨⟨a12, a6, m⟩, k⟩ =>
+      ⟨⟨h.1.same k m, (k.gpr .r26 (by decide)).trans h.2⟩, a12, a6⟩
+
+theorem TL {d : CD} {s : State} (h : C1a d s) : WP isa Precompute.loadN s (C2 d) := by
+  obtain ⟨⟨hb, h26⟩, h12, h6⟩ := h
+  have hwd : d.w = (d.k + 7) / 8 := rfl
+  have hZ := hb.env.hZ
+  have hk := hb.k64
+  have hk' := hb.k1024
+  have hnw := hb.env.hs.nowrap
+  have e28 := slot_eq d.w 28
+  refine WP.mono (loadN_ok (dA := slot d.w 0) hb.env.hs hb.env.h10 h12 h6 hb.env.h11 (by omega) (by omega)
+    (by omega) (by rw [slot_eq]; omega) (by rw [slot_eq] at hZ ⊢; omega)
+    (fun i hi => hb.rdD i (by rcases hb.hL with h | h <;> omega))
+    (fun i hi => hb.sepD i (by rcases hb.hL with h | h <;> omega))) fun t ⟨hv, out, k⟩ => ?_
+  have hm : Body d.S d.w s.mem t.mem := Body.of out (Nat.le_refl _) (by rw [slot_eq] at hZ ⊢; omega)
+  refine ⟨⟨⟨hb.keep k hm, (k.gpr .r26 (by decide)).trans h26⟩, (k.gpr .r12 (by decide)).trans h12,
+    (k.gpr .r6 (by decide)).trans h6⟩, ?_⟩
+  rw [arr, hv, ← Proof.Ffdh.take_bytesAt _ _ (show d.k ≤ d.L by rcases hb.hL with h | h <;> omega), hb.bD]
 
 end VG.Proof.Ffdh.PPC64LE.Domain
