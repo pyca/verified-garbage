@@ -23,7 +23,7 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   `Sig.contract A (inPlaceSig "f") …`), and then `⟨_, _, _, rfl⟩`, whose
   unification does not always find the arguments of `Sig.contract` itself.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
-  on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64) by
+  on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64, PPC64LE) by
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
   x86-64) by `Code.all_of_allInstrs (by lit_decide)`, which evaluates the
   code's literal if the module imports the one that materializes it

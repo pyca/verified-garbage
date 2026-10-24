@@ -37,12 +37,16 @@ use asm::x86_64 as arch;
 // The ISA models are little-endian, and the contracts assume the pointer
 // width of each architecture's calling convention: the verified assembly is
 // compiled only where both hold (each target's `rustCfg`, in
-// `lean/VerifiedGarbage/TCB/<Target>/Target.lean`), not on aarch64_be, armeb
-// or x32. This `compile_error!` and those below each mirror a condition of a
+// `lean/VerifiedGarbage/TCB/<Target>/Target.lean`), not on aarch64_be, armeb,
+// big-endian powerpc64 or x32. This `compile_error!` and those below each mirror a condition of a
 // `rustCfg`.
 #[cfg(any(
     all(
-        any(target_arch = "aarch64", target_arch = "arm"),
+        any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "powerpc64"
+        ),
         target_endian = "big"
     ),
     all(
@@ -51,7 +55,7 @@ use asm::x86_64 as arch;
     ),
 ))]
 compile_error!(
-    "the verified assembly needs a little-endian target with its architecture's usual pointer width (not, e.g., aarch64_be or x32)"
+    "the verified assembly needs a little-endian target with its architecture's usual pointer width (not, e.g., aarch64_be, powerpc64 or x32)"
 );
 
 // The 32-bit x86 model's baseline is i686 with SSE2 (see
