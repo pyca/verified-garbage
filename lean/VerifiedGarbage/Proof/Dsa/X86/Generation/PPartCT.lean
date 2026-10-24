@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PPart
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.PCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.PCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
+import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Two runs of p's search from the same seed and q leak the same -/
 

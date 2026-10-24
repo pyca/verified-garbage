@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABI
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Framed
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Framed
 public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
+public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
 
 /-! # The probable-prime test meets the shared contract's postcondition -/
 

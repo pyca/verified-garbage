@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Minus
 public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 import VerifiedGarbage.Proof.Mont.X86.WordConst
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Exact non-underflowing subtraction from the loaded modulus -/
 

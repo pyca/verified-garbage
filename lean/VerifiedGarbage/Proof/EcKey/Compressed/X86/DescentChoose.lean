@@ -9,9 +9,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 
 /-! # Select the correction factor of the P-224 descent -/
 

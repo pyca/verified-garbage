@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Dsa.X86.CorePowerLoad
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.CoreStore
-import VerifiedGarbage.Proof.Dsa.X86.CorePowerFrame
 import VerifiedGarbage.Proof.Dsa.X86.PowCall
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout

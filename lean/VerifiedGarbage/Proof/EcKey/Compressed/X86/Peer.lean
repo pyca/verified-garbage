@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.TagCheck
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86

@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Finish
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Frame
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Frame
 import VerifiedGarbage.Proof.Dsa.Generation.ByteResult
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # Parameter generation meets its contract on i686 -/
 

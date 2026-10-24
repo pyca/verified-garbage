@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Rsa.X86.DivContext
 public import VerifiedGarbage.Spec.Ffdh
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # The generator's candidate `h` and its range check (A.2.1 steps 1–3) -/
 

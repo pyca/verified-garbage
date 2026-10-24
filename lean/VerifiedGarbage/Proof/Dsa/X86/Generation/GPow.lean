@@ -1,17 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.GRange
+import VerifiedGarbage.Proof.Dsa.X86.Generation.GRange
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Dsa.X86.PowCall
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
-import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.OutsFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 import VerifiedGarbage.Proof.Dsa.X86.Generation.LoadStore
+public import VerifiedGarbage.Impl.Dsa.Layout
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Rsa.X86.DivContext
+public import VerifiedGarbage.Spec.Ffdh
 
 /-! # `g = h^((p − 1)/q) mod p` and its check `g > 1` (A.2.1 steps 4–5) -/
 

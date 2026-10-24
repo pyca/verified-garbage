@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Load
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Load
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessLoadTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSaveTiming
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
 
 /-! # The entry and the import leak only public pointers and the candidate's width -/
 

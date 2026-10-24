@@ -1,17 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
+import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
+public import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86.InvSetWord
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
+public import VerifiedGarbage.TCB.Mem
 
 /-! # Initial state of the 256-bit divstep inversion -/
 

@@ -2,9 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Dsa.X86.StagePower
-import VerifiedGarbage.Proof.Dsa.X86.StageValues
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
-import VerifiedGarbage.Proof.Dsa.X86.Layout
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame

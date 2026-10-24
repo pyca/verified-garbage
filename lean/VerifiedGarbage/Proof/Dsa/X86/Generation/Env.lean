@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Generation
 public import VerifiedGarbage.Proof.Mont.X86.Words
-import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32

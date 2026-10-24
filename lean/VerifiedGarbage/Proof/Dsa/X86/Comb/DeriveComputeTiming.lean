@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.StageTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
-import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

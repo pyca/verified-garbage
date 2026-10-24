@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # Two runs of a hash leak the same: addresses from `edi` and `esp` -/
 

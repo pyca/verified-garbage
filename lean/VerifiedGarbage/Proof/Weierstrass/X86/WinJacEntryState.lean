@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import VerifiedGarbage.Proof.Weierstrass.X86.JacState
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
 
 /-! ## `WinJacCoZState` -/
 

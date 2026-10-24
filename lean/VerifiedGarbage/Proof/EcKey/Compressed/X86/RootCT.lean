@@ -1,20 +1,30 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DescentRound
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.TonelliPowers
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.TonelliSetup
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Tonelli
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressFront
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.TonelliPowers
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.TonelliSetup
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.Tonelli
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.DescentPower
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Counter
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Slots
+public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
+public import VerifiedGarbage.Spec.EcKey.Compressed
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Carry P-224's public counter through existing field calls
 

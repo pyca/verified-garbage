@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Memory
-import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 import VerifiedGarbage.Proof.Framework.Offset

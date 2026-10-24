@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Hash
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Dsa.X86.Generation
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The arguments of a probable-prime test
 

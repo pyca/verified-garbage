@@ -1,11 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABI
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingBody
+import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingBody
 public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 import VerifiedGarbage.Proof.Framework.Sig
+public import Mathlib.Data.Nat.GCD.Basic
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateEnvironment
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveContext
 
 /-! # The test is constant time under the shared contract's leak -/
 

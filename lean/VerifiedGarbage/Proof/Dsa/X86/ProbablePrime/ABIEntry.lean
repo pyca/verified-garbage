@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABI
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
-import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

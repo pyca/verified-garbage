@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMiddle
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressFinish
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.EcKey.Compressed.Decode
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Main
-import VerifiedGarbage.Proof.Ecdh.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.Pre
 
 /-! # Decompression meets the merged API contract -/
 

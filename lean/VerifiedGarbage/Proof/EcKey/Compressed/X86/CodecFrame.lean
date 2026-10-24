@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86

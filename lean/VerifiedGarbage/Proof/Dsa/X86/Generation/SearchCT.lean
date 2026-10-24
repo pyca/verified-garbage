@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Search
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.AttemptCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Search
+import VerifiedGarbage.Proof.Dsa.X86.Generation.AttemptCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
+import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # Two runs of the search over the seeds leak the same -/
 

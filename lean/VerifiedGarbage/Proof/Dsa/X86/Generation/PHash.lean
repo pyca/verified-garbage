@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.AddBE
+import VerifiedGarbage.Proof.Dsa.X86.Generation.AddBE
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Impl.Dsa.X86.Generation
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # One hash of p's candidate
 

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.GenerationStack
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.AllocatedArgs
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InlineInvoke
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeFrame
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
 
 /-! The internal prevalidated body is called only with the checked retained context. -/
 

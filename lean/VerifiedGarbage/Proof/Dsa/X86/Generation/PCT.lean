@@ -1,14 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.QCT
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.QCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCT
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
+import VerifiedGarbage.Proof.Dsa.X86.Generation.AddBE
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Copy
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # Two runs of p's search from the same seed leak the same -/
 

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressVerified
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Verified
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressVerified
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
@@ -23,6 +23,15 @@ meta import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
+public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMiddle
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86.BrainpoolP512r1Decompress

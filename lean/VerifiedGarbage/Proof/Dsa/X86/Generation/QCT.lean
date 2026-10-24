@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCT
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Two runs of q from the same seed leak the same -/
 

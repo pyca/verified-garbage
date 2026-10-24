@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
 import VerifiedGarbage.Proof.Dsa.X86.PowCallTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
+import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.GRange
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # Two runs of the generator from the same `p` and `q` leak the same -/
 

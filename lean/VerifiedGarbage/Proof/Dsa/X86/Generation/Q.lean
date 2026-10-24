@@ -2,14 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCall
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Copy
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Copy
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Impl.Dsa.X86.Generation
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # q from a seed: hashed, shaped, and tested -/
 

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSelectTiming
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicColumnTiming
 import VerifiedGarbage.Proof.Mont.X86.CombSubsetControl
 import VerifiedGarbage.Proof.Mont.X86.CombAccess
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import Init.Prelude

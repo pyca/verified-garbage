@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinish
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # The status and the octets read -/
 

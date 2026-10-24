@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # What every stage keeps
 

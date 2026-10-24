@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.WordsCanonical
 
 /-! Both comb helpers share the existing DSA register-save and restore boundary. -/

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingLayout
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-import VerifiedGarbage.Proof.Dsa.X86.DerivingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Dsa.X86.PowMul
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
-import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 import VerifiedGarbage.Proof.Mont.X86.ShiftDown

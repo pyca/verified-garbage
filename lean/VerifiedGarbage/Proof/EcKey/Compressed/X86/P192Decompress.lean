@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressVerified
-public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressVerified
+import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
 public import VerifiedGarbage.Spec.EcKey.P192
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
@@ -22,6 +22,15 @@ meta import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.P192.X86
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
+public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
+public import VerifiedGarbage.Impl.Ecdsa.P192.X86
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMiddle
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86.P192Decompress

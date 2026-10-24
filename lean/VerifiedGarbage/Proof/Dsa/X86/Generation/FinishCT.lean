@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Correct
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Correct
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Search
+import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # Two runs of one geometry's search and result leak the same -/
 

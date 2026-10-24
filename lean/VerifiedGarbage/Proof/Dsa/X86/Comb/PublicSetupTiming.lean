@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.Setup
 import VerifiedGarbage.Proof.Mont.X86.CombDigitMath
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Dsa.X86.Comb
 meta import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 meta import VerifiedGarbage.Proof.Framework.X86.Taint

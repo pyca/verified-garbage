@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.PowSteps
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 import VerifiedGarbage.Proof.Mont.X86.PowerInit

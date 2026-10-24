@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Square
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.Square
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Counter
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
+public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 
 /-! # The tested power in a P-224 descent round -/
 

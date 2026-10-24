@@ -4,11 +4,13 @@ public import VerifiedGarbage.Impl.Mont.X86.Compact
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The callee-saved registers' frame around the generator
 

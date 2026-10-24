@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.PowMulTiming
-public import VerifiedGarbage.Proof.Dsa.X86.PowCore
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
-import VerifiedGarbage.Proof.Mont.X86.ContextInit
+public import VerifiedGarbage.Proof.Mont.X86.ContextInit
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 public import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
 public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
 import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
+public import VerifiedGarbage.Proof.Dsa.X86.PowSteps
 
 /-! # The trace of DSA's exponentiation core
 

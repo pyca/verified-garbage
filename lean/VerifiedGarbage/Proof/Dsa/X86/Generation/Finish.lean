@@ -4,9 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.Search
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Copy
 import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
 import VerifiedGarbage.Proof.Bignum.X86.CopyRead
-import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 
 /-! # The result: p||q||g to `out` and 1, or zeros and 0 -/
 

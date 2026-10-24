@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootCT
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.CodecFrame
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.CodecFrame
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Pre
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressFront
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMiddle
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86

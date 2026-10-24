@@ -2,18 +2,23 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PX
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Arith
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.OutsFrame
-import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Impl.Dsa.X86.Generation
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Copy
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # One counter of p's search (A.1.1.2 steps 11.1–11.8)
 

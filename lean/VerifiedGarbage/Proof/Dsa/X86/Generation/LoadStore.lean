@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -11,6 +11,10 @@ import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Impl.Dsa.X86.Generation
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Big-endian bytes of `scratch` into arrays of 32-bit words, and back -/
 

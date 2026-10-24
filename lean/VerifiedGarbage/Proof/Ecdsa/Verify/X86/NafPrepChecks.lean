@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Flags

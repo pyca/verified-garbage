@@ -9,9 +9,11 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Check the recovered root's square and parity -/
 

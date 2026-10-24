@@ -1,9 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
-import VerifiedGarbage.Proof.Mont.X86.PowerStep
-import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 
-import VerifiedGarbage.Proof.Dsa.X86.CoreStore
 import VerifiedGarbage.Proof.Dsa.X86.CorePowerFrame
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Load
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.Bignum.Octets

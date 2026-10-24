@@ -3,14 +3,20 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafEntry
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
 import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Weierstrass.Words32
-public import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
 import VerifiedGarbage.Proof.Weierstrass.X86.JacState
+public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
+public import VerifiedGarbage.Impl.Weierstrass.X86.TComb
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.Code
 
 /-! Adding a signed digit to the doubled accumulator. -/
 

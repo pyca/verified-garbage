@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Attempt
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Attempt
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.QCT
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PPartCT
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GCT
@@ -11,6 +11,11 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.PPart
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.GRange
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # Two runs of a seed leak the same -/
 

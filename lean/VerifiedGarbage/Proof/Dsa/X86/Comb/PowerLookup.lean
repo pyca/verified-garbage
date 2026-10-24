@@ -2,12 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerDigits
 public import VerifiedGarbage.Proof.Mont.X86.CombDigit
-import VerifiedGarbage.Proof.Mont.X86.CombShift
-import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
-import VerifiedGarbage.Proof.Mont.X86.ContextMul
-import VerifiedGarbage.Proof.Mont.X86.ContextMath
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
-import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 public import VerifiedGarbage.Impl.Mont.X86.CombPower
 public import VerifiedGarbage.Proof.Framework.Semantics

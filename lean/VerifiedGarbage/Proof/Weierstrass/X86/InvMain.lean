@@ -14,7 +14,6 @@ public import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.Alg32
 import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
 import VerifiedGarbage.Proof.Divstep.Batch
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # Soundness of the 256-bit divstep inversion -/
 

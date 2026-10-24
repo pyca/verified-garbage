@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PPart
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.CheckCall
+import VerifiedGarbage.Proof.Dsa.X86.Generation.CheckCall
 public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Seqs
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
@@ -13,6 +12,11 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+import VerifiedGarbage.Proof.Dsa.X86.Generation.GRange
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.AddBE
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 
 /-! # One seed: q, p, g and the domain check (A.1.1.2, A.2.1) -/
 

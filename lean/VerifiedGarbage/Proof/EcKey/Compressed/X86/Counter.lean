@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
-public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Impl.Weierstrass.X86
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Public loop counters for P-224 coordinate recovery -/
 

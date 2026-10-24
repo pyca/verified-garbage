@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
-import VerifiedGarbage.Proof.Dsa.X86.RunBytes
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Frames for schedules with retained tables beyond the ordinary arithmetic workspace. -/

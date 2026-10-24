@@ -2,11 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvFg
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvAb
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
+import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
 import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Divstep.Word32
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
+public import Mathlib.Data.BitVec
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 
 /-! # A complete thirty-step inversion batch -/
 
