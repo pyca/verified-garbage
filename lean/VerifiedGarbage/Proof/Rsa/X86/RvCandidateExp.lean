@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowExp
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
 
 /-! # Exponentiation of a recovery candidate in Montgomery form -/
 

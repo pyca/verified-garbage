@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
 import VerifiedGarbage.Proof.MillerRabin.X86.DataMultiply
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.MillerRabin.Word32

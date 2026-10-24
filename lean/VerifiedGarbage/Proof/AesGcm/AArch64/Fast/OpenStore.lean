@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # AES-GCM on AArch64: `vg_aes_gcm_open_store_powers`
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_store_powers`
-is `vg_aes_gcm_open_with_powers`'s code (`Fast.openWithPw`) with
+is `vg_aes_gcm_open_with_powers`'s code (`Fast.openStorePw`) with
 `vg_ghash_store_powers` (`GhashStoreImpl`) as the call on the whole blocks:
 on the path for TLS records with an allowed tag length, which its
 precondition requires, the call hashes as `vg_ghash` and writes the powers
@@ -137,7 +137,7 @@ variable (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKe
 include hMK
 
 theorem openSt_correctN (s : State) (hs : openStN s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       openStAArch64.post s s' := by
   have hs' := hs
   obtain ⟨hpx, pd, pw, pc, h16, h12, htl⟩ := hs'
@@ -154,7 +154,7 @@ theorem openSt_correctN (s : State) (hs : openStN s) :
 
 theorem openSt_ctN :
     ConstantTime isa openStN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
-      (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) :=
+      (Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn) :=
   openWithEX_ct (w := 3) v _ hMK (.inr rfl) (extra := fun _ => []) (extraW := fun s => [pwRO s])
     (ex := fun s => [pwRO s]) (fun _ h => h.1)
     (fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.1.symm)
@@ -222,13 +222,13 @@ variable (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKe
 include hMK
 
 theorem openSt_correct (s : State) (hs : openStAArch64.pre s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       openStAArch64.post s s' := by
   obtain ⟨t, s₁, he, ha, hp⟩ := openSt_correctN v g hMK _ (narrowSO_pre hs)
   exact ⟨t, _, narrowSO_exec hs he, ha, hp⟩
 
 theorem openSt_ct :
-    ConstantTime isa openStAArch64.pre openStAArch64.pub (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) := by
+    ConstantTime isa openStAArch64.pre openStAArch64.pub (Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨u₁, r₁, f₁, -⟩ := openSt_correctN v g hMK _ (narrowSO_pre h₁)
   obtain ⟨u₂, r₂, f₂, -⟩ := openSt_correctN v g hMK _ (narrowSO_pre h₂)
@@ -236,7 +236,7 @@ theorem openSt_ct :
   exact openSt_ctN v g hMK _ _ _ _ _ _ (narrowSO_pre h₁) (narrowSO_pre h₂) hq f₁ f₂
 
 theorem openSt_verified :
-    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn)
       (Proof.AesGcm.openStorePowersScratchContract AArch64.abi) :=
   Verified.of_correct (openSt_correct v g hMK) (openSt_ct v g hMK)
     { pre := by
@@ -296,7 +296,7 @@ theorem openFrameSatSt_pre : ∃ s, (Spec.Gcm.openStorePowersContract AArch64.ab
 
 theorem openSt_framed (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn))
+      (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn))
       (Spec.Gcm.openStorePowersContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openStorePowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.AesGcm.openStorePowersPreP AArch64.abi.ptrBits)

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
 public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Blowfish.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Blowfish on PPC64LE: an S-box lookup

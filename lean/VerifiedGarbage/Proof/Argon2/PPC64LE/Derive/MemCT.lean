@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall

@@ -28,6 +28,8 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Argon2
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
+meta import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
 
 @[expose] public section
 

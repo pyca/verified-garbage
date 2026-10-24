@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcTaint
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86: the masks

@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSizedResult
 
 /-! # Every supported public output length selects its verified native width -/

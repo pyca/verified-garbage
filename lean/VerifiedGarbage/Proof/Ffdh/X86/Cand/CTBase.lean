@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
-import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp

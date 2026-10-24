@@ -14,6 +14,10 @@ meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
 meta import VerifiedGarbage.Proof.Sha256.Scratch
 meta import VerifiedGarbage.Spec.Sha256.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.Reloc
+import VerifiedGarbage.Proof.Hmac.Scratch
+meta import VerifiedGarbage.Proof.Hmac.Scratch
+meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 
 /-!
 # HMAC-SHA-224 on PPC64LE

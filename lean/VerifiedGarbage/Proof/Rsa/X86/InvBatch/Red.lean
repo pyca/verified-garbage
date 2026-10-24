@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Divstep.Red32
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Ring

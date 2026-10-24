@@ -9,6 +9,10 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Frame
+import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
+meta import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Two runs of an attempt (x86)
 

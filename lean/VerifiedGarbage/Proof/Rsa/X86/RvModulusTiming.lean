@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.RvBody
+import VerifiedGarbage.Proof.Rsa.X86.RvBody
 public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
@@ -8,6 +8,9 @@ public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
+public import VerifiedGarbage.Proof.Rsa.X86.RvLoads
+public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 
 /-! # Loading and validating the public modulus preserves all call inputs -/
 

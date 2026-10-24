@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Steps of the parameter search (x86)
 

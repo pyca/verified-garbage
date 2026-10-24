@@ -32,6 +32,8 @@ meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_seal` is constant time

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Rsa.X86.InvTimeChoose
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.CvRt.Sized
-import VerifiedGarbage.Proof.Rsa.X86.CvPair
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.RelCT

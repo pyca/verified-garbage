@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
-import VerifiedGarbage.Impl.MillerRabin.X86.Ops
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 

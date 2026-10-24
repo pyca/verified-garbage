@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
 # `vg_gf25519_r32_mul`, `vg_gf25519_r32_pow250` and `vg_ed25519_r32_point_add` on PPC64LE, verified

@@ -3,8 +3,11 @@ module
 import VerifiedGarbage.Proof.Idea.Arith
 public import VerifiedGarbage.Impl.Idea.PPC64LE
 public import VerifiedGarbage.Spec.Idea
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # IDEA on PPC64LE: ⊙ without branches

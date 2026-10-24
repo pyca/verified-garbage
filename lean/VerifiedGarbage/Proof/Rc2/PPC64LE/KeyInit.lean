@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.KeySteps
-import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+import VerifiedGarbage.Proof.Rc2.PPC64LE.KeySteps
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.ExpandKey
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Rc2.Table
 
 /-!
 # RC2 on PPC64LE: the setup of key expansion

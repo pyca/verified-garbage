@@ -16,6 +16,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Proof.MillerRabin.X86_64 VG.Impl.Dsa.X86_64.Generation
 
+
+variable {checkName : String}
+
 theorem seedGeneratorBefore_congr {n pLen qLen : Nat} {p : SeedGeneratorPublic} {s t : State}
     (h : SeedGeneratorBefore n pLen qLen p s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t) :
     SeedGeneratorBefore n pLen qLen p t :=
@@ -45,13 +48,13 @@ theorem seedPrimeFinish_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : K
     (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedPrimeBefore n pLen qLen))
       (.seq (primeSearch H.sha1 H.sha256 M.mm K.run pLen qLen)
-        (onSuccess (.seq (generatorSearch Sq.mm M.mm pLen) (onSuccess (finishDomain Sq.mm M.mm pLen qLen)))))
+        (onSuccess (.seq (generatorSearch Sq.mm M.mm pLen) (onSuccess (finishDomain (checkName := checkName) Sq.mm M.mm pLen qLen)))))
       (fun _ _ => True) := by
   refine RelCT.seq (two_post (seedPrime_ct H M K n hn pLen qLen sizes)
     (fun _ _ h => seedPrime_after H M K h)) ?_
   apply onSuccess_ct (Φ := SeedPrimeAfter n pLen qLen) SeedPublic.context SeedPublic.primeStatus
     (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedPrimeAfter_congr h hm hk)
-  exact (seedGeneratorFinish_ct M Sq n pLen qLen sizes).mono
+  exact (seedGeneratorFinish_ct (checkName := checkName) M Sq n pLen qLen sizes).mono
     (fun _ _ h => seedPrimeAfter_related h) (fun _ _ h => h)
 
 end VG.Proof.Dsa.X86_64.Generation

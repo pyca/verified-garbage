@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.InverseLift
 public import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Mont.X86.Loop
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.InverseLift

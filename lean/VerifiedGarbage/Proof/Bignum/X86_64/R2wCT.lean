@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Bignum.X86_64.R2SquaresCT
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
@@ -269,7 +271,7 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
     rw [hx', hn', hN]
     exact Nat.mod_lt _ (by omega_arith)
   -- The squarings.
-  exact two_map (·.L) (fun _ _ h => h) (sqs_ct M 1)
+  exact two_map (·.L) (fun _ _ h => h) (rolled_sqs_ct M 1 (Or.inl rfl))
 
 /-! ## The choice -/
 
@@ -301,6 +303,6 @@ theorem choice_ct (M : Mont) : RelCT isa (Two R2Pre) (choice M.mm) fun _ _ => Tr
       simp only [eval, hz, Option.some.injEq, decide_eq_true_eq] at hc
       exact ⟨h, hc.1, hc.2⟩) (fast_ct M)
   · rw [old_eq]
-    exact two_map id (fun p s h => h.1.1) (r2_ct M)
+    exact two_map id (fun p s h => h.1.1) (r2_ct_with _ (rolled_sqs_ct M 5 (Or.inr rfl)))
 
 end VG.Proof.Bignum.X86_64.R2w

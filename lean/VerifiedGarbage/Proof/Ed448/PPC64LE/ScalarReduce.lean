@@ -11,6 +11,7 @@ public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.Scalar
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarBit
 public import VerifiedGarbage.Proof.X448.PPC64LE.Field
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # `vg_ed448_scalar_reduce` on PPC64LE: correctness

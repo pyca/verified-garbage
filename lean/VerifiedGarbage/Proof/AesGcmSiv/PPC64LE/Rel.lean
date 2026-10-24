@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM-SIV on PPC64LE: relating two runs

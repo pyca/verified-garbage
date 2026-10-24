@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Poly1305.Radix26
 public import VerifiedGarbage.Impl.Poly1305.PPC64LE
 import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Nat.Bitwise.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Poly1305 on PPC64LE: the steps of the code

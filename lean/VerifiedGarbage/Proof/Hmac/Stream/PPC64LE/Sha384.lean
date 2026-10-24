@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
+import VerifiedGarbage.Proof.Hmac.Scratch
+meta import VerifiedGarbage.Proof.Hmac.Scratch
+meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 
 /-!
 # HMAC-SHA-384 on PPC64LE

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
@@ -15,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Reduce
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Wide
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
 
 /-!
 # Deterministic ECDSA on PPC64LE: the whole signature

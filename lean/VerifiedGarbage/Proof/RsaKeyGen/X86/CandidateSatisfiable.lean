@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABITable
 
 /-! # A concrete native caller satisfies the candidate contract and its static table -/
 

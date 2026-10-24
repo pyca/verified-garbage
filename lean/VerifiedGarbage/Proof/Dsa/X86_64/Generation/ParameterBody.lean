@@ -19,6 +19,9 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 open VG.Proof.MillerRabin.X86_64
 
+
+variable {checkName : String}
+
 theorem parameter_body_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     {p : GenerationContext} {expected : Option Spec.Dsa.Params} {initial : State}
     {used : Nat} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -27,7 +30,7 @@ theorem parameter_body_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Ke
     (Rt : Rep t.mem p.geo.F p.geo.hash V
       (upd (upd W 1 (off (W 8) used)) 10 (BitVec.ofNat 64 (used + p.geo.qLen))))
     (ft : Frame [⟨p.geo.F, frameBytes⟩] s.mem t.mem) (kt : Keep [.rax, .rcx] s t) :
-    WP isa (Impl.Dsa.X86_64.Generation.seedAttempt H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) t fun u =>
+    WP isa (Impl.Dsa.X86_64.Generation.seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) t fun u =>
       ∃ V' W', Lay u p.geo.F p.geo.hash ∧ Rep u.mem p.geo.F p.geo.hash V' W' ∧
         (if W' 19 = 3 then ParameterInvariant p expected initial (used + p.geo.qLen) u
           else ParameterFinished p expected initial u) := by
@@ -50,7 +53,7 @@ theorem parameter_body_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Ke
     simp [Wt, upd, words 8 (by decide), h8, seed, GenerationTape.slice]
   have ht16 : Wt 16 = BitVec.ofNat 64 randUsed := by
     simpa [Wt, upd, words 16 (by decide)] using h16
-  refine WP.mono (seedAttempt_ok H M Sq K ht seed hlen (ht.seeds.slice room) h1 ht16 bound)
+  refine WP.mono (seedAttempt_ok (checkName := checkName) H M Sq K ht seed hlen (ht.seeds.slice room) h1 ht16 bound)
     fun u ⟨Wu, randUsed', mu, bound', u16, slots, result, fu, ru, wu⟩ => ?_
   have frame := (fi.trans ff).trans fu
   have rd := ru.trans (kt.2.1.trans ri)

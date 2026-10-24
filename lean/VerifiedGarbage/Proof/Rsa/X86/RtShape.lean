@@ -11,6 +11,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 
 /-! # Stack-pointer safety of RSA callers, reusing the Montgomery proof -/
 

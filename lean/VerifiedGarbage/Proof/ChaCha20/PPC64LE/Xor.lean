@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
 meta import VerifiedGarbage.Proof.ChaCha20.Keystream
@@ -15,6 +15,15 @@ meta import VerifiedGarbage.Spec.ChaCha20.Contract
 public import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
 import all Init.Data.Nat.Bitwise.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Spec
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # ChaCha20 keystream XOR on PPC64LE

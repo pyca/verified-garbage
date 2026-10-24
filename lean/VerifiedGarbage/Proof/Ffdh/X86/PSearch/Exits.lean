@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The parameter search's exits (x86)
 

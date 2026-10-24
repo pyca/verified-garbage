@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
-import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Proof.RsaKeyGen.Table

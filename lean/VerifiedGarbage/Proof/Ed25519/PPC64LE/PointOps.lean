@@ -10,6 +10,7 @@ public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldProg
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.Ed25519.Point32
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
 # Ed25519 on PPC64LE: calls of the point addition, and doubling

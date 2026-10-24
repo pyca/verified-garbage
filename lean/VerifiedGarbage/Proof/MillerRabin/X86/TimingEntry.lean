@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.EntryValues
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCoreState
 import VerifiedGarbage.Proof.MillerRabin.X86.EntryArgs
 import VerifiedGarbage.Proof.MillerRabin.X86.EntryMarker
-import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 
 /-! # The reviewed input contract initializes each run's private timing invariant -/
 

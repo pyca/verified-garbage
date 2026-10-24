@@ -6,10 +6,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
-import Mathlib.Algebra.NeZero
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual

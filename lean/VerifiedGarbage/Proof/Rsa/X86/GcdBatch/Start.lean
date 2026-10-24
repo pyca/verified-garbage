@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The low words and identity matrix for an RSA GCD batch -/
 

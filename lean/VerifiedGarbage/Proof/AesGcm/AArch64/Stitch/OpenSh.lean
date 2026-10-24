@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortSeal
 # AES-GCM on AArch64, short records: `openWithS` with the short path
 
 Untrusted: everything here is checked by Lean. `openWithS` with `sh` takes
-`openShortF` for records of at most `shortMax` bytes (`shortThr`), which
+`openShortF` for records of 17 to `shortMax` bytes (`shortThr`, `shortMin`), which
 leaves what `open` must (`openShort_post`), and otherwise the paths of
 `openWithS_wp`.
 -/
@@ -81,14 +81,26 @@ theorem openWithSh_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmu
     have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
       rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
     refine WP.ite _ (eval_zero x9₃ (by omega)) (fun hz => ?_) (fun _ => ?_)
-    · unfold Impl.AesGcm.AArch64.Stitch.openShortF
-      refine openRestWith_wp o₃ x12₃ fun o' hT hok hx' => ?_
-      have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₃ r hr)
-      have h96 := of_decide_eq_true hz
-      rw [hc.2] at o' ⊢
-      exact openShort_post gh o' (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
-        (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 (by omega) hT hok
-        fun u he hrd hwr hf => htb u he hrd hwr hf
+    · refine WP.seq (WP.mono (shortMin_ok (n := (s.gpr .x7).toNat) s₃ (by rw [hx₃ .x7 (by simp), ofNat_toNat'])
+        (by omega)) fun s₄ ⟨x9₄, r₄⟩ => ?_)
+      have o₄ := o₃.of_regs r₄
+      have x12₄ : s₄.gpr .x12 = stackArg s 0 := by rw [r₄.others _ (by decide), x12₃]
+      have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
+        rw [r₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₃ r hr]
+      refine WP.ite _ (eval_zero x9₄ (by omega)) (fun _ => ?_) (fun _ => ?_)
+      · unfold Impl.AesGcm.AArch64.Fast.openFastP
+        refine openRestWith_wp o₄ x12₄ fun o' hT hok hx' => ?_
+        have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₄ r hr)
+        exact openRunWith_post cl v hMK o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
+          (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT hok hgh
+      · unfold Impl.AesGcm.AArch64.Stitch.openShortF
+        refine openRestWith_wp o₄ x12₄ fun o' hT hok hx' => ?_
+        have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₄ r hr)
+        have h96 := of_decide_eq_true hz
+        rw [hc.2] at o' ⊢
+        exact openShort_post gh o' (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
+          (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 (by omega) hT hok
+          fun u he hrd hwr hf => htb u he hrd hwr hf
     · refine WP.seq (WP.mono (Stitch.thr_ok s₃) fun s₄ ⟨_, r₄⟩ => ?_)
       have o₄ := o₃.of_regs r₄
       have x12₄ : s₄.gpr .x12 = stackArg s 0 := by rw [r₄.others _ (by decide), x12₃]
