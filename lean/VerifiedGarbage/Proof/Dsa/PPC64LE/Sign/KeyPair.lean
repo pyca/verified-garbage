@@ -55,7 +55,8 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
       (word t.mem L.S hMask = mask (decide (gOf s.mem L key ^ xOf s.mem L key % p = yOf s.mem L key)) ∧
         InP t L ∧ Outside L.S 0 (slot L.wp 8) s.mem t.mem ∧ arrP t.mem L 0 = arrP s.mem L 0 ∧
         word t.mem L.S (slot L.wp 0 + 8 * L.wp) = word s.mem L.S (slot L.wp 0 + 8 * L.wp) ∧
-        (∀ i < 19, word t.mem L.S (saveOff i) = word s.mem L.S (saveOff i))) ∧ Keep keyPairRegs s t := by
+        (∀ i < 19, word t.mem L.S (saveOff i) = word s.mem L.S (saveOff i)) ∧
+        word t.mem L.S hOut = word s.mem L.S hOut) ∧ Keep keyPairRegs s t := by
   have hZ := hL.z256
   have hw := hL.wp_ge
   have hw8 := hL.wp_eq
@@ -116,7 +117,7 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   rw [x4, v4, v5, y5] at c3
   have kall := k17.trans kt
   refine ⟨⟨?_, ⟨en6.keep (k7.trans kt) (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
-      (kall.gpr .r23 (by decide)).trans hin.h23⟩, ?_, ?_, ?_, fun i hi => ?_⟩, kall.mono (by decide)⟩
+      (kall.gpr .r23 (by decide)).trans hin.h23⟩, ?_, ?_, ?_, fun i hi => ?_, ?_⟩, kall.mono (by decide)⟩
   · rw [mt]
     exact (word_writeW_self s₇.mem L.S hMask _).trans c3
   · exact ((o4.mono (Nat.zero_le _) (by omega)).trans (o6'.mono (Nat.zero_le _) (by omega))).trans
@@ -129,5 +130,8 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   · rw [Outside.word wo (by simp only [saveOff]; omega) (by simp only [saveOff]; omega),
       Outside.word o6' (by simp only [saveOff]; omega) (by simp only [saveOff]; omega),
       Outside.word o4 (by simp only [saveOff]; omega) (by simp only [saveOff]; omega)]
+  · rw [Outside.word wo (by simp only [hOut]; omega) (by simp only [hOut]; omega),
+      Outside.word o6' (by simp only [hOut]; omega) (by simp only [hOut]; omega),
+      Outside.word o4 (by simp only [hOut]; omega) (by simp only [hOut]; omega)]
 
 end VG.Proof.Dsa.PPC64LE

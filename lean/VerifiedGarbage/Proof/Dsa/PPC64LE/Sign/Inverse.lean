@@ -36,7 +36,8 @@ theorem inverseK_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key s
       (QS t L key sig dig ∧
         arrQ t.mem L 4 = kOf s.mem L sig ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem L.Buf L.ql) %
           arrQ s.mem L 0 ∧
-        arrQ t.mem L 8 = arrQ s.mem L 8 ∧ QArr L s.mem t.mem) ∧ Keep invRegs s t := by
+        arrQ t.mem L 8 = arrQ s.mem L 8 ∧ QArr L s.mem t.mem ∧ arrQ t.mem L 9 = arrQ s.mem L 9) ∧
+        Keep invRegs s t := by
   have hRR := pow_sq_eq 4
   generalize (2 : Nat) ^ (128 * 4) = R2 at h8 hRR
   have hql := hL.ql
@@ -116,7 +117,7 @@ theorem inverseK_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key s
       by decide, by decide, by decide⟩, (kall.gpr .r21 (by decide)).trans h.inq.h21,
       (kall.gpr .r23 (by decide)).trans h.inq.h23⟩, h.scr.congr kall.wr,
       h.regs.keep kall⟩, ?_, ?_,
-    by rw [mt]; exact qa2.trans (qa3.trans qa7)⟩, kall.mono (by decide)⟩
+    by rw [mt]; exact qa2.trans (qa3.trans qa7), ?_⟩, kall.mono (by decide)⟩
   · rw [arrQ, mt]
     have rr : val32 s₃.mem L.Q (slot 4 1) (2 * 4) = 2 ^ (64 * 4) * 2 ^ (64 * 4) % val32 s₃.mem L.Q (slot 4 0) (2 * 4) := by
       rw [hRR]; exact a1s.trans (by rw [← a0s])
@@ -130,5 +131,11 @@ theorem inverseK_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key s
     show arr s₃.mem L.Q 4 8 = _
     rw [arr, Outside.val32 o3 (by rw [e71, e78]; omega) (by decide)]
     exact a8s
+
+  · rw [arrQ, mt]
+    show val32 s₇.mem L.Q (slot 4 9) (2 * 4) = val32 s.mem L.Q (slot 4 9) (2 * 4)
+    rw [Outside.val32 o7' (by simp only [slot_eq]; omega) (by decide),
+      Outside.val32 o3 (by rw [e71]; simp only [slot_eq]; omega) (by decide),
+      Outside.val32 o2 (by rw [e74]; simp only [slot_eq]; omega) (by decide)]
 
 end VG.Proof.Dsa.PPC64LE
