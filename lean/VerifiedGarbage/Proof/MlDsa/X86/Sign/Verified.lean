@@ -20,12 +20,12 @@ open VG.Impl.MlDsa.X86.Sign
 open VG.Spec.MlDsa
 
 theorem sign44_verified : Verified X86.target (sign prims mlDsa44) (signContract mlDsa44 X86.abi 96) :=
-  verified prims_ok (.inl rfl) (NoSp.of_all (by decide +kernel))
+  verified prims_ok (.inl rfl) (NoSp.of_all (by lit_decide))
 
 theorem sign65_verified : Verified X86.target (sign prims mlDsa65) (signContract mlDsa65 X86.abi 96) :=
-  verified prims_ok (.inr (.inl rfl)) (NoSp.of_all (by decide +kernel))
+  verified prims_ok (.inr (.inl rfl)) (NoSp.of_all (by lit_decide))
 
 theorem sign87_verified : Verified X86.target (sign prims mlDsa87) (signContract mlDsa87 X86.abi 96) :=
-  verified prims_ok (.inr (.inr rfl)) (NoSp.of_all (by decide +kernel))
+  verified prims_ok (.inr (.inr rfl)) (NoSp.of_all (by lit_decide))
 
 end VG.Proof.MlDsa.X86.Sign

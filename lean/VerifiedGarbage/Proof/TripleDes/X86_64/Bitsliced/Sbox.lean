@@ -39,7 +39,7 @@ def sboxPost (j : Nat) (e : Env Nat) : Bool :=
 theorem sbox_check : ∀ j < 8,
     check (table 64 64) sboxCfg (fun _ => none) (instrs (sboxLiteral j))
       sboxEnv (sboxPost j) = true := by
-  decide +kernel
+  lit_decide
 
 theorem sboxLiteral_eq : ∀ j < 8, sboxLiteral j = .block (sboxCode j)
   | 0, _ => sbox0.lit_eq.symm
@@ -54,7 +54,7 @@ theorem sboxLiteral_eq : ∀ j < 8, sboxLiteral j = .block (sboxCode j)
 
 theorem sbox_preserves : ∀ j < 8,
     (instrs (sboxLiteral j)).all (fun op => op.dst != some .r15) = true := by
-  decide +kernel
+  lit_decide
 
 /-- Bit `p` of each input register, as the S-box's input. -/
 def inputAt (s : State) (p : Nat) : BitVec 6 :=

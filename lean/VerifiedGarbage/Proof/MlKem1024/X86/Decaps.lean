@@ -111,7 +111,7 @@ def satMem : Mem := fun a =>
   if a = 0x5009 then 0x10 else if a = 0x500d then 0x20 else if a = 0x5012 then 1 else 0
 
 theorem verified : Verified X86.target Impl.MlKem1024.X86.decaps (Spec.MlKem1024.decapsContract X86.abi 88) := by
-  refine Piece.verified (((piece (L := L1024) (by decide) (NoSp.of_all (by decide +kernel))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
+  refine Piece.verified (((piece (L := L1024) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
     (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · have hp := pre_of h₀
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq

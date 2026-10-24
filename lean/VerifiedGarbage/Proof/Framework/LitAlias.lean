@@ -64,7 +64,7 @@ meta def aliasRound (N : Name) (x : Expr) (k₀ : Nat) : MetaM Nat := do
       let mut memo : NameMap Bool := {}
       for u in x.getUsedConstants do
         if !heads.contains u then
-          (_, memo) ← (Lit.reaches heads mods u).run memo
+          (_, memo) ← (Lit.reaches heads mods (Lit.firstModuleOf env heads) u).run memo
       let memo' := memo
       pure (Lit.unfoldWhere env (fun c => memo'.find? c == some true) x
         (fun t => t.getAppFn.isConst && heads.contains t.getAppFn.constName!))

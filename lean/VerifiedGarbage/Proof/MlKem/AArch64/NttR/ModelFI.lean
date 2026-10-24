@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.MlKem.Ntt
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Sound
 public import VerifiedGarbage.Proof.MlKem.NttLayer
+import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-KEM on AArch64: the scheduled inverse NTT halfword by halfword, its coefficients
@@ -209,14 +212,14 @@ def cl (x : Nat) : Nat :=
 /-- The bound of coefficient `p` after level `st`: that of the class of `p mod 2^st`. -/
 def bF (st p : Nat) : Nat := (bT.getD st []).getD (cl (p % 2 ^ st)) 0
 
-theorem bF_ends : (∀ p < 256, bF 0 p = 3329 ∧ mmB 3329 3303 ≤ bF 1 p ∧ bF 8 p ≤ 32768) := by decide +kernel
+theorem bF_ends : (∀ p < 256, bF 0 p = 3329 ∧ mmB 3329 3303 ≤ bF 1 p ∧ bF 8 p ≤ 32768) := by lit_decide
 
 /-- The sums of each level fit, and their bounds (reduced or not) are those
 of the next level. -/
 theorem bF_sum : ∀ st < 7, ∀ p < 256, p % (2 * fLen (st + 1)) < fLen (st + 1) →
     p + fLen (st + 1) < 256 ∧ bF (st + 1) p + bF (st + 1) (p + fLen (st + 1)) ≤ 32768 ∧
     (if fRed (st + 1) p = true then mmB (bF (st + 1) p + bF (st + 1) (p + fLen (st + 1))) 1
-      else bF (st + 1) p + bF (st + 1) (p + fLen (st + 1))) ≤ bF (st + 2) p := by decide +kernel
+      else bF (st + 1) p + bF (st + 1) (p + fLen (st + 1))) ≤ bF (st + 2) p := by lit_decide
 
 /-- The differences of each level fit, their zetas are those of `NTT⁻¹`, and
 their products are less than `q`. -/
@@ -224,9 +227,9 @@ theorem bF_dif : ∀ st < 7, ∀ p < 256, ¬ p % (2 * fLen (st + 1)) < fLen (st 
     fLen (st + 1) ≤ p ∧ bF (st + 1) p + bF (st + 1) (p - fLen (st + 1)) ≤ 32768 ∧ 3329 ≤ bF (st + 2) p ∧
     256 / fLen (st + 1) - 1 - p / (2 * fLen (st + 1)) < 128 ∧
     0 < zetaN (256 / fLen (st + 1) - 1 - p / (2 * fLen (st + 1))) ∧
-    zetaN (256 / fLen (st + 1) - 1 - p / (2 * fLen (st + 1))) < 3329 := by decide +kernel
+    zetaN (256 / fLen (st + 1) - 1 - p / (2 * fLen (st + 1))) < 3329 := by lit_decide
 
-theorem fLen_eq : ∀ st < 7, fLen (st + 1) = 2 <<< st := by decide +kernel
+theorem fLen_eq : ∀ st < 7, fLen (st + 1) = 2 <<< st := by lit_decide
 
 /-! ## The coefficients represent `NTT⁻¹`'s -/
 

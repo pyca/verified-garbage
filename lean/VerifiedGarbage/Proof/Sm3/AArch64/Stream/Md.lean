@@ -45,8 +45,8 @@ abbrev params := Impl.Sm3.AArch64.Stream.params
 theorem dims : Dims params := ⟨by decide, by decide, by decide, by decide⟩
 
 theorem shape : Shape (P := params) md where
-  lenKeepsV := by decide +kernel
-  outKeepsV := by decide +kernel
+  lenKeepsV := by lit_decide
+  outKeepsV := by lit_decide
   len _ hout := len64_ok (d := params.N + params.B - params.L) (be := true) (by decide) hout
   out _ hin hout hd := by
     refine (out32_ok (n := 8) true (by decide) hin hout hd).mono fun s' ⟨g, rd, wr, sp, m⟩ =>
@@ -54,7 +54,7 @@ theorem shape : Shape (P := params) md where
     rw [m, digest_eq]
 
 theorem callee : CalleeOk (P := params) md Impl.Sm3.AArch64.compress :=
-  ⟨compress_verified.1, by decide +kernel, by decide +kernel⟩
+  ⟨compress_verified.1, by lit_decide, by lit_decide⟩
 
 namespace Update
 
@@ -62,7 +62,7 @@ theorem update_verified : Verified AArch64.target Impl.Sm3.AArch64.Stream.update
   have h := MdStream.AArch64.Update.verified (name := "vg_sm3_compress") dims callee
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by decide +kernel)) (by decide +kernel)
+    (instrs_keeps (by lit_decide)) (by lit_decide)
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sm3.iv m hr hc, fun _ _ _ _ h => h, h.2.2⟩
 
 /-- A state satisfying `update`'s precondition. -/
@@ -76,7 +76,7 @@ theorem finalize_verified : Verified AArch64.target Impl.Sm3.AArch64.Stream.fina
   have h := MdStream.AArch64.Finalize.verified (name := "vg_sm3_compress") dims shape callee
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
       (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by decide +kernel)) (by decide +kernel)
+    (instrs_keeps (by lit_decide)) (by lit_decide)
   Verified.of_implies h
     ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sm3.iv m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
 

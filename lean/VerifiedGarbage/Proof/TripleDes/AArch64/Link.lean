@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 
 /-!
 # Triple DES's core for the modes on AArch64: the registers across the call
