@@ -151,7 +151,7 @@ def gkRest : List Instr :=
   save .r11 ++ ([.store .d .r3 .r23 64, .store .d .r4 .r23 72, .store .d .r5 .r23 80, .store .d .r10 .r23 88,
     .addi .r3 .r7 0, .addi .r4 .r8 0, .addi .r5 .r9 0] ++ (setup ++ [.add .r9 .r21 .r28]))
 
-theorem gkFront_eq : gkFront = [.addSp .r11 104, .load .d .r11 .r11 0] ++ gkRest := by
+theorem gkFront_eq : gkFront = ([.addSp .r11 104, .load .d .r11 .r11 0] : List Instr) ++ gkRest := by
   simp only [gkFront, gkRest, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- After loading the working space's address, with the rest of the front to come. -/
@@ -412,7 +412,7 @@ theorem KD {g : GD} {s : State} (h : K5 g s) : WP isa VG.Impl.Ffdh.PPC64LE.Deriv
       by split <;> [decide; split <;> decide], by split <;> [decide; split <;> decide]⟩
 
 theorem KM1 {g : GD} {s : State} (h : K6 g s) :
-    WP isa (.block (statusMask ++ [.load .d .r25 .r23 64, .addi .r6 .r28 0])) s (K7 g) := by
+    WP isa (.block (statusMask ++ ([.load .d .r25 .r23 64, .addi .r6 .r28 0] : List Instr))) s (K7 g) := by
   obtain ⟨⟨h23, h28⟩, hX, hrd, hx, hk, st, h3, hst1, hst⟩ := h
   refine WP.mono (WP.keep [.r0, .r6, .r12, .r17, .r25] (Q := fun t => t.gpr .r25 = off g.d.x.X 0 ∧
       t.gpr .r17 = mask (decide (st = 1)) ∧ t.gpr .r6 = BitVec.ofNat 64 g.d.x.c.k ∧ t.mem = s.mem) (by
