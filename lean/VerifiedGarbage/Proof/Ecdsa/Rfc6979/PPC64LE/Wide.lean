@@ -10,6 +10,12 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
+
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
+
 /-!
 # Deterministic ECDSA on PPC64LE: scalars longer than the hash
 

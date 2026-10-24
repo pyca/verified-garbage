@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
 
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Exp
+
 /-!
 # Miller–Rabin's exponent on PPC64LE
 
