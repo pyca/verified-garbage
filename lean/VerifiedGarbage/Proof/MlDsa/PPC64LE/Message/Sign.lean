@@ -50,9 +50,10 @@ structure MFacts (p : Params) : Prop where
   sk : 128 ≤ p.skLen
   pk : p.pkLen < 2 ^ 15
   skl : p.skLen < 2 ^ 15
+  sgl : p.sigLen < 2 ^ 15
 
 theorem mfacts {p : Params} (h : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : MFacts p := by
-  rcases h with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide, by decide⟩
+  rcases h with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide, by decide, by decide⟩
 
 theorem msw (p : Params) : messageScratchWords p * 8 = oE p + 1024 := by
   simp only [messageScratchWords, oE]; omega
