@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-SIV on PPC64LE: the arguments, the entry and the exit

@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Ctr
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.Mac
 import VerifiedGarbage.Proof.AesSiv.Ctr32
-import VerifiedGarbage.Proof.AesSiv.Words
 import VerifiedGarbage.Proof.Siv.Spec
 import VerifiedGarbage.Proof.AesCcm.Ctr
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp

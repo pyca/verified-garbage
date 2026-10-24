@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Dec
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Dec
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.TopCT
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.MacCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchLists
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Init
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Init
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Proof.AesSiv.Scratch
@@ -14,6 +14,11 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.Impl.AesSiv.PPC64LE
+public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Entry
+public import VerifiedGarbage.Proof.AesSiv.PPC64LE.S2v
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 

@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.Rel
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.MacCT
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.CtrCT
-public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Dec
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Rel
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -16,6 +15,12 @@ meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Rel
 meta import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Fn
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Long
+meta import VerifiedGarbage.Proof.AesSiv.PPC64LE.Enc
+meta import VerifiedGarbage.Proof.AesSiv.PPC64LE.Fn
+meta import VerifiedGarbage.Proof.AesSiv.PPC64LE.Long
+public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Enc
 
 /-!
 # AES-SIV on PPC64LE: constant time of `encrypt` and `decrypt`

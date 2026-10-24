@@ -1,19 +1,26 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Env
-public import VerifiedGarbage.Proof.AesSiv.PPC64LE.FinRaw
-public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Call
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.FinRaw
+import VerifiedGarbage.Proof.AesCtr.PPC64LE.Call
 public import VerifiedGarbage.Impl.AesSiv.PPC64LE
 public import VerifiedGarbage.Spec.Siv
 import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.Siv.Spec
-import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Common
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # AES-SIV on PPC64LE: the calls' arguments, and the CMAC of a string

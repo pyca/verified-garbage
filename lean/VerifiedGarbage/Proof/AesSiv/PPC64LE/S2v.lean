@@ -8,10 +8,11 @@ import VerifiedGarbage.Proof.CmacAes.PPC64LE.FinSteps
 import VerifiedGarbage.Proof.Siv.Spec
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.FinRaw
+import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 
 /-!
 # AES-SIV on PPC64LE: S2V over the components of associated data

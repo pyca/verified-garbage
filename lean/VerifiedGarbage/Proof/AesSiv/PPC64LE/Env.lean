@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
+import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 /-!
 # AES-SIV on PPC64LE: where everything is

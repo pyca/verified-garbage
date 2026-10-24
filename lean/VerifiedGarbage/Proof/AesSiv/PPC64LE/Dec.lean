@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Enc
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Enc
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.CtrLoop
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Fn
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Long
+public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Entry
+public import VerifiedGarbage.Proof.AesSiv.PPC64LE.S2v
 
 /-!
 # AES-SIV on PPC64LE: `decrypt`
