@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Modes.Ops
+public import VerifiedGarbage.Impl.Modes.PPC64LE.Counter
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
@@ -25,9 +26,9 @@ IV's address in `r29`, the steps left in `r30`, and the data pointer in
 Every mode here processes one step at a time (`Mode`), in three *areas*:
 the step's data (`dat`, at `r31`), the chaining value (`chn`) and the
 core's first block (`buf`). A step is `pre` (copies and XORs among the
-areas, words or bytes: `Op`, through `r8` and `r9`), `core.crypt` (which
-enciphers `buf`), `post`, and the data pointer and the steps left
-advanced.
+areas, words or bytes, and the counters' increments: `Op`, through `r8` and
+`r9`), `core.crypt` (which enciphers `buf`), `post`, and the data pointer
+and the steps left advanced.
 
 * The caller's registers and the return address are saved in their slots,
   the IV is copied to the chaining value, and `core.prepare` makes the key
@@ -85,11 +86,11 @@ def loc : Loc → Reg × Nat
   | .chn => (sb, 8 * c.chnSlot)
   | .buf => (sb, 8 * c.buf)
 
-/-- An operation's code, through `r8` (and `r9` for an XOR). The modes here
-neither increment counters nor use a step's words otherwise. -/
+/-- An operation's code, through `r8` (and `r9` for an XOR or an increment). -/
 def opCode (o : Op) : List Instr :=
-  if o.inc || o.inc32 then [] else
-  if o.wide then
+  if o.inc then incAt (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
+  else if o.inc32 then inc32At (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
+  else if o.wide then
     ([.load .w .r8 (c.loc o.src).1 ((c.loc o.src).2 + o.sOff)] : List Instr) ++
       (match o.xr with
        | none => []

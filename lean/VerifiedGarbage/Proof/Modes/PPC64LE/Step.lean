@@ -271,13 +271,13 @@ theorem mem_kept {r : Reg} (h : r = .r3 ∨ r = .r29 ∨ r = .r30 ∨ r = .r31) 
 theorem kept_ne : ∀ r ∈ kept, r ≠ .r8 ∧ r ≠ .r9 := by decide
 
 /-- The operations' hypotheses, for `opsCode_wp`. -/
-theorem ops_ok {len : Loc → Nat} {os : List Op} (h : ∀ o ∈ os, Plain o ∧ o.InBounds len) :
-    ∀ o ∈ os, Plain o ∧ o.InBounds len ∧ o.dst ∈ allLocs :=
-  fun o ho => ⟨(h o ho).1, (h o ho).2, mem_allLocs _⟩
+theorem ops_ok {len : Loc → Nat} {os : List Op} (h : ∀ o ∈ os, o.InBounds len) :
+    ∀ o ∈ os, o.InBounds len ∧ o.dst ∈ allLocs :=
+  fun o ho => ⟨h o ho, mem_allLocs _⟩
 
 theorem pre_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
     {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st)
-    (hpre : ∀ o ∈ M.pre, Plain o ∧ o.InBounds (lens c st)) {j : Nat} (hj : j < n) {s : State}
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st)) {j : Nat} (hj : j < n) {s : State}
     (hI : Inv cs s₀ B D n st k F c0 xs j s) :
     WP isa (.block (c.opsCode M.pre)) s
       (Mid cs s₀ B D n st j k s (applyOps M.pre (cont (areas c B D st j) s.mem))) := by
@@ -354,7 +354,7 @@ theorem ofNat_pred64 {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - BitVec.ofNat 
 
 theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
     {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st) (hM : M.step = st)
-    (hpost : ∀ o ∈ M.post, Plain o ∧ o.InBounds (lens c st)) (hcomp : Computes M (4 * c.bw) (cs.cipher k) F)
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c st)) (hcomp : Computes M (4 * c.bw) (cs.cipher k) F)
     (hxs : xs.length = n) {j : Nat} (hj : j < n) {s s₃ : State} (hI : Inv cs s₀ B D n st k F c0 xs j s)
     (hm : Mid cs s₀ B D n st j k s (cryptBuf (4 * c.bw) (cs.cipher k)
       (applyOps M.pre (cont (areas c B D st j) s.mem))) s₃) :
@@ -382,7 +382,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   -- The step's outputs.
   let A := areas c B D st j
   have hstep : Agree (lens c st) (cont A s₅.mem) (stepA M (4 * c.bw) (cs.cipher k) (cont A s.mem)) :=
-    Agree.trans a₅ (applyOps_agree (fun o ho => (hpost o ho).2) hm.agree)
+    Agree.trans a₅ (applyOps_agree hpost hm.agree)
   obtain ⟨hc1, hc2⟩ := hcomp (cont A s.mem)
   rw [hM] at hc1 hc2
   have xj : rd (cont A s.mem) .dat st = xs[j]'(by omega_using [hxs, hj]) := hI.input hxs hj
@@ -427,7 +427,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
 
 theorem body_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
     {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st) (hM : M.step = st)
-    (hpre : ∀ o ∈ M.pre, Plain o ∧ o.InBounds (lens c st)) (hpost : ∀ o ∈ M.post, Plain o ∧ o.InBounds (lens c st))
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st)) (hpost : ∀ o ∈ M.post, o.InBounds (lens c st))
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hxs : xs.length = n) {j : Nat} (hj : j < n) {s : State}
     (hI : Inv cs s₀ B D n st k F c0 xs j s) :
     WP isa (c.body M) s (Inv cs s₀ B D n st k F c0 xs (j + 1)) := by
@@ -437,7 +437,7 @@ theorem body_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
 
 theorem loop_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
     {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st) (hM : M.step = st)
-    (hpre : ∀ o ∈ M.pre, Plain o ∧ o.InBounds (lens c st)) (hpost : ∀ o ∈ M.post, Plain o ∧ o.InBounds (lens c st))
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st)) (hpost : ∀ o ∈ M.post, o.InBounds (lens c st))
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hxs : xs.length = n) {s : State}
     (hI : Inv cs s₀ B D n st k F c0 xs 0 s) :
     WP isa (.ite (.zero .d .r30) (.block []) (.loop (c.body M) (.nonzero .d .r30))) s

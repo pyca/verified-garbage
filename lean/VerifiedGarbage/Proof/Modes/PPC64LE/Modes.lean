@@ -23,27 +23,7 @@ open VG.Spec.Aes (bytesAt)
 
 variable {c : Core}
 
-/-! ## The operations are copies and XORs -/
-
-theorem copyBlk_plain {bw : Nat} {dst src : Loc} : ∀ o ∈ copyBlk bw dst src, Plain o := by
-  intro o ho
-  simp only [copyBlk, List.mem_map, List.mem_range] at ho
-  obtain ⟨_, _, rfl⟩ := ho
-  exact ⟨rfl, rfl⟩
-
-theorem xorBlk_plain {bw : Nat} {dst x y : Loc} : ∀ o ∈ xorBlk bw dst x y, Plain o := by
-  intro o ho
-  simp only [xorBlk, List.mem_map, List.mem_range] at ho
-  obtain ⟨_, _, rfl⟩ := ho
-  exact ⟨rfl, rfl⟩
-
-theorem shiftIn_plain {bw : Nat} : ∀ o ∈ Mode.shiftIn bw, Plain o := by
-  intro o ho
-  simp only [Mode.shiftIn, List.mem_append, List.mem_map, List.mem_range, List.mem_singleton] at ho
-  rcases ho with ⟨_, _, rfl⟩ | rfl <;> exact ⟨rfl, rfl⟩
-
-theorem both {len : Loc → Nat} {os : List Op} (hp : ∀ o ∈ os, Plain o) (hb : ∀ o ∈ os, o.InBounds len) :
-    ∀ o ∈ os, Plain o ∧ o.InBounds len := fun o ho => ⟨hp o ho, hb o ho⟩
+/-! ## The operations -/
 
 theorem append_ok {P : Op → Prop} {os os' : List Op} (h : ∀ o ∈ os, P o) (h' : ∀ o ∈ os', P o) :
     ∀ o ∈ os ++ os', P o := fun o ho => (List.mem_append.mp ho).elim (h o) (h' o)
@@ -66,9 +46,8 @@ theorem ofb_wp (hp : SeqPre c (Mode.ofb c.bw) s₀) (hk : cs.KeyArgs s₀ (wrs0 
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Ofb.crypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Ofb.next (cs.cipher k) (iv0 c s₀) (N s₀) := by
   have b := blk_bounds (c := c) (st := (Mode.ofb c.bw).step) rfl
-  refine WP.mono (seq_wp cs hp (both copyBlk_plain (copyBlk_inBounds (b _) (b _)))
-    (both (append_ok copyBlk_plain xorBlk_plain)
-      (append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _))))
+  refine WP.mono (seq_wp cs hp ((copyBlk_inBounds (b _) (b _)))
+    ((append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _))))
     (ofb_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · exact h2.trans (by rw [(ofb_run _ _ _).1]; rfl)
   · rw [h3 rfl, ← (ofb_run _ _ _).2, chunksAt_length]
@@ -79,9 +58,8 @@ theorem cfbEnc_wp (hp : SeqPre c (Mode.cfbEnc c.bw) s₀) (hk : cs.KeyArgs s₀ 
       bytesAt s'.mem (P s₀) (4 * c.bw) =
         Spec.Cbc.next (iv0 c s₀) (Spec.Cfb.encrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀)) := by
   have b := blk_bounds (c := c) (st := (Mode.cfbEnc c.bw).step) rfl
-  refine WP.mono (seq_wp cs hp (both copyBlk_plain (copyBlk_inBounds (b _) (b _)))
-    (both (append_ok xorBlk_plain copyBlk_plain)
-      (append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _))))
+  refine WP.mono (seq_wp cs hp ((copyBlk_inBounds (b _) (b _)))
+    ((append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _))))
     (cfbEnc_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · exact h2.trans (by rw [(cfbEnc_run _ _ _).1]; rfl)
   · rw [h3 rfl, (cfbEnc_run _ _ _).2]; rfl
@@ -91,9 +69,8 @@ theorem cfbDec_wp (hp : SeqPre c (Mode.cfbDec c.bw) s₀) (hk : cs.KeyArgs s₀ 
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cfb.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) := by
   have b := blk_bounds (c := c) (st := (Mode.cfbDec c.bw).step) rfl
-  refine WP.mono (seq_wp cs hp (both copyBlk_plain (copyBlk_inBounds (b _) (b _)))
-    (both (append_ok copyBlk_plain xorBlk_plain)
-      (append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _))))
+  refine WP.mono (seq_wp cs hp ((copyBlk_inBounds (b _) (b _)))
+    ((append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _))))
     (cfbDec_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · exact h2.trans (by rw [(cfbDec_run _ _ _).1]; rfl)
   · rw [h3 rfl, (cfbDec_run _ _ _).2]; rfl
@@ -109,12 +86,8 @@ theorem cfb8Enc_wp (hp : SeqPre c (Mode.cfb8Enc c.bw) s₀) (hk : cs.KeyArgs s�
   have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega
   have hne : iv0 c s₀ ≠ [] := by
     intro h; have := congrArg List.length h; simp [bytesAt] at this; omega
-  refine WP.mono (seq_wp cs hp (both copyBlk_plain (copyBlk_inBounds (by simp [lens]) (by simp [lens])))
-    (fun o ho => ⟨?_, ?_⟩) (cfb8Enc_computes hbw) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
-  · simp only [Mode.cfb8Enc, List.mem_cons] at ho
-    rcases ho with rfl | ho
-    · exact ⟨rfl, rfl⟩
-    · exact shiftIn_plain o ho
+  refine WP.mono (seq_wp cs hp ((copyBlk_inBounds (by simp [lens]) (by simp [lens])))
+    (fun o ho => ?_) (cfb8Enc_computes hbw) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · simp only [Mode.cfb8Enc, List.mem_cons] at ho
     rcases ho with rfl | ho
     · exact xorByte_inBounds (by simp [lens, Mode.cfb8Enc]) (by simp [lens]; omega)
@@ -133,12 +106,8 @@ theorem cfb8Dec_wp (hp : SeqPre c (Mode.cfb8Dec c.bw) s₀) (hk : cs.KeyArgs s�
   have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega
   have hne : iv0 c s₀ ≠ [] := by
     intro h; have := congrArg List.length h; simp [bytesAt] at this; omega
-  refine WP.mono (seq_wp cs hp (both copyBlk_plain (copyBlk_inBounds (by simp [lens]) (by simp [lens])))
-    (fun o ho => ⟨?_, ?_⟩) (cfb8Dec_computes hbw) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
-  · simp only [Mode.cfb8Dec, List.mem_append, List.mem_singleton] at ho
-    rcases ho with ho | rfl
-    · exact shiftIn_plain o ho
-    · exact ⟨rfl, rfl⟩
+  refine WP.mono (seq_wp cs hp ((copyBlk_inBounds (by simp [lens]) (by simp [lens])))
+    (fun o ho => ?_) (cfb8Dec_computes hbw) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · simp only [Mode.cfb8Dec, List.mem_append, List.mem_singleton] at ho
     rcases ho with ho | rfl
     · exact shiftIn_inBounds hbw (by simp [lens]) (by simp [lens, Mode.cfb8Dec]) o ho
@@ -157,9 +126,8 @@ theorem cbcEncChained_wp (hp : SeqPre c (Mode.cbcEncChained c.bw) s₀)
       bytesAt s'.mem (P s₀) (4 * c.bw) =
         Spec.Cbc.next (iv0 c s₀) (Spec.Cbc.encrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀)) := by
   have b := blk_bounds (c := c) (st := (Mode.cbcEncChained c.bw).step) rfl
-  refine WP.mono (seq_wp cs hp (both xorBlk_plain (xorBlk_inBounds (b _) (b _) (b _)))
-    (both (append_ok copyBlk_plain copyBlk_plain)
-      (append_ok (copyBlk_inBounds (b _) (b _)) (copyBlk_inBounds (b _) (b _))))
+  refine WP.mono (seq_wp cs hp ((xorBlk_inBounds (b _) (b _) (b _)))
+    ((append_ok (copyBlk_inBounds (b _) (b _)) (copyBlk_inBounds (b _) (b _))))
     (cbcEncChained_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · exact h2.trans (by rw [encrypt_run]; rfl)
   · rw [h3 rfl, encrypt_run_next]; rfl
@@ -170,9 +138,8 @@ theorem cbcDecChained_wp (hp : SeqPre c (Mode.cbcDecChained c.bw) s₀)
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cbc.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) := by
   have b := blk_bounds (c := c) (st := (Mode.cbcDecChained c.bw).step) rfl
-  refine WP.mono (seq_wp cs hp (both copyBlk_plain (copyBlk_inBounds (b _) (b _)))
-    (both (append_ok (append_ok xorBlk_plain copyBlk_plain) copyBlk_plain)
-      (append_ok (append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _)))
+  refine WP.mono (seq_wp cs hp ((copyBlk_inBounds (b _) (b _)))
+    ((append_ok (append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _)))
         (copyBlk_inBounds (b _) (b _))))
     (cbcDecChained_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · exact h2.trans (by rw [decrypt_run]; rfl)
