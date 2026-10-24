@@ -35,12 +35,14 @@ theorem qb_le {v : VD} {s : State} (h : Base v s) : v.qb ≤ v.L.ql := by
 
 /-- `Base` after `r2` gets q's octets. -/
 theorem Base.step2 {v : VD} {s t : State} {rs : List Reg} {qb : Nat} (h : Base v s) (k : Keep rs s t)
-    (ho : Outside v.L.S 0 v.L.Z s.mem t.mem) (h2 : t.gpr .r2 = pack v.L.pl v.L.ql qb v.d) (hqb : qb < 2 ^ 16)
+    (ho : Body v.L s.mem t.mem) (h2 : t.gpr .r2 = pack v.L.pl v.L.ql qb v.d) (hqb : qb < 2 ^ 16)
     (hr : ∀ r ∈ ([.r21, .r26, .r27, .r28] : List Reg), r ∉ rs := by decide) : Base v t :=
   ⟨h.ok, Regs.of_pack h.ok ((k.gpr .r21 (hr _ (by decide))).trans h.regs.r21)
       ((k.gpr .r27 (hr _ (by decide))).trans h.regs.r27) ((k.gpr .r28 (hr _ (by decide))).trans h.regs.r28)
       ((k.gpr .r26 (hr _ (by decide))).trans h.regs.r26) h2 hqb (by simp only [VD.d]; omega),
-    h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr, h.hdg.keep k.rd k.wr, (h.hk.kept ho).trans h.kb⟩
+    h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr, h.hdg.keep k.rd k.wr,
+    (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb, h.hx.keep k.rd k.wr,
+    h.hdr_body ho, h.sgn⟩
 
 /-- p's octets into `r24`. -/
 theorem w_a24 {v : VD} {s : State} (h : S1 v s ∧ s.gpr .r0 = 0) :
@@ -90,8 +92,9 @@ theorem ite16q_rel : RelCT isa (Two S2a) (.ite (.zero .d .r16) (.block [.li .r0 
   rel_ite_zero (fun v s₁ s₂ h₁ h₂ => by rw [pins_S2a v s₁ s₂ h₁ h₂ .r16 (by decide)])
     (rel_weaken (two_taint _ pins_S2a (by taint_decide))) (rel_weaken (two_taint _ pins_S2a (by taint_decide)))
 
-theorem bitsQ_rel : RelCT isa (Two S2) (.seq (.block ptrQ) bytesBits) (Two S3) :=
-  two_post (RelCT.assoc (RelCT.seq (two_post (two_taint _ pins_S2 (by taint_decide)) fun _ _ h => w_scanQ h)
+theorem bitsQ_rel {G : VD → Prop} :
+    RelCT isa (Two fun v s => S2 v s ∧ G v) (.seq (.block ptrQ) bytesBits) (Two fun v s => S3 v s ∧ G v) :=
+  two_postG (RelCT.assoc (RelCT.seq (two_post (two_taint _ pins_S2 (by taint_decide)) fun _ _ h => w_scanQ h)
     ite16q_rel)) fun _ _ h => w_bitsQ h
 
 /-- q's octets into `r25` and `r2`, and `pairs`. -/
@@ -112,21 +115,22 @@ theorem w_pairs {v : VD} {s : State} (h : S3 v s ∧ s.gpr .r0 = 0) :
     fun u ⟨⟨b0, m2⟩, k2⟩ => ⟨(B.step2 k1 (by rw [m1]; exact Outside.refl _ _ _ _) a2 (by omega)).step k2
       (by rw [m2]; exact Outside.refl _ _ _ _), by rw [k2.gpr .r2 (by decide), a2], fixL_nil u, tp, h0.mp z, b0⟩
 
-theorem sizes_rel {rest fail : Prog isa} {Q : State → State → Prop}
-    (hrest : RelCT isa (Two S5) rest Q)
-    (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s) → RelCT isa (Two Φ) fail Q) :
-    RelCT isa (Two S0) (sizes rest fail) Q := by
+/-- The check of the sizes, for public data satisfying `G`. -/
+theorem sizes_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : VD → Prop}
+    (hrest : RelCT isa (Two fun v s => S5 v s ∧ G v) rest Q)
+    (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
+    RelCT isa (Two fun v s => S0 v s ∧ G v) (sizes rest fail) Q := by
   unfold sizes andThen
-  refine RelCT.seq bitsP_rel (rel_ite_zero (zero_iff_agree (fun (v : VD) => 128 ≤ v.tP) fun _ _ h => h.2.2.2) ?_
-    (hfail _ fun _ _ h => h.1.1))
-  refine RelCT.seq (two_post (two_taint _ (pins_and pins_S1) (by taint_decide)) fun _ _ h => w_a24 h) ?_
-  refine RelCT.seq bitsQ_rel (rel_ite_zero (zero_iff_agree (fun (v : VD) => 128 ≤ v.tQ) fun _ _ h => h.2.2.2.2) ?_
-    (hfail _ fun _ _ h => h.1.1))
-  refine RelCT.assoc (RelCT.seq (two_post (two_taint _ (pins_and pins_S3) (by taint_decide))
+  refine RelCT.seq bitsP_rel (rel_ite_zeroG (zero_iff_agree (fun (v : VD) => 128 ≤ v.tP)
+    fun _ _ h => h.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
+  refine RelCT.seq (two_postG (two_taint _ (pins_and pins_S1) (by taint_decide)) fun _ _ h => w_a24 h) ?_
+  refine RelCT.seq bitsQ_rel (rel_ite_zeroG (zero_iff_agree (fun (v : VD) => 128 ≤ v.tQ)
+    fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
+  refine RelCT.assoc (RelCT.seq (two_postG (two_taint _ (pins_and pins_S3) (by taint_decide))
     fun _ _ h => w_pairs h) ?_)
-  refine rel_ite_zero (zero_iff_agree (fun (v : VD) => Spec.Dsa.supportedSizes (8 * v.sP) (8 * v.qb))
-    fun _ _ h => h.2.2.2.2.2) (hrest.mono (fun _ _ => two_mono fun v s ⟨⟨B, r2, _, tp, tq, h0⟩, z⟩ =>
-      ⟨B, r2, fixL_nil s, (VG.Proof.Dsa.supported_scans v.pB v.qB).mpr ⟨tp, tq, h0.mp z⟩⟩) fun _ _ h => h)
-    (hfail _ fun _ _ h => h.1.1)
+  refine rel_ite_zeroG (zero_iff_agree (fun (v : VD) => Spec.Dsa.supportedSizes (8 * v.sP) (8 * v.qb))
+    fun _ _ h => h.2.2.2.2.2) (hrest.mono (fun _ _ => two_mono fun v s ⟨⟨⟨B, r2, _, tp, tq, h0⟩, z⟩, g⟩ =>
+      ⟨⟨B, r2, fixL_nil s, (VG.Proof.Dsa.supported_scans v.pB v.qB).mpr ⟨tp, tq, h0.mp z⟩⟩, g⟩) fun _ _ h => h)
+    (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)
 
 end VG.Proof.Dsa.PPC64LE

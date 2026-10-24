@@ -124,8 +124,9 @@ theorem verify_correct (s : State) (h : vContract.pre s) :
     (by rw [VG.Proof.Bignum.bytesAt_length]; exact hsl) hkey
   rw [hsg0, hsg1] at hspec
   refine WP.seq (checkKey_ok hL scr₁ hr₁ r2₁ (by omega) (srcK s₁ k₁.rd k₁.wr) (fun t hK hc hkp kc => ?_)
-    (fun t hn hkp h21 scrt kc => ?_))
-  · have kt := k₁.trans kc
+    (fun t hn hkp hrt scrt kc => ?_))
+  · have hkp := Kept.ofBody hL hkp
+    have kt := k₁.trans kc
     have hKt := hKs.mp hK
     have hn32 : Spec.Dsa.bitLength (qOf s.mem (layOf s) (s.gpr .r3)) / 8 ≤ 32 := by
       have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega
@@ -145,9 +146,10 @@ theorem verify_correct (s : State) (h : vContract.pre s) :
     rw [show min (min (s.gpr .r10).toNat 64) (Spec.Dsa.bitLength (qOf s.mem (layOf s) (s.gpr .r3)) / 8) =
       min (s.gpr .r10).toNat (Spec.Dsa.bitLength (qOf s.mem (layOf s) (s.gpr .r3)) / 8) by omega]
     exact ⟨fun h => ⟨hKt, h⟩, fun h => h.2⟩
-  · refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = 0#64 ∧ u.mem = t.mem) (by prun) (by decide))
+  · have hkp := Kept.ofBody hL hkp
+    refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = 0#64 ∧ u.mem = t.mem) (by prun) (by decide))
       fun u ⟨⟨u3, um⟩, ku⟩ => ?_
-    refine WP.mono (finish_ok ((ku.gpr .r21 (by decide)).trans h21) (hwr' u (scrt.congr ku.wr))
+    refine WP.mono (finish_ok ((ku.gpr .r21 (by decide)).trans hrt.r21) (hwr' u (scrt.congr ku.wr))
       (hsav' u (by rw [um]; exact hkp)) ((k₁.trans kc).trans ku)) fun w ⟨hab, w3⟩ => ⟨hab, ?_⟩
     show ((w.gpr .r3).setWidth 32).toNat = _
     rw [w3, u3, hspec, decide_eq_false (fun hx => hn (hKs.mpr hx.1))]
