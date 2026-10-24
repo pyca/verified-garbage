@@ -119,6 +119,13 @@ theorem stepLwz {t n : Reg} {off : Nat} {a : Addr} (hn : n ≠ .r0) (ho : off < 
     WP isa (.block (.load .w t n off :: is)) s Q :=
   stepW (by rw [exec_load_w hn ho (by rw [ha]; exact hin), ha]) k
 
+theorem stepLbz {t n : Reg} {off : Nat} {a : Addr} (hn : n ≠ .r0) (ho : off < 2 ^ 15)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hin : InRegions (s.rd ++ s.wr) a 1)
+    (k : ∀ s', Kp [t] s s' → s'.mem = s.mem → s'.gpr t = (s.mem.readW a 8).setWidth 64 →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (.lbz t n off :: is)) s Q :=
+  stepW (by rw [exec_lbz hn ho (by rw [ha]; exact hin), ha]; rfl) k
+
 theorem stepLwbrx {t a b : Reg} {ea : Addr} (hn : a ≠ .r0) (hea : s.gpr a + s.gpr b = ea)
     (hin : InRegions (s.rd ++ s.wr) ea 4)
     (k : ∀ s', Kp [t] s s' → s'.mem = s.mem → s'.gpr t = (rev32 (s.mem.readW ea 32)).setWidth 64 →
