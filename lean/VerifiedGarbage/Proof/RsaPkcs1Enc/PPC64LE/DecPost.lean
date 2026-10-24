@@ -147,6 +147,8 @@ theorem slotOut {s u : State} (hwr : u.wr = fr s :: s.wr) {d : Nat} (h₁ : 32 �
 structure Post (s : State) (R : BitVec 64) (EM : List Byte) (u : State) : Prop extends Fr2 s u where
   r : u.mem.readW (fb s + BitVec.ofNat 64 Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR) 64 = R
   em : Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r7).toNat = EM
+  /-- The result is a 32-bit value. -/
+  rb : (R ^^^ BitVec.ofNat 64 1).toNat < 2 ^ 63
 
 section
 variable {s : State} {R : BitVec 64} {EM : List Byte} {t t' : State}
@@ -156,7 +158,7 @@ theorem Post.step (h : DPre s) (hc : Post s R EM t) (hrd : t'.rd = t.rd) (hwr : 
     (hsp : t'.sp = t.sp) (hg : ∀ r ∈ preserved, t'.gpr r = t.gpr r) {ws : List Region}
     (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe s r) : Post s R EM t' := by
   refine ⟨⟨hsp.trans hc.sp, hrd.trans hc.rd, hwr.trans hc.wr, fun r hr => (hg r hr).trans (hc.hi r hr),
-    hc.mem.trans (hf.sub fun r hr => safe_in h (hs r hr)), hc.sl.safe h hf hs⟩, ?_, ?_⟩
+    hc.mem.trans (hf.sub fun r hr => safe_in h (hs r hr)), hc.sl.safe h hf hs⟩, ?_, ?_, hc.rb⟩
   · rw [hf.readW (Region.contains_self _ _) (fun X hX => safe_frame h (hs X hX) (.inl (by decide)) (by decide))
       (by decide)]
     exact hc.r
@@ -168,7 +170,7 @@ theorem Post.step (h : DPre s) (hc : Post s R EM t) (hrd : t'.rd = t.rd) (hwr : 
 theorem Post.regs (hc : Post s R EM t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
     (hm : t'.mem = t.mem) (hg : ∀ r ∈ preserved, t'.gpr r = t.gpr r) : Post s R EM t' :=
   ⟨⟨hsp.trans hc.sp, hrd.trans hc.rd, hwr.trans hc.wr, fun r hr => (hg r hr).trans (hc.hi r hr),
-    hm ▸ hc.mem, hm ▸ hc.sl⟩, by rw [hm]; exact hc.r, by rw [hm]; exact hc.em⟩
+    hm ▸ hc.mem, hm ▸ hc.sl⟩, by rw [hm]; exact hc.r, by rw [hm]; exact hc.em, hc.rb⟩
 
 end
 

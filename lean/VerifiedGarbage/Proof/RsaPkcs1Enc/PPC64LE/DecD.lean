@@ -26,6 +26,11 @@ open VG.Proof.Bignum.PPC64LE (Keep)
 /-- The result's 32 bits, zero-extended. -/
 def rOf (x : BitVec 64) : BitVec 64 := (x.setWidth 32).setWidth 64
 
+theorem rOf_lt (x : BitVec 64) : (rOf x ^^^ BitVec.ofNat 64 1).toNat < 2 ^ 63 := by
+  rw [BitVec.toNat_xor, BitVec.toNat_ofNat]
+  have : (rOf x).toNat < 2 ^ 32 := by simp only [rOf, BitVec.toNat_setWidth]; omega
+  exact Nat.lt_of_lt_of_le (Nat.xor_lt_two_pow (n := 32) this (by decide)) (by decide)
+
 /-- After `j` zeros of `D`. -/
 structure ZInv (s : State) (R : BitVec 64) (EM : List Byte) (j : Nat) (t : State) : Prop where
   post : Post s R EM t
@@ -76,7 +81,7 @@ theorem dPtrs₁_inv {s u : State} (h : DPre s) (A : AtD s u) :
     rw [outR_eq h]; exact h.ko.symm.sub_right (frame_sub s (by decide))
   refine ⟨⟨⟨⟨kt.sp.trans hsp, kt.rd.trans A.rd, kt.wr.trans A.wr,
     fun r hr => (kt.gpr r (by revert r; decide)).trans (A.hi r hr), A.mem.trans (hf.sub fun r hr => ?_),
-    A.sl.words hf fun r hr d hd hn => ?_⟩, ?_, ?_⟩, t12, ?_, t0, fun i hi => absurd hi (Nat.not_lt_zero _)⟩, t9⟩
+    A.sl.words hf fun r hr d hd hn => ?_⟩, ?_, ?_, rOf_lt _⟩, t12, ?_, t0, fun i hi => absurd hi (Nat.not_lt_zero _)⟩, t9⟩
   · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s (by decide)⟩
   · rw [List.mem_singleton.mp hr]
     exact Offset.disjoint _ (hd.imp id fun h' => by unfold oLr Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR at *; omega)

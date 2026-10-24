@@ -47,11 +47,6 @@ theorem rOf_one (x : BitVec 64) : decide (rOf x ^^^ BitVec.ofNat 64 1 = 0) = dec
     · intro h; simp only [rOf, h]; rfl
   simp only [this]
 
-theorem rOf_lt (x : BitVec 64) : (rOf x ^^^ BitVec.ofNat 64 1).toNat < 2 ^ 63 := by
-  rw [BitVec.toNat_xor, BitVec.toNat_ofNat]
-  have : (rOf x).toNat < 2 ^ 32 := by simp only [rOf, BitVec.toNat_setWidth]; omega
-  exact Nat.lt_of_lt_of_le (Nat.xor_lt_two_pow (n := 32) this (by decide)) (by decide)
-
 /-- RSADP, as the specification calls the private-key operation. -/
 def rsadpOf (s : State) (C : List Byte) : Spec.Rsa.Outcome :=
   Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat)
