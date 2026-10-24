@@ -32,14 +32,15 @@
 //! the associated-data components and the data total more than 32 bytes,
 //! the `_aes_cbc` instances, whose CMAC chains whole blocks with the round
 //! keys and the chaining value kept in vector registers, and otherwise the
-//! `_aes` ones (`chains_long`). On ARMv7 there is one implementation of
-//! AES, and so one instance of each function.
+//! `_aes` ones (`chains_long`). On ARMv7 and PPC64LE there is one
+//! implementation of AES, and so one instance of each function.
 
 #![cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::aes::Backend;
@@ -174,9 +175,9 @@ fn select(f: Features) -> Backend {
     Backend::select_for(f, AESNI)
 }
 
-/// The only implementation of AES on ARMv7, with the AES-SIV functions for
-/// it.
-#[cfg(target_arch = "arm")]
+/// The only implementation of AES on ARMv7 and PPC64LE, with the AES-SIV
+/// functions for it.
+#[cfg(any(target_arch = "arm", target_arch = "powerpc64"))]
 fn select(f: Features) -> Backend {
     Backend::select(f)
 }
