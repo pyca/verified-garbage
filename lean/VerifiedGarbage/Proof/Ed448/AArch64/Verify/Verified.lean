@@ -29,15 +29,13 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 # Ed448 verification on AArch64: `Verified`
 
 Correctness including the ABI (`verify_ok`), for any implementation `v` of
-the Keccak permutation, given `EqOk` (which the generic file passes in, from
-`VerifyVerified.lean`). Constant time in everything but the pointers and lengths:
-the branch on `ctxlen` is on a public length; in the frame's body, two runs
-whose pointers and lengths agree have the same layout, so they are related
-by `Whole.Two`. The blocks address only the stack and `scratch`, from
-registers that agree (the taint analysis); each call is of constant-time
-code (the sponge functions for `v`, `vg_ed448_scalar_reduce`,
-`vg_ed448_verify_equation`, all constant time in their buffers' contents)
-whose public data, its pointers, lengths and the sponge's positions, agree.
+Keccak, given the sparse equation's `EqOk` from `Sparse/Verified.lean`.
+Timing depends only on the public verification inputs permitted by the
+reviewed contract: pointers, lengths and input bytes. Hash and scalar-reduction
+correctness establish equal public challenge values in the two runs before
+the sparse equation is called. Its digit branches and table addresses depend
+on the public signature and challenge scalars; point coordinates are unrelated
+in its timing proof. The other calls retain their content-independent timing.
 -/
 
 @[expose] public section
