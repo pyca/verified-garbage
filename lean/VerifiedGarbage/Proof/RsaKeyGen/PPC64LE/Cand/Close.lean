@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Candidate
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
@@ -34,22 +35,6 @@ open VG.Impl.RsaKeyGen.PPC64LE.Candidate (seqs sub loadP closeCalc closeCheck aP
 open VG.Impl.Bignum.PPC64LE.PublicChecked (base)
 open VG.Proof.MillerRabin.PPC64LE (Env)
 open VG.Proof.Bignum (slot wv)
-
-theorem wp_seqs {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : State} {Q : State → Prop} :
-    WP isa (seqs (c :: l)) s Q ↔ WP isa c s (fun t => WP isa (seqs l) t Q) := by
-  match l, hl with
-  | _ :: _, _ => exact WP.seq_iff
-
-theorem slot_le {w j k : Nat} (h : j ≤ k) : slot w j ≤ slot w k := by
-  unfold slot; have := Nat.mul_le_mul_right (8 * (w + 2)) h; omega
-
-theorem slot0 {w : Nat} : slot w 0 = 256 := by simp [slot, VG.Impl.Bignum.hdrBytes]
-
-/-- An array's offset, linear in `w` for `omega` (whose preprocessing of
-`j * (8 * (w + 2))` for larger `j` exceeds the recursion limit). -/
-theorem slot_lin (w j : Nat) : slot w j = 256 + j * (8 * w) + j * 16 := by
-  show VG.Impl.Bignum.hdrBytes + j * (8 * (w + 2)) = _
-  rw [Nat.mul_add 8 w 2, Nat.mul_add, ← Nat.add_assoc]; rfl
 
 /-- The registers `sub` writes. -/
 def subRegs : List Reg := [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20]
