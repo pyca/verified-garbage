@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial

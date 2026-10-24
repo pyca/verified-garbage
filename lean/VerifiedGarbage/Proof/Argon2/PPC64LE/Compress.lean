@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Copy
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Copy
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Rounds
 
 /-! # Argon2 compression G on PPC64LE: correctness, constant time, `Verified` -/
 

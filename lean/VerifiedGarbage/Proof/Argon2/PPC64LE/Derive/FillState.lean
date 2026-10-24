@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillSteps
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.FillStep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 

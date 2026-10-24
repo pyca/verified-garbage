@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
+import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Prologue
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: the other parts

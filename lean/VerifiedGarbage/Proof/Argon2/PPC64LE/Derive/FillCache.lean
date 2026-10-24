@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillInput
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCall
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillInput
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCall
 public import VerifiedGarbage.Proof.Argon2.FillStep
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 
 /-!
 # Argon2 on PPC64LE: the address block

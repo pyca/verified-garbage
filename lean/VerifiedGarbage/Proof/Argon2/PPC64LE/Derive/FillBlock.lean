@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Copy
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCall
 
 /-!
 # Argon2 on PPC64LE: one block of the filling loops

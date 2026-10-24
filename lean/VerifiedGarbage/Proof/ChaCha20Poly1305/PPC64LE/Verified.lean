@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Tail
+import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Tail
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Tail
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
@@ -22,6 +22,9 @@ import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Contract
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Mac
+import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Prologue
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Prologue
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: `Verified`
