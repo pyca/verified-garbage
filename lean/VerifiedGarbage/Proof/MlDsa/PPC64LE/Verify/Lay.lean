@@ -26,7 +26,7 @@ for any parameter set.
 namespace VG.Proof.MlDsa.PPC64LE.Verify
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
-open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn inB)
+open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn inB reg)
 open VG.Impl.MlDsa.PPC64LE.Verify
 open VG.Spec.MlDsa (Params scratchWords mlDsa44 mlDsa65 mlDsa87)
 open VG.Spec.Sha3 (bytesAt)

@@ -36,7 +36,7 @@ and the prologue, key generation's (`vpro_piece`).
 namespace VG.Proof.MlDsa.PPC64LE.Verify
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
-open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece disjW disjW')
+open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece disjW disjW' reg)
 open VG.Impl.MlDsa.PPC64LE.Verify
 open VG.Impl.MlDsa.PPC64LE.KeyGen (pro)
 open VG.Spec.MlDsa (Params)
@@ -134,6 +134,7 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     WP isa (.block pro) σ fun s => VC p STK σ s ∧ s.gpr .r24 = 1 := by
   have hL := vlay_ok hp
   have fc := hp.f_c
+  have hk := hF.k
   obtain ⟨hs1, -⟩ := hF.scr
   have w0 : (vlay p STK σ).buf 0 ∈ σ.wr := by
     rw [show (vlay p STK σ).buf 0 = reg (vScr σ) (scrLen p) from rfl, hp.wr]
@@ -184,9 +185,9 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
   · show _ ∈ s.rd ++ s.wr
     rw [rd, rd₁, wr, wr₁, hp.rd, hp.wr]
     rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, vlay]
-  · rw [m, hin (i := 2) (.inl rfl) rfl]; exact ep
-  · rw [m, hin (i := 3) (.inr (.inl rfl)) rfl]; exact em
-  · rw [m, hin (i := 4) (.inr (.inr rfl)) rfl]; exact es
+  · rw [m, hin (i := 2) (l := p.pkLen) (.inl rfl) rfl]; exact ep
+  · rw [m, hin (i := 3) (l := 64) (.inr (.inl rfl)) rfl]; exact em
+  · rw [m, hin (i := 4) (l := p.sigLen) (.inr (.inr rfl)) rfl]; exact es
 
 theorem vpro_piece {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) :
     VPiece p STK (fun σ s => s = σ) (fun σ s => VC p STK σ s ∧ s.gpr .r24 = 1) (.block pro) :=
