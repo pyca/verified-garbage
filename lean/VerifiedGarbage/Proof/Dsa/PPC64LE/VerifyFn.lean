@@ -17,6 +17,8 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Save
 (`front_ok`), `checkKey` either runs `body` (`body_ok`) or leaves 0, and
 `restore` gives back the nonvolatile registers (`finish_ok`); the result is
 the specification's by `Proof/Dsa/Accepted.lean`'s `verifyBytes_compute`.
+`verifyLike_ok` states this for any check of the key in place of
+`checkKey` that behaves as it does (for prevalidated verification).
 -/
 
 @[expose] public section
@@ -74,9 +76,21 @@ theorem verify_spec {pl ql : Nat} {key sg dg : List Byte} {p q g y : Nat}
   · rw [VG.Proof.Dsa.verifyBytes_invalid_shape (by rw [hkey]; exact hs)]
     simp only [hs, false_and, decide_false]
 
-theorem verify_correct (s : State) (h : vContract.pre s) :
-    ∃ tr t, Exec isa Verify.verify s tr t ∧ abiPreserved s t ∧ vContract.post s t := by
-  show WP isa Verify.verify s fun t => abiPreserved s t ∧ vContract.post s t
+/-- Verification after `Verify.entry`, with the check of the key by `X`:
+`checkKey`, or, when `V` gives `KeyOk`, a setup of the working spaces that
+assumes it. -/
+theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
+    (hX : ∀ {u : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State → Prop} {rest fail : Prog isa},
+      L.Ok → ScrL u L → Regs u L key sig dig → u.gpr .r2 = pack L.pl L.ql 0 d → d < 2 ^ 16 →
+      Src u L key (3 * L.pl + L.ql) → (V → KeyOk u.mem L key) →
+      (∀ t, KeyOk u.mem L key → Checked u t L key sig dig d → Body L u.mem t.mem → Keep ckRegs u t →
+        WP isa rest t Q) →
+      (∀ t, ¬ KeyOk u.mem L key → Body L u.mem t.mem → Regs t L key sig dig → ScrL t L → Keep ckRegs u t →
+        WP isa fail t Q) →
+      WP isa (X rest fail) u Q)
+    {s : State} (h : vContract.pre s) (hV : V → KeyOk s.mem (layOf s) (s.gpr .r3)) :
+    WP isa (.seq (.block Verify.entry) (.seq (X Verify.body (.block [.li .r3 0])) (.block restore))) s
+      fun t => abiPreserved s t ∧ vContract.post s t := by
   have hL := layOf_ok h
   have hZ := hL.z256
   have hpre := h
@@ -108,7 +122,6 @@ theorem verify_correct (s : State) (h : vContract.pre s) :
       (total := (s.gpr .r8).toNat) (by simp only [layOf]; omega)]
     refine (List.take_of_length_le ?_).symm
     simp only [List.length_drop, VG.Proof.Bignum.bytesAt_length, layOf]; omega
-  unfold Verify.verify
   refine WP.seq (WP.mono (front_ok hpre) fun s₁ ⟨⟨hr₁, scr₁, r2₁, sav₁, out₁⟩, k₁⟩ => ?_)
   have hwr' : ∀ u : State, ScrL u (layOf s) → ∀ i < 19, InRegions u.wr (off (savW (stackArg s 0)) (8 * i)) 8 :=
     fun u hu i hi => by rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [layOf] at hZ ⊢; omega)
@@ -123,7 +136,8 @@ theorem verify_correct (s : State) (h : vContract.pre s) :
     (by rw [VG.Proof.Bignum.bytesAt_length]; exact hplq.symm)
     (by rw [VG.Proof.Bignum.bytesAt_length]; exact hsl) hkey
   rw [hsg0, hsg1] at hspec
-  refine WP.seq (checkKey_ok hL scr₁ hr₁ r2₁ (by omega) (srcK s₁ k₁.rd k₁.wr) (fun t hK hc hkp kc => ?_)
+  refine WP.seq (hX hL scr₁ hr₁ r2₁ (by omega) (srcK s₁ k₁.rd k₁.wr) (fun hv => hKs.mpr (hV hv))
+    (fun t hK hc hkp kc => ?_)
     (fun t hn hkp hrt scrt kc => ?_))
   · have hkp := Kept.ofBody hL hkp
     have kt := k₁.trans kc
@@ -154,5 +168,12 @@ theorem verify_correct (s : State) (h : vContract.pre s) :
     show ((w.gpr .r3).setWidth 32).toNat = _
     rw [w3, u3, hspec, decide_eq_false (fun hx => hn (hKs.mpr hx.1))]
     rfl
+
+theorem verify_correct (s : State) (h : vContract.pre s) :
+    ∃ tr t, Exec isa Verify.verify s tr t ∧ abiPreserved s t ∧ vContract.post s t := by
+  show WP isa Verify.verify s fun t => abiPreserved s t ∧ vContract.post s t
+  unfold Verify.verify
+  exact verifyLike_ok (X := checkKey) (V := False)
+    (fun hL hs hr h2 hd hk _ hrest hfail => checkKey_ok hL hs hr h2 hd hk hrest hfail) h False.elim
 
 end VG.Proof.Dsa.PPC64LE
