@@ -267,10 +267,22 @@ structure _root_.VG.Impl.MlKem.PPC64LE.KemLay.CallsOk (K : KemLay) : Prop where
     WP isa K.callDU s Q
   cuT : ConstantTime isa (fun _ => True) (regsEq [.r3, .r4, .r5, .r6]) K.compress
   duT : ConstantTime isa (fun _ => True) (regsEq [.r3, .r4, .r5, .r6]) K.decompress
+  seedT : ∀ t, RegsCT [.r31]
+    (.block (seedBytes t ++ [.addi .r3 .r31 oSeed, .addi .r4 .r31 K.oAhat, .addi .r5 .r31 K.oSample]))
+  zeroT : RegsCT [.r31] (zeroPoly K.oAcc)
+  kgSetupT : RegsCT [.r3, .r4, .r5, .r6] (.block K.kgSetup)
+  rhoT : RegsCT [.r29, .r31] (copy .r31 oSeed .r29 (384 * K.k) 32)
+  ekT : RegsCT [.r28, .r29] (copy .r29 0 .r28 (384 * K.k) K.ekLen)
+  zT : RegsCT [.r28, .r30] (copy .r30 32 .r28 (768 * K.k + 64) 32)
+  encSeedT : RegsCT [.r30, .r31] (copy .r30 (384 * K.k) .r31 oSeed 32)
+  ctT : RegsCT [.r28, .r31] (copy .r28 0 .r31 oCin K.ctLen)
+  cmpT : RegsCT [.r28, .r31] K.compare
 
 theorem kl768_calls : kl768.CallsOk :=
   ⟨fun hL _ _ _ _ _ g3 g4 g5 g6 hd => compressL hL g3 g4 g5 g6 (by rcases hd with rfl | rfl <;> decide),
     fun hL _ _ _ _ _ g3 g4 g5 g6 hd => decompressL hL g3 g4 g5 g6 (by rcases hd with rfl | rfl <;> decide),
-    compressT, decompressT⟩
+    compressT, decompressT, fun t => by cases t <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 end VG.Proof.MlKem.PPC64LE
