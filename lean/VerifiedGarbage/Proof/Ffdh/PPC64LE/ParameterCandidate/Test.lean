@@ -73,4 +73,22 @@ theorem testCore_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State} (h : St 
   WP.seq (WP.mono (montPrep_mst h hp hm1 hm2 hn hodd hN3) fun _ ⟨M, _, h152⟩ =>
     millerRabin_ok R hbl M (h152.trans hu) hul)
 
+/-- Before a modulus's Montgomery constants: what `testCore_ok` asks. -/
+structure TCPre (p : PP) (mb N u : Nat) (s : State) : Prop where
+  st : St p s
+  ph : Ph p mb s
+  mb1 : 511 ≤ mb
+  mb2 : mb ≤ p.bits
+  n : wv s.mem p.B (slot (wOf mb) 0) (wOf mb) = N
+  bl : Spec.RsaKeyGen.bitLength (N - 1) = mb
+  odd : N % 2 = 1
+  n3 : 3 ≤ N
+  used : word s.mem p.B 152 = BitVec.ofNat 64 u
+  ul : u ≤ p.r.length
+
+theorem TCPre.core (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State} (h : TCPre p mb N u s) :
+    WP isa (.seq montPrep (millerRabin R.name R.code)) s
+      (MrEnd p mb N (VG.Proof.Ffdh.ParameterCandidate.checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u))) :=
+  testCore_ok R h.st h.ph h.mb1 h.mb2 h.n h.bl h.odd h.n3 h.used h.ul
+
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

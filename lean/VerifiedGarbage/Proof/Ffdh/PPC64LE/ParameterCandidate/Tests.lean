@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Test
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # An FFDH parameter candidate on PPC64LE: the tests of q and p
@@ -54,14 +55,12 @@ theorem phR_used : ∀ r ∈ phRanges ++ [(8 * hTop, 8)], 152 + 8 ≤ r.1 ∨ r.
   simp only [phRanges, hTop, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
 
-/-- The test of q, halved in array 0 in p's width. -/
-theorem testQ_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
+/-- The set-up of q's test: its working space. -/
+theorem qPrep_ok {p : PP} {s : State} {c u : Nat} (h : St p s)
     (hc : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)))
     (hq : wv s.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) = (c - 1) / 2) (hqo : ((c - 1) / 2) % 2 = 1)
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
-    WP isa (test true R.name R.code) s
-      (MrEnd p (p.bits - 1) ((c - 1) / 2)
-        (checkWitnesses ((c - 1) / 2) (Spec.Ffdh.primeChecks (p.bits - 1)) (p.r.drop u))) := by
+    WP isa (.seq (phase true) (.block [])) s (TCPre p (p.bits - 1) ((c - 1) / 2) u) := by
   have hb1 := h.dims.b1
   have hb2 := h.dims.b2
   have hdn := h.dims.n
@@ -73,14 +72,12 @@ theorem testQ_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
   have hbl := VG.Proof.Ffdh.ParameterCandidate.half_pred_bitLength (bits := p.bits) (by omega)
     (Spec.Rsa.os2ip (p.r.take p.L)) (by rw [← hc]; exact hqo)
   rw [← hc] at hbl
-  unfold test
   refine WP.seq (WP.mono (phase_ok h true) fun t ⟨⟨st, ph, hf⟩, _⟩ => ?_)
   simp only [mbOf, ↓reduceIte] at ph
-  simp only [↓reduceIte]
-  rw [WP.seq_iff, WP.block_nil_iff]
+  rw [WP.block_nil_iff]
   have hL : p.L = (p.bits + 7) / 8 := rfl
   have hwq : wOf (p.bits - 1) ≤ wOf p.bits := by simp only [wOf]; omega
-  refine testCore_ok R st ph (by omega) (by omega) ?_ hbl hqo ?_ ?_ hul
+  refine ⟨st, ph, by omega, by omega, ?_, hbl, hqo, ?_, ?_, hul⟩
   · rw [slot_zero] at hq ⊢
     refine wv_low (w := wOf p.bits) ?_ hwq (Nat.lt_of_lt_of_le hqu (Nat.pow_le_pow_right (by decide) (by
       simp only [wOf]; omega)))
@@ -90,12 +87,23 @@ theorem testQ_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
     omega
   · rw [hf.word_eq phR_used (by decide)]; exact hu
 
-/-- The test of p, loaded again from the tape. -/
-theorem testP_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
+/-- The test of q, halved in array 0 in p's width. -/
+theorem testQ_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
+    (hc : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)))
+    (hq : wv s.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) = (c - 1) / 2) (hqo : ((c - 1) / 2) % 2 = 1)
+    (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
+    WP isa (test true R.name R.code) s
+      (MrEnd p (p.bits - 1) ((c - 1) / 2)
+        (checkWitnesses ((c - 1) / 2) (Spec.Ffdh.primeChecks (p.bits - 1)) (p.r.drop u))) := by
+  unfold test
+  simp only [↓reduceIte]
+  exact WP.assoc (WP.seq (WP.mono (qPrep_ok h hc hq hqo hu hul) fun _ ht => ht.core R))
+
+/-- The set-up of p's test: its working space, and p from the tape. -/
+theorem pPrep_ok {p : PP} {s : State} {c u : Nat} (h : St p s)
     (hc : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)))
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) (hL : p.L ≤ p.r.length) :
-    WP isa (test false R.name R.code) s
-      (MrEnd p p.bits c (checkWitnesses c (Spec.Ffdh.primeChecks p.bits) (p.r.drop u))) := by
+    WP isa (.seq (phase false) shapeP) s (TCPre p p.bits c u) := by
   have hb1 := h.dims.b1
   have hb2 := h.dims.b2
   have hdn := h.dims.n
@@ -104,11 +112,9 @@ theorem testP_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
   have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := p.bits) (by omega)
     (Spec.Rsa.os2ip (p.r.take p.L))).2
   rw [← hc] at hpo hl hbl
-  unfold test
   refine WP.seq (WP.mono (phase_ok h false) fun t ⟨⟨st, ph, hf⟩, _⟩ => ?_)
   simp only [mbOf, Bool.false_eq_true, ↓reduceIte] at ph
-  simp only [Bool.false_eq_true, ↓reduceIte]
-  refine WP.seq (WP.mono (shapeP_ok st ph hL) fun t₂ ⟨⟨hn₂, f₂⟩, k₂⟩ => ?_)
+  refine WP.mono (shapeP_ok st ph hL) fun t₂ ⟨⟨hn₂, f₂⟩, k₂⟩ => ?_
   have hLe : p.L = (p.bits + 7) / 8 := rfl
   have hw : wOf p.bits = (p.bits + 63) / 64 := rfl
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
@@ -118,9 +124,19 @@ theorem testP_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
     rw [List.mem_singleton.mp hr]
     exact InMut.arrays (by rw [hsl]) (by rw [hsl]; simp only [saveBytes]; omega)) k₂ (by decide)
   have ph₂ : Ph p p.bits t₂ := ph.keepHdr (k₂.gpr _ (by decide)) (k₂.gpr _ (by decide)) (k₂.gpr _ (by decide)) hlow
-  refine testCore_ok R st₂ ph₂ (by omega) (Nat.le_refl _) (by rw [hn₂, hc]) hbl hpo ?_ ?_ hul
+  refine ⟨st₂, ph₂, by omega, Nat.le_refl _, by rw [hn₂, hc], hbl, hpo, ?_, ?_, hul⟩
   · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 2 ≤ p.bits - 1 by omega)
     omega
   · rw [hlow 152 (by decide), hf.word_eq phR_used (by decide)]; exact hu
+
+/-- The test of p, loaded again from the tape. -/
+theorem testP_ok (R : RoundImpl) {p : PP} {s : State} {c u : Nat} (h : St p s)
+    (hc : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)))
+    (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) (hL : p.L ≤ p.r.length) :
+    WP isa (test false R.name R.code) s
+      (MrEnd p p.bits c (checkWitnesses c (Spec.Ffdh.primeChecks p.bits) (p.r.drop u))) := by
+  unfold test
+  simp only [Bool.false_eq_true, ↓reduceIte]
+  exact WP.assoc (WP.seq (WP.mono (pPrep_ok h hc hu hul hL) fun _ ht => ht.core R))
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

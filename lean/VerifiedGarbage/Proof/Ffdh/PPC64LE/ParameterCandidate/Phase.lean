@@ -140,12 +140,12 @@ theorem phaseHead_ok {p : PP} {s : State} (h : St p s) (q : Bool) :
     · iterate 13 refine frm_writeW ?_ _ (by decide) (by decide)
       exact Frm.refl _ _ _
 
-/-- `topMask`: `hTop := 2^k − 1` for `k = mb + 64 − 64 w`, in 1..=64. -/
-theorem topMask_ok {p : PP} {s : State} (h : St p s) {mb : Nat}
+/-- `topMask`'s first block: its count `k = mb + 64 − 64 w` in `r3`. -/
+theorem topT1_ok {p : PP} {s : State} (h : St p s) {mb : Nat}
     (hm : word s.mem p.B (8 * hMb) = BitVec.ofNat 64 mb) (hw : word s.mem p.B (8 * hW) = BitVec.ofNat 64 (wOf mb)) :
-    WP isa topMask s fun t =>
-      (word t.mem p.B (8 * hTop) = BitVec.ofNat 64 (2 ^ (mb + 64 - 64 * wOf mb) - 1) ∧
-        Frm p.B [(8 * hTop, 8)] s.mem t.mem) ∧ Keep [.r3, .r4, .r5] s t := by
+    WP isa (.block [ldh .r3 hMb, ldh .r4 hW, .lsl .r4 .r4 6, .sub .r3 .r3 .r4, .addi .r3 .r3 64, .li .r5 0]) s
+      fun u => (u.gpr .r3 = BitVec.ofNat 64 (mb + 64 - 64 * wOf mb) ∧ u.gpr .r5 = BitVec.ofNat 64 0 ∧
+        u.mem = s.mem) ∧ Keep [.r3, .r4, .r5] s u := by
   have hk1 : 1 ≤ mb + 64 - 64 * wOf mb := by simp only [wOf]; omega
   have hk2 : mb + 64 - 64 * wOf mb ≤ 64 := by simp only [wOf]; omega
   generalize hkd : mb + 64 - 64 * wOf mb = k at hk1 hk2 ⊢
@@ -155,13 +155,23 @@ theorem topMask_ok {p : PP} {s : State} (h : St p s) {mb : Nat}
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
     simp only [wOf] at hkd ⊢
     omega
+  refine WP.keep [.r3, .r4, .r5] ?_ (by decide)
+  simp only [ldh, hMb, hW]
+  prun [h.r31, h.ld (d := 248) (by decide), h.ld (d := 48) (by decide), show s.mem.readW (p.B + 248#64) 64 =
+    BitVec.ofNat 64 mb from hm, show s.mem.readW (p.B + 48#64) 64 = BitVec.ofNat 64 (wOf mb) from hw]
+  exact ek
+
+/-- `topMask`: `hTop := 2^k − 1` for `k = mb + 64 − 64 w`, in 1..=64. -/
+theorem topMask_ok {p : PP} {s : State} (h : St p s) {mb : Nat}
+    (hm : word s.mem p.B (8 * hMb) = BitVec.ofNat 64 mb) (hw : word s.mem p.B (8 * hW) = BitVec.ofNat 64 (wOf mb)) :
+    WP isa topMask s fun t =>
+      (word t.mem p.B (8 * hTop) = BitVec.ofNat 64 (2 ^ (mb + 64 - 64 * wOf mb) - 1) ∧
+        Frm p.B [(8 * hTop, 8)] s.mem t.mem) ∧ Keep [.r3, .r4, .r5] s t := by
+  have hk1 : 1 ≤ mb + 64 - 64 * wOf mb := by simp only [wOf]; omega
+  have hk2 : mb + 64 - 64 * wOf mb ≤ 64 := by simp only [wOf]; omega
   unfold topMask
-  refine WP.seq (WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun u => u.gpr .r3 = BitVec.ofNat 64 k ∧
-      u.gpr .r5 = BitVec.ofNat 64 0 ∧ u.mem = s.mem) ?_ (by decide)) fun u ⟨⟨u3, u5, um⟩, ku⟩ => ?_)
-  · simp only [ldh, hMb, hW]
-    prun [h.r31, h.ld (d := 248) (by decide), h.ld (d := 48) (by decide), show s.mem.readW (p.B + 248#64) 64 =
-      BitVec.ofNat 64 mb from hm, show s.mem.readW (p.B + 48#64) 64 = BitVec.ofNat 64 (wOf mb) from hw]
-    exact ek
+  refine WP.seq (WP.mono (topT1_ok h hm hw) fun u ⟨⟨u3, u5, um⟩, ku⟩ => ?_)
+  generalize hkd : mb + 64 - 64 * wOf mb = k at hk1 hk2 u3 ⊢
   let Inv : Nat → State → Prop := fun i t =>
     (t.gpr .r5 = BitVec.ofNat 64 (2 ^ i - 1) ∧ t.mem = s.mem) ∧ Keep [.r3, .r4, .r5] s t
   refine WP.seq (WP.mono (wp_countdown (cnt := .r3) (N := k) (by omega) (by omega) Inv
