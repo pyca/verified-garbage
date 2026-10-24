@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # SHA-512: the PPC64LE contracts
