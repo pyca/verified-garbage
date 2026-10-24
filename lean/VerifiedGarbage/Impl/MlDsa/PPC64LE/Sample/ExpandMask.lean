@@ -57,7 +57,7 @@ def emLoop (c : Nat) : Prog isa :=
     (.loop (.block (emBody c)) (.nonzero .d .r6))
 
 def expandMask : Prog isa :=
-  .seq (.block (pro .r6 .r5 .r3 [.li .r28 66] [VG.Impl.Sha3.PPC64LE.Stream.mov .r27 .r4]))
+  .seq (.block (pro .r6 .r5 .r3 [.li .r28 66] (zext32 .r27 .r4)))
     (.seq (sponge 136 640)
       (.seq (.seq (.block [.lis .r12 2, .sub .r12 .r27 .r12]) (.ite (.zero .d .r12) (emLoop 18) (emLoop 20)))
         (.block epi)))
