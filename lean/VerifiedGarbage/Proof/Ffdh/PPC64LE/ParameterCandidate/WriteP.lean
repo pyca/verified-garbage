@@ -18,6 +18,22 @@ namespace VG.Proof.Ffdh.PPC64LE.ParameterCandidate
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
 
+/-- `writeP`'s first block: `out`, `out_len`, and the address of p's last
+octet. -/
+theorem writeHead_ok {s : State} {B O : Addr} {Z k : Nat} (hs : Scr s B Z)
+    (h31 : s.gpr .r31 = B) (h10 : s.gpr .r10 = off B 256)
+    (hO : s.mem.readW (B + BitVec.ofNat 64 16) 64 = O) (hL : s.mem.readW (B + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 k)
+    (hk : 1 ≤ k) (hZ : 256 + k ≤ Z) :
+    WP isa (.block [Impl.MillerRabin.PPC64LE.Search.ldh .r4 hOut, Impl.MillerRabin.PPC64LE.Search.ldh .r5 hLen, .add .r6 .r10 .r5, .subi .r6 .r6 1]) s fun s₂ =>
+      (s₂.gpr .r6 = off B (256 + (k - 1)) ∧ s₂.gpr .r4 = O ∧ s₂.gpr .r5 = BitVec.ofNat 64 k ∧ s₂.mem = s.mem) ∧
+        Keep [.r4, .r5, .r6] s s₂ := by
+  have hnw := hs.nowrap
+  refine WP.keep [.r4, .r5, .r6] ?_ (by decide)
+  simp only [Impl.MillerRabin.PPC64LE.Search.ldh, hOut, hLen]
+  prun [h31, h10, hO, hL, hs.ld (d := 16) (n := 8) (by omega), hs.ld (d := 24) (n := 8) (by omega),
+    off_add, BitVec.add_zero]
+  rw [off_sub1 _ (by omega)]; congr 2; omega
+
 theorem writeP_ok {s : State} {B O : Addr} {Z k : Nat} (hs : Scr s B Z) (ho : Scr s O k)
     (h31 : s.gpr .r31 = B) (h10 : s.gpr .r10 = off B 256)
     (hO : s.mem.readW (B + BitVec.ofNat 64 16) 64 = O) (hL : s.mem.readW (B + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 k)
@@ -29,12 +45,7 @@ theorem writeP_ok {s : State} {B O : Addr} {Z k : Nat} (hs : Scr s B Z) (ho : Sc
   have hno := ho.nowrap
   unfold writeP
   refine WP.seq ?_
-  refine WP.mono (WP.keep [.r4, .r5, .r6] (Q := fun s₂ => s₂.gpr .r6 = off B (256 + (k - 1)) ∧
-    s₂.gpr .r4 = O ∧ s₂.gpr .r5 = BitVec.ofNat 64 k ∧ s₂.mem = s.mem)
-    (by simp only [Impl.MillerRabin.PPC64LE.Search.ldh, hOut, hLen]
-        prun [h31, h10, hO, hL, hs.ld (d := 16) (n := 8) (by omega), hs.ld (d := 24) (n := 8) (by omega),
-        off_add, BitVec.add_zero]
-        rw [off_sub1 _ (by omega)]; congr 2; omega) (by decide)) fun s₂ ⟨⟨b6, b4, b5, m2⟩, k2⟩ => ?_
+  refine WP.mono (writeHead_ok hs h31 h10 hO hL hk hZ) fun s₂ ⟨⟨b6, b4, b5, m2⟩, k2⟩ => ?_
   let Inv : Nat → State → Prop := fun j t =>
     t.gpr .r6 = off B (256 + (k - 1) - j) ∧ t.gpr .r4 = off O j ∧ Outside O 0 j s.mem t.mem ∧
       (∀ i < j, t.mem (off O i) = s.mem (off B (256 + (k - 1 - i)))) ∧ Keep [.r0, .r4, .r5, .r6] s t
