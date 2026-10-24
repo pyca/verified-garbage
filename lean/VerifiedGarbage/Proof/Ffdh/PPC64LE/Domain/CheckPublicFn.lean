@@ -68,7 +68,7 @@ def setupRegs : List Reg := [.r10, .r11, .r21, .r26, .r27, .r28, .r29, .r31]
 theorem setup_ok {s : State} {S D Y : Addr} {k L : Nat} (h3 : s.gpr .r3 = D)
     (h4 : s.gpr .r4 = BitVec.ofNat 64 L) (h5 : s.gpr .r5 = BitVec.ofNat 64 k) (h6 : s.gpr .r6 = Y)
     (h23 : s.gpr .r23 = S) (hk : k ≤ 1024) :
-    WP isa (.block (setup ++ [.addi .r26 .r6 0])) s fun t =>
+    WP isa (.block (setup ++ ([.addi .r26 .r6 0] : List Instr))) s fun t =>
       (t.gpr .r21 = D ∧ t.gpr .r27 = BitVec.ofNat 64 L ∧ t.gpr .r28 = BitVec.ofNat 64 k ∧
         t.gpr .r11 = BitVec.ofNat 64 (2 * ((k + 7) / 8)) ∧ t.gpr .r29 = BitVec.ofNat 64 (8 * ((k + 7) / 8 + 2)) ∧
         t.gpr .r10 = off S (slot ((k + 7) / 8) 0) ∧ t.gpr .r31 = S ∧ t.gpr .r26 = Y ∧ t.mem = s.mem) ∧
@@ -108,8 +108,8 @@ theorem bytes_frame {m m' : Mem} {D S : Addr} {L Z : Nat} (hf : Frame [savR S] m
     ((Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega)) _ hc)
 
 theorem pres_not_written : ∀ r ∈ preserved, (∀ i < 18, r ≠ Impl.Ffdh.PPC64LE.Domain.saved i) →
-    r ∉ ([.r23] : List Reg) ++ setupRegs ++ [.r0, .r6, .r12, .r14, .r15, .r16, .r17, .r18] ++
-      (checkYRegs ++ [.r3]) := by
+    r ∉ ([.r23] : List Reg) ++ setupRegs ++ ([.r0, .r6, .r12, .r14, .r15, .r16, .r17, .r18] : List Reg) ++
+      (checkYRegs ++ ([.r3] : List Reg)) := by
   decide
 
 theorem ret_ofNat (c : Prop) [Decidable c] :

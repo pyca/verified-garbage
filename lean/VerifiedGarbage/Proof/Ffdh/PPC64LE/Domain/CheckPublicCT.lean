@@ -198,13 +198,13 @@ theorem pins_C0 : Pins C0 [.r3, .r4, .r5, .r6, .r8] := by
 theorem pins_base {Φ : CD → State → Prop} (h : ∀ d s, Φ d s → Base d s) : Pins Φ baseRegs :=
   fun _ _ _ h₁ h₂ => (h _ _ h₁).pins (h _ _ h₂)
 
-theorem pins_C1 {Φ : CD → State → Prop} (h : ∀ d s, Φ d s → C1 d s) : Pins Φ (baseRegs ++ [.r26]) := by
+theorem pins_C1 {Φ : CD → State → Prop} (h : ∀ d s, Φ d s → C1 d s) : Pins Φ (baseRegs ++ ([.r26] : List Reg)) := by
   intro d s₁ s₂ h₁ h₂ r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact (h _ _ h₁).1.pins (h _ _ h₂).1 r hr
   · rw [List.mem_singleton] at hr; subst hr; rw [(h _ _ h₁).2, (h _ _ h₂).2]
 
-theorem pins_C1a : Pins C1a (baseRegs ++ [.r26, .r12, .r6]) := by
+theorem pins_C1a : Pins C1a (baseRegs ++ ([.r26, .r12, .r6] : List Reg)) := by
   intro d s₁ s₂ h₁ h₂ r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact h₁.1.1.pins h₂.1.1 r hr
@@ -214,7 +214,7 @@ theorem pins_C1a : Pins C1a (baseRegs ++ [.r26, .r12, .r6]) := by
     · rw [h₁.2.1, h₂.2.1]
     · rw [h₁.2.2, h₂.2.2]
 
-theorem pins_C3 : Pins C3 (baseRegs ++ [.r26, .r6, .r15, .r18]) := by
+theorem pins_C3 : Pins C3 (baseRegs ++ ([.r26, .r6, .r15, .r18] : List Reg)) := by
   intro d s₁ s₂ h₁ h₂ r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact h₁.1.1.pins h₂.1.1 r hr
@@ -232,7 +232,7 @@ theorem pins_CF : Pins CF [.r23] := by
 /-! ## The steps, by correctness -/
 
 theorem T01 {d : CD} {s : State} (h : C0 d s) :
-    WP isa (.block (save .r8 ++ setup ++ [.addi .r26 .r6 0])) s (C1 d) := by
+    WP isa (.block (save .r8 ++ setup ++ ([.addi .r26 .r6 0] : List Instr))) s (C1 d) := by
   obtain ⟨⟨hrd, hwr, dDS, dYS, nwD, nwY, nwS, ⟨hk, hk'⟩, hL, hyl, hsl⟩, rfl⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsl
   simp only [domR, yR, scrR] at hrd hwr dDS dYS
