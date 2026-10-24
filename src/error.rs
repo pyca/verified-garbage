@@ -100,6 +100,11 @@ mod tests {
             crate::blowfish_cbc::Error::IncompleteBlock,
         );
         check!(
+            crate::aes_ocb::Error::InvalidKeyLength,
+            crate::aes_ocb::Error::InvalidNonceLength,
+            crate::aes_ocb::Error::TagMismatch,
+        );
+        check!(
             crate::aes_gcm_siv::Error::InvalidKeyLength,
             crate::aes_gcm_siv::Error::InvalidTextLength,
             crate::aes_gcm_siv::Error::InvalidAadLength,
@@ -126,9 +131,6 @@ mod tests {
             crate::aes_gcm::Error::AadAfterText,
             crate::aes_gcm::Error::InvalidOutputLength,
             crate::aes_gcm::Error::TooManyPieces,
-            crate::aes_ocb::Error::InvalidKeyLength,
-            crate::aes_ocb::Error::InvalidNonceLength,
-            crate::aes_ocb::Error::TagMismatch,
             crate::aes_siv::Error::InvalidKeyLength,
             crate::aes_siv::Error::TooManyComponents,
             crate::aes_siv::Error::TagMismatch,
