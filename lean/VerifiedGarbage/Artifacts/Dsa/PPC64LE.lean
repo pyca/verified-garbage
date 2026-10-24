@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyVerified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA on PPC64LE -/
@@ -32,6 +33,14 @@ def artifacts : List Artifact := [
         p mod q = 1, the order of g), with the fixed-window power of the RSA code on PPC64LE, \
         branching only on the domain, which is public."]
     code := Impl.Dsa.PPC64LE.Params.checkParameters
-    verified := Proof.Dsa.PPC64LE.checkParameters_verified }]
+    verified := Proof.Dsa.PPC64LE.checkParameters_verified },
+  Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
+    notes := ["The domain is checked as for `vg_dsa_check_parameters`, branching only on it. The \
+        derivation computes y = g^x mod p with the fixed-window secret-exponent power of the RSA code on \
+        PPC64LE, which is below p, and of order dividing q since g's is; it keeps the checks of y ≠ 0, \
+        y ≠ 1 and 0 < x < q as a mask, and'ed into each octet of p||q||g||y||x as it goes to out: x and y \
+        do not affect the leakage trace."]
+    code := Impl.Dsa.PPC64LE.Derive.derive
+    verified := Proof.Dsa.PPC64LE.deriveKey_verified }]
 
 end VG.Artifacts.Dsa.PPC64LE
