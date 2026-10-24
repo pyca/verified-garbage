@@ -120,6 +120,31 @@ theorem Prep.prepared {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) 
     simpa only [Spec.MillerRabin.exponent, Spec.MillerRabin.shift, mrE, mrSig, sigOf, mrA, aE] using h.e
   · exact h.l
 
+/-- `Prep` survives a state that keeps `Env`, `r12`, and the words and
+numbers `Prep` reads. -/
+theorem Prep.keep {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (env : Env t B (8 * L) w)
+    (r12 : t.gpr .r12 = s.gpr .r12)
+    (hw : ∀ d, (d = 0 ∨ d = 48 ∨ d = 56 ∨ d = 224 ∨ (∃ j < 8, d = 8 * (8 + j)) ∨ d = slot w 0 ∨
+      d = slot w 27 + 8 * w) → word t.mem B d = word s.mem B d)
+    (hv : ∀ j, (j = 0 ∨ j = 1 ∨ j = 9 ∨ j = 10 ∨ j = 27) →
+      val32 t.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w)) : Prep t B L w c := by
+  have h56 := hw 56 (by simp)
+  have h0 := hw (slot w 0) (by simp)
+  refine ⟨env, (hw 0 (by simp)).trans h.len, (hw 48 (by simp)).trans h.wW, (hw 224 (by simp)).trans h.strideW,
+    fun j hj => (hw _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨j, hj, rfl⟩)))))).trans (h.arrW j hj),
+    (hv 0 (by simp)).trans h.n, h.c3, h.odd, by rw [h0, h56]; exact h.inv, by rw [r12, h56]; exact h.r12,
+    (hv 1 (by simp)).trans h.r1, (hv 9 (by simp)).trans h.r9, (hv 10 (by simp)).trans h.r10, ?_, ?_⟩
+  · have he := h.e
+    have e27 : aE = 27 := rfl
+    rw [e27] at he ⊢
+    exact (hv 27 (by simp)).trans he
+  · have hl := h.l
+    have e27 : aE = 27 := rfl
+    rw [e27] at hl ⊢
+    have := hw (slot w 27 + 8 * w) (by simp)
+    simp only [word] at this
+    rw [this]; exact hl
+
 /-- `Prep` survives a change of memory that keeps the round's words and a
 state that keeps `Env` and `r12`. -/
 theorem Prep.transfer {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (env : Env t B (8 * L) w)
@@ -130,24 +155,18 @@ theorem Prep.transfer {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c
   have hZ := env.hZ
   have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
-  have h56 := hw 56 (by omega) (by kept_tac)
-  have h0 := hw (slot w 0) (by simp only [es]; omega) (by kept_tac)
-  refine ⟨env, (hw 0 (by omega) (by kept_tac)).trans h.len, (hw 48 (by omega) (by kept_tac)).trans h.wW,
-    (hw 224 (by omega) (by kept_tac)).trans h.strideW, fun j hj => ?_, ?_, h.c3, h.odd, by rw [h0, h56]; exact h.inv,
-    by rw [r12, h56]; exact h.r12, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hw _ (by omega) (by intro i h1 h2; simp only [Kept, slot, hdrBytes, List.mem_cons, List.not_mem_nil,
-      or_false, forall_eq_or_imp, forall_eq]; and_intros <;> omega)]
-    exact h.arrW j hj
-  · show val32 _ _ _ _ = c; rw [hv 0 (by simp only [es]; omega) (by kept_tac)]; exact h.n
-  · show val32 _ _ _ _ = _; rw [hv 1 (by simp only [es]; omega) (by kept_tac)]; exact h.r1
-  · show val32 _ _ _ _ = _; rw [hv 9 (by simp only [es]; omega) (by kept_tac)]; exact h.r9
-  · show val32 _ _ _ _ = _; rw [hv 10 (by simp only [es]; omega) (by kept_tac)]; exact h.r10
-  · have he := h.e
-    have e27 : aE = 27 := rfl
-    rw [e27] at he ⊢
-    show val32 _ _ _ _ = _
-    have s27 := es 27
-    have b27 : slot w 27 + 8 * w ≤ 8 * L := by omega
+  refine h.keep env r12 (fun d hd => ?_) (fun j hj => ?_)
+  · rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl
+    · exact hw 0 (by omega) (by kept_tac)
+    · exact hw 48 (by omega) (by kept_tac)
+    · exact hw 56 (by omega) (by kept_tac)
+    · exact hw 224 (by omega) (by kept_tac)
+    · exact hw _ (by omega) (by intro i h1 h2; simp only [Kept, slot, hdrBytes, List.mem_cons, List.not_mem_nil,
+        or_false, forall_eq_or_imp, forall_eq]; and_intros <;> omega)
+    · exact hw (slot w 0) (by simp only [es]; omega) (by kept_tac)
+    · have s27 := es 27
+      exact hw (slot w 27 + 8 * w) (by omega) (by kept_tac)
+  · have s27 := es 27
     have k27 : ∀ i, slot w 27 ≤ i → i < slot w 27 + 8 * w → Kept w i := by
       intro i h1 h2
       refine ⟨fun k hk => ?_, fun j hj => ?_, Or.inr h1⟩
@@ -156,13 +175,12 @@ theorem Prep.transfer {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
         have := es 2; have := es 3; have := es 5; have := es 6; have := es 8
         rcases hj with rfl | rfl | rfl | rfl | rfl <;> omega
-    rw [hv 27 b27 k27]; exact he
-  · have hl := h.l
-    have e27 : aE = 27 := rfl
-    rw [e27] at hl ⊢
-    have := hw (slot w 27 + 8 * w) (by simp only [es]; omega) (by kept_tac)
-    simp only [word] at this
-    rw [this]; exact hl
+    rcases hj with rfl | rfl | rfl | rfl | rfl
+    · exact hv 0 (by simp only [es]; omega) (by kept_tac)
+    · exact hv 1 (by simp only [es]; omega) (by kept_tac)
+    · exact hv 9 (by simp only [es]; omega) (by kept_tac)
+    · exact hv 10 (by simp only [es]; omega) (by kept_tac)
+    · exact hv 27 (by omega) k27
 
 /-- What `roundCall` leaves: the prepared modulus, the result in `r3`, the
 round's `Keeps`, and everything outside the working space and the round's
