@@ -63,6 +63,8 @@ def Instr.asm : Instr → List String
   | .storeRev .d t a b => [s!"stdbrx {t.name}, {a.name}, {b.name}"]
   | .mflr d => [s!"mflr {d.name}"]
   | .mtlr r => [s!"mtlr {r.name}"]
+  | .adrSym d name => ["bcl 20, 31, 2f", "2:", s!"mflr {d.name}",
+      s!"addis {d.name}, {d.name}, ({name} - 2b)@ha", s!"addi {d.name}, {d.name}, ({name} - 2b)@l"]
   | .push r => ["stdu %r1, -48(%r1)", s!"std {r.name}, 32(%r1)"]
   | .pop r => [s!"ld {r.name}, 32(%r1)", "addi %r1, %r1, 48"]
   | .alloc bytes => [s!"stdu %r1, -{bytes}(%r1)"]
@@ -84,5 +86,11 @@ def printer : Printer isa where
   jump l := s!"b {l}"
   ret := ["blr"]
   call := "bl"
+  -- Label 2 is private to `adrSym`, the `mflr` after its `bcl`: structured
+  -- control flow uses 20, 21, …; repeated sequences use the nearest 2b.
+  symLines
+    | .adrSym d name => some [.text "bcl 20, 31, 2f", .text "2:", .text s!"mflr {d.name}",
+        .sym s!"addis {d.name}, {d.name}, (" .ppcHa name, .sym s!"addi {d.name}, {d.name}, (" .ppcLo name]
+    | _ => none
 
 end VG.PPC64LE
