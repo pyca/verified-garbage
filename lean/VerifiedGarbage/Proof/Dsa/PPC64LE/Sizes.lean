@@ -365,14 +365,17 @@ theorem sizes_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
     rw [g0.mpr (hSz.mp h).2.2] at hz''
     exact absurd hz'' (by decide)
 
+/-- The registers `odds` writes before `rest` or `fail`. -/
+def oddsRegs : List Reg := [.r0, .r3, .r6, .r12, .r14]
+
 /-- `odds rest fail`: `rest` if p and q are odd, else `fail`. -/
 theorem odds_ok {s : State} {L : Lay} {key sig dig : Addr} {Q : State → Prop} {rest fail : Prog isa}
     (hL : L.Ok) (hr : Regs s L key sig dig)
     (hk : Src s L key (3 * L.pl + L.ql))
-    (hrest : ∀ t, pOf s.mem L key % 2 = 1 → qOf s.mem L key % 2 = 1 → t.mem = s.mem → Keep sizesRegs s t →
+    (hrest : ∀ t, pOf s.mem L key % 2 = 1 → qOf s.mem L key % 2 = 1 → t.mem = s.mem → Keep oddsRegs s t →
       WP isa rest t Q)
     (hfail : ∀ t, ¬ (pOf s.mem L key % 2 = 1 ∧ qOf s.mem L key % 2 = 1) → t.mem = s.mem →
-      Keep sizesRegs s t → WP isa fail t Q) :
+      Keep oddsRegs s t → WP isa fail t Q) :
     WP isa (odds rest fail) s Q := by
   have hpl : 128 ≤ L.pl ∧ L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega
   have hql := hL.ql
