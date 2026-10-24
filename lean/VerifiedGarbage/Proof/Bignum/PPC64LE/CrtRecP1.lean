@@ -45,12 +45,12 @@ theorem bytesAt_below {B : Addr} {o n d k : Nat} {m m' : Mem} (h : Outside B o n
 /-- `recombineP`'s first part, in `p`'s working space `off BX oA` (`P` in
 array 0, `m₁` in array 4), `m₂` the `qL` bytes of `X`'s array 1 (`qL` in the
 header). -/
-theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Prog isa} {Q : State → Prop}
+theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Prog isa} {Q : State → Prop}
     (hs : Scr s BX Z) (hA : oA + slot wP 8 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wP 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wP + 2)))
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wP)) (h23 : s.gpr .r23 = BX)
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wP))
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
-    (hQL : word s.mem BX oQLen = BitVec.ofNat 64 qL) (hq1 : 1 ≤ qL) (hqx : qL ≤ 8 * (wX + 2)) (hwX : wX < 2 ^ 31)
+    (h31 : s.gpr .r31 = BitVec.ofNat 64 qL) (hq1 : 1 ≤ qL) (hqx : qL ≤ 8 * (wX + 2)) (hwX : wX < 2 ^ 31)
     (hP : val32 s.mem (off BX oA) (slot wP 0) (2 * wP) = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
     (hm1 : val32 s.mem (off BX oA) (slot wP 4) (2 * wP) = m1)
     (hm2 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off BX (slot wX 1)) qL) = m2)
@@ -63,7 +63,7 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
     WP isa (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3)) (.seq Precompute.r2
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
-      (.seq (.block (xb .r30 1 ++ [.load .d .r31 .r23 oQLen])) (.seq ModArith.reduce c)))))) s Q := by
+      (.seq (.block (xb .r30 1)) (.seq ModArith.reduce c)))))) s Q := by
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
@@ -112,17 +112,11 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
   rw [m7, m6] at hw8 out8
   have outB : Outside BX oA (slot wP 8) s.mem s₈.mem :=
     (out_sub (fun y hy => out5 y hy) (by omega) (by omega) (by omega)).trans (out_sub out8 (by omega) (by omega) (by omega))
-  have hQL' : s₈.mem.readW (off BX 56) 64 = BitVec.ofNat 64 qL := (outB.word (Or.inl (by omega)) (by omega)).trans hQL
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (xb_ok (rd := .r30) (by decide) (by decide) ((k18.gpr _ (by decide)).trans h27)
-    ((k18.gpr _ (by decide)).trans h28) 1) fun s₉ ⟨⟨a30, m9⟩, k9⟩ => ?_
-  refine WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = BitVec.ofNat 64 qL ∧ t.mem = s₉.mem) (by
-    prun [((k18.trans k9).gpr .r23 (by decide)).trans h23, oQLen,
-      (hs.congr (k18.trans k9).wr).ld (show 56 + 8 ≤ Z by omega), m9, hQL']) (by decide))
-    fun s₁₀ ⟨⟨a31, m10⟩, k10⟩ => ?_
-  have k110 := (k18.trans k9).trans k10
-  have hm10 : s₁₀.mem = s₈.mem := by rw [m10, m9]
+  refine WP.seq (WP.mono (xb_ok (rd := .r30) (by decide) (by decide) ((k18.gpr _ (by decide)).trans h27)
+    ((k18.gpr _ (by decide)).trans h28) 1) fun s₁₀ ⟨⟨a30, m10⟩, k10⟩ => ?_)
+  have k110 := k18.trans k10
+  have hm10 : s₁₀.mem = s₈.mem := m10
+  have a31 : s₁₀.gpr .r31 = BitVec.ofNat 64 qL := (k110.gpr _ (by decide)).trans h31
   have o5 : Mont.Outside (off BX oA) (slot wP 1) (24 * (wP + 2)) s.mem s₅.mem := out5
   have o8 : Mont.Outside (off BX oA) (slot wP 7) (8 * wP) s₅.mem s₈.mem := fun y hy => out8 y hy
   have v0 : val32 s₁₀.mem (off BX oA) (slot wP 0) (2 * wP) = Pv := by
@@ -140,14 +134,14 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
   refine WP.seq (WP.mono (ModArith.reduce_ok (D := off BX (slot wX 1)) (hsA.congr k110.wr) (by omega) hw' (by omega)
     ((k110.gpr _ (by decide)).trans h10) ((k110.gpr _ (by decide)).trans h29)
     ((k110.gpr _ (by decide)).trans h11) (by rw [v0]; omega)
-    (by rw [k10.gpr _ (by decide), a30, off_off, Nat.add_zero]) a31 hq1 (by omega)
+    (by rw [a30, off_off, Nat.add_zero]) a31 hq1 (by omega)
     (fun i hi => by rw [off_off]; exact (hs.congr k110.wr).ld (by omega))
     (fun i hi y hy he => by
       have := ofs_sub hy (by omega)
       rw [← he] at this; simp only [off_off] at this; rw [show ofs BX (off BX (slot wX 1 + i)) = slot wX 1 + i from Mem.sub_ofNat_toNat BX (by omega)] at this
       omega)) fun t ⟨⟨r1', outR⟩, kR⟩ => ?_)
   have gr12 : t.gpr .r12 = s₁.gpr .r12 := by
-    rw [kR.gpr _ (by decide), k10.gpr _ (by decide), k9.gpr _ (by decide), k8.gpr _ (by decide),
+    rw [kR.gpr _ (by decide), k10.gpr _ (by decide), k8.gpr _ (by decide),
       k7.gpr _ (by decide), k6.gpr _ (by decide), k5.gpr _ (by decide), g12]
   refine hc t (by rw [outR.val32 (Or.inl (by omega)) (by omega), v0])
     (by rw [r1', hb, hm2, v0]) (by rw [outR.val32 (Or.inr (by omega)) (by omega), v4])
@@ -155,5 +149,37 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
     (by rw [gr12, outR.w32 (Or.inl (by omega)) (by omega), w0]; exact iinv) ?_ (k110.trans kR).mono
   rw [hm10] at outR
   exact outB.trans (out_sub (fun y hy => outR y hy) (by omega) (by omega) (by omega))
+
+/-- `recombineP`'s first part, `q_len` (`qL`, in the header) first. -/
+theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Prog isa} {Q : State → Prop}
+    (hs : Scr s BX Z) (hA : oA + slot wP 8 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
+    (h10 : s.gpr .r10 = off (off BX oA) (slot wP 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wP + 2)))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wP)) (h23 : s.gpr .r23 = BX)
+    (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hQL : word s.mem BX oQLen = BitVec.ofNat 64 qL) (hq1 : 1 ≤ qL) (hqx : qL ≤ 8 * (wX + 2)) (hwX : wX < 2 ^ 31)
+    (hP : val32 s.mem (off BX oA) (slot wP 0) (2 * wP) = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
+    (hm1 : val32 s.mem (off BX oA) (slot wP 4) (2 * wP) = m1)
+    (hm2 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off BX (slot wX 1)) qL) = m2)
+    (hc : ∀ t, val32 t.mem (off BX oA) (slot wP 0) (2 * wP) = Pv →
+      val32 t.mem (off BX oA) (slot wP 1) (2 * wP) = m2 % Pv →
+      val32 t.mem (off BX oA) (slot wP 4) (2 * wP) = m1 →
+      val32 t.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv →
+      (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wP 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
+      Outside BX oA (slot wP 8) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
+    WP isa (.seq (.block [.load .d .r31 .r23 oQLen]) (.seq (.block (PublicChecked.minv ++
+      PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2
+      (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
+      (.seq (.block (xb .r30 1)) (.seq ModArith.reduce c))))))) s Q := by
+  have hn := hs.nowrap
+  have hQL' : s.mem.readW (off BX 56) 64 = BitVec.ofNat 64 qL := hQL
+  refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = BitVec.ofNat 64 qL ∧ t.mem = s.mem) (by
+    prun [h23, oQLen, hs.ld (show 56 + 8 ≤ Z by have := slot_le (w := wX) (j := 0) (by decide); unfold slot at *; omega),
+      hQL']) (by decide)) fun s' ⟨⟨a31, m'⟩, k'⟩ => ?_)
+  rw [← m'] at hP hm1 hm2
+  refine recP1'_ok (hs.congr k'.wr) hA hXA hw2 hw' ((k'.gpr _ (by decide)).trans h10) ((k'.gpr _ (by decide)).trans h29)
+    ((k'.gpr _ (by decide)).trans h11) ((k'.gpr _ (by decide)).trans h27)
+    ((k'.gpr _ (by decide)).trans h28) a31 hq1 hqx hwX hP hP2 hPodd hm1 hm2 fun t v0 v1 v4 v7 t12 tinv o k => ?_
+  rw [m'] at o
+  exact hc t v0 v1 v4 v7 t12 tinv o (k'.trans k).mono
 
 end VG.Proof.Bignum.PPC64LE.Crt

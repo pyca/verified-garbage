@@ -204,3 +204,5 @@ theorem setupX_ok {s : State} {S : Addr} {Z k pL : Nat} (hs : Scr s S Z) (hZ : 2
   · rw [tm, m4, m3, hm2]
     exact ((writeW_outside s.mem S (d := 96) _ (by omega)).mono (by omega) (by omega)).trans
       ((writeW_outside _ S (d := 104) _ (by omega)).mono (by omega) (by omega))
+
+end VG.Proof.Bignum.PPC64LE.Crt

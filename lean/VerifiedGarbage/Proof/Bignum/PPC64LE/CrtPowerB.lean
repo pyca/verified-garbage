@@ -31,20 +31,19 @@ open VG.Proof.Bignum.PPC64LE
 /-- `power`'s second part, in the working space `off BX oA` with the prime
 `P` in array 0 and `x < P` in array 1, for the `L` bytes at `D` (from the
 header's words `oD` and `oLen`): `x^d mod P` into array 4. -/
-theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x oD oLen : Nat}
-    (hs : Scr s BX Z) (hA : oA + slot wA 8 ≤ Z) (hXA : 256 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
+theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x : Nat}
+    (hs : Scr s BX Z) (hA : oA + slot wA 8 ≤ Z) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)))
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wA)) (h23 : s.gpr .r23 = BX)
-    (hoD : oD + 8 ≤ 256 ∧ oD % 8 = 0) (hoL : oLen + 8 ≤ 256 ∧ oLen % 8 = 0)
-    (hDp : word s.mem BX oD = off D 0) (hLw : word s.mem BX oLen = BitVec.ofNat 64 L) (hL : 1 ≤ L)
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wA))
+    (h18 : s.gpr .r18 = off D 0) (h19 : s.gpr .r19 = BitVec.ofNat 64 L) (hL : 1 ≤ L)
     (hL' : L < 2 ^ 63) (hrdD : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
     (hsepD : ∀ i < L, ∀ x, ofs BX x < Z → off D i ≠ x)
     (hP : val32 s.mem (off BX oA) (slot wA 0) (2 * wA) = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
     (hx : val32 s.mem (off BX oA) (slot wA 1) (2 * wA) = x) :
     WP isa (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 1)) (.seq copyN
       (.seq (.block (PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3))
-      (.seq Precompute.r2 (.seq (.block PublicChecked.minv)
-      (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powSecret)))))) s fun t =>
+      (.seq Precompute.r2 (.seq (.block (PublicChecked.minv ++ [.addi .r30 .r18 0, .addi .r31 .r19 0]))
+        ModExp.powSecret))))) s fun t =>
       (val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv ∧
         val32 t.mem (off BX oA) (slot wA 4) (2 * wA) = x ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
         Outside BX oA (slot wA 8) s.mem t.mem) ∧ Keep powerRegs s t := by
@@ -97,25 +96,19 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x oD oLen : Nat}
     rw [out7.val32 (Or.inr (by omega)) (by omega), v4]
   have hlow : (word s₇.mem (off BX oA) (slot wA 0)).toNat % 2 = 1 := by
     rw [← wv_low_mod2 _ _ _ (show 1 ≤ wA by omega), ← Pre.val32_eq_wv, v0', hPodd]
-  refine WP.seq (WP.mono (Pub.minv_ok (hsA.congr k17.wr) ((k17.gpr _ (by decide)).trans h10) (by omega) hlow)
-    fun s₈ ⟨⟨i12, iinv, m8⟩, k8⟩ => ?_)
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.minv_ok (hsA.congr k17.wr) ((k17.gpr _ (by decide)).trans h10) (by omega) hlow)
+    fun s₈ ⟨⟨i12, iinv, m8⟩, k8⟩ => ?_
   have k18 := k17.trans k8
-  -- the header
   have outH : Outside BX oA (slot wA 8) s.mem s₈.mem := by
     rw [m8]
     exact (out_sub out3 (by omega) (by omega) (by omega)).trans
       (out_sub (fun y hy => out7 y hy) (by omega) (by omega) (by omega))
-  have hD' : s₈.mem.readW (off BX oD) 64 = off D 0 := (outH.word (Or.inl (by omega)) (by omega)).trans hDp
-  have hL'' : s₈.mem.readW (off BX oLen) 64 = BitVec.ofNat 64 L :=
-    (outH.word (Or.inl (by omega)) (by omega)).trans hLw
-  refine WP.seq (WP.mono (WP.keep [.r30, .r31] (Q := fun t => t.gpr .r30 = off D 0 ∧
+  refine WP.mono (WP.keep [.r30, .r31] (Q := fun t => t.gpr .r30 = off D 0 ∧
     t.gpr .r31 = BitVec.ofNat 64 L ∧ t.mem = s₈.mem) (by
-      prun [(k18.gpr .r23 (by decide)).trans h23,
-        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oD < 2 ^ 15 by omega, show oD % 4 = 0 by omega⟩,
-        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oLen < 2 ^ 15 by omega, show oLen % 4 = 0 by omega⟩,
-        (hs.congr k18.wr).ld (show oD + 8 ≤ Z by omega), (hs.congr k18.wr).ld (show oLen + 8 ≤ Z by omega),
-        hD', hL'']) rfl)
-    fun s₉ ⟨⟨a30, a31, m9⟩, k9⟩ => ?_)
+      prun [(k18.gpr .r18 (by decide)).trans h18, (k18.gpr .r19 (by decide)).trans h19, BitVec.add_zero])
+    (by decide)) fun s₉ ⟨⟨a30, a31, m9⟩, k9⟩ => ?_
   have k19 := k18.trans k9
   have hm9 : s₉.mem = s₇.mem := by rw [m9, m8]
   have hb : Spec.Rsa.bytesAt s₉.mem D L = Spec.Rsa.bytesAt s.mem D L := by
@@ -167,13 +160,11 @@ theorem power_ok {s : State} {BX I D : Addr} {Z oA wA wX xj k L Pv oD oLen : Nat
   have eX8 : slot wX 8 = hdrBytes + 8 * (8 * (wX + 2)) := rfl
   have hh : hdrBytes = 256 := rfl
   unfold power
-  refine powerA_ok hs hA hXA hw2 hw' hwx hxj h10 h29 h11 h23 h27 h28 hI hK hk hk' hrdI hsepI hP (by omega)
-    fun t v0 v1 out k => ?_
+  refine powerA_ok hs hA hXA hw2 hw' hwx hxj h10 h29 h11 h23 h27 h28 hoD hoL hI hK hDp hLw hk hk' hrdI hsepI hP
+    (by omega) fun t v0 v1 out t18 t19 k => ?_
   have hb : Spec.Rsa.bytesAt t.mem D L = Spec.Rsa.bytesAt s.mem D L := bytesAt_out out hA hsepD
-  refine WP.mono (powerB_ok (hs.congr k.wr) hA (by omega) hw2 hw' ((k.gpr _ (by decide)).trans h10)
-    ((k.gpr _ (by decide)).trans h29) ((k.gpr _ (by decide)).trans h11) ((k.gpr _ (by decide)).trans h23)
-    hoD hoL (by rw [out.word (Or.inl (by omega)) (by omega)]; exact hDp)
-    (by rw [out.word (Or.inl (by omega)) (by omega)]; exact hLw) hL hL'
+  refine WP.mono (powerB_ok (hs.congr k.wr) hA hw2 hw' ((k.gpr _ (by decide)).trans h10)
+    ((k.gpr _ (by decide)).trans h29) ((k.gpr _ (by decide)).trans h11) t18 t19 hL hL'
     (fun i hi => by rw [k.rd, k.wr]; exact hrdD i hi) hsepD v0 hP2 hPodd v1)
     fun u ⟨⟨u0, u4, uo⟩, ku⟩ => ⟨⟨u0, ?_, out.trans uo⟩, (k.trans ku).mono⟩
   rw [u4, hb, ← Nat.pow_mod]

@@ -189,14 +189,17 @@ def setupP (oB oLen : Nat) : List Instr :=
 
 /-- In a prime's working space, the prime from `X`'s array `xj`, `c mod p` in
 array 4, `R² mod p` in array 1, `-p⁻¹ mod 2³²` in `r12`, then
-`c^d mod p` in array 4 for `d` at `oD` of the prime's length at `oLen`. -/
+`c^d mod p` in array 4 for `d` at `oD` of the prime's length at `oLen`. The
+header's words are loaded first, so that the rest computes from registers
+alone. -/
 def power (xj oD oLen : Nat) : Prog isa :=
-  .seq (.block ([.addi .r14 .r10 0] ++ xb .r15 xj)) (.seq copyN
-  (.seq (.block [.load .d .r30 .r23 oIn, .load .d .r31 .r23 oNLen]) (.seq ModArith.reduce
+  .seq (.block ([.load .d .r30 .r23 oIn, .load .d .r31 .r23 oNLen, .load .d .r18 .r23 oD,
+      .load .d .r19 .r23 oLen, .addi .r14 .r10 0] ++ xb .r15 xj)) (.seq copyN
+  (.seq ModArith.reduce
   (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 1)) (.seq copyN
   (.seq (.block (PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3))
-  (.seq Precompute.r2 (.seq (.block PublicChecked.minv)
-  (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powSecret)))))))))
+  (.seq Precompute.r2 (.seq (.block (PublicChecked.minv ++ [.addi .r30 .r18 0, .addi .r31 .r19 0]))
+    ModExp.powSecret)))))))
 
 /-- `m₂`'s `q_len` bytes, most significant first, from `Q`'s array 4 into
 `X`'s array 1. -/
@@ -216,11 +219,13 @@ def addMask : Prog isa :=
 /-- In `P`: `h = (m₁ - m₂ mod p) qInv mod p` into array 4, from `m₁` in array
 4. -/
 def recombineP : Prog isa :=
-  -- `-p⁻¹ mod 2³²`; `R² mod p` (which `powSecret` overwrote) into array 7; `m₂ mod p` into array 1.
-  .seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
+  -- `q_len` first; `-p⁻¹ mod 2³²`; `R² mod p` (which `powSecret` overwrote) into array 7; `m₂ mod p`
+  -- into array 1.
+  .seq (.block [.load .d .r31 .r23 oQLen])
+  (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3)) (.seq Precompute.r2
   (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
-  (.seq (.block (xb .r30 1 ++ [.load .d .r31 .r23 oQLen])) (.seq ModArith.reduce
+  (.seq (.block (xb .r30 1)) (.seq ModArith.reduce
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.
   (.seq (.block (PublicChecked.base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
       .store .d .r0 .r14 0] ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
@@ -229,7 +234,7 @@ def recombineP : Prog isa :=
       PublicChecked.base .r16 0)) (.seq addMask
   -- `qInv` into array 6; `h` into array 4.
   (.seq (.block (PublicChecked.base .r14 6 ++ xb .r15 7)) (.seq copyN
-  (.seq (PublicChecked.montOp 5 3 6) (PublicChecked.montOp 4 5 7)))))))))))))
+  (.seq (PublicChecked.montOp 5 3 6) (PublicChecked.montOp 4 5 7))))))))))))))
 
 /-- In `X`: `m = q h + m₂` into array 4, from `h` in `P`'s array 4 and `m₂`
 in `Q`'s. -/
