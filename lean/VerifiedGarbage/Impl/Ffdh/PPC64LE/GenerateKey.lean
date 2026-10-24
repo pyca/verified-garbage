@@ -20,11 +20,11 @@ public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Derive
 * then as `vg_ffdh_derive_public` (`Derive.dpBody`): the status 2 and zeros
   at `y` for x out of range, else `y = g^x mod p` or zeros and the status 1
   or 3;
-* zeros at `x` but for the status 1 (`zeroX`).
+* x's octets masked by the status being 1 (`maskX`): zeros but for 1.
 
-The code branches on p's validity, whether there is q, x's range and the
-status, which the status reveals; the scan and the cut run over every octet
-without a branch.
+The code branches on p's validity, whether there is q and x's range, which
+the domain and the status reveal; the scan, the cut and the mask run over
+every octet without a branch.
 -/
 
 @[expose] public section
@@ -86,15 +86,20 @@ def scalar : Prog isa :=
   .seq boundPtr (.seq (.block scanSetup) (.seq (countLoop .r6 scanBody)
     (.seq (.block (smear ++ cutSetup)) (countLoop .r6 cutBody))))
 
-/-- Zeros at x's `p_len` octets. -/
-def zeroX : Prog isa :=
-  .seq (.block [.load .d .r25 .r23 64, .addi .r6 .r28 0, .li .r0 0])
-    (countLoop .r6 [.stb .r0 .r25 0, .addi .r25 .r25 1])
+/-- `r17 :=` all ones if the status `r3` is 1, else 0, without a branch. -/
+def statusMask : List Instr :=
+  [.subi .r12 .r3 1, .li .r0 0, .sub .r17 .r0 .r12, .logic .or .r17 .r17 .r12, .lsr .d .r17 .r17 63,
+    .subi .r17 .r17 1]
+
+/-- x's `p_len` octets and'ed with the mask of the status 1: kept for 1,
+zeros otherwise. -/
+def maskX : Prog isa :=
+  .seq (.block (statusMask ++ [.load .d .r25 .r23 64, .addi .r6 .r28 0]))
+    (countLoop .r6 [.lbz .r16 .r25 0, .logic .and .r16 .r16 .r17, .stb .r16 .r25 0, .addi .r25 .r25 1])
 
 /-- After p's check: x, then `vg_ffdh_derive_public`'s body, then zeros at
 x but for the status 1. -/
-def gkBody : Prog isa :=
-  .seq scalar (.seq Derive.dpBody (.seq (.block [.subi .r12 .r3 1]) (.ite (.zero .d .r12) (.block []) zeroX)))
+def gkBody : Prog isa := .seq scalar (.seq Derive.dpBody maskX)
 
 /-- `vg_ffdh_generate_key`. -/
 def generateKey : Prog isa :=

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 In the working space of `Domain/Body.lean`, p in array 0, x's, `y`'s and
 `rand`'s addresses in the header's words 8, 10 and 11: `gkBody_ok`, x cut
 from `rand` (`scalar_ok`), then `vg_ffdh_derive_public`'s body
-(`Derive.dpBody_ok`), then zeros at x but for the status 1 (`zeroX_ok`).
+(`Derive.dpBody_ok`), then x masked by the status being 1 (`maskX_ok`).
 -/
 
 @[expose] public section
@@ -34,29 +34,13 @@ def gkOct (m : Mem) (D R : Addr) (k L : Nat) : List Byte :=
 def gkSt (x g p b : Nat) : Nat :=
   if ¬ (0 < x ∧ x < b) then 2 else if 1 < g ^ x % p ∧ g ^ x % p < p - 1 then 1 else 3
 
-theorem gkSt_one (x g p b : Nat) :
-    ((BitVec.ofNat 64 (gkSt x g p b) - 1#64) == 0) = decide (gkSt x g p b = 1) := by
-  unfold gkSt
-  split
-  · rfl
-  · split <;> rfl
+theorem gkSt_range (x g p b : Nat) : 1 ≤ gkSt x g p b ∧ gkSt x g p b < 4 := by
+  unfold gkSt; split
+  · decide
+  · split <;> decide
 
 /-- The registers `gkBody` writes. -/
-def gkBodyRegs : List Reg := scalarRegs ++ Derive.dpBodyRegs ++ ([.r0, .r6, .r12, .r25] : List Reg)
-
-theorem gkRegs_a : ∀ r ∈ (scalarRegs ++ Derive.dpBodyRegs) ++ ([.r12] : List Reg), r ∈ gkBodyRegs := by
-  intro r hr
-  rcases List.mem_append.mp hr with h | h
-  · exact List.mem_append_left _ h
-  · rw [List.mem_singleton.mp h]; exact List.mem_append_right _ (by simp)
-
-theorem gkRegs_b : ∀ r ∈ ((scalarRegs ++ Derive.dpBodyRegs) ++ ([.r12] : List Reg)) ++ ([.r0, .r6, .r25] : List Reg),
-    r ∈ gkBodyRegs := by
-  intro r hr
-  rcases List.mem_append.mp hr with h | h
-  · exact gkRegs_a r h
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl <;> simp [gkBodyRegs]
+def gkBodyRegs : List Reg := scalarRegs ++ Derive.dpBodyRegs ++ ([.r0, .r6, .r12, .r16, .r17, .r25] : List Reg)
 
 /-- What a change at x's `k` octets keeps: the working space. -/
 theorem out_scr {X B : Addr} {Z k : Nat} {m m' : Mem} (h : Outside X 0 k m m')
@@ -127,9 +111,6 @@ theorem gkBody_ok {s : State} {B D X O R : Addr} {Z w k L p : Nat} (h : Env s B 
   have hxb : Spec.Rsa.bytesAt s₄.mem X k = gkOct s.mem D R k L := by
     rw [fr4 X k hsepX hsepXO, xb]; rfl
   have k34 := k3.trans k4
-  refine WP.seq (WP.mono (WP.keep [.r12] (Q := fun u => u.gpr .r12 = s₄.gpr .r3 - 1#64 ∧ u.mem = s₄.mem)
-    (by prun) (by decide)) fun s₅ ⟨⟨a12, m5⟩, k5⟩ => ?_)
-  have k35 := k34.trans k5
   have hst : s₄.gpr .r3 = BitVec.ofNat 64 (gkSt xv (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k)) p
       (Derive.bnd s.mem D k L p)) := by
     rw [st4]; unfold gkSt; rfl
@@ -143,23 +124,17 @@ theorem gkBody_ok {s : State} {B D X O R : Addr} {Z w k L p : Nat} (h : Env s B 
       · simp [h1, h2]
       · simp [h1, h2]
     · simp [h1]
-  refine WP.ite (s₅.gpr .r12 == 0) (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
-  · rw [a12, hst, gkSt_one, decide_eq_true_eq] at hz
-    refine WP.mono (WP.keep [] (Q := fun u => u = s₅) (by prun) (by decide)) fun t ⟨e, _⟩ => ?_
-    subst e
-    refine ⟨⟨by rw [k5.gpr .r3 (by decide), hst], by rw [m5, hyb], by rw [m5, hxb, ite_eq_left hz],
-      fun d hd => by rw [m5, w4 d hd, hw3 d hd]⟩, k35.mono gkRegs_a⟩
-  · rw [a12, hst, gkSt_one, decide_eq_false_iff_not] at hz
-    have hX5 : s₅.mem.readW (off B 64) 64 = off X 0 := by
-      show word s₅.mem B 64 = _; rw [m5, w4 64 (by omega), hw3 64 (by omega)]; exact hX
-    refine WP.mono (zeroX_ok (hs.congr k35.wr) (by omega) ((k35.gpr .r23 (by decide)).trans h23)
-      ((k35.gpr .r28 (by decide)).trans h28) hX5 (by omega) (by omega) (hx.congr k35.wr))
-      fun t ⟨⟨tz, tout⟩, kt⟩ => ⟨⟨?_, ?_, ?_, fun d hd => ?_⟩, (k35.trans kt).mono gkRegs_b⟩
-    · rw [kt.gpr .r3 (by decide), k5.gpr .r3 (by decide), hst]
-    · rw [outside_bytesAt tout (by omega) hsepOX, m5, hyb]
-    · rw [tz, ite_eq_right hz]
-    · refine (Outside.word_sep (d := d) tout hsepBX (by omega) (by omega) hnw).trans ?_
-      show Mont.word _ B d = _
-      rw [m5, w4 d hd, hw3 d hd]
+  have hX4 : s₄.mem.readW (off B 64) 64 = off X 0 := by
+    show word s₄.mem B 64 = _; rw [w4 64 (by omega), hw3 64 (by omega)]; exact hX
+  refine WP.mono (maskX_ok (hs.congr k34.wr) (by omega) ((k34.gpr .r23 (by decide)).trans h23)
+    ((k34.gpr .r28 (by decide)).trans h28) hX4 (by omega) (by omega) (hx.congr k34.wr) hst
+    (gkSt_range _ _ _ _).1 (gkSt_range _ _ _ _).2)
+    fun t ⟨⟨tz, tout⟩, kt⟩ => ⟨⟨?_, ?_, ?_, fun d hd => ?_⟩, k34.trans kt⟩
+  · rw [kt.gpr .r3 (by decide), hst]
+  · rw [outside_bytesAt tout (by omega) hsepOX, hyb]
+  · rw [tz, hxb]
+  · refine (Outside.word_sep (d := d) tout hsepBX (by omega) (by omega) hnw).trans ?_
+    show Mont.word _ B d = _
+    rw [w4 d hd, hw3 d hd]
 
 end VG.Proof.Ffdh.PPC64LE.GenerateKey
