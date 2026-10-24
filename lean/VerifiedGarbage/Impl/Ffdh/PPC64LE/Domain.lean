@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.ModExp
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.ModArith
 public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Round
 
 /-!
@@ -107,5 +108,52 @@ scratch_len)`. -/
 def checkPublic : Prog isa :=
   .seq (.block (save .r8 ++ setup ++ [.addi .r26 .r6 0])) (.seq loadP
     (.seq (.ite (.zero .d .r0) checkY (.block [.li .r3 0])) (.block restore)))
+
+/-! ## `vg_ffdh_check_domain` -/
+
+/-- `r26 := domain + p_len`, g's octets. -/
+def gPtr : List Instr := [.add .r26 .r21 .r28]
+
+/-- `r26 := domain + 2 p_len`, q's octets. -/
+def qPtr : List Instr := [.lsl .r26 .r28 1, .add .r26 .r26 .r21]
+
+/-- `r26 &=` the mask of q's last octet being odd. -/
+def qOdd : List Instr :=
+  [.lsl .r16 .r28 1, .add .r16 .r16 .r28, .add .r16 .r16 .r21, .subi .r16 .r16 1, .lbz .r0 .r16 0, .li .r3 1,
+    .logic .and .r0 .r0 .r3, .li .r3 0, .sub .r0 .r3 .r0, .logic .and .r26 .r26 .r0]
+
+/-- p's octets into array 0 again. -/
+def reloadP : Prog isa :=
+  .seq (.block [.addi .r12 .r21 0, .addi .r6 .r28 0]) Precompute.loadN
+
+/-- `r25 :=` the mask of `p mod q = 1`: q into array 0, p's octets reduced
+modulo q into array 1 (`ModArith.reduce`), compared with 1; then p back into
+array 0. -/
+def qDiv : Prog isa :=
+  .seq (.block [.lsl .r12 .r28 1, .add .r12 .r12 .r21, .addi .r6 .r28 0]) (.seq Precompute.loadN
+    (.seq (.block [.addi .r30 .r21 0, .addi .r31 .r28 0]) (.seq ModArith.reduce
+      (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r25 1 7) reloadP))))))
+
+/-- g's octets into array 4, `r26 :=` the mask of `1 < g < p − 1`. -/
+def checkG : Prog isa := .seq (.block gPtr) range
+
+/-- With q. -/
+def withQ : Prog isa :=
+  .seq (.block qPtr) (.seq range (.seq (.block qOdd) (.ite (.zero .d .r26) (.block [.li .r3 0])
+    (.seq qDiv (.seq checkG (.seq (.block [.logic .and .r26 .r26 .r25])
+      (.ite (.zero .d .r26) (.block [.li .r3 0]) subgroup)))))))
+
+/-- Without q. -/
+def withoutQ : Prog isa :=
+  .seq checkG (.ite (.zero .d .r26) (.block [.li .r3 0]) (.block [.li .r3 1]))
+
+/-- The checks after p's. -/
+def domainBody : Prog isa :=
+  .seq (.block hasQ) (.ite (.zero .d .r0) withQ withoutQ)
+
+/-- `vg_ffdh_check_domain(domain, domain_len, p_len, scratch, scratch_len)`. -/
+def checkDomain : Prog isa :=
+  .seq (.block (save .r6 ++ setup)) (.seq loadP
+    (.seq (.ite (.zero .d .r0) domainBody (.block [.li .r3 0])) (.block restore)))
 
 end VG.Impl.Ffdh.PPC64LE.Domain
