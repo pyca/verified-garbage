@@ -131,7 +131,7 @@ theorem setup_ok {s0 s : State} (h : Base s0 s) (h22 : s.gpr .r22 = s0.gpr .r8) 
     prun [VG.Impl.Rsa.PPC64LE.Keys.stride, h22, ofNat_shr1, ofNat_stride, ofNat_digits60 _ hw, nArr]
   refine WP.mono hb fun u ⟨⟨u29, u30, u8, um⟩, ku⟩ => ?_
   have hu : Ws u (kB s0) (kZ s0) (kW s0) nArr :=
-    ⟨hs.congr ku.wr, fits, by omega, hw, u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩
+    ⟨hs.congr ku.wr, fits, by omega, Nat.le_trans hw (by decide), u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩
   obtain ⟨hn, hn1, hn2⟩ := zero_bounds fits hw
   refine WP.mono (zeroArrays_ok hu u8 hn1 hn2 hn)
     fun t ⟨ht, z, out, kt⟩ => ⟨?_, ht, ?_, (ku.trans kt).mono⟩
