@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Instances
+
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
@@ -18,6 +20,27 @@ namespace VG.Artifacts.Ffdh.AArch64
 open VG.AArch64
 
 def artifacts : List Artifact := [
+  Spec.Ffdh.generationPrecomputeApi.artifact target {
+    consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
+    notes := ["Recognizes exact RFC 3526/RFC 7919 groups with the reviewed shorter-exponent policy; \
+      other domains retain their full public bound. Initializes one immutable canonical five-tooth \
+      comb context using the existing eight-limb product and dedicated squaring implementation."]
+    code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
+    verified := Proof.Ffdh.AArch64.Cached.precompute_verified _ },
+  Spec.Ffdh.cachedGenerateKeyApi.artifact target {
+    notes := ["Uses the context's public width and five-tooth comb schedule for every scalar, \
+      including secret leading zeros. Scalar range checks, public-value checks and failure zeroing \
+      implement the existing vetted generation contract."]
+    code := Impl.Ffdh.AArch64.Cached.Generate.code Proof.Bignum.AArch64.Mont.productEight.mm
+    verified := Proof.Ffdh.AArch64.Cached.attempt_verified _ },
+  Spec.Ffdh.cachedKeySearchApi.artifact target {
+    stack := 64
+    notes := ["The whole cached rejection search is verified, including both budgets, entropy \
+      refills, octets consumed, output zeroing and public status leakage. The immutable context \
+      is reloaded from the caller's public arguments; a 48-byte attempt frame shares the existing \
+      16-byte link-register frame."]
+    code := Proof.Ffdh.AArch64.Cached.cachedSearch
+    verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified },
   Spec.Ffdh.checkPublicApi.artifact target {
     notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
         working space of `w = ⌈p_len / 8⌉` words with an inner one for p (its 32-entry window table \
