@@ -73,7 +73,7 @@ theorem Kept.of_regs {W : List Region} {s s' : State} (hm : s'.mem = s.mem) (hrd
 take. -/
 structure KEnv (N : Nat) (sc : Addr) (t : State) : Prop where
   big : 840 ≤ N
-  w : (⟨sc, N⟩ : Region) ∈ t.wr
+  w : PPC64LE.Covers [⟨sc, N⟩] t.wr
   sp : 48 ≤ t.sp.toNat
   d : (below t.sp 48).Disjoint ⟨sc, N⟩
 
@@ -211,13 +211,13 @@ theorem kw_sub {N : Nat} (sc : Addr) (hN : 840 ≤ N) : Region.Sub ⟨sc + BitVe
 theorem st_kw (sc : Addr) : Region.Disjoint ⟨sc, 200⟩ ⟨sc + BitVec.ofNat 64 200, 640⟩ :=
   Offset.base_disjoint sc (by decide) (by decide)
 
-theorem cov_st {N : Nat} {ws : List Region} {sc : Addr} (hN : 840 ≤ N) (hw : (⟨sc, N⟩ : Region) ∈ ws) :
-    PPC64LE.Covers [⟨sc, 200⟩, ⟨sc + BitVec.ofNat 64 200, 640⟩] ws :=
-  Covers.of_sub fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, hw, 0, by simp, by simp; omega⟩
-    · exact ⟨_, hw, 200, rfl, by simp; omega⟩
+theorem cov_st {N : Nat} {ws : List Region} {sc : Addr} (hN : 840 ≤ N) (hw : PPC64LE.Covers [⟨sc, N⟩] ws) :
+    PPC64LE.Covers [⟨sc, 200⟩, ⟨sc + BitVec.ofNat 64 200, 640⟩] ws := by
+  refine fun a n h => hw a n (Covers.of_sub (fun r hr => ?_) a n h)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, List.mem_cons_self, 0, by simp, by simp; omega⟩
+  · exact ⟨_, List.mem_cons_self, 200, rfl, by simp; omega⟩
 
 theorem cov_app {xs ys ws : List Region} (h₁ : PPC64LE.Covers xs ws) (h₂ : PPC64LE.Covers ys ws) :
     PPC64LE.Covers (xs ++ ys) ws := by
@@ -345,7 +345,7 @@ theorem zeroState_ok {N : Nat} {sc : Reg} {scA : Addr} (hsc : sc ∈ preserved) 
     (s₁ := s.write .r0 (BitVec.ofNat 64 0)) (by rw [RegUpd.gpr_write_self]; rfl) fun k hk => by
       rw [esc, RegUpd.wr_write]
       have := he.big
-      exact in_base he.w (by omega) (by omega))
+      exact he.w _ _ (in_base List.mem_cons_self (by omega) (by omega)))
     fun s₂ h₂ => ?_
   have hf := h₂.frame
   have hz := h₂.zero

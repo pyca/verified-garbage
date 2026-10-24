@@ -62,13 +62,17 @@ def oHdr : Nat := 984
 
 /-! ## Entry and exit -/
 
-/-- `E` (`scratch` in `sr` plus `oE p`) in `r12`, our caller's registers
-`rs` and the link register saved there, and the arguments `mv` moved. -/
-def enter (sr : Reg) (p : Params) (rs : List Reg) (mv : List Instr) : List Instr :=
-  Impl.MlDsa.PPC64LE.Arith.loadImm .r12 (oE p) ++ ([.add .r12 sr .r12] : List Instr) ++ saveRegs .r12 oSV rs ++ mv
-
 /-- `0 ‖ ctx_len` (`ctx_len` in `r26`) at `oHdr`. -/
 def hdr : List Instr := [.li .r0 0, .stb .r0 .r30 oHdr, .stb .r26 .r30 (oHdr + 1)]
+
+/-- `E` (`scratch` in `sr` plus `oE p`) in `r12`. -/
+def base (sr : Reg) (p : Params) : List Instr :=
+  Impl.MlDsa.PPC64LE.Arith.loadImm .r12 (oE p) ++ ([.add .r12 sr .r12] : List Instr)
+
+/-- `E` in `r12`, our caller's registers `rs` and the link register saved
+there, and the moves `ms` (to, from) of the arguments. -/
+def enter (sr : Reg) (p : Params) (rs : List Reg) (ms : List (Reg × Reg)) : List Instr :=
+  base sr p ++ (saveRegs .r12 oSV rs ++ ms.map (fun m => mov m.1 m.2) ++ hdr)
 
 /-- The formatted message after its first piece: `0 ‖ ctx_len`, the
 context (`r25`, `r26`), the message (`r23`, `r24`). -/
@@ -90,14 +94,14 @@ def top (body : Prog isa) : Prog isa :=
 `rnd`, `sig`, `scratch` and `E` (the base of the saves, last). -/
 def signRegs : List Reg := [.r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30]
 
-def signMoves : List Instr :=
-  [mov .r22 .r3, mov .r23 .r4, mov .r24 .r5, mov .r25 .r6, mov .r26 .r7, mov .r27 .r8, mov .r28 .r9,
-    mov .r29 .r10, mov .r30 .r12]
+def signMs : List (Reg × Reg) :=
+  [(.r22, .r3), (.r23, .r4), (.r24, .r5), (.r25, .r6), (.r26, .r7), (.r27, .r8), (.r28, .r9), (.r29, .r10),
+    (.r30, .r12)]
 
 /-- `vg_mldsa*_sign_message` for the parameter set `p`, calling the signing
 function on `μ` `f`, named `n`. -/
 def signMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
-  top <| .seq (.block (enter .r10 p signRegs signMoves ++ hdr)) <| .seq (muHash ⟨.r22, 64, .imm 64⟩) <|
+  top <| .seq (.block (enter .r10 p signRegs signMs)) <| .seq (muHash ⟨.r22, 64, .imm 64⟩) <|
   .seq (.block [mov .r3 .r22, .addi .r4 .r30 oMU, mov .r5 .r27, mov .r6 .r28, mov .r7 .r29]) <|
   .seq (.call n f) (.block (restoreRegs .r30 oSV signRegs))
 
@@ -105,14 +109,13 @@ def signMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
 `ctx_len`, `sig`, `scratch` and `E`. -/
 def verifyRegs : List Reg := [.r22, .r23, .r24, .r25, .r26, .r27, .r29, .r30]
 
-def verifyMoves : List Instr :=
-  [mov .r22 .r3, mov .r23 .r4, mov .r24 .r5, mov .r25 .r6, mov .r26 .r7, mov .r27 .r8, mov .r29 .r9,
-    mov .r30 .r12]
+def verifyMs : List (Reg × Reg) :=
+  [(.r22, .r3), (.r23, .r4), (.r24, .r5), (.r25, .r6), (.r26, .r7), (.r27, .r8), (.r29, .r9), (.r30, .r12)]
 
 /-- `vg_mldsa*_verify_message` for the parameter set `p`, calling the
 verification function on `μ` `f`, named `n`. -/
 def verifyMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
-  top <| .seq (.block (enter .r9 p verifyRegs verifyMoves ++ hdr)) <| .seq (trHash p) <|
+  top <| .seq (.block (enter .r9 p verifyRegs verifyMs)) <| .seq (trHash p) <|
   .seq (muHash ⟨.r30, oMU, .imm 64⟩) <|
   .seq (.block [mov .r3 .r22, .addi .r4 .r30 oMU, mov .r5 .r27, mov .r6 .r29]) <|
   .seq (.call n f) (.block (restoreRegs .r30 oSV verifyRegs))
