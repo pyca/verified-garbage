@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Ed448.PPC64LE.Scalar
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Whole
 public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
+public import VerifiedGarbage.Impl.MlKem.PPC64LE.Sample
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
 
 /-!
@@ -24,7 +25,7 @@ and scalars, the first ten bytes of `dom4(0, C)`, our caller's nonvolatile
 registers that we use, and the link register. The pointers and lengths stay
 in `r20`–`r28`, which no function called writes.
 
-A hash (`hash`) zeroes the Keccak state, absorbs its pieces one after the
+A hash (`hash`) zeroes the Keccak state (as ML-KEM's do), absorbs its pieces one after the
 other, each from the position the previous one returned, pads with SHAKE's
 suffix, and squeezes 114 bytes (`SHAKE256`, rate 136).
 -/
@@ -70,10 +71,6 @@ def absorbs (sc : Reg) : Bool → List Piece → Prog isa
   | _, [] => .block []
   | first, p :: ps => .seq (.block (absorbArgs sc first p)) (.seq callAbsorb (absorbs sc false ps))
 
-/-- The Keccak state at `sc` zeroed, through `r8`. -/
-def zeroState (sc : Reg) : List Instr :=
-  .li .r8 0 :: (List.range 25).map fun k => .store .d .r8 sc (8 * k)
-
 /-- `pad(state = sc, rate = 136, pos = r3, suffix = 0x1f, sc + 200)`. -/
 def padArgs (sc : Reg) : List Instr := [mov .r5 .r3, mov .r3 sc, .li .r4 136, .li .r6 0x1f, .addi .r7 sc KW]
 
@@ -83,7 +80,7 @@ def squeezeArgs (sc f : Reg) (o : Nat) : List Instr :=
 
 /-- `SHAKE256` of the concatenation of the pieces `ps`, 114 bytes, into `o(f)`. -/
 def hash (sc : Reg) (ps : List Piece) (f : Reg) (o : Nat) : Prog isa :=
-  .seq (.block (zeroState sc)) <| .seq (absorbs sc true ps) <| .seq (.block (padArgs sc)) <|
+  .seq (.block (Impl.MlKem.PPC64LE.zeroState sc)) <| .seq (absorbs sc true ps) <| .seq (.block (padArgs sc)) <|
   .seq callPad <| .seq (.block (squeezeArgs sc f o)) callSqueeze
 
 /-- Pruning (`Spec.Ed448.prune`) in place on the 57 bytes at `o(f)`: bits 0–1 of
