@@ -4,7 +4,11 @@ public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignSteps
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
+public import VerifiedGarbage.Proof.Ed448.Ref
 
 /-!
 # `vg_ed448_sign_cached` on PPC64LE: the nonce and `R`

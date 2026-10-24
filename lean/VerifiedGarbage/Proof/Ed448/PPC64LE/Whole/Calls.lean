@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseVerified
+import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VVerified
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseMain
 
 /-!
 # Ed448's whole functions on PPC64LE: the calls of the Ed448 functions

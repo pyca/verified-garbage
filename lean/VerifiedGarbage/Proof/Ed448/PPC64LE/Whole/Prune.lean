@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.Whole
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
+import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Ed448.PruneBytes
@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Ed448's whole functions on PPC64LE: pruning in place

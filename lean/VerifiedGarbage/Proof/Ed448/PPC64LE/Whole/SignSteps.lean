@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignSetup
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.Whole
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # `vg_ed448_sign_cached` on PPC64LE: the steps

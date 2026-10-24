@@ -5,11 +5,11 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed448.WholeLocal
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # `vg_ed448_verify` on PPC64LE, verified

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.VerifyMsg
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCT
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VCT
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCT
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -18,6 +18,14 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.VVerified
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.Whole
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.VVerified
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # `vg_ed448_verify` on PPC64LE in constant time

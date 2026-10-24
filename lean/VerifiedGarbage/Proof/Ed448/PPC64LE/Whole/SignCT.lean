@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCached
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCached
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.HashCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
@@ -12,6 +12,15 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignChallenge
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignChallenge
+meta import VerifiedGarbage.Proof.Ed448.Ref
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
 
 /-!
 # `vg_ed448_sign_cached` on PPC64LE in constant time
@@ -87,7 +96,8 @@ theorem signV_eq {s₁ s₂ : State} (hp : SPub s₁ s₂) : ∀ r ∈ signRegs,
   obtain ⟨p3, p4, p5, p6, p7, p8, p9, p10, -, pf⟩ := hp
   intro r hr
   simp only [signRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [p3, p10, p4, p5, p6, p7, p8, p9, pf]
 
 theorem inv_regs {s₁ s₂ a b : State} (hp : SPub s₁ s₂) (ha : SInv s₁ a) (hb : SInv s₂ b) :
     ∀ r ∈ signRegs, a.gpr r = b.gpr r := fun r hr =>

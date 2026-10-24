@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.Whole
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.KCall
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
+import VerifiedGarbage.Proof.MlKem.PPC64LE.KCall
+import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.Sha3.Stream
@@ -10,6 +10,11 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Ed448's whole functions on PPC64LE: `SHAKE256` of pieces

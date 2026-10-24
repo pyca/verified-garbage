@@ -4,7 +4,10 @@ public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
 
 /-!
 # `vg_ed448_sign_cached` on PPC64LE: the challenge and `S`

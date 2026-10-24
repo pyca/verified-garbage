@@ -1,16 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCT
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCached
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCached
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed448.WholeLocal
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # `vg_ed448_sign_cached` on PPC64LE, verified

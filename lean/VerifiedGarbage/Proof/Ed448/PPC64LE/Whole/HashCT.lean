@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
@@ -18,6 +17,8 @@ meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.KCall
+meta import VerifiedGarbage.Proof.MlKem.PPC64LE.KCall
 
 /-!
 # Ed448's whole functions on PPC64LE: the hash in constant time

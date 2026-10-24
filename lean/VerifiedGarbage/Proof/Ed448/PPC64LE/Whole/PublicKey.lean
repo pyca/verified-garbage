@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.Whole
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # `vg_ed448_public_key` on PPC64LE, with its frame as an argument
