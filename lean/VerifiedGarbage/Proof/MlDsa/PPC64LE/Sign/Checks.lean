@@ -295,7 +295,7 @@ theorem onesAdd_ok (s : State) :
 /-- `ssep`, with the slots and checks of the signing loop. -/
 syntax "csep " term:max : tactic
 macro_rules
-  | `(tactic| csep $hF) => `(tactic| ssep $hF [izChk, iqChk, ihChk, kbChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, s2Base,
+  | `(tactic| csep $hF) => `(tactic| ssep $hF [icChk, izChk, iqChk, ihChk, kbChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, s2Base,
       t0Base, aBase, nSec])
 
 /-- `slt`, with the slots of the signing loop. -/
@@ -701,19 +701,21 @@ theorem onesOk_piece {t : Nat} : SPiece p STK (fun σ s => IH p STK σ t p.k p.k
   rw [e24, h.r26, h.r24, sign_bit (by omega) (by omega), bit_and']
   exact bit_congr passV_iff
 
-/-- The checks of iteration `t`, up to the branch on their result. -/
-theorem checks0_piece {t : Nat} :
-    SPiece p STK (KA p STK t) (KO p STK · t)
-      (.seq (nttAt P cP) (.seq (.block [.li .r24 1, .li .r26 0]) (.seq (seqR (zR P p) 0 p.ℓ)
-        (.seq (seqR (r0R P p) 0 p.k) (.seq (seqR (hR P p) 0 p.k) (.block (onesOk p))))))) :=
-  (cntt_piece hP hF hS).seq ((kinit_piece).seq
-    ((Piece.mono (Piece.seqR (I := fun r σ s => IZ p STK σ t r r s) p.ℓ 0
-      fun r _ hr => zR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.iq).seq
-    ((Piece.mono (Piece.seqR (I := fun i σ s => IQ p STK σ t i i s) p.k 0
-      fun i _ hi => r0R_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.ih).seq
-    ((Piece.mono (Piece.seqR (I := fun i σ s => IH p STK σ t i i i s) p.k 0
-      fun i _ hi => hR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
-      (onesOk_piece hF)))))
+theorem zs_piece {t : Nat} :
+    SPiece p STK (fun σ s => IZ p STK σ t 0 0 s) (fun σ s => IQ p STK σ t 0 0 s) (seqR (zR P p) 0 p.ℓ) :=
+  Piece.mono (Piece.seqR (I := fun r σ s => IZ p STK σ t r r s) p.ℓ 0
+    fun r _ hr => zR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.iq
+
+theorem r0s_piece {t : Nat} :
+    SPiece p STK (fun σ s => IQ p STK σ t 0 0 s) (fun σ s => IH p STK σ t 0 0 0 s) (seqR (r0R P p) 0 p.k) :=
+  Piece.mono (Piece.seqR (I := fun i σ s => IQ p STK σ t i i s) p.k 0
+    fun i _ hi => r0R_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.ih
+
+theorem hs_piece {t : Nat} :
+    SPiece p STK (fun σ s => IH p STK σ t 0 0 0 s) (fun σ s => IH p STK σ t p.k p.k p.k s) (seqR (hR P p) 0 p.k) :=
+  Piece.mono (Piece.seqR (I := fun i σ s => IH p STK σ t i i i s) p.k 0
+    fun i _ hi => hR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h
+
 end
 
 end VG.Proof.MlDsa.PPC64LE.Sign

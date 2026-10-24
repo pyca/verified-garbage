@@ -29,7 +29,7 @@ namespace VG.Proof.MlDsa.PPC64LE.Sign
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn inB reg)
 open VG.Impl.MlDsa.PPC64LE.Sign
-open VG.Spec.MlDsa (Params scratchWords mlDsa44 mlDsa65 mlDsa87 gamma2s simpleBitPackBounds)
+open VG.Spec.MlDsa (Params scratchWords mlDsa44 mlDsa65 mlDsa87 gamma2s simpleBitPackBounds ballParams)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The parameter sets -/
@@ -50,11 +50,13 @@ structure SFacts (p : Params) : Prop where
   g1 : p.γ₁ = 2 ^ 17 ∨ p.γ₁ = 2 ^ 19
   g2 : p.γ₂ ∈ gamma2s
   sbp : w1Max p ∈ simpleBitPackBounds
+  bp : (cLen p, p.τ) ∈ ballParams
+  tau : p.τ < 2 ^ 31
 
 theorem sfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : SFacts p := by
   rcases hp with rfl | rfl | rfl <;>
     exact ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
-      by decide, by decide, by decide, by decide, by decide⟩
+      by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
 
 theorem SFacts.scr {p : Params} (hF : SFacts p) :
     5120 + 1024 * (5 + 4 * p.k + 3 * p.ℓ + p.k * p.ℓ) ≤ scrLen p ∧ 32768 ≤ scrLen p ∧ scrLen p < 2 ^ 31 := by
