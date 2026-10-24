@@ -216,7 +216,89 @@ theorem ball_okX {s : State} (hs : Site L Wb STK s) (hS : S ≤ STK) {name : Str
       KeyGen.imm_toNat (by omega)] at hx
   exacts [this.1, this.2, hx]
 
+theorem rn_trRet (hS : S ≤ STK) {name : String} {sd a w : Impl.MlDsa.PPC64LE.KeyGen.Ptr}
+    (m : KeyGen.RnOk L Wb sd a w) {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Site L Wb STK x ∧ Site L Wb STK y ∧ x.sp = y.sp ∧
+      bytesAt x.mem (lpa L sd) 34 = bytesAt y.mem (lpa L sd) 34) :
+    RelCT isa Q (callAt name P.rejNTT (KeyGen.rnArgs sd a w))
+      fun x y => (x.gpr .r3).setWidth 32 = (y.gpr .r3).setWidth 32 := by
+  obtain ⟨stk, hstk, hver⟩ := hP.rejNTT.verified
+  refine callVRet_tr hver.1 (hP.rejRet stk) m.hg fun x y hxy => ?_
+  obtain ⟨hx, hy, hsp, hl⟩ := hQ x y hxy
+  obtain ⟨gx3, gx4, gx5⟩ := KeyGen.rn_vg hx m (KeyGen.rnRd L sd) (KeyGen.rnWr L a w)
+  obtain ⟨gy3, gy4, gy5⟩ := KeyGen.rn_vg hy m (KeyGen.rnRd L sd) (KeyGen.rnWr L a w)
+  refine ⟨KeyGen.rnRd L sd, KeyGen.rnWr L a w, KeyGen.rn_preS hx (Nat.le_trans hstk hS) m,
+    KeyGen.rn_preS hy (Nat.le_trans hstk hS) m,
+    KeyGen.rejNtt_pub (by rw [KeyGen.view_glue_sp, KeyGen.view_glue_sp, hsp]) (by rw [gx3, gy3]) (by rw [gx4, gy4])
+      (by rw [gx5, gy5]) ?_, (KeyGen.rn_cov hx m).1, (KeyGen.rn_cov hx m).2, (KeyGen.rn_cov hy m).1,
+    (KeyGen.rn_cov hy m).2⟩
+  rw [gx3, gy3, KeyGen.view_glue_mem, KeyGen.view_glue_mem]
+  exact hl
+
+theorem ball_trRet (hS : S ≤ STK) {name : String} {ct c w : Impl.MlDsa.PPC64LE.KeyGen.Ptr} {len tau : Nat}
+    (m : KeyGen.BallOk L Wb ct len tau c w) {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Site L Wb STK x ∧ Site L Wb STK y ∧ x.sp = y.sp ∧
+      bytesAt x.mem (lpa L ct) len = bytesAt y.mem (lpa L ct) len) :
+    RelCT isa Q (callAt name P.ball (KeyGen.ballArgs ct len tau c w))
+      fun x y => (x.gpr .r3).setWidth 32 = (y.gpr .r3).setWidth 32 := by
+  obtain ⟨stk, hstk, hver⟩ := hP.ball.verified
+  obtain ⟨l0, ll, lt⟩ := m.lt
+  refine callVRet_tr hver.1 (hP.ballRet stk) m.hg fun x y hxy => ?_
+  obtain ⟨hx, hy, hsp, hl⟩ := hQ x y hxy
+  obtain ⟨gx3, gx4, gx5, gx6, gx7⟩ := KeyGen.ball_vg hx m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
+  obtain ⟨gy3, gy4, gy5, gy6, gy7⟩ := KeyGen.ball_vg hy m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
+  refine ⟨KeyGen.ballRd L ct len, KeyGen.ballWr L c w, KeyGen.ball_preS hx (Nat.le_trans hstk hS) m,
+    KeyGen.ball_preS hy (Nat.le_trans hstk hS) m,
+    KeyGen.ball_pub (by rw [KeyGen.view_glue_sp, KeyGen.view_glue_sp, hsp]) (by rw [gx3, gy3]) (by rw [gx4, gy4])
+      (by rw [gx5, gy5]) (by rw [gx6, gy6]) (by rw [gx7, gy7]) ?_, (KeyGen.ball_cov hx m).1, (KeyGen.ball_cov hx m).2,
+    (KeyGen.ball_cov hy m).1, (KeyGen.ball_cov hy m).2⟩
+  rw [gx3, gy3, gx4, gy4, KeyGen.view_glue_mem, KeyGen.view_glue_mem, KeyGen.imm_toNat (by omega)]
+  exact hl
+
 end
+
+/-! ## Two runs related by more than their entry states -/
+
+/-- Two runs, each satisfying `I` from its entry state, related by `E`. -/
+def RR (p : Params) (STK : Nat) (I E : State → State → Prop) (x y : State) : Prop :=
+  Rel2 (SPre p STK) (sPub p) I x y ∧ E x y
+
+theorem WP.conj {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : WP isa c s Q₁) (h₂ : WP isa c s Q₂) :
+    WP isa c s fun s' => Q₁ s' ∧ Q₂ s' := by
+  obtain ⟨t, s', e, q₁⟩ := h₁
+  obtain ⟨_, _, e', q₂⟩ := h₂
+  obtain ⟨-, rfl⟩ := Exec.det e e'
+  exact ⟨t, _, e, q₁, q₂⟩
+
+/-- A piece that takes each run from `I` to `J` and from `s` to `s'` with
+`F s s'`, and leaks the same from runs related by `RR I E`, with `Q₀` of the
+final states. -/
+theorem stepRR {p : Params} {STK : Nat} {I J E E' Q₀ F : State → State → Prop} {c : Prog isa}
+    (hw : ∀ σ s, SPre p STK σ → I σ s → WP isa c s fun s' => J σ s' ∧ F s s')
+    (ht : RelCT isa (RR p STK I E) c Q₀)
+    (hE : ∀ x y x' y', RR p STK I E x y → F x x' → F y y' → Q₀ x' y' → E' x' y') :
+    RelCT isa (RR p STK I E) c (RR p STK J E') := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
+  obtain ⟨ht', hq⟩ := ht _ _ _ _ _ _ hr e₁ e₂
+  obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, he⟩ := hr
+  obtain ⟨_, u₁, f₁, g₁, k₁⟩ := hw σ₁ s₁ p₁ i₁
+  obtain ⟨_, u₂, f₂, g₂, k₂⟩ := hw σ₂ s₂ p₂ i₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
+  exact ⟨ht', ⟨σ₁, σ₂, p₁, p₂, hpub, g₁, g₂⟩, hE _ _ _ _ ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, he⟩ k₁ k₂ hq⟩
+
+/-- A piece, from runs related by `RR`, keeping `E` as each run keeps it (`F`). -/
+theorem pieceRR {p : Params} {STK : Nat} {I J E E' F : State → State → Prop} {c : Prog isa}
+    (h : SPiece p STK I J c) (hF : ∀ σ s, SPre p STK σ → I σ s → WP isa c s (F s))
+    (hE : ∀ x y x' y', RR p STK I E x y → F x x' → F y y' → E' x' y') :
+    RelCT isa (RR p STK I E) c (RR p STK J E') :=
+  stepRR (fun σ s hp hs => WP.conj (h.ok σ s hp hs) (hF σ s hp hs))
+    (RelCT.mono h.tr (fun _ _ hr => hr.1) fun _ _ h => h) fun x y x' y' hr fx fy _ => hE x y x' y' hr fx fy
+
+theorem RR.mono {p : Params} {STK : Nat} {I I' E E' : State → State → Prop} {x y : State} (h : RR p STK I E x y)
+    (hI : ∀ σ s, I σ s → I' σ s) (hE : E x y → E' x y) : RR p STK I' E' x y := by
+  obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, e⟩ := h
+  exact ⟨⟨σ₁, σ₂, p₁, p₂, hpub, hI _ _ i₁, hI _ _ i₂⟩, hE e⟩
 
 /-! ## `ρ` -/
 
@@ -240,6 +322,27 @@ theorem leak_rho {p : Params} {sk₁ sk₂ μ₁ μ₂ r₁ r₂ : List Byte} (h
 
 theorem pub_rho {p : Params} {σ₁ σ₂ : State} (h : sPub p σ₁ σ₂) : (skOf p σ₁).take 32 = (skOf p σ₂).take 32 :=
   leak_rho (Proof.MlKem.bytesAt_length _ _ _) (Proof.MlKem.bytesAt_length _ _ _) h.2.2.2.2.2.2
+
+/-! ## The state, but for `r3` and `r24` -/
+
+theorem SC1.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : SC1 p STK σ s) (hr : Regs2 s s') :
+    SC1 p STK σ s' :=
+  ⟨h.site.regs2 hr, hr.rd.trans h.rd, hr.wr.trans h.wr, hr.sp.trans h.sp,
+    fun r hp hs => by
+      have : r ≠ .r3 ∧ r ≠ .r24 := ⟨fun e => by subst e; simp [preserved] at hp,
+        fun e => by subst e; simp [savedTop] at hs⟩
+      rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
+    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.sig, by rw [hr.mem]; exact h.sk, by rw [hr.mem]; exact h.mu,
+    by rw [hr.mem]; exact h.rnd⟩
+
+theorem SC2.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s) (hr : Regs2 s s') :
+    SC2 p STK σ s' :=
+  ⟨h.site.regs2 hr, hr.rd.trans h.rd, hr.wr.trans h.wr, hr.sp.trans h.sp,
+    fun r hp hs => by
+      have : r ≠ .r3 ∧ r ≠ .r24 := ⟨fun e => by subst e; simp [preserved] at hp,
+        fun e => by subst e; simp [savedTop] at hs⟩
+      rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
+    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.sk, by rw [hr.mem]; exact h.mu⟩
 
 /-! ## Two runs -/
 

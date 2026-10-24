@@ -64,6 +64,13 @@ theorem SFacts.lens {p : Params} (hF : SFacts p) : p.skLen < 32768 ∧ p.sigLen 
   · rw [hF.sk]; rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> rw [e] <;> omega
   · rw [hF.sig, sigH]; rcases hF.ct with e | e | e <;> rcases hF.lz with e' | e' <;> rw [e, e'] <;> omega
 
+/-- The slot of `Â[0, 0]`; entry `e = ℓi + j` is in slot `aBase + e`. -/
+abbrev aBase (p : Params) : Nat := 5 + 4 * p.k + 3 * p.ℓ
+
+theorem sptr_ok {r : Reg} (hr : KeyGen.baseReg r = true) {o : Nat} (h : o < 2 ^ 31) :
+    KeyGen.argOk (.ptr (r, o)) = true := by
+  simp only [KeyGen.argOk, Bool.and_eq_true, decide_eq_true_eq]; exact ⟨hr, h⟩
+
 /-! ## The precondition -/
 
 section
@@ -184,14 +191,14 @@ macro_rules
                        have := ($hF).om; have := ($hF).w1; have := ($hF).w1l
                        try dsimp only [$ls,*]
                        try dsimp only [sepB, sepAll, inB, tri, ix, sc, pS, cP, t1P, t2P, t3P, t4P, hP, yP, yhP, wP,
-                         s1P, s2P, t0P, aP, oP, oSIG, oRS, oMS, oCT, oW1, oPS, skS1, skS2, skT0, sigZ, sigH]
+                         s1P, s2P, t0P, aP, oP, oSIG, oRS, oMS, oCT, oW1, oPS, skS1, skS2, skT0, sigZ, sigH, aBase]
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [sepB, sepAll, inB, slay1_sizes, slay2_sizes,
                          List.getD_cons_zero, List.getD_cons_succ, List.length_cons, List.length_nil, List.all_cons,
                          List.all_nil, tri, ix, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne,
                          ne_eq, Bool.and_true, Bool.true_and, true_and, and_true, true_or, or_true, Nat.zero_add,
                          sc, pS, cP, t1P, t2P, t3P, t4P, hP, yP, yhP, wP, s1P, s2P, t0P, aP, oP, oSIG, oRS, oMS, oCT,
-                         oW1, oPS, skS1, skS2, skT0, sigZ, sigH, false_or, or_false, decide_eq_true_iff, $ls,*]
+                         oW1, oPS, skS1, skS2, skT0, sigZ, sigH, aBase, false_or, or_false, decide_eq_true_iff, $ls,*]
                        and_intros <;> omega_arith))
 
 /-- Proves that an offset into the buffers is below `2³¹`, for any parameter
@@ -206,7 +213,7 @@ macro_rules
         VG.Impl.MlDsa.PPC64LE.Sign.oRS, VG.Impl.MlDsa.PPC64LE.Sign.oMS, VG.Impl.MlDsa.PPC64LE.Sign.oCT,
         VG.Impl.MlDsa.PPC64LE.Sign.oW1, VG.Impl.MlDsa.PPC64LE.Sign.oPS, VG.Impl.MlDsa.PPC64LE.Sign.skS1,
         VG.Impl.MlDsa.PPC64LE.Sign.skS2, VG.Impl.MlDsa.PPC64LE.Sign.skT0, VG.Impl.MlDsa.PPC64LE.Sign.sigZ,
-        VG.Impl.MlDsa.PPC64LE.Sign.sigH]
+        VG.Impl.MlDsa.PPC64LE.Sign.sigH, VG.Proof.MlDsa.PPC64LE.Sign.aBase]
       omega))
 
 end VG.Proof.MlDsa.PPC64LE.Sign
