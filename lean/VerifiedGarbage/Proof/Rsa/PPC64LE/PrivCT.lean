@@ -85,6 +85,22 @@ theorem fb_same {s₁ s₂ : State} (S : Same s₁ s₂) : fb s₁ = fb s₂ := 
 theorem r_same {s₁ s₂ : State} (S : Same s₁ s₂) {r : Reg} (hr : r ∈ argRegs := by decide) :
     s₁.gpr r = s₂.gpr r := S.gpr r hr
 
+/-- The public data, from its facts. -/
+theorem pub_of {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp) (hr : ∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r)
+    (ha : ∀ i < 12, stackArg s₁ i = stackArg s₂ i)
+    (hn : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r5) (s₁.gpr .r6).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r5) (s₂.gpr .r6).toNat)
+    (he : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r7) (s₁.gpr .r8).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r7) (s₂.gpr .r8).toNat) :
+    (Spec.Rsa.privateCheckedContract abi frameBytes).pub s₁ s₂ := by
+  have e : frameBytes = 3327 + 1 := rfl
+  rw [e]
+  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
+    List.append_eq]
+  simp only [List.getD_cons_succ, List.getD_cons_zero]
+  exact ⟨hsp, by rw [hn, he], hr .r3 (by decide), hr .r4 (by decide), hr .r5 (by decide), hr .r6 (by decide),
+    hr .r7 (by decide), hr .r8 (by decide), hr .r9 (by decide), hr .r10 (by decide), ha 0 (by decide),
+    ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide), ha 5 (by decide), ha 6 (by decide),
+    ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), ha 10 (by decide), ha 11 (by decide)⟩
+
 /-! ## The calls -/
 
 theorem crt_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP s₁) (h₂ : PreP s₂) (S : Same s₁ s₂) (A₁ : AtCrt s₁ t₁)
