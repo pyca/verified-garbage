@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Sha256
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P192Sha256
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.CT
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
 
 /-!
 # Deterministic ECDSA over P-192 with HMAC-SHA-256 on PPC64LE

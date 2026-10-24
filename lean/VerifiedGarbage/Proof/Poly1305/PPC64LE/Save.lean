@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Setup
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Poly1305 on PPC64LE: saving and restoring the nonvolatile registers

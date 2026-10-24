@@ -3,9 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Framed
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFrameResult
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEncodedResult
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallValid
-import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSizes

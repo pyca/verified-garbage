@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Blowfish.PPC64LE
+import VerifiedGarbage.Impl.Blowfish.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Blowfish
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Blowfish on PPC64LE: running blocks

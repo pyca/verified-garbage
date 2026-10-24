@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
 
 /-! # A candidate's exponentiation leaks only public data
 

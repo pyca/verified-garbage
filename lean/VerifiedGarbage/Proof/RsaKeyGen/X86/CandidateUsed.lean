@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateFinish
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
-import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Mont.Words
 

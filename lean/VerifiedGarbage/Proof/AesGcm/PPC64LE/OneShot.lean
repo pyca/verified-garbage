@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`

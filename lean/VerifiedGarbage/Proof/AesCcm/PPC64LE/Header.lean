@@ -8,6 +8,12 @@ import VerifiedGarbage.Proof.AesCcm.Rev64
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Callee
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Common
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # AES-CCM on PPC64LE: the encoding of the length of the associated data

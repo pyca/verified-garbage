@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut32
 import VerifiedGarbage.Proof.Weierstrass.Words32
 
 /-!

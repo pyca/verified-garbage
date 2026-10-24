@@ -1,16 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Compress
 public import VerifiedGarbage.Spec.MlKem.Poly
-import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
-import VerifiedGarbage.Proof.MlKem.PPC64LE.Reduce
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 public import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -34,6 +32,13 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_decode_decompress`

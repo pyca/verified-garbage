@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArrays
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateMemory
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestMetadata
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestCore
 
 /-! # Live candidate state supplies every pointer and permission needed by the finish paths -/

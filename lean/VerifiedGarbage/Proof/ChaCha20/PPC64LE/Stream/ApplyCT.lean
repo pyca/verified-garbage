@@ -2,11 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Apply
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Apply
-public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 
 /-!
 # Streaming ChaCha20 on PPC64LE: `apply`, constant time

@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
-import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Mont.Words32

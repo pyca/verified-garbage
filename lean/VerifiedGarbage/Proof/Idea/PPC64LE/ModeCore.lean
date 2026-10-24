@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Round
 public import VerifiedGarbage.Spec.Idea
 public import VerifiedGarbage.Spec.Idea.Cbc
+import VerifiedGarbage.Proof.Idea.PPC64LE.Block
 
 /-!
 # IDEA's core for the modes on PPC64LE

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ProductTiming
 import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
-import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 
 /-! # Factor preparation keeps values and choices secret on i686 -/
 

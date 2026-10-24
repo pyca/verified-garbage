@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Scalar
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 

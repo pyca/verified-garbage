@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 
 /-!
 # Deterministic ECDSA on PPC64LE: the blocks between the calls

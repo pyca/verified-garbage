@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Steps
 public import VerifiedGarbage.Spec.P256
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
 
 /-!
 # Deterministic ECDSA on PPC64LE: the candidates

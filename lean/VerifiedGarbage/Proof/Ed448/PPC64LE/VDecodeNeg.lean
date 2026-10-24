@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeCheck
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeCheck
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseStep
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VSel
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseEncode
@@ -9,6 +9,10 @@ import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Spec.X448.Contract
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's verification on PPC64LE: the negated point

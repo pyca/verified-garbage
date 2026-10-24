@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayTiming
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Array
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64Array

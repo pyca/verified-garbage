@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Rel
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Callee
+public import VerifiedGarbage.Impl.AesCcm.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # AES-CCM on PPC64LE: the arguments of the calls

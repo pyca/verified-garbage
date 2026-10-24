@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 
 /-!
 # AES-GCM on PPC64LE: GHASH over blocks of the state, `T` or the data

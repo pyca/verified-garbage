@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The key search's finish (x86)
 

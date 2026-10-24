@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Cmac
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Semantics
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus

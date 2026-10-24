@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessChecks
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessChecks
 
 /-! # The public candidate environment supplies the complete blinded-loop geometry -/
 

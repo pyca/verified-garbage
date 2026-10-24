@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.KeyInit
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.KeyP
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.KeyEnc
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.KeyInit
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.KeyP
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.KeyEnc
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
-import VerifiedGarbage.Proof.Blowfish.Table
-import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Blowfish.PPC64LE
+public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
 # Blowfish on PPC64LE: key expansion

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Descent
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step

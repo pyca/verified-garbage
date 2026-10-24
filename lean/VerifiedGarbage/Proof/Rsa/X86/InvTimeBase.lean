@@ -3,8 +3,6 @@ import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.InvChoose
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Framework.Taint
 public import Init.Data.BitVec.Basic

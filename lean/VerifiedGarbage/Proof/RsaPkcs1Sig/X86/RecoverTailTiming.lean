@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
-import VerifiedGarbage.Proof.Rsa.X86.PrivTailTiming
 
 /-! # The padding check never branches on the precomputed RSA call's status -/
 

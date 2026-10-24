@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedSmall
-import VerifiedGarbage.Proof.Rsa.X86.RvFusedBit
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps

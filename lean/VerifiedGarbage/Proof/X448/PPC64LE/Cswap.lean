@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X448.PPC64LE.Field
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.X448.PPC64LE
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
+public import VerifiedGarbage.Spec.X448
 
 /-!
 # X448 on PPC64LE: the conditional swap

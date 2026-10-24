@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Divide
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 
 /-!
 # Argon2 on PPC64LE: the parameters

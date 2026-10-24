@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ed448.Binary
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.Scalar
 public import VerifiedGarbage.Proof.X448.PPC64LE.Field
 public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448 on PPC64LE: an integer of `N` bytes modulo `L`

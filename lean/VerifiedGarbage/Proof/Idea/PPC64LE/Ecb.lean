@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.PPC64LE.Block
+import VerifiedGarbage.Proof.Idea.PPC64LE.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Idea.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
+public import VerifiedGarbage.Proof.Idea.PPC64LE.Round
 
 /-!
 # IDEA ECB on PPC64LE

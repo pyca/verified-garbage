@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
-import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 
 /-! # Live candidate inputs satisfy the timing preconditions of every prefilter -/
 

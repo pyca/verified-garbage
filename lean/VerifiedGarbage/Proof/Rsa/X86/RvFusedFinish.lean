@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 
 /-! Moving the saved root to the factor-extraction interface. -/
 @[expose] public section

@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
+public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
+public import VerifiedGarbage.Spec.Sha256
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 
 /-!
 # Deterministic ECDSA on PPC64LE: copying words
