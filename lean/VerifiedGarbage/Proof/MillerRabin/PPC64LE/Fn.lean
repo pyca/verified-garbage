@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.Bignum.Fios32
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 
 /-!
 # The Miller–Rabin round on PPC64LE: the function
@@ -124,7 +125,7 @@ theorem ret_val (x : Bool) : ((BitVec.ofNat 64 1 &&& mask x).setWidth 32).toNat 
   cases x <;> decide
 
 theorem pres_not_written : ∀ r ∈ preserved, (∀ i < 18, r ≠ Impl.MillerRabin.PPC64LE.saved i) →
-    r ∉ setupRegs ++ coreRegs ++ [.r3] ∧ r ≠ .r21 := by
+    r ∉ setupRegs ++ coreRegs ++ ([.r3] : List Reg) ∧ r ≠ .r21 := by
   decide
 
 theorem fn_correct (s : State) (h : fnContract.pre s) :

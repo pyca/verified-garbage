@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Last
 public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 
 /-!
 # The Miller–Rabin round on PPC64LE: the round

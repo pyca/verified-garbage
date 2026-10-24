@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 
 /-!
 # The Miller–Rabin round on PPC64LE: the context

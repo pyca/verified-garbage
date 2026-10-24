@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Window
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 
 /-!
 # The Miller–Rabin round on PPC64LE: the windows of the exponent

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 
 /-!
 # The Miller–Rabin round on PPC64LE: the table
