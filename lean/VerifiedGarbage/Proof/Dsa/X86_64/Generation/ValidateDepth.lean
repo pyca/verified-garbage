@@ -30,7 +30,8 @@ theorem checkParameters_depth_bound (sq : Prog isa) (mul : Nat → Nat → Nat �
     PublicPower.encodedPower PublicPower.expLoop PublicPower.byte PublicPower.window
     PublicPower.squares PublicPower.squaresInit PublicPower.squaresNext
     PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
-    Crt.tabBuild Crt.tabBuildN Crt.toEnt Crt.copyArr R2Words.choice R2Words.fast R2Words.old
+    Crt.tabBuild Crt.tabBuildN Crt.toEnt Crt.copyArr R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
   repeat' first
     | rw [generation_depth_seqs]
     | rw [Code.x86_64Depth]

@@ -1,4 +1,6 @@
 module
+
+import VerifiedGarbage.Proof.Bignum.X86_64.R2Squares
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -372,7 +374,7 @@ theorem choice_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 6
     refine WP.mono (fast_ok hg₁ hZ (by omega_using [hw, h4]) hw30 hn₁ hodd (by rw [hm₁]; exact hT) h4)
       fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, h3, by rw [← hm₁]; exact h4', (k₁.trans h5).mono (by decide)⟩
   · rw [old_eq]
-    refine WP.mono (r2_ok M hg₁ hZ hw hw30 hn₁ hinv₁ ((k₁.gpr (by decide)).trans h12)
+    refine WP.mono (r2_ok_with _ (rolled_sqs_spec M 5 (by decide)) hg₁ hZ hw hw30 hn₁ hinv₁ ((k₁.gpr (by decide)).trans h12)
       ((k₁.gpr (by decide)).trans h10) hodd hlo)
       fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, h3, by rw [← hm₁]; exact h4', (k₁.trans h5).mono (by decide)⟩
 
