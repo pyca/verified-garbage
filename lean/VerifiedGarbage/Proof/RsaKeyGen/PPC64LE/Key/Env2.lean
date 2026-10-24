@@ -127,10 +127,10 @@ theorem setDigitE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j x k : Nat} (h
     (hjdv : j ≠ aDv := by decide) (hx : x < 2 ^ 15) (hk : k < w) (h6 : s.gpr .r6 = BitVec.ofNat 64 (4 * k))
     (hv : V j < 2 ^ (32 * k)) {rest : List Instr} {Q : State → Prop}
     (kk : ∀ t, Ws t B Z w nArr → KS t.mem B w (upd V j (V j + 2 ^ (32 * k) * x)) F →
-      KK B w s.mem t.mem → Keep opsRegs s t → WP isa (.block rest) t Q) :
+      KK B w s.mem t.mem → Keep [.r0, .r5] s t → WP isa (.block rest) t Q) :
     WP isa (.block (setDigit j x ++ rest)) s Q := by
   refine setDigit_ok h hj nArr_le hx hk h6 fun t ht kt v kr _ => kk t ht ?_ (KK.of kt (arr_mem hj) (by simp))
-    kr.mono
+    kr
   rw [digit_zero hk (by rw [ks.arrs j hj]; exact hv), Nat.mul_zero, Nat.add_zero, ks.arrs j hj] at v
   refine ks.step kt (fit_of h) (fun i hi hn => ?_) (fun i hi => ?_) (fun _ _ _ => rfl)
     (fun d hd => by simp at hd) (fun hd => ?_)

@@ -141,7 +141,7 @@ theorem setDigit_ok {s : State} {B : Addr} {Z w N j x k : Nat} (h : Ws s B Z w N
     {rest : List Instr} {Q : State → Prop}
     (kk : ∀ t, Ws t B Z w N → KeyWorkspace.Keep B w [j] [] s.mem t.mem →
       num t.mem B w j + 2 ^ (32 * k) * w32 s.mem B (arr w j + 4 * k) =
-        num s.mem B w j + 2 ^ (32 * k) * x → Keep opRegs s t →
+        num s.mem B w j + 2 ^ (32 * k) * x → Keep [.r0, .r5] s t →
       w32 t.mem B (arr w j + 4 * w) = w32 s.mem B (arr w j + 4 * w) → WP isa (.block rest) t Q) :
     WP isa (.block (setDigit j x ++ rest)) s Q := by
   have fit := h.arr_fit hj
@@ -152,7 +152,7 @@ theorem setDigit_ok {s : State} {B : Addr} {Z w N j x k : Nat} (h : Ws s B Z w N
   rw [List.append_assoc]
   refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
   rw [WP.block_append_iff]
-  have k₀ : Keep opRegs s (s.write .r5 (off B (arr w j))) := (Keep.write _ _ _).mono
+  have k₀ : Keep [.r5] s (s.write .r5 (off B (arr w j))) := Keep.write _ _ _
   have e5 : off B (arr w j) + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 0 = off B (arr w j + 4 * k) := by
     rw [BitVec.add_zero, off_add]
   have hk' : WP isa (.block [.add .r5 .r5 .r6, .li .r0 x, .store .w .r0 .r5 0])
@@ -162,7 +162,7 @@ theorem setDigit_ok {s : State} {B : Addr} {Z w N j x k : Nat} (h : Ws s B Z w N
     refine WP.keep _ ?_ (by rfl)
     prun [h6, e5, exec_li hx, h.scr.st (show arr w j + 4 * k + 4 ≤ Z by omega)]
   refine WP.mono hk' fun u ⟨mu, ku⟩ => ?_
-  have kt : Keep opRegs s u := k₀.trans' ku.mono
+  have kt : Keep [.r0, .r5] s u := (k₀.trans ku).mono
   have o := writeW32_outside s.mem B (d := arr w j + 4 * k) ((BitVec.ofNat 64 x).setWidth 32) (by omega)
   refine kk u (h.of_keep kt) ?_ ?_ kt ?_
   · rw [mu]; exact KeyWorkspace.Keep.of_arr (d := 4 * k) o (by omega) (by simp)
