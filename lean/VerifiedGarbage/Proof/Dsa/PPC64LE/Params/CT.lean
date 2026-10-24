@@ -30,23 +30,27 @@ namespace VG.Proof.Dsa.PPC64LE
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.MillerRabin.PPC64LE
 open VG.Impl.Bignum VG.Impl.Dsa.PPC64LE
 
+/-- A call's public data: the layout, the `n` octets at `r3` (the domain, or a
+key); no signature, digest or `out`. -/
+def pvdN (n : Nat) (s : State) : VD :=
+  ⟨playOf s, s.gpr .r3, 0, 0, 0, Spec.Rsa.bytesAt s.mem (s.gpr .r3) n, n, 0, none, n⟩
+
 /-- A call's public data: the layout, the domain and its octets; no
 signature, digest or `out`. -/
-def pvdOf (s : State) : VD :=
-  ⟨playOf s, s.gpr .r3, 0, 0, 0,
-    Spec.Rsa.bytesAt s.mem (s.gpr .r3) (2 * (s.gpr .r5).toNat + (s.gpr .r6).toNat),
-    2 * (s.gpr .r5).toNat + (s.gpr .r6).toNat, 0, none, 2 * (s.gpr .r5).toNat + (s.gpr .r6).toNat⟩
+def pvdOf (s : State) : VD := pvdN (2 * (s.gpr .r5).toNat + (s.gpr .r6).toNat) s
 
 /-- On entry. -/
 def PC0 (v : VD) (s : State) : Prop := pcContract.pre s ∧ pvdOf s = v
 
-theorem pins_PC0 : Pins PC0 [.r3, .r5, .r6, .r7] := by
+/-- The public data `pvdN` fix the arguments' registers `Params.entry` reads. -/
+theorem pins_pvd {Φ : VD → State → Prop} {f : State → Nat} (h : ∀ v s, Φ v s → pvdN (f s) s = v) :
+    Pins Φ [.r3, .r5, .r6, .r7] := by
   intro v s₁ s₂ h₁ h₂ r hr
-  obtain ⟨-, e₁⟩ := h₁
-  obtain ⟨-, e₂⟩ := h₂
+  have e₁ := h v s₁ h₁
+  have e₂ := h v s₂ h₂
   have := congrArg VD.key (e₁.trans e₂.symm)
   have hL := congrArg VD.L (e₁.trans e₂.symm)
-  simp only [pvdOf, playOf, Lay.mk.injEq] at this hL
+  simp only [pvdN, playOf, Lay.mk.injEq] at this hL
   obtain ⟨h7, -, h5, h6⟩ := hL
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -55,23 +59,38 @@ theorem pins_PC0 : Pins PC0 [.r3, .r5, .r6, .r7] := by
   · exact BitVec.eq_of_toNat_eq h6
   · exact h7
 
+theorem pins_PC0 : Pins PC0 [.r3, .r5, .r6, .r7] := pins_pvd fun _ _ h => h.2
+
 /-- A buffer of no octets. -/
 theorem src_zero (s : State) (L : Lay) (D : Addr) {n : Nat} (h : n = 0) : Src s L D n :=
   ⟨fun i hi => absurd hi (by omega), fun i hi => absurd hi (by omega)⟩
 
-theorem pfront_S0 {v : VD} {s : State} (h : PC0 v s) : WP isa (.block Params.entry) s (S0 v) := by
-  obtain ⟨hp, rfl⟩ := h
-  have hL := playOf_ok hp
+/-- `Params.entry`, for the `n` octets at `r3`, which hold at least a domain. -/
+theorem pfront_S0_of {s : State} {n : Nat} (hL : (playOf s).Ok)
+    (hwr : s.wr = [⟨s.gpr .r7, (s.gpr .r8).toNat * 8⟩])
+    (nw : (s.gpr .r7).toNat + (s.gpr .r8).toNat * 8 ≤ 2 ^ 64)
+    (hsrc : ∀ {t : State}, t.rd = s.rd → t.wr = s.wr → Src t (playOf s) (s.gpr .r3) n)
+    (hn : 2 * (playOf s).pl + (playOf s).ql ≤ n) :
+    WP isa (.block Params.entry) s (S0 (pvdN n s)) := by
   have hZ := hL.z256
-  refine WP.mono (pfront_ok hp) fun t ⟨⟨hr, scr, r2, _, out⟩, k⟩ => ?_
+  refine WP.mono (pfront_ok_of hL hwr nw) fun t ⟨⟨hr, scr, r2, _, out⟩, k⟩ => ?_
   have Out : Outside (playOf s).S 0 (playOf s).Z s.mem t.mem :=
     out.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega)
-  exact ⟨⟨hL, hr, scr, pre_psrc hp k.rd k.wr, src_zero _ _ _ rfl, src_zero _ _ _ rfl,
-    (pre_psrc hp rfl rfl).kept Out, pre_psrc hp k.rd k.wr, (fun _ h => nomatch h), (fun h => nomatch h),
-    Nat.le_refl _⟩, r2, fixL_nil t, trivial⟩
+  exact ⟨⟨hL, hr, scr, hsrc k.rd k.wr, src_zero _ _ _ rfl, src_zero _ _ _ rfl,
+    (hsrc rfl rfl).kept Out, hsrc k.rd k.wr, (fun _ h => nomatch h), (fun h => nomatch h), hn⟩,
+    r2, fixL_nil t, trivial⟩
+
+theorem pfront_S0 {v : VD} {s : State} (h : PC0 v s) : WP isa (.block Params.entry) s (S0 v) := by
+  obtain ⟨hp, rfl⟩ := h
+  exact pfront_S0_of (playOf_ok hp) hp.2.1 hp.2.2.2.2.1 (fun hr hw => pre_psrc hp hr hw) (Nat.le_refl _)
+
+/-- The taint of `Params.entry`, from the arguments' registers. -/
+theorem pentry_taint {Φ : VD → State → Prop} (h : Pins Φ [.r3, .r5, .r6, .r7]) :
+    RelCT isa (Two Φ) (.block Params.entry) fun _ _ => True :=
+  two_taint _ h (by taint_decide)
 
 theorem pentry_rel : RelCT isa (Two PC0) (.block Params.entry) (Two S0) :=
-  two_post (two_taint _ pins_PC0 (by taint_decide)) fun _ _ h => pfront_S0 h
+  two_post (pentry_taint pins_PC0) fun _ _ h => pfront_S0 h
 
 theorem one_rel {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → Base v s) :
     RelCT isa (Two Φ) (.block [.li .r3 1]) (Two End) :=
@@ -97,7 +116,7 @@ theorem pvdOf_eq {s t : State} (hs : pcContract.pre s) (hp : pcContract.pub s t)
   have e := map_toNat_inj hl
   have hk := hs.2.2.2.2.2.2.1
   rw [← h3, ← h4, hk] at e
-  simp only [pvdOf, playOf, ← h3, ← h5, ← h6, ← h7, ← h8, e]
+  simp only [pvdOf, pvdN, playOf, ← h3, ← h5, ← h6, ← h7, ← h8, e]
 
 theorem checkParameters_ct : ConstantTime isa pcContract.pre pcContract.pub Params.checkParameters :=
   RelCT.constantTime (checkParameters_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>

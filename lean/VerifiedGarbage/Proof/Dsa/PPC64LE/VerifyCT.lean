@@ -39,14 +39,15 @@ theorem body_rel : RelCT isa (Two K9) Verify.body (Two End) :=
   rel_end (two_taint _ (pins_fixL _ _ fun _ => rfl) (by taint_decide)) (fun _ _ h => h.1.regs.r21)
     (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
 
-theorem checkKey_rel :
-    RelCT isa (Two fun v s => S0 v s ∧ KY v) (checkKey Verify.body (.block [.li .r3 0])) (Two End) :=
-  sizes_rel (oddsTail_rel (fun _ _ _ h => h) (body_rel.mono (fun _ _ => two_mono fun _ _ h => h.1)
+/-- The check of the key, then `rest`, or 0. -/
+theorem checkKey_rel {rest : Prog isa} (hrest : RelCT isa (Two K9) rest (Two End)) :
+    RelCT isa (Two fun v s => S0 v s ∧ KY v) (checkKey rest (.block [.li .r3 0])) (Two End) :=
+  sizes_rel (oddsTail_rel (fun _ _ _ h => h) (hrest.mono (fun _ _ => two_mono fun _ _ h => h.1)
       fun _ _ h => h) fun _ h => fail_rel fun v s h' => (h v s h').1) fun _ h => fail_rel fun v s h' => (h v s h').1
 
 theorem verify_rel : RelCT isa (Two C0) Verify.verify fun _ _ => True := by
   unfold Verify.verify
-  exact RelCT.seq entry_rel (RelCT.seq checkKey_rel (two_taint _ pins_End (by taint_decide)))
+  exact RelCT.seq entry_rel (RelCT.seq (checkKey_rel body_rel) (two_taint _ pins_End (by taint_decide)))
 
 /-- Runs that agree on the contract's public data have the same public data `vdOf`. -/
 theorem vdOf_eq {s t : State} (hs : vContract.pre s) (hp : vContract.pub s t) : vdOf s = vdOf t := by
