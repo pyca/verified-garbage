@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Instances
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Verified
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Verified
+public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Derive.Verified
@@ -52,15 +52,13 @@ def artifacts : List Artifact := [
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.CheckPublic.cp_verified _ _ _ },
   Spec.Ffdh.checkDomainApi.artifact target {
-    notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
-        working space of `w = ⌈p_len / 8⌉` words with an inner one for p. g and q are compared with \
-        1 and with p − 1 by a subtraction's borrow over all the words; `q ∣ p − 1` is a Montgomery \
-        reduction of p − 1 modulo q, in a workspace for q's significant octets, compared with zero; \
-        `g^q mod p` is computed by RSA's exponentiation with five-bit windows (the \
-        `vg_rsa_square_window5` helper and a constant-time table scan) from q's first nonzero octet."]
-    code := Impl.Ffdh.AArch64.Domain.CheckDomain.code Proof.Bignum.AArch64.WindowFive.called.code
+    consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
+    notes := ["Exact RFC 3526/RFC 7919 domain matches use kernel-checked fixed-parameter \
+      certificates for the existing algebraic validation rules, including the subgroup power. \
+      Every byte of p, g and an optional q must match; other inputs retain the general validator."]
+    code := Impl.Ffdh.AArch64.VettedValidation.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.CheckDomain.cd_verified _ _ _ },
+    verified := Proof.Ffdh.AArch64.VettedValidation.verified _ _ _ },
   Spec.Ffdh.exchangeApi.artifact target {
     notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
         working space of `w = ⌈p_len / 8⌉` words with an inner one for p. `y^x mod p` is computed by \
