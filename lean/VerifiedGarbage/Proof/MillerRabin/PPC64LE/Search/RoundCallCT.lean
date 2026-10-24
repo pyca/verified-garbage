@@ -43,13 +43,12 @@ structure RcD where
 
 /-- Before the call of a witness's round. -/
 def RC (d : RcD) (s : State) : Prop :=
-  Prep s d.B d.L d.w d.c ∧ arr s.mem d.B d.w 4 = d.a ∧ d.a < d.c ∧ (⟨d.B, 8 * d.L⟩ : Region) ∈ s.wr ∧
-    176 ≤ s.sp.toNat ∧ (below s.sp 176).Disjoint ⟨d.B, 8 * d.L⟩
+  Prep s d.B d.L d.w d.c ∧ arr s.mem d.B d.w 4 = d.a ∧ d.a < d.c ∧ 176 ≤ s.sp.toNat ∧ (below s.sp 176).Disjoint ⟨d.B, 8 * d.L⟩
 
 /-- With the arguments in `r3` and `r4`. -/
 def RCm (d : RcD) (s : State) : Prop :=
   Prep s d.B d.L d.w d.c ∧ val32 s.mem d.B (slot d.w 5) (2 * d.w) = d.a % d.c * 2 ^ (64 * d.w) % d.c ∧
-    s.gpr .r3 = d.B ∧ s.gpr .r4 = BitVec.ofNat 64 d.L ∧ (⟨d.B, 8 * d.L⟩ : Region) ∈ s.wr ∧
+    s.gpr .r3 = d.B ∧ s.gpr .r4 = BitVec.ofNat 64 d.L ∧
     176 ≤ s.sp.toNat ∧ (below s.sp 176).Disjoint ⟨d.B, 8 * d.L⟩
 
 theorem pins_RC : Pins RC [.r10, .r11, .r29, .r31] := by
@@ -64,7 +63,7 @@ theorem pins_RC : Pins RC [.r10, .r11, .r29, .r31] := by
 theorem rcPre_ok {d : RcD} {s : State} (h : RC d s) :
     WP isa (.seq (.seq (.block minv32) (PublicChecked.montOp 5 4 1)) (.block [.addi .r3 .r31 0, ldh .r4 hWsLen]))
       s (RCm d) := by
-  obtain ⟨hp, ha, hac, hwr, hsp, hstk⟩ := h
+  obtain ⟨hp, ha, hac, hsp, hstk⟩ := h
   have e := hp.env
   have l56 : InRegions (s.rd ++ s.wr) (d.B + BitVec.ofNat 64 56) 8 := e.hs.ld (d := 56) (by
     have := e.hZ; simp only [slot, hdrBytes] at this; omega)
@@ -75,7 +74,7 @@ theorem rcPre_ok {d : RcD} {s : State} (h : RC d s) :
     (fun j _ _ => by rw [um])
   refine WP.mono (rcHead_ok hu (by rw [um]; exact u12) (by rw [um]; exact ha) hac) fun t m => ?_
   have k := ku.trans m.keep
-  exact ⟨m.prep, m.a5, m.r3, m.r4, by rw [k.wr]; exact hwr, by rw [k.sp]; exact hsp, by rw [k.sp]; exact hstk⟩
+  exact ⟨m.prep, m.a5, m.r3, m.r4, by rw [k.sp]; exact hsp, by rw [k.sp]; exact hstk⟩
 
 theorem rcPre_ct : RelCT isa (Two RC)
     (.seq (.seq (.block minv32) (PublicChecked.montOp 5 4 1)) (.block [.addi .r3 .r31 0, ldh .r4 hWsLen]))
@@ -86,7 +85,7 @@ theorem rcPre_ct : RelCT isa (Two RC)
 theorem rc_pre {d : RcD} {s : State} (h : RCm d s) :
     (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176).pre
       (s.callEntry.withRegions [] [⟨d.B, 8 * d.L⟩]) := by
-  obtain ⟨p₂, h5, r3₂, r4₂, hwr, hsp, hstk⟩ := h
+  obtain ⟨p₂, h5, r3₂, r4₂, hsp, hstk⟩ := h
   have e := p₂.env
   have hnw := e.hs.nowrap
   have hL64 : d.L < 2 ^ 64 := by omega
@@ -104,6 +103,11 @@ theorem rc_pub {d : RcD} {s₁ s₂ : State} (h₁ : RCm d s₁) (h₂ : RCm d s
   rw [a3, a4, b3, b4, p₁.width, p₂.width]
   exact ⟨⟨hsp, rfl⟩, fun _ _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
 
+theorem rc_covers {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) :
+    Covers ([] ++ [⟨B, 8 * L⟩]) (s.rd ++ s.wr) := fun x n hx => by
+  obtain ⟨r, hr, hc⟩ := scr_covers h.env.hs (by simpa only [List.nil_append] using hx)
+  exact ⟨r, List.mem_append_right _ hr, hc⟩
+
 /-- After the call: the working space's address. -/
 def RCc (d : RcD) (s : State) : Prop := s.gpr .r31 = d.B
 
@@ -112,22 +116,15 @@ theorem rcCall_ct (R : RoundImpl) : RelCT isa (Two RCm) (.call R.name R.code) (T
   · intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
     obtain ⟨d, h₁, h₂, hsp⟩ := hp
     have cov : ∀ {s : State}, RCm d s → Covers ([] ++ [⟨d.B, 8 * d.L⟩]) (s.rd ++ s.wr) ∧
-        Covers [⟨d.B, 8 * d.L⟩] s.wr := fun h =>
-      ⟨fun x n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ (by
-        simp only [List.nil_append, List.mem_singleton] at hr; rw [hr]; exact h.2.2.2.2.1), hc⟩,
-       fun x n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton] at hr; rw [hr]; exact h.2.2.2.2.1, hc⟩⟩
+        Covers [⟨d.B, 8 * d.L⟩] s.wr := fun h => ⟨rc_covers h.1, fun _ _ => scr_covers h.1.env.hs⟩
     exact RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) R.verified.1 R.verified.2.1 [] [⟨d.B, 8 * d.L⟩]
       (fun a b ⟨ha, hb⟩ => by
         subst ha hb
         exact ⟨rc_pre h₁, rc_pre h₂, rc_pub h₁ h₂ hsp, (cov h₁).1, (cov h₁).2, (cov h₂).1, (cov h₂).2⟩)
       _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
-  · have hwr := h.2.2.2.2.1
-    have h31 := h.1.env.h31
+  · have h31 := h.1.env.h31
     exact WP.callAny (k := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176) R.verified.1
-      (rd := []) (wr := [⟨d.B, 8 * d.L⟩]) (rc_pre h)
-      (fun x n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ (by
-        simp only [List.nil_append, List.mem_singleton] at hr; rw [hr]; exact hwr), hc⟩)
-      (fun x n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton] at hr; rw [hr]; exact hwr, hc⟩)
+      (rd := []) (wr := [⟨d.B, 8 * d.L⟩]) (rc_pre h) (rc_covers h.1) (fun _ _ => scr_covers h.1.env.hs)
       (fun s' _ _ _ _ hcs _ => (hcs .r31 (by decide)).trans h31) (by have := R.stack; omega)
 
 theorem pins_RCc : Pins RCc [.r31] := by

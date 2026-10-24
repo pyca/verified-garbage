@@ -49,7 +49,7 @@ def RdPost (s : State) (B : Addr) (L w c a i K : Nat) (t : State) : Prop :=
     else u.mem.writeW (B + BitVec.ofNat 64 160) (BitVec.ofNat 64 2)) ∧ Keep [.r3, .r4, .r5] u t
 
 theorem roundCount_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a i K : Nat} (h : Prep s B L w c)
-    (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
+    (ha : arr s.mem B w 4 = a) (hac : a < c)
     (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩)
     (hI : word s.mem B 176 = BitVec.ofNat 64 i) (hK : word s.mem B 168 = BitVec.ofNat 64 K)
     (hi : i < 2 ^ 62) (hK' : K < 2 ^ 62) :
@@ -59,7 +59,7 @@ theorem roundCount_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a i K : Nat}
   have es : ∀ j, VG.Proof.Bignum.slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
   unfold round
-  refine WP.seq (WP.mono (roundCall_ok R h ha hac hwr hsp hstk) fun u hu => ?_)
+  refine WP.seq (WP.mono (roundCall_ok R h ha hac hsp hstk) fun u hu => ?_)
   have hs : Scr u B (8 * L) := hu.prep.env.hs
   have h31 : u.gpr .r31 = B := hu.prep.env.h31
   have l160 : InRegions u.wr (B + BitVec.ofNat 64 160) 8 := hs.st (d := 160) (by omega)

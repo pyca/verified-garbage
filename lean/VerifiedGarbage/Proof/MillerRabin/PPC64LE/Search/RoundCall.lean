@@ -271,9 +271,24 @@ theorem rcHead_ok {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
   have k12 := k₁.trans k₂
   exact ⟨p₂, by rw [m₂]; exact h5, r3₂, r4₂, by rw [m₂]; exact o₁, k12⟩
 
+/-- The working space's bytes are writable. -/
+theorem scr_covers {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) {x : Addr} {n : Nat}
+    (h : InRegions [⟨B, Z⟩] x n) : InRegions s.wr x n := by
+  obtain ⟨B₀, o, L', hm, hb, hoL, -⟩ := hs.wr
+  obtain ⟨r, hr, hc⟩ := h
+  rw [List.mem_singleton] at hr
+  subst hr hb
+  refine ⟨⟨B₀, L'⟩, hm, ?_⟩
+  simp only [Region.Contains, off] at hc ⊢
+  have e : x - B₀ = (x - (B₀ + BitVec.ofNat 64 o)) + BitVec.ofNat 64 o := by bv_omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
+  have := Nat.mod_le ((x - (B₀ + BitVec.ofNat 64 o)).toNat + o % 2 ^ 64) (2 ^ 64)
+  have := Nat.mod_le o (2 ^ 64)
+  omega
+
 theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
     (h12 : s.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32)
-    (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
+    (ha : arr s.mem B w 4 = a) (hac : a < c)
     (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩) :
     WP isa (.seq (PublicChecked.montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen])
       (.seq (.call R.name R.code) (.block (([.lsl .r3 .r3 32, .lsr .d .r3 .r3 32] : List Instr) ++ regsBack))))) s
@@ -292,7 +307,7 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
   have r3₂ := mid.r3
   have r4₂ := mid.r4
   have hL64 : L < 2 ^ 64 := by omega
-  have hwr₂ : (⟨B, 8 * L⟩ : Region) ∈ s₂.wr := by rw [k12.wr]; exact hwr
+  have hwr₂ : ∀ x n, InRegions [⟨B, 8 * L⟩] x n → InRegions s₂.wr x n := fun _ _ => scr_covers p₂.env.hs
   -- The round.
   refine WP.seq (WP.callAny (k := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176) R.verified.1
     (rd := []) (wr := [⟨B, 8 * L⟩]) ?_ ?_ ?_ (fun s₃ hrd hwr₃ hsp₃ hf hcs hpost => ?_) (by have := R.stack; omega))
@@ -300,9 +315,10 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
     simp only [r3₂, r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm L 8, k12.sp]
     exact ⟨hsp, trivial, hstk, by omega, p₂.layout, p₂.prepared (by
       show val32 s₂.mem B (slot w 5) (2 * w) < c; rw [mid.a5]; exact Nat.mod_lt _ (by have := h.c3; omega))⟩
-  · exact fun x n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ (by
-      simp only [List.nil_append, List.mem_singleton] at hr; rw [hr]; exact hwr₂), hc⟩
-  · exact fun x n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton] at hr; rw [hr]; exact hwr₂, hc⟩
+  · intro x n hx
+    obtain ⟨r, hr, hc⟩ := hwr₂ x n (by simpa only [List.nil_append] using hx)
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  · exact hwr₂
   sig_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs] at hpost
   obtain ⟨hres, hk3⟩ := hpost
   rw [r3₂, p₂.width] at hres hk3
@@ -374,7 +390,7 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
     rw [kt.gpr r (p1 r hr h29), hcs r hr, k12.gpr r (p2 r hr hm)]
 
 theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
-    (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
+    (ha : arr s.mem B w 4 = a) (hac : a < c)
     (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩) :
     WP isa (roundCall R.name R.code) s (RcPost s B L w c a) := by
   have e := h.env
@@ -386,7 +402,7 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
     fun u ⟨⟨u12, um⟩, ku⟩ => ?_)
   have hu : Prep u B L w c := h.transfer (e.keep ku (by decide)) (fun d _ _ => by rw [um])
     (fun j _ _ => by rw [um])
-  refine WP.mono (roundCallTail_ok R hu (by rw [um]; exact u12) (by rw [um]; exact ha) hac (by rw [ku.wr]; exact hwr)
+  refine WP.mono (roundCallTail_ok R hu (by rw [um]; exact u12) (by rw [um]; exact ha) hac
     (by rw [ku.sp]; exact hsp) (by rw [ku.sp]; exact hstk)) fun t ht => ?_
   have p12 : ∀ r ∈ preserved, r ∉ ([.r12] : List Reg) := by decide
   exact ⟨ht.prep, ht.r3, by have := ht.keeps; rwa [um] at this, by have := ht.frame; rwa [um, ku.sp] at this, ht.rd.trans ku.rd, ht.wr.trans ku.wr, ht.sp.trans ku.sp,
