@@ -24,7 +24,9 @@ the functions it calls preserve.
 1. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
    `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)` for the `kℓ` entries, with `r24` the
    AND of the results. If one failed (`r24 = 0`), it returns 0 at once.
-2. `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, then `sig` to `r28`; and `ŝ₁`, `ŝ₂`
+2. `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `rnd ‖ μ` first copied to `W1`
+   (so that the sponge reads one argument besides `scratch`, as its proof
+   requires of arguments that may overlap), then `sig` to `r28`; and `ŝ₁`, `ŝ₂`
    and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of `sk`.
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`):
    the commitment (`y ← ExpandMask(ρ″, κ)`, `ŷ = NTT(y)`, `w = NTT⁻¹(Â ŷ)`,
@@ -241,10 +243,10 @@ def sampleE (e : Nat) : Prog isa :=
 /-- `ρ` to `RS`, and the `kℓ` entries of `Â`. -/
 def expandA : Prog isa := .seq (copy .r30 0 .r31 oRS 32) (seqR (sampleE P p) 0 (p.k * p.ℓ))
 
-/-- `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, then `sig` to `r28`. -/
+/-- `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, from `rnd ‖ μ` copied to `W1`, then `sig` to `r28`. -/
 def rhoPP : Prog isa :=
-  .seq (hash 136 0x1f [⟨.r30, 32, 32⟩, ⟨.r28, 0, 32⟩, ⟨.r29, 0, 64⟩] [⟨.r31, oMS, 64⟩])
-    (.block [.load .d .r28 .r31 oSIG])
+  .seq (copy .r28 0 .r31 oW1 32) (.seq (copy .r29 0 .r31 (oW1 + 32) 64)
+    (.seq (hash 136 0x1f [⟨.r30, 32, 32⟩, ⟨.r31, oW1, 96⟩] [⟨.r31, oMS, 64⟩]) (.block [.load .d .r28 .r31 oSIG])))
 
 /-- `ŝ₁[r]`. -/
 def decS1 (r : Nat) : Prog isa :=
