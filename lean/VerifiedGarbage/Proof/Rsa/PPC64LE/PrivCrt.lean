@@ -88,10 +88,9 @@ theorem below_apart {s : State} (h : PreP s) {d : Nat} (hd : d + 8 ≤ oM) {r : 
 
 theorem crt_noFrames : Impl.Bignum.PPC64LE.Crt.crt.noFrames = true := by decide +kernel
 
-theorem crtCall_ok {s t : State} (h : PreP s) (A : AtCrt s t) {Q : State → Prop}
-    (hQ : ∀ u, Mid s u → crtOut s u → Q u) : WP isa crtCall t Q := by
+theorem crt_covers {s t : State} (h : PreP s) (A : AtCrt s t) :
+    Covers (crtRd s ++ crtWr s) (t.rd ++ t.wr) ∧ Covers (crtWr s) t.wr := by
   have hk := h.k2
-  have mk : Region.Sub (mR s) (kR s) := frame_sub s (by unfold oM frameBytes; omega)
   have ei : (⟨s.gpr .r9, (s.gpr .r6).toNat⟩ : Region) = iR s := by simp only [iR, h.h10]
   have hw : Covers (crtWr s) t.wr := by
     rw [A.wr, h.hwr]
@@ -100,14 +99,20 @@ theorem crtCall_ok {s t : State} (h : PreP s) (A : AtCrt s t) {Q : State → Pro
     rcases hr with rfl | rfl
     · exact Covers.one (in_fr s _ (by unfold oM; omega) (by unfold oM frameBytes; omega))
     · exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp
-  have hc : Covers (crtRd s ++ crtWr s) (t.rd ++ t.wr) := by
-    refine Covers.append_left (Covers.of_forall fun r hr => ?_) (Covers.right hw)
-    rw [A.rd, A.wr, h.hrd]
-    simp only [crtRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    rotate_left 7
-    · exact Covers.right (Covers.one (in_fr s _ (by decide) (by decide)))
-    all_goals exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [ei])
+  refine ⟨Covers.append_left (Covers.of_forall fun r hr => ?_) (Covers.right hw), hw⟩
+  rw [A.rd, A.wr, h.hrd]
+  simp only [crtRd, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rotate_left 7
+  · exact Covers.right (Covers.one (in_fr s _ (by decide) (by decide)))
+  all_goals exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [ei])
+
+theorem crtCall_ok {s t : State} (h : PreP s) (A : AtCrt s t) {Q : State → Prop}
+    (hQ : ∀ u, Mid s u → crtOut s u → Q u) : WP isa crtCall t Q := by
+  have hk := h.k2
+  have mk : Region.Sub (mR s) (kR s) := frame_sub s (by unfold oM frameBytes; omega)
+  have ei : (⟨s.gpr .r9, (s.gpr .r6).toNat⟩ : Region) = iR s := by simp only [iR, h.h10]
+  obtain ⟨hc, hw⟩ := crt_covers h A
   unfold crtCall
   refine WP.call (k := Proof.Bignum.PPC64LE.Crt.fnContract) Proof.Bignum.PPC64LE.Crt.fn_correct (crt_pre h A) hc hw
     (fun u hrd hwr hsp hf hpres _ hpost => hQ u ?_ ?_) crt_noFrames

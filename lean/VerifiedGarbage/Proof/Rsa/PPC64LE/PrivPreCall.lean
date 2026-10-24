@@ -176,13 +176,10 @@ structure AtPub (s u : State) : Prop extends Mid s u where
 
 theorem pre_noFrames : Impl.Bignum.PPC64LE.Precompute.precompute.noFrames = true := by decide +kernel
 
-theorem preCall_ok {s t : State} (h : PreP s) (A : AtPre s t) {Q : State → Prop}
-    (hQ : ∀ u, AtPub s u → Q u) : WP isa preCall t Q := by
+theorem pre_covers {s t : State} (h : PreP s) (A : AtPre s t) :
+    Covers ([nR s] ++ preWr s) (t.rd ++ t.wr) ∧ Covers (preWr s) t.wr := by
   have hk := h.k2
-  have pk := pwR_sub h
   have pwl := pw_le hk
-  have fbt := fb_toNat h.sp1
-  unfold frameBytes at fbt
   have hw : Covers (preWr s) t.wr := by
     rw [A.wr, h.hwr]
     refine Covers.of_forall fun r hr => ?_
@@ -190,14 +187,41 @@ theorem preCall_ok {s t : State} (h : PreP s) (A : AtPre s t) {Q : State → Pro
     rcases hr with rfl | rfl
     · exact Covers.one (in_fr s _ (by unfold oPre; omega) (by unfold oPre frameBytes; omega))
     · exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp
-  have hc : Covers ([nR s] ++ preWr s) (t.rd ++ t.wr) := by
-    refine Covers.append_left (Covers.of_mem fun r hr => ?_) (Covers.right hw)
-    rw [List.mem_singleton.mp hr, A.rd, h.hrd]; simp
+  refine ⟨Covers.append_left (Covers.of_mem fun r hr => ?_) (Covers.right hw), hw⟩
+  rw [List.mem_singleton.mp hr, A.rd, h.hrd]; simp
+
+theorem pre_toNat {s : State} (h : PreP s) :
+    (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .r6).toNat)).toNat =
+      Spec.Rsa.precomputedWords (s.gpr .r6).toNat := by
+  have := pw_le h.k2
+  rw [BitVec.toNat_ofNat]; omega
+
+theorem pre_pre {s t : State} (h : PreP s) (A : AtPre s t) :
+    Proof.Bignum.PPC64LE.Pre.fnContract.pre (t.callEntry.withRegions [nR s] (preWr s)) := by
+  have hk := h.k2
+  have pk := pwR_sub h
+  have pwl := pw_le hk
+  have fbt := fb_toNat h.sp1
+  unfold frameBytes at fbt
   have g : ∀ r, r ∉ linkRegs → (t.callEntry.withRegions [nR s] (preWr s)).gpr r = t.gpr r :=
     fun r hr => State.callEntry_gpr t hr
-  have e4 : (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .r6).toNat)).toNat =
-      Spec.Rsa.precomputedWords (s.gpr .r6).toNat := by
-    rw [BitVec.toNat_ofNat]; omega
+  simp only [Proof.Bignum.PPC64LE.Pre.fnContract, g .r3 (by decide), g .r4 (by decide), g .r5 (by decide),
+    g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), A.r3, A.r4, A.r5, A.r6, A.r7, A.r8, pre_toNat h,
+    State.withRegions_rd, State.withRegions_wr, Proof.Bignum.PPC64LE.Pre.nR, Proof.Bignum.PPC64LE.Pre.preR,
+    Proof.Bignum.PPC64LE.Pre.scrR]
+  refine ⟨trivial, trivial, h.kn.sub_left pk, h.ks.sub_left pk, h.ns, ?_, h.wn, h.ws, ⟨h.k1, h.k2⟩, trivial, ?_⟩
+  · rw [Offset.toNat_add_ofNat]; unfold oPre at *; omega
+  · have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *
+    unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega
+
+theorem preCall_ok {s t : State} (h : PreP s) (A : AtPre s t) {Q : State → Prop}
+    (hQ : ∀ u, AtPub s u → Q u) : WP isa preCall t Q := by
+  have hk := h.k2
+  have pk := pwR_sub h
+  obtain ⟨hc, hw⟩ := pre_covers h A
+  have g : ∀ r, r ∉ linkRegs → (t.callEntry.withRegions [nR s] (preWr s)).gpr r = t.gpr r :=
+    fun r hr => State.callEntry_gpr t hr
+  have e4 := pre_toNat h
   have hn : Spec.Rsa.bytesAt t.mem (s.gpr .r5) (s.gpr .r6).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat :=
     bytes_of_frame A.mem (fun r hr => by
@@ -207,16 +231,8 @@ theorem preCall_ok {s t : State} (h : PreP s) (A : AtPre s t) {Q : State → Pro
       · exact h.ns) (by have := h.wn; omega)
   unfold preCall
   refine WP.call (k := Proof.Bignum.PPC64LE.Pre.fnContract) (rd := [nR s]) (wr := preWr s)
-    Proof.Bignum.PPC64LE.Pre.fn_correct ?_ hc hw
+    Proof.Bignum.PPC64LE.Pre.fn_correct (pre_pre h A) hc hw
     (fun u hrd hwr hsp hf hpres _ hpost => hQ u ?_) pre_noFrames
-  · simp only [Proof.Bignum.PPC64LE.Pre.fnContract, g .r3 (by decide), g .r4 (by decide), g .r5 (by decide),
-      g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), A.r3, A.r4, A.r5, A.r6, A.r7, A.r8, e4,
-      State.withRegions_rd, State.withRegions_wr, Proof.Bignum.PPC64LE.Pre.nR, Proof.Bignum.PPC64LE.Pre.preR,
-      Proof.Bignum.PPC64LE.Pre.scrR]
-    refine ⟨trivial, trivial, h.kn.sub_left pk, h.ks.sub_left pk, h.ns, ?_, h.wn, h.ws, ⟨h.k1, h.k2⟩, trivial, ?_⟩
-    · rw [Offset.toNat_add_ofNat]; unfold oPre at *; omega
-    · have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *
-      unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega
   · have hp : ∀ r ∈ preserved, u.gpr r = t.gpr r := hpres
     have ft : Frame [kR s, sR s] s.mem u.mem := by
       refine (A.mem.trans (hf.sub fun r hr => ?_))
