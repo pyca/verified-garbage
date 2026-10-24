@@ -10,12 +10,16 @@ them, but a relational proof (`RelCT`) may want to cut it anywhere: `flat`
 lists the programs of a code in order, splitting every sequence, and
 `seqL` runs a list of programs in sequence. A code and its list run the same
 and leak the same trace (`exec_flat`), so a proof may run the list instead,
-cut where it wants (`exec_seqL_append`).
+cut where it wants (`exec_seqL_append`). Codes have decidable equality, so
+that the kernel can check that a list of programs is a code's (`decide
++kernel`), where elaborating `rfl` would recurse too deep.
 -/
 
 @[expose] public section
 
 namespace VG
+
+deriving instance DecidableEq for Code
 
 variable {I C : Type}
 

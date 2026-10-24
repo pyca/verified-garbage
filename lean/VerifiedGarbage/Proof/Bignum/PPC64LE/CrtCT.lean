@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsA
-meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsA
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
+meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
@@ -28,15 +28,6 @@ theorem crt_run (d : List (BitVec 64) × List (BitVec 64) × List Byte) (s : Sta
   let ⟨tr, t, e, _⟩ := fn_correct s h.1
   ⟨tr, t, exec_flat.mp e, trivial⟩
 
-theorem pins98 : Pins (At C0 crtF 98)
-    [.r10, .r11, .r14, .r15, .r18, .r19, .r23, .r27, .r28, .r29, .r30, .r31] := sorry
-theorem pins150 : Pins (At C0 crtF 150)
-    [.r10, .r11, .r14, .r15, .r18, .r19, .r23, .r27, .r28, .r29, .r30, .r31] := sorry
-theorem pins201 : Pins (At C0 crtF 201) [.r15, .r16, .r17, .r23] := sorry
-theorem pins204 : Pins (At C0 crtF 204) [.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r31] := sorry
-theorem pins249 : Pins (At C0 crtF 249) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := sorry
-theorem pins255 : Pins (At C0 crtF 255) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := sorry
-theorem pins274 : Pins (At C0 crtF 274) [.r10, .r23, .r27, .r28, .r29] := sorry
 
 theorem fn_rel : RelCT isa (Two C0) crt fun _ _ => True := by
   refine chain_start (chain_cons crt_run (m := 1) (by decide) ?_ ?_)
