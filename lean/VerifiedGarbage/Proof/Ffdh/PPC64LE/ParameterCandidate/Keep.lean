@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.StCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Round
 
 /-!
 # An FFDH parameter candidate on PPC64LE: the tests' state
@@ -130,5 +131,43 @@ theorem MSt.frm {p : PP} {mb N : Nat} {s t : State} (h : MSt p mb N s) {rs : Lis
   exact hf.wv_eq (fun r hr' => (hr r hr').arr hj) (by
     have := es 0; have := es 1; have := es 9; have := es 10; have := es 27
     rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [saveBytes] at hZ' <;> omega)
+
+theorem Read.kept {w d : Nat} (hd : Read w d) : ∀ i, d ≤ i → i < d + 8 → Kept w i := by
+  intro i h1 h2
+  have e0 : slot w 0 = 256 := by simp [slot, hdrBytes]
+  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have := es 2; have := es 3; have := es 5; have := es 6; have := es 8; have := es 11; have := es 27
+  unfold Read at hd
+  refine ⟨fun k hk => ?_, fun j hj => ?_, ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
+    rcases hk with rfl | rfl | rfl | rfl | rfl <;>
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;>
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega
+  · rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨k, hk, rfl⟩ | rfl | rfl <;> omega
+
+/-- `MSt` survives a witness's round. -/
+theorem MSt.round {p : PP} {mb N a i K : Nat} {s t : State} (h : MSt p mb N s)
+    (hR : RdPost s p.B p.n (wOf mb) N a i K t) : MSt p mb N t := by
+  obtain ⟨u, hu, tm, kt⟩ := hR
+  obtain ⟨hw2, -, hZ⟩ := h.w
+  have stu : St p u := h.st.call hu.keeps (by have := hu.frame; rw [h.st.sp] at this; exact this) hu.rd hu.wr
+    hu.sp hu.prep.env.h31
+  have phu : Ph p mb u := h.ph.keep (hu.prep.env.h10.trans h.ph.r10.symm) (hu.prep.env.h11.trans h.ph.r11.symm)
+    (hu.prep.env.h29.trans h.ph.r29.symm) fun d hd => keeps_word hu.keeps (by
+      have := hd.le; simp only [PP.Z, saveBytes] at hZ; omega) hd.kept
+  have mu : MSt p mb N u := ⟨stu, phu, hu.prep, h.mb1, h.mb2⟩
+  have hf : Frm p.B [(176, 8), (160, 8)] u.mem t.mem := by
+    rw [tm]
+    split
+    · exact frm_writeW (a := 160) (frm_writeW (a := 176) (Frm.refl _ _ _) _
+        ⟨_, List.mem_cons_self, by decide, by decide⟩ (by decide)) _
+        ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by decide, by decide⟩ (by decide)
+    · exact frm_writeW (a := 160) (Frm.refl _ _ _) _
+        ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by decide, by decide⟩ (by decide)
+  exact mu.frm hf (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Or.inl ⟨by simp, rfl⟩) kt (by decide)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
