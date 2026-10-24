@@ -5,12 +5,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # Field arithmetic without its displacements, for constant time

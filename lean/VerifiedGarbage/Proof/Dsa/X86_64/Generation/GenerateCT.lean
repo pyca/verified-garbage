@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeParametersCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Generate
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeParameters
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 
 /-! # Complete search and output timing for each supported parameter size -/
 

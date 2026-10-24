@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.Layout`. -/
 

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

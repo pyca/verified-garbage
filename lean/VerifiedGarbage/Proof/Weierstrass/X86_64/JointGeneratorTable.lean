@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 import VerifiedGarbage.Proof.Weierstrass.JacAdd

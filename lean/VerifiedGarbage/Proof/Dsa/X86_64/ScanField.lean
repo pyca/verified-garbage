@@ -11,7 +11,6 @@ import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # Scanning modulus buffers through the saved DSA fields -/
 

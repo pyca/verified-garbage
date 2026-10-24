@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorModulusCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorModulus
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Workspace
 
 /-! # Compose fresh workspace initialization with generator exponentiation -/
 

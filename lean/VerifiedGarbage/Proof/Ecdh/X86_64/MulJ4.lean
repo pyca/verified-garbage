@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Weierstrass.WindowJ
 
 /-!
 # ECDH on x86-64: `[d]P` by 4-bit windows with a Jacobian accumulator

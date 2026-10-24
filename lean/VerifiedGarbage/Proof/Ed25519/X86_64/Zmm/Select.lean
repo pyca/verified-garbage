@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
 import VerifiedGarbage.Proof.Framework.X86_64.ZVecKeep
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
@@ -14,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Impl.X86_64Scal
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # The `zmm` comb: the selection

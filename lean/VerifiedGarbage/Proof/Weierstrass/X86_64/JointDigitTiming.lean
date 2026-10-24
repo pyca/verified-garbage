@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-! Public digit reads recover the loaded byte and agree on the zero branch. -/
 

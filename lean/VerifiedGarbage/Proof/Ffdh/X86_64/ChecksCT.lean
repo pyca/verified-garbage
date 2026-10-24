@@ -22,7 +22,6 @@ meta import Aesop.BuiltinRules
 meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Bignum.CrtMath
 meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # FFDH on x86-64: comparisons in constant time -/

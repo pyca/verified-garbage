@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Random
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Impl.Dsa.X86_64.Random
+import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Dsa.Layout
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.TCB.Artifact
 
 /-! Byte-subtraction lemma used by the scalar range check. -/
 @[expose] public section

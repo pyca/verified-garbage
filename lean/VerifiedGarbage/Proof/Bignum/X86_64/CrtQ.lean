@@ -10,7 +10,6 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
-import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-!
 # RSA with the CRT on x86-64: `q`'s phase

@@ -6,9 +6,7 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.BodyCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Body
-import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyCT
-import VerifiedGarbage.Spec.RsaKeyGen.Contract
 
 /-! # FFDH parameter generation on x86-64: constant time under the public tape contract -/
 

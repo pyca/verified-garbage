@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubMain
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCode
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedChecked
 
 /-! # `vg_rsa_public_precomputed_checked_ifma`: correctness -/
 

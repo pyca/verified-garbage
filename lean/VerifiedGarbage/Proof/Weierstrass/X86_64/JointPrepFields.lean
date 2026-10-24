@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! The recoders preserve the field inputs and the external generator table. -/
 

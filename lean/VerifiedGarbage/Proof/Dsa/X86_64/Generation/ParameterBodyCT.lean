@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterCTState
 public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAttempt
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 
 /-! # One public seed attempt advances the outer search and witness cursor -/
 

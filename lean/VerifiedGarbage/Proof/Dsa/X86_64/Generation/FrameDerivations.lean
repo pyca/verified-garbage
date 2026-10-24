@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameDerived
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Derive several arena pointers from the preserved scratch base -/
 

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.Validate.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Setup
 import VerifiedGarbage.Proof.Ecdh.X86_64.Check
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.X25519.X86_64.Step

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Main
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 
 /-! # FFDH key-generation attempts on x86-64: correctness and ABI -/
 

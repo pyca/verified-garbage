@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
@@ -11,6 +11,12 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # The joint loop's doubler

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameDerivations
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameDerived
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Initialize the three workspace pointers and the witness cursor -/
 

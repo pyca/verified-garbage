@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 public import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

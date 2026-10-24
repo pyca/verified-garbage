@@ -1,18 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
-public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Impl.MdStream.X86_64
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Spec.Hmac
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Deterministic ECDSA on x86-64: the hash function

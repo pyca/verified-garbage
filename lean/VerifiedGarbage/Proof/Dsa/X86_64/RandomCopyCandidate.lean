@@ -10,7 +10,6 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
 
 /-! The copied ISA bytes encode precisely the specification's candidate. -/
 @[expose] public section

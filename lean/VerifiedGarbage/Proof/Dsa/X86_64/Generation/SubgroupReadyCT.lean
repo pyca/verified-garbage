@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupCTState
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
 
 /-! # Hash and shape the subgroup candidate before the native primality call -/
 

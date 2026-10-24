@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 
 /-! # FFDH private-key validation on x86-64: full main computation -/
 

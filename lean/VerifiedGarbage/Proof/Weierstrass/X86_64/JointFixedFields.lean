@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedLoad
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafExternalCopy
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-! The affine generator row supplies an exact public field environment. -/
 

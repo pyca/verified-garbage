@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedFields
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedEntryW
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! Canonical affine generator coordinates and their external read-only storage. -/
 

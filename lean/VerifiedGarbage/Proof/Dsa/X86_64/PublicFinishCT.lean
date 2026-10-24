@@ -8,7 +8,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicPower
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.Power
 
 /-! # Public exponent bytes across the DSA calling convention -/
 

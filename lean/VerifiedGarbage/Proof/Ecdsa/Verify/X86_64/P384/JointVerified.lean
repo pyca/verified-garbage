@@ -18,6 +18,7 @@ import Batteries.Data.List.Lemmas
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 
 /-!
 # ECDSA verification over P-384 on x86-64: `Verified`

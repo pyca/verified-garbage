@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 
 /-! The table and cache initialization writes are separate from both scalar streams. -/
 

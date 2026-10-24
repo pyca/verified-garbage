@@ -18,7 +18,6 @@ meta import Aesop.BuiltinRules
 meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Bignum.CrtMath
 meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # Constant-time Montgomery constants for padded DSA moduli -/

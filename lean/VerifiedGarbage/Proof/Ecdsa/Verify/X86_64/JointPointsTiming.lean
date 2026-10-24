@@ -11,12 +11,13 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
 /-! The two-scalar multiplication leaks only the public verification inputs. -/
 

@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.GenerationSized
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # The restricted helper adds only the public width precondition -/
 

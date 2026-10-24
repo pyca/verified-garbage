@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.GTables
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Tables
 public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Framework.GetElem

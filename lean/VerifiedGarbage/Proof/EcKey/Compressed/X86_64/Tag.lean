@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.EcKey.Compressed.Parity
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.TCB.Code
 
 /-! # The compressed tag store -/
 

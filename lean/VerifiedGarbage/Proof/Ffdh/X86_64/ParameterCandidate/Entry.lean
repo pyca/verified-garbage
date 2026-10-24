@@ -7,7 +7,6 @@ import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # FFDH parameter generation on x86-64: save the ABI arguments and registers -/
 

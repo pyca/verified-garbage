@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Tag
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 
 /-! # Select and check the canonical root's parity -/
 

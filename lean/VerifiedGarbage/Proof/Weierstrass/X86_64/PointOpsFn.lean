@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
 import VerifiedGarbage.Proof.Mont.Read
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # Point operations as functions on x86-64: from the contracts to the bodies

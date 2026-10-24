@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOps
 
 /-!
 # The Jacobian window method on x86-64: an iteration

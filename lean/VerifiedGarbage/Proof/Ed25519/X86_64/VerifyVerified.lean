@@ -62,10 +62,8 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.NormNum.Prime
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
 meta import Mathlib.FieldTheory.Finite.Basic
 meta import Mathlib.Tactic.NormNum.Prime
 meta import VerifiedGarbage.Proof.Framework.RegSetOrder

@@ -15,6 +15,7 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicSquares
 
 /-! # Public window addresses and branches depend only on the exponent -/
 

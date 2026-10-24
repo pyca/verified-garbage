@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! # FFDH on x86-64: exponentiate a sampled scalar and finish both outputs -/
 

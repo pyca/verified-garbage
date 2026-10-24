@@ -13,7 +13,6 @@ import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 
 /-! # Public selection of supported DSA modulus widths -/
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 import VerifiedGarbage.Proof.Weierstrass.JacCoZ
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # The Jacobian window method on x86-64: the table into affine coordinates
