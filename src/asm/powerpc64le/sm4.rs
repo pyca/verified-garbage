@@ -31925,7 +31925,9 @@ oris %r22, %r22, 0
 ori %r22, %r22, 65535
 std %r22, 400(%r8)
 cmpldi %cr0, %r4, 0
-beq %cr0, 20f
+bne %cr0, 20f
+b 21f
+20:
 addi %r10, %r8, 3008
 ld %r14, 0(%r3)
 or %r15, %r14, %r14
@@ -41672,8 +41674,11 @@ std %r21, 56(%r10)
 addi %r10, %r10, -64
 addi %r3, %r3, 8
 addi %r11, %r8, 3072
-b 21f
-20:
+21:
+cmpldi %cr0, %r4, 0
+beq %cr0, 22f
+b 23f
+22:
 addi %r10, %r8, 1024
 ld %r14, 0(%r3)
 or %r15, %r14, %r14
@@ -51420,7 +51425,7 @@ std %r21, 56(%r10)
 addi %r10, %r10, 64
 addi %r3, %r3, 8
 addi %r11, %r8, 3072
-21:
+23:
 ld %r14, 3072(%r8)
 ld %r15, 3080(%r8)
 ld %r16, 3088(%r8)
