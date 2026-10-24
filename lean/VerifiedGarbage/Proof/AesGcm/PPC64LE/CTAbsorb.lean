@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
@@ -12,6 +12,9 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on PPC64LE: `ghash1`, `absorb`, `flush` and `lens` are constant time

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.FinSteps
+import VerifiedGarbage.Proof.CmacAes.PPC64LE.FinSteps
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Block
@@ -11,6 +11,11 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Contract
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacAes.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # AES-CMAC on PPC64LE: `vg_cmac_aes_finalize`
