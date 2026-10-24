@@ -20,7 +20,7 @@ on:
         description: The commit to compare against, as a full or abbreviated SHA, a branch or a tag (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
       arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or thumb and aarch64-apple, which run only when named; empty for x86_64 aarch64 x86 arm)
+        description: Space-separated architectures to run (x86_64 aarch64 x86 arm powerpc64, or thumb and aarch64-apple, which run only when named; empty for x86_64 aarch64 x86 arm powerpc64)
         required: false
       cpu_features:
         description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
@@ -124,14 +124,15 @@ jobs:
           path: head
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
-          # this target never compiles (bench_compare.py leaves out lean/ too).
+          # this target never compiles (bench_compare.py leaves out lean/ too):
+          # only its own, in `asm` (ci/bench_arches.py's `ASM_DIRS`).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
             !/lean/
             !/docs/
             !/src/asm/*/
-            /src/asm/${{ matrix.arch == 'thumb' && 'arm' || matrix.arch == 'aarch64-apple' && 'aarch64' || matrix.arch }}/
+            /src/asm/${{ matrix.asm }}/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ needs.arches.outputs.base }}
         with:
@@ -139,14 +140,15 @@ jobs:
           path: base
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
-          # this target never compiles (bench_compare.py leaves out lean/ too).
+          # this target never compiles (bench_compare.py leaves out lean/ too):
+          # only its own, in `asm` (ci/bench_arches.py's `ASM_DIRS`).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
             !/lean/
             !/docs/
             !/src/asm/*/
-            /src/asm/${{ matrix.arch == 'thumb' && 'arm' || matrix.arch == 'aarch64-apple' && 'aarch64' || matrix.arch }}/
+            /src/asm/${{ matrix.asm }}/
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a

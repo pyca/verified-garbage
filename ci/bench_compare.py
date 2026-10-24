@@ -213,6 +213,7 @@ EXECUTABLES = {
     "x86": ("ELF", 32, 3),
     "arm": ("ELF", 32, 40),
     "thumb": ("ELF", 32, 40),
+    "powerpc64": ("ELF", 64, 21),
     "aarch64-apple": ("Mach-O", 64, 0x0100000C),
 }
 

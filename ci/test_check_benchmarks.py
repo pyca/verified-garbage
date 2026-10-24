@@ -13,6 +13,7 @@ from unittest import mock
 
 import bench_arches as planner
 import bench_compare
+import rust_arches
 
 
 # A `src/cpu.rs` detecting features as the real one does.
@@ -165,6 +166,28 @@ class Selection(unittest.TestCase):
                 rows = self.rows(['src/asm/x86_64/consts/vg_t.rs'])
                 self.assertEqual({r['arch'] for r in rows}, {'x86_64'})
                 self.assertTrue(all(r['modules'] == '' for r in rows))
+
+    def test_asm_directories_select_their_architectures(self):
+        # PPC64LE's verified functions are in `src/asm/powerpc64le/`, its
+        # `target_arch` is `powerpc64`; each entry names both.
+        self.assertEqual({a: planner.asm_dir(a) for a in planner.PLATFORMS if planner.asm_dir(a) != a},
+                         {'powerpc64': 'powerpc64le'})
+        for a in planner.PLATFORMS:
+            self.assertEqual(rust_arches.ARCHES[planner.asm_dir(a)], a)
+        self.files['src/asm/powerpc64le/x448.rs'] = ''
+        rows = self.rows(['src/asm/powerpc64le/x448.rs'])
+        self.assertEqual([(r['arch'], r['asm'], r['cpu-features'], r['modules']) for r in rows],
+                         [('powerpc64', 'powerpc64le', '', 'x448')])
+        # Its tables of constants select the modules of its directory using them.
+        self.files['src/asm/powerpc64le/consts/vg_t.rs'] = 'pub(crate) static VG_T: [u64; 1] = [1];\n'
+        self.files['src/asm/powerpc64le/x448.rs'] = 'T = sym super::consts::VG_T,\n'
+        self.assertEqual(self.modules(self.rows(['src/asm/powerpc64le/consts/vg_t.rs'], ())),
+                         {'powerpc64': 'x448'})
+        # The directory of an architecture that is not benchmarked needs nothing.
+        self.assertEqual(self.rows(['src/asm/riscv64/x448.rs']), [])
+        # Manual runs check out the directory of the architecture they run.
+        self.assertEqual({(r['arch'], r['asm']) for r in planner.manual('powerpc64 thumb aarch64-apple')},
+                         {('powerpc64', 'powerpc64le'), ('thumb', 'arm'), ('aarch64-apple', 'aarch64')})
 
     def test_planner_changes_need_no_benchmarks(self):
         self.assertEqual(self.rows(['ci/bench_arches.py']), [])
@@ -429,7 +452,7 @@ class Selection(unittest.TestCase):
         })
         rows = self.rows(['bench/support/shared.rs'])
         self.assertEqual(self.modules(rows), {'x86_64': 'argon2 x448', 'aarch64': 'argon2',
-                                              'x86': 'argon2', 'arm': 'argon2'})
+                                              'x86': 'argon2', 'arm': 'argon2', 'powerpc64': 'argon2'})
         # A file outside `bench/` (e.g. test vectors), and one a helper
         # includes, follow the benchmarks including them in turn.
         self.files['bench/tests/argon2.rs'] = ''
@@ -440,7 +463,8 @@ class Selection(unittest.TestCase):
         self.base_files['bench/benches/primitives/x448.rs'] = self.files.pop('bench/benches/primitives/x448.rs')
         self.files['bench/benches/primitives/argon2.rs'] += '\n#[path = "../../support/shared.rs"]\nmod s;\n'
         self.assertEqual(self.modules(self.rows(['bench/support/shared.rs'])),
-                         {'x86_64': 'argon2 x448', 'aarch64': 'argon2', 'x86': 'argon2', 'arm': 'argon2'})
+                         {'x86_64': 'argon2 x448', 'aarch64': 'argon2', 'x86': 'argon2', 'arm': 'argon2',
+                          'powerpc64': 'argon2'})
         # A file nothing includes needs nothing outside `bench/`, and every
         # benchmark inside it.
         self.assertEqual(self.rows(['tests/cavp/other.rs']), [])
@@ -651,25 +675,25 @@ class Selection(unittest.TestCase):
         self.assertIsNone(names(lib, lib + '#[cfg(test)]\n#[cfg(test)]\nmod aes_tests;\n'))
 
     def test_code_other_architectures_compile_needs_nothing_here(self):
-        # As in bringing up PPC64LE: its module, its `arch`, a `cfg_attr`
-        # only it applies, and its entry in a module's list of architectures.
+        # As in bringing up an architecture that is not benchmarked (as
+        # PPC64LE was): its module, its `arch`, a `cfg_attr` only it applies,
+        # and its entry in a module's list of architectures.
         self.base_files.update({
             'src/lib.rs': 'mod ct;\npub mod chacha;\n#[cfg(target_arch = "x86_64")]\nuse asm::x86_64 as arch;\n',
             'src/asm/mod.rs': '#[cfg(target_arch = "x86_64")]\n#[rustfmt::skip]\npub(crate) mod x86_64;\n',
-            'src/ct.rs': '//! Helpers.\n#![cfg_attr(target_arch = "powerpc64", allow(dead_code))]\n'
+            'src/ct.rs': '//! Helpers.\n#![cfg_attr(target_arch = "riscv64", allow(dead_code))]\n'
                          'pub(crate) fn eq() {}\n',
             'src/chacha.rs': '#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]\nfn f() {}\n',
         })
         self.files.update({
             'src/lib.rs': self.base_files['src/lib.rs']
-            + '#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]\n'
-              'use asm::powerpc64le as arch;\n',
+            + '#[cfg(target_arch = "riscv64")]\nuse asm::riscv64 as arch;\n',
             'src/asm/mod.rs': self.base_files['src/asm/mod.rs']
-            + '\n#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]\n'
-              '#[rustfmt::skip]\npub(crate) mod powerpc64le {\n    fn f() -> [u8; 2] { [b\'}\', 0] }\n}\n',
+            + '\n#[cfg(target_arch = "riscv64")]\n'
+              '#[rustfmt::skip]\npub(crate) mod riscv64 {\n    fn f() -> [u8; 2] { [b\'}\', 0] }\n}\n',
             'src/ct.rs': 'pub(crate) fn eq() {}\n',
             'src/chacha.rs': '#![cfg(any(\n    target_arch = "x86_64",\n    target_arch = "aarch64",\n'
-                             '    target_arch = "powerpc64"\n))]\nfn f() {}\n',
+                             '    target_arch = "riscv64"\n))]\nfn f() {}\n',
         })
         paths = ['src/lib.rs', 'src/asm/mod.rs', 'src/ct.rs', 'src/chacha.rs']
         self.assertEqual(self.rows(paths, registered=None), [])
@@ -811,7 +835,7 @@ class Executables(unittest.TestCase):
                                      + machine.to_bytes(2, 'little'))
         headers = {
             'x86_64': elf(64, 62), 'aarch64': elf(64, 183), 'x86': elf(32, 3), 'arm': elf(32, 40),
-            'thumb': elf(32, 40),
+            'thumb': elf(32, 40), 'powerpc64': elf(64, 21),
             'aarch64-apple': b'\xcf\xfa\xed\xfe' + (0x0100000C).to_bytes(4, 'little') + bytes(12),
         }
         with tempfile.TemporaryDirectory() as tmp:
@@ -830,7 +854,8 @@ class Executables(unittest.TestCase):
                 bench_compare.check_arch(binary, 'arm')
 
     def test_this_machine_is_its_architecture(self):
-        arch = {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64-apple'}.get(os.uname().machine)
+        arch = {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64-apple',
+                'ppc64le': 'powerpc64'}.get(os.uname().machine)
         if arch is None or not os.path.exists('/bin/sh'):
             self.skipTest('no architecture of EXECUTABLES')
         bench_compare.check_arch(os.path.realpath('/bin/sh'), arch)
