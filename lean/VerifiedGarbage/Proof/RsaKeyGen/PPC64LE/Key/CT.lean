@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Correct
+import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Correct
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -10,6 +10,9 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Body
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Stores
 
 /-!
 # `vg_rsa_keygen_key` on PPC64LE: constant time

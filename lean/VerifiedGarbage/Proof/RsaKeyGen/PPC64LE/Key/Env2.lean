@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLoop
+import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLoop
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithA
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 
 /-!
 # `vg_rsa_keygen_key` on PPC64LE: the flags, the comparisons, the division and the inverse as values

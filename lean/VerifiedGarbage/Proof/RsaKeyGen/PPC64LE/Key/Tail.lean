@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.DMath
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env2
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env3
 
 /-!
 # `vg_rsa_keygen_key` on PPC64LE: from `d` to the mask

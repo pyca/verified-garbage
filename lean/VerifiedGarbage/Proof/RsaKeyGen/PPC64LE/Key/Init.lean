@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env2
 
 /-!
 # `vg_rsa_keygen_key` on PPC64LE: the working space, the inputs and the constants
