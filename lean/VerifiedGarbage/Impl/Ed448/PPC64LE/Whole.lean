@@ -101,14 +101,14 @@ def wipe (f : Reg) (o n : Nat) : List Instr := .li .r8 0 :: (List.range n).map f
 
 `F`: the hash at 0 (pruned in place), the saves at 120. -/
 
-def pkRegs : List Reg := [.r20, .r21, .r22, .r23]
+def pkRegs : List Reg := [.r21, .r22, .r23, .r24]
 
 def publicKey : Prog isa :=
-  .seq (.block (saveRegs .r6 120 pkRegs ++ [mov .r20 .r3, mov .r21 .r4, mov .r22 .r5, mov .r23 .r6])) <|
-  .seq (hash .r22 [⟨.r21, 0, .imm 57⟩] .r23 0) <|
-  .seq (.block (prune .r23 0 ++ [mov .r3 .r20, .addi .r4 .r23 0, mov .r5 .r22])) <|
+  .seq (.block (saveRegs .r6 120 pkRegs ++ [mov .r21 .r3, mov .r22 .r4, mov .r23 .r5, mov .r24 .r6])) <|
+  .seq (hash .r23 [⟨.r22, 0, .imm 57⟩] .r24 0) <|
+  .seq (.block (prune .r24 0 ++ [mov .r3 .r21, .addi .r4 .r24 0, mov .r5 .r23])) <|
   .seq (.call "vg_ed448_scalar_base" scalarBase) <|
-  .block (restoreRegs .r23 120 pkRegs)
+  .block (restoreRegs .r24 120 pkRegs)
 
 /-! ## `vg_ed448_sign_cached(out = r3, seed = r4, pk = r5, context = r6, ctxlen = r7, message = r8,
 len = r9, scratch = r10)`, `F` at `96(r1)`

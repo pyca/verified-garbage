@@ -43,9 +43,9 @@ structure PkPre (s : State) : Prop where
 /-- What the body may write. -/
 abbrev pkW (s : State) : List Region := [⟨s.gpr .r3, 57⟩, ⟨s.gpr .r5, 8192⟩, ⟨s.gpr .r6, 160⟩, below s.sp 48]
 
-/-- The values in `r20`–`r23`. -/
+/-- The values in `r21`–`r24`. -/
 def pkV (s : State) : Reg → BitVec 64
-  | .r20 => s.gpr .r3 | .r21 => s.gpr .r4 | .r22 => s.gpr .r5 | .r23 => s.gpr .r6 | _ => 0
+  | .r21 => s.gpr .r3 | .r22 => s.gpr .r4 | .r23 => s.gpr .r5 | .r24 => s.gpr .r6 | _ => 0
 
 abbrev PkInv (s : State) : State → Prop := Inv s (s.gpr .r6) 120 pkRegs (pkV s) (pkW s)
 
@@ -72,20 +72,20 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
   unfold publicKey
   -- The setup.
   refine WP.seq (WP.mono (show WP isa (.block (saveRegs .r6 120 pkRegs ++
-      ([(.r20, .r3), (.r21, .r4), (.r22, .r5), (.r23, .r6)] : List (Reg × Reg)).map (fun p => mov p.1 p.2) ++ []))
+      ([(.r21, .r3), (.r22, .r4), (.r23, .r5), (.r24, .r6)] : List (Reg × Reg)).map (fun p => mov p.1 p.2) ++ []))
       s (PkInv s) from setup_ok (by decide) (by decide) (by decide)
         (fun p hp' => in_base hFw (by revert p; decide) (by revert p; decide)) ⟨_, by simp, hsS⟩ rfl
         (by decide) (by decide) (fun p hp' => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
           rcases hp' with rfl | rfl | rfl | rfl <;> rfl) fun u hu => WP.block_nil hu) fun t₁ h₁ => ?_)
-  have g21 : t₁.gpr .r21 = s.gpr .r4 := h₁.regs _ (by decide)
-  have g22 : t₁.gpr .r22 = s.gpr .r5 := h₁.regs _ (by decide)
-  have g23 : t₁.gpr .r23 = s.gpr .r6 := h₁.regs _ (by decide)
+  have g22x : t₁.gpr .r22 = s.gpr .r4 := h₁.regs _ (by decide)
+  have g23x : t₁.gpr .r23 = s.gpr .r5 := h₁.regs _ (by decide)
+  have g24x : t₁.gpr .r24 = s.gpr .r6 := h₁.regs _ (by decide)
   have e₁ : KEnv (s.gpr .r5) t₁ := ⟨by rw [h₁.wr]; exact hCw, by rw [h₁.sp]; exact hp.sp, by rw [h₁.sp]; exact hp.bC⟩
   -- The hash.
-  have pR : Piece.R t₁.gpr ⟨.r21, 0, .imm 57⟩ = ⟨s.gpr .r4, 57⟩ := by
-    simp only [Piece.R, Piece.addr, Len.val, g21, BitVec.add_zero]
-  have pk : PieceOk (s.gpr .r5) t₁ ⟨.r21, 0, .imm 57⟩ :=
+  have pR : Piece.R t₁.gpr ⟨.r22, 0, .imm 57⟩ = ⟨s.gpr .r4, 57⟩ := by
+    simp only [Piece.R, Piece.addr, Len.val, g22x, BitVec.add_zero]
+  have pk : PieceOk (s.gpr .r5) t₁ ⟨.r22, 0, .imm 57⟩ :=
     ⟨by decide, by decide, show 57 < 2 ^ 15 by decide, by
       rw [pR, h₁.rd, hp.rd]; exact fun a n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_left _ hr, hc⟩,
       by rw [pR]; exact hp.sC, by rw [pR, h₁.sp]; exact hp.bS⟩
@@ -94,8 +94,8 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
     refine Covers.of_sub fun r hr => ?_
     rw [List.mem_singleton.mp hr]
     exact ⟨_, hFw, 0, by simp, by simp⟩
-  refine WP.seq (WP.mono (hash_ok (sc := .r22) (f := .r23) (o := 0) (out := s.gpr .r6) (by decide) (by decide)
-    (by decide) g22 (by rw [g23, F0]) e₁ (by simp) (fun p hp' => by rw [List.mem_singleton.mp hp']; exact pk)
+  refine WP.seq (WP.mono (hash_ok (sc := .r23) (f := .r24) (o := 0) (out := s.gpr .r6) (by decide) (by decide)
+    (by decide) g23x (by rw [g24x, F0]) e₁ (by simp) (fun p hp' => by rw [List.mem_singleton.mp hp']; exact pk)
     hwF (hp.cF.symm.sub_left hF114) (by rw [h₁.sp]; exact hp.bF.sub_right hF114)) fun t₂ ⟨k₂, d₂⟩ => ?_)
   have h₂ : PkInv s t₂ := Inv.kept h₁ pkRegs_pres k₂ (fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -119,12 +119,12 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
   have hh : bytesAt t₂.mem (s.gpr .r6) 114 = Spec.Sha3.shake256 (bytesAt s.mem (s.gpr .r4) 57) 114 := by
     have := d₂
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Piece.bytes,
-      Piece.addr, Len.val, g21, BitVec.add_zero, seed₁] at this
+      Piece.addr, Len.val, g22x, BitVec.add_zero, seed₁] at this
     exact this
   -- The pruning, and the arguments of `scalar_base`.
   have hFw' : ∀ j < 57, InRegions t₂.wr (s.gpr .r6 + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [h₂.wr]; exact in_base hFw (by omega) (by omega)
-  refine WP.seq (prune_ok (f := .r23) (o := 0) (q := s.gpr .r6) (by decide) (by decide) (by decide)
+  refine WP.seq (prune_ok (f := .r24) (o := 0) (q := s.gpr .r6) (by decide) (by decide) (by decide)
     (by rw [h₂.regs _ (by decide)]; exact F0) hFw' fun u um usp urd uwr ug => ?_)
   unfold mov
   refine wp_addi (by decide) (by decide) fun v₁ e₁ => wp_addi (by decide) (by decide) fun v₂ e₂ =>
