@@ -1,0 +1,107 @@
+module
+
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Framework.Offset
+
+/-!
+# The RSA private-key operation on PPC64LE: a prime's working space
+
+`words_ok`: `max(2, ⌈len / 8⌉)` (`wsWords`). `setupP_ok`: the registers of
+a prime's working space, from its base and length in the header.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.PPC64LE.Crt
+
+open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.Crt
+open VG.Proof.Bignum.PPC64LE
+
+theorem words_val {u : Nat} (hu : 1 ≤ u) (hu' : u < 2 ^ 62) :
+    BitVec.ofNat 64 u + (BitVec.ofNat 64 u - BitVec.ofNat 64 2) >>> 63 = BitVec.ofNat 64 (max 2 u) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
+  simp only [BitVec.toNat_ofNat]
+  rcases (show u = 1 ∨ 2 ≤ u by omega) with rfl | h
+  · decide
+  · rw [Nat.mod_eq_of_lt (show u < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 2 < 2 ^ 64 by decide),
+      show 2 ^ 64 - 2 + u = (u - 2) + 2 ^ 64 by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (show u - 2 < 2 ^ 64 by omega), Nat.div_eq_of_lt (show u - 2 < 2 ^ 63 by omega),
+      Nat.add_zero, Nat.mod_eq_of_lt (show u < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show max 2 u < 2 ^ 64 by omega)]
+    omega
+
+/-- `words r4 r3`, `len ≥ 1` in `r3`: `r4 := wsWords len`. -/
+theorem words_ok {s : State} {len : Nat} (h3 : s.gpr .r3 = BitVec.ofNat 64 len) (hl : 1 ≤ len)
+    (hl' : len < 2 ^ 60) :
+    WP isa (.block (words .r4 .r3)) s fun t =>
+      (t.gpr .r4 = BitVec.ofNat 64 (wsWords len) ∧ t.mem = s.mem) ∧ Keep [.r4, .r0] s t := by
+  refine WP.keep _ ?_ (by decide)
+  have e : (BitVec.ofNat 64 len + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((len + 7) / 8) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, Nat.shiftRight_eq_div_pow]
+    simp only [BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show len < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 7 < 2 ^ 64 by decide),
+      Nat.mod_eq_of_lt (show len + 7 < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega)]
+  prun [words, h3, e]
+  exact words_val (by omega) (by omega)
+
+theorem wsWords_lt {len : Nat} (hl' : len < 2 ^ 60) : wsWords len < 2 ^ 58 := by unfold wsWords; omega
+
+theorem shl_ofNat {w k : Nat} (h : w * 2 ^ k < 2 ^ 64) : BitVec.ofNat 64 w <<< k = BitVec.ofNat 64 (w * 2 ^ k) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  rw [Nat.mod_eq_of_lt (show w < 2 ^ 64 from Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_right _ (Nat.two_pow_pos _)) h),
+    Nat.mod_eq_of_lt h]
+
+/-- `area r3`, a working space's base in `r3` and its words in `r4`. -/
+theorem area_ok {s : State} {A : Addr} {w : Nat} (h3 : s.gpr .r3 = A) (h4 : s.gpr .r4 = BitVec.ofNat 64 w)
+    (hw : w < 2 ^ 58) :
+    WP isa (.block (area .r3)) s fun t =>
+      (t.gpr .r10 = off A (slot w 0) ∧ t.gpr .r21 = off A (slot w 0) ∧
+        t.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * w) ∧ t.mem = s.mem) ∧
+      Keep [.r10, .r21, .r29, .r11] s t := by
+  refine WP.keep _ ?_ (by decide)
+  have e0 : off A (slot w 0) = A + BitVec.ofNat 64 256 := by
+    simp only [off, slot, Nat.zero_mul, Nat.add_zero]; rfl
+  have e29 : BitVec.ofNat 64 (w * 2 ^ 3) + BitVec.ofNat 64 16 = BitVec.ofNat 64 (8 * (w + 2)) := by
+    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add]; congr 1; omega
+  prun [area, h3, h4, hdrBytes, shl_ofNat (show w * 2 ^ 3 < 2 ^ 64 by omega),
+    shl_ofNat (show w * 2 ^ 1 < 2 ^ 64 by omega), BitVec.add_zero]
+  exact ⟨e0.symm, e0.symm, e29, by congr 1; omega⟩
+
+/-- `setupP oB oLen`: a prime's working space at `off BX oA` (the header's
+word `oB`) for its length `len` (word `oLen`). -/
+theorem setupP_ok {s : State} {BX : Addr} {Z oA len oB oLen : Nat} (hs : Scr s BX Z) (h23 : s.gpr .r23 = BX)
+    (hoB : oB + 8 ≤ 256 ∧ oB % 8 = 0) (hoL : oLen + 8 ≤ 256 ∧ oLen % 8 = 0) (hZ : 256 ≤ Z)
+    (hB : word s.mem BX oB = off BX oA) (hL : word s.mem BX oLen = BitVec.ofNat 64 len) (hl : 1 ≤ len)
+    (hl' : len < 2 ^ 60) :
+    WP isa (.block (setupP oB oLen)) s fun t =>
+      (t.gpr .r10 = off (off BX oA) (slot (wsWords len) 0) ∧ t.gpr .r21 = off (off BX oA) (slot (wsWords len) 0) ∧
+        t.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords len + 2)) ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * wsWords len) ∧
+        t.gpr .r4 = BitVec.ofNat 64 (wsWords len) ∧ t.mem = s.mem) ∧
+      Keep [.r0, .r3, .r4, .r10, .r11, .r21, .r29] s t := by
+  unfold setupP
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 len ∧ t.mem = s.mem) (by
+    prun [h23, exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oLen < 2 ^ 15 by omega, show oLen % 4 = 0 by omega⟩,
+      hs.ld (show oLen + 8 ≤ Z by omega)]
+    exact hL) rfl) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (words_ok a3 hl hl') fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = off BX oA ∧ t.mem = s.mem) (by
+    prun [(k12.gpr _ (by decide)).trans h23,
+      exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oB < 2 ^ 15 by omega, show oB % 4 = 0 by omega⟩,
+      (hs.congr k12.wr).ld (show oB + 8 ≤ Z by omega), m2, m1]
+    exact hB) rfl) fun s₃ ⟨⟨a3', m3⟩, k3⟩ => ?_
+  refine WP.mono (area_ok a3' ((k3.gpr _ (by decide)).trans a4) (wsWords_lt hl'))
+    fun t ⟨⟨t10, t21, t29, t11, tm⟩, k4⟩ => ⟨⟨t10, t21, t29, t11, ?_, by rw [tm, m3]⟩, ((k12.trans k3).trans k4).mono⟩
+  rw [k4.gpr _ (by decide), k3.gpr _ (by decide), a4]
+
+end VG.Proof.Bignum.PPC64LE.Crt
