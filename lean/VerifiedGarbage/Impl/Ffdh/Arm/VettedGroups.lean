@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Spec.Rsa
-public import VerifiedGarbage.Spec.Ffdh.VettedGroups
+public import VerifiedGarbage.Impl.Ffdh.VettedGroups
 import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
 
@@ -12,40 +12,14 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
 namespace VG.Impl.Ffdh.Arm.VettedGroups
 open VG VG.Arm
 
-structure Group where
-  len : Nat
-  bits : Nat
-  prime : Nat
-  deriving DecidableEq
-
-def groups : List Group :=
-  [⟨256, 225, Spec.Ffdh.modp2048Prime⟩, ⟨256, 225, Spec.Ffdh.ffdhe2048Prime⟩,
-   ⟨384, 275, Spec.Ffdh.modp3072Prime⟩, ⟨384, 275, Spec.Ffdh.ffdhe3072Prime⟩,
-   ⟨512, 325, Spec.Ffdh.modp4096Prime⟩, ⟨512, 325, Spec.Ffdh.ffdhe4096Prime⟩,
-   ⟨768, 375, Spec.Ffdh.modp6144Prime⟩, ⟨768, 375, Spec.Ffdh.ffdhe6144Prime⟩,
-   ⟨1024, 400, Spec.Ffdh.modp8192Prime⟩, ⟨1024, 400, Spec.Ffdh.ffdhe8192Prime⟩]
-
-def Group.domain (g : Group) : List Byte :=
-  Spec.Rsa.i2osp g.prime g.len ++ Spec.Rsa.i2osp 2 g.len ++
-    Spec.Rsa.i2osp ((g.prime - 1) / 2) g.len
-
-/-- A pure view of the exact byte comparisons performed by the scan. -/
+export VG.Impl.Ffdh.VettedGroups (Group groups wordBytes tableBytes tableWord tableWords)
+namespace Group
+export VG.Impl.Ffdh.VettedGroups.Group (domain bytes)
+end Group
 def recognize : List Group → Nat → List Byte → Nat
   | [], _, _ => 0
   | g :: gs, k, dom =>
     if g.len = k ∧ dom = g.domain.take dom.length then g.bits else recognize gs k dom
-
-def wordBytes (x : Nat) : List Byte :=
-  (List.range 4).map fun i => BitVec.ofNat 8 (x / 2 ^ (8 * i))
-
-def Group.bytes (g : Group) : List Byte := wordBytes g.len ++ wordBytes g.bits ++ g.domain
-
-def tableBytes : List Byte := groups.flatMap Group.bytes
-
-def tableWord (i : Nat) : BitVec 64 :=
-  (show Mem from fun a : Addr => tableBytes.getD a.toNat 0).readW (BitVec.ofNat 64 (8 * i)) 64
-
-def tableWords : List (BitVec 64) := (List.range (tableBytes.length / 8)).map tableWord
 
 def tableSym : String := "VG_FFDH_VETTED_GROUPS"
 def tableConsts : List (String × List (BitVec 64)) := [(tableSym, tableWords)]

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
-public import VerifiedGarbage.Spec.Ffdh.VettedGroups
+public import VerifiedGarbage.Impl.Ffdh.VettedGroups
 
 /-! Public exact-domain recognition. Unrecognized groups retain the full scalar bound.
 The shared policy accepts a missing q or exactly (p-1)/2, never merely a matching width. -/
@@ -9,34 +9,11 @@ The shared policy accepts a missing q or exactly (p-1)/2, never merely a matchin
 namespace VG.Impl.Ffdh.AArch64.Cached.Policy
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
 
-structure Group where
- len : Nat
- bits : Nat
- prime : Nat
- deriving DecidableEq
-
-def groups : List Group :=
- [⟨256,225,Spec.Ffdh.modp2048Prime⟩,⟨256,225,Spec.Ffdh.ffdhe2048Prime⟩,
-  ⟨384,275,Spec.Ffdh.modp3072Prime⟩,⟨384,275,Spec.Ffdh.ffdhe3072Prime⟩,
-  ⟨512,325,Spec.Ffdh.modp4096Prime⟩,⟨512,325,Spec.Ffdh.ffdhe4096Prime⟩,
-  ⟨768,375,Spec.Ffdh.modp6144Prime⟩,⟨768,375,Spec.Ffdh.ffdhe6144Prime⟩,
-  ⟨1024,400,Spec.Ffdh.modp8192Prime⟩,⟨1024,400,Spec.Ffdh.ffdhe8192Prime⟩]
-
-def Group.domain (g : Group) : List Byte :=
- Spec.Rsa.i2osp g.prime g.len ++ Spec.Rsa.i2osp 2 g.len ++
- Spec.Rsa.i2osp ((g.prime-1)/2) g.len
-
-/-- Pure reference view of the recognizer's exact public byte comparisons. -/
-def recognizeList : List Group → Nat → List Byte → Nat
- | [],_,_=>0
- | g::gs,k,dom=>if g.len=k ∧ dom=g.domain.take dom.length then g.bits else recognizeList gs k dom
-
-def wordBytes (n : Nat) : List Byte := (List.range 4).map fun i => BitVec.ofNat 8 (n / 2^(8*i))
-def Group.bytes (g : Group) : List Byte := wordBytes g.len ++ wordBytes g.bits ++ g.domain
-def tableBytes : List Byte := groups.flatMap Group.bytes
-def tableWord (i : Nat) : BitVec 64 :=
- (show Mem from fun a : Addr => tableBytes.getD a.toNat 0).readW (BitVec.ofNat 64 (8*i)) 64
-def tableWords : List (BitVec 64) := (List.range (tableBytes.length/8)).map tableWord
+export VG.Impl.Ffdh.VettedGroups (Group groups wordBytes tableBytes tableWord tableWords)
+namespace Group
+export VG.Impl.Ffdh.VettedGroups.Group (domain bytes)
+end Group
+export VG.Impl.Ffdh.VettedGroups (recognizeList)
 
 def tableSym : String := "VG_FFDH_VETTED_GROUPS_A64"
 def tableConsts : List (String × List (BitVec 64)) := [(tableSym,tableWords)]
