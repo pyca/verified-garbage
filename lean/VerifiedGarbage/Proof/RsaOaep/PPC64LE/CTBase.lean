@@ -41,6 +41,19 @@ structure Ok (S : State → Addr) (vf : State → Reg → BitVec 64) (Pre : Stat
   fits : ∀ {s}, Pre s → Fits S s
   agree : ∀ {a s}, Pub a s → Agree S vf a s
 
+/-- What MGF1 and the hash functions' calls need: `Pre` gives `Fits`, and
+`Pub a s` that `s` agrees with `a` on the stack pointer and `S`, whatever
+`r15`–`r23` hold (a function may keep secrets there, as decryption keeps the
+private operation's result). -/
+structure OkS (S : State → Addr) (Pre : State → Prop) (Pub : State → State → Prop) : Prop where
+  fits : ∀ {s}, Pre s → Fits S s
+  sp : ∀ {a s}, Pub a s → s.sp = a.sp
+  S : ∀ {a s}, Pub a s → S s = S a
+
+theorem Ok.s {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop}
+    {Pub : State → State → Prop} (X : Ok S vf Pre Pub) : OkS S Pre Pub :=
+  ⟨X.fits, fun p => (X.agree p).sp, fun p => (X.agree p).S⟩
+
 /-- `t` has `Base` from an entry state with `a`'s public data. -/
 def B (S : State → Addr) (vf : State → Reg → BitVec 64) (Pre : State → Prop) (Pub : State → State → Prop)
     (a t : State) : Prop :=
@@ -66,6 +79,34 @@ theorem B.sp {a t : State} (h : B S vf Pre Pub a t) : t.sp = fb a := (h.agree X)
 theorem B.only {a t t' : State} {rs : List Reg} (h : B S vf Pre Pub a t) (o : Only rs t t')
     (hrs : ∀ r ∈ rs, r ∉ .r14 :: fx ++ hiRegs := by decide) : B S vf Pre Pub a t' :=
   let ⟨s, P, p, b⟩ := h; ⟨s, P, p, b.only (X.fits P) o hrs⟩
+
+end
+
+section
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
+  (X : OkS S Pre Pub)
+include X
+
+omit X in
+theorem Base.spA (X : OkS S Pre Pub) {a s t : State} (p : Pub a s) (b : Base S vf s t) : t.sp = fb a := by
+  rw [b.sp, fb, fb, X.sp p]
+
+theorem B.spS {a t : State} (h : B S vf Pre Pub a t) : t.sp = fb a :=
+  let ⟨_, _, p, b⟩ := h; by rw [b.sp, fb, fb, X.sp p]
+
+theorem B.r14S {a t : State} (h : B S vf Pre Pub a t) : t.gpr .r14 = S a :=
+  let ⟨_, _, p, b⟩ := h; b.r14.trans (X.S p)
+
+theorem B.onlyS {a t t' : State} {rs : List Reg} (h : B S vf Pre Pub a t) (o : Only rs t t')
+    (hrs : ∀ r ∈ rs, r ∉ .r14 :: fx ++ hiRegs := by decide) : B S vf Pre Pub a t' :=
+  let ⟨s, P, p, b⟩ := h; ⟨s, P, p, b.only (X.fits P) o hrs⟩
+
+end
+
+section
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
+variable (X : Ok S vf Pre Pub)
+include X
 
 /-- Pins of states with `B` and more. -/
 theorem pins_of {α : Type} {Φ : α → State → Prop} {an : α → State} (h : ∀ a t, Φ a t → B S vf Pre Pub (an a) t)
