@@ -193,7 +193,7 @@ def main (name : String) (roundCode : Prog isa) : Prog isa :=
 
 /-- `vg_ffdh_parameter_candidate`. -/
 def code (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block entry) (.seq zeroOut (.seq (.block ([ldh .r3 hRandLen, ldh .r4 hLen] ++ geFlag .r5 .r3 .r4 .r6))
+  .seq (.block entry) (.seq zeroOut (.seq (.block ([ldh .r3 hRandLen, ldh .r4 hLen] ++ geFlag .r5 .r3 .r4))
     (.seq (.ite (.zero .d .r5) (.block (finish 0)) (main name roundCode)) (.block exit))))
 
 end VG.Impl.Ffdh.PPC64LE.ParameterCandidate
