@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSel
+import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSel
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecScan
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on PPC64LE: writing the output

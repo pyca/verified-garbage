@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
-public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on PPC64LE: IRPRF's messages

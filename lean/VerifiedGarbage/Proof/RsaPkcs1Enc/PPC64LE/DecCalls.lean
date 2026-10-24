@@ -3,11 +3,18 @@ module
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
+public import Mathlib.Data.List.Nodup
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on PPC64LE: the calls of SHA-256 and HMAC, in two runs

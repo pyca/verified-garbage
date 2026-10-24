@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSel
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSel
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on PPC64LE: constant time from the mask on

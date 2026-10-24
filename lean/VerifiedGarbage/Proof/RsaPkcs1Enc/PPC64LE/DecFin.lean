@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSel
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on PPC64LE: the selection
