@@ -81,7 +81,7 @@ def entry : List Instr :=
     .mflr .r0, .store .d .r0 .r11 144] ++
   (List.range 18).map (fun i => .store .d (saved i) .r11 (8 * i)) ++
   [.addi .r31 .r10 0, sth .r12 hWsLen, sth .r3 hOut, sth .r4 hLen, sth .r4 hUsed, sth .r5 hUsedP,
-    sth .r6 hBits, sth .r7 hGen, sth .r8 hRand, sth .r9 hRandLen]
+    sth .r6 hBits, .lsr .w .r7 .r7 0, sth .r7 hGen, sth .r8 hRand, sth .r9 hRandLen]
 
 /-- The registers back from the save area, `r31` last, and the result
 `r3`. -/
