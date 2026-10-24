@@ -68,6 +68,15 @@ Modelling choices:
 * The stack pointer is always 16-byte aligned (ELFv2 ABI §2.2.3.1, "The
   stack shall be quadword aligned"), and a frame moves it by 48 bytes or
   by a multiple of 16, so the model does not check the alignment.
+* A `static` the code reads (`Artifact.consts`) is at the address
+  `State.syms name`, where `name` is its name, which `adrSym` puts in a
+  register: `bcl 20, 31, $+4` leaves the address of the next instruction in
+  `LR`, `mflr` copies it, and `addis` and `addi` add the static's distance
+  from there, which the linker resolves (see `exec`). No instruction changes
+  `syms`: a static's address is fixed for the run of the program. The model
+  does not know the address `bcl` leaves in `LR`: it is the next of the
+  state's `unknowns`, as a call's return address is, so code that returns
+  after an `adrSym` must restore `LR`.
 * A frame may instead allocate a buffer on the stack (`alloc`, `stdu r1,
   -bytes(r1)`), released by its pop (`free`, `addi r1, r1, bytes`): the
   frame is the 32-byte header of the ELFv2 minimum frame (as for `push`)
@@ -112,9 +121,11 @@ structure State where
   /-- Regions the code may read and write. -/
   wr : List Region
   /-- Values the model does not know, used in order: the return address each
-  call stores and what linkage code may leave in `r0`, `r11` and `r12` (see
-  `TCB/Code.lean`). -/
+  call stores, what linkage code may leave in `r0`, `r11` and `r12` (see
+  `TCB/Code.lean`), and the address each `adrSym` leaves in `LR`. -/
   unknowns : Nat → BitVec 64 := fun _ => 0
+  /-- The address of each `static` the code can name (`adrSym`), by name. -/
+  syms : String → BitVec 64 := fun _ => 0
 
 inductive LogicOp | and | or | xor
   deriving DecidableEq, Repr
@@ -175,6 +186,10 @@ inductive Instr
   | mflr (d : Reg)
   /-- `mtlr RS` (`mtspr 8, RS`) -/
   | mtlr (s : Reg)
+  /-- `bcl 20, 31, $+4`, `mflr RT`, `addis RT, RT, (S - L)@ha` and `addi RT,
+  RT, (S - L)@l`, where `S` is the address of the `static` named `name` and
+  `L` that of the `mflr`: `RT ← S`, and `LR` changed (see `exec`); `RT ≠ 0` -/
+  | adrSym (d : Reg) (name : String)
   /-- `stdu r1, -48(r1)` then `std RS, 32(r1)`: the push of a frame of 48
   bytes (see `push`) -/
   | push (r : Reg)
@@ -289,7 +304,23 @@ abbrev Size.ext (sz : Size) (v : BitVec sz.bits) : BitVec 64 := v.setWidth 64
   Indexed", likewise for the eight bytes;
 * §3.3.19 "Move From Special Purpose Register" (`mflr RT` is `mfspr RT, 8`:
   `RT ← LR`) and "Move To Special Purpose Register" (`mtlr RS` is `mtspr 8,
-  RS`: `LR ← (RS)`). -/
+  RS`: `LR ← (RS)`);
+* `adrSym d name` is four instructions, which the linker completes with the
+  static's address `S` (`State.syms name`): §2.4 "Branch Conditional"
+  (`bcl 20, 31, $+4`: `BO = 20`, branch always, to the next instruction,
+  and `LK = 1`: `LR ← CIA + 4`), "Move From Special Purpose Register" (`mflr
+  RT`: `RT ← LR`, the address `L` of the `mflr` itself), then §3.3.9 "Add
+  Immediate Shifted" (`addis RT, RT, SI`: `RT ← (RA) + EXTS(SI || 0x0000)`)
+  and "Add Immediate" (`addi RT, RT, SI`: `RT ← (RA) + EXTS(SI)`) of
+  `#ha(S - L)` and `#lo(S - L)`, the values of the relocations
+  `R_PPC64_REL16_HA` and `R_PPC64_REL16_LO` of `S - L` (ELFv2 ABI, "Relocation
+  Types Table"; "Relocation Notations": `#lo(x) = x & 0xffff` and `#ha(x) =
+  ((x >> 16) + ((x & 0x8000) ? 1 : 0)) & 0xffff`), so that `RT ← L + (S -
+  L) = S` when `S - L` fits in 32 signed bits: the static and the code are
+  less than 2 GB apart, as the ABI's medium code model, the default, has
+  them (ELFv2 ABI, "Code Models"). With `RT = 0`, `addis` and `addi` would
+  read 0 for `(RA|0)`, so the model faults. The model does not know `L`:
+  `LR` gets the next of the state's `unknowns`. -/
 def exec : Instr → State → Option State
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))
   | .sub d n m, s => some (s.write d (s.gpr n - s.gpr m))
@@ -333,6 +364,10 @@ def exec : Instr → State → Option State
     (addrX s a b).bind fun ea => s.store ea 8 (rev64 (s.gpr t))
   | .mflr d, s => some (s.write d s.lr)
   | .mtlr r, s => some { s with lr := s.gpr r }
+  | .adrSym d name, s =>
+    if d ≠ .r0 then
+      some { s.write d (s.syms name) with lr := s.unknowns 0, unknowns := fun n => s.unknowns (n + 1) }
+    else none
   -- Only the push and pop of a frame (`push`, `pop`).
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
 

@@ -297,13 +297,13 @@ theorem Exec.sp {c : Prog isa} {s s' : State} {t : List Leak} (h : VG.Exec isa c
 
 /-- Whether an instruction writes the link register. -/
 def Instr.writesLr : Instr → Bool
-  | .mtlr _ => true
+  | .mtlr _ | .adrSym .. => true
   | _ => false
 
 theorem exec_lr {i : Instr} {s s' : State} (h : exec i s = some s') (hi : i.writesLr = false) :
     s'.lr = s.lr := by
   cases i with
-  | mtlr => simp [Instr.writesLr] at hi
+  | mtlr | adrSym => simp [Instr.writesLr] at hi
   | loadRev sz =>
     cases sz <;> simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h <;>
     obtain ⟨_, _, _, _, rfl⟩ := h <;> rfl
