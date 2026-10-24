@@ -60,7 +60,7 @@ structure Dims (p : PP) : Prop where
   b2 : p.bits ≤ 8192
   g : p.g = 2 ∨ p.g = 5
   n : 16 * p.L + 32 ≤ p.n
-  n' : p.n < 2 ^ 58
+  n' : 8 * p.n ≤ 2 ^ 64
   rl : p.r.length < 2 ^ 63
 
 /-- The header words holding the arguments. -/
