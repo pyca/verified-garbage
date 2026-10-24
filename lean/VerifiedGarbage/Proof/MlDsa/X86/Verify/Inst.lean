@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-DSA verification on x86 (32-bit), with this library's primitives
@@ -31,21 +32,21 @@ open VG VG.X86 VG.Proof.MlDsa.X86.KeyGen
 open VG.Impl.MlDsa.X86.Verify (prims verify44 verify65 verify87)
 
 theorem prims_ok : PrimsOk prims where
-  ntt := ⟨⟨15, by decide, Arith.NttFwd.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  invNtt := ⟨⟨15, by decide, Arith.NttInvP.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  mul := ⟨⟨15, by decide, Arith.mul_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  mulAdd := ⟨⟨15, by decide, Arith.mulAdd_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  sub := ⟨⟨15, by decide, Arith.sub_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  rejNtt := ⟨⟨55, by decide, Sample.RejNtt.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  ball := ⟨⟨55, by decide, Sample.Ball.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  useHint := ⟨⟨15, by decide, Round.useHint_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  simpleBitPack := ⟨⟨15, by decide, Pack.SimpleBitPack.verified⟩, by decide +kernel,
-    NoSp.of_all (by decide +kernel)⟩
-  bitUnpack := ⟨⟨15, by decide, Pack.Unpack.BU.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  unpackT1 := ⟨⟨15, by decide, Pack.Unpack.T1.verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
-  hintUnpack := ⟨⟨15, by decide, Pack.Hint.hintBitUnpack_verified⟩, by decide +kernel,
-    NoSp.of_all (by decide +kernel)⟩
-  normLt := ⟨⟨15, by decide, Round.normLt_verified⟩, by decide +kernel, NoSp.of_all (by decide +kernel)⟩
+  ntt := ⟨⟨15, by decide, Arith.NttFwd.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  invNtt := ⟨⟨15, by decide, Arith.NttInvP.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  mul := ⟨⟨15, by decide, Arith.mul_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  mulAdd := ⟨⟨15, by decide, Arith.mulAdd_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  sub := ⟨⟨15, by decide, Arith.sub_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  rejNtt := ⟨⟨55, by decide, Sample.RejNtt.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  ball := ⟨⟨55, by decide, Sample.Ball.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  useHint := ⟨⟨15, by decide, Round.useHint_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  simpleBitPack := ⟨⟨15, by decide, Pack.SimpleBitPack.verified⟩, by lit_decide,
+    NoSp.of_all (by lit_decide)⟩
+  bitUnpack := ⟨⟨15, by decide, Pack.Unpack.BU.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  unpackT1 := ⟨⟨15, by decide, Pack.Unpack.T1.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+  hintUnpack := ⟨⟨15, by decide, Pack.Hint.hintBitUnpack_verified⟩, by lit_decide,
+    NoSp.of_all (by lit_decide)⟩
+  normLt := ⟨⟨15, by decide, Round.normLt_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
 
 theorem verify44_verified :
     Verified X86.target verify44 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 X86.abi 96) :=
