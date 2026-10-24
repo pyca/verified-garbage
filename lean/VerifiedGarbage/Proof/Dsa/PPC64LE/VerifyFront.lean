@@ -118,8 +118,8 @@ theorem pack_entry (x y : BitVec 64) {d : Nat} (hx : x.toNat < 2 ^ 16) (hy : y.t
 /-- After the registers are saved: the key, the signature and the digest into
 `r27`, `r28` and `r26`, and the lengths into `r2`. -/
 theorem front_tail (s : State) (h5 : (s.gpr .r5).toNat < 2 ^ 16) (h6 : (s.gpr .r6).toNat < 2 ^ 16) :
-    WP isa (.block ([.addi .r27 .r3 0, .addi .r28 .r7 0, .addi .r26 .r9 0] ++ (Verify.capD ++
-      [.lsl .r4 .r4 48, .lsl .r0 .r6 16, .add .r2 .r5 .r0, .add .r2 .r2 .r4]))) s fun t =>
+    WP isa (.block (([.addi .r27 .r3 0, .addi .r28 .r7 0, .addi .r26 .r9 0] : List Instr) ++ (Verify.capD ++
+      ([.lsl .r4 .r4 48, .lsl .r0 .r6 16, .add .r2 .r5 .r0, .add .r2 .r2 .r4] : List Instr)))) s fun t =>
       (t.gpr .r27 = s.gpr .r3 ∧ t.gpr .r28 = s.gpr .r7 ∧ t.gpr .r26 = s.gpr .r9 ∧
         t.gpr .r2 = pack (s.gpr .r5).toNat (s.gpr .r6).toNat 0 (min (s.gpr .r10).toNat 64) ∧ t.mem = s.mem) ∧
         Keep [.r27, .r28, .r26, .r0, .r4, .r2] s t := by

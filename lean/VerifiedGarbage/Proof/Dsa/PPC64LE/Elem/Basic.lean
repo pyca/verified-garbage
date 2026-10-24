@@ -47,7 +47,7 @@ theorem clear20_ok (s : State) {a b : Bool} (h20 : s.gpr .r20 = mask a) (h19 : s
 
 /-- The key and `p_len`, for `reduce` and the like. -/
 theorem keyLen_ok {s : State} {L : Lay} {key sig dig : Addr} (hr : Regs s L key sig dig) :
-    WP isa (.block ([.addi .r30 .r27 0] ++ getP .r31)) s fun t =>
+    WP isa (.block (([.addi .r30 .r27 0] : List Instr) ++ getP .r31)) s fun t =>
       (t.gpr .r30 = key ∧ t.gpr .r31 = BitVec.ofNat 64 L.pl ∧ t.mem = s.mem) ∧ Keep [.r30, .r31] s t := by
   refine WP.keep _ ?_ (by decide)
   unfold getP
