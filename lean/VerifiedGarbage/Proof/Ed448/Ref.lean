@@ -167,6 +167,45 @@ def VerifyEqOk : Prop :=
             (negPoint a) 456)))
           (double (double r)))
 
+/-- One iteration of the ladder of four additions per bit: `q + q` for
+`i = 3`, else `q + B` (`i = 2`), `q + a` (`i = 1`) or `q + r` (`i = 0`) if
+the bit `b` is set. -/
+def vphase (i : Nat) (b : Bool) (a r q : Point) : Point :=
+  if i = 3 then Spec.Ed448.pointAdd q q
+  else if b then Spec.Ed448.pointAdd q (if i = 2 then Spec.Ed448.basePoint else if i = 1 then a else r)
+  else q
+
+/-- The bit of the iteration `i` for bit `t`: of `S` (`i = 2`), `K` (`i = 1`)
+or `M` (`i = 0`). -/
+def vbit (S K M i t : Nat) : Bool := if i = 2 then bitAt S t else if i = 1 then bitAt K t else bitAt M t
+
+/-- The four iterations of bit `t`. -/
+def vstep4 (S K M t : Nat) (a r q : Point) : Point :=
+  vphase 0 (vbit S K M 0 t) a r (vphase 1 (vbit S K M 1 t) a r
+    (vphase 2 (vbit S K M 2 t) a r (vphase 3 true a r q)))
+
+/-- The point after the top `m` of the 458 bits of `S`, `K` and `M`:
+`[S]B + [K]a + [M]r` for `m = 458`. -/
+def vladder4 (S K M : Nat) (a r : Point) : Nat → Point
+  | 0 => Spec.Ed448.identity
+  | m + 1 => vstep4 S K M (457 - m) a r (vladder4 S K M a r m)
+
+theorem vladder4_bit (S K M : Nat) (a r : Point) {t : Nat} (ht : t < 458) :
+    vladder4 S K M a r (458 - t) = vstep4 S K M t a r (vladder4 S K M a r (458 - (t + 1))) := by
+  rw [show 458 - t = (458 - (t + 1)) + 1 by omega, vladder4, show 457 - (458 - (t + 1)) = t by omega]
+
+/-- The equation (RFC 8032 §5.2.7) of decoded `A` and `R`: `S < L`, and
+`[4S]B + [4k](-A) + [4](-R)` (by `vladder4`) is the neutral point. -/
+def VerifyEq4Ok : Prop :=
+  ∀ (pk sig ch : List Byte) (a r : Point), pk.length = 57 → sig.length = 114 → ch.length = 57 →
+    Spec.Ed448.decodePoint pk = some a → Spec.Ed448.decodePoint (sig.take 57) = some r →
+    Spec.Ed448.verifyEquation pk sig ch =
+      (decide (Spec.Ed448.decodeLE (sig.drop 57) < Spec.Ed448.L) &&
+        Spec.Ed448.pointEqual
+          (vladder4 (4 * Spec.Ed448.decodeLE (sig.drop 57)) (4 * Spec.Ed448.decodeLE ch) 4
+            (negPoint a) (negPoint r) 458)
+          Spec.Ed448.identity)
+
 theorem verifyEquation_none {pk sig ch : List Byte}
     (h : Spec.Ed448.decodePoint pk = none ∨ Spec.Ed448.decodePoint (sig.take 57) = none) :
     Spec.Ed448.verifyEquation pk sig ch = false := by

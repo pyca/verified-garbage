@@ -36,7 +36,7 @@ structure SelInv (b : Addr) (o q r sw : Nat) (s0 : State) (n : Nat) (s : State) 
   lo : ∀ j < n, limb s.mem b o j = X25519.PPC64LE.sel sw (limb s0.mem b q j) (limb s0.mem b r j)
 
 theorem sel_ok {o q r : Nat} (ho : o + 56 ≤ 4096) (hq : q + 56 ≤ 4096) (hr : r + 56 ≤ 4096)
-    (hoq : o + 56 ≤ q ∨ q + 56 ≤ o) (hor : o + 56 ≤ r ∨ r + 56 ≤ o)
+    (hoq : o + 56 ≤ q ∨ q + 56 ≤ o ∨ o = q) (hor : o + 56 ≤ r ∨ r + 56 ≤ o)
     {s0 : State} (hc : Ctx b s0) {sw : Nat} (hsw : sw ≤ 1) (h11 : s0.gpr .r11 = 0 - BitVec.ofNat 64 sw) :
     WP isa (.block (sel o q r)) s0 (SelInv b o q r sw s0 14) := by
   refine wp_range_flatMap (M := isa) (SelInv b o q r sw s0) (fun k s hk h => ?_) 14 (Nat.le_refl _) s0
@@ -45,7 +45,7 @@ theorem sel_ok {o q r : Nat} (ho : o + 56 ≤ 4096) (hq : q + 56 ≤ 4096) (hr :
   have wq : wd s.mem b (q + 4 * k) = limb s0.mem b q k :=
     wd_frame h.frame fun x hx => by
       rw [List.mem_singleton.mp hx]
-      exact Offset.disjoint _ (by omega_using [hoq, hk]) (by omega_using [hq, hk]) (by omega_using [ho, hk])
+      exact Offset.disjoint _ (by omega) (by omega_using [hq, hk]) (by omega_using [ho, hk])
   have wr : wd s.mem b (r + 4 * k) = limb s0.mem b r k :=
     wd_frame h.frame fun x hx => by
       rw [List.mem_singleton.mp hx]
