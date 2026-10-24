@@ -2304,7 +2304,6 @@ mod tests {
             // a multiple of 8.
             unsafe { core::slice::from_raw_parts(self.ctx.as_ptr().cast(), self.written() / 8) }
         }
-
     }
 
     /// Every implementation the CPU can run encrypts and decrypts long
@@ -2681,7 +2680,7 @@ mod tests {
                 #[cfg(target_arch = "aarch64")]
                 {
                     assert!(k.fns.powers.is_some());
-                    assert_eq!(k.clone().ctx, k.ctx);
+                    assert_eq!(k.clone().key(), k.key());
                     assert_ne!(k.powers, [0; 16]);
                     assert_eq!(k.clone().powers, k.powers);
                     if fresh.fns.powers.is_some() {
