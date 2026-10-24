@@ -1,18 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyQ
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Gk
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.KeyPair
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem.Basic
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyInv
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyBody
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
+public import VerifiedGarbage.Spec.RsaPss
 
 /-!
 # DSA signing on PPC64LE: r and the masks of the ranges
