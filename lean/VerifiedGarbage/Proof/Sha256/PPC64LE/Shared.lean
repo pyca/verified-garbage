@@ -5,11 +5,15 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Update
-public import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Sha256.Scratch
 public import VerifiedGarbage.Spec.Sha256.Contract
 import all Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Impl.Sha256.PPC64LE.Stream
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Sha256 on PPC64LE: the shared contracts
