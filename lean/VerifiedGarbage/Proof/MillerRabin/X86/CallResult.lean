@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.CallEntry
 public import VerifiedGarbage.Proof.MillerRabin.Word32
 import VerifiedGarbage.Proof.Framework.Sig
