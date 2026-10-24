@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
-import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace

@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRead
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MontInverse
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowWord
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
-import VerifiedGarbage.Proof.Mont.RangeCover
 
 /-! # A fresh candidate reaches the existing prepared Montgomery contract -/
 

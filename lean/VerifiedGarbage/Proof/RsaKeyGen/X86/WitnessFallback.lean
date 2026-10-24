@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessFallbackWord
 import VerifiedGarbage.Proof.RsaKeyGen.WitnessBits32
-import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Native fallback produces exactly the reviewed forced witness -/
 

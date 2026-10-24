@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
-import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessPolicy
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStatus
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts

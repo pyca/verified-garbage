@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Constants
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
-import VerifiedGarbage.Proof.Mont.RangeCover
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
