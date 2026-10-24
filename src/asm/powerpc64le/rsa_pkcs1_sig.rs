@@ -2035,3 +2035,1006 @@ blr",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
+
+/// RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and the private key `(p, q, dP, dQ, qInv)` (as `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros and returns 0 if `hash` names no hash function, `digest` is not as long as its values, `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal error) if the signature fails the check against `e`, which is the case for no hash value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it writes is one `vg_rsa_pkcs1_verify` accepts. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
+///
+/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame and signs it with `vg_rsa_private_checked`, which checks the signature against `e`, then overwrites the encoding with zeros. Only the lengths, the hash function and the public key decide a branch or an address. It uses 4592 bytes of stack: its frame of 1264 bytes and `vg_rsa_private_checked`'s.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 4592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"stdu %r1, -1264(%r1)
+addi %r12, %r1, 0
+std %r26, 192(%r12)
+std %r27, 200(%r12)
+std %r28, 208(%r12)
+std %r29, 216(%r12)
+std %r30, 224(%r12)
+mflr %r0
+std %r0, 232(%r12)
+or %r26, %r3, %r3
+or %r27, %r5, %r5
+or %r28, %r6, %r6
+or %r29, %r7, %r7
+or %r30, %r8, %r8
+addi %r4, %r12, 240
+or %r5, %r28, %r28
+rlwinm %r6, %r9, 0, 0, 31
+or %r7, %r10, %r10
+ld %r8, 1360(%r12)
+addi %r9, %r6, -0
+cmplwi %cr0, %r9, 0
+beq %cr0, 20f
+addi %r9, %r6, -1
+cmplwi %cr0, %r9, 0
+beq %cr0, 22f
+addi %r9, %r6, -2
+cmplwi %cr0, %r9, 0
+beq %cr0, 24f
+addi %r9, %r6, -3
+cmplwi %cr0, %r9, 0
+beq %cr0, 26f
+addi %r9, %r6, -4
+cmplwi %cr0, %r9, 0
+beq %cr0, 28f
+addi %r9, %r6, -5
+cmplwi %cr0, %r9, 0
+beq %cr0, 210f
+addi %r9, %r6, -6
+cmplwi %cr0, %r9, 0
+beq %cr0, 212f
+addi %r9, %r6, -7
+cmplwi %cr0, %r9, 0
+beq %cr0, 214f
+addi %r9, %r6, -8
+cmplwi %cr0, %r9, 0
+beq %cr0, 216f
+addi %r9, %r6, -9
+cmplwi %cr0, %r9, 0
+beq %cr0, 218f
+addi %r9, %r6, -10
+cmplwi %cr0, %r9, 0
+beq %cr0, 220f
+addi %r9, %r6, -11
+cmplwi %cr0, %r9, 0
+beq %cr0, 222f
+li %r9, 2048
+li %r10, 0
+b 223f
+222:
+li %r9, 83
+li %r10, 64
+223:
+b 221f
+220:
+li %r9, 67
+li %r10, 48
+221:
+b 219f
+218:
+li %r9, 51
+li %r10, 32
+219:
+b 217f
+216:
+li %r9, 47
+li %r10, 28
+217:
+b 215f
+214:
+li %r9, 51
+li %r10, 32
+215:
+b 213f
+212:
+li %r9, 47
+li %r10, 28
+213:
+b 211f
+210:
+li %r9, 83
+li %r10, 64
+211:
+b 29f
+28:
+li %r9, 67
+li %r10, 48
+29:
+b 27f
+26:
+li %r9, 51
+li %r10, 32
+27:
+b 25f
+24:
+li %r9, 47
+li %r10, 28
+25:
+b 23f
+22:
+li %r9, 35
+li %r10, 20
+23:
+b 21f
+20:
+li %r9, 34
+li %r10, 16
+21:
+subf %r11, %r10, %r8
+cmpldi %cr0, %r11, 0
+bne %cr0, 224f
+addi %r11, %r9, 11
+subf %r11, %r11, %r5
+rldicl %r11, %r11, 1, 63
+cmpldi %cr0, %r11, 0
+bne %cr0, 226f
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+subf %r11, %r9, %r5
+addi %r11, %r11, -3
+li %r0, 255
+228:
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+addi %r11, %r11, -1
+cmpldi %cr0, %r11, 0
+bne %cr0, 228b
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+addi %r9, %r6, -0
+cmplwi %cr0, %r9, 0
+beq %cr0, 229f
+addi %r9, %r6, -1
+cmplwi %cr0, %r9, 0
+beq %cr0, 231f
+addi %r9, %r6, -2
+cmplwi %cr0, %r9, 0
+beq %cr0, 233f
+addi %r9, %r6, -3
+cmplwi %cr0, %r9, 0
+beq %cr0, 235f
+addi %r9, %r6, -4
+cmplwi %cr0, %r9, 0
+beq %cr0, 237f
+addi %r9, %r6, -5
+cmplwi %cr0, %r9, 0
+beq %cr0, 239f
+addi %r9, %r6, -6
+cmplwi %cr0, %r9, 0
+beq %cr0, 241f
+addi %r9, %r6, -7
+cmplwi %cr0, %r9, 0
+beq %cr0, 243f
+addi %r9, %r6, -8
+cmplwi %cr0, %r9, 0
+beq %cr0, 245f
+addi %r9, %r6, -9
+cmplwi %cr0, %r9, 0
+beq %cr0, 247f
+addi %r9, %r6, -10
+cmplwi %cr0, %r9, 0
+beq %cr0, 249f
+addi %r9, %r6, -11
+cmplwi %cr0, %r9, 0
+beq %cr0, 251f
+b 252f
+251:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 81
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 10
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 64
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+252:
+b 250f
+249:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 65
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+250:
+b 248f
+247:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 49
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 8
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 32
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+248:
+b 246f
+245:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 45
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 7
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 28
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+246:
+b 244f
+243:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 49
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 32
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+244:
+b 242f
+241:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 45
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 28
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+242:
+b 240f
+239:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 81
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 64
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+240:
+b 238f
+237:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 65
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+238:
+b 236f
+235:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 49
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 32
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+236:
+b 234f
+233:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 45
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 96
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 1
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 101
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 28
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+234:
+b 232f
+231:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 33
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 9
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 43
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 14
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 3
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 26
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 20
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+232:
+b 230f
+229:
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 32
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 48
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 12
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 6
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 8
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 42
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 72
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 134
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 247
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 13
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 2
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 5
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 0
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 4
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+li %r0, 16
+stb %r0, 0(%r4)
+addi %r4, %r4, 1
+230:
+253:
+lbz %r0, 0(%r7)
+stb %r0, 0(%r4)
+addi %r7, %r7, 1
+addi %r4, %r4, 1
+addi %r8, %r8, -1
+cmpldi %cr0, %r8, 0
+bne %cr0, 253b
+li %r3, 1
+b 227f
+226:
+li %r3, 0
+227:
+b 225f
+224:
+li %r3, 0
+225:
+cmpldi %cr0, %r3, 0
+beq %cr0, 254f
+addi %r12, %r1, 0
+ld %r0, 1368(%r12)
+std %r0, 96(%r12)
+ld %r0, 1376(%r12)
+std %r0, 104(%r12)
+ld %r0, 1384(%r12)
+std %r0, 112(%r12)
+ld %r0, 1392(%r12)
+std %r0, 120(%r12)
+ld %r0, 1400(%r12)
+std %r0, 128(%r12)
+ld %r0, 1408(%r12)
+std %r0, 136(%r12)
+ld %r0, 1416(%r12)
+std %r0, 144(%r12)
+ld %r0, 1424(%r12)
+std %r0, 152(%r12)
+ld %r0, 1432(%r12)
+std %r0, 160(%r12)
+ld %r0, 1440(%r12)
+std %r0, 168(%r12)
+ld %r0, 1448(%r12)
+std %r0, 176(%r12)
+ld %r0, 1456(%r12)
+std %r0, 184(%r12)
+or %r3, %r26, %r26
+or %r4, %r28, %r28
+or %r5, %r27, %r27
+or %r6, %r28, %r28
+or %r7, %r29, %r29
+or %r8, %r30, %r30
+addi %r9, %r12, 240
+or %r10, %r28, %r28
+bl {vg_rsa_private_checked}
+addi %r12, %r1, 0
+addi %r7, %r12, 240
+or %r8, %r28, %r28
+li %r0, 0
+256:
+stb %r0, 0(%r7)
+addi %r7, %r7, 1
+addi %r8, %r8, -1
+cmpldi %cr0, %r8, 0
+bne %cr0, 256b
+b 255f
+254:
+or %r7, %r26, %r26
+or %r8, %r28, %r28
+li %r0, 0
+257:
+stb %r0, 0(%r7)
+addi %r7, %r7, 1
+addi %r8, %r8, -1
+cmpldi %cr0, %r8, 0
+bne %cr0, 257b
+255:
+addi %r12, %r1, 0
+ld %r0, 232(%r12)
+mtlr %r0
+ld %r26, 192(%r12)
+ld %r27, 200(%r12)
+ld %r28, 208(%r12)
+ld %r29, 216(%r12)
+ld %r30, 224(%r12)
+addi %r1, %r1, 1264
+blr",
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+    )
+}
