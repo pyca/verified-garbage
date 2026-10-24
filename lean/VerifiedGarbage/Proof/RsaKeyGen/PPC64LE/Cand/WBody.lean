@@ -179,19 +179,25 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
       rw [hd.used, List.length_drop]
       congr 1; omega
 
+/-- The loop's test of octets left. -/
+abbrev availB : List Instr := [ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] ++ geFlag .r5 .r3 .r4
+
+/-- The loop's draw, or its end for want of octets. -/
+abbrev drawI (R : RoundImpl) : Prog isa := .ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw R.name R.code)
+
+/-- The loop's test of its status. -/
+abbrev tailB : List Instr := [ldh .r3 hStat, .subi .r3 .r3 4]
+
 /-- What the loop leaves for the result. -/
 abbrev mrLoop (R : RoundImpl) : Prog isa :=
-  .loop (.seq (.block ([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] ++ geFlag .r5 .r3 .r4))
-    (.seq (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw R.name R.code))
-      (.block [ldh .r3 hStat, .subi .r3 .r3 4])))
-    (.zero .d .r3)
+  .loop (.seq (.block availB) (.seq (drawI R) (.block tailB))) (.zero .d .r3)
 
-theorem loop_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch n : Nat} {r : Spec.RsaKeyGen.Rand}
-    (P : LIn s B Ra L w c rl ch r) (hI : Inv s B L w c ch r n t) :
-    WP isa (mrLoop R) t (MrOut s B L w c rl r) := by
-  refine WP.loop (M := isa) (Q := MrOut s B L w c rl r) (Inv s B L w c ch r) ?_ n t hI
-  intro n t hI
-  obtain ⟨k, ha, hi⟩ := hI
+theorem availS {s t : State} {B Ra : Addr} {L w c rl ch k n : Nat} {r : Spec.RsaKeyGen.Rand}
+    (P : LIn s B Ra L w c rl ch r)
+    (ha : MrAt c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 (8 * w) r k n)
+    (hi : St s B L w c r k t) :
+    WP isa (.block availB) t fun t₁ => St s B L w c r k t₁ ∧
+      t₁.gpr .r5 = BitVec.ofNat 64 (if 8 * w ≤ rl - 8 * w * (k + 1) then 1 else 0) := by
   have e := hi.prep.env
   have hZ := e.hZ
   have hw4 := e.hw
@@ -204,21 +210,43 @@ theorem loop_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch n : Nat
     hi.hdr _ (by omega) (fun j hj => by
       have : j ≠ d := fun e => h2 (e ▸ hj)
       simp only [lpWords, List.mem_cons, List.not_mem_nil, or_false] at hj; omega)
-  refine WP.seq (WP.mono (avail_ok e.hs e.h31 (by omega) ((hwd hRandLen (by decide) (by decide)).trans P.rlen)
+  exact WP.mono (avail_ok e.hs e.h31 (by omega) ((hwd hRandLen (by decide) (by decide)).trans P.rlen)
     hi.used ((hwd hK (by decide) (by decide)).trans P.kk) (by omega) (by omega) (by omega))
-    fun t₁ ⟨⟨a5, m₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (mid_ok R P ha (hi.keep k₁ m₁) a5) fun t₂ hm => ?_)
-  rcases hm with ⟨hc, ha', hi'⟩ | ⟨-, v, hv, hst, ho⟩
+    fun t₁ ⟨⟨a5, m₁⟩, k₁⟩ => ⟨hi.keep k₁ m₁, a5⟩
+
+/-- After the loop's test. -/
+def Tl (s : State) (B : Addr) (L w c rl ch : Nat) (r : Spec.RsaKeyGen.Rand) (k n : Nat) (t : State) : Prop :=
+  (MC c w r k n ∧ isa.eval (.zero .d .r3) t = some true ∧
+      MrAt c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 (8 * w) r (k + 1) (n - 1) ∧
+      St s B L w c r (k + 1) t) ∨
+    (¬ MC c w r k n ∧ isa.eval (.zero .d .r3) t = some false ∧ MrOut s B L w c rl r t)
+
+theorem tailS {s t : State} {B : Addr} {L w c rl ch k n : Nat} {r : Spec.RsaKeyGen.Rand}
+    (hm : Mid s B L w c rl ch r k n t) : WP isa (.block tailB) t (Tl s B L w c rl ch r k n) := by
+  rcases hm with ⟨hc, ha', hi'⟩ | ⟨hc, v, hv, hst, ho⟩
   · have e' := hi'.prep.env
     have hZ' := e'.hZ
     rw [slot_lin] at hZ'
     exact WP.mono (tail_ok e'.hs e'.h31 (by omega) hi'.stat (by decide)) fun t₃ ⟨⟨ev, m₃⟩, k₃⟩ =>
-      .inr ⟨ev, n - 1, by have := hc.2.2; omega, k + 1, ha', hi'.keep k₃ m₃⟩
+      .inl ⟨hc, ev, ha', hi'.keep k₃ m₃⟩
   · have e' := ho.prep.env
     have hZ' := e'.hZ
     rw [slot_lin] at hZ'
     exact WP.mono (tail_ok e'.hs e'.h31 (by omega) hst (by omega)) fun t₃ ⟨⟨ev, m₃⟩, k₃⟩ =>
-      .inl ⟨by rw [ev, decide_eq_false (by omega)], ho.keep k₃ m₃⟩
+      .inr ⟨hc, by rw [ev, decide_eq_false (by omega)], ho.keep k₃ m₃⟩
+
+theorem loop_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch n : Nat} {r : Spec.RsaKeyGen.Rand}
+    (P : LIn s B Ra L w c rl ch r) (hI : Inv s B L w c ch r n t) :
+    WP isa (mrLoop R) t (MrOut s B L w c rl r) := by
+  refine WP.loop (M := isa) (Q := MrOut s B L w c rl r) (Inv s B L w c ch r) ?_ n t hI
+  intro n t hI
+  obtain ⟨k, ha, hi⟩ := hI
+  refine WP.seq (WP.mono (availS P ha hi) fun t₁ ⟨h₁, a5⟩ => ?_)
+  refine WP.seq (WP.mono (mid_ok R P ha h₁ a5) fun t₂ hm => ?_)
+  refine WP.mono (tailS hm) fun t₃ ht => ?_
+  rcases ht with ⟨hc, ev, ha', hi'⟩ | ⟨-, ev, ho⟩
+  · exact .inr ⟨ev, n - 1, by have := hc.2.2; omega, k + 1, ha', hi'⟩
+  · exact .inl ⟨ev, ho⟩
 
 /-- The loop's counts set up. -/
 abbrev mrInit : List Instr :=
