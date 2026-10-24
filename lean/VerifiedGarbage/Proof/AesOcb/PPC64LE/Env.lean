@@ -39,6 +39,17 @@ theorem runBlock_append (a b : List Instr) (s : State) :
     funext u
     exact ih u
 
+/-- Branching on a register holding `n`, while it is not zero. -/
+theorem eval_nonzero {s : State} {r : Reg} {n : Nat} (h : s.gpr r = BitVec.ofNat 64 n) (hn : n < 2 ^ 64) :
+    isa.eval (.nonzero .d r) s = some (!decide (n = 0)) := by
+  show some _ = _
+  simp only [State.read, Size.bits, BitVec.setWidth_eq, h]
+  by_cases h0 : n = 0
+  · subst h0; rfl
+  · have : BitVec.ofNat 64 n ≠ 0 := fun e => h0 ((Proof.AesGcm.PPC64LE.ofNat_eq_zero hn).mp e)
+    simp only [h0, decide_false, Bool.not_false]
+    exact congrArg some (bne_iff_ne.mpr this)
+
 /-! ## The regions -/
 
 /-- The key context and `W`. -/
