@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Hdr
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Loop
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Pre
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 
 /-!
 # DSA's probable-prime test on PPC64LE: trial division

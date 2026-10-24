@@ -12,6 +12,12 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Hdr
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Entry
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Hdr
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Load
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Entry
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Load
 
 /-!
 # DSA's probable-prime test on PPC64LE: constant time

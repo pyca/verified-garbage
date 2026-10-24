@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Load
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Load
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Entry
 
 /-!
 # DSA's probable-prime test on PPC64LE: the header

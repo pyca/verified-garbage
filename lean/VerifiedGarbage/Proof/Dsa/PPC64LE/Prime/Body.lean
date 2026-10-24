@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Hdr
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Load
 
 /-!
 # DSA's probable-prime test on PPC64LE: the body

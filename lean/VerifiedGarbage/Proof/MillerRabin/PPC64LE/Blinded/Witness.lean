@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Ctx
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Ctx
 import VerifiedGarbage.Proof.RsaKeyGen.WitnessBits
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Copy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Prep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Blinded
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCall
 
 /-!
 # The blinded Miller–Rabin loop on PPC64LE: a draw's witness

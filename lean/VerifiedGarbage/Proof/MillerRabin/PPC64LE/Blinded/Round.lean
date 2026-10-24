@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Ctx
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Ctx
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Blinded
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCall
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 
 /-!
 # The blinded Miller–Rabin loop on PPC64LE: after a passing round

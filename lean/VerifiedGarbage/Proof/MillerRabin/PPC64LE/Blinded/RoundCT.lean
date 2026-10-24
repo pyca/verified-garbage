@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.CTBase
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Round
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Round
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCallCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.CTBase
@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Blinded
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCall
 
 /-!
 # The blinded Miller–Rabin loop on PPC64LE: constant time of a round
