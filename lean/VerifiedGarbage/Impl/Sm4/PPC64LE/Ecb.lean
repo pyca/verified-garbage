@@ -15,14 +15,19 @@ allocates on the stack. As on x86-64 and AArch64
   the masks set.
 * The round keys are bitsliced into the table at slot 128, in the order the
   rounds use them: `rk₀ … rk₃₁` for encryption, `rk₃₁ … rk₀` for decryption
-  (§7.2). Decryption then runs the same rounds as encryption.
+  (§7.2). Decryption then runs the same rounds as encryption. The sixteen
+  pairs of round keys are unrolled, so that every store of the table is at a
+  known offset of the scratch buffer (`kr` moves by a constant between them):
+  a caller's analysis of constant time (`VG.PPC64LE.slotTaint`) then knows
+  that the callee-saved registers the functions save there survive the
+  table, and its own public values with them.
 * Each group of up to sixteen blocks is copied to the tail buffer,
   bitsliced, run through the 32 rounds (eight times four, the state's words
   taking the new words in turn), and copied back.
 
 `r3` (the schedule, then the copies' count), `r4` (the data), `r5` (the
 blocks left), `r6` and `r7` (the copies' pointers), `r8`, `r10` (the round
-key's entry), `r11` (the key setup's count, then the table's end), `r12`
+key's entry), `r11` (the table's end), `r12`
 (the group's blocks) and the loop test (`t0`) hold public values; no
 address and no branch depends on anything else. The rounds use only the
 state, the temporaries and the scratch buffer, so the public values stay in
@@ -44,19 +49,19 @@ inductive Dir | encrypt | decrypt
 /-- `r := ` the address of slot `k`. -/
 def slotAddr (r : Reg) (k : Nat) : List Instr := [.addi r sb (8 * k)]
 
+/-- `n` pairs of round keys, from the word at `r3`, to the entries at `kr`,
+which `st` moves to the next entry after each. -/
+def keyPairs (st : Instr) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (.block (keyOne 0 ++ [st] ++ keyOne 1 ++ [st, .addi .r3 .r3 8])) (keyPairs st n)
+
 /-- Encryption's table: round keys `2 m` and `2 m + 1`, from the word at
 `r3`, to entries `2 m` and `2 m + 1`. -/
-def encKeys : Prog isa :=
-  .seq (.block (slotAddr kr tableSlot ++ [.li .r11 16]))
-    (.loop (.block (keyOne 0 ++ [.addi kr kr 64] ++ keyOne 1 ++
-      [.addi kr kr 64, .addi .r3 .r3 8, .subi .r11 .r11 1])) (.nonzero .d .r11))
+def encKeys : Prog isa := .seq (.block (slotAddr kr tableSlot)) (keyPairs (.addi kr kr 64) 16)
 
 /-- Decryption's table: round keys `2 m` and `2 m + 1` to entries `31 - 2 m`
 and `30 - 2 m`. -/
-def decKeys : Prog isa :=
-  .seq (.block (slotAddr kr (tableSlot + 8 * 31) ++ [.li .r11 16]))
-    (.loop (.block (keyOne 0 ++ [.subi kr kr 64] ++ keyOne 1 ++
-      [.subi kr kr 64, .addi .r3 .r3 8, .subi .r11 .r11 1])) (.nonzero .d .r11))
+def decKeys : Prog isa := .seq (.block (slotAddr kr (tableSlot + 8 * 31))) (keyPairs (.subi kr kr 64) 16)
 
 /-- The table, then `r11 := ` its end. -/
 def keys (dir : Dir) : Prog isa :=

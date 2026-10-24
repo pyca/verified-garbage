@@ -12,7 +12,8 @@
 //! AArch64 uses a serial core for encryption and short decryption, and
 //! processes sixteen independent decryption inputs per batch for larger
 //! buffers. Other targets use bitsliced SM4; ARMv7 prepares round keys once
-//! per call and decrypts eight inputs per batch. This module holds the key
+//! per call and decrypts eight inputs per batch; PPC64LE prepares them once
+//! per call and takes one block at a time. This module holds the key
 //! schedule and handles a partial last
 //! segment: CFB encryption of a zero block is
 //! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
@@ -22,7 +23,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
@@ -39,7 +41,12 @@ pub struct Sm4Cfb128 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 /// The signature of `vg_sm4_cfb128_encrypt` and `vg_sm4_cfb128_decrypt`.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 type Cfb = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 
 impl Sm4Cfb128 {

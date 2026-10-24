@@ -18,13 +18,16 @@
 //! eight (about eight times ECB's cost). ARMv7 prepares round keys once per
 //! call. Encryption follows the serial feedback chain; decryption transforms
 //! eight independent ciphertext blocks before combining them with preceding
-//! ciphertext. This module checks the lengths and holds the key schedule.
+//! ciphertext. PPC64LE prepares the round keys once per call too, and takes
+//! one block at a time in both directions, in a bitsliced batch of sixteen.
+//! This module checks the lengths and holds the key schedule.
 
 #![cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
