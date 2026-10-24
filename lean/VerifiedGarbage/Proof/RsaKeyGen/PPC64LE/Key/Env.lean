@@ -51,6 +51,18 @@ def upd (V : Nat → Nat) (j v : Nat) : Nat → Nat := fun i => if i = j then v 
 
 theorem upd_ne {V : Nat → Nat} {j v i : Nat} (h : i ≠ j) : upd V j v i = V i := by simp [upd, h]
 
+theorem flag01 (c : Prop) [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by split <;> omega
+
+/-- A selection under a flag of a condition. -/
+theorem sel_flag (c : Prop) [Decidable c] (a b : Nat) :
+    (if (if c then 1 else 0 : Nat) = 0 then a else b) = if c then b else a := by
+  by_cases h : c <;> simp [h]
+
+/-- Values through the environments of the steps: `simp only` with the
+steps' equations, the side conditions (distinct arrays) by `decide`. -/
+macro "vsimp" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
+  `(tactic| (set_option linter.unusedSimpArgs false in simp (disch := decide) only [$ls,*]))
+
 /-- `a - b` modulo `2^(32 w)`. -/
 def subW (w a b : Nat) : Nat := (a + 2 ^ (32 * w) - b) % 2 ^ (32 * w)
 
@@ -62,6 +74,16 @@ structure KS (m : Mem) (B : Addr) (w : Nat) (V F : Nat → Nat) : Prop where
 theorem KS.lt {m : Mem} {B : Addr} {w : Nat} {V F : Nat → Nat} (h : KS m B w V F) {j : Nat}
     (hj : j < nArr) : V j < 2 ^ (32 * w) := by
   rw [← h.arrs j hj]; exact val32_lt _ _ _ _
+
+/-- An update of the arrays' values, as a fresh environment. -/
+theorem KS.vx {m : Mem} {B : Addr} {w : Nat} {V F : Nat → Nat} {o v : Nat} (h : KS m B w (upd V o v) F) :
+    ∃ V', KS m B w V' F ∧ V' o = v ∧ ∀ j, j ≠ o → V' j = V j :=
+  ⟨_, h, upd_self _ _ _, fun _ hj => upd_ne hj⟩
+
+/-- An update of the flags, as a fresh environment. -/
+theorem KS.fx {m : Mem} {B : Addr} {w : Nat} {V F : Nat → Nat} {d x : Nat} (h : KS m B w V (upd F d x)) :
+    ∃ F', KS m B w V F' ∧ F' d = x ∧ ∀ e, e ≠ d → F' e = F e :=
+  ⟨_, h, upd_self _ _ _, fun _ he => upd_ne he⟩
 
 theorem KK.trans {B : Addr} {w : Nat} {m₁ m₂ m₃ : Mem} (h₁ : KK B w m₁ m₂) (h₂ : KK B w m₂ m₃) :
     KK B w m₁ m₃ := KeyWorkspace.Keep.trans h₁ h₂
