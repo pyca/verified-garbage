@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DecompressMain
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Tonelli
@@ -17,6 +17,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.EcKey.P224
 meta import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P224.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P224
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Contract
+public import VerifiedGarbage.Spec.P224
 
 /-!
 # SEC 1 point conversion over P-224 on PPC64LE: `Verified`

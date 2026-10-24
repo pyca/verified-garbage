@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Contract
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 public import VerifiedGarbage.Impl.EcKey.Compressed.PPC64LE
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Finish
@@ -11,10 +11,10 @@ import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Finish
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 
 /-!
 # SEC 1 point compression on PPC64LE: the whole function

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DecompressMain
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DescentLoop
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DescentLoop
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.RootPow
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Mont.PPC64LE.Const
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Descent
 
 /-!
 # SEC 1 point decompression on PPC64LE: P-224's candidate

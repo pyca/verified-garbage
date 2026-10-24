@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.PPC64LE
+import VerifiedGarbage.Impl.Weierstrass.PPC64LE
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Loop
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # SEC 1 point decompression on PPC64LE: the descent's counters

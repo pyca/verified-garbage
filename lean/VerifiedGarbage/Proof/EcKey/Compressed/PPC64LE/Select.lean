@@ -4,15 +4,16 @@ public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 public import VerifiedGarbage.Impl.EcKey.Compressed.PPC64LE.Decompress
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
-import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Impl.Ecdsa.PPC64LE
+public import VerifiedGarbage.Proof.Weierstrass.Env
 
 /-!
 # SEC 1 point decompression on PPC64LE: the root of the tag's parity

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DecompressContract
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 public import VerifiedGarbage.Impl.EcKey.Compressed.PPC64LE.Decompress
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Peer
@@ -16,12 +16,11 @@ import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Finish
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 
 /-!
 # SEC 1 point decompression on PPC64LE: the whole function

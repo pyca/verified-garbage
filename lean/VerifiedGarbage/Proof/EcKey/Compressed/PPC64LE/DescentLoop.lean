@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Poly
+public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 
 /-!
 # SEC 1 point decompression on PPC64LE: P-224's descent, its rounds

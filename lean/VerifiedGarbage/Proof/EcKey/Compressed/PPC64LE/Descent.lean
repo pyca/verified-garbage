@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Square
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Poly
-public import VerifiedGarbage.Impl.EcKey.Compressed.Root
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Square
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Poly
+import VerifiedGarbage.Impl.EcKey.Compressed.Root
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
@@ -14,6 +14,10 @@ import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Impl.EcKey.Compressed.PPC64LE.Decompress
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Counter
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # SEC 1 point decompression on PPC64LE: P-224's descent

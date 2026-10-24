@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DecompressMain
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 meta import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP384r1
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Contract
+public import VerifiedGarbage.Spec.BrainpoolP384r1
 
 /-!
 # SEC 1 point conversion over brainpoolP384r1 on PPC64LE: `Verified`
