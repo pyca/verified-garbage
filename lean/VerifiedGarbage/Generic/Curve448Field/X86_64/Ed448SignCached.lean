@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantForLit
 
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Verified

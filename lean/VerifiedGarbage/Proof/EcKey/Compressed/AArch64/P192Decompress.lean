@@ -6,9 +6,11 @@ import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Spec.EcKey.P192
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdh.AArch64.P192.CheckVerified
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.P192.AArch64

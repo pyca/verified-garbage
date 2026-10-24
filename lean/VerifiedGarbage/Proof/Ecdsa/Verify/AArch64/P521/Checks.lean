@@ -1,6 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
@@ -206,9 +210,47 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Weierstrass.AArch64
 open VG.Impl.Weierstrass.AArch64
 
-/-- Constant time for the registers `rs`, by taint tracking. -/
+/- The constant-time analyses of the field functions, and of the parts of the
+verifier's prefix that `before_checks` and the joint verifier's `before_ct`
+share, are done once here (`taint_summary`, `Proof/Framework/TaintSum.lean`),
+rather than in every check that calls them. The functions start from the
+pointer `x0` and the offsets `x1`–`x3` public, and keep public `x0` and the
+counters `x19` and `x20` that they do not write. -/
+
+taint_summary mulPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
+  (.call (Spec.Weierstrass.Mont.p521p.fn "mul")
+    (Impl.Weierstrass.AArch64.Mont.mulFn 9 Spec.Weierstrass.Mont.p521p.m))
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+taint_summary mulNSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
+  (.call (Spec.Weierstrass.Mont.p521n.fn "mul")
+    (Impl.Weierstrass.AArch64.Mont.mulFn 9 Spec.Weierstrass.Mont.p521n.m))
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+taint_summary sqrPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
+  (.call (Spec.Weierstrass.Mont.p521p.fn "sqr") Impl.Weierstrass.AArch64.Mont.sqrFn521)
+  keeping (VectorTaint.ofRegs [.x0])
+
+taint_summary validateSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
+  (Impl.Ecdh.AArch64.Cfg.validate p521)
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+  using mulPSum mulNSum sqrPSum
+taint_summary scalarsSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
+  (Impl.Ecdsa.Verify.AArch64.Cfg.scalars p521)
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+  using mulPSum mulNSum sqrPSum
+taint_summary nPowSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
+  p521.nPow
+  keeping (VectorTaint.ofRegs [.x0, .x20])
+  using mulPSum mulNSum sqrPSum
+taint_summary uvSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
+  (Impl.Ecdsa.Verify.AArch64.Cfg.uv p521)
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+  using mulPSum mulNSum sqrPSum
+
+/-- Constant time for the registers `rs`, by taint tracking, with the field
+functions' summaries. -/
 macro "reg_ct" rs:term : tactic => `(tactic|
-  exact VectorTaint.constantTime (Taint.ofRegs $rs) (fun _ _ _ _ h => h) (by taint_decide))
+  exact VG.Taint.constantTime_of_exists (A := VectorTaint.taint) (Taint.ofRegs $rs, RegSet.empty)
+    (fun _ _ _ _ h => VectorTaint.agree_initial h) (by taint_decide_sum [mulPSum, mulNSum, sqrPSum]))
 
 /-- The window method's slots, which the public NAF uses. -/
 abbrev Kq := packedQ p521
@@ -237,17 +279,27 @@ theorem keep_of {c : Prog isa}
 
 theorem dblu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr},
     Exec isa (fprogB Kq.M (PubNaf.dbluOps Kq)) s tr t → t.gpr r = s.gpr r := by
+  -- Both registers in one evaluation of the code.
+  have h : ([Reg.x19, .x20].all fun r => topAll (keepsReg r) (fprogB Kq.M (PubNaf.dbluOps Kq)) &&
+      ((fprogB Kq.M (PubNaf.dbluOps Kq)).calls.all fun nb =>
+        (straight nb.2).any (restores r) || nb.2.allInstrs (keepsReg r))) = true := by decide +kernel
   intro r hr s t tr he
+  have hh := List.all_eq_true.mp h r hr
+  rw [Bool.and_eq_true] at hh
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl <;>
-    exact gpr_top (by decide) he (by decide +kernel) (by decide +kernel)
+  rcases hr with rfl | rfl <;> exact gpr_top (by decide) he hh.1 hh.2
 
 theorem zaddu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr},
     Exec isa (fprogB Kq.M (PubNaf.zadduOps Kq)) s tr t → t.gpr r = s.gpr r := by
+  -- Both registers in one evaluation of the code.
+  have h : ([Reg.x19, .x20].all fun r => topAll (keepsReg r) (fprogB Kq.M (PubNaf.zadduOps Kq)) &&
+      ((fprogB Kq.M (PubNaf.zadduOps Kq)).calls.all fun nb =>
+        (straight nb.2).any (restores r) || nb.2.allInstrs (keepsReg r))) = true := by decide +kernel
   intro r hr s t tr he
+  have hh := List.all_eq_true.mp h r hr
+  rw [Bool.and_eq_true] at hh
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl <;>
-    exact gpr_top (by decide) he (by decide +kernel) (by decide +kernel)
+  rcases hr with rfl | rfl <;> exact gpr_top (by decide) he hh.1 hh.2
 
 theorem window_checks : PubNaf.WindowChecks Kq where
   table := {
@@ -279,9 +331,17 @@ theorem prep_checks : PubNaf.PrepChecks Kq (p521.sl V) where
   init := by reg_ct [.x0]
   step := by reg_ct (PubNaf.prepPublic Kq.M.n)
 
+
+/-- Everything up to the public comb, with the summaries of its parts. -/
+theorem before_checks : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3])) (verifyPrefix p521) :=
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint) (Taint.ofRegs [.x0, .x1, .x2, .x3], RegSet.empty)
+    (fun _ _ _ _ h => VectorTaint.agree_initial h)
+    (by taint_decide_sum [mulPSum, mulNSum, sqrPSum, validateSum, scalarsSum, nPowSum, uvSum])
+
 /-- The public comb's iterations, and the code before and after the multiplications. -/
 theorem packed_verify_checks : PackedNafVerifyChecks p521 where
-  before := by reg_ct [.x0, .x1, .x2, .x3]
+  before := before_checks
   comb := {
     init := by reg_ct [.x0]
     head := by reg_ct [.x0, .x19]

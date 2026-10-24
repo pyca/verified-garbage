@@ -259,7 +259,7 @@ theorem cryptBody_wp {s₀ : State} (hwr : (⟨s₀.gpr .r4, 8 * slots⟩ : Regi
     WP isa cryptPrepared s₀ fun s' => (∀ i < 18, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
       ReadyAt d (s₀.gpr .r3).toNat s'.mem (s₀.gpr .r4) w ∧
       Frame [⟨s₀.gpr .r4, 8 * keySlot⟩, ⟨s₀.gpr .r4 + BitVec.ofNat 64 (8 * savedSlot), 272⟩] s₀.mem s'.mem ∧
-      s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧
+      s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.gpr sb = s₀.gpr .r4 ∧
       ∀ j < 8, Spec.Camellia.blockAt s'.mem (s₀.gpr .r4 + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) =
         blockFn (Spec.Camellia.subkeysOfWords (s₀.gpr .r3).toNat w) (specDir d)
           (Spec.Camellia.blockAt s₀.mem (s₀.gpr .r4 + BitVec.ofNat 64 (8 * tailSlot + 16 * j))) := by
@@ -325,7 +325,7 @@ theorem cryptBody_wp {s₀ : State} (hwr : (⟨s₀.gpr .r4, 8 * slots⟩ : Regi
         (by rw [savedSlot_eq]; omega)
     · exact VG.Offset.disjoint b (.inl (by rw [savedSlot_eq, tailSlot_eq]; omega)) (by rw [savedSlot_eq]; omega)
         (by rw [tailSlot_eq]; omega)
-  obtain ⟨s₆, e₆, rg₆, -, m₆, rd₆, wr₆⟩ := restore_ok (by rw [c₅.wr, wr₄, wr₃, wr₂, wr₁]; exact hwr) base₅ sv₅
+  obtain ⟨s₆, e₆, rg₆, og₆, m₆, rd₆, wr₆⟩ := restore_ok (by rw [c₅.wr, wr₄, wr₃, wr₂, wr₁]; exact hwr) base₅ sv₅
   have hk5 : ∀ k, keySlot ≤ k → k < savedSlot →
       s₅.mem.readW (wordAddr b k) 64 = s₀.mem.readW (wordAddr b k) 64 := fun k h1 h2 => by
     rw [← slot₃ k h2, ← m₄]
@@ -336,7 +336,8 @@ theorem cryptBody_wp {s₀ : State} (hwr : (⟨s₀.gpr .r4, 8 * slots⟩ : Regi
     · exact VG.Offset.disjoint b (.inl (by rw [savedSlot_eq, tailSlot_eq] at *; omega))
         (by rw [savedSlot_eq] at h2; omega) (by rw [tailSlot_eq]; omega)
   refine WP.of_runBlock ⟨s₆, e₆, fun i hi => by rw [rg₆ i hi, o₁ _ (sreg_ne i hi)], ?_, ?_,
-    by rw [rd₆, c₅.rd, rd₄, rd₃, rd₂, rd₁], by rw [wr₆, c₅.wr, wr₄, wr₃, wr₂, wr₁], fun j hj => ?_⟩
+    by rw [rd₆, c₅.rd, rd₄, rd₃, rd₂, rd₁], by rw [wr₆, c₅.wr, wr₄, wr₃, wr₂, wr₁],
+    by rw [og₆ _ (by decide), base₅], fun j hj => ?_⟩
   · refine ⟨fun kv hkv => by rw [m₆]; exact c₅.masks.at base₅ kv hkv, fun i hi => (hr.2 i hi).congr fun j hj => ?_⟩
     have hg4 : (s₀.gpr .r3).toNat / 6 ≤ 4 := by omega
     rw [entryW_eq, entryW_eq, m₆, hk5 _ (by omega) (by rw [keySlot_eq, savedSlot_eq]; omega)]

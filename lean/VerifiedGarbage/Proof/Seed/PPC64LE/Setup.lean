@@ -92,9 +92,10 @@ theorem stores_ok {s : State} (h : Room s) (l : List (Nat × Reg)) (hl : ∀ p �
 theorem loads_ok {s : State} (h : Room s) (l : List (Reg × Nat))
     (hl : ∀ p ∈ l, p.2 < scratchSlots ∧ p.1 ≠ .r8) (hd : (l.map (·.1)).Nodup) :
     ∃ s', runBlock isa (l.map fun p => ldS p.1 p.2) s = some s' ∧ s'.mem = s.mem ∧ s'.sp = s.sp ∧
-      (∀ p ∈ l, s'.gpr p.1 = slotW s p.2) ∧ (∀ r, (∀ p ∈ l, p.1 ≠ r) → s'.gpr r = s.gpr r) := by
+      (∀ p ∈ l, s'.gpr p.1 = slotW s p.2) ∧ (∀ r, (∀ p ∈ l, p.1 ≠ r) → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
   induction l generalizing s with
-  | nil => exact ⟨s, runBlock_nil, rfl, rfl, (fun _ h => by cases h), fun _ _ => rfl⟩
+  | nil => exact ⟨s, runBlock_nil, rfl, rfl, (fun _ h => by cases h), fun _ _ => rfl, rfl, rfl⟩
   | cons p l ih =>
     have hp := hl p List.mem_cons_self
     have e := exec_ld h hp.1 p.1
@@ -102,10 +103,11 @@ theorem loads_ok {s : State} (h : Room s) (l : List (Reg × Nat))
     have c₁ : s₁.gpr .r8 = s.gpr .r8 := gpr_write_of_ne _ _ (Ne.symm hp.2)
     have h₁ : Room s₁ := room_congr h c₁ rfl
     have hn : p.1 ∉ l.map (·.1) := (List.nodup_cons.mp hd).1
-    obtain ⟨s', run', m', sp', set', keep'⟩ :=
+    obtain ⟨s', run', m', sp', set', keep', rd', wr'⟩ :=
       ih h₁ (fun q hq => hl q (List.mem_cons_of_mem _ hq)) (List.nodup_cons.mp hd).2
     have sl₁ : ∀ j, slotW s₁ j = slotW s j := slotW_write s hp.2 _
-    refine ⟨s', ?_, by rw [m']; rfl, by rw [sp']; rfl, fun q hq => ?_, fun r hr => ?_⟩
+    refine ⟨s', ?_, by rw [m']; rfl, by rw [sp']; rfl, fun q hq => ?_, fun r hr => ?_, by rw [rd']; rfl,
+      by rw [wr']; rfl⟩
     · rw [List.map_cons, runBlock_cons, e, runStep_some]; exact run'
     · rcases List.mem_cons.mp hq with rfl | hq
       · rw [keep' _ (fun r hr he => hn (by rw [← he]; exact List.mem_map_of_mem hr))]

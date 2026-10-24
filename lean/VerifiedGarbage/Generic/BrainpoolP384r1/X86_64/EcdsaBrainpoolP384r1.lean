@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Verified

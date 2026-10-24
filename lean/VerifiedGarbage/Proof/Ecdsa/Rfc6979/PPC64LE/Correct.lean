@@ -72,9 +72,12 @@ theorem stageA_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr 
   have hqd : L.q ≤ P.I.hashLen := by rw [hq]; exact P.hQD
   have hq4 : 4 * P.k = L.q := by rw [hq, P.hk]
   rw [WP.block_append_iff]
-  refine WP.mono (reduce_ok hL P.hk P.hk12 (by rw [hq4]; exact hqd) P.hn₁ P.hn₂ hc) fun u ⟨hcu, _, hr⟩ => ?_
+  have hok := lq_ok hq
+  refine WP.mono (reduce_ok hL P.hk P.hk16 (by rw [hq4]; exact hqd) (by rw [P.hk, ← hq4]) hok P.hn₁ P.hn₂ hc)
+    fun u ⟨hcu, _, hr⟩ => ?_
   refine WP.mono (initKV_ok hL hcu) fun v ⟨hcv, hf, hkv⟩ => ⟨hcv, ?_, ?_, ?_⟩
-  · have hq48 := lq_le hq
+  · have ⟨hq₁, hq₂⟩ := hok
+    have hne := hcu.ne
     have hh : hOf L v.mem = hOf L u.mem := bytesAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by omega) (by omega))
       (by omega)
@@ -104,16 +107,19 @@ structure QB (P : Rfc) (L : Lay P.I.hashLen) (m₀ : Mem) (K V : List Byte) (u :
 
 theorem hq4_of (hq : L.q = P.c.len) : L.q % 4 = 0 := by rw [hq, P.hk]; omega
 
+theorem e_eq (hq : L.q = P.c.len) : extra P.c.hHigh = L.e := by
+  unfold Lay.e Lay.hHigh Cfg.hHigh; rw [hq]
+
 theorem stageB_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr m₀ t) (ha : QA P L m₀ t) :
     WP isa (P.c.rekeyFull 0) t fun u => Ctx L g lr m₀ u ∧ QB P L m₀ (K₁ P L m₀) (V₁ P L m₀) u :=
-  WP.mono (rekeyFull_ok P.K P.hcH hq.symm hL (lq_le hq) (hq4_of hq) hc (b := 0) (by decide)) fun u h =>
+  WP.mono (rekeyFull_ok P.K P.hcH hq.symm hL (lq_ok hq) (hq4_of hq) hc (b := 0) (by decide)) fun u h =>
     ⟨h.ctx, h.h.trans ha.h, by rw [h.key, ha.k, ha.v, ha.h, hc.dBytes hL (Nat.le_refl _)],
       by rw [h.v, h.key, ha.k, ha.v, ha.h, hc.dBytes hL (Nat.le_refl _)]⟩
 
 theorem stageC_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr m₀ t)
     (hb : QB P L m₀ (K₁ P L m₀) (V₁ P L m₀) t) :
     WP isa (P.c.rekeyFull 1) t fun u => Ctx L g lr m₀ u ∧ QB P L m₀ (kv0 P L m₀).1 (kv0 P L m₀).2 u :=
-  WP.mono (rekeyFull_ok P.K P.hcH hq.symm hL (lq_le hq) (hq4_of hq) hc (b := 1) (by decide)) fun u h =>
+  WP.mono (rekeyFull_ok P.K P.hcH hq.symm hL (lq_ok hq) (hq4_of hq) hc (b := 1) (by decide)) fun u h =>
     ⟨h.ctx, h.h.trans hb.h, by rw [h.key, hb.k, hb.v, hb.h, hc.dBytes hL (Nat.le_refl _), kv0_eq hq],
       by rw [h.v, h.key, hb.k, hb.v, hb.h, hc.dBytes hL (Nat.le_refl _), kv0_eq hq]⟩
 
@@ -132,7 +138,7 @@ theorem stageD_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t)
 /-- From the arguments saved to the wiped frame: the loop has stopped at a candidate. -/
 theorem rest_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr m₀ t) :
     WP isa (.seq (.block (P.c.reduce ++ Cfg.initKV)) (.seq (P.c.rekeyFull 0) (.seq (P.c.rekeyFull 1)
-      (.seq (.block P.c.initCnt) (.seq (.loop P.c.tryOne (.nonzero .d .r12)) (.block Cfg.wipe)))))) t
+      (.seq (.block P.c.initCnt) (.seq (.loop P.c.tryOne (.nonzero .d .r12)) (.block (Cfg.wipe P.c.hHigh))))))) t
       fun u => Ctx L g lr m₀ u ∧ ∃ i, Exit P L m₀ i u := by
   have hnB := hL.nB
   refine WP.seq (WP.mono (stageA_ok hL hq hc) fun u₁ ⟨hc₁, ha⟩ => ?_)
@@ -140,9 +146,13 @@ theorem rest_ok (hL : L.Ok) (hq : L.q = P.c.len) {t : State} (hc : Ctx L g lr m�
   refine WP.seq (WP.mono (stageC_ok hL hq hc₂ hb) fun u₃ ⟨hc₃, hb₃⟩ => ?_)
   refine WP.seq (WP.mono (stageD_ok hL hc₃ hb₃) fun u₄ ⟨hc₄, h₀⟩ => ?_)
   refine WP.seq (WP.mono (loop_ok hL hq hc₄ h₀) fun u₅ ⟨hc₅, i, hx⟩ => ?_)
-  refine WP.mono (wipe_ok hL hc₅) fun u ⟨hcu, K, hf⟩ => ⟨hcu, i, hx.lt, hx.fails, hx.last,
+  refine WP.mono (wipe_ok hL (by rw [e_eq hq]) hc₅) fun u ⟨hcu, K, hf⟩ => ⟨hcu, i, hx.lt, hx.fails, hx.last,
     hx.res.keep (by rw [K.gpr _ (by decide)]) (bytesAt_frame hf ?_ (by have := hL.no; omega))⟩
-  simp only [List.mem_singleton]; rintro r rfl; exact (hL.stk_OUT (by omega)).symm
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact (hL.stk_OUT (by omega)).symm
+  · exact (hL.stk_OUT (by omega)).symm
 
 /-! ## The result -/
 
@@ -243,55 +253,75 @@ theorem go_iff (hq : L.q = P.c.len) {i : Nat} (hi : i < P.c.tries) (hf : ∀ j <
 theorem lay_q (P : Rfc) (s : State) : (lay P.I.hashLen P.I.ecdsa.curve.len s).q = P.c.len := by
   show P.I.ecdsa.curve.len = _; rw [P.hE, P.hcl]
 
+theorem pre_conv {s : State} (h : (rfcPPC P.I (400 + extra P.c.hHigh)).pre s) :
+    (rfcPPC P.I (400 + extra (decide (48 < P.I.ecdsa.curve.len)))).pre s := by
+  have hlen : P.I.ecdsa.curve.len = P.c.len := by rw [P.hE, P.hcl]
+  rw [hlen]; exact h
+
 /-- The signature, with the frames: the return address saved in the outer
 one, the arguments in the inner one, and both popped. -/
-theorem sign_ok {s : State} (h : (rfcPPC P.I 400).pre s) :
-    WP isa P.c.sign s fun s' => abiPreserved s s' ∧ (rfcPPC P.I 400).post s s' := by
-  have hL := lay_ok h
+theorem sign_ok {s : State} (h : (rfcPPC P.I (400 + extra P.c.hHigh)).pre s) :
+    WP isa P.c.sign s fun s' => abiPreserved s s' ∧ (rfcPPC P.I (400 + extra P.c.hHigh)).post s s' := by
+  have h' := pre_conv h
+  have hL := lay_ok h'
   have hq := lay_q P s
-  have hsp : 400 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+  have he : extra P.c.hHigh = (lay P.I.hashLen P.I.ecdsa.curve.len s).e := e_eq hq
+  have hsp : 400 + extra P.c.hHigh ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   obtain ⟨L, hl⟩ : ∃ L, lay P.I.hashLen P.I.ecdsa.curve.len s = L := ⟨_, rfl⟩
-  have hB : s.sp = L.B + BitVec.ofNat 64 400 := by
-    rw [← hl]; show s.sp = s.sp - BitVec.ofNat 64 400 + BitVec.ofNat 64 400; rw [BitVec.sub_add_cancel]
+  have hB : s.sp = L.B + BitVec.ofNat 64 (400 + L.e) := by
+    rw [← hl]
+    show s.sp = s.sp - BitVec.ofNat 64 (400 + (lay P.I.hashLen P.I.ecdsa.curve.len s).e) +
+      BitVec.ofNat 64 (400 + (lay P.I.hashLen P.I.ecdsa.curve.len s).e)
+    rw [BitVec.sub_add_cancel]
+  rw [hl] at he
+  have hne := L.e_le
+  have hn16 := L.e_mod
   have hnB := hL.nB
-  rw [Cfg.sign]
+  rw [Cfg.sign, frameBytes, he]
   refine WP.seq (wp_step exec_mflr (wp_nil ?_))
-  refine WP.seq (WP.frame (by show 48 ≤ s.sp.toNat; omega) (WP.alloc (by decide)
-    (by show 256 ≤ (s.sp - 48).toNat; rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; show 48 ≤ s.sp.toNat; omega)]
-        show 256 ≤ s.sp.toNat - 48; omega) ?_))
+  refine WP.seq (WP.frame (by show 48 ≤ s.sp.toNat; omega) (WP.alloc (by omega)
+    (by show 256 + L.e ≤ (s.sp - 48).toNat; rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; show 48 ≤ s.sp.toNat; omega)]
+        show 256 + L.e ≤ s.sp.toNat - 48; omega) ?_))
   rw [Cfg.body]
-  refine WP.seq (WP.mono (entry_ok h) fun t hc => ?_)
-  rw [hl] at hc hL hq
+  have hent := entry_ok h'
+  rw [hl] at hent
+  refine WP.seq (WP.mono hent fun t hc => ?_)
+  rw [hl] at hL hq
   refine WP.mono (rest_ok hL hq hc) fun u ⟨hcu, i, hx⟩ => ?_
   refine wp_step exec_mtlr (wp_nil ?_)
   have hsu := hcu.sp
   -- The return address and the stack pointer, as on entry.
-  have hr0 : (popped .r0 (freed 256 u)).gpr .r0 = s.lr := by
-    show (freed 256 u).mem.read ((freed 256 u).sp + 32) 8 = _
-    rw [show (freed 256 u).sp + 32 = L.B + BitVec.ofNat 64 384 by
-      show u.sp + BitVec.ofNat 64 256 + 32 = _; rw [hsu, fr_add, BitVec.add_assoc]; rfl, read8]
+  have hr0 : (popped .r0 (freed (256 + L.e) u)).gpr .r0 = s.lr := by
+    show (freed (256 + L.e) u).mem.read ((freed (256 + L.e) u).sp + 32) 8 = _
+    rw [show (freed (256 + L.e) u).sp + 32 = L.B + BitVec.ofNat 64 (384 + L.e) by
+      show u.sp + BitVec.ofNat 64 (256 + L.e) + 32 = _
+      rw [hsu, fr_add, BitVec.add_assoc]
+      congr 1
+      rw [show (32 : BitVec 64) = BitVec.ofNat 64 32 from rfl, BitVec.ofNat_add_ofNat]; congr 1; omega, read8]
     exact hcu.lr
   refine ⟨⟨fun r hr => ?_, ?_, hr0⟩, ?_⟩
-  · show (popped .r0 (freed 256 u)).gpr r = _
+  · show (popped .r0 (freed (256 + L.e) u)).gpr r = _
     have h0 : r ≠ .r0 := fun e => by subst e; exact absurd hr (by decide)
-    show ((freed 256 u).write .r0 _).gpr r = _
+    show ((freed (256 + L.e) u).write .r0 _).gpr r = _
     rw [Proof.Mont.PPC64LE.write_gpr]; simp only [h0, ↓reduceIte]
     exact hcu.cs r hr
-  · show u.sp + BitVec.ofNat 64 256 + 48 = s.sp
-    rw [hsu, hB, fr_add, BitVec.add_assoc]; rfl
+  · show u.sp + BitVec.ofNat 64 (256 + L.e) + 48 = s.sp
+    rw [hsu, hB, fr_add, BitVec.add_assoc]
+    congr 1
+    rw [show (48 : BitVec 64) = BitVec.ofNat 64 48 from rfl, BitVec.ofNat_add_ofNat]; congr 1; omega
   · have hr := result_eq hq hx
-    have hm : (popped .r0 (freed 256 u)).mem = u.mem := rfl
-    have h3 : (popped .r0 (freed 256 u)).gpr .r3 = u.gpr .r3 := rfl
+    have hm : (popped .r0 (freed (256 + L.e) u)).mem = u.mem := rfl
+    have h3 : (popped .r0 (freed (256 + L.e) u)).gpr .r3 = u.gpr .r3 := rfl
     have hd : s.gpr .r4 = L.d := by rw [← hl]; rfl
     have hg : s.gpr .r5 = L.dg := by rw [← hl]; rfl
     have ho : s.gpr .r3 = L.out := by rw [← hl]; rfl
     have hlq : P.I.ecdsa.curve.len = L.q := by rw [← hl]; rfl
     show match (result P.I s.mem (s.gpr .r4) (s.gpr .r5)).1 with
-      | some rs => ((popped .r0 (freed 256 u)).gpr .r3).setWidth 32 = 1 ∧
-          Spec.Ecdsa.bytesAt (popped .r0 (freed 256 u)).mem (s.gpr .r3) (2 * P.I.ecdsa.curve.len) =
+      | some rs => ((popped .r0 (freed (256 + L.e) u)).gpr .r3).setWidth 32 = 1 ∧
+          Spec.Ecdsa.bytesAt (popped .r0 (freed (256 + L.e) u)).mem (s.gpr .r3) (2 * P.I.ecdsa.curve.len) =
             Spec.Ecdsa.encode P.I.ecdsa.curve rs
-      | none => ((popped .r0 (freed 256 u)).gpr .r3).setWidth 32 = 0 ∧
-          Spec.Ecdsa.bytesAt (popped .r0 (freed 256 u)).mem (s.gpr .r3) (2 * P.I.ecdsa.curve.len) =
+      | none => ((popped .r0 (freed (256 + L.e) u)).gpr .r3).setWidth 32 = 0 ∧
+          Spec.Ecdsa.bytesAt (popped .r0 (freed (256 + L.e) u)).mem (s.gpr .r3) (2 * P.I.ecdsa.curve.len) =
             List.replicate (2 * P.I.ecdsa.curve.len) 0
     rw [hd, hg, hr, hm, h3, ho, hlq, P.hE]
     have := hx.res

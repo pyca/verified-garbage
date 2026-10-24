@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.InverseCfgLit
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.InverseVerified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.InverseLit

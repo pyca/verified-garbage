@@ -131,8 +131,11 @@ LAW_VARIANT = re.compile(r"^VerifiedGarbage\.Variants\.\w+\.\w+\.Law$")
 # A generic file (`Generic/<Iface…>/<Target>/<Alg>.lean`) is likewise imported
 # by nothing (the emitter applies it to the variants): one whose functions call
 # an implementation proved with heavy algebra (GHASH's PMULL) pays the import
-# for itself alone, so it is not counted either.
-GENERIC_LEAF = re.compile(r"^VerifiedGarbage\.Generic\.")
+# for itself alone, so it is not counted either. So does a registration file
+# (`Artifacts/<Alg>/<Target>.lean`), which only the emitter reads: one binding
+# a target-independent theorem proved with heavy algebra (AES-GCM-SIV's tag
+# input) to a target's proofs, which take it as a hypothesis.
+GENERIC_LEAF = re.compile(r"^VerifiedGarbage\.(?:Generic|Artifacts)\.")
 DECIDE_CONFIG = re.compile(r"decide\s*:=\s*true\b")  # `after_word`
 DECIDE_FLAG = re.compile(r"\b(?:simp|simp_all|simpa|dsimp)\b[^\n]*?\+decide\b")
 BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")

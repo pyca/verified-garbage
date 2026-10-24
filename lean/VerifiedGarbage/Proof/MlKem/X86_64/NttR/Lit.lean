@@ -10,8 +10,12 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.ZmLit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.ZmLit
+public import Lean.ToExpr
+public meta import Lean.ToExpr
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, its passes as literals
@@ -23,8 +27,16 @@ register allocation again.
 
 Materialize the shared zeta table before the passes. Name each half's
 underlying generator application explicitly, so the combined passes reuse
-its checked literal instead of evaluating the allocator a second time.
+its checked literal instead of evaluating the allocator a second time. The
+two forms of each half of pass B share their butterflies and reduction
+(`passBRed`), whose allocator state is a literal of its own.
 -/
+
+public meta section
+
+deriving instance Lean.ToExpr for VG.Impl.MlKem.X86_64.NttR.Alloc
+
+end
 
 @[expose] public section
 
@@ -46,6 +58,8 @@ end Impl.MlKem.X86_64.NttR
 materialize_value Impl.MlKem.X86_64.NttR.zetaTbl
 
 materialize_value Impl.MlKem.X86_64.NttR.passA
+materialize_value Impl.MlKem.X86_64.NttR.passBRed0 := Impl.MlKem.X86_64.NttR.passBRed 0
+materialize_value Impl.MlKem.X86_64.NttR.passBRed1 := Impl.MlKem.X86_64.NttR.passBRed 1
 materialize_value Impl.MlKem.X86_64.NttR.passBR100 :=
   Impl.MlKem.X86_64.NttR.passB .r10 0
 materialize_value Impl.MlKem.X86_64.NttR.passBR101 :=

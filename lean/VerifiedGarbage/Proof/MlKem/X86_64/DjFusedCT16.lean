@@ -165,7 +165,7 @@ theorem entsJ_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) :
   have := ents16_tr (n, c) K.L.k K.oA (sc K.oW)
     (R := fun e => R K.L fun σ s => 3 * nb K.L ≤ e ∧ EBX F.toDcWfB σ e s)
     (fun e he he' => relFalse fun _ _ ⟨_, _, _, _, _, ⟨h3, _⟩, _⟩ => absurd F.noS (by omega))
-    (fun q hq => relInv (fun σ s hp hs => WP.mono (Enc16.quadE_step v (by omega) (F.enc.q q hq) hs.2)
+    (fun q hq => relInv (fun σ s hp hs => WP.mono (Enc16.quadE_step v (C := Decaps.dcX F.toDcWfB σ) (by omega) (F.enc.q q hq) hs.2)
         fun _ h => ⟨by omega, h.2⟩)
       (RelCT.mono (quadJ_tr v F hq)
         (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, h₁.2, h₂.2⟩) fun _ _ h => h))

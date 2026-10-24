@@ -129,10 +129,10 @@ theorem runBlock_trans {a b : List Instr} {s s' s'' : State} (h1 : runBlock isa 
     (h2 : runBlock isa b s' = some s'') : runBlock isa (a ++ b) s = some s'' := by
   rw [runBlock_append, h1, Option.bind_some, h2]
 
-theorem keepRegs : ∀ r ∈ [Reg.r3, .r4, .r5, .r7, .r8],
+theorem keepRegs : ∀ r ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r7, .r8],
     r ≠ .r9 ∧ r ≠ .r10 ∧ r ≠ .r11 ∧ r ≠ .r12 := by decide
 
-theorem notG16 : ∀ r ∈ [Reg.r3, .r4, .r5, .r7, .r8], r ∉ g16Writes := by decide
+theorem notG16 : ∀ r ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r7, .r8], r ∉ g16Writes := by decide
 
 theorem round_ok (d : Spec.Seed.Direction) {s : State} (h : Room s)
     (hk0 : InRegions (s.rd ++ s.wr) (s.gpr .r3) 4)
@@ -142,7 +142,7 @@ theorem round_ok (d : Spec.Seed.Direction) {s : State} (h : Room s)
         Spec.Seed.round (s.mem.readW (s.gpr .r3) 32, s.mem.readW (s.gpr .r3 + 4) 32) (quad s b)) ∧
       Room s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.gpr .r3 = s.gpr .r3 + stepW d ∧ s'.gpr .r7 = s.gpr .r7 - 1 ∧
-      s'.gpr .r4 = s.gpr .r4 ∧ s'.gpr .r5 = s.gpr .r5 ∧ s'.gpr .r8 = s.gpr .r8 ∧
+      s'.gpr .r4 = s.gpr .r4 ∧ s'.gpr .r5 = s.gpr .r5 ∧ s'.gpr .r2 = s.gpr .r2 ∧ s'.gpr .r6 = s.gpr .r6 ∧ s'.gpr .r8 = s.gpr .r8 ∧
       Frame [workR s] s.mem s'.mem := by
   let K0 := s.mem.readW (s.gpr .r3) 32
   let K1 := s.mem.readW (s.gpr .r3 + 4) 32
@@ -184,7 +184,7 @@ theorem round_ok (d : Spec.Seed.Direction) {s : State} (h : Room s)
   have hrun : runBlock isa [keyNext d, .subi .r7 .r7 1] s10 = some s12 := by
     rw [runBlock_cons, exec_keyNext, runStep_some, runBlock_cons, exec_dec _ .r7, runStep_some, runBlock_nil]
   -- Registers through the steps.
-  have keep : ∀ r ∈ [Reg.r3, .r4, .r5, .r7, .r8], s10.gpr r = s.gpr r := by
+  have keep : ∀ r ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r7, .r8], s10.gpr r = s.gpr r := by
     intro r hr
     have hg := notG16 r hr
     obtain ⟨h1, h2, h3, h4⟩ := keepRegs r hr
@@ -196,7 +196,7 @@ theorem round_ok (d : Spec.Seed.Direction) {s : State} (h : Room s)
   have r9_12 : s12.gpr .r8 = s.gpr .r8 := by rw [g12 _ (by decide) (by decide), r9_10]
   have lv12 : ∀ k b, lv s12 k b = lv s10 k b := fun k b => by
     simp only [lv, laneA, s12, s11, mem_write, r9_12, r9_10]
-  refine ⟨s12, ?_, fun b hb => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨s12, ?_, fun b hb => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact runBlock_trans (runBlock_trans (runBlock_trans (runBlock_trans (runBlock_trans
       (runBlock_trans (runBlock_trans (runBlock_trans (runBlock_trans hrun2 hs3) hs4) hs5) hs6)
       hs7) hs8) hs9) hs10) hrun
@@ -270,8 +270,10 @@ theorem round_ok (d : Spec.Seed.Direction) {s : State} (h : Room s)
   · simp only [s12, s11, sp_write, spp10]
     rw [runBlock_sp hs9, spp8, runBlock_sp hs7, spp6, runBlock_sp hs5, spp4, runBlock_sp hs3,
       runBlock_sp hrun2]
-  · simp [s12, s11, gpr_write, keep _ (show Reg.r3 ∈ [Reg.r3, .r4, .r5, .r7, .r8] by decide)]
-  · simp [s12, s11, gpr_write, keep _ (show Reg.r7 ∈ [Reg.r3, .r4, .r5, .r7, .r8] by decide)]
+  · simp [s12, s11, gpr_write, keep _ (show Reg.r3 ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r7, .r8] by decide)]
+  · simp [s12, s11, gpr_write, keep _ (show Reg.r7 ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r7, .r8] by decide)]
+  · rw [g12 _ (by decide) (by decide), keep _ (by decide)]
+  · rw [g12 _ (by decide) (by decide), keep _ (by decide)]
   · rw [g12 _ (by decide) (by decide), keep _ (by decide)]
   · rw [g12 _ (by decide) (by decide), keep _ (by decide)]
   · exact r9_12

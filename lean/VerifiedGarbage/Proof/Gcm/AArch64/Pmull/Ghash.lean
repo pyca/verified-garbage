@@ -787,10 +787,25 @@ theorem loops_ok {s₀ : State} (hp : Pm s₀) :
     WP isa Impl.Gcm.AArch64.Pmull.ghash s₀ fun s' => Proof.Gcm.ghashAArch64.post s₀ s' :=
   loopsWith_ok hp (prologueT_ok hp) fun _ _ h => powersS_ok h
 
+/-- Whether a register is not one of `preserved`, as one `match`: the
+kernel evaluates `(dsts i).all notPres` on every instruction several times
+faster than `preserved.all fun r => !clobbers i r`. -/
+private def notPres : Reg → Bool
+  | .x19 | .x20 | .x21 | .x22 | .x23 | .x24 | .x25 | .x26 | .x27 | .x28 | .x30 => false
+  | _ => true
+
+private theorem keeps_pres {c : Prog isa} (h : c.allInstrs (fun i => (dsts i).all notPres) = true) :
+    c.allInstrs (fun i => preserved.all fun r => !clobbers i r) = true := by
+  rw [Code.allInstrs_eq] at h ⊢
+  refine List.all_eq_true.mpr fun i hi => List.all_eq_true.mpr fun r hr => ?_
+  have hn : notPres r = false := by revert r; decide
+  simp only [clobbers_eq_false_of_all (List.all_eq_true.mp h i hi) hn, Bool.not_false]
+
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa Impl.Gcm.AArch64.Pmull.ghash s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashAArch64.post s₀ s' :=
-  WP.mono (WP.gprs (rs := preserved) (loops_ok (Pre.pm hp)) (by decide +kernel) (by decide +kernel))
+  WP.mono (WP.gprs (rs := preserved) (loops_ok (Pre.pm hp)) (keeps_pres (by decide +kernel))
+    (by decide +kernel))
     fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
 
 theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashAArch64.pre s) :
@@ -974,7 +989,7 @@ theorem correctP {s₀ : State} (hs : Proof.Gcm.ghashPreparedAArch64.pre s₀) :
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashAArch64.post s₀ s' :=
   WP.mono (WP.gprs (rs := preserved)
     (loopsWith_ok (pm_of_prepared hs) (prologueP_ok hs) fun _ _ hI => powersP_ok hs hI)
-    (by decide +kernel) (by decide +kernel)) fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
+    (keeps_pres (by decide +kernel)) (by decide +kernel)) fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
 
 theorem ghashP_correct (s : State) (hs : Proof.Gcm.ghashPreparedAArch64.pre s) :
     ∃ t s', Exec isa Impl.Gcm.AArch64.Pmull.ghashP s t s' ∧ abiPreserved s s' ∧
@@ -1237,7 +1252,7 @@ theorem correctW {s₀ : State} (hs : Proof.Gcm.ghashWithAArch64.pre s₀) :
     WP isa Impl.Gcm.AArch64.Pmull.ghashW s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashAArch64.post s₀ s' :=
   WP.mono (WP.gprs (rs := preserved) (loopsAll_ok (pm_of_with hs) (prologueW_ok hs))
-    (by decide +kernel) (by decide +kernel)) fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
+    (keeps_pres (by decide +kernel)) (by decide +kernel)) fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
 
 theorem ghashW_correct (s : State) (hs : Proof.Gcm.ghashWithAArch64.pre s) :
     ∃ t s', Exec isa Impl.Gcm.AArch64.Pmull.ghashW s t s' ∧ abiPreserved s s' ∧
@@ -1483,7 +1498,7 @@ theorem correctS {s₀ : State} (hs : Proof.Gcm.ghashStoreAArch64.pre s₀) :
     refine WP.seq (WP.mono (WP.gprs (rs := [.x8]) (loopsPart_ok hp hI₁) (by decide +kernel)
       (by decide +kernel)) fun s₂ ⟨hI₂, g₂⟩ => ?_)
     exact epiS_ok hs hI₂ (by rw [g₂ .x8 (by simp), h8₁])
-  exact WP.mono (WP.gprs (rs := preserved) hw (by decide +kernel) (by decide +kernel))
+  exact WP.mono (WP.gprs (rs := preserved) hw (keeps_pres (by decide +kernel)) (by decide +kernel))
     fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
 
 theorem ghashS_correct (s : State) (hs : Proof.Gcm.ghashStoreAArch64.pre s) :

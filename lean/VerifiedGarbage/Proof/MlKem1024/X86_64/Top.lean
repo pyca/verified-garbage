@@ -142,6 +142,36 @@ def decaps1024Sat : State where
   rd := [⟨0x1000, 3168⟩, ⟨0x2000, 1568⟩]
   wr := [⟨0x3000, 32⟩, ⟨0x10000, 49152⟩]
 
+/-! The control flow and the stack pointer of the functions with 16-bit
+polynomials, for any 16-bit sampler `c`: `Top` proves the functions, and
+`Written` what they write, from these. -/
+
+theorem keyGen16_1024_ctl (v : Sample4Impl) (m : String) {c : Prog isa} (S : S16Ok c) :
+    ctlOk (kemKeyGen16 kem1024w v.callee (m, c)) = true := by s16_ctl v c S kpke1024
+
+theorem keyGen16_1024_sp (v : Sample4Impl) (m : String) {c : Prog isa} (S : S16Ok c) :
+    (kemKeyGen16 kem1024w v.callee (m, c)).all (fun i => !isa.writesSp i) = true := by s16_sp v c S kpke1024
+
+theorem encapsH16_1024_ctl (v : Sample4Impl) (m : String) {c : Prog isa} (S : S16Ok c) :
+    ctlOk (kemEncapsH16 kem1024w v.callee (m, c)) = true := by s16_ctl v c S kpke1024
+
+theorem encapsH16_1024_sp (v : Sample4Impl) (m : String) {c : Prog isa} (S : S16Ok c) :
+    (kemEncapsH16 kem1024w v.callee (m, c)).all (fun i => !isa.writesSp i) = true := by s16_sp v c S kpke1024
+
+theorem encaps16_1024_ctl (v : Sample4Impl) (m : String) {c b : Prog isa} (S : S16Ok c) (B : BatchHOk16 b) :
+    ctlOk (kemEncaps16 kem1024w v.callee (m, c) b) = true := by ek16_ctl v c b S B kpke1024
+
+theorem encaps16_1024_sp (v : Sample4Impl) (m : String) {c b : Prog isa} (S : S16Ok c) (B : BatchHOk16 b) :
+    (kemEncaps16 kem1024w v.callee (m, c) b).all (fun i => !isa.writesSp i) = true := by
+  ek16_sp v c b S B kpke1024
+
+theorem decaps16_1024_ctl (v : Sample4Impl) (m : String) {c b : Prog isa} (S : S16Ok c) (B : BatchHOk16 b) :
+    ctlOk (kemDecapsJ16 kem1024w v.callee (m, c) b) = true := by ek16_ctl v c b S B kpke1024
+
+theorem decaps16_1024_sp (v : Sample4Impl) (m : String) {c b : Prog isa} (S : S16Ok c) (B : BatchHOk16 b) :
+    (kemDecapsJ16 kem1024w v.callee (m, c) b).all (fun i => !isa.writesSp i) = true := by
+  ek16_sp v c b S B kpke1024
+
 /-- The shared contract of `keyGen1024`, from the contract its proofs are written against. -/
 theorem keyGenImp1024 : (keyGenK kem1024).Implies (Spec.MlKem1024.keyGenContract X86_64.abi 32) :=
     { pre := by sig_implies_pre [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
@@ -157,7 +187,7 @@ theorem keyGenImp1024 : (keyGenK kem1024).Implies (Spec.MlKem1024.keyGenContract
 theorem keyGen1024_verified (v : Sample4Impl) :
     Verified X86_64.target (keyGen1024 v.callee) (Spec.MlKem1024.keyGenContract X86_64.abi 32) :=
   keyGenSel_verified (n := scr16) (by decide) kpke1024 v kg16Wf1024 kgWf1024 keyGenImp1024
-    (fun _ c S => by s16_ctl v c S kpke1024)
+    (fun m _ S => keyGen16_1024_ctl v m S)
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
 /-- The shared contract of `encapsH1024`, from the contract its proofs are written against. -/
@@ -182,7 +212,7 @@ theorem encapsHImp1024 : (encapsK kem1024).Implies (Spec.MlKem1024.encapsHContra
 theorem encapsH1024_verified (v : Sample4Impl) :
     Verified X86_64.target (encapsH1024 v.callee) (Spec.MlKem1024.encapsHContract X86_64.abi 32) :=
   encapsHSel_verified (n := scr16) (by decide) kpke1024 v ec16Wf1024 ecWf1024 calls1024 encapsHImp1024
-    (fun _ c S => by s16_ctl v c S kpke1024)
+    (fun m _ S => encapsH16_1024_ctl v m S)
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
 theorem encaps1024_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem1024 v.callee) = true := by
@@ -204,7 +234,7 @@ theorem encapsImp1024 : (encK kem1024).Implies (Spec.MlKem1024.encapsContract X8
 theorem encaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (encaps1024 v.callee) (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
   encapsSel_verified (n := scr16) (by decide) kpke1024 v ek16HWf1024 ekt16Wf1024 ekWf1024 calls1024 encapsImp1024
-    (fun _ c b S B => by ek16_ctl v c b S B kpke1024) (encaps1024_ctl v)
+    (fun m _ _ S B => encaps16_1024_ctl v m S B) (encaps1024_ctl v)
 
 /-- The shared contract of `decaps1024`, from the contract its proofs are written against. -/
 theorem decapsImp1024 : (decapsK kem1024).Implies (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
@@ -221,7 +251,7 @@ theorem decapsImp1024 : (decapsK kem1024).Implies (Spec.MlKem1024.decapsContract
 theorem decaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (decaps1024 v.callee) (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
   decapsSel_verified (n := scr16) (by decide) kpke1024 v djHWf1024 djtWf1024 dcWf1024 calls1024 decapsImp1024
-    (fun _ c b S B => by ek16_ctl v c b S B kpke1024)
+    (fun m _ _ S B => decaps16_1024_ctl v m S B)
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
 end VG.Proof.MlKem1024.X86_64

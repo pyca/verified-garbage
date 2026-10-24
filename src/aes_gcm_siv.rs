@@ -14,14 +14,15 @@
 //! implementations of AES (`vg_aes_ctr32`, `vg_aes_expand_key`) and of GHASH
 //! (`vg_ghash`, with which POLYVAL is computed) that AES-GCM has, and are
 //! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64, x86,
-//! AArch64 and 32-bit ARM (the baseline ISA's implementations alone) have
-//! implementations so far.
+//! AArch64, 32-bit ARM and PPC64LE (the baseline ISA's implementations alone
+//! on the last two) have implementations so far.
 
 #![cfg(any(
     target_arch = "x86_64",
     target_arch = "x86",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::aes_gcm::{Backend, instance, select};

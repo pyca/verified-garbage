@@ -742,15 +742,22 @@ theorem fill_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} {s : St
   · simp only [decide_eq_false_iff_not] at hb
     exact WP.block_nil (.inr (fill_done hd hp hI hC₇ hb))
 
+theorem nv_of_all {c : Prog isa}
+    (h : ((instrs c).all fun i => untouched.all fun r => dstOf i != some r) = true) :
+    ∀ r ∈ untouched, ∀ i ∈ instrs c, dstOf i ≠ some r := fun r hr i hi =>
+  bne_iff_ne.mp (List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr)
+
 /-- The first part of an iteration, which calls nothing, writes no
 `untouched` register. -/
 theorem pick_nv (P : Params) : ∀ r ∈ untouched, ∀ i ∈ instrs (.ite (.zero .d .r30)
     (.seq (.block [.lsr .d .r8 .r29 (lg P)]) (.ite (.zero .d .r8) (fill P) (.block (direct P))))
     (fill P) : Prog isa), dstOf i ≠ some r := by
-  intro r hr i hi
-  revert i r
-  unfold fill copy copyWordBody copyBody storeWord direct mov
-  split <;> simp [instrs, dstOf, untouched]
+  have h : (instrs (.ite (.zero .d .r30)
+      (.seq (.block [.lsr .d .r8 .r29 (lg P)]) (.ite (.zero .d .r8) (fill P) (.block (direct P))))
+      (fill P) : Prog isa)).all (fun i => untouched.all fun r => dstOf i != some r) = true := by
+    unfold fill copy copyWordBody copyBody storeWord direct mov
+    split <;> simp only [instrs, List.all_append, List.all_cons, List.all_nil, dstOf] <;> decide
+  exact nv_of_all h
 
 
 /-! ## One iteration -/
@@ -848,17 +855,16 @@ theorem correctMain (hd : Dims P) {name : String} {code : Prog isa} (hf : Callee
       s'.sp = s₀.sp ∧ (updK H).post s₀ s' := by
   have hlen := len_lt s₀
   unfold updateMain
-  refine WP.seq (WP.mono (WP.gprs (rs := untouched) (Q := Inv H s₀ 0) (prologue_ok (H := H) hd hp) (by
-      intro r hr i hi
-      revert i r
+  refine WP.seq (WP.mono (WP.gprs (rs := untouched) (Q := Inv H s₀ 0) (prologue_ok (H := H) hd hp) (nv_of_all (by
       unfold updateStart save saved mov
-      simp [instrs, dstOf, untouched])) fun s₁ ⟨hI, hnv₁⟩ => ?_)
+      simp only [instrs, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.all_cons,
+        List.all_nil, dstOf]
+      decide))) fun s₁ ⟨hI, hnv₁⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun (s : State) => Inv H s₀ (len s₀) s ∧ ∀ r ∈ untouched, s.gpr r = s₀.gpr r) ?_
-    fun s₂ ⟨hI₂, hnv₂⟩ => WP.mono (WP.gprs (rs := untouched) (epilogue_ok hd hp hI₂) (by
-      intro r hr i hi
-      revert i r
+    fun s₂ ⟨hI₂, hnv₂⟩ => WP.mono (WP.gprs (rs := untouched) (epilogue_ok hd hp hI₂) (nv_of_all (by
       unfold restore
-      simp [instrs, dstOf, untouched]))
+      simp only [instrs, List.all_cons, List.all_nil, dstOf]
+      decide)))
     fun s₃ ⟨⟨hsv, hsp, hpost⟩, hnv₃⟩ =>
       ⟨preserved_of hsv fun r hr => (hnv₃ r hr).trans (hnv₂ r hr), hsp, hpost⟩)
   refine WP.ite (decide (len s₀ = 0))

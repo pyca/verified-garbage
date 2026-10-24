@@ -1287,40 +1287,10 @@ theorem step1 (hdd : dArg s₀ .rsi = 1) {i : Nat} (hi : i < 8) {s : State} (hI 
   have hc : ∀ t, (fun t => cv 315 1 ((CE.F s₀)[32 * i + t]!).val) t ≤ 1 := fun t => cv1_le _
   have htot := accN_total (fun t => cv 315 1 ((CE.F s₀)[32 * i + t]!).val)
   have hlt : cv 315 1 ((CE.F s₀)[32 * i + 0]!).val * 2 ^ 0 + cv 315 1 ((CE.F s₀)[32 * i + 1]!).val * 2 ^ 1 + cv 315 1 ((CE.F s₀)[32 * i + 2]!).val * 2 ^ 2 + cv 315 1 ((CE.F s₀)[32 * i + 3]!).val * 2 ^ 3 + cv 315 1 ((CE.F s₀)[32 * i + 4]!).val * 2 ^ 4 + cv 315 1 ((CE.F s₀)[32 * i + 5]!).val * 2 ^ 5 + cv 315 1 ((CE.F s₀)[32 * i + 6]!).val * 2 ^ 6 + cv 315 1 ((CE.F s₀)[32 * i + 7]!).val * 2 ^ 7 + cv 315 1 ((CE.F s₀)[32 * i + 8]!).val * 2 ^ 8 + cv 315 1 ((CE.F s₀)[32 * i + 9]!).val * 2 ^ 9 + cv 315 1 ((CE.F s₀)[32 * i + 10]!).val * 2 ^ 10 + cv 315 1 ((CE.F s₀)[32 * i + 11]!).val * 2 ^ 11 + cv 315 1 ((CE.F s₀)[32 * i + 12]!).val * 2 ^ 12 + cv 315 1 ((CE.F s₀)[32 * i + 13]!).val * 2 ^ 13 + cv 315 1 ((CE.F s₀)[32 * i + 14]!).val * 2 ^ 14 + cv 315 1 ((CE.F s₀)[32 * i + 15]!).val * 2 ^ 15 + cv 315 1 ((CE.F s₀)[32 * i + 16]!).val * 2 ^ 16 + cv 315 1 ((CE.F s₀)[32 * i + 17]!).val * 2 ^ 17 + cv 315 1 ((CE.F s₀)[32 * i + 18]!).val * 2 ^ 18 + cv 315 1 ((CE.F s₀)[32 * i + 19]!).val * 2 ^ 19 + cv 315 1 ((CE.F s₀)[32 * i + 20]!).val * 2 ^ 20 + cv 315 1 ((CE.F s₀)[32 * i + 21]!).val * 2 ^ 21 + cv 315 1 ((CE.F s₀)[32 * i + 22]!).val * 2 ^ 22 + cv 315 1 ((CE.F s₀)[32 * i + 23]!).val * 2 ^ 23 + cv 315 1 ((CE.F s₀)[32 * i + 24]!).val * 2 ^ 24 + cv 315 1 ((CE.F s₀)[32 * i + 25]!).val * 2 ^ 25 + cv 315 1 ((CE.F s₀)[32 * i + 26]!).val * 2 ^ 26 + cv 315 1 ((CE.F s₀)[32 * i + 27]!).val * 2 ^ 27 + cv 315 1 ((CE.F s₀)[32 * i + 28]!).val * 2 ^ 28 + cv 315 1 ((CE.F s₀)[32 * i + 29]!).val * 2 ^ 29 + cv 315 1 ((CE.F s₀)[32 * i + 30]!).val * 2 ^ 30 + cv 315 1 ((CE.F s₀)[32 * i + 31]!).val * 2 ^ 31 < 2 ^ 32 := by
-    have := hc 0
-    have := hc 1
-    have := hc 2
-    have := hc 3
-    have := hc 4
-    have := hc 5
-    have := hc 6
-    have := hc 7
-    have := hc 8
-    have := hc 9
-    have := hc 10
-    have := hc 11
-    have := hc 12
-    have := hc 13
-    have := hc 14
-    have := hc 15
-    have := hc 16
-    have := hc 17
-    have := hc 18
-    have := hc 19
-    have := hc 20
-    have := hc 21
-    have := hc 22
-    have := hc 23
-    have := hc 24
-    have := hc 25
-    have := hc 26
-    have := hc 27
-    have := hc 28
-    have := hc 29
-    have := hc 30
-    have := hc 31
-    simp only at *
-    omega
+    have st : ∀ {x c : Nat} (n : Nat), x < 2 ^ n → c ≤ 1 → x + c * 2 ^ n < 2 ^ (n + 1) := fun n hx hc' => by
+      have := Nat.mul_le_mul_right (2 ^ n) hc'; rw [Nat.pow_succ]; omega
+    have h0 : cv 315 1 ((CE.F s₀)[32 * i + 0]!).val * 2 ^ 0 < 2 ^ 1 := by have := hc 0; simp only at this; omega
+    exact st 31 (st 30 (st 29 (st 28 (st 27 (st 26 (st 25 (st 24 (st 23 (st 22 (st 21 (st 20 (st 19 (st 18 (st 17 (st 16 (st 15 (st 14 (st 13 (st 12 (st 11 (st 10 (st 9 (st 8 (st 7 (st 6 (st 5 (st 4 (st 3 (st 2 (st 1 (h0) (hc 1)) (hc 2)) (hc 3)) (hc 4)) (hc 5)) (hc 6)) (hc 7)) (hc 8)) (hc 9)) (hc 10)) (hc 11)) (hc 12)) (hc 13)) (hc 14)) (hc 15)) (hc 16)) (hc 17)) (hc 18)) (hc 19)) (hc 20)) (hc 21)) (hc 22)) (hc 23)) (hc 24)) (hc 25)) (hc 26)) (hc 27)) (hc 28)) (hc 29)) (hc 30)) (hc 31)
   refine sum1_ok h4 (by rw [htot]; exact hlt)
     (by rw [w4, w3, w2, w1, hI.wr, hp.2.1, hg4, hI.r8, CE.lenEq hp hdd]
         exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (show 4 * i + 4 ≤ 32 * 1 by omega) (by omega)⟩)

@@ -285,7 +285,7 @@ theorem testBit_union_right {a b i : Nat} (h : b.testBit i = true) : (a ||| b).t
 
 theorem VOp.frame {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s s' : State}
     (he : (op.eval s).map (fun (p : VReg × BitVec 128) => s.setV p.1 p.2) = some s') : Frame xb F s s' := by
-  cases op <;> simp only [VOp.fp, reduceCtorEq] at hf <;> cases hf
+  cases op <;> cases hf
   case ins a d i n =>
     cases a <;> simp only [VOp.eval] at he <;> split at he <;>
       simp only [Option.map_some, Option.map_none, Option.some.injEq, reduceCtorEq] at he <;>
@@ -423,7 +423,7 @@ theorem VOp.det {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s t : State} (h :
     VOp.eval s op = VOp.eval t op := by
   have hv := h.v
   have hg := h.gpr
-  cases op <;> simp only [VOp.fp, reduceCtorEq] at hf <;> cases hf
+  cases op <;> cases hf
   case dup a d n => cases a <;> simp (disch := simp) only [VOp.eval, hg]
   case ins a d i n => cases a <;> simp (disch := simp) only [VOp.eval, hg, hv]
   all_goals simp (disch := simp [vecFp, Nat.testBit_or]) only [VOp.eval, hv]
@@ -435,7 +435,7 @@ theorem VOp.fp_shape {op : VOp} {F : Fp} (hf : VOp.fp op = some F) : F.gw = 0 �
 theorem VOp.dst_eq {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s : State} {d : VReg} {x : BitVec 128}
     (he : VOp.eval s op = some (d, x)) : ∀ r : VReg, F.vw.testBit r.ctorIdx → r = d := by
   intro r hr
-  cases op <;> simp only [VOp.fp, reduceCtorEq] at hf <;> cases hf
+  cases op <;> cases hf
   case dup a d' n =>
     cases a <;> simp only [VOp.eval, Option.some.injEq, Prod.mk.injEq] at he <;>
       obtain ⟨rfl, -⟩ := he <;> simpa using hr

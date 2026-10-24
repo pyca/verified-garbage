@@ -1,4 +1,5 @@
 import VerifiedGarbageTest.Ec.Common
+import VerifiedGarbageTest.Memo
 import VerifiedGarbage.Spec.Ecdh
 
 /-!
@@ -50,17 +51,40 @@ def parse (name : String) (count : Nat) (text : String) : Except String (List Ve
   unless vs.size == count do throw s!"expected {count} vectors, got {vs.size}"
   return vs.toList
 
+/-- `exchange`, with the multiples of the peer's key given by `mQ`
+(`mQ (Q, d)` for `mul d Q`): `exchange` when `mQ` is `mul` (`exchange_eq`),
+so that the checks of a vector compute `dQ` once (`Test.memo`). -/
+def exchangeM (C : Curve) (mQ : Point C × Nat → Point C) (d : Nat) (peer : List Byte) :
+    Option (List Byte) :=
+  if 1 ≤ d ∧ d < C.n then
+    match decodePublicKey C peer with
+    | some Q =>
+      match mQ (Q, d) with
+      | .affine x _ => some (toBytes C.len x.val)
+      | .infinity => none
+    | none => none
+  else none
+
+theorem exchange_eq (C : Curve) (d : Nat) (peer : List Byte) :
+    exchange C d peer = exchangeM C (fun Qd => mul Qd.2 Qd.1) d peer :=
+  rfl
+
 def checkVector (C : Curve) (i : Nat) (v : Vector) : Except String Unit := do
   let pt := point C.len
   let U : Point C := .affine (Fin.ofNat C.p v.ux) (Fin.ofNat C.p v.uy)
   unless publicKey C v.d == some U do throw s!"vector {i}: public key mismatch"
   unless encodePoint U == pt v.ux v.uy do throw s!"vector {i}: encoding mismatch"
   unless decodePublicKey C (pt v.ux v.uy) == some U do throw s!"vector {i}: decoding failed"
-  unless exchange C v.d (pt v.qx v.qy) == some (toBytes C.len v.z) do
+  -- `dQ` is computed once: `mulQ'` is `mulQ` (`Test.memo_tableOf`), and
+  -- `exchangeM C mulQ` is `exchange C` (`exchange_eq`).
+  let Q : Point C := .affine (Fin.ofNat C.p v.qx) (Fin.ofNat C.p v.qy)
+  let mulQ := fun (Qd : Point C × Nat) => mul Qd.2 Qd.1
+  let tableQ := Test.tableOf mulQ [(Q, v.d)]
+  let mulQ' := Test.memo tableQ mulQ
+  unless exchangeM C mulQ' v.d (pt v.qx v.qy) == some (toBytes C.len v.z) do
     throw s!"vector {i}: shared secret mismatch"
   -- Both sides agree, when the peer's key is the other key pair's.
-  let Q : Point C := .affine (Fin.ofNat C.p v.qx) (Fin.ofNat C.p v.qy)
-  unless mul v.d Q == .affine (Fin.ofNat C.p v.z) (match mul v.d Q with
+  unless mulQ' (Q, v.d) == .affine (Fin.ofNat C.p v.z) (match mulQ' (Q, v.d) with
       | .affine _ y => y | .infinity => 0) do
     throw s!"vector {i}: dQ"
   -- Invalid public keys: off the curve, a coordinate not below p, the

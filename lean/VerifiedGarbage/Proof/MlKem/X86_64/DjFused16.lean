@@ -131,7 +131,7 @@ theorem entsJ_ok {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {σ : S
   have h16 : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul F.k.2 F.k.2
   have := ents16_ok (n, c) K.L.k K.oA (sc K.oW) (I := fun e s => 3 * nb K.L ≤ e ∧ EBX F.toDcWfB σ e s)
     (fun e he he' _ hs => absurd F.noS (by omega))
-    (fun q hq _ hs => WP.mono (Enc16.quadE_step v (by omega) (F.enc.q q hq) hs.2) fun _ h => ⟨by omega, h.2⟩)
+    (fun q hq _ hs => WP.mono (Enc16.quadE_step v (C := dcX F.toDcWfB σ) (by omega) (F.enc.q q hq) hs.2) fun _ h => ⟨by omega, h.2⟩)
     (K.L.k * K.L.k - 3 * nb K.L) (3 * nb K.L) (by have := F.nbK; omega) F.eS s ⟨Nat.le_refl _, h⟩
   rw [Nat.add_sub_cancel' F.nbK.2] at this
   exact WP.mono this fun _ h => h.2

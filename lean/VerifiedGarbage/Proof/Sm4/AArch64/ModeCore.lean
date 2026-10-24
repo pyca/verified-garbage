@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # SM4's core for the modes on AArch64
@@ -101,6 +102,15 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
 def kept (s : State) : State :=
   (((s.setV .v28 (ofVDwords (s.gpr .x30) (s.gpr .x30))).setV .v27 (ofVDwords (s.gpr sb) (s.gpr sb))).setV
     .v29 (ofVDwords (s.gpr .x23) (s.gpr .x23))).setV .v30 (ofVDwords (s.gpr .x24) (s.gpr .x24))
+
+theorem kept_mem (s : State) : (kept s).mem = s.mem := by
+  simp only [kept, RegUpd.mem_setV]
+
+theorem kept_rd (s : State) : (kept s).rd = s.rd := by
+  simp only [kept, RegUpd.rd_setV]
+
+theorem kept_wr (s : State) : (kept s).wr = s.wr := by
+  simp only [kept, RegUpd.wr_setV]
 
 theorem keepHead_ok (s : State) : runBlock isa keepHead s = some (kept s) := by
   rw [show keepHead = [.vop (.dup .d2 .v28 .x30)] ++ ([.vop (.dup .d2 .v27 sb)] ++
@@ -211,9 +221,9 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
   have x1₄ : s₄.gpr .x1 = BitVec.ofNat 64 (dirFlagOf d) := by rw [o₄ _ (by decide), o₃ _ (by decide), r₂]
   have x2₄ : s₄.gpr .x2 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide)]; exact hB
   have x3₄ : s₄.gpr .x3 = BitVec.ofNat 64 slots := r₄
-  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂]; rfl
-  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂]; rfl
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂]; rfl
+  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, kept_mem]
+  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, kept_rd]
+  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, kept_wr]
   show WP isa (prepareCall d) s _
   refine WP.seq (WP.of_runBlock ⟨s₄, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
   have hsep : Region.Disjoint ⟨s.gpr .x0, 128⟩ ⟨B, 8 * slots⟩ :=
@@ -311,9 +321,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
     rcases hv with rfl | rfl | rfl | rfl <;> exact runBlock_keepV (by decide) eargs
   have x0₃ : s₃.gpr .x0 = B := by rw [o₃ _ (by decide), r₂]; exact hB
   have x1₃ : s₃.gpr .x1 = BitVec.ofNat 64 slots := r₃
-  have mem₃ : s₃.mem = s.mem := by rw [m₃, m₂]; rfl
-  have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂]; rfl
-  have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂]; rfl
+  have mem₃ : s₃.mem = s.mem := by rw [m₃, m₂, kept_mem]
+  have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂, kept_rd]
+  have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂, kept_wr]
   show WP isa cryptCall s _
   refine WP.seq (WP.of_runBlock ⟨s₃, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
   have hH : Spec.Sm4.Prepared.Holds layout s.mem B k (specDirA d) := by

@@ -1,4 +1,5 @@
 import VerifiedGarbageTest.Cbc
+import VerifiedGarbageTest.Memo
 import VerifiedGarbage.Spec.Cfb8
 
 /-!
@@ -39,8 +40,13 @@ run_cmd do
           throwError "{name}, COUNT = {count}: unexpected lengths"
         let ciph := Spec.Cbc.aesWith (Spec.Aes.rounds (key.length / 4)) (Spec.Aes.expandKey key)
         let (input, output) := if dir == "ENCRYPT" then (pt, ct) else (ct, pt)
+        -- The splits encrypt the same input blocks again: each is computed
+        -- once, in `ciph'`, which is `ciph` (`memo_tableOf`). The input block
+        -- of segment `j` is `next iv` of the ciphertext segments before it.
+        let ciph' := Test.memo (Test.tableOf ciph
+          ((List.range input.length).map fun j => next iv (ct.take j))) ciph
         let run (iv : List Byte) (bs : List Byte) : List Byte :=
-          if dir == "ENCRYPT" then encrypt ciph iv bs else decrypt ciph iv bs
+          if dir == "ENCRYPT" then encrypt ciph' iv bs else decrypt ciph' iv bs
         let whole := if dir == "ENCRYPT" then aesCfb8Encrypt key iv pt else aesCfb8Decrypt key iv ct
         unless whole == output do
           throwError "{name}, COUNT = {count}: AES-CFB8 {dir} is wrong"

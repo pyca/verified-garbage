@@ -18,8 +18,10 @@ proves `CoreSpec` of its own.
 
 * `KeyArgs s rs k`: the key argument (in `r3`) in the state `s` gives the
   key `k`. It survives what a mode does before `prepare`
-  (`keyArgs_congr`): keeping `r3`, the regions, and memory outside `rs`,
-  writable regions.
+  (`keyArgs_congr`): keeping `r3` and the other registers the caller
+  expects preserved but the mode's `r29`–`r31` (`KeptBut`), the regions,
+  and memory outside `rs`, writable regions. (A key with more than one
+  argument may thus keep the others in callee-saved registers.)
 * `Ready s B ws k`: the key `k` is ready in `s`, with the scratch buffer at
   `B`, for a mode that writes within the regions `ws` (its data and the
   scratch buffer). It survives what a mode does between the core's code
@@ -42,6 +44,13 @@ open VG.Spec.Aes (bytesAt)
 argument, and every register the caller expects preserved (among them
 `r29`–`r31`, which hold the mode's state). -/
 def kept : List Reg := .r3 :: preserved
+
+/-- `s'` has the registers of `kept` that `s` has, but the mode's
+`r29`–`r31`: what a mode keeps around the core's code. -/
+def KeptBut (s s' : State) : Prop := ∀ r ∈ kept, r ≠ .r29 → r ≠ .r30 → r ≠ .r31 → s'.gpr r = s.gpr r
+
+theorem KeptBut.r3 {s s' : State} (h : KeptBut s s') : s'.gpr .r3 = s.gpr .r3 :=
+  h .r3 (by decide) (by decide) (by decide) (by decide)
 
 /-- The scratch buffer of `n` slots at `B` is writable in `s`, and does not
 wrap around. -/
@@ -80,10 +89,10 @@ structure CoreSpec (c : Core) where
   cipher_len : ∀ k b, (cipher k b).length = 4 * c.bw
   layout : Layout c
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
-    s'.gpr .r3 = s.gpr .r3 → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    KeptBut s s' → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
     KeyArgs s' rs k
   ready_frame : ∀ {s s' : State} {B : Addr} {ws : List Region} {k : Key} {rs : List Region},
-    Ready s B ws k → s'.gpr .r3 = s.gpr .r3 → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    Ready s B ws k → KeptBut s s' → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
     (∀ r ∈ rs, ∃ r' ∈ ws, Region.Sub r r') →
     (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (blkRegion c B)) → Ready s' B ws k
   prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →

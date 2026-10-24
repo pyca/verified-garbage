@@ -34,8 +34,9 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE
 
-/-- The buffers and the lowest byte of the stack used (`sp - 400` on entry),
-for a digest of `dn` bytes and scalars of `q`. -/
+/-- The buffers and the lowest byte of the stack used (`sp - (400 + e)` on
+entry, for `e` bytes at the frame's top), for a digest of `dn` bytes and
+scalars of `q`. -/
 structure Lay (dn : Nat) where
   out : Addr
   d : Addr
@@ -48,16 +49,27 @@ namespace Lay
 
 variable {dn : Nat} (L : Lay dn)
 
+/-- Whether `h` is at the frame's top: scalars of more than 48 bytes. -/
+def hHigh : Bool := decide (48 < L.q)
+
+/-- The bytes at the frame's top (`extra`). -/
+def e : Nat := Impl.Ecdsa.Rfc6979.PPC64LE.extra L.hHigh
+
+/-- Where `h` is in the frame. -/
+def ho : Nat := if L.hHigh then Impl.Ecdsa.Rfc6979.PPC64LE.fX else Impl.Ecdsa.Rfc6979.PPC64LE.fH
+
 abbrev OUT : Region := ⟨L.out, 2 * L.q⟩
 abbrev D : Region := ⟨L.d, L.q⟩
 abbrev DG : Region := ⟨L.dg, dn⟩
 abbrev SCR : Region := ⟨L.scr, 8192⟩
 /-- The stack used. -/
-abbrev STK : Region := ⟨L.B, 400⟩
+abbrev STK : Region := ⟨L.B, 400 + L.e⟩
 /-- The frame's local variable space, writable. -/
-abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 128, 224⟩
+abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 128, 224 + L.e⟩
 /-- Our return address's place, writable. -/
-abbrev LR : Region := ⟨L.B + BitVec.ofNat 64 384, 16⟩
+abbrev LR : Region := ⟨L.B + BitVec.ofNat 64 (384 + L.e), 16⟩
+/-- The frame's top, above its pointers (`extra`). -/
+abbrev EXT : Region := ⟨L.B + BitVec.ofNat 64 352, L.e⟩
 /-- The stack below the frame's pointers: the calls', the back chain, `K`,
 `V`, `h` and the count. -/
 abbrev LOW : Region := ⟨L.B, 312⟩
@@ -78,7 +90,28 @@ structure Ok : Prop where
   nd : L.d.toNat + L.q ≤ 2 ^ 64
   ng : L.dg.toNat + dn ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
-  nB : L.B.toNat + 400 ≤ 2 ^ 64
+  nB : L.B.toNat + 400 + L.e ≤ 2 ^ 64
+
+/-- Where `h` is: at the frame's `fH` (from `B + 256`, below the count) for
+scalars of at most 48 bytes, or at its top (`fX`, from `B + 352`) within the
+`e` bytes there, for scalars of at most 64. -/
+def HOk : Prop := L.q ≤ 64 ∧ (L.ho = 160 ∧ L.q ≤ 48 ∨ L.ho = 256 ∧ L.q ≤ L.e)
+
+theorem e_le : L.e ≤ 64 := by
+  simp only [e, Impl.Ecdsa.Rfc6979.PPC64LE.extra]; split <;> omega
+
+theorem e_mod : L.e % 16 = 0 := by
+  simp only [e, Impl.Ecdsa.Rfc6979.PPC64LE.extra]; split <;> omega
+
+/-- Where the code has `h`, as the layout has it. -/
+theorem fHo_eq {c : Impl.Ecdsa.Rfc6979.PPC64LE.Cfg} (hcl : c.len = L.q) : c.fHo = L.ho := by
+  unfold Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.fHo Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.hHigh ho hHigh; rw [hcl]
+
+theorem hOk (h : L.q ≤ 64) : L.HOk := by
+  refine ⟨h, ?_⟩
+  simp only [ho, e, hHigh, Impl.Ecdsa.Rfc6979.PPC64LE.extra, Impl.Ecdsa.Rfc6979.PPC64LE.fX,
+    Impl.Ecdsa.Rfc6979.PPC64LE.fH, decide_eq_true_eq]
+  split <;> omega
 
 end Lay
 
@@ -94,8 +127,8 @@ theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨
   ⟨0, (BitVec.add_zero p).symm, by simpa using h⟩
 
 /-- A region of the frame's local variable space. -/
-theorem within_fr (B : Addr) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 352) :
-    Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 128, 224⟩ :=
+theorem within_fr (B : Addr) {e d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 352 + e) :
+    Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 128, 224 + e⟩ :=
   ⟨d - 128, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega⟩
 
 theorem covers_of {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Within r R) : Covers rs rs' :=
@@ -104,39 +137,50 @@ theorem covers_of {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Withi
     exact ⟨R, hR, off, hb, hl⟩
 
 /-- A region the code may write without disturbing `Ctx`: within `out`,
-`scratch` or the stack below the frame's pointers. -/
+`scratch`, the stack below the frame's pointers or the frame's top. -/
 def Safe {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
-  Region.Sub r L.OUT ∨ Region.Sub r L.SCR ∨ Region.Sub r L.LOW
+  Region.Sub r L.OUT ∨ Region.Sub r L.SCR ∨ Region.Sub r L.LOW ∨ Region.Sub r L.EXT
 
 theorem safe_low {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 312) : Safe L ⟨L.B + BitVec.ofNat 64 d, n⟩ :=
-  .inr (.inr (Offset.sub_base _ h))
+  .inr (.inr (.inl (Offset.sub_base _ h)))
+
+theorem safe_ext {dn : Nat} (L : Lay dn) {d n : Nat} (h₁ : 352 ≤ d) (h₂ : d + n ≤ 352 + L.e) :
+    Safe L ⟨L.B + BitVec.ofNat 64 d, n⟩ :=
+  .inr (.inr (.inr (Offset.sub _ h₁ h₂)))
 
 theorem safe_scr {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 8192) : Safe L ⟨L.scr + BitVec.ofNat 64 d, n⟩ :=
   .inr (.inl (Offset.sub_base _ h))
 
+/-- `h`'s bytes are safe to write. -/
+theorem safe_h {dn : Nat} (L : Lay dn) (hh : L.HOk) {d n : Nat} (h : d + n ≤ L.q) :
+    Safe L ⟨L.B + BitVec.ofNat 64 (96 + L.ho + d), n⟩ := by
+  obtain ⟨-, ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩⟩ := hh
+  · exact safe_low L (by omega)
+  · exact safe_ext L (by omega) (by omega)
+
 theorem Safe.of_sub {dn : Nat} {L : Lay dn} {r r' : Region} (hs : Safe L r') (h : Region.Sub r r') : Safe L r := by
-  rcases hs with hs | hs | hs
+  rcases hs with hs | hs | hs | hs
   exacts [.inl fun x hx => hs x (h x hx), .inr (.inl fun x hx => hs x (h x hx)),
-    .inr (.inr fun x hx => hs x (h x hx))]
+    .inr (.inr (.inl fun x hx => hs x (h x hx))), .inr (.inr (.inr fun x hx => hs x (h x hx)))]
 
 namespace Lay.Ok
 
 variable {dn : Nat} {L : Lay dn}
 
-theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 400) (h₂ : e + k ≤ 8192) :
+theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 400 + L.e) (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
   (h.kc.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
 
-theorem stk_SCR (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400) :
+theorem stk_SCR (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400 + L.e) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.SCR := h.kc.sub_left (Offset.sub_base _ h₁)
 
-theorem stk_OUT (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400) :
+theorem stk_OUT (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400 + L.e) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.OUT := h.ko.sub_left (Offset.sub_base _ h₁)
 
-theorem stk_D (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400) :
+theorem stk_D (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400 + L.e) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.D := h.kd.sub_left (Offset.sub_base _ h₁)
 
-theorem stk_DG (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400) :
+theorem stk_DG (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 400 + L.e) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.DG := h.kg.sub_left (Offset.sub_base _ h₁)
 
 /-- The 96 bytes the calls use, apart from `scratch`. -/
@@ -148,32 +192,38 @@ theorem low_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
 theorem ptrs_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 312, 32⟩ r := by
   have := h.nB
-  rcases hs with hs | hs | hs
+  rcases hs with hs | hs | hs | hs
   · exact (h.stk_OUT (by omega)).sub_right hs
   · exact (h.stk_SCR (by omega)).sub_right hs
   · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
+  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
 
 /-- Our return address is apart from every safe region. -/
 theorem lr_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 384, 16⟩ r := by
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 (384 + L.e), 16⟩ r := by
   have := h.nB
-  rcases hs with hs | hs | hs
+  rcases hs with hs | hs | hs | hs
   · exact (h.stk_OUT (by omega)).sub_right hs
   · exact (h.stk_SCR (by omega)).sub_right hs
   · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
+  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
 
 /-- The buffers that are only read are apart from every safe region. -/
 theorem d_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.D.Disjoint r := by
   rcases hs with hs | hs | hs
   · exact h.od.symm.sub_right hs
   · exact h.dc.sub_right hs
-  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
+  · rcases hs with hs | hs
+    · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
+    · exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
 
 theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
   rcases hs with hs | hs | hs
   · exact h.og.symm.sub_right hs
   · exact h.gc.sub_right hs
-  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
+  · rcases hs with hs | hs
+    · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
+    · exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
 
 end Lay.Ok
 
@@ -190,15 +240,17 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m₀ 
   pDg : t.mem.readW (L.B + BitVec.ofNat 64 320) 64 = L.dg
   pD : t.mem.readW (L.B + BitVec.ofNat 64 328) 64 = L.d
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 336) 64 = L.out
-  lr : t.mem.readW (L.B + BitVec.ofNat 64 384) 64 = lr
+  lr : t.mem.readW (L.B + BitVec.ofNat 64 (384 + L.e)) 64 = lr
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
+  ne : L.e ≤ 64
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
-  rcases h with h | h | h
+  rcases h with h | h | h | h
   · exact ⟨_, by simp, h⟩
   · exact ⟨_, by simp, h⟩
   · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base L.B (by omega) a (h a ha)⟩
 
 namespace Ctx
 
@@ -210,17 +262,19 @@ theorem keep (hL : L.Ok) (hc : Ctx L g lr m₀ t) (hrd : t'.rd = t.rd) (hwr : t'
     (hsp : t'.sp = t.sp) (hcs : ∀ r ∈ preserved, t'.gpr r = t.gpr r)
     {ws : List Region} (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe L r) : Ctx L g lr m₀ t' := by
   have := hL.nB
+  have := hc.ne
   have keep : ∀ d, 312 ≤ d → d + 8 ≤ 344 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 312, 32⟩)
       (Offset.contains _ h₁ (by omega) (by omega)) (fun r hr => hL.ptrs_safe (hs r hr)) (by decide)
-  have keepLr : t'.mem.readW (L.B + BitVec.ofNat 64 384) 64 = t.mem.readW (L.B + BitVec.ofNat 64 384) 64 :=
-    hf.readW (r := ⟨L.B + BitVec.ofNat 64 384, 16⟩)
+  have keepLr : t'.mem.readW (L.B + BitVec.ofNat 64 (384 + L.e)) 64 =
+      t.mem.readW (L.B + BitVec.ofNat 64 (384 + L.e)) 64 :=
+    hf.readW (r := ⟨L.B + BitVec.ofNat 64 (384 + L.e), 16⟩)
       (Offset.contains _ (Nat.le_refl _) (by omega) (by omega)) (fun r hr => hL.lr_safe (hs r hr)) (by decide)
   exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr => (hcs r hr).trans (hc.cs r hr),
     (keep 312 (by omega) (by omega)).trans hc.pScr, (keep 320 (by omega) (by omega)).trans hc.pDg,
     (keep 328 (by omega) (by omega)).trans hc.pD, (keep 336 (by omega) (by omega)).trans hc.pOut,
-    keepLr.trans hc.lr, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame)⟩
+    keepLr.trans hc.lr, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), hc.ne⟩
 
 /-- Code that writes only registers but the callee-saved ones. -/
 theorem regs (hL : L.Ok) (hc : Ctx L g lr m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
@@ -249,13 +303,13 @@ theorem dg_byte (hL : L.Ok) (hc : Ctx L g lr m₀ t) {i : Nat} (hi : i < dn) :
     · exact hL.gc
     · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega) hi
 
-theorem inFr (hc : Ctx L g lr m₀ t) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 352) :
+theorem inFr (hc : Ctx L g lr m₀ t) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 352 + L.e) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := hc.ne; omega)⟩
 
-theorem inFrW (hc : Ctx L g lr m₀ t) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 352) :
+theorem inFrW (hc : Ctx L g lr m₀ t) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 352 + L.e) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := hc.ne; omega)⟩
 
 theorem inScr (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions (t.rd ++ t.wr) (L.scr + BitVec.ofNat 64 o) n :=
@@ -296,17 +350,23 @@ end Ctx
 
 /-! ## The layout of a call, and the frames' entry -/
 
-/-- The layout of a call from `s`, with a digest of `dn` bytes and scalars
-of `q`. -/
+/-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
+`q` and `e` bytes at the frame's top. -/
 def lay (dn q : Nat) (s : State) : Lay dn :=
-  ⟨s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r6, s.sp - BitVec.ofNat 64 400, q⟩
+  ⟨s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r6,
+    s.sp - BitVec.ofNat 64 (400 + Impl.Ecdsa.Rfc6979.PPC64LE.extra (decide (48 < q))), q⟩
 
-theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} (h : (rfcPPC I 400).pre s) :
+theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State}
+    (h : (rfcPPC I (400 + Impl.Ecdsa.Rfc6979.PPC64LE.extra (decide (48 < I.ecdsa.curve.len)))).pre s) :
     (lay I.hashLen I.ecdsa.curve.len s).Ok := by
   obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp⟩ := h
-  have nB : (lay I.hashLen I.ecdsa.curve.len s).B.toNat + 400 ≤ 2 ^ 64 := by
-    simp only [lay]
-    rw [Offset.toNat_sub_ofNat s.sp 400]
+  have nB : (lay I.hashLen I.ecdsa.curve.len s).B.toNat + 400 + (lay I.hashLen I.ecdsa.curve.len s).e ≤ 2 ^ 64 := by
+    have hle := (lay I.hashLen I.ecdsa.curve.len s).e_le
+    show (s.sp - BitVec.ofNat 64 (400 + (lay I.hashLen I.ecdsa.curve.len s).e)).toNat + 400 +
+      (lay I.hashLen I.ecdsa.curve.len s).e ≤ 2 ^ 64
+    change 400 + (lay I.hashLen I.ecdsa.curve.len s).e ≤ s.sp.toNat at hsp
+    generalize (lay I.hashLen I.ecdsa.curve.len s).e = e at hle hsp ⊢
+    rw [Offset.toNat_sub_ofNat s.sp _]
     omega
   exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB⟩
 
@@ -314,27 +374,33 @@ theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} (h : (rfcPPC I 400)
 def lrSaved (s : State) : State := s.write .r0 s.lr
 
 /-- The state in which the inner frame's body starts. -/
-def entered (s : State) : State := allocated 256 (pushed .r0 (lrSaved s))
+def entered (e : Nat) (s : State) : State := allocated (256 + e) (pushed .r0 (lrSaved s))
 
-@[simp] theorem entered_rd (s : State) : (entered s).rd = s.rd := rfl
+@[simp] theorem entered_rd (e : Nat) (s : State) : (entered e s).rd = s.rd := rfl
 
-theorem entered_gpr (s : State) {r : Reg} (hr : r ≠ .r0) : (entered s).gpr r = s.gpr r := by
+theorem entered_gpr (e : Nat) (s : State) {r : Reg} (hr : r ≠ .r0) : (entered e s).gpr r = s.gpr r := by
   show (s.write .r0 s.lr).gpr r = _
   simp [State.write, hr]
 
 theorem entered_sp (dn q : Nat) (s : State) :
-    (entered s).sp = (lay dn q s).B + BitVec.ofNat 64 96 := by
-  show s.sp - 48 - BitVec.ofNat 64 256 = s.sp - BitVec.ofNat 64 400 + BitVec.ofNat 64 96
-  bv_omega
+    (entered (lay dn q s).e s).sp = (lay dn q s).B + BitVec.ofNat 64 96 := by
+  show s.sp - 48 - BitVec.ofNat 64 (256 + (lay dn q s).e) =
+    s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 96
+  generalize (lay dn q s).e = e
+  simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
 
 theorem entered_wr (dn q : Nat) (s : State) :
-    (entered s).wr = (lay dn q s).FR :: (lay dn q s).LR :: s.wr := by
-  show (⟨s.sp - 48 - BitVec.ofNat 64 256 + 32, 256 - 32⟩ : Region) :: ⟨s.sp - 48 + 32, 16⟩ :: s.wr = _
-  have h₁ : s.sp - 48 - BitVec.ofNat 64 256 + 32 = (lay dn q s).B + BitVec.ofNat 64 128 := by
-    show _ = s.sp - BitVec.ofNat 64 400 + BitVec.ofNat 64 128; bv_omega
-  have h₂ : s.sp - 48 + 32 = (lay dn q s).B + BitVec.ofNat 64 384 := by
-    show _ = s.sp - BitVec.ofNat 64 400 + BitVec.ofNat 64 384; bv_omega
-  rw [h₁, h₂]
+    (entered (lay dn q s).e s).wr = (lay dn q s).FR :: (lay dn q s).LR :: s.wr := by
+  show (⟨s.sp - 48 - BitVec.ofNat 64 (256 + (lay dn q s).e) + 32, 256 + (lay dn q s).e - 32⟩ : Region) ::
+    ⟨s.sp - 48 + 32, 16⟩ :: s.wr =
+    ⟨s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 128, 224 + (lay dn q s).e⟩ ::
+    ⟨s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 (384 + (lay dn q s).e), 16⟩ :: s.wr
+  generalize (lay dn q s).e = e
+  have h₁ : s.sp - 48 - BitVec.ofNat 64 (256 + e) + 32 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 128 := by
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+  have h₂ : s.sp - 48 + 32 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 (384 + e) := by
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+  rw [h₁, h₂, show 256 + e - 32 = 224 + e by omega]
 
 /-- A 64-bit `write` is a `writeW`. -/
 theorem write8 (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a v := by
@@ -345,17 +411,22 @@ theorem read8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
 
 /-- What the frames' pushes write: the back chains and the return address. -/
 theorem entered_mem (dn q : Nat) (s : State) :
-    (entered s).mem =
-      ((s.mem.writeW ((lay dn q s).B + BitVec.ofNat 64 352) s.sp).writeW ((lay dn q s).B + BitVec.ofNat 64 384)
-        s.lr).writeW ((lay dn q s).B + BitVec.ofNat 64 96) (s.sp - 48) := by
+    (entered (lay dn q s).e s).mem =
+      ((s.mem.writeW ((lay dn q s).B + BitVec.ofNat 64 (352 + (lay dn q s).e)) s.sp).writeW
+        ((lay dn q s).B + BitVec.ofNat 64 (384 + (lay dn q s).e)) s.lr).writeW ((lay dn q s).B + BitVec.ofNat 64 96)
+        (s.sp - 48) := by
   show ((s.mem.write (s.sp - 48) 8 s.sp).write (s.sp - 48 + 32) 8 s.lr).write
-    (s.sp - 48 - BitVec.ofNat 64 256) 8 (s.sp - 48) = _
-  have h₁ : s.sp - 48 = (lay dn q s).B + BitVec.ofNat 64 352 := by
-    show _ = s.sp - BitVec.ofNat 64 400 + BitVec.ofNat 64 352; bv_omega
-  have h₂ : s.sp - 48 + 32 = (lay dn q s).B + BitVec.ofNat 64 384 := by
-    show _ = s.sp - BitVec.ofNat 64 400 + BitVec.ofNat 64 384; bv_omega
-  have h₃ : s.sp - 48 - BitVec.ofNat 64 256 = (lay dn q s).B + BitVec.ofNat 64 96 := by
-    show _ = s.sp - BitVec.ofNat 64 400 + BitVec.ofNat 64 96; bv_omega
+    (s.sp - 48 - BitVec.ofNat 64 (256 + (lay dn q s).e)) 8 (s.sp - 48) =
+      ((s.mem.writeW (s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 (352 + (lay dn q s).e))
+        s.sp).writeW (s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 (384 + (lay dn q s).e))
+        s.lr).writeW (s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 96) (s.sp - 48)
+  generalize (lay dn q s).e = e
+  have h₁ : s.sp - 48 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 (352 + e) := by
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+  have h₂ : s.sp - 48 + 32 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 (384 + e) := by
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+  have h₃ : s.sp - 48 - BitVec.ofNat 64 (256 + e) = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 96 := by
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
   rw [h₃, h₂, write8, write8, write8, ← h₁]
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

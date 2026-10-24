@@ -112,7 +112,7 @@ theorem init_step (P : Kit) (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
     · exact safe_scr L (by omega)
     · exact safe_scr L (by omega)
     · exact safe_scr L (by omega)
-    · exact .inr (.inr (Region.sub_prefix (by omega)))
+    · exact .inr (.inr (.inl (Region.sub_prefix (by omega))))
   refine ⟨hcu.keep hL h₁ h₂ h₃ hcs h₄ hs, hmu ▸ h₄.sub fun r hr => ?_, ?_, ?_⟩
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -310,7 +310,7 @@ theorem fin_step (P : Kit) (hL : L.Ok) {t₀ t : State} {da : Addr} {len dst : N
     · exact safe_scr L (by omega)
     · exact safe_low L (by omega)
     · exact safe_scr L (by omega)
-    · exact .inr (.inr (Region.sub_prefix (by omega)))
+    · exact .inr (.inr (.inl (Region.sub_prefix (by omega))))
   have hk := keyOf_length P (L := L) t₀.mem
   have hbk := blockKey_length P (k := keyOf P L t₀.mem) (by rw [hk]; exact P.hH.hDB)
   have hbs : P.I.S.H.blockSize = P.H.B := by rw [P.hIS]; exact P.hH.hB

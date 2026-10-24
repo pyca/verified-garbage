@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantForLit
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed448.Facts

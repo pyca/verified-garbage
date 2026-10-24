@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Bignum.Fios32
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -31,22 +32,22 @@ theorem head_arith (t a b m : BitVec 32) (m' : BitVec 64) (hm' : m'.toNat < 2 ^ 
   have hu : u < 2 ^ 32 := Nat.mod_lt _ (by decide)
   have e2 := Fios32.mac_lt hu hm hx (show 0 < 2 ^ 32 by decide)
   have p1 : (a.setWidth 64 * b.setWidth 64).toNat = a.toNat * b.toNat := by
-    rw [toNat_mul_lt] <;> rw [toNat_ext32, toNat_ext32]; omega
+    rw [toNat_mul_lt] <;> rw [toNat_ext32, toNat_ext32]; omega_arith
   have vx : X.toNat = x := by
     simp only [X, x]
-    rw [toNat_add_lt (by rw [toNat_ext32, p1]; omega), toNat_ext32, p1]
+    rw [toNat_add_lt (by rw [toNat_ext32, p1]; omega_arith), toNat_ext32, p1]
   have vl : L.toNat = x % 2 ^ 32 := by
     simp only [L]; rw [BitVec.ushiftRight_zero, toNat_lo32, vx]
   have vu : U.toNat = u := by
     simp only [U, u]
     rw [BitVec.ushiftRight_zero, toNat_lo32, toNat_mul_lt] <;> rw [vl]
     have : x % 2 ^ 32 * m'.toNat < 2 ^ 32 * 2 ^ 32 := Nat.mul_lt_mul'' hx hm'
-    omega
+    omega_arith
   have p2 : (U * m.setWidth 64).toNat = u * m.toNat := by
-    rw [toNat_mul_lt] <;> rw [vu, toNat_ext32]; omega
+    rw [toNat_mul_lt] <;> rw [vu, toNat_ext32]; omega_arith
   have vy : Y.toNat = x % 2 ^ 32 + u * m.toNat := by
     simp only [Y]
-    rw [toNat_add_lt (by rw [vl, p2]; omega), vl, p2]
+    rw [toNat_add_lt (by rw [vl, p2]; omega_arith), vl, p2]
   exact ⟨by rw [toNat_shr32, vx], vu, by rw [toNat_shr32, vy]⟩
 
 theorem ofNat_sub_one {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 64) :
@@ -54,7 +55,7 @@ theorem ofNat_sub_one {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- The registers `head` writes. -/
 def headRegs : List Reg := [.r0, .r3, .r6, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
@@ -96,12 +97,12 @@ theorem top_arith (t : BitVec 32) (c₁ c₂ : BitVec 64) (hc1 : c₁.toNat < 2 
   have ht := t.isLt
   have hx := Nat.mod_lt x (show 0 < 2 ^ 32 by decide)
   have vx : X.toNat = x := by
-    simp only [X, x]; rw [toNat_add_lt (by rw [toNat_ext32]; omega), toNat_ext32]
+    simp only [X, x]; rw [toNat_add_lt (by rw [toNat_ext32]; omega_arith), toNat_ext32]
   have vy : Y.toNat = y := by
     simp only [Y, y]
-    rw [BitVec.ushiftRight_zero, toNat_add_lt (by rw [toNat_lo32, vx]; omega), toNat_lo32, vx]
+    rw [BitVec.ushiftRight_zero, toNat_add_lt (by rw [toNat_lo32, vx]; omega_arith), toNat_lo32, vx]
   refine ⟨by rw [lo32_ofNat, vy], ?_⟩
-  rw [lo32_ofNat, toNat_add_lt (by rw [toNat_shr32, toNat_shr32, vx, vy]; omega), toNat_shr32,
+  rw [lo32_ofNat, toNat_add_lt (by rw [toNat_shr32, toNat_shr32, vx, vy]; omega_arith), toNat_shr32,
     toNat_shr32, vx, vy, Nat.add_comm (y / 2 ^ 32)]
 
 /-- The top digit of a round (`top`), the accumulator's pointer at digit `n -
@@ -116,8 +117,8 @@ theorem top_ok {s : State} {B : Addr} {Z dT : Nat} (hs : Scr s B Z) (h14 : s.gpr
         (BitVec.ofNat 32 (x / 2 ^ 32 + y / 2 ^ 32)) ∧ Keep [.r0, .r20] s s' := by
   refine WP.keep [.r0, .r20] ?_ (by decide)
   unfold top
-  prun [h14, hs.ld (show dT + 4 + 4 ≤ Z by omega), hs.st (show dT + 4 ≤ Z by omega),
-    hs.st (show dT + 4 + 4 ≤ Z by omega)]
+  prun [h14, hs.ld (show dT + 4 + 4 ≤ Z by omega_arith), hs.st (show dT + 4 ≤ Z by omega_arith),
+    hs.st (show dT + 4 + 4 ≤ Z by omega_arith)]
   obtain ⟨k1, k2⟩ := top_arith (s.mem.readW (off B (dT + 4)) 32) _ _ hc1 hc2
   rw [k1, k2]
 
@@ -131,13 +132,13 @@ theorem subi_ok (s : State) (r : Reg) (hr : r ≠ .r0) :
 /-- A store of digit `j` of a number of `j + 1` digits. -/
 theorem val32_write_top (m : Mem) (B : Addr) (d j : Nat) (v : BitVec 32) (h : d + 4 * j + 4 ≤ 2 ^ 64) :
     val32 (m.writeW (off B (d + 4 * j)) v) B d (j + 1) = val32 m B d j + 2 ^ (32 * j) * v.toNat := by
-  rw [val32_succ, (writeW32_outside m B v (by omega)).val32 (by omega) (by omega), w32_write_self]
+  rw [val32_succ, (writeW32_outside m B v (by omega_arith)).val32 (by omega_arith) (by omega_arith), w32_write_self]
 
 /-- A digit `j + 1` of the accumulator's low digits is the `j + 1`-th. -/
-theorem off_succ (dA j : Nat) : dA + 4 * j + 4 = dA + 4 * (j + 1) := by omega
+theorem off_succ (dA j : Nat) : dA + 4 * j + 4 = dA + 4 * (j + 1) := by omega_arith
 
 theorem pow32_mul (j : Nat) : 2 ^ 32 * 2 ^ (32 * j) = 2 ^ (32 * (j + 1)) := by
-  rw [← Nat.pow_add]; congr 1; omega
+  rw [← Nat.pow_add]; congr 1; omega_arith
 
 /-- The pass of a round over digits `1` to `n - 1` (`countLoop .r17 step`),
 from the pointers at digit 0 with the carries of digit 0: the low `n` digits
@@ -175,30 +176,30 @@ theorem inner_ok {s₀ : State} {B : Addr} {Z dA dB dM n : Nat} (hs : Scr s₀ B
     simp only [val32, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.mul_one]
     exact h0
   have hfin := wp_countdown (body := .block (step ++ ([.subi .r17 .r17 1] : List Instr)))
-    (cnt := .r17) (N := n - 1) (by omega) (by omega) Inv (fun j hj s hI hc => ?_) hinv0 h17
+    (cnt := .r17) (N := n - 1) (by omega_arith) (by omega_arith) Inv (fun j hj s hI hc => ?_) hinv0 h17
   · refine WP.mono hfin fun s ⟨i14, _, _, i20, i22, iout, ieq, ik⟩ => ⟨i14, i20, i22, iout, ?_, ik⟩
-    rwa [Nat.sub_add_cancel (by omega : 1 ≤ n)] at ieq
+    rwa [Nat.sub_add_cancel (by omega_arith : 1 ≤ n)] at ieq
   obtain ⟨i14, i15, i16, i20, i22, iout, ieq, ik⟩ := hI
   have r18 : s.gpr .r18 = s₀.gpr .r18 := ik.gpr _ (by decide)
   have r19 : s.gpr .r19 = s₀.gpr .r19 := ik.gpr _ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (step_ok (hs.congr ik.wr) i14 i15 i16 (by omega) (by omega) (by omega)
+  refine WP.mono (step_ok (hs.congr ik.wr) i14 i15 i16 (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [r18]; exact ha) (by rw [r19]; exact hu) i20 i22)
     fun s₁ ⟨⟨j14, j15, j16, j20, j22, jm⟩, k₁⟩ => ?_
   refine WP.mono (subi_ok s₁ .r17 (by decide)) fun s₂ e => ?_
   subst e
   -- The digits read are those on entry.
   have wt : w32 s.mem B (dA + 4 * j + 4) = w32 s₀.mem B (dA + 4 * j + 4) :=
-    iout.w32 (by omega) (by omega)
+    iout.w32 (by omega_arith) (by omega_arith)
   have wb : w32 s.mem B (dB + 4 * j + 4) = w32 s₀.mem B (dB + 4 * j + 4) :=
-    iout.w32 (by omega) (by omega)
+    iout.w32 (by omega_arith) (by omega_arith)
   have wm : w32 s.mem B (dM + 4 * j + 4) = w32 s₀.mem B (dM + 4 * j + 4) :=
-    iout.w32 (by omega) (by omega)
+    iout.w32 (by omega_arith) (by omega_arith)
   simp only [r18, r19, wt, wb, wm] at j20 j22 jm
   have hw := writeW32_outside s.mem B (d := dA + 4 * j)
     (BitVec.ofNat 32 ((w32 s₀.mem B (dA + 4 * j + 4) + ai * w32 s₀.mem B (dB + 4 * j + 4) +
       (s.gpr .r20).toNat) % 2 ^ 32 + u * w32 s₀.mem B (dM + 4 * j + 4) + (s.gpr .r22).toNat))
-    (by omega)
+    (by omega_arith)
   refine ⟨⟨by gsimp; rw [j14, off_succ], by gsimp; rw [j15, off_succ],
     by gsimp; rw [j16, off_succ], ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · gsimp; rw [j20]
@@ -208,11 +209,11 @@ theorem inner_ok {s₀ : State} {B : Addr} {Z dA dB dM n : Nat} (hs : Scr s₀ B
     exact Fios32.mac_div_lt (by exact hu) (by exact (s₀.mem.readW _ 32).isLt)
       (Nat.mod_lt _ (by decide)) i22
   · gsimp; rw [jm]
-    exact (iout.mono (Nat.le_refl _) (by omega)).trans (hw.mono (by omega) (by omega))
+    exact (iout.mono (Nat.le_refl _) (by omega_arith)).trans (hw.mono (by omega_arith) (by omega_arith))
   · gsimp
     rw [jm, j20, j22]
-    rw [val32_write_top _ _ _ _ _ (by omega), BitVec.toNat_ofNat, val32_succ s₀.mem B dA (j + 1), val32_succ s₀.mem B dB (j + 1),
-      val32_succ s₀.mem B dM (j + 1), ← off_succ, ← off_succ, ← off_succ, show 32 * (j + 1 + 1) = 32 * (j + 1) + 32 by omega,
+    rw [val32_write_top _ _ _ _ _ (by omega_arith), BitVec.toNat_ofNat, val32_succ s₀.mem B dA (j + 1), val32_succ s₀.mem B dB (j + 1),
+      val32_succ s₀.mem B dM (j + 1), ← off_succ, ← off_succ, ← off_succ, show 32 * (j + 1 + 1) = 32 * (j + 1) + 32 by omega_arith,
       Nat.pow_add]
     exact Fios32.row_step (pow32_mul j) ieq (Fios32.step_eq _ _ _ _ _ _ _)
   · have k₂ : Keep [.r17] s₁ (s₁.write .r17 (s₁.gpr .r17 - BitVec.ofNat 64 1)) :=

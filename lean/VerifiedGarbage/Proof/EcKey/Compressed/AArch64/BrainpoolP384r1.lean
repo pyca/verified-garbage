@@ -4,9 +4,11 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Main
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.CheckVerified
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64

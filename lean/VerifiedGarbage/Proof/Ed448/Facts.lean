@@ -105,6 +105,34 @@ theorem baseLadder_ok : BaseLadderOk := fun k hk => by
   rw [Nat.sub_self, Nat.shiftRight_zero] at h
   rw [encodePoint_rep h, encodePoint_rep (pointMul_rep k basePoint_rep)]
 
+/-- `ladderStep_rep`, for `ladderStep2`. -/
+theorem ladderStep2_rep {r : Point} {k t : Nat} (hr : Rep r ((k >>> (t + 1)) • baseAff)) :
+    Rep (ladderStep2 (bitAt k t) r) ((k >>> t) • baseAff) := by
+  have h2 := pointAdd_rep hr hr
+  have e1 : (k >>> t) • baseAff = (k >>> (t + 1)) • baseAff + (k >>> (t + 1)) • baseAff +
+      ((k >>> t) &&& 1) • baseAff := by
+    conv => lhs; rw [shift_step k t]
+    rw [add_nsmul, two_mul, add_nsmul]
+  rw [e1]
+  unfold ladderStep2
+  rcases bit_cases k t with ⟨h, hb⟩ | ⟨h, hb⟩
+  · rw [h, zero_nsmul, add_zero, hb]; exact h2
+  · rw [h, one_nsmul, hb]; exact pointAdd_rep h2 basePoint_rep
+
+theorem ladder2_rep {k : Nat} (hk : Below456 k) :
+    ∀ m ≤ 456, Rep (ladder2 k m) ((k >>> (456 - m)) • baseAff)
+  | 0, _ => by rw [Nat.sub_zero, shift_456 hk, zero_nsmul]; exact identity_rep
+  | m + 1, hm => by
+    have h := ladderStep2_rep (t := 455 - m) (show Rep (ladder2 k m) ((k >>> (455 - m + 1)) • baseAff) by
+      rw [show 455 - m + 1 = 456 - m by omega]; exact ladder2_rep hk m (by omega))
+    rw [show 456 - (m + 1) = 455 - m by omega]
+    exact h
+
+theorem baseLadder2_ok : BaseLadder2Ok := fun k hk => by
+  have h := ladder2_rep hk 456 (Nat.le_refl _)
+  rw [Nat.sub_self, Nat.shiftRight_zero] at h
+  rw [encodePoint_rep h, encodePoint_rep (pointMul_rep k basePoint_rep)]
+
 /-- One bit of both scalars: `Q` for `[S >> (t+1)]B + [k >> (t+1)]a` becomes `Q` for
 `[S >> t]B + [k >> t]a`. -/
 theorem vstepRef_rep {q a' : Point} {S K t : Nat} {a : EPoint dZ}

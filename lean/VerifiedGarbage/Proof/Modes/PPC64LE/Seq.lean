@@ -171,11 +171,11 @@ theorem ivAreasOk {s₀ s : State} (hp : SeqPre c M s₀) (hb : s.gpr sb = S s�
     · exact dCB.symm
 
 theorem copyBlk_ok {bw : Nat} {dst src : Loc} {ws : List Loc} (hd : dst ∈ ws) {len : Loc → Nat}
-    (hl : ∀ l, len l = 4 * bw) : ∀ o ∈ copyBlk bw dst src, Plain o ∧ o.InBounds len ∧ o.dst ∈ ws := by
+    (hl : ∀ l, len l = 4 * bw) : ∀ o ∈ copyBlk bw dst src, o.InBounds len ∧ o.dst ∈ ws := by
   intro o ho
   simp only [copyBlk, List.mem_map, List.mem_range] at ho
   obtain ⟨w, hw, rfl⟩ := ho
-  refine ⟨⟨rfl, rfl⟩, ⟨?_, ?_, fun _ _ h => by cases h⟩, hd⟩ <;>
+  refine ⟨⟨?_, ?_, fun _ _ h => by cases h⟩, hd⟩ <;>
     simp only [Op.width, Bool.false_eq_true, ite_false, ite_true, hl] <;> omega_using [hw]
 
 /-! ## The entry -/
@@ -400,7 +400,7 @@ theorem setup_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : c
   have hS₁ : ScrIn s₁ (S s₀) c.total := ⟨by rw [h₁.wr]; exact hp.scr.wr, hfit⟩
   have m1 : ∀ {a b : Region} {l : List Region}, b ∈ a :: b :: l := List.mem_cons_of_mem _ List.mem_cons_self
   refine WP.mono (cs.prepare_wp h₁.b hS₁ m1
-    (cs.keyArgs_congr hk (h₁.keep _ (by decide) (by decide) (by decide) (by decide)) h₁.rd h₁.wr
+    (cs.keyArgs_congr hk h₁.keep h₁.rd h₁.wr
       (h₁.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, m1, modeScr⟩)))
     fun s₂ ⟨ready₂, b₂, kept₂, f₂, rd₂, wr₂⟩ => ?_
@@ -440,13 +440,22 @@ theorem setup_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : c
 
 /-! ## The function -/
 
-theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
-    (hpre : ∀ o ∈ M.pre, Plain o ∧ o.InBounds (lens c M.step))
-    (hpost : ∀ o ∈ M.post, Plain o ∧ o.InBounds (lens c M.step))
+/-- What the function changes besides the registers: memory only in the
+core's and the mode's slots, the data and the IV; and it leaves the scratch
+buffer's address in `sb`. -/
+structure Changes (c : Core) (M : Mode) (s₀ s' : State) : Prop where
+  sb : s'.gpr sb = S s₀
+  frame : Frame [coreRegion c (S s₀), modeR c (S s₀), dataRegion (Dp s₀) M.step (N s₀), ivR s₀ c] s₀.mem s'.mem
+
+/-- `seq_wp`, and what the function changes (`Changes`). -/
+theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step))
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step))
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
     WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
-      (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) := by
+      (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) ∧
+      Changes c M s₀ s' := by
   have hL := hp.layout
   have hfit := hp.scr.fit
   have hroom := hL.room
@@ -499,11 +508,23 @@ theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.
         · subst e31; exact h31
         exact hk r (List.mem_cons_of_mem _ hr) e29 e30 e31, hsp, hlr⟩
   have ne0 : ∀ r ∈ kept, r ≠ .r0 := fun r hr => (kept_ne_entry r hr).1
+  have fr₄ : Frame [coreRegion c (S s₀), modeR c (S s₀), dataRegion (Dp s₀) M.step (N s₀), ivR s₀ c]
+      s₀.mem s₄.mem := by
+    refine (h₃.frame.mono (by simp)).trans (h₄.frame.sub fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨modeR c (S s₀), by simp, VG.Offset.sub _ (by slot_omega) (by slot_omega)⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+  have r0ne : Reg.r5 ≠ .r29 ∧ Reg.r5 ≠ .r30 ∧ Reg.r5 ≠ .r31 ∧ Reg.r5 ≠ .r0 := by decide
   cases hiv : M.ivOut
   · rw [show (if false = true then c.ivBack else []) ++ c.restore = c.restore by simp]
     refine restore_wp hp h₄.b wr₄ sv₄ lr₄ fun t g29 g30 g31 glr g m hsp =>
-      ⟨abi t hsp glr g29 g30 g31 fun r hr h29 h30 h31 => by rw [g r h29 h30 h31 (ne0 r hr), keep₄ r hr h29 h30 h31],
-        by rw [m, data₄], fun h => by cases h⟩
+      And.intro (abi t hsp glr g29 g30 g31 fun r hr h29 h30 h31 => by
+          rw [g r h29 h30 h31 (ne0 r hr), keep₄ r hr h29 h30 h31])
+        (And.intro (by rw [m, data₄]) (And.intro (fun h => by cases h)
+          ⟨by show t.gpr .r5 = _; rw [g _ r0ne.1 r0ne.2.1 r0ne.2.2.1 r0ne.2.2.2]; exact h₄.b,
+            by rw [m]; exact fr₄⟩))
   · rw [show (if true = true then c.ivBack else []) ++ c.restore =
       mov .r31 .r29 :: (c.opsCode (copyBlk c.bw .dat .chn) ++ c.restore) by simp [Core.ivBack]]
     refine wp_mr fun s₅ u₅ => ?_
@@ -532,7 +553,7 @@ theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.
       (by rw [wr₆, u₅.wr, wr₄]) sv₆ lr₆ fun t g29 g30 g31 glr g m hsp =>
         ⟨abi t hsp glr g29 g30 g31 fun r hr h29 h30 h31 => by
           rw [g r h29 h30 h31 (ne0 r hr), g₆' r (kept_ne r hr).1 (kept_ne r hr).2 h31, keep₄ r hr h29 h30 h31],
-          ?_, fun _ => ?_⟩
+          ?_, fun _ => ?_, ⟨?_, ?_⟩⟩
     · rw [m, chunksAt_frame f₆ (ivOnly (hp.ivData hiv).symm) (by have := hp.dataFit; omega_arith), data₄]
     · rw [m]
       have hc := h₄.chn
@@ -544,5 +565,20 @@ theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.
       simp only [cont, ivAreas] at e₆
       rw [e₆, copyBlk_apply (by decide), ite_eq_left ⟨rfl, hi⟩]
       rfl
+    · show t.gpr .r5 = _
+      rw [g _ r0ne.1 r0ne.2.1 r0ne.2.2.1 r0ne.2.2.2, g₆' _ (by decide) (by decide) (by decide)]; exact h₄.b
+    · rw [m]
+      refine fr₄.trans (f₆.sub fun r hr => ?_)
+      simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
+      subst hr; exact ⟨_, by simp, fun _ h => h⟩
+
+theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step))
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step))
+    (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
+    WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
+      chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
+      (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) :=
+  WP.mono (seq_changes_wp cs hp hpre hpost hcomp hk) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
 
 end VG.Proof.Modes.PPC64LE

@@ -354,7 +354,7 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
     intro s₆ p
     have r9₆ : s₆.gpr .r8 = s₅.gpr .r8 := p.regs _ (by simp)
     have room₆ : Room s₆ := room_congr room₅ r9₆ p.wr
-    obtain ⟨s', run', m', sp', set', keep'⟩ := loads_ok room₆ Impl.Seed.PPC64LE.savedRegs
+    obtain ⟨s', run', m', sp', set', keep', -, -⟩ := loads_ok room₆ Impl.Seed.PPC64LE.savedRegs
       (fun q hq => ⟨(savedRegs_ok q hq).1, (savedRegs_ok q hq).2.1⟩) (by decide)
     refine WP.of_runBlock ⟨s', by rw [restore_eq]; exact run', ?_⟩
     have pf := p.frame

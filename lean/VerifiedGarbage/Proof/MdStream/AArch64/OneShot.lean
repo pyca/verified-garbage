@@ -1572,21 +1572,17 @@ theorem digest_keepsV {P : Params} {H : Md P.B P.N P.L} {D : Nat} (hs : ShapeD H
     {name : String} {code : Prog isa}
     (hi : init.allInstrs VG.AArch64.keepsV = true) (h : code.allInstrs VG.AArch64.keepsV = true) :
     (digest P init name code).allInstrs VG.AArch64.keepsV = true := by
-  have hl := List.all_eq_true.mp hs.lenKeepsV
-  have ho := List.all_eq_true.mp hs.outKeepsV
-  rw [Code.allInstrs_eq] at h hi ⊢
-  have hc := List.all_eq_true.mp h
-  have hii := List.all_eq_true.mp hi
-  simp [digest, body, setup, whole, tail, copyTail, copy16, copy1, zeroBuf, compressBuf, mark16, tail16,
-    bytesTail, lenStore, Impl.Tbl.AArch64.const128, Impl.Tbl.AArch64.const64,
-    Impl.MdStream.AArch64.OneShot.compressWith, finish, wipe, OneShot.restore, instrs, lg, mov,
-    VG.AArch64.keepsV, vdstOf, VOp.dst]
-  refine ⟨fun x hx => ?_, fun x hx => ?_, fun x hx => ?_, fun x hx => ?_, fun x hx => ?_⟩ <;>
-    first
-    | simpa [VG.AArch64.keepsV, vdstOf, VOp.dst] using hii x hx
-    | simpa [VG.AArch64.keepsV, vdstOf, VOp.dst] using hc x hx
-    | simpa [VG.AArch64.keepsV, vdstOf, VOp.dst] using hl x hx
-    | simpa [VG.AArch64.keepsV, vdstOf, VOp.dst] using ho x hx
+  have hb : ∀ is : List Instr, (Code.block is : Prog isa).allInstrs VG.AArch64.keepsV =
+      is.all VG.AArch64.keepsV := fun is => by rw [Code.allInstrs_eq]; rfl
+  have hst : ∀ (a b c : Reg) (n : Nat),
+      (List.range n).all (VG.AArch64.keepsV ∘ fun k => Instr.stp a b c (16 * k)) = true :=
+    fun _ _ _ _ => List.all_eq_true.mpr fun _ _ => rfl
+  simp only [hb, hst, Code.allInstrs.eq_2, Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5,
+    Code.allInstrs.eq_6, digest, body, setup, whole, tail, copyTail, copy16, copy1, zeroBuf,
+    compressBuf, mark16, tail16, bytesTail, lenStore, Impl.Tbl.AArch64.const128,
+    Impl.Tbl.AArch64.const64, Impl.MdStream.AArch64.OneShot.compressWith, finish, wipe,
+    OneShot.restore, mov, hi, h, hs.lenKeepsV, hs.outKeepsV, List.all_cons, List.all_append,
+    List.all_nil, List.all_map, VG.AArch64.keepsV, vdstOf, VOp.dst, Bool.and_true]
 
 /-- The one-shot digest is verified, given that it is constant time (which
 the taint analysis proves of each hash function's code). -/

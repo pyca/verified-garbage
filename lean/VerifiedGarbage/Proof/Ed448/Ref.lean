@@ -103,6 +103,28 @@ def BaseLadderOk : Prop :=
   ∀ k, Below456 k → Spec.Ed448.encodePoint (ladder k 456) =
     Spec.Ed448.encodePoint (Spec.Ed448.pointMul k Spec.Ed448.basePoint)
 
+/-- One bit, with the point doubled by the addition formula (as the
+specification's `pointMul` doubles): the point added to itself, and `B`
+added if the bit is set. -/
+def ladderStep2 (b : Bool) (r : Point) : Point :=
+  if b then Spec.Ed448.pointAdd (Spec.Ed448.pointAdd r r) Spec.Ed448.basePoint
+  else Spec.Ed448.pointAdd r r
+
+/-- `ladder` with `ladderStep2`. -/
+def ladder2 (k : Nat) : Nat → Point
+  | 0 => Spec.Ed448.identity
+  | m + 1 => ladderStep2 (bitAt k (455 - m)) (ladder2 k m)
+
+/-- The bits from `t` up, after bit `t + 1`'s. -/
+theorem ladder2_bit (k : Nat) {t : Nat} (ht : t < 456) :
+    ladder2 k (456 - t) = ladderStep2 (bitAt k t) (ladder2 k (456 - (t + 1))) := by
+  rw [show 456 - t = (456 - (t + 1)) + 1 by omega, ladder2, show 455 - (456 - (t + 1)) = t by omega]
+
+/-- `ladder2` over all 456 bits encodes `[k]B`. -/
+def BaseLadder2Ok : Prop :=
+  ∀ k, Below456 k → Spec.Ed448.encodePoint (ladder2 k 456) =
+    Spec.Ed448.encodePoint (Spec.Ed448.pointMul k Spec.Ed448.basePoint)
+
 /-- A point's encoding, as code computes it: the 56 bytes of `y = Y/Z` and
 the low bit of `x = X/Z` as the top bit of the 57th, with `1/Z` by X448's
 addition chain. -/

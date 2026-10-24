@@ -2,6 +2,7 @@ import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaPss
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+import VerifiedGarbageTest.Memo
 
 /-!
 # RSASSA-PSS and MGF1 specification tests
@@ -96,18 +97,62 @@ def parse (text : String) (last : String) : Except String (List Vector) := do
     | _ => pure ()
   return vs.reverse
 
+/-! The checks of a vector hash the same strings again (the seeds of MGF1
+and `M'`, in each `verify`, `encodeK` and `sign`): they use `H` with those
+digests computed once, `withTable H`, which is `H` (`withTable_eq`). -/
+
+/-- `H`, with the digests of `table` looked up. -/
+def withTable (H : Hash) (table : List (List Byte × List Byte)) : Hash :=
+  { H with hash := Test.memo table H.hash }
+
+theorem withTable_eq (H : Hash) (xs ys : List (List Byte)) :
+    withTable H (Test.tableOf H.hash xs ++ Test.tableOf H.hash ys) = H := by
+  rw [withTable, Test.memo_tableOf_append]
+
+/-- The strings `mgf1 H h maskLen` hashes. -/
+def seeds (H : Hash) (h : List Byte) (maskLen : Nat) : List (List Byte) :=
+  (List.range ((maskLen + H.len - 1) / H.len)).map fun counter => h ++ Rsa.i2osp counter 4
+
+/-- `H` with the digests computed once that `verify H H v.n v.e mHash v.sig`
+computes, whatever the salt length: from the encoding `EM` the signature
+gives, as in `verifyEncoding`, MGF1's seeds and then `M'`. -/
+def verifyHash (H : Hash) (v : Vector) (mHash : List Byte) : Hash :=
+  let k := v.n.length
+  let emBits := bitLength (Rsa.os2ip v.n) - 1
+  let emLen := emLength emBits
+  let z := 8 * emLen - emBits
+  let len := emLen - H.len - 1
+  let em? := (Rsa.publicOpChecked v.n v.e v.sig).bind fun x =>
+    let em := x.drop (k - emLen)
+    if em.length = emLen ∧ H.len + 2 ≤ emLen ∧ em.getLast? = some 0xbc ∧
+      clearTop z (em.take len) = em.take len then some em else none
+  let xs := match em? with
+    | some em => seeds H ((em.drop len).take H.len) len
+    | none => []
+  let t := Test.tableOf H.hash xs
+  let ys := match em? with
+    | some em =>
+      let db := clearTop z (xorBytes (em.take len) (mgf1 (withTable H t) ((em.drop len).take H.len) len))
+      match db.dropWhile (· == 0) with
+      | 0x01 :: salt => [zeros 8 ++ mHash ++ salt]
+      | _ => []
+    | none => []
+  withTable H (t ++ Test.tableOf H.hash ys)
+
 /-- Checks one signature verification vector. -/
 def checkVer (v : Vector) : Except String Unit := do
   let H ← hashOf v.alg
   let mHash := H.hash v.msg
-  unless verify H H v.n v.e mHash v.sig none == v.pass do throw "verify with any salt length"
+  -- `H` (`withTable_eq`).
+  let H' := verifyHash H v mHash
+  unless verify H' H' v.n v.e mHash v.sig none == v.pass do throw "verify with any salt length"
   if let some salt := v.salt then
     let sLen := salt.length
-    unless verify H H v.n v.e mHash v.sig (some sLen) == v.pass do throw "verify"
+    unless verify H' H' v.n v.e mHash v.sig (some sLen) == v.pass do throw "verify"
     if v.pass then
-      unless !verify H H v.n v.e mHash v.sig (some (sLen + 1)) do throw "accepted sLen + 1"
+      unless !verify H' H' v.n v.e mHash v.sig (some (sLen + 1)) do throw "accepted sLen + 1"
       if sLen > 0 then
-        unless !verify H H v.n v.e mHash v.sig (some (sLen - 1)) do throw "accepted sLen - 1"
+        unless !verify H' H' v.n v.e mHash v.sig (some (sLen - 1)) do throw "accepted sLen - 1"
 
 /-- The CRT form derived from a vector's private key. -/
 abbrev CrtKey := List Byte × List Byte × List Byte × List Byte × List Byte
@@ -130,20 +175,26 @@ def checkGen (v : Vector) (key : CrtKey) : Except String Unit := do
   let some salt := v.salt | throw "no salt"
   let n := Rsa.os2ip v.n
   let k := v.n.length
-  let some em := encodeK H H v.n mHash salt | throw "encoding failed"
+  -- `H` with the digests of `M'` and MGF1's seeds computed once: `H`
+  -- (`withTable_eq`).
+  let emLen := emLength (bitLength n - 1)
+  let m' := zeros 8 ++ mHash ++ salt
+  let t := Test.tableOf H.hash [m']
+  let H' := withTable H (t ++ Test.tableOf H.hash (seeds H ((withTable H t).hash m') (emLen - H.len - 1)))
+  let some em := encodeK H' H' v.n mHash salt | throw "encoding failed"
   unless some em == Rsa.publicOp v.n v.e v.sig do throw "encodeK is not S^e mod n"
   unless Rsa.i2osp (Rsa.powMod (Rsa.os2ip em) (Rsa.os2ip v.d) n) k == v.sig do
     throw "S is not EM^d mod n"
-  unless verify H H v.n v.e mHash v.sig (some salt.length) do throw "verify"
-  unless sign H H v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash salt ==
+  unless verify H' H' v.n v.e mHash v.sig (some salt.length) do throw "verify"
+  unless sign H' H' v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash salt ==
       .ok v.sig do
     throw "sign"
   -- A salt too long for the modulus, and a digest of the wrong length.
   let long := List.replicate (k - H.len - 1) 0
-  unless sign H H v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash long ==
+  unless sign H' H' v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash long ==
       .invalid do
     throw "signed with a salt too long"
-  unless sign H H v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 (0 :: mHash) salt ==
+  unless sign H' H' v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 (0 :: mHash) salt ==
       .invalid do
     throw "signed a digest of the wrong length"
 
