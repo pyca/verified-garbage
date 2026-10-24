@@ -16,8 +16,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubSave
 signature = r7, signature_len = r8, digest = r9, digest_len = r10, scratch,
 scratch_len)`, the last two on the stack. `front_ok`: `entry` loads
 `scratch`'s address from the stack, saves the nonvolatile registers in its
-header, keeps the arguments there (`Hdr`, the digest's length) and lays out
-the working spaces.
+header, and keeps the arguments and the lengths in registers (`Regs`, `r2`).
 -/
 
 @[expose] public section
@@ -75,137 +74,122 @@ theorem layOf_ok {s : State} (h : vContract.pre s) : (layOf s).Ok := by
   simp only [Spec.Dsa.lengthsValid] at hv
   exact ⟨by simp only [layOf]; omega, by simp only [layOf]; omega, by simp only [layOf]; omega, nw⟩
 
-/-- The registers `entry` writes. -/
-def entryRegs : List Reg := [.r4, .r6, .r11, .r21]
+/-- `capD`'s value: `min(x, 64)`. -/
+theorem cap_eq (x : BitVec 64) :
+    x ^^^ (x ^^^ 64#64) &&& 0#64 - (0#64 - x >>> 6) >>> 63 = BitVec.ofNat 64 (min x.toNat 64) := by
+  have hx := x.isLt
+  by_cases h : x.toNat < 64
+  · have e : x >>> 6 = 0#64 := by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+      simp only [BitVec.toNat_ofNat]
+      omega
+    rw [e, BitVec.sub_self, BitVec.zero_ushiftRight, BitVec.sub_self, BitVec.and_zero, BitVec.xor_zero]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat, Nat.min_eq_left (by omega), Nat.mod_eq_of_lt hx]
+  · have e : 0#64 - (0#64 - x >>> 6) >>> 63 = BitVec.allOnes 64 := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
+        BitVec.toNat_allOnes]
+      simp only [Nat.reducePow] at *
+      omega
+    rw [e, BitVec.and_allOnes, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat, Nat.min_eq_right (by omega)]
+    rfl
 
-theorem front_off0 (S : Addr) : off S 0 = S := BitVec.add_zero S
-
-/-- A word apart from a later write. -/
-theorem front_rd {m : Mem} {S : Addr} {d e : Nat} (v : BitVec 64) (h : e + 8 ≤ d ∨ d + 8 ≤ e)
-    (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) : word (m.writeW (off S d) v) S e = word m S e :=
-  (writeW_outside m S v hd).word h he
-
-theorem front_rd0 {m : Mem} {S : Addr} {e : Nat} (v : BitVec 64) (h : 8 ≤ e) (he : e + 8 ≤ 2 ^ 64) :
-    word (m.writeW S v) S e = word m S e := by
-  have := front_rd (m := m) (S := S) (d := 0) v (.inr h) (by decide) he
-  rwa [front_off0] at this
-
-theorem front_out {m : Mem} {S : Addr} {d : Nat} (v : BitVec 64) (h : d + 8 ≤ 64) :
-    Outside S 0 64 m (m.writeW (off S d) v) :=
-  (writeW_outside m S v (by omega)).mono (Nat.zero_le _) (by omega)
-
-/-- The first store, at `S`. -/
-theorem front_mem0 (m : Mem) (S : Addr) (v : BitVec 64) :
-    word (m.writeW S v) S 0 = v ∧ (∀ e, 8 ≤ e → e + 8 ≤ 2 ^ 64 → word (m.writeW S v) S e = word m S e) ∧
-      Outside S 0 64 m (m.writeW S v) := by
-  have h := word_writeW_self m S 0 v
-  have h' := fun e (h1 : 8 ≤ e) (h2 : e + 8 ≤ 2 ^ 64) => front_rd (m := m) (S := S) (d := 0) v (.inr h1) (by decide) h2
-  have h'' := front_out (m := m) (S := S) (d := 0) v (by decide)
-  rw [front_off0] at h h' h''
-  exact ⟨h, h', h''⟩
-
-/-- The header's eight stores. -/
-theorem front_mem {m m₀ m' : Mem} {S : Addr} {v₀ v₁ v₂ v₃ v₄ v₅ v₆ v₇ : BitVec 64}
-    (h₀ : word m₀ S 0 = v₀ ∧ (∀ e, 8 ≤ e → e + 8 ≤ 2 ^ 64 → word m₀ S e = word m S e) ∧ Outside S 0 64 m m₀)
-    (hm : m' = ((((((m₀.writeW (off S 16) v₁).writeW (off S 40) v₂).writeW (off S 48) v₃).writeW
-      (off S 56) v₄).writeW (off S 8) v₅).writeW (off S 24) v₆).writeW (off S 32) v₇) :
-    (word m' S 0 = v₀ ∧ word m' S 16 = v₁ ∧ word m' S 40 = v₂ ∧ word m' S 48 = v₃ ∧ word m' S 56 = v₄ ∧
-      word m' S 8 = v₅ ∧ word m' S 24 = v₆ ∧ word m' S 32 = v₇) ∧
-    (∀ e, 64 ≤ e → e + 8 ≤ 2 ^ 64 → word m' S e = word m S e) ∧ Outside S 0 64 m m' := by
-  subst hm
-  obtain ⟨w0, we, wo⟩ := h₀
-  refine ⟨?_, fun e h1 h2 => ?_, ?_⟩
-  · simp (disch := decide) only [front_rd, word_writeW_self, w0, and_self]
-  · simp (disch := omega) only [front_rd]
-    exact we e (by omega) h2
-  · exact (((((((wo.trans (front_out _ (by decide))).trans (front_out _ (by decide))).trans
-      (front_out _ (by decide))).trans (front_out _ (by decide))).trans (front_out _ (by decide))).trans
-      (front_out _ (by decide))).trans (front_out _ (by decide)))
-
-theorem front_q (S x : BitVec 64) :
-    28#64 * x + 704#64 + S = S + BitVec.ofNat 64 (704 + 28 * x.toNat) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
-  omega
-
-theorem front_buf (S x : BitVec 64) :
-    28#64 * x + 704#64 + S + 1600#64 = S + BitVec.ofNat 64 (704 + 28 * x.toNat + 1600) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
-  omega
-
-theorem front_saved_ne11 : ∀ i < 18, saved i ≠ .r11 := by decide
-
-/-- The header stores and `layout`, from `S` in `r21`. -/
-theorem front_tail {s : State} {S : Addr} {Z : Nat} (h21 : s.gpr .r21 = S) (hs : Scr s S Z) (hZ : 256 ≤ Z) :
-    WP isa (.block ([.store .d .r3 .r21 hKey, .store .d .r6 .r21 hQ, .store .d .r7 .r21 hSig,
-      .store .d .r9 .r21 hDig, .store .d .r10 .r21 hDlen, .addi .r6 .r5 0] ++ layout)) s fun t =>
-      ((word t.mem S 0 = s.gpr .r3 ∧ word t.mem S 16 = s.gpr .r6 ∧ word t.mem S 40 = s.gpr .r7 ∧
-        word t.mem S 48 = s.gpr .r9 ∧ word t.mem S 56 = s.gpr .r10 ∧ word t.mem S 8 = s.gpr .r5 ∧
-        word t.mem S 24 = 28#64 * s.gpr .r5 + 704#64 + S ∧
-        word t.mem S 32 = 28#64 * s.gpr .r5 + 704#64 + S + 1600#64) ∧
-      (∀ e, 64 ≤ e → e + 8 ≤ 2 ^ 64 → word t.mem S e = word s.mem S e) ∧ Outside S 0 64 s.mem t.mem) ∧
-      Keep [.r6, .r4] s t := by
+/-- `capD`: `r4 := min(digest_len, 64)`. -/
+theorem capD_ok (s : State) :
+    WP isa (.block Verify.capD) s fun t =>
+      (t.gpr .r4 = BitVec.ofNat 64 (min (s.gpr .r10).toNat 64) ∧ t.mem = s.mem) ∧ Keep [.r0, .r4] s t := by
   refine WP.keep _ ?_ (by decide)
-  have st : ∀ d, d + 8 ≤ Z → InRegions s.wr (S + BitVec.ofNat 64 d) 8 := fun d hd => hs.st hd
-  have st0 : InRegions s.wr S 8 := by simpa [off] using hs.st (d := 0) (by omega)
-  unfold layout
-  prun [h21, hKey, hQ, hSig, hDig, hDlen, hP, hQws, hBuf, BitVec.add_zero, st0, st 8 (by omega),
-    st 16 (by omega), st 24 (by omega), st 32 (by omega), st 40 (by omega), st 48 (by omega), st 56 (by omega)]
-  have := front_mem (v₁ := s.gpr .r6) (v₂ := s.gpr .r7) (v₃ := s.gpr .r9) (v₄ := s.gpr .r10) (v₅ := s.gpr .r5)
-    (v₆ := 28#64 * s.gpr .r5 + 704#64 + S) (v₇ := 28#64 * s.gpr .r5 + 704#64 + S + 1600#64)
-    (front_mem0 s.mem S (s.gpr .r3)) rfl
-  exact ⟨this.1, fun e h1 h2 => this.2.1 e h1 (by omega), this.2.2⟩
+  unfold Verify.capD
+  prun [cap_eq]
+
+/-- The lengths into `r2`. -/
+theorem pack_entry (x y : BitVec 64) {d : Nat} (hx : x.toNat < 2 ^ 16) (hy : y.toNat < 2 ^ 16) (hd : d < 2 ^ 16) :
+    x + y <<< 16 + BitVec.ofNat 64 d <<< 48 = pack x.toNat y.toNat 0 d := by
+  apply BitVec.eq_of_toNat_eq
+  rw [pack_toNat hx hy (by decide) hd]
+  simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
+  simp only [Nat.reducePow] at *
+  omega
+
+/-- After the registers are saved: the key, the signature and the digest into
+`r27`, `r28` and `r26`, and the lengths into `r2`. -/
+theorem front_tail (s : State) (h5 : (s.gpr .r5).toNat < 2 ^ 16) (h6 : (s.gpr .r6).toNat < 2 ^ 16) :
+    WP isa (.block ([.addi .r27 .r3 0, .addi .r28 .r7 0, .addi .r26 .r9 0] ++ (Verify.capD ++
+      [.lsl .r4 .r4 48, .lsl .r0 .r6 16, .add .r2 .r5 .r0, .add .r2 .r2 .r4]))) s fun t =>
+      (t.gpr .r27 = s.gpr .r3 ∧ t.gpr .r28 = s.gpr .r7 ∧ t.gpr .r26 = s.gpr .r9 ∧
+        t.gpr .r2 = pack (s.gpr .r5).toNat (s.gpr .r6).toNat 0 (min (s.gpr .r10).toNat 64) ∧ t.mem = s.mem) ∧
+        Keep [.r27, .r28, .r26, .r0, .r4, .r2] s t := by
+  refine WP.block_append (WP.mono (WP.keep [.r27, .r28, .r26] (Q := fun u => u.gpr .r27 = s.gpr .r3 ∧
+      u.gpr .r28 = s.gpr .r7 ∧ u.gpr .r26 = s.gpr .r9 ∧ u.mem = s.mem) (by prun [BitVec.add_zero]) (by decide))
+    fun u ⟨⟨a27, a28, a26, mu⟩, ku⟩ => ?_)
+  refine WP.block_append (WP.mono (capD_ok u) fun v ⟨⟨b4, mv⟩, kv⟩ => ?_)
+  rw [ku.gpr .r10 (by decide)] at b4
+  have v5 : v.gpr .r5 = s.gpr .r5 := (kv.gpr .r5 (by decide)).trans (ku.gpr .r5 (by decide))
+  have v6 : v.gpr .r6 = s.gpr .r6 := (kv.gpr .r6 (by decide)).trans (ku.gpr .r6 (by decide))
+  refine WP.mono (WP.keep [.r4, .r0, .r2] (Q := fun w =>
+      w.gpr .r2 = pack (s.gpr .r5).toNat (s.gpr .r6).toNat 0 (min (s.gpr .r10).toNat 64) ∧ w.mem = v.mem)
+    (by prun [b4, v5, v6, pack_entry _ _ h5 h6 (show min (s.gpr .r10).toNat 64 < 2 ^ 16 by omega)]) (by decide))
+    fun w ⟨⟨c2, mw⟩, kw⟩ => ⟨⟨(kw.gpr .r27 (by decide)).trans ((kv.gpr .r27 (by decide)).trans a27),
+      (kw.gpr .r28 (by decide)).trans ((kv.gpr .r28 (by decide)).trans a28),
+      (kw.gpr .r26 (by decide)).trans ((kv.gpr .r26 (by decide)).trans a26), c2, mw.trans (mv.trans mu)⟩,
+      ((ku.trans kv).trans kw).mono (by decide)⟩
+
+/-- The registers `entry` writes. -/
+def entryRegs : List Reg := [.r0, .r2, .r4, .r11, .r21, .r26, .r27, .r28]
+
+theorem front_saved_ne11 : ∀ i < 19, saved i ≠ .r11 := by decide
 
 /-- `entry`: `scratch` (from the stack) into `r21`, the nonvolatile registers
-saved in its header, and the arguments kept there. Memory changes only in
-the header. -/
+saved in its header, and the arguments and lengths into registers (`Regs`,
+`r2`). Memory changes only in the header. -/
 theorem front_ok {s : State} (h : vContract.pre s) :
     WP isa (.block Verify.entry) s fun t =>
-      (t.gpr .r21 = stackArg s 0 ∧ ScrL t (layOf s) ∧ Hdr t.mem (layOf s) (s.gpr .r3) (s.gpr .r7) (s.gpr .r9) ∧
-        word t.mem (stackArg s 0) hDlen = s.gpr .r10 ∧
-        (∀ i < 18, word t.mem (stackArg s 0) (saveOff i) = s.gpr (saved i)) ∧
+      (Regs t (layOf s) (s.gpr .r3) (s.gpr .r7) (s.gpr .r9) ∧ ScrL t (layOf s) ∧
+        t.gpr .r2 = pack (layOf s).pl (layOf s).ql 0 (min (s.gpr .r10).toNat 64) ∧
+        (∀ i < 19, word t.mem (stackArg s 0) (saveOff i) = s.gpr (saved i)) ∧
         Outside (stackArg s 0) 0 256 s.mem t.mem) ∧ Keep entryRegs s t := by
   have hL := layOf_ok h
   have hZ := hL.z256
+  have hpl : (s.gpr .r5).toNat < 2 ^ 16 := by have := hL.pl; simp only [layOf] at this; omega
+  have hql : (s.gpr .r6).toNat < 2 ^ 16 := by have := hL.ql; simp only [layOf] at this; omega
   obtain ⟨-, hrd, hwr, -, -, -, -, -, -, -, nw, -, -, -, -⟩ := h
   unfold Verify.entry
-  rw [List.append_assoc, List.append_assoc]
+  simp only [List.append_assoc]
   refine WP.block_append (WP.mono (Pub.loadS_ok s ⟨stackArgs s, List.mem_append_left _ (by rw [hrd]; simp),
     by simp [Region.Contains]⟩) fun s₁ ⟨⟨a11, m1, _⟩, k1⟩ => ?_)
   have hscr : ∀ t : State, t.wr = s.wr → ScrL t (layOf s) := fun t ht =>
     Scr.of_mem (by rw [ht, hwr]; simp [layOf]) nw
-  have hin : ∀ i < 18, InRegions s₁.wr (off (savW (s₁.gpr .r11)) (8 * i)) 8 := fun i hi => by
+  have hin : ∀ i < 19, InRegions s₁.wr (off (savW (s₁.gpr .r11)) (8 * i)) 8 := fun i hi => by
     rw [← saveOff_eq, a11]
-    exact (hscr s₁ k1.wr).st (d := 112 + 8 * i) (by simp only [layOf] at hZ ⊢; omega)
+    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [layOf] at hZ ⊢; omega)
   refine WP.block_append (WP.mono (save_ok s₁ hin) fun s₂ hS => ?_)
   have k12 := k1.trans hS.keep
   have h21 : s₂.gpr .r21 = stackArg s 0 := hS.r21.trans a11
-  refine WP.mono (front_tail h21 (hscr s₂ (k12.wr)) hZ) fun t ⟨⟨⟨w0, w16, w40, w48, w56, w8, w24, w32⟩, wf, wo⟩, kt⟩ => ?_
-  have k := k12.trans kt
   have e : ∀ r, r ≠ .r11 → r ≠ .r21 → s₂.gpr r = s.gpr r := fun r h1 h2 =>
     k12.gpr r fun hm => by
       simp only [List.mem_append, List.mem_singleton] at hm
       exact hm.elim h1 h2
-  have qo := hL.qOff_eq
-  simp only [layOf] at qo
-  refine ⟨⟨(kt.gpr .r21 (by decide)).trans h21, hscr t k.wr, ⟨w0.trans (e _ (by decide) (by decide)),
-    w8.trans ?_, w16.trans (e _ (by decide) (by decide)), w24.trans ?_, w32.trans ?_,
-    w40.trans (e _ (by decide) (by decide)), w48.trans (e _ (by decide) (by decide))⟩,
-    w56.trans (e _ (by decide) (by decide)), fun i hi => ?_, ?_⟩, k.mono⟩
-  · rw [e _ (by decide) (by decide)]
-    exact BitVec.eq_of_toNat_eq (by simp [layOf])
-  · rw [e _ (by decide) (by decide), front_q]
-    simp only [Lay.Q, layOf, qo]
-  · rw [e _ (by decide) (by decide), front_buf]
-    simp only [Lay.Buf, Lay.bOff, layOf, qo]
-  · rw [wf _ (by simp only [saveOff]; omega) (by simp only [saveOff]; omega)]
-    show s₂.mem.readW (stackArg s 0 + BitVec.ofNat 64 (112 + 8 * i)) 64 = _
+  refine WP.mono (front_tail s₂ (by rw [e _ (by decide) (by decide)]; exact hpl)
+    (by rw [e _ (by decide) (by decide)]; exact hql)) fun t ⟨⟨t27, t28, t26, t2, mt⟩, kt⟩ => ?_
+  have k := k12.trans kt
+  rw [e .r3 (by decide) (by decide)] at t27
+  rw [e .r7 (by decide) (by decide)] at t28
+  rw [e .r9 (by decide) (by decide)] at t26
+  rw [e .r5 (by decide) (by decide), e .r6 (by decide) (by decide), e .r10 (by decide) (by decide)] at t2
+  have t21 : t.gpr .r21 = stackArg s 0 := (kt.gpr .r21 (by decide)).trans h21
+  refine ⟨⟨Regs.of_pack hL t21 t27 t28 t26 t2 (by decide) (by omega), hscr t k.wr, t2, fun i hi => ?_, ?_⟩,
+    k.mono (by decide)⟩
+  · rw [mt]
+    show s₂.mem.readW (stackArg s 0 + BitVec.ofNat 64 (104 + 8 * i)) 64 = _
     rw [saveOff_eq, ← a11, hS.saved i hi]
     exact k1.gpr _ fun h => front_saved_ne11 i hi (List.mem_singleton.mp h)
-  · have f2 : Outside (stackArg s 0) 112 144 s₁.mem s₂.mem :=
+  · have f2 : Outside (stackArg s 0) 104 152 s₁.mem s₂.mem :=
       VG.Proof.Bignum.frame_outside (by rw [← a11]; exact hS.frame) (by decide)
-    rw [← m1]
-    exact (f2.mono (Nat.zero_le _) (by decide)).trans (wo.mono (Nat.le_refl _) (by decide))
+    rw [mt, ← m1]
+    exact f2.mono (Nat.zero_le _) (by decide)
 
 end VG.Proof.Dsa.PPC64LE

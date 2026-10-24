@@ -84,7 +84,7 @@ theorem Kept.ofMask {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.S hMask 8 
 
 /-- The signature's and the digest's values, kept. -/
 theorem sig_kept {s : State} {L : Lay} {sig dig : Addr} {D : Nat} (hsg : Src s L sig (2 * L.ql))
-    (hdg : Src s L dig D) {m m' : Mem} (h : Kept L m m') {k : Nat} (hk : k ≤ D) :
+    (hdg : Src s L dig D) {m m' : Mem} (h : Outside L.S 0 L.Z m m') {k : Nat} (hk : k ≤ D) :
     rOf m' L sig = rOf m L sig ∧ sOf m' L sig = sOf m L sig ∧
       Spec.Rsa.bytesAt m' dig k = Spec.Rsa.bytesAt m dig k := by
   refine ⟨?_, ?_, (hdg.take hk).kept h⟩
@@ -140,7 +140,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   have hql := hL.ql
   have hnw := hL.nowrap
   obtain ⟨ip, scr, regs, p0, ptop, p8, q0, qtop, r2⟩ := hc
-  obtain ⟨ep, eq, eg, ey⟩ := key_kept hk hkp
+  obtain ⟨ep, eq, eg, ey⟩ := key_kept hk hkp.out
   unfold KeyOk at hK
   have hqlt : qOf s₀.mem L key < 2 ^ (8 * L.ql) := by
     rw [← eq, qOf, ← VG.Proof.Bignum.pow256_eq]
@@ -202,7 +202,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   -- `w = s^(q − 2) mod q`.
   refine WP.seq (WP.mono (inverse_ok Q₄ hL (hsg.keep k₁₄.rd k₁₄.wr) (by rw [q0₄]; omega) (by rw [q0₄]; exact hqo)
       (by rw [a8₄, h8₃, q0₄])) fun s₅ ⟨⟨Q₅, w4₅, a8₅, qa₅⟩, k₅⟩ => ?_)
-  rw [q0₄, bq₄, (sig_kept hsg hdg K₄ (Nat.zero_le d)).2.1] at w4₅
+  rw [q0₄, bq₄, (sig_kept hsg hdg K₄.out (Nat.zero_le d)).2.1] at w4₅
   have q0₅ : arrQ s₅.mem L 0 = q := qa₅.arr0.trans q0₄
   have k₁₅ := k₁₄.trans k₅
   have B₂₅ := B₂₄.trans (qa₅.qbody.body hL)
@@ -213,13 +213,13 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
       (by rw [q0₅]; omega) (by rw [q0₅]; exact hqo) (by rw [q0₅]; exact hqlt)
       (by rw [a8₅, a8₄, h8₃, q0₅]) w4₅ (by rw [q0₅]; exact Nat.mod_lt _ (by omega)))
     fun s₆ ⟨⟨Q₆, u1₆, u2₆, qb₆⟩, k₆⟩ => ?_)
-  rw [q0₅, (sig_kept hsg hdg K₅ (Nat.min_le_left d n)).2.2] at u1₆
-  rw [q0₅, (sig_kept hsg hdg K₅ (Nat.zero_le d)).1] at u2₆
+  rw [q0₅, (sig_kept hsg hdg K₅.out (Nat.min_le_left d n)).2.2] at u1₆
+  rw [q0₅, (sig_kept hsg hdg K₅.out (Nat.zero_le d)).1] at u2₆
   have k₁₆ := k₁₅.trans k₆
   have qb₂₆ : QBuf L s₂.mem s₆.mem := ((qa₃.qbuf.trans qb₄).trans qa₅.qbuf).trans qb₆
   have B₂₆ := B₂₅.trans (qb₆.body hL)
   have K₆ := K₂.trans (Kept.ofBody hL B₂₆)
-  obtain ⟨ep₆, -, eg₆, ey₆⟩ := key_kept hk (hkp.trans K₆)
+  obtain ⟨ep₆, -, eg₆, ey₆⟩ := key_kept hk (hkp.trans K₆).out
   -- `g^u1 y^u2 mod p`.
   refine WP.seq (WP.mono (combine_ok hL Q₆.scr Q₆.regs (hk.keep k₁₆.rd k₁₆.wr)
       ((qb₂₆.arrP hL (by decide)).trans ((pw 0 (by decide)).trans p0)) (by omega) hpo
@@ -236,7 +236,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   -- The comparison.
   refine WP.mono (compare_ok hL (scr.congr k₁₇.wr) (regs.keep k₁₇) (hsg.keep k₁₇.rd k₁₇.wr) (by rw [q0₇]; omega)
       hm₇) fun t ⟨⟨r3, Bt⟩, kt⟩ => ?_
-  rw [q0₇, v₇, (sig_kept hsg hdg K₇ (Nat.zero_le d)).1] at r3
+  rw [q0₇, v₇, (sig_kept hsg hdg K₇.out (Nat.zero_le d)).1] at r3
   refine ⟨⟨?_, K₂.trans (Kept.ofBody hL ((B₂₆.trans B₇).trans Bt)), (kt.gpr .r21 (by decide)).trans ip₇.h21,
     scr.congr (k₁₇.trans kt).wr⟩, keep_but21 (k₁₇.trans kt) (by decide) (by decide)⟩
   rw [r3]

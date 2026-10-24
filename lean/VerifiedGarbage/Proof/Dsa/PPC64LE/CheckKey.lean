@@ -49,17 +49,18 @@ theorem Kept.ofBody {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Body L m m') : Kept 
       (by have := hL.nowrap; have := hL.z256; simp only [saveOff]; omega)⟩
 
 /-- A buffer apart from `scratch`, kept. -/
-theorem Src.kept {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {m m' : Mem} (hk : Kept L m m') :
+theorem Src.kept {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {m m' : Mem}
+    (hk : Outside L.S 0 L.Z m m') :
     Spec.Rsa.bytesAt m' D n = Spec.Rsa.bytesAt m D n := by
   simp only [Spec.Rsa.bytesAt]
-  refine List.map_congr_left fun i hi => hk.out _ (Or.inr ?_)
+  refine List.map_congr_left fun i hi => hk _ (Or.inr ?_)
   have hi := List.mem_range.mp hi
   by_contra hc
   exact h.sep i hi (D + BitVec.ofNat 64 i) (by omega) rfl
 
 /-- The key's values, kept. -/
 theorem key_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (3 * L.pl + L.ql)) {m m' : Mem}
-    (h : Kept L m m') :
+    (h : Outside L.S 0 L.Z m m') :
     pOf m' L key = pOf m L key ∧ qOf m' L key = qOf m L key ∧ gOf m' L key = gOf m L key ∧
       yOf m' L key = yOf m L key := by
   refine ⟨?_, ?_, ?_, ?_⟩
@@ -145,7 +146,7 @@ theorem checkKey_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : St
   generalize hY : yOf s.mem L key = y
   have vals : ∀ {m : Mem}, Kept L s.mem m → pOf m L key = p ∧ qOf m L key = q ∧ gOf m L key = g ∧
       yOf m L key = y := fun hm => by
-    obtain ⟨a, b, c, d⟩ := key_kept hk hm
+    obtain ⟨a, b, c, d⟩ := key_kept hk hm.out
     exact ⟨a.trans hP, b.trans hQ', c.trans hG, d.trans hY⟩
   have hKey : KeyOk s.mem L key ↔ VG.Proof.Dsa.shapeValid p q ∧ VG.Proof.Dsa.publicChecks p q g y := by
     rw [KeyOk, hP, hQ', hG, hY]
