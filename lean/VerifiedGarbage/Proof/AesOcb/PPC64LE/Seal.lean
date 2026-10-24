@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Body
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Entry
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Hash
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.Hash
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Nonce
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Contract
 import VerifiedGarbage.Proof.Ocb.Bytes
@@ -12,8 +12,10 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.HashChunk
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.RestTag
 
 /-!
 # AES-OCB on PPC64LE: `vg_aes_ocb_seal`

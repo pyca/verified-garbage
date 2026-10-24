@@ -1,15 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.LNtz
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.LNtz
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Words
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.PadTo
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ocb
 
 /-!
 # AES-OCB on PPC64LE: a pass over the whole blocks (`pass`)

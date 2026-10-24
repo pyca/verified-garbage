@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes

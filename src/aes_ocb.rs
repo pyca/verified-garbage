@@ -115,7 +115,10 @@ fn select(f: Features) -> Backend {
 
 /// The only implementation of AES on ARMv7 and PPC64LE, with the AES-OCB
 /// functions for it.
-#[cfg(any(target_arch = "arm", all(target_arch = "powerpc64", target_endian = "little")))]
+#[cfg(any(
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 fn select(f: Features) -> Backend {
     Backend::select(f)
 }

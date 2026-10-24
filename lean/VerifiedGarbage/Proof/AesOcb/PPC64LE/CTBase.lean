@@ -7,8 +7,10 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Taint
+public meta import Lean.Elab.Tactic.Basic
 
 /-!
 # AES-OCB on PPC64LE: relating two runs
@@ -197,7 +199,7 @@ theorem callBlocks_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.St
 theorem encOne_rel {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : V₁ .r28 = BitVec.ofNat 64 R) {σ₁ σ₂ : State}
     (E₁ : Env V₁ sp σ₁) (E₂ : Env V₂ sp σ₂) {d : Nat} (hd : d + 16 ≤ 512)
     (hc : ∃ h, (VG.Taint.check taint (Taint.ofRegs ([] ++ pubR))
-      (.block (callArgs ++ [.addi .r5 .r31 d, .li .r6 1])) h).isSome = true) :
+      (.block (callArgs ++ ([.addi .r5 .r31 d, .li .r6 1] : List Instr))) h).isSome = true) :
     RelCT isa (Eq2 σ₁ σ₂) (encOne d) TT :=
   callBlocks_rel L hV Proof.Aes.PPC64LE.encryptBlocks_correct Proof.Aes.PPC64LE.encryptBlocks_ct hR h28 E₁ E₂ []
     (fun _ h => absurd h List.not_mem_nil) hc

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
 
 /-!
 # AES-OCB on PPC64LE: the calls of the block functions

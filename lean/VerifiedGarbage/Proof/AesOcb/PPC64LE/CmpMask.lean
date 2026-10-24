@@ -12,11 +12,11 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
 
 /-!
 # AES-OCB on PPC64LE: checking the tag (`recv`, `cmp`) and the mask (`mask`)

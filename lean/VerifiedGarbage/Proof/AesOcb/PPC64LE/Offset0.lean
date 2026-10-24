@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
 
 /-!
 # AES-OCB on PPC64LE: `Offset_0` (`offset0`)

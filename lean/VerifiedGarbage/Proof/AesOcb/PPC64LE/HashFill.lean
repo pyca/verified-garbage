@@ -7,9 +7,9 @@ import VerifiedGarbage.Proof.AesOcb.PPC64LE.LNtz
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.PadTo
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
 
 /-!
 # AES-OCB on PPC64LE: filling the buffer of `HASH` (`hashFill`)

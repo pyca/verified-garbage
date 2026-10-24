@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.Words
 import VerifiedGarbage.Proof.Ocb.State
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 
 /-!
 # AES-OCB on PPC64LE: the entry (`entry`)

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Verified
-public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # AES-OCB on PPC64LE, with its working space on the stack

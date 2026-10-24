@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 public import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Dbl
 import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Cmac.Dbl64

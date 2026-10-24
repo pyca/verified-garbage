@@ -250,7 +250,7 @@ abbrev sumRegs : List Reg := [.r3, .r4, .r11, .r25]
 theorem sumStep_ok {W : Addr} {t : State} (h31 : t.gpr .r31 = W) (hw : Covers [⟨W, 2560⟩] t.wr) {k c : Nat}
     (hk : k < c) (hc : c ≤ 8) (h11 : t.gpr .r11 = W + BitVec.ofNat 64 (384 + 16 * k))
     (h25 : t.gpr .r25 = BitVec.ofNat 64 (c - k)) :
-    WP isa (.block (xorB .r31 .r11 .r31 sumO 0 sumO ++ [.addi .r11 .r11 16, .subi .r25 .r25 1])) t fun t' =>
+    WP isa (.block (xorB .r31 .r11 .r31 sumO 0 sumO ++ ([.addi .r11 .r11 16, .subi .r25 .r25 1] : List Instr))) t fun t' =>
       BlkStep W sumO (blockAtMem t.mem (W + BitVec.ofNat 64 sumO) ^^^
         blockAtMem t.mem (W + BitVec.ofNat 64 (384 + 16 * k))) sumRegs t t' ∧
       t'.gpr .r11 = W + BitVec.ofNat 64 (384 + 16 * (k + 1)) ∧ t'.gpr .r25 = BitVec.ofNat 64 (c - (k + 1)) := by
@@ -463,7 +463,7 @@ theorem chunkRest_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} 
     (h28 : V .r28 = BitVec.ofNat 64 R) {t : State} {j c : Nat} (F₀ : FillInv V sp ciph l A a s₀ j c t 0)
     (hc0 : 0 < c) (hc : c ≤ 8) (hjc : j + c ≤ a.length / 16) :
     WP isa (.seq (.loop hashFill (.nonzero .d .r25))
-      (.seq (.block (callArgs ++ [.addi .r5 .r31 bufO, .load .d .r6 .r31 cnO]))
+      (.seq (.block (callArgs ++ ([.addi .r5 .r31 bufO, .load .d .r6 .r31 cnO] : List Instr)))
       (.seq encCall
       (.seq (.block [.addi .r11 .r31 bufO, .load .d .r25 .r31 cnO])
       (.seq hashSum (.block [.load .d .r3 .r31 hlO])))))) t

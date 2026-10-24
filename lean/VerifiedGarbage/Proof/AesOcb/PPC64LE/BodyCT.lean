@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Whole
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.Whole
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.Body
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.Pass
-import VerifiedGarbage.Proof.AesOcb.PPC64LE.RestTag
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -18,6 +17,12 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.AesOcb.PPC64LE
 meta import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
+public import VerifiedGarbage.Proof.Aes.PPC64LE.Blocks
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Spec.Ocb
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-OCB on PPC64LE: the data and the tag are constant time

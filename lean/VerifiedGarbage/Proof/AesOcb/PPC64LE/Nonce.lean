@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Args
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.Args
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.Offset0
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.NonceBlock
 import VerifiedGarbage.Proof.Ocb.State
-import VerifiedGarbage.Proof.Ocb.Stretch
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Spec.Ocb
 
 /-!
 # AES-OCB on PPC64LE: `Offset_0` from the nonce (`nonce`)

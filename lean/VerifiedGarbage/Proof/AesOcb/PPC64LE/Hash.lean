@@ -1,18 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.HashChunk
-import VerifiedGarbage.Proof.AesOcb.PPC64LE.HashFill
-import VerifiedGarbage.Proof.AesOcb.PPC64LE.Nonce
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.PadTo
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-OCB on PPC64LE: `HASH` (`hash`)

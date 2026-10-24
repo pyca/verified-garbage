@@ -1,14 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Seal
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.CmpMask
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.CmpMask
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ocb
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # AES-OCB on PPC64LE: `vg_aes_ocb_open`

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.HashCT
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.BodyCT
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.Body
-import VerifiedGarbage.Proof.AesOcb.PPC64LE.Hash
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -20,6 +19,8 @@ meta import VerifiedGarbage.Proof.Ocb.Bytes
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.AesOcb.PPC64LE
 meta import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.RestTag
+meta import VerifiedGarbage.Proof.AesOcb.PPC64LE.RestTag
 
 /-!
 # AES-OCB on PPC64LE: `seal` and `open` up to the tag are constant time

@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.AesOcb.PPC64LE
+import VerifiedGarbage.Impl.AesOcb.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # AES-OCB on PPC64LE: where everything is

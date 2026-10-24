@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -114,8 +113,8 @@ def NonceHead (W N : Addr) (nl : Nat) (s s₂ : State) : Prop :=
 goes, and the arguments of the copy. -/
 theorem nonceHead_ok {W N : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 2560⟩] s.wr) {nl : Nat}
     (h1 : 1 ≤ nl) (h15 : nl ≤ 15) (h24 : s.gpr .r24 = N) (h25 : s.gpr .r25 = BitVec.ofNat 64 nl) :
-    WP isa (.block (zero16 tmpO ++ [.addi .r4 .r31 (tmpO + 15), .sub .r4 .r4 .r25, .li .r0 1, .stb .r0 .r4 0,
-      .addi .r4 .r4 1, Impl.AesGcm.PPC64LE.mov .r3 .r24, Impl.AesGcm.PPC64LE.mov .r5 .r25])) s
+    WP isa (.block (zero16 tmpO ++ ([.addi .r4 .r31 (tmpO + 15), .sub .r4 .r4 .r25, .li .r0 1, .stb .r0 .r4 0,
+      .addi .r4 .r4 1, Impl.AesGcm.PPC64LE.mov .r3 .r24, Impl.AesGcm.PPC64LE.mov .r5 .r25] : List Instr))) s
       (NonceHead W N nl s) := by
   have wW : ∀ {e k : Nat}, e + k ≤ 2560 → InRegions s.wr (W + BitVec.ofNat 64 e) k := fun h => in_off hw h (by decide)
   refine WP.block_append (WP.mono (zero16_ok (s := s) (d := tmpO) (by decide) h31 (wW (by decide))
