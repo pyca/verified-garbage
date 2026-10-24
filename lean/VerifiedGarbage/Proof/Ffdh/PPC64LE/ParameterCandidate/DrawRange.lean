@@ -57,8 +57,9 @@ theorem dRange_ok {s : State} {B : Addr} {Z w N x : Nat} (hs : Scr s B Z) (h10 :
     (hw : 2 ≤ w) (hw' : w ≤ 128) (hZ : slot w 7 ≤ Z) (hN : wv s.mem B (slot w 0) w = N) (hodd : N % 2 = 1)
     (hx : wv s.mem B (slot w 4) w = x) :
     WP isa (.seq (.block (base .r14 3 ++ base .r15 4)) (.seq copyWords (.seq (.block (base .r5 3 ++
-        [.load .d .r3 .r5 0, .li .r4 1, .logic .or .r3 .r3 .r4, .store .d .r3 .r5 0, .lsl .r6 .r11 2,
-          .add .r5 .r5 .r6, .li .r0 0, .store .d .r0 .r5 0] ++ base .r8 3 ++ base .r9 6)) subMod))) s fun t =>
+        ([.load .d .r3 .r5 0, .li .r4 1, .logic .or .r3 .r3 .r4, .store .d .r3 .r5 0, .lsl .r6 .r11 2,
+          .add .r5 .r5 .r6, .li .r0 0, .store .d .r0 .r5 0] : List Instr) ++ base .r8 3 ++ base .r9 6)) subMod)))
+      s fun t =>
       ((t.gpr .r20 = 0#64 ↔ ¬ x < N - 1) ∧
         Frm B [(slot w 3, 8 * (w + 2)), (slot w 6, 8 * (w + 2))] s.mem t.mem) ∧ Keep drRegs s t := by
   have hnw := hs.nowrap

@@ -74,7 +74,7 @@ theorem dLoad_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
         t.gpr .r10 = off p.B (slot (wOf mb) 4) ∧
         Frm p.B [(152, 8), (slot (wOf mb) 4, 8 * wOf mb)] s.mem t.mem ∧
         t.mem.readW (p.B + BitVec.ofNat 64 152) 64 = BitVec.ofNat 64 (u + (mb + 7) / 8)) ∧
-      Keep ([.r3, .r6, .r12, .r10] ++ [.r0, .r14, .r15, .r16, .r17]) s t := by
+      Keep (([.r3, .r6, .r12, .r10] : List Reg) ++ ([.r0, .r14, .r15, .r16, .r17] : List Reg)) s t := by
   have hb1 := h.st.dims.b1
   have hb2 := h.st.dims.b2
   have hn := h.st.dims.n
@@ -121,10 +121,10 @@ modulo `2^mb`; then `r24 :=` its low word halved, for the scan of the rest
 theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) (hm2 : mb ≤ p.bits)
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wOf mb)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wOf mb + 2)))
     (htop : word s.mem p.B (8 * hTop) = BitVec.ofNat 64 (2 ^ (mb + 64 - 64 * wOf mb) - 1)) :
-    WP isa (.block ([.addi .r10 .r31 hdrBytes] ++ base .r5 4 ++ [.lsl .r6 .r11 2, .add .r5 .r5 .r6,
-        .subi .r5 .r5 8, ldh .r4 hTop, .load .d .r6 .r5 0, .logic .and .r6 .r6 .r4, .store .d .r6 .r5 0] ++
-        base .r5 4 ++ [.load .d .r24 .r5 0, .lsr .d .r24 .r24 1, .addi .r5 .r5 8, .lsr .d .r6 .r11 1,
-        .subi .r6 .r6 1])) s fun t =>
+    WP isa (.block (([.addi .r10 .r31 hdrBytes] : List Instr) ++ base .r5 4 ++ ([.lsl .r6 .r11 2,
+        .add .r5 .r5 .r6, .subi .r5 .r5 8, ldh .r4 hTop, .load .d .r6 .r5 0, .logic .and .r6 .r6 .r4,
+        .store .d .r6 .r5 0] : List Instr) ++ base .r5 4 ++ ([.load .d .r24 .r5 0, .lsr .d .r24 .r24 1,
+        .addi .r5 .r5 8, .lsr .d .r6 .r11 1, .subi .r6 .r6 1] : List Instr))) s fun t =>
       (wv t.mem p.B (slot (wOf mb) 4) (wOf mb) = wv s.mem p.B (slot (wOf mb) 4) (wOf mb) % 2 ^ mb ∧
         t.gpr .r24 = word t.mem p.B (slot (wOf mb) 4) >>> 1 ∧ t.gpr .r5 = off p.B (slot (wOf mb) 4 + 8) ∧
         t.gpr .r6 = BitVec.ofNat 64 (wOf mb - 1) ∧ t.gpr .r10 = off p.B (slot (wOf mb) 0) ∧
