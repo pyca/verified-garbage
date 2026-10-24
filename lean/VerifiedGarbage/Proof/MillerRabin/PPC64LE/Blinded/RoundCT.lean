@@ -26,7 +26,7 @@ outcome (`RcPost.r3`), which the branch tests, is a function of `c` and `a`.
 
 namespace VG.Proof.MillerRabin.PPC64LE.Blinded
 
-open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE
+open VG VG.PPC64LE
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.MillerRabin.PPC64LE.Search VG.Impl.MillerRabin.PPC64LE.Blinded
 open VG.Proof.MillerRabin.PPC64LE (Env arr RoundImpl)
 open VG.Proof.MillerRabin.PPC64LE.Search (Prep RcPost roundCall_ok)
