@@ -124,12 +124,17 @@ theorem argLoad_ok {STK : Nat} {σ s : State} (pre : CIn STK σ) (sp : s.sp = σ
 
 theorem entrySaved_ne : ∀ i < 19, saved.getD i .r14 ∉ [Reg.r0, .r4, .r6, .r11, .r12] := by decide
 
-/-- The words `entry` sets: the witnesses read and the status, both 0. -/
-abbrev entryLS : List Nat := [fUsed, fStatus]
+/-- The words `entry` sets: the first seed, the seeds' bytes, and the
+witnesses read and the status, both 0. -/
+abbrev entryLS : List Nat := [fSeed, fSeedLeft, fUsed, fStatus]
+
+/-- Their values. -/
+abbrev eV (G : GP) : Nat → BitVec 64 := fun o =>
+  if o = fSeed then G.seeds else if o = fSeedLeft then BitVec.ofNat 64 G.seedsLen else 0
 
 /-- `entry`: a state of the search. -/
 theorem entry_ok {STK : Nat} {σ : State} (pre : CIn STK σ) :
-    WP isa (.block entry) σ fun t => GI (mkG σ) STK σ (fun _ => 0) entryLS t ∧ t.gpr .r5 = σ.gpr .r5 := by
+    WP isa (.block entry) σ fun t => GI (mkG σ) STK σ (eV (mkG σ)) entryLS t ∧ t.gpr .r5 = σ.gpr .r5 := by
   have big : 8 * (64 * (mkG σ).pLen + 1024) ≤ (mkG σ).scrLen * 8 := by
     have := pre.scrLen; simp only [Spec.Dsa.generationScratchWords] at this
     show 8 * (64 * (σ.gpr .r5).toNat + 1024) ≤ (stackArg σ 3).toNat * 8; omega
@@ -185,11 +190,13 @@ theorem entry_ok {STK : Nat} {σ : State} (pre : CIn STK σ) :
       · rw [val (r := .r9) (o := fHs) (by decide), g4 _ (by decide)]; rfl
       · rw [val (r := .r10) (o := fHsLen) (by decide), g4 _ (by decide)]; simp [mkG]
     · simp only [entryLS, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl
-      · rw [val (r := .r6) (o := fUsed) (by decide), v6]
-      · rw [val (r := .r6) (o := fStatus) (by decide), v6]
+      rcases ho with rfl | rfl | rfl | rfl
+      · rw [val (r := .r7) (o := fSeed) (by decide), g4 _ (by decide)]; rfl
+      · rw [val (r := .r8) (o := fSeedLeft) (by decide), g4 _ (by decide)]; simp [mkG, eV, fSeedLeft, fSeed]
+      · rw [val (r := .r6) (o := fUsed) (by decide), v6]; rfl
+      · rw [val (r := .r6) (o := fStatus) (by decide), v6]; rfl
     · simp only [entryLS, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl <;> refine ⟨by decide, by decide, by decide, fun p hp => ?_⟩ <;>
+      rcases ho with rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, by decide, fun p hp => ?_⟩ <;>
         (simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
          rcases hp with rfl | rfl | rfl | rfl | rfl <;> (dsimp only; decide))
     · rw [u₅.mem, ← m₄]
