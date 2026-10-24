@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 
 /-! # Camellia-CFB128 artifacts on baseline x86-64 -/
 
