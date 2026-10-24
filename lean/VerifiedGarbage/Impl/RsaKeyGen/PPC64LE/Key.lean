@@ -80,7 +80,7 @@ def aQ : Nat := 25
 def aPm : Nat := 26
 def aQm : Nat := 27
 def aT : Nat := 28
-def aT2 : Nat := 29
+def aS : Nat := 29
 def aU : Nat := 30
 def aV : Nat := 31
 def aF : Nat := 32
@@ -200,7 +200,7 @@ def invOf (a m : Nat) : Prog isa :=
 
 /-- `v` odd by a swap, `[aG] := gcd(u, v)` (1 for `v < 2`). -/
 def gcdUV : Prog isa := seqs ([.block (bitOf X0 aV ++ notS X0 X0), sel aU2 aU aV X0, sel aV2 aV aU X0] ++
-  ltS X1 aV2 aTwo ++ [sel aT2 aV2 aThree X1, invOf aU2 aT2, sel aG 1 aOne X1])
+  ltS X1 aV2 aTwo ++ [sel aS aV2 aThree X1, invOf aU2 aS, sel aG 1 aOne X1])
 
 /-- `[q] := [q] / [d]` (`[aDr]` := the remainder), through `aDv`. -/
 def divBy (q d : Nat) : Prog isa := seqs [copy aDv d, div q aDr aDv aDt]
@@ -225,15 +225,15 @@ def dOdd : Prog isa := seqs ([.block (andNotS X0 X5 X3), sel aME aThree aE X0, c
   [div aRt aDr aDv aDt] ++ [copy aDo aQt] ++ addTo aDo aRt aNc aZero ++ ltS X2 aL aTwo ++
   [.block (andNotS X6 X2 X1)])
 
-/-- `e = 1`: `X7` := `L ≠ 1`; `X6` and `[aT2]` the odd case's or `e = 1`'s. -/
-def dOne : Prog isa := seqs [eqS X0 aL aOne, .block (notS X7 X0 ++ selS X6 X6 X7 X4), sel aT2 aDo aOne X4]
+/-- `e = 1`: `X7` := `L ≠ 1`; `X6` and `[aS]` the odd case's or `e = 1`'s. -/
+def dOne : Prog isa := seqs [eqS X0 aL aOne, .block (notS X7 X0 ++ selS X6 X6 X7 X4), sel aS aDo aOne X4]
 
 /-- `e` even (modulus `mL`, `L` if it is odd and at least 3, else 3):
 `d = e⁻¹ mod mL`, and `X1` := `L` odd, at least 3, and `gcd(e, mL) = 1`;
 then `[aD]` and `X6` by whether `e` is odd. -/
 def dEven : Prog isa := seqs ([.block (bitOf X0 aL)] ++ ltS X1 aL aThree ++
   [.block (andNotS X2 X1 X0), sel aMl aThree aL X2, invOf aE aMl, eqS X0 1 aOne,
-    .block (andS X1 X2 X0 ++ selS X6 X1 X6 X3), sel aD 3 aT2 X3])
+    .block (andS X1 X2 X0 ++ selS X6 X1 X6 X3), sel aD 3 aS X3])
 
 /-- `d` and `X6`. -/
 def dPart : Prog isa := seqs [eFlags, dOdd, dOne, dEven]
@@ -250,7 +250,7 @@ def qinvPart : Prog isa := seqs ([.block (bitOf X0 aP)] ++ ltS X1 aP aThree ++
 
 /-- `[o] := d mod [j]`, by 1 for `[j] = 0`. -/
 def crtOf (o j : Nat) : Prog isa :=
-  seqs [eqS X2 j aZero, sel aT2 j aOne X2, copy aQd aD, copy aDv aT2, div aQd o aDv aDt]
+  seqs [eqS X2 j aZero, sel aS j aOne X2, copy aQd aD, copy aDv aS, div aQd o aDv aDt]
 
 /-- `dP` into `aDP` and `dQ` into `aDQ`. -/
 def crtPart : Prog isa := seqs [crtOf aDP aPm, crtOf aDQ aQm]
