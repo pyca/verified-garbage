@@ -302,7 +302,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     cases d <;> simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]
   layout := ⟨by cases d <;> decide, .inr rfl, by cases d <;> decide, by cases d <;> decide,
     by cases d <;> decide⟩
-  keyArgs_congr h e hrd hwr hf := keyArgs_congr h e hrd hwr hf
+  keyArgs_congr h e hrd hwr hf := keyArgs_congr h e.r3 hrd hwr hf
   ready_frame h _ _ _ hf _ hd := holds_frame h hf hd
   prepare_wp hB hs hR hk := prepare_wp d hB hs hR hk
   crypt_wp hB hs hR := crypt_wp d hB hs hR

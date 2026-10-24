@@ -224,8 +224,8 @@ def dirCoreSpec (up : Bool) : CoreSpec (dirCore up) where
   Ready := Ready
   cipher_len k b := dirCipher_len up k b
   layout := layout up
-  keyArgs_congr h e r w f := keyArgs_congr h e r w f
-  ready_frame h e r w f hs _ := ready_frame h e r w f hs
+  keyArgs_congr h e r w f := keyArgs_congr h e.r3 r w f
+  ready_frame h e r w f hs _ := ready_frame h e.r3 r w f hs
   prepare_wp := prepare_wp up
   crypt_wp := crypt_wp up
 
