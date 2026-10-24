@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 
 /-!
 # AES-GCM-SIV on PPC64LE: counter mode (`crypt`)

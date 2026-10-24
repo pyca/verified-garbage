@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Block32
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 
 /-!
 # AES-GCM-SIV on PPC64LE: the message keys (`derive`)

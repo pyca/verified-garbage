@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.KeysCT
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.PolyCT
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.CryptCT
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.KeysCT
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.PolyCT
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.CryptCT
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Entry
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
@@ -17,6 +17,13 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Fn
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
+meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
+public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM-SIV on PPC64LE: constant time

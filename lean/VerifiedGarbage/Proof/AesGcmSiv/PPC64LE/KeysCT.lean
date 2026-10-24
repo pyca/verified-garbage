@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Rel
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Keys
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Keys
 meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Rel
 meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Keys
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
+meta import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Derive
 
 /-!
 # AES-GCM-SIV on PPC64LE: the keys in two runs

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Entry
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Entry
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCcm.Compare
 import VerifiedGarbage.Proof.AesCcm.BytesAt
@@ -9,6 +9,17 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 
 /-!
 # AES-GCM-SIV on PPC64LE: the tags in and out, the comparison and the mask

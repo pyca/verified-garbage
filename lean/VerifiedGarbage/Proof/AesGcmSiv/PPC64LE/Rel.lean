@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Rel
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 
 /-!
 # AES-GCM-SIV on PPC64LE: relating two runs

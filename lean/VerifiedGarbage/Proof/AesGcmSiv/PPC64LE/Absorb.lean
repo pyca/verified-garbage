@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 
 /-!
 # AES-GCM-SIV on PPC64LE: POLYVAL's whole blocks (`chunk`)
