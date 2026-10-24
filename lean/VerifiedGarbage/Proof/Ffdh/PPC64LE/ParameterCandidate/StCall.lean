@@ -40,7 +40,7 @@ theorem St.call {p : PP} {s t : State} {w : Nat} (h : St p s)
     keeps_hdr hk hi hk' (by simp only [PP.L] at hn; omega)
   have ha := h.args
   refine ⟨h.scr.congr hwr, h31, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨?_, h.bufs.sepR, ?_, ?_, h.bufs.scrO.congr hwr,
-    h.bufs.sepO, h.bufs.scrU.congr hwr, h.bufs.sepU, h.bufs.stkR, h.bufs.stkO, h.bufs.stkU⟩, h.dims,
+    h.bufs.sepO, h.bufs.scrU.congr hwr, h.bufs.sepU, h.bufs.stkR, h.bufs.stkO, h.bufs.stkU, h.bufs.dOU⟩, h.dims,
     by rw [hwr]; exact h.ws, hsp.trans h.sp, h.stk, h.stkB, fun i hi => ?_⟩
   · rw [e (by decide) (by decide)]; exact ha.wsLen
   · rw [e (by decide) (by decide)]; exact ha.out

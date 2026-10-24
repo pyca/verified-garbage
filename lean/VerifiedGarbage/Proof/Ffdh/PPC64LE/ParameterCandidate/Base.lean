@@ -122,6 +122,7 @@ structure Bufs (p : PP) (s : State) : Prop where
   stkR : (below p.sp 176).Disjoint ⟨p.rp, p.r.length⟩
   stkO : (below p.sp 176).Disjoint ⟨p.op, p.L⟩
   stkU : (below p.sp 176).Disjoint ⟨p.up, 8⟩
+  dOU : (⟨p.op, p.L⟩ : Region).Disjoint ⟨p.up, 8⟩
 
 /-- The tape's bytes are kept by a change in the working space. -/
 theorem bytes_frm {p : PP} {m m' : Mem} {rs : List (Nat × Nat)} (hf : Frm p.B rs m m')
@@ -159,6 +160,7 @@ theorem Bufs.step {p : PP} {s t : State} {rs : List (Nat × Nat)} {regs : List R
   stkR := h.stkR
   stkO := h.stkO
   stkU := h.stkU
+  dOU := h.dOU
 
 /-- Between the pieces: the working space at `r31`, the arguments, the
 buffers and the bounds. -/
