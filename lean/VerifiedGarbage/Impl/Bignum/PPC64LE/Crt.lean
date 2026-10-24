@@ -133,10 +133,12 @@ def loadX : Prog isa :=
     (.seq (.block [.load .d .r12 .r23 oIn, .load .d .r6 .r23 oNLen]) (.seq (loadArr 6)
     (.seq (.block [.load .d .r12 .r23 oQInv, .load .d .r6 .r23 oPLen]) (loadArr 7)))))))))))
 
-/-- `r26 :=` all ones if `n` is valid (`Precompute.check`: `r0 = 0`), else 0. -/
+/-- `r26 :=` all ones if `n` is valid (`Precompute.check`: `r0 = 0`), else 0:
+`r0 = 0` exactly when `(r0 >> 1 | r0 & 1) - 1` has its top bit set. -/
 def checkN : Prog isa :=
   .seq (.block [.load .d .r12 .r23 oN, .load .d .r6 .r23 oNLen]) (.seq Precompute.check
-    (.block [.li .r3 1, .sub .r26 .r0 .r3]))
+    (.block [.lsr .d .r3 .r0 1, .li .r4 1, .logic .and .r4 .r0 .r4, .logic .or .r3 .r3 .r4, .subi .r3 .r3 1,
+      .lsr .d .r3 .r3 63, .li .r4 0, .sub .r26 .r4 .r3]))
 
 /-- `r26 &=` all ones if array `a` is below array `m`: `subMod` into array 3. -/
 def checkLt (a m : Nat) : Prog isa :=

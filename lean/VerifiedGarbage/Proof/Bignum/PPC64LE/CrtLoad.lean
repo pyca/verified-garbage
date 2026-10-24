@@ -81,4 +81,48 @@ theorem onesWords_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z)
     · exact word_writeW_self _ _ _ _
   · exact jk.trans' ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono)
 
+/-- `loadArr j`: the `k` bytes at `X` (`r12`, `r6`), most significant first,
+into array `j`, and its word `w` := 0; `r10` back to array 0 (`r21`). -/
+theorem loadArr_ok {s : State} {B X : Addr} {Z w k j : Nat} (hs : Scr s B Z) (hj : j < 8)
+    (h12 : s.gpr .r12 = off X 0) (h6 : s.gpr .r6 = BitVec.ofNat 64 k)
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h21 : s.gpr .r21 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (hk : 1 ≤ k) (hkw : k ≤ 8 * w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+    (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off X i) 1)
+    (hsep : ∀ i < k, ∀ x, ofs B x < Z → off X i ≠ x) :
+    WP isa (loadArr j) s fun t =>
+      (Mont.val32 t.mem B (slot w j) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem X k) ∧
+        word t.mem B (slot w j + 8 * w) = 0 ∧ Outside B (slot w j) (8 * (w + 1)) s.mem t.mem ∧
+        t.gpr .r10 = off B (slot w 0)) ∧
+      Keep [.r0, .r10, .r14, .r15, .r16, .r17] s t := by
+  have hnw := hs.nowrap
+  have sj : slot w j + 8 * (w + 2) ≤ Z := Nat.le_trans (slot_le hj) hZ
+  have hh : hdrBytes = 256 := rfl
+  have h1 : 256 ≤ slot w j := by unfold slot; omega
+  unfold loadArr
+  refine WP.seq (WP.mono (Pub.base_ok (rd := .r10) (by decide) (by decide) h10 h29 j)
+    fun s₁ ⟨⟨a10, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (loadN_ok (dA := slot w j) (hs.congr k1.wr) a10
+    ((k1.gpr _ (by decide)).trans h12) ((k1.gpr _ (by decide)).trans h6) ((k1.gpr _ (by decide)).trans h11)
+    hk hkw hw' (by omega) (by omega) (by rw [k1.rd, k1.wr]; exact hrd)
+    (by intro i hi x hx; exact hsep i hi x hx)) fun s₃ ⟨hv, out₃, k3⟩ => ?_)
+  rw [m1] at hv out₃
+  have k13 := k1.trans k3
+  refine WP.mono (WP.keep [.r14, .r0, .r10] (Q := fun t =>
+    t.mem = s₃.mem.writeW (off B (slot w j + 8 * w)) (0 : BitVec 64) ∧ t.gpr .r10 = off B (slot w 0))
+    ?_ (by decide)) fun t ⟨⟨tm, t10⟩, k4⟩ => ⟨⟨?_, ?_, ?_, t10⟩, (k13.trans k4).mono⟩
+  · have a10' : s₃.gpr .r10 = off B (slot w j) := (k3.gpr _ (by decide)).trans a10
+    have e16 : off B (slot w j + 8 * (w + 2)) - BitVec.ofNat 64 16 = off B (slot w j + 8 * w) := by
+      rw [off, VG.Offset.add_ofNat_sub B (show 16 ≤ slot w j + 8 * (w + 2) by omega)]; congr 2
+    prun [a10', (k13.gpr .r29 (by decide)).trans h29, (k13.gpr .r21 (by decide)).trans h21, off_add, e16,
+      BitVec.add_zero, (hs.congr k13.wr).st (show slot w j + 8 * w + 8 ≤ Z by omega)]
+    rfl
+  · rw [tm, Mont.Outside.val32 (fun x hx => writeW_outside s₃.mem B (d := slot w j + 8 * w) 0 (by omega) x hx)
+      (by omega) (by omega)]
+    exact hv
+  · rw [tm]; exact word_writeW_self _ _ _ _
+  · rw [tm]
+    exact (out₃.mono (Nat.le_refl _) (by omega)).trans
+      ((writeW_outside s₃.mem B (d := slot w j + 8 * w) 0 (by omega)).mono (by omega) (by omega))
+
 end VG.Proof.Bignum.PPC64LE.Crt
