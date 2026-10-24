@@ -18480,3 +18480,269 @@ blr",
         vg_dsa_sign = sym super::dsa::vg_dsa_sign,
     )
 }
+
+/// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
+///
+/// The domain is checked by calling `vg_dsa_check_parameters`, branching only on it. x is sampled as for `vg_dsa_sign_random`: each draw is copied, its first octet masked, into the last octets of a zeroed nonce in the stack frame and compared with q by a borrow chain without a branch, so only the tape's length and the draws' acceptance affect the leakage trace. An accepted x is passed to `vg_dsa_derive_key`, which writes p||q||g||y||x or zeroes `out`. Every failure zeroes `out`, and every exit zeroes the nonce. The nonvolatile registers, which hold the state, are saved in the frame.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `params` must be valid for reads of `params_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
+/// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
+/// * Caller must assure domain validity and supply fresh independent random bytes.
+/// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"stdu %r1, -304(%r1)
+addi %r12, %r1, 0
+std %r14, 152(%r12)
+std %r15, 160(%r12)
+std %r16, 168(%r12)
+std %r17, 176(%r12)
+std %r18, 184(%r12)
+std %r19, 192(%r12)
+std %r20, 200(%r12)
+std %r21, 208(%r12)
+std %r22, 216(%r12)
+std %r23, 224(%r12)
+std %r24, 232(%r12)
+std %r25, 240(%r12)
+std %r26, 248(%r12)
+std %r27, 256(%r12)
+std %r28, 264(%r12)
+std %r29, 272(%r12)
+std %r30, 280(%r12)
+std %r31, 288(%r12)
+mflr %r0
+std %r0, 296(%r12)
+addi %r18, %r3, 0
+addi %r30, %r5, 0
+addi %r19, %r6, 0
+addi %r20, %r8, 0
+addi %r21, %r9, 0
+addi %r23, %r10, 0
+ld %r24, 400(%r12)
+ld %r22, 408(%r12)
+ld %r26, 416(%r12)
+std %r26, 96(%r12)
+li %r25, 0
+addi %r12, %r1, 0
+li %r0, 0
+std %r0, 120(%r12)
+std %r0, 128(%r12)
+std %r0, 136(%r12)
+std %r0, 144(%r12)
+addi %r3, %r19, 0
+add %r4, %r20, %r20
+add %r4, %r4, %r21
+addi %r5, %r20, 0
+addi %r6, %r21, 0
+addi %r7, %r22, 0
+addi %r8, %r26, 0
+bl {vg_dsa_check_parameters}
+cmplwi %cr0, %r3, 0
+beq %cr0, 20f
+add %r12, %r19, %r20
+addi %r6, %r21, 0
+addi %r14, %r12, 0
+addi %r17, %r6, 0
+li %r15, 0
+li %r16, 0
+22:
+lbz %r0, 0(%r14)
+or %r15, %r15, %r0
+li %r3, 0
+subf %r3, %r15, %r3
+rldicl %r3, %r3, 1, 63
+add %r16, %r16, %r3
+addi %r14, %r14, 1
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 22b
+addi %r28, %r16, 0
+add %r27, %r12, %r6
+subf %r27, %r16, %r27
+lbz %r3, 0(%r27)
+rldicl %r4, %r3, 63, 1
+or %r29, %r3, %r4
+rldicl %r4, %r29, 62, 2
+or %r29, %r29, %r4
+rldicl %r4, %r29, 60, 4
+or %r29, %r29, %r4
+rldicl %r4, %r16, 63, 1
+rldicl %r5, %r3, 63, 1
+or %r4, %r4, %r5
+li %r5, 0
+subf %r4, %r4, %r5
+rldicl %r4, %r4, 1, 63
+subf %r5, %r16, %r5
+rldicl %r5, %r5, 1, 63
+and %r0, %r4, %r5
+cmpldi %cr0, %r0, 0
+beq %cr0, 23f
+li %r17, 128
+li %r31, 4
+25:
+subf %r3, %r25, %r24
+subf %r4, %r28, %r3
+rldicl %r4, %r4, 1, 63
+rldicl %r3, %r3, 1, 63
+li %r5, 1
+xor %r3, %r3, %r5
+and %r3, %r3, %r4
+cmpldi %cr0, %r3, 0
+bne %cr0, 26f
+add %r3, %r23, %r25
+addi %r4, %r1, 120
+add %r4, %r4, %r21
+subf %r4, %r28, %r4
+addi %r5, %r28, 0
+addi %r6, %r29, 0
+28:
+lbz %r0, 0(%r3)
+and %r0, %r0, %r6
+stb %r0, 0(%r4)
+li %r6, 255
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 28b
+add %r25, %r25, %r28
+addi %r3, %r1, 120
+add %r3, %r3, %r21
+add %r4, %r27, %r28
+addi %r5, %r28, 0
+li %r6, 0
+li %r7, 0
+29:
+addi %r3, %r3, -1
+addi %r4, %r4, -1
+lbz %r0, 0(%r3)
+or %r7, %r7, %r0
+lbz %r8, 0(%r4)
+add %r8, %r8, %r6
+subf %r0, %r8, %r0
+rldicl %r6, %r0, 1, 63
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 29b
+li %r0, 0
+subf %r0, %r7, %r0
+rldicl %r0, %r0, 1, 63
+and %r6, %r6, %r0
+cmpldi %cr0, %r6, 0
+bne %cr0, 210f
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+beq %cr0, 212f
+b 213f
+212:
+li %r31, 0
+213:
+b 211f
+210:
+li %r31, 1
+211:
+b 27f
+26:
+li %r31, 2
+27:
+addi %r3, %r31, -4
+cmpldi %cr0, %r3, 0
+beq %cr0, 25b
+addi %r3, %r31, -1
+cmpldi %cr0, %r3, 0
+beq %cr0, 214f
+b 215f
+214:
+addi %r3, %r18, 0
+add %r4, %r20, %r20
+add %r4, %r4, %r20
+add %r4, %r4, %r21
+add %r4, %r4, %r21
+addi %r5, %r19, 0
+add %r6, %r20, %r20
+add %r6, %r6, %r21
+addi %r7, %r20, 0
+addi %r8, %r1, 120
+addi %r9, %r21, 0
+addi %r10, %r22, 0
+bl {vg_dsa_derive_key}
+cmplwi %cr0, %r3, 0
+beq %cr0, 216f
+li %r31, 1
+b 217f
+216:
+li %r31, 0
+217:
+215:
+b 24f
+23:
+li %r31, 0
+24:
+b 21f
+20:
+li %r31, 0
+21:
+addi %r3, %r31, -1
+cmpldi %cr0, %r3, 0
+beq %cr0, 218f
+addi %r16, %r18, 0
+add %r17, %r20, %r20
+add %r17, %r17, %r20
+add %r17, %r17, %r21
+add %r17, %r17, %r21
+li %r0, 0
+220:
+stb %r0, 0(%r16)
+addi %r16, %r16, 1
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 220b
+b 219f
+218:
+219:
+addi %r12, %r1, 0
+li %r0, 0
+std %r0, 120(%r12)
+std %r0, 128(%r12)
+std %r0, 136(%r12)
+std %r0, 144(%r12)
+std %r25, 0(%r30)
+addi %r3, %r31, 0
+addi %r12, %r1, 0
+ld %r0, 296(%r12)
+mtlr %r0
+ld %r14, 152(%r12)
+ld %r15, 160(%r12)
+ld %r16, 168(%r12)
+ld %r17, 176(%r12)
+ld %r18, 184(%r12)
+ld %r19, 192(%r12)
+ld %r20, 200(%r12)
+ld %r21, 208(%r12)
+ld %r22, 216(%r12)
+ld %r23, 224(%r12)
+ld %r24, 232(%r12)
+ld %r25, 240(%r12)
+ld %r26, 248(%r12)
+ld %r27, 256(%r12)
+ld %r28, 264(%r12)
+ld %r29, 272(%r12)
+ld %r30, 280(%r12)
+ld %r31, 288(%r12)
+addi %r1, %r1, 304
+blr",
+        vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters,
+        vg_dsa_derive_key = sym super::dsa::vg_dsa_derive_key,
+    )
+}

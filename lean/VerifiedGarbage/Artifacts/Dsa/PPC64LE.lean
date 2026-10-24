@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA on PPC64LE -/
@@ -52,6 +53,17 @@ def artifacts : List Artifact := [
         the nonce. The nonvolatile registers, which hold the loop's state, are saved in the frame."]
     stack := 304
     code := Impl.Dsa.PPC64LE.RandomSign.code
-    verified := Proof.Dsa.PPC64LE.randomSign_verified }]
+    verified := Proof.Dsa.PPC64LE.randomSign_verified },
+  Spec.Dsa.generateKeyApi.artifact PPC64LE.target {
+    notes := ["The domain is checked by calling `vg_dsa_check_parameters`, branching only on it. x is \
+        sampled as for `vg_dsa_sign_random`: each draw is copied, its first octet masked, into the last \
+        octets of a zeroed nonce in the stack frame and compared with q by a borrow chain without a \
+        branch, so only the tape's length and the draws' acceptance affect the leakage trace. An accepted \
+        x is passed to `vg_dsa_derive_key`, which writes p||q||g||y||x or zeroes `out`. Every failure \
+        zeroes `out`, and every exit zeroes the nonce. The nonvolatile registers, which hold the state, \
+        are saved in the frame."]
+    stack := 304
+    code := Impl.Dsa.PPC64LE.Generate.code
+    verified := Proof.Dsa.PPC64LE.generate_verified }]
 
 end VG.Artifacts.Dsa.PPC64LE
