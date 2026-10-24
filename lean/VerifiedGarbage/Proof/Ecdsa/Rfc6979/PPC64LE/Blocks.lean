@@ -244,16 +244,42 @@ theorem wipe_stores (hL : L.Ok) :
       g₁.trans k₂, f₁.trans (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega) (by omega)⟩)⟩
 
-/-- The frame's `K`, `V`, the hash and the count wiped. -/
-theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.block Cfg.wipe) t fun u => Ctx L g lr m₀ u ∧ Kp [.r11, .r12] t u ∧
-      Frame [⟨L.B + BitVec.ofNat 64 128, 176⟩] t.mem u.mem := by
-  rw [Cfg.wipe, WP.block_append_iff]
+/-- The frame's top, `k` 64-bit words from `fX`. -/
+theorem wipeExt_stores (hL : L.Ok) :
+    ∀ k, 8 * k ≤ L.e → ∀ u : State, Ctx L g lr m₀ u → u.gpr .r11 = L.B + BitVec.ofNat 64 96 →
+      WP isa (.block ((List.range k).map fun j => .store .d .r12 .r11 (fX + 8 * j))) u fun u' =>
+        Ctx L g lr m₀ u' ∧ Kp [] u u' ∧ Frame [⟨L.B + BitVec.ofNat 64 352, L.e⟩] u.mem u'.mem
+  | 0, _, u, hc, _ => wp_nil ⟨hc, Kp.refl _ _, Frame.refl _ _⟩
+  | k + 1, hk, u, hc, h11 => by
+    have hnB := hL.nB
+    have hne := hc.ne
+    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
+    refine WP.mono (wipeExt_stores hL k (by omega) u hc h11) fun u₁ ⟨hc₁, g₁, f₁⟩ => ?_
+    refine stepStd (a := L.B + BitVec.ofNat 64 (352 + 8 * k)) (by decide) (by simp only [fX]; omega)
+      (by rw [g₁.gpr _ (by simp), h11, fr_add, show 96 + (fX + 8 * k) = 352 + 8 * k by simp only [fX]; omega])
+      (hc₁.inFrW (by omega) (by omega)) fun u₂ k₂ g₂ m₂ => wp_nil ?_
+    have f₂ : Frame [⟨L.B + BitVec.ofNat 64 (352 + 8 * k), 8⟩] u₁.mem u₂.mem := by
+      rw [m₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+    refine ⟨hc₁.keep hL k₂.rd k₂.wr k₂.sp (fun r _ => by rw [g₂]) f₂ (by
+        simp only [List.mem_singleton]; rintro r rfl; exact safe_ext L (by omega) (by omega)),
+      g₁.trans k₂, f₁.trans (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega) (by omega)⟩)⟩
+
+/-- The frame's `K`, `V`, the hash and the count wiped, and its top. -/
+theorem wipe_ok (hL : L.Ok) {hHigh : Bool} (he : extra hHigh ≤ L.e) {t : State} (hc : Ctx L g lr m₀ t) :
+    WP isa (.block (Cfg.wipe hHigh)) t fun u => Ctx L g lr m₀ u ∧ Kp [.r11, .r12] t u ∧
+      Frame [⟨L.B + BitVec.ofNat 64 128, 176⟩, ⟨L.B + BitVec.ofNat 64 352, L.e⟩] t.mem u.mem := by
+  rw [Cfg.wipe, List.append_assoc, WP.block_append_iff]
   refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
   refine stepLi (by decide) fun t₂ k₂ m₂ v₂ => wp_nil ?_
   have K : Kp [.r11, .r12] t t₂ := k₁.mono.trans k₂.mono
-  refine WP.mono (wipe_stores hL 22 (Nat.le_refl _) t₂ (hc.kp hL K (by rw [m₂, m₁]))
-    (by rw [k₂.gpr _ (by decide), v₁, hc.sp, BitVec.add_zero])) fun u ⟨hcu, gu, fu⟩ =>
-    ⟨hcu, K.trans gu.mono, by rw [← m₁, ← m₂]; exact fu⟩
+  have b₂ : t₂.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [k₂.gpr _ (by decide), v₁, hc.sp, BitVec.add_zero]
+  rw [WP.block_append_iff]
+  refine WP.mono (wipe_stores hL 22 (Nat.le_refl _) t₂ (hc.kp hL K (by rw [m₂, m₁])) b₂) fun u ⟨hcu, gu, fu⟩ => ?_
+  have h8 : extra hHigh % 8 = 0 := by cases hHigh <;> decide
+  refine WP.mono (wipeExt_stores hL (extra hHigh / 8) (by omega) u hcu (by rw [gu.gpr _ (by simp), b₂])) fun u' ⟨hcu', gu', fu'⟩ => ⟨hcu', (K.trans gu.mono).trans gu'.mono, ?_⟩
+  rw [← m₁, ← m₂]
+  exact (fu.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+    (fu'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

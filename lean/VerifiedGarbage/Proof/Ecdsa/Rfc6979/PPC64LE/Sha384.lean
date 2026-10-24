@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Kit
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha384
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Update
 
-/-! # Deterministic ECDSA on PPC64LE: HMAC-SHA-384's functions -/
+/-! # Deterministic ECDSA on PPC64LE: HMAC-SHA-384's and HMAC-SHA-512's functions
+
+Both in one module, which alone of the deterministic signatures' imports SHA-512's `update`. -/
 
 @[expose] public section
 
@@ -25,6 +28,12 @@ theorem sha512_updCT : ConstantTime isa
 def sha384K : Kit :=
   Kit.ofStream Proof.Hmac.Stream.PPC64LE.Sha384.hash Proof.Hmac.Stream.PPC64LE.Sha384.ok Spec.Hmac.sha384I rfl
     Proof.Hmac.Stream.PPC64LE.Sha384.initScratch Proof.Hmac.Stream.PPC64LE.Sha384.finalizeScratch sha512_updCT
+    (by decide) (by decide) (by decide)
+
+/-- HMAC-SHA-512's functions. -/
+def sha512K : Kit :=
+  Kit.ofStream Proof.Hmac.Stream.PPC64LE.Sha512.hash Proof.Hmac.Stream.PPC64LE.Sha512.ok Spec.Hmac.sha512I rfl
+    Proof.Hmac.Stream.PPC64LE.Sha512.initScratch Proof.Hmac.Stream.PPC64LE.Sha512.finalizeScratch sha512_updCT
     (by decide) (by decide) (by decide)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
