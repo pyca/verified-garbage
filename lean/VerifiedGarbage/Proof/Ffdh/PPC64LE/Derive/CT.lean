@@ -375,6 +375,30 @@ theorem pins_Z2 : Pins Z2 (baseRegs ++ ([.r12, .r6] : List Reg)) := fun d s₁ s
 theorem pins_Z3 : Pins Z3 (baseRegs ++ ([.r6, .r15, .r18] : List Reg)) := fun d s₁ s₂ h₁ h₂ =>
   pins_X3 d.x s₁ s₂ h₁.1 h₂.1
 
+/-- `dpBody`, from p's check with p valid. -/
+theorem dpBody_rel : RelCT isa (Two fun (d : DD) s => Z4 d s ∧ s.gpr .r0 = 0) dpBody
+    (Two fun (d : DD) s => CF d.x.c s) := by
+  unfold dpBody xRange
+  refine RelCT.seq (R := Two R2) (RelCT.seq
+    (two_post (two_taint _ (pins_xb (Φ := fun d s => Z4 d s ∧ s.gpr .r0 = 0) fun _ _ h => h.1.1.1)
+      (by taint_decide)) fun _ _ h => TR1 h)
+    (two_post (two_taint _ pins_R1 (by taint_decide)) fun _ _ h => h.2)) ?_
+  refine two_ite (Φ := R2) (fun d s₁ s₂ h₁ h₂ => h₁.2.2.2.2.1.trans h₂.2.2.2.2.1.symm) ?_ ?_
+  · unfold dpBad
+    exact RelCT.seq (two_post (two_taint _ (pins_base' (Φ := fun d s => R2 d s ∧ s.gpr .r26 = 0)
+        fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => TB h)
+      (RelCT.seq (two_post (two_taint _ (pins_x pins_X7) (by taint_decide)) fun _ _ h => h.2)
+        (two_post (two_taint _ pins_ZCF (by taint_decide)) fun _ _ h => TLi h 2 (by decide)))
+  · unfold dpGood exPower exOut
+    exact RelCT.seq (two_post (two_taint _ (pins_base' (Φ := fun d s => R2 d s ∧ s.gpr .r26 ≠ 0)
+        fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => TG1 h)
+      (RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_xb (Φ := G2) fun _ _ h => h.1) (by taint_decide))
+          fun _ _ h => TG2 h)
+        (two_post (two_taint _ (pins_x pins_X5) (by taint_decide)) fun _ _ h => h.2))
+        (RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_x pins_X6) (by taint_decide)) fun _ _ h => h.2)
+            (two_post (two_taint _ (pins_x pins_X7) (by taint_decide)) fun _ _ h => h.2))
+          (two_post (two_taint _ pins_ZCF (by taint_decide)) fun _ _ h => TSt h)))
+
 theorem dp_rel : RelCT isa (Two Z0) derivePublic fun _ _ => True := by
   unfold derivePublic
   refine RelCT.seq (R := Two ZB) (two_post (two_taint _ pins_Z0 (by taint_decide)) fun _ _ h => F0 h)
@@ -388,26 +412,7 @@ theorem dp_rel : RelCT isa (Two Z0) derivePublic fun _ _ => True := by
   · refine two_ite (Φ := Z4) (fun d s₁ s₂ h₁ h₂ => h₁.1.2.2.trans h₂.1.2.2.symm) ?_
       (two_post (two_taint _ (pins_xb (Φ := fun d s => Z4 d s ∧ s.gpr .r0 ≠ 0) fun _ _ h => h.1.1.1)
         (by taint_decide)) fun _ _ h => FK0 h)
-    unfold dpBody xRange
-    refine RelCT.seq (R := Two R2) (RelCT.seq
-      (two_post (two_taint _ (pins_xb (Φ := fun d s => Z4 d s ∧ s.gpr .r0 = 0) fun _ _ h => h.1.1.1)
-        (by taint_decide)) fun _ _ h => TR1 h)
-      (two_post (two_taint _ pins_R1 (by taint_decide)) fun _ _ h => h.2)) ?_
-    refine two_ite (Φ := R2) (fun d s₁ s₂ h₁ h₂ => h₁.2.2.2.2.1.trans h₂.2.2.2.2.1.symm) ?_ ?_
-    · unfold dpBad
-      exact RelCT.seq (two_post (two_taint _ (pins_base' (Φ := fun d s => R2 d s ∧ s.gpr .r26 = 0)
-          fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => TB h)
-        (RelCT.seq (two_post (two_taint _ (pins_x pins_X7) (by taint_decide)) fun _ _ h => h.2)
-          (two_post (two_taint _ pins_ZCF (by taint_decide)) fun _ _ h => TLi h 2 (by decide)))
-    · unfold dpGood exPower exOut
-      exact RelCT.seq (two_post (two_taint _ (pins_base' (Φ := fun d s => R2 d s ∧ s.gpr .r26 ≠ 0)
-          fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => TG1 h)
-        (RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_xb (Φ := G2) fun _ _ h => h.1) (by taint_decide))
-            fun _ _ h => TG2 h)
-          (two_post (two_taint _ (pins_x pins_X5) (by taint_decide)) fun _ _ h => h.2))
-          (RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_x pins_X6) (by taint_decide)) fun _ _ h => h.2)
-              (two_post (two_taint _ (pins_x pins_X7) (by taint_decide)) fun _ _ h => h.2))
-            (two_post (two_taint _ pins_ZCF (by taint_decide)) fun _ _ h => TSt h)))
+    exact dpBody_rel
 
 /-- Bools equal when they are false together. -/
 theorem bool_eq_of_false_iff {a b : Bool} (h : a = false ↔ b = false) : a = b := by
