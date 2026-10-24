@@ -89,6 +89,15 @@ pub(crate) mod camellia_ofb;
 pub(crate) mod cast5;
 
 #[rustfmt::skip]
+pub(crate) mod cast5_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]

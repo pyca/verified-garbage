@@ -7,8 +7,8 @@
 //! which it replaces with the last output block, in constant time: its
 //! timing depends on none of the key, the chaining value and the data. It is
 //! the modes' generic OFB over CAST5's table-scanning block code, one block
-//! at a time: on x86, x86-64 and AArch64 over the block code itself, on ARMv7
-//! calling the verified `vg_cast5_ecb_encrypt` for each block. This module
+//! at a time: on x86, x86-64, AArch64 and PPC64LE over the block code itself,
+//! on ARMv7 calling the verified `vg_cast5_ecb_encrypt` for each block. This module
 //! holds the subkeys and handles a partial last block
 //! (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output
 //! block, whose first bytes it XORs into the rest of the input.
@@ -17,7 +17,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::cast5_ofb::vg_cast5_ofb;
