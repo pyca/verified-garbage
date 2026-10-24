@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Init
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
@@ -20,6 +21,14 @@ def artifacts : List Artifact := [
     notes := ["The model has no carry bit, so `p_len` is first checked to be below `2^11` (a branch \
         on a public value), and the bounds are then sign bits of 64-bit differences."]
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
-    verified := Proof.Ffdh.PPC64LE.KeyGeneration.init_verified }]
+    verified := Proof.Ffdh.PPC64LE.KeyGeneration.init_verified },
+  Spec.Ffdh.checkPublicApi.artifact PPC64LE.target {
+    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
+        working space of `w = ⌈p_len / 8⌉` words; y is compared with p by a subtraction's borrow and \
+        with 0, 1 and p − 1 by equality masks over all the words; with q, `y^q mod p` is computed by \
+        RSA's bit-serial exponentiation (`R² mod p` by doublings) and compared with 1. The \
+        nonvolatile registers are saved in the working space's header."]
+    code := Impl.Ffdh.PPC64LE.Domain.checkPublic
+    verified := Proof.Ffdh.PPC64LE.Domain.cp_verified }]
 
 end VG.Artifacts.Ffdh.PPC64LE

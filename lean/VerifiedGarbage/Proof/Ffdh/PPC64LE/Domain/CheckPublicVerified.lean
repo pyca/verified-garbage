@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
@@ -33,5 +34,9 @@ def satState : State where
 theorem cp_implies : cpContract.Implies (Spec.Ffdh.checkPublicContract abi) := by
   sig_implies [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, cpContract,
     Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid] [satState] using satState
+
+/-- `vg_ffdh_check_public`. -/
+theorem cp_verified : Verified target checkPublic (Spec.Ffdh.checkPublicContract abi) :=
+  Verified.of_correct cp_correct cp_ct cp_implies
 
 end VG.Proof.Ffdh.PPC64LE.Domain

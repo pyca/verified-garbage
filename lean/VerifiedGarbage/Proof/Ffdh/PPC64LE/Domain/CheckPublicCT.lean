@@ -379,4 +379,45 @@ theorem TS {d : CD} {s : State} (h : C6 d s ∧ s.gpr .r0 = 0) : WP isa subgroup
   show t.gpr .r23 = d.S
   rw [k.gpr .r23 (by decide), hb.r23]
 
+/-! ## Constant time -/
+
+theorem cp_rel : RelCT isa (Two C0) checkPublic fun _ _ => True := by
+  unfold checkPublic
+  refine RelCT.seq (two_post (two_taint _ pins_C0 (by taint_decide)) fun _ _ h => T01 h)
+    (RelCT.seq (R := Two C4) ?_ (RelCT.seq (R := Two CF) ?_ (two_taint _ pins_CF (by taint_decide))))
+  · unfold loadP Precompute.check
+    exact RelCT.seq (two_post (two_taint _ (pins_C1 fun _ _ h => h) (by taint_decide)) fun _ _ h => TA h)
+      (RelCT.seq (two_post (two_taint _ pins_C1a (by taint_decide)) fun _ _ h => TL h)
+        (RelCT.seq (two_post (two_taint (Φ := C2) _ (fun d s₁ s₂ h₁ h₂ => pins_C1a d s₁ s₂ h₁.1 h₂.1)
+          (by taint_decide)) fun _ _ h => TC1 h)
+          (two_post (two_taint _ pins_C3 (by taint_decide)) fun _ _ h => TC2 h)))
+  · refine two_ite (fun d s₁ s₂ h₁ h₂ => h₁.2.2.trans h₂.2.2.symm) ?_
+      (two_post (two_taint _ (pins_base (Φ := fun d s => C4 d s ∧ s.gpr .r0 ≠ 0) fun _ _ h => h.1.1.1)
+        (by taint_decide)) fun _ _ h => TK0 (Φ := fun d s => C4 d s ∧ s.gpr .r0 ≠ 0) (fun _ _ h => h.1.1.1) h)
+    unfold checkY
+    refine RelCT.seq (two_post (two_taint _ (pins_C1 (Φ := fun d s => C4 d s ∧ s.gpr .r0 = 0) fun _ _ h => h.1.1)
+      (by taint_decide)) fun _ _ h => TR h) (two_ite (Φ := C5) (fun d s₁ s₂ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm)
+        (two_post (two_taint _ (pins_base (Φ := fun d s => C5 d s ∧ s.gpr .r26 = 0) fun _ _ h => h.1.1)
+          (by taint_decide)) fun _ _ h => TK0 (Φ := fun d s => C5 d s ∧ s.gpr .r26 = 0) (fun _ _ h => h.1.1) h)
+        (RelCT.seq (two_post (two_taint _ (pins_base (Φ := fun d s => C5 d s ∧ s.gpr .r26 ≠ 0) fun _ _ h => h.1.1)
+          (by taint_decide)) fun _ _ h => TQ h)
+          (two_ite (Φ := C6) (fun d s₁ s₂ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm)
+            (two_post (two_taint _ (pins_base (Φ := fun d s => C6 d s ∧ s.gpr .r0 = 0) fun _ _ h => h.1.1)
+              (by taint_decide)) fun _ _ h => TS h)
+            (two_post (two_taint _ (pins_base (Φ := fun d s => C6 d s ∧ s.gpr .r0 ≠ 0) fun _ _ h => h.1.1)
+              (by taint_decide)) fun _ _ h => TK1 (Φ := fun d s => C6 d s ∧ s.gpr .r0 ≠ 0) (fun _ _ h => h.1.1) h))))
+
+theorem cp_ct : ConstantTime isa cpContract.pre cpContract.pub checkPublic :=
+  RelCT.constantTime (cp_rel.mono (fun s t ⟨hs, ht, hsp, h3, h4, h5, h6, h7, h8, h9, hb⟩ => ⟨cdOf s, ⟨hs, rfl⟩,
+    ⟨ht, by
+      have l1 : ((Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat).map (·.toNat)).length =
+          ((Spec.Rsa.bytesAt t.mem (t.gpr .r3) (t.gpr .r4).toNat).map (·.toNat)).length := by
+        simp only [List.length_map, bytesAt_length, h4]
+      obtain ⟨e1, e2⟩ := List.append_inj hb l1
+      simp only [cdOf]
+      rw [(List.map_inj_right (fun _ _ h => BitVec.eq_of_toNat_eq h)).mp e1,
+        (List.map_inj_right (fun _ _ h => BitVec.eq_of_toNat_eq h)).mp e2]
+      simp only [h3, h4, h5, h6, h8, h9]⟩, hsp⟩)
+    fun _ _ h => h)
+
 end VG.Proof.Ffdh.PPC64LE.Domain
