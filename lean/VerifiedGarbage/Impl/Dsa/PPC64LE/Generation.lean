@@ -88,8 +88,9 @@ def st (r : Reg) (o : Nat) : Instr := .store .d r .r28 o
 /-- The state word at `o` := `v`. -/
 def stImm (o v : Nat) : List Instr := [.li .r3 v, st .r3 o]
 
-/-- `r0 := ` the state word at `o` minus `v`, for a test against zero. -/
-def cmpF (o v : Nat) : List Instr := [ld .r0 o, .subi .r0 .r0 v]
+/-- `r0 := ` the state word at `o` minus `v`, for a test against zero (through
+`r3`: `subi` reads `r0` as 0). -/
+def cmpF (o v : Nat) : List Instr := [ld .r3 o, .subi .r0 .r3 v]
 
 /-! ## The scratch -/
 
