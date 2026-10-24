@@ -2,13 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.HighLow
-public import VerifiedGarbage.Proof.MlDsa.Round.Ones
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -24,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_use_hint`

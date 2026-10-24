@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Arith
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Arith
 public import VerifiedGarbage.Proof.MlDsa.Round.Mem
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -30,6 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Round
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_norm_lt`

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.Round.Mem
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Common
@@ -30,6 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_high_bits` and `vg_mldsa_low_bits`
