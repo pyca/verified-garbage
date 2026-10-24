@@ -9,8 +9,8 @@
 //! `iv`, which they replace with the last ciphertext block, in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
 //! Both are the modes' generic CFB over CAST5's table-scanning block code,
-//! one block at a time: on x86, x86-64 and AArch64 over the block code
-//! itself, on ARMv7 calling the verified `vg_cast5_ecb_encrypt` for each
+//! one block at a time: on x86, x86-64, AArch64 and PPC64LE over the block
+//! code itself, on ARMv7 calling the verified `vg_cast5_ecb_encrypt` for each
 //! block. This module holds the subkeys and handles a partial
 //! last segment: CFB encryption of a zero block is `CIPH_K` of the block to
 //! continue from, whose first bytes it XORs into the rest of the input.
@@ -19,7 +19,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use crate::arch::cast5_cfb::{vg_cast5_cfb64_decrypt, vg_cast5_cfb64_encrypt};
@@ -38,7 +39,12 @@ pub struct Cast5Cfb64 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
 /// The signature of `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt`.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 type Cfb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
 
 impl Cast5Cfb64 {
