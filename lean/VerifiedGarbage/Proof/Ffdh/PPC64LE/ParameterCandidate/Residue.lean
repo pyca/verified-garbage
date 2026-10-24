@@ -33,6 +33,15 @@ theorem res2 : ∀ r < 24, (BitVec.ofNat 64 r ^^^ BitVec.ofNat 64 11 = 0#64 ↔ 
 theorem res5 : ∀ r < 10, ((BitVec.ofNat 64 r ||| BitVec.ofNat 64 4) ^^^ BitVec.ofNat 64 7 = 0#64 ↔ r = 3 ∨ r = 7) := by
   decide
 
+/-- `hBad` stored over `m`. -/
+theorem bad_post {m : Mem} {p : PP} {t : State} {v : BitVec 64} {P : Prop}
+    (tm : t.mem = m.writeW (p.B + BitVec.ofNat 64 200) v) (hv : v = 0#64 ↔ P) :
+    (word t.mem p.B (8 * hBad) = 0#64 ↔ P) ∧ Frm p.B [(8 * hBad, 8)] m t.mem := by
+  refine ⟨?_, ?_⟩
+  · simp only [word, off, hBad, Nat.reduceMul, tm, rw_self]; exact hv
+  · rw [tm]
+    exact frm_writeW (a := 200) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩ (by decide)
+
 theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
     WP isa residue s fun t =>
       ((word t.mem p.B (8 * hBad) = 0#64 ↔ goodRes p.g (wv s.mem p.B (slot (wOf p.bits) 0) (wOf p.bits))) ∧
@@ -61,13 +70,6 @@ theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
     have k3 := kv.trans kt'
     refine WP.mono (ht t' t3 (by rw [tm', vm, um]) (hu.step (by rw [tm', vm]; exact Frm.refl _ _ _) k3))
       fun t ⟨q, kt⟩ => ⟨q, (k3.trans kt).mono (by decide)⟩
-  have post : ∀ (t : State) (v : BitVec 64) (P : Prop), t.mem = s.mem.writeW (p.B + BitVec.ofNat 64 200) v →
-      (v = 0#64 ↔ P) → ((word t.mem p.B (8 * hBad) = 0#64 ↔ P) ∧ Frm p.B [(8 * hBad, 8)] s.mem t.mem) := by
-    intro t v P tm hv
-    refine ⟨?_, ?_⟩
-    · simp only [word, off, hBad, Nat.reduceMul, tm, rw_self]; exact hv
-    · rw [tm]
-      exact frm_writeW (a := 200) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩ (by decide)
   unfold residue
   refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = BitVec.ofNat 64 p.g - 2#64 ∧ u.mem = s.mem)
     (by simp only [ldh, hGen]; prun [h.r31, h.ld (d := 128) (by decide), h.args.gen']) (by decide))
@@ -84,7 +86,7 @@ theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
       fun t' t3 tm' ht' => ?_) fun t ⟨q, k⟩ => ⟨q, (ku.trans k).mono (by decide)⟩
     refine WP.mono (WP.keep [.r3, .r4] (Q := fun t => t.mem = s.mem.writeW (p.B + BitVec.ofNat 64 200)
       (BitVec.ofNat 64 (x % 24) ^^^ BitVec.ofNat 64 11)) ?_ (by decide)) fun t ⟨tm, kt⟩ =>
-        ⟨post t _ _ tm ?_, kt.mono (by decide)⟩
+        ⟨bad_post tm ?_, kt.mono (by decide)⟩
     · simp only [sth, hBad]
       prun [ht'.r31, ht'.st (d := 200) (by decide), tm', t3]
     · rw [res2 _ (Nat.mod_lt _ (by decide)), goodRes, ite_eq_left hg]
@@ -96,7 +98,7 @@ theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
       fun t' t3 tm' ht' => ?_) fun t ⟨q, k⟩ => ⟨q, (ku.trans k).mono (by decide)⟩
     refine WP.mono (WP.keep [.r3, .r4] (Q := fun t => t.mem = s.mem.writeW (p.B + BitVec.ofNat 64 200)
       ((BitVec.ofNat 64 (x % 10) ||| BitVec.ofNat 64 4) ^^^ BitVec.ofNat 64 7)) ?_ (by decide)) fun t ⟨tm, kt⟩ =>
-        ⟨post t _ _ tm ?_, kt.mono (by decide)⟩
+        ⟨bad_post tm ?_, kt.mono (by decide)⟩
     · simp only [sth, hBad]
       prun [ht'.r31, ht'.st (d := 200) (by decide), tm', t3]
     · rw [res5 _ (Nat.mod_lt _ (by decide)), goodRes, ite_eq_right (by omega)]
