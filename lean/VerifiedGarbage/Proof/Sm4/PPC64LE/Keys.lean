@@ -162,13 +162,6 @@ def krStep : Dir → Instr
   | .encrypt => .addi kr kr 64
   | .decrypt => .subi kr kr 64
 
-theorem keyBody_eq (dir : Dir) :
-    (match dir with | .encrypt => encKeys | .decrypt => decKeys) =
-      .seq (.block (slotAddr kr (match dir with | .encrypt => tableSlot | .decrypt => tableSlot + 8 * 31) ++
-          ([.li .r11 16] : List Instr)))
-        (.loop (.block (keyOne 0 ++ ([krStep dir] : List Instr) ++ keyOne 1 ++
-          ([krStep dir, .addi .r3 .r3 8, .subi .r11 .r11 1] : List Instr))) (.nonzero .d .r11)) := by
-  cases dir <;> rfl
 
 /-- `kr` moves from `x` to `y`. -/
 def RsiStep : Dir → Nat → Nat → Prop
@@ -244,7 +237,6 @@ structure KInv (s₀ : State) (b sched : Addr) (dir : Dir) (m : Nat) (s : State)
   pre : SchedPre s b sched
   rsi : s.gpr kr = b + BitVec.ofNat 64 (rsiAt dir m)
   rdi : s.gpr .r3 = sched + BitVec.ofNat 64 (8 * m)
-  cnt : s.gpr .r11 = BitVec.ofNat 64 (16 - m)
   ent : ∀ i < 2 * m, WordRel (entryW s.mem b (entOf dir i))
     (fun _ => (Spec.Sm4.scheduleAt s₀.mem sched).getD i 0)
   masks : MasksOk s
@@ -289,8 +281,8 @@ theorem rsiAt_succ (dir : Dir) {m : Nat} (hm : m < 16) :
 theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : Addr} {m : Nat} (hm : m < 16)
     (hi : KInv s₀ b sched dir m s) :
     ∃ s', runBlock isa (keyOne 0 ++ ([krStep dir] : List Instr) ++ keyOne 1 ++
-        ([krStep dir, .addi .r3 .r3 8, .subi .r11 .r11 1] : List Instr)) s = some s' ∧
-      KInv s₀ b sched dir (m + 1) s' ∧ (s'.gpr .r11 == 0) = decide (m + 1 = 16) := by
+        ([krStep dir, .addi .r3 .r3 8] : List Instr)) s = some s' ∧
+      KInv s₀ b sched dir (m + 1) s' := by
   have hpre := hi.pre
   have hfit := hpre.fit
   have he0 := entOf_lt dir (show 2 * m < 32 by omega_arith)
@@ -330,11 +322,8 @@ theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : Addr} {m : Nat} (hm :
     (x := 8 * tableSlot + 64 * entOf dir (2 * m + 1)) (y := rsiAt dir (m + 1))
     st2 (by rw [o₃ _ (by decide), r₂])
   obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅⟩ := addI_ok s₄ .r3 .r3 (imm := 8) (by decide)
-  obtain ⟨s₆, e₆, c₆, o₆, m₆, rd₆, wr₆⟩ := subI_ok s₅ .r11 .r11 (imm := 1) (by decide)
-  have ht₅ : s₅.gpr .r11 = BitVec.ofNat 64 (16 - m) := by
-    rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide), hi.cnt]
-  have hmem : s₆.mem = s₃.mem := by rw [m₆, m₅, m₄]
-  have hb₆ : s₆.gpr sb = s₃.gpr sb := by rw [o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide)]
+  have hmem : s₅.mem = s₃.mem := by rw [m₅, m₄]
+  have hb₆ : s₅.gpr sb = s₃.gpr sb := by rw [o₅ _ (by decide), o₄ _ (by decide)]
   have hf₃ : Frame [⟨b, 8 * tableEnd⟩] s₀.mem s₃.mem := by
     refine hfr₂.trans (f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -342,20 +331,18 @@ theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : Addr} {m : Nat} (hm :
     rcases hr with rfl | rfl
     · exact Region.sub_prefix (by omega_arith)
     · rw [tableSlot_eq]; exact VG.Offset.sub_base b (by omega_arith)
-  refine ⟨s₆, ?_, ⟨hpre₂.congr (by rw [hb₆, o₃ _ (by decide)]) (by rw [rd₆, rd₅, rd₄, rd₃])
-      (by rw [wr₆, wr₅, wr₄, wr₃]), by rw [o₆ _ (by decide), o₅ _ (by decide), r₄], ?_, ?_, fun i hi' => ?_,
+  refine ⟨s₅, ?_, ⟨hpre₂.congr (by rw [hb₆, o₃ _ (by decide)]) (by rw [rd₅, rd₄, rd₃])
+      (by rw [wr₅, wr₄, wr₃]), by rw [o₅ _ (by decide), r₄], ?_, fun i hi' => ?_,
       fun kv hkv => ?_, by rw [hmem]; exact hf₃, fun r h1 h2 h3 h4 => ?_,
-      by rw [rd₆, rd₅, rd₄, rd₃, rd₂, rd₁, hi.rd], by rw [wr₆, wr₅, wr₄, wr₃, wr₂, wr₁, hi.wr]⟩, ?_⟩
+      by rw [rd₅, rd₄, rd₃, rd₂, rd₁, hi.rd], by rw [wr₅, wr₄, wr₃, wr₂, wr₁, hi.wr]⟩⟩
   · rw [runBlock_app, runBlock_app, runBlock_app, e₁, Option.bind_some, e₂, Option.bind_some, e₃,
       Option.bind_some,
-      show ([krStep dir, .addi .r3 .r3 8, .subi .r11 .r11 1] : List Instr) =
-        [krStep dir] ++ ([.addi .r3 .r3 8] ++ [.subi .r11 .r11 1]) from rfl,
-      runBlock_app, e₄, Option.bind_some, runBlock_app, e₅, Option.bind_some, e₆]
-  · rw [o₆ _ (by decide), r₅, o₄ _ (by decide), o₃ _ (by decide), hrdi₂, addr_add,
+      show ([krStep dir, .addi .r3 .r3 8] : List Instr) = [krStep dir] ++ [.addi .r3 .r3 8] from rfl,
+      runBlock_app, e₄, Option.bind_some, e₅]
+  · rw [r₅, o₄ _ (by decide), o₃ _ (by decide), hrdi₂, addr_add,
       show 8 * m + 8 = 8 * (m + 1) by omega_arith]
-  · rw [c₆, ht₅, VG.Offset.ofNat_sub_ofNat (by omega_arith), show 16 - m - 1 = 16 - (m + 1) by omega_arith]
   · have hent : ∀ i' < 32, i' ≠ entOf dir (2 * m) → i' ≠ entOf dir (2 * m + 1) → ∀ j < 8,
-        entryW s₆.mem b i' j = entryW s.mem b i' j := fun i' hi'' h0 h1 j hj => by
+        entryW s₅.mem b i' j = entryW s.mem b i' j := fun i' hi'' h0 h1 j hj => by
       rw [hmem, entryW_frame f₃ hi'' he1 h1 hj, m₂, entryW_frame f₁ hi'' he0 h0 hj]
     rcases (show i < 2 * m ∨ i = 2 * m ∨ i = 2 * m + 1 by omega_arith) with hlt | rfl | rfl
     · exact (hi.ent i hlt).congr fun j hj => hent _ (entOf_lt dir (by omega_arith))
@@ -364,11 +351,9 @@ theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : Addr} {m : Nat} (hm :
     · refine E₁.congr fun j hj => ?_
       rw [hmem, entryW_frame f₃ he0 he1 (fun h => by have := entOf_inj dir (by omega_arith) (by omega_arith) h; omega_arith) hj, m₂]
     · exact E₃.congr fun j hj => by rw [hmem]
-  · show s₆.mem.readW (wordAddr (s₆.gpr sb) kv.1) 64 = kv.2
+  · show s₅.mem.readW (wordAddr (s₅.gpr sb) kv.1) 64 = kv.2
     rw [hmem, hb₆]; exact m₃ kv hkv
-  · rw [o₆ r h4, o₅ r h3, o₄ r h2, o₃ r h1, o₂ r h2, o₁ r h1, hi.regs r h1 h2 h3 h4]
-  · rw [c₆, ht₅, VG.Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
-    simp only [decide_eq_decide]; omega_arith
+  · rw [o₅ r h3, o₄ r h2, o₃ r h1, o₂ r h2, o₁ r h1, hi.regs r h1 h2 h3 h4]
 
 theorem entOf_entOf (dir : Dir) {e : Nat} (he : e < 32) : entOf dir (entOf dir e) = e := by
   cases dir <;> simp [entOf] <;> omega_arith
@@ -387,39 +372,33 @@ structure KeysPost (s₀ : State) (b sched : Addr) (dir : Dir) (s : State) : Pro
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-/-- The loop's body. -/
-def tableBody (dir : Dir) : List Instr :=
-  keyOne 0 ++ ([krStep dir] : List Instr) ++ keyOne 1 ++
-    [krStep dir, .addi .r3 .r3 8, .subi .r11 .r11 1]
+theorem keyPairs_wp (dir : Dir) {s₀ : State} {b sched : Addr} :
+    ∀ n m, m + n = 16 → ∀ s, KInv s₀ b sched dir m s →
+      WP isa (keyPairs (krStep dir) n) s (KInv s₀ b sched dir 16)
+  | 0, m, h, s, hi => wp_nil (by rw [show m = 16 by omega_arith] at hi; exact hi)
+  | n + 1, m, h, s, hi => by
+    obtain ⟨s', e', hi'⟩ := keyIter_ok dir (by omega_arith) hi
+    exact WP.seq (WP.of_runBlock ⟨s', e', keyPairs_wp dir n (m + 1) (by omega_arith) s' hi'⟩)
 
-theorem keyLoop_wp (dir : Dir) {s₀ s : State} {b sched : Addr} (hi : KInv s₀ b sched dir 0 s) :
-    WP isa (.loop (.block (tableBody dir)) (.nonzero .d .r11)) s (KInv s₀ b sched dir 16) := by
-  refine WP.loop (M := isa) (fun n s => ∃ m, n = 16 - m ∧ m < 16 ∧ KInv s₀ b sched dir m s)
-    (fun n s hs => ?_) 16 s ⟨0, rfl, by omega_arith, hi⟩
-  obtain ⟨m, rfl, hm, hi⟩ := hs
-  obtain ⟨s', e', hi', z'⟩ := keyIter_ok dir hm hi
-  refine WP.of_runBlock ⟨s', e', ?_⟩
-  by_cases h16 : m + 1 = 16
-  · exact .inl ⟨by rw [eval_nonzero, z', h16]; rfl, by rw [h16] at hi'; exact hi'⟩
-  · exact .inr ⟨by rw [eval_nonzero, z']; simp [h16], 16 - (m + 1), by omega_arith, m + 1, rfl, by omega_arith, hi'⟩
+theorem keyBody_eq (dir : Dir) :
+    (match dir with | .encrypt => encKeys | .decrypt => decKeys) =
+      .seq (.block (slotAddr kr (match dir with | .encrypt => tableSlot | .decrypt => tableSlot + 8 * 31)))
+        (keyPairs (krStep dir) 16) := by
+  cases dir <;> rfl
 
 theorem keysGen_wp (dir : Dir) (k : Nat) (hk : 8 * k = rsiAt dir 0) (hse : 8 * k < 2 ^ 15)
     {s₀ : State} {b sched : Addr} (hp : SchedPre s₀ b sched) (hrdi : s₀.gpr .r3 = sched) (hm : MasksOk s₀) :
-    WP isa (.seq (.seq (.block (slotAddr kr k ++ ([.li .r11 16] : List Instr)))
-        (.loop (.block (tableBody dir)) (.nonzero .d .r11)))
+    WP isa (.seq (.seq (.block (slotAddr kr k)) (keyPairs (krStep dir) 16))
       (.block (slotAddr .r11 tableEnd))) s₀ (KeysPost s₀ b sched dir) := by
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := slotAddr_ok s₀ kr k hse
-  obtain ⟨s₂, e₂, t₂, o₂, m₂, rd₂, wr₂⟩ := li_ok s₁ .r11 (v := 16) (by decide)
-  have hinv : KInv s₀ b sched dir 0 s₂ := by
-    refine ⟨hp.congr (by rw [o₂ _ (by decide), o₁ _ (by decide)]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]),
-      by rw [o₂ _ (by decide), r₁, hp.base, hk], by rw [o₂ _ (by decide), o₁ _ (by decide), hrdi]; simp,
-      by rw [t₂], fun i hi => by omega_arith, fun kv hkv => ?_, by rw [m₂, m₁]; exact Frame.refl _ _,
-      fun r _ h2 _ h4 => by rw [o₂ r h4, o₁ r h2], by rw [rd₂, rd₁],
-      by rw [wr₂, wr₁]⟩
-    show s₂.mem.readW (wordAddr (s₂.gpr sb) kv.1) 64 = kv.2
-    rw [m₂, m₁, o₂ _ (by decide), o₁ _ (by decide)]; exact hm kv hkv
-  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_app, e₁, Option.bind_some]; exact e₂,
-    WP.mono (keyLoop_wp dir hinv) fun s h => ?_⟩))
+  have hinv : KInv s₀ b sched dir 0 s₁ := by
+    refine ⟨hp.congr (by rw [o₁ _ (by decide)]) rd₁ wr₁,
+      by rw [r₁, hp.base, hk], by rw [o₁ _ (by decide), hrdi]; simp,
+      fun i hi => by omega_arith, fun kv hkv => ?_, by rw [m₁]; exact Frame.refl _ _,
+      fun r _ h2 _ _ => by rw [o₁ r h2], rd₁, wr₁⟩
+    show s₁.mem.readW (wordAddr (s₁.gpr sb) kv.1) 64 = kv.2
+    rw [m₁, o₁ _ (by decide)]; exact hm kv hkv
+  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.mono (keyPairs_wp dir 16 0 rfl s₁ hinv) fun s h => ?_⟩))
   have hfit := h.pre.fit
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := slotAddr_ok s .r11 tableEnd (by decide)
   refine WP.of_runBlock ⟨s₃, e₃, h.pre.congr (o₃ _ (by decide)) rd₃ wr₃, ⟨?_, ?_, fun e he => ?_⟩, fun kv hkv => ?_,

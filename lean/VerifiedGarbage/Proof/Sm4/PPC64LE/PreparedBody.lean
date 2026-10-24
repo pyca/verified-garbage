@@ -169,12 +169,20 @@ theorem prepareBody_wp {s₀ : State} (hrd : s₀.rd = [⟨s₀.gpr .r3, 128⟩]
   have hsch : Spec.Sm4.scheduleAt s₁.mem (s₀.gpr .r3) = Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .r3) :=
     hk₁.sched_eq' (Nat.le_refl _) f₁
   refine WP.seq (WP.mono (Q := KeysPost s₁ b (s₀.gpr .r3) (dirOf (s₀.gpr .r4))) ?_ fun s₂ k₂ => ?_)
-  · refine WP.ite (s₀.gpr .r4 == 0) ((eval_zero s₁ .r4).trans (by rw [r4₁])) (fun h => ?_) (fun h => ?_)
-    · have : dirOf (s₀.gpr .r4) = .encrypt := by simp only [dirOf, beq_iff_eq.mp h, ite_true]
-      rw [this]; exact keys_wp .encrypt hk₁ r3₁ m₁
-    · have h' : s₀.gpr .r4 ≠ 0 := fun e => by rw [e] at h; exact absurd h (by decide)
-      have : dirOf (s₀.gpr .r4) = .decrypt := by simp only [dirOf, h', ite_false]
-      rw [this]; exact keys_wp .decrypt hk₁ r3₁ m₁
+  · by_cases h0 : s₀.gpr .r4 = 0
+    · have : dirOf (s₀.gpr .r4) = .encrypt := by simp only [dirOf, h0, ite_true]
+      rw [this]
+      refine WP.seq (WP.ite false (by rw [eval_nonzero, r4₁, h0]; rfl) (fun h => by cases h)
+        fun _ => WP.of_runBlock ⟨_, rfl, ?_⟩)
+      exact WP.ite true (by rw [eval_zero, r4₁, h0]; rfl) (fun _ => keys_wp .encrypt hk₁ r3₁ m₁)
+        fun h => by cases h
+    · have : dirOf (s₀.gpr .r4) = .decrypt := by simp only [dirOf, h0, ite_false]
+      rw [this]
+      refine WP.seq (WP.ite true (by rw [eval_nonzero, r4₁]; simpa using h0) (fun _ =>
+        WP.mono (keys_wp .decrypt hk₁ r3₁ m₁) fun s k => ?_) fun h => by cases h)
+      have r4 : s.gpr .r4 = s₀.gpr .r4 := by
+        rw [k.regs .r4 (by decide) (by decide) (by decide) (by decide), r4₁]
+      exact WP.ite false (by rw [eval_zero, r4]; simpa using h0) (fun h => by cases h) fun _ => WP.of_runBlock ⟨_, rfl, k⟩
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have sv₂ : Saved s₀ b s₂.mem := fun i hi => by
     rw [← sv₁ i hi]
