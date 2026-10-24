@@ -366,6 +366,64 @@ theorem decS1_piece {r : Nat} (hr : r < p.ℓ) :
   rcases (by omega : r' < r ∨ r' = r) with h' | rfl
   exacts [I.s1 r' h', hq]
 
+
+theorem decS2_piece {i : Nat} (hi : i < p.k) :
+    SPiece p STK (ID p STK · p.ℓ i 0) (ID p STK · p.ℓ (i + 1) 0) (decS2 P p i) := by
+  have hk' := hF.k; have hl := hF.l
+  obtain ⟨hxy, hlen, hlt⟩ := eta_facts hF
+  have ho : skS2 p i + sLen p ≤ p.skLen := by
+    have hsk := hF.sk
+    have hm : sLen p * (i + 1) ≤ sLen p * p.k := Nat.mul_le_mul_left _ (by omega)
+    rw [Nat.mul_add, Nat.mul_one] at hm
+    rw [Nat.mul_add] at hsk
+    show 128 + sLen p * p.ℓ + sLen p * i + sLen p ≤ p.skLen
+    omega
+  have hj : s1Base p ≤ s2Base p + i ∧ s2Base p + i < aBase p :=
+    ⟨by simp only [s1Base, s2Base]; omega, by simp only [s2Base, aBase]; omega⟩
+  have h1 : ∀ r < p.ℓ, s1Base p + r ≠ s2Base p + i := fun r hr => by simp only [s1Base, s2Base]; omega
+  have h2 : ∀ i' < i, s2Base p + i' ≠ s2Base p + i := fun i' hi' => by omega
+  refine Piece.mono ((du_piece hP hF hS hj (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.zero_le _) h1 h2
+    (fun _ h => absurd h (Nat.not_lt_zero _)) hxy hlen ho ⟨hlt.1, hlt.2.1, hlt.2.2, hlt.2.2⟩).seq
+    (nt_piece hP hF hS hj (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.zero_le _) h1 h2
+      (fun _ h => absurd h (Nat.not_lt_zero _))))
+    (fun _ _ _ h => h) fun σ s _ ⟨I, hq⟩ => ⟨I.sc, I.r24, I.ok, I.A, I.rpp, I.s1, fun i' hi' => ?_, I.t0⟩
+  rcases (by omega : i' < i ∨ i' = i) with h' | rfl
+  exacts [I.s2 i' h', hq]
+
+theorem decT0_piece {i : Nat} (hi : i < p.k) :
+    SPiece p STK (ID p STK · p.ℓ p.k i) (ID p STK · p.ℓ p.k (i + 1)) (decT0 P p i) := by
+  have hk' := hF.k; have hl := hF.l
+  have ho : skT0 p i + 416 ≤ p.skLen := by
+    have hsk := hF.sk
+    show 128 + sLen p * (p.ℓ + p.k) + 416 * i + 416 ≤ p.skLen
+    omega
+  have hj : s1Base p ≤ t0Base p + i ∧ t0Base p + i < aBase p :=
+    ⟨by simp only [s1Base, t0Base]; omega, by simp only [t0Base, aBase]; omega⟩
+  have h1 : ∀ r < p.ℓ, s1Base p + r ≠ t0Base p + i := fun r hr => by simp only [s1Base, t0Base]; omega
+  have h2 : ∀ i' < p.k, s2Base p + i' ≠ t0Base p + i := fun i' hi' => by simp only [s2Base, t0Base]; omega
+  have h3 : ∀ i' < i, t0Base p + i' ≠ t0Base p + i := fun i' hi' => by omega
+  refine Piece.mono ((du_piece hP hF hS hj (Nat.le_refl _) (Nat.le_refl _) (Nat.le_of_lt hi) h1 h2 h3
+    (x := 4095) (y := 4096) (by decide) (by decide) ho (by decide)).seq
+    (nt_piece hP hF hS hj (Nat.le_refl _) (Nat.le_refl _) (Nat.le_of_lt hi) h1 h2 h3))
+    (fun _ _ _ h => h) fun σ s _ ⟨I, hq⟩ => ⟨I.sc, I.r24, I.ok, I.A, I.rpp, I.s1, I.s2, fun i' hi' => ?_⟩
+  rcases (by omega : i' < i ∨ i' = i) with h' | rfl
+  · exact I.t0 i' h'
+  · have e : skT0 p i' = 128 + Proof.MlDsa.Sign.lenS p * p.ℓ + Proof.MlDsa.Sign.lenS p * p.k + 32 * d * i' := by
+      show 128 + sLen p * (p.ℓ + p.k) + 416 * i' = _
+      rw [Nat.mul_add, ← Nat.add_assoc]; rfl
+    rw [e] at hq
+    exact hq
+
+/-- Decoding, from `Â`: `ρ″`, `ŝ₁`, `ŝ₂` and `t̂₀`. -/
+theorem decode_piece : SPiece p STK (IM p STK) (ID p STK · p.ℓ p.k p.k) (decode P p) := by
+  unfold decode
+  refine (rhoPP_piece hF).seq ((Piece.mono (Piece.seqR (I := fun r σ s => ID p STK σ r 0 0 s) p.ℓ 0
+    fun r _ hr => decS1_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+    ((Piece.mono (Piece.seqR (I := fun i σ s => ID p STK σ p.ℓ i 0 s) p.k 0
+      fun i _ hi => decS2_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+      (Piece.mono (Piece.seqR (I := fun i σ s => ID p STK σ p.ℓ p.k i s) p.k 0
+        fun i _ hi => decT0_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h)))
+
 end
 
 end VG.Proof.MlDsa.PPC64LE.Sign
