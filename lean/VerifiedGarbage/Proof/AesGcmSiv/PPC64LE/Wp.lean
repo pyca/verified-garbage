@@ -1,0 +1,87 @@
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-!
+# AES-GCM-SIV on PPC64LE: arithmetic and the arguments of calls
+
+Untrusted: everything here is checked by Lean. Shifts and differences of
+small numbers as 64-bit words; and the arguments of `vg_aes_ctr32` from the
+environment (`cargs`): the encryption key's schedule at `W + 256` or the
+key-generating key's at `K`, the counter block at `W + 112`, `k` blocks at
+`Q` and the working space at `W + 1776`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcmSiv.PPC64LE
+
+open VG VG.PPC64LE
+open VG.Proof.AesGcm.PPC64LE (CtrCall)
+
+theorem ofNat_shl (a k : Nat) : BitVec.ofNat 64 a <<< k = BitVec.ofNat 64 (2 ^ k * a) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_mul_mod]
+  rw [Nat.mul_comm]
+
+theorem ofNat_lsr {a : Nat} (k : Nat) (ha : a < 2 ^ 64) : BitVec.ofNat 64 a >>> k = BitVec.ofNat 64 (a / 2 ^ k) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) ha)]
+
+theorem ofNat_sub {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
+    BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega)]
+  omega
+
+theorem ofNat_add (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) :=
+  (BitVec.ofNat_add a b).symm
+
+theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (⟨p, 16⟩ : Region).Disjoint r) : Spec.Gcm.blockAt m' p = Spec.Gcm.blockAt m p := by
+  rw [Spec.Gcm.blockAt, Spec.Gcm.blockAt, Proof.Cmac.bytesAt_frame16 hf hd]
+
+theorem setWidth_32_64 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
+
+/-- The arguments of `vg_aes_ctr32`: the schedule of `R` rounds at `K'`, the
+counter block at `W + 112`, `k` blocks at `Q`, which it may write, and the
+working space at `W + 1776`. -/
+theorem cargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
+    (hK : Covers [⟨K', 240⟩] (s.rd ++ s.wr)) (hKw : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩)
+    (hKs : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 1776, 2048⟩)
+    {Q : Addr} {k : Nat} (hqk : (⟨K', 240⟩ : Region).Disjoint ⟨Q, 16 * k⟩)
+    (hqc : (⟨c.W + BitVec.ofNat 64 112, 16⟩ : Region).Disjoint ⟨Q, 16 * k⟩)
+    (hqs : (⟨Q, 16 * k⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 1776, 2048⟩)
+    (hqw : Covers [⟨Q, 16 * k⟩] s.wr) (hfit : Q.toNat + 16 * k ≤ 2 ^ 64) (hk : k < 2 ^ 64)
+    (r3 : s.gpr .r3 = K') (r4 : s.gpr .r4 = BitVec.ofNat 64 c.R) (r5 : s.gpr .r5 = c.W + BitVec.ofNat 64 112)
+    (r6 : s.gpr .r6 = Q) (r7 : s.gpr .r7 = BitVec.ofNat 64 k) (r8 : s.gpr .r8 = c.W + BitVec.ofNat 64 1776) :
+    CtrCall s K' (c.W + BitVec.ofNat 64 112) Q (c.W + BitVec.ofNat 64 1776) c.R k where
+  r3 := r3
+  r4 := r4
+  r5 := r5
+  r6 := r6
+  r7 := r7
+  r8 := r8
+  rounds := by rcases L.rounds with h | h <;> simp [h]
+  n_lt := hk
+  kc := hKw
+  kd := hqk
+  ks := hKs
+  cd := hqc
+  cs := L.w_w (.inl (by decide)) (by decide) (by decide)
+  ds := hqs
+  fit := hfit
+  reads := Covers.append_left (Covers.cons hK Covers.nil)
+    (Covers.cons (E.perm.wCR (by decide)) (Covers.cons (Covers.right hqw) (Covers.cons (E.perm.wCR (by decide))
+      Covers.nil)))
+  writes := Covers.cons (E.perm.wC (by decide)) (Covers.cons hqw (Covers.cons (E.perm.wC (by decide)) Covers.nil))
+
+end VG.Proof.AesGcmSiv.PPC64LE
