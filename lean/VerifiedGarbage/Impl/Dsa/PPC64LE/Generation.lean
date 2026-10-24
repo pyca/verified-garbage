@@ -260,6 +260,12 @@ def enterP (pLen : Nat) : List Instr :=
   [scr .r21 pB, .addi .r23 .r21 0, .addi .r31 .r21 0, .addi .r10 .r21 VG.Impl.Bignum.hdrBytes,
     .li .r11 (pLen / 4), .li .r29 (pLen + 16)]
 
+/-- Array 4's word `w` := 0 (as `elemRange` reads it), and `r10` back to array 0. -/
+def zeroTop4 : List Instr :=
+  VG.Impl.Bignum.PPC64LE.PublicChecked.base .r10 4 ++
+    [.add .r14 .r10 .r29, .subi .r14 .r14 16, .li .r0 0, .store .d .r0 .r14 0,
+      .addi .r10 .r31 VG.Impl.Bignum.hdrBytes]
+
 /-- `[4] := h^((p−1)/q) mod p` for `h` at `fH`: p into array 0, `R² mod p`
 into array 1, `h` into array 4, then the power over `sE`; `r0 := 0` exactly
 when `1 < [4] < p`. -/
@@ -271,7 +277,7 @@ def power (pLen qLen : Nat) : Prog isa := seqs [
   .block [ld .r12 fH, .li .r6 pLen], VG.Impl.Dsa.PPC64LE.loadArr 4,
   .block (VG.Impl.Bignum.PPC64LE.PublicChecked.minv ++ [scr .r30 sE, .li .r31 (eBytes pLen qLen)]),
   VG.Impl.Bignum.PPC64LE.ModExp.powSecret,
-  .block [.addi .r31 .r23 0],
+  .block ([.addi .r31 .r23 0] ++ zeroTop4),
   VG.Impl.Dsa.PPC64LE.elemRange]
 
 /-! ## The search -/
