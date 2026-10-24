@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Tag
 public import VerifiedGarbage.Proof.GcmSiv.Ctr
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -11,6 +11,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+import VerifiedGarbage.Proof.GcmSiv.Spec
 
 /-!
 # AES-GCM-SIV on PPC64LE: counter mode (`crypt`)

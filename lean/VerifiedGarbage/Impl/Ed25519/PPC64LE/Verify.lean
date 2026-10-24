@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.PPC64LE.ScalarBase
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Recover
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Scalar

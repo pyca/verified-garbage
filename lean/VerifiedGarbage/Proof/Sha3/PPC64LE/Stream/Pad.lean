@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Sha3.PPC64LE.Call
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Wp
-import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call

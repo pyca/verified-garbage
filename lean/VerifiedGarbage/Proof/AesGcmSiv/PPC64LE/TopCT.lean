@@ -24,6 +24,8 @@ public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 
 /-!
 # AES-GCM-SIV on PPC64LE: constant time

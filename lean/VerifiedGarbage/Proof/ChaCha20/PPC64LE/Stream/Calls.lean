@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Bytes
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 
 /-!
 # Streaming ChaCha20 on PPC64LE: the calls

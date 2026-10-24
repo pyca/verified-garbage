@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Call
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
-import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.CbcList
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.Cbc
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 /-!
 # RC2-CBC on PPC64LE: one block

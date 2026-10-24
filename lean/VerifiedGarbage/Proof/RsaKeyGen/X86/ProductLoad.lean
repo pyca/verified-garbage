@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Product
 public import VerifiedGarbage.Proof.Mont.X86.Words
-import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Mont.Words

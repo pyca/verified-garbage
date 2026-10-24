@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Impl.MdStream.PPC64LE
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # HMAC over any streaming hash function: PPC64LE implementation

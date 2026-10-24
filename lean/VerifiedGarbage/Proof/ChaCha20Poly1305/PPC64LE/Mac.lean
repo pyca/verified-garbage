@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Prologue
+import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Prologue
 import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Entry
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: absorbing padded data

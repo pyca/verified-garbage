@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Deterministic ECDSA on PPC64LE: steps in the frame, and the entry
@@ -38,7 +38,7 @@ theorem Ctx.kp (hL : L.Ok) {t t' : State} (hc : Ctx L g lr m₀ t) {rs : List Re
 
 /-- The arguments saved in the frame: `Ctx` holds. -/
 theorem entry_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State}
-    (h : (rfcPPC I (400 + Impl.Ecdsa.Rfc6979.PPC64LE.extra (decide (48 < I.ecdsa.curve.len)))).pre s) :
+    (h : (rfcPPC I (400 + extraOf I.hashLen I.ecdsa.curve.len)).pre s) :
     WP isa (.block Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.saveArgs) (entered (lay I.hashLen I.ecdsa.curve.len s).e s)
       (Ctx (lay I.hashLen I.ecdsa.curve.len s) s.gpr s.lr s.mem) := by
   have hL := lay_ok h

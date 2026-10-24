@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
-import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 
 /-!
 # AES-GCM-SIV on PPC64LE: `vg_aes_gcm_siv_open`

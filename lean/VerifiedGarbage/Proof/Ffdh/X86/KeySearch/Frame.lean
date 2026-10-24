@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Entry
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The attempt's frame of arguments (x86)
 

@@ -1,12 +1,12 @@
 //! The FFDH operations, entirely in verified code: the domain, public-key
 //! and key-pair checks, key generation and the exchange (`VG.Spec.Ffdh`'s
 //! contracts). Key generation's whole rejection search is verified
-//! (`vg_ffdh_generate_key_search`, or its cached entry point on ARM).
+//! (`vg_ffdh_generate_key_search`, or its cached entry point on ARMv7/AArch64).
 //! Rust lays out the domain, pads the values to the modulus' width,
 //! allocates the working space and selects the implementation for the CPU.
 
 use super::arithmetic::{Backend, scalar};
-#[cfg(not(target_arch = "arm"))]
+#[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
 use crate::arch::ffdh::vg_ffdh_generate_key_search;
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
@@ -30,7 +30,7 @@ fn scratch(p_len: usize) -> Scratch {
 pub(super) struct Domain {
     bytes: alloc::vec::Vec<u8>,
     p_len: usize,
-    #[cfg(target_arch = "arm")]
+    #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
     precomputed: super::precomputed::Precomputed,
 }
 
@@ -73,17 +73,17 @@ impl Domain {
         if ok != 1 {
             return None;
         }
-        #[cfg(target_arch = "arm")]
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
         let precomputed = super::precomputed::Precomputed::new(&bytes, p_len, &mut ws);
         Some(Self {
             bytes,
             p_len,
-            #[cfg(target_arch = "arm")]
+            #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
             precomputed,
         })
     }
 
-    #[cfg(target_arch = "arm")]
+    #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
     pub(super) fn exponent_len(&self) -> usize {
         self.precomputed.exponent_len()
     }
@@ -196,7 +196,7 @@ impl Domain {
     /// Run the key search on `tape` into `x` and `y` (`p_len` bytes each):
     /// the status (1 for a key pair, 3 for a budget exhausted, 0 for more
     /// entropy), the bytes of the tape consumed and the next request
-    /// ARM reuses the canonical public comb context initialized by `new`;
+    /// ARMv7 and AArch64 reuse the canonical public comb context initialized by `new`;
     /// other architectures use their existing full-width search.
     pub(super) fn key_search(
         &self,
@@ -207,12 +207,13 @@ impl Domain {
     ) -> (u32, usize, usize) {
         assert!(x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        #[cfg(target_arch = "arm")]
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_search_cached,
+            #[cfg(target_arch = "arm")]
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_umaal,
         };
-        #[cfg(not(target_arch = "arm"))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => vg_ffdh_generate_key_search,
             #[cfg(target_arch = "x86_64")]
@@ -225,7 +226,7 @@ impl Domain {
         // `vg_ffdh_check_domain`; `x` and `y` are `p_len` bytes and `ws`
         // `16 p_len + 32` words. All are distinct Rust objects. The CPU
         // variant is selected only when the CPU has its generated feature
-        // set. The ARM context is the immutable canonical allocation written
+        // set. The public context is the immutable canonical allocation written
         // once for this checked domain and its exact ctx_len.
         let status = unsafe {
             f(
@@ -242,9 +243,9 @@ impl Domain {
                 ws.as_mut_ptr(),
                 ws.len(),
                 state,
-                #[cfg(target_arch = "arm")]
+                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
                 self.precomputed.words().as_ptr(),
-                #[cfg(target_arch = "arm")]
+                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
                 self.precomputed.words().len(),
             )
         };
@@ -254,18 +255,18 @@ impl Domain {
     /// One attempt at a key pair from `p_len` random bytes `rand`: 1 and the
     /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
     /// scalar out of range, 3 for a degenerate public value
-    /// (`vg_ffdh_generate_key`, or its cached entry point on ARM).
+    /// (`vg_ffdh_generate_key`, or its cached entry point on ARMv7/AArch64).
     #[cfg(test)]
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => {
-                #[cfg(target_arch = "arm")]
+                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
                 {
                     crate::arch::ffdh::vg_ffdh_generate_key_cached
                 }
-                #[cfg(not(target_arch = "arm"))]
+                #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
                 {
                     crate::arch::ffdh::vg_ffdh_generate_key
                 }
@@ -291,9 +292,9 @@ impl Domain {
                 rand.len(),
                 ws.as_mut_ptr(),
                 ws.len(),
-                #[cfg(target_arch = "arm")]
+                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
                 self.precomputed.words().as_ptr(),
-                #[cfg(target_arch = "arm")]
+                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
                 self.precomputed.words().len(),
             )
         }
@@ -340,7 +341,7 @@ impl Domain {
     }
 }
 
-#[cfg(all(test, target_arch = "arm"))]
+#[cfg(all(test, any(target_arch = "arm", target_arch = "aarch64")))]
 mod cache_tests {
     use super::*;
 
@@ -369,6 +370,7 @@ mod cache_tests {
         }
     }
 
+    #[cfg(target_arch = "arm")]
     #[test]
     fn canonical_context_crosses_arithmetic_backends() {
         // Feature-forced baseline CI runs take the first path; UMAAL runs

@@ -41,6 +41,8 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_open` is constant time

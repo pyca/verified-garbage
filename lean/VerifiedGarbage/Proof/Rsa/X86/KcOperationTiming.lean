@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Rsa.X86.KcResources
 import VerifiedGarbage.Proof.Rsa.X86.KcBodyPublic
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # The complete key-validation operation leaks only the contract's declared public inputs -/
 

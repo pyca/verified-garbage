@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 
 /-! Initializing the fused search after aligning the full exponent. -/
 @[expose] public section

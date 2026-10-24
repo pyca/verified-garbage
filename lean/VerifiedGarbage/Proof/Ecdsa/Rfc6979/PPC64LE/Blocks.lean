@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 
 /-!
 # Deterministic ECDSA on PPC64LE: the blocks between the calls
@@ -143,12 +145,14 @@ theorem initCnt_ok (hL : L.Ok) {c : Cfg} (ht : c.tries < 2 ^ 15) {t : State} (hc
   rw [m₃, Mem.readW_writeW_self64, k₂.gpr _ (by decide), v₁]
 
 /-- The arguments of `core`: `out`, `d`, the digest, `k` (the frame's `V`)
-and `scratch`. -/
-theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.block Cfg.coreArgs) t fun u => Ctx L g lr m₀ u ∧ u.mem = t.mem ∧
-      Kp [.r11, .r3, .r4, .r5, .r6, .r7] t u ∧ u.gpr .r3 = L.out ∧ u.gpr .r4 = L.d ∧ u.gpr .r5 = L.dg ∧
-      u.gpr .r6 = L.B + BitVec.ofNat 64 192 ∧ u.gpr .r7 = L.scr := by
+and `scratch`; or, if `wide`, the digest and `k` at the frame's top. -/
+theorem coreArgs_ok (hL : L.Ok) (wide : Bool) {t : State} (hc : Ctx L g lr m₀ t) :
+    WP isa (.block (Cfg.coreArgs wide)) t fun u => Ctx L g lr m₀ u ∧ u.mem = t.mem ∧
+      Kp [.r11, .r3, .r4, .r5, .r6, .r7] t u ∧ u.gpr .r3 = L.out ∧ u.gpr .r4 = L.d ∧
+      u.gpr .r5 = (if wide then L.B + BitVec.ofNat 64 352 else L.dg) ∧
+      u.gpr .r6 = (if wide then L.B + BitVec.ofNat 64 424 else L.B + BitVec.ofNat 64 192) ∧ u.gpr .r7 = L.scr := by
   have hnB := hL.nB
+  simp only [Cfg.coreArgs, List.cons_append, List.nil_append]
   refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
   have hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
   have hc₁ := hc.kp hL k₁ m₁
@@ -158,24 +162,43 @@ theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
   refine stepLd (a := L.B + BitVec.ofNat 64 328) (by decide) (by decide)
     (by rw [k₂.gpr _ (by decide), hb, fr_add]; rfl) (hc₂.inFr (by omega) (by omega)) fun t₃ k₃ m₃ v₃ => ?_
   have hc₃ := hc₂.kp hL k₃ m₃
-  refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide)
-    (by rw [k₃.gpr _ (by decide), k₂.gpr _ (by decide), hb, fr_add]; rfl) (hc₃.inFr (by omega) (by omega))
-    fun t₄ k₄ m₄ v₄ => ?_
-  have hc₄ := hc₃.kp hL k₄ m₄
-  refine stepAddSp (by decide) fun t₅ k₅ m₅ v₅ => ?_
-  have hc₅ := hc₄.kp hL k₅ m₅
-  refine stepLd (a := L.B + BitVec.ofNat 64 312) (by decide) (by decide)
-    (by rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), hb,
-      fr_add]; rfl) (hc₅.inFr (by omega) (by omega)) fun t₆ k₆ m₆ v₆ => wp_nil ?_
-  have K : Kp [.r11, .r3, .r4, .r5, .r6, .r7] t t₆ :=
-    ((((k₁.mono.trans k₂.mono).trans k₃.mono).trans k₄.mono).trans k₅.mono).trans k₆.mono
-  refine ⟨hc₅.kp hL k₆ m₆, by rw [m₆, m₅, m₄, m₃, m₂, m₁], K, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), v₂, m₁,
-      hc.pOut]
-  · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), v₃, m₂, m₁, hc.pD]
-  · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, m₃, m₂, m₁, hc.pDg]
-  · rw [k₆.gpr _ (by decide), v₅, k₄.sp, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]; rfl
-  · rw [v₆, m₅, m₄, m₃, m₂, m₁, hc.pScr]
+  have h3 : t₃.gpr .r3 = L.out := by rw [k₃.gpr _ (by decide), v₂, m₁, hc.pOut]
+  have h4 : t₃.gpr .r4 = L.d := by rw [v₃, m₂, m₁, hc.pD]
+  have hm₃ : t₃.mem = t.mem := by rw [m₃, m₂, m₁]
+  have K₃ : Kp [.r11, .r3, .r4, .r5, .r6, .r7] t t₃ := (k₁.mono.trans k₂.mono).trans k₃.mono
+  cases wide
+  · simp only [Bool.false_eq_true, ite_false, List.cons_append, List.nil_append]
+    refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide)
+      (by rw [k₃.gpr _ (by decide), k₂.gpr _ (by decide), hb, fr_add]; rfl) (hc₃.inFr (by omega) (by omega))
+      fun t₄ k₄ m₄ v₄ => ?_
+    have hc₄ := hc₃.kp hL k₄ m₄
+    refine stepAddSp (by decide) fun t₅ k₅ m₅ v₅ => ?_
+    have hc₅ := hc₄.kp hL k₅ m₅
+    refine stepLd (a := L.B + BitVec.ofNat 64 312) (by decide) (by decide)
+      (by rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), hb,
+        fr_add]; rfl) (hc₅.inFr (by omega) (by omega)) fun t₆ k₆ m₆ v₆ => wp_nil ?_
+    have K : Kp [.r11, .r3, .r4, .r5, .r6, .r7] t t₆ := ((K₃.trans k₄.mono).trans k₅.mono).trans k₆.mono
+    refine ⟨hc₅.kp hL k₆ m₆, by rw [m₆, m₅, m₄, hm₃], K, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), h3]
+    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), h4]
+    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, hm₃, hc.pDg]
+    · rw [k₆.gpr _ (by decide), v₅, k₄.sp, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]; rfl
+    · rw [v₆, m₅, m₄, hm₃, hc.pScr]
+  · simp only [ite_true, List.cons_append, List.nil_append]
+    refine stepAddSp (by decide) fun t₄ k₄ m₄ v₄ => ?_
+    have hc₄ := hc₃.kp hL k₄ m₄
+    refine stepAddSp (by decide) fun t₅ k₅ m₅ v₅ => ?_
+    have hc₅ := hc₄.kp hL k₅ m₅
+    refine stepLd (a := L.B + BitVec.ofNat 64 312) (by decide) (by decide)
+      (by rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), hb,
+        fr_add]; rfl) (hc₅.inFr (by omega) (by omega)) fun t₆ k₆ m₆ v₆ => wp_nil ?_
+    have K : Kp [.r11, .r3, .r4, .r5, .r6, .r7] t t₆ := ((K₃.trans k₄.mono).trans k₅.mono).trans k₆.mono
+    refine ⟨hc₅.kp hL k₆ m₆, by rw [m₆, m₅, m₄, hm₃], K, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), h3]
+    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), h4]
+    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]; rfl
+    · rw [k₆.gpr _ (by decide), v₅, k₄.sp, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]; rfl
+    · rw [v₆, m₅, m₄, hm₃, hc.pScr]
 
 /-- One candidate fewer, and whether to try another: `r12` is zero if
 `core` succeeded (bit 0 of `r3`) or no candidates are left. -/
@@ -266,8 +289,9 @@ theorem wipeExt_stores (hL : L.Ok) :
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega) (by omega)⟩)⟩
 
 /-- The frame's `K`, `V`, the hash and the count wiped, and its top. -/
-theorem wipe_ok (hL : L.Ok) {hHigh : Bool} (he : extra hHigh ≤ L.e) {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.block (Cfg.wipe hHigh)) t fun u => Ctx L g lr m₀ u ∧ Kp [.r11, .r12] t u ∧
+theorem wipe_ok (hL : L.Ok) {hHigh wide : Bool} (he : extra hHigh wide ≤ L.e) {t : State}
+    (hc : Ctx L g lr m₀ t) :
+    WP isa (.block (Cfg.wipe hHigh wide)) t fun u => Ctx L g lr m₀ u ∧ Kp [.r11, .r12] t u ∧
       Frame [⟨L.B + BitVec.ofNat 64 128, 176⟩, ⟨L.B + BitVec.ofNat 64 352, L.e⟩] t.mem u.mem := by
   rw [Cfg.wipe, List.append_assoc, WP.block_append_iff]
   refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
@@ -276,8 +300,8 @@ theorem wipe_ok (hL : L.Ok) {hHigh : Bool} (he : extra hHigh ≤ L.e) {t : State
   have b₂ : t₂.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [k₂.gpr _ (by decide), v₁, hc.sp, BitVec.add_zero]
   rw [WP.block_append_iff]
   refine WP.mono (wipe_stores hL 22 (Nat.le_refl _) t₂ (hc.kp hL K (by rw [m₂, m₁])) b₂) fun u ⟨hcu, gu, fu⟩ => ?_
-  have h8 : extra hHigh % 8 = 0 := by cases hHigh <;> decide
-  refine WP.mono (wipeExt_stores hL (extra hHigh / 8) (by omega) u hcu (by rw [gu.gpr _ (by simp), b₂])) fun u' ⟨hcu', gu', fu'⟩ => ⟨hcu', (K.trans gu.mono).trans gu'.mono, ?_⟩
+  have h8 : extra hHigh wide % 8 = 0 := by cases hHigh <;> cases wide <;> decide
+  refine WP.mono (wipeExt_stores hL (extra hHigh wide / 8) (by omega) u hcu (by rw [gu.gpr _ (by simp), b₂])) fun u' ⟨hcu', gu', fu'⟩ => ⟨hcu', (K.trans gu.mono).trans gu'.mono, ?_⟩
   rw [← m₁, ← m₂]
   exact (fu.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
     (fu'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)

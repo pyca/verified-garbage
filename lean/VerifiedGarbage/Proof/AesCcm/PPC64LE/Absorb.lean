@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Callee
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Callee
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 public import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.Mac
@@ -11,6 +11,19 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Impl.AesCcm.PPC64LE
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Spec.Cmac
 
 /-!
 # AES-CCM on PPC64LE: a buffer padded, chained (`absorbPad y`)

@@ -14,6 +14,9 @@ namespace VG.Impl.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Impl.Pbkdf2.Md.X86_64
 open VG.Impl.Mgf1.X86_64 (sp)
 
+variable {checkName : String}
+
+
 def savedRegisters : List (Nat × Reg) :=
   [(0, .rbx), (8, .rbp), (16, .r12), (24, .r13), (32, .r14), (40, .r15)]
 
@@ -43,17 +46,17 @@ def entryDerived : List Instr :=
 
 def dispatch (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
   .seq (.block [.mov .rax (.mem (sp 136)), .alu .cmp .rax (.imm 128)])
-    (.ite .e (generate G1 G256 sq mul round 128 20)
+    (.ite .e (generate (checkName := checkName) G1 G256 sq mul round 128 20)
       (.seq (.block [.alu .cmp .rax (.imm 256)])
-        (.ite .e (generate G1 G256 sq mul round 256 32) (generate G1 G256 sq mul round 384 32))))
+        (.ite .e (generate (checkName := checkName) G1 G256 sq mul round 256 32) (generate (checkName := checkName) G1 G256 sq mul round 384 32))))
 
 def entryBody (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
-  .seq (.block (entryHeader ++ entryIncoming ++ entryDerived)) (dispatch G1 G256 sq mul round)
+  .seq (.block (entryHeader ++ entryIncoming ++ entryDerived)) (dispatch (checkName := checkName) G1 G256 sq mul round)
 
 def code (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
   .frame (.alloc 48)
     (.seq (.block saveRegisters)
-      (.seq (.frame (.alloc 296) (entryBody G1 G256 sq mul round) (.free 296)) (.block restoreRegisters)))
+      (.seq (.frame (.alloc 296) (entryBody (checkName := checkName) G1 G256 sq mul round) (.free 296)) (.block restoreRegisters)))
     (.free 48)
 
 end VG.Impl.Dsa.X86_64.Generation

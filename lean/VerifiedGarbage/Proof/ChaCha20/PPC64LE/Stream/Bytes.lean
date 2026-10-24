@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Init
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 
 /-!
 # Streaming ChaCha20 on PPC64LE: XORing bytes

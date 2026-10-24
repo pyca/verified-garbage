@@ -18,6 +18,9 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 open VG.Proof.MillerRabin.X86_64
 
+
+variable {checkName : String}
+
 theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
@@ -28,7 +31,7 @@ theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : K
     WP isa (.seq (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 M.mm K.run p.geo.pLen p.geo.qLen)
       (Impl.Dsa.X86_64.Generation.onSuccess
         (.seq (Impl.Dsa.X86_64.Generation.generatorSearch Sq.mm M.mm p.geo.pLen)
-          (Impl.Dsa.X86_64.Generation.onSuccess (Impl.Dsa.X86_64.Generation.finishDomain Sq.mm M.mm p.geo.pLen p.geo.qLen))))) s
+          (Impl.Dsa.X86_64.Generation.onSuccess (Impl.Dsa.X86_64.Generation.finishDomain (checkName := checkName) Sq.mm M.mm p.geo.pLen p.geo.qLen))))) s
       (SeedFinished p W (VG.Proof.Dsa.Generation.primeResult (8 * p.geo.pLen) (8 * p.geo.qLen)
         (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) seed.bytes
         ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used)) s) := by
@@ -54,7 +57,7 @@ theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : K
           ((value - 1) / Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ be
       have qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen
           (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ bqu
-      have call := seedGeneratorFinish_ok M Sq mv value (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes)
+      have call := seedGeneratorFinish_ok (checkName := checkName) M Sq mv value (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes)
         domain qfit bv ev qv u16 huu
       have expected : VG.Proof.Dsa.Generation.primeResult (8 * p.geo.pLen) (8 * p.geo.qLen)
           (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) seed.bytes

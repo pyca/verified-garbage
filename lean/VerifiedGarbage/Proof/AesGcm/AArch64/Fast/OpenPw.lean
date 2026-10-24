@@ -18,7 +18,7 @@ Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_with_powers`
 is `open` with `pw` a stack argument after `tag_len` (so `work` one slot
 further, `Fast.openWithPw`), its whole blocks on the path for TLS records
 hashed by `vg_ghash_with_powers`, called with `pw` loaded from the stack
-(`Fast.pwCall 16`), as `vg_aes_gcm_seal_with_powers` does (`SealPw.lean`).
+(`Fast.pwSel 16`), as `vg_aes_gcm_seal_with_powers` does (`SealPw.lean`).
 -/
 
 @[expose] public section
@@ -114,11 +114,6 @@ theorem gwCallO_of {σ s : State} {Y S : Addr} (hs : openPwN σ) (sY : Region.Su
 
 /-! ## On the regions of the proofs -/
 
-theorem pwCall16_keepsV (g : GhashWithImpl) :
-    (Impl.AesGcm.AArch64.Fast.pwCall 16 g.fn).allInstrs keepsV = true := by
-  simp only [Impl.AesGcm.AArch64.Fast.pwCall, Code.allInstrs, g.keepsV, Bool.and_true]
-  decide
-
 section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
@@ -128,8 +123,8 @@ theorem openPw_correctN (s : State) (hs : openPwN s) :
       openAArch64.post s s' :=
   WP.withPreservedV (openWithE_wp (w := 3) _ v hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
       have q := gwCallO_of hs sY sS hrd hwr hsp hf
-      pw_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
-    (fastOpenWithE_keepsV v (.inr rfl) (pwCall16_keepsV g))
+      pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
+    (fastOpenWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inr rfl)))
 
 theorem openPw_ctN :
     ConstantTime isa openPwN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
@@ -137,7 +132,7 @@ theorem openPw_ctN :
   openWithE_ct (w := 3) v _ hMK (.inr rfl) (extra := fun s => [pwRO s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCallO_of p sY sS hrd hwr hsp hf
-      pw_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
+      pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
     fun {σ₁ σ₂ s₁ s₂ _ _ _ _} p₁ p₂ hq c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ => by
       obtain ⟨q0, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
       have e3 : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by decide)
@@ -147,7 +142,7 @@ theorem openPw_ctN :
         (sp₂.trans qsp) (by rw [← e3, ← q6, ← q7]; exact f₂)
       rw [← e2] at hP₂ k₂
       rw [← q0] at k₂
-      exact pw_rel g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm)
+      exact pwSel_rel v g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm)
 
 end
 

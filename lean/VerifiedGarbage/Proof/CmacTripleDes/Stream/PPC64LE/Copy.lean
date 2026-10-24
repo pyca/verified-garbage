@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Streaming TDEA-CMAC on PPC64LE: the byte copy

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvBody
+import VerifiedGarbage.Proof.Rsa.X86.RvBody
 public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
 import VerifiedGarbage.Proof.Rsa.X86.RvModulusTiming
@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
 /-! # The wrapper exposes only the public modulus and declared attempt count -/
 

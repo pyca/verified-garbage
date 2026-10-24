@@ -1,6 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+public import VerifiedGarbage.Spec.Hmac.Generic
 
 /-!
 # HMAC over any streaming hash function on PPC64LE: an instance

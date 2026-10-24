@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTBase
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCall
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.CT
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Correct
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 
 /-!
 # Argon2 on PPC64LE: the calls of G and H′, in two runs

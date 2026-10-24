@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Mont.Words32
 /-! # The inverse working bank and virtual modulus -/
 @[expose] public section
 namespace VG.Proof.Rsa.X86.InvBatch

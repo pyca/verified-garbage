@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvRest
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedSearch
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 
 /-! Complete fused recovery after the initial validity test. -/
 @[expose] public section

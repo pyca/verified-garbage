@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Mix
-import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Mix
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Spec.Argon2
 public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.Impl.Argon2.PPC64LE.Compress
+public import VerifiedGarbage.Impl.MdStream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Argon2 compression on PPC64LE: the row and column permutations -/
 

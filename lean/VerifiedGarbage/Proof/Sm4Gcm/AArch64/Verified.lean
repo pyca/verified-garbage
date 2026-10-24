@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Seal
 import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Open
 import VerifiedGarbage.Proof.Sm4Gcm.AArch64.StreamVerify
 import VerifiedGarbage.Proof.Sm4Gcm.AArch64.StreamFinish
+import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 
 /-!
 # SM4-GCM on AArch64: `Verified`
@@ -43,39 +44,39 @@ def GcmImpl.features (v : GcmImpl) : List String := v.gh.features
 /-! ## v8–v15 -/
 
 theorem init_keepsV : init.allInstrs keepsV = true := by
-  simp only [init, ctrCall, Code.allInstrs, ctrCode_keepsV, keyCode_keepsV]; decide +kernel
+  simp only [init, ctrCall, Code.allInstrs, ctrCode_keepsV, keyCode_keepsV]; lit_decide
 
 theorem streamEncrypt_keepsV (v : GcmImpl) : (streamEncrypt v.callees).allInstrs keepsV = true := by
   simp only [streamEncrypt, encBody, fo, textAbs, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb,
     absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
-    Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; decide +kernel
+    Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
 
 theorem streamDecrypt_keepsV (v : GcmImpl) : (streamDecrypt v.callees).allInstrs keepsV = true := by
   simp only [streamDecrypt, decBody, decAbs, fo, textAbs, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall,
     absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens,
-    GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; decide +kernel
+    GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
 
 theorem streamFinish_keepsV (v : GcmImpl) : (streamFinish v.callees).allInstrs keepsV = true := by
   simp only [streamFinish, finBody, tag, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB,
     Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, ctrCode_keepsV,
-    v.gh.keepsV]; decide +kernel
+    v.gh.keepsV]; lit_decide
 
 theorem streamVerify_keepsV (v : GcmImpl) : (streamVerify v.callees).allInstrs keepsV = true := by
   simp only [streamVerify, tagLenOk, tagIn, cmpSeg, cmp, cmp16, finBody, tag, ctrCall, ghCall, absorb,
     absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
-    Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; decide +kernel
+    Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
 
 theorem seal_keepsV (v : GcmImpl) : («seal» v.callees).allInstrs keepsV = true := by
   simp only [«seal», sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1,
     crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor,
-    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; decide +kernel
+    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
 
 theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true := by
   simp only [«open», openEntry, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tagIn, cmpSeg, cmp,
     cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
     ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush,
     lens, GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]
-  decide +kernel
+  lit_decide
 
 /-! ## Correctness -/
 

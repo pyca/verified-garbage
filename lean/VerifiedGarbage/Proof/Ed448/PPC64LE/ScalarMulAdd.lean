@@ -14,6 +14,7 @@ public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarLoop
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.X448.PPC64LE.Pass
 
 /-!
 # `vg_ed448_scalar_mul_add` on PPC64LE: correctness

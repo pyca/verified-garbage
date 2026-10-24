@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverCand
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverCand
 public import VerifiedGarbage.Proof.Ed25519.RecoverResult
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldTest
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Freeze
@@ -9,10 +9,12 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 import VerifiedGarbage.Proof.X25519.PPC64LE.Bits
 import VerifiedGarbage.Proof.X25519.PPC64LE.Limbs
-import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Recover
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
 # Ed25519 on PPC64LE: the sign and the checks of a decoding

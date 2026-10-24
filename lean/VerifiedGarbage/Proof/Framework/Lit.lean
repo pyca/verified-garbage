@@ -105,12 +105,21 @@ meta def lhsOf (N : Name) : MetaM Expr := do
 
 /-- The constants `c` with a literal (`c.lit_eq : c = c.lit`), from
 `materialize_code c` or `materialize_table c`. -/
-meta def litConsts (env : Environment) : Array Name :=
-  (litNames env).filter fun N => match env.find? (N ++ `lit_eq) with
+meta def litConsts (env : Environment) (names : Array Name := litNames env) : Array Name :=
+  names.filter fun N => match env.find? (N ++ `lit_eq) with
     | some ci => match ci.type.eq? with
       | some (_, .const c _, _) => c == N
       | _ => false
     | none => false
+
+/-- The constants `c` with a literal of another name (`N.lit_eq : c = N.lit`,
+from `materialize_code N := c` or `materialize_value N := c`). -/
+meta def litAliases (env : Environment) (names : Array Name := litNames env) : Array Name :=
+  names.filterMap fun N => match env.find? (N ++ `lit_eq) with
+    | some ci => match ci.type.eq? with
+      | some (_, .const c _, _) => if c == N then none else some c
+      | _ => none
+    | none => none
 
 /-- Whether `S` is a structure with a field that is a proof. -/
 meta def hasProofFields (S : Expr) : MetaM Bool := do
@@ -132,13 +141,26 @@ meta def codeModule (env : Environment) (mods : Array Name) (c : Name) : Bool :=
     | some (`VerifiedGarbage :: k :: _) => k ∈ [`Impl, `Proof, `Variants, `Generic, `Artifacts]
     | _ => false
 
+/-- The index of the first module with one of `targets` (the number of
+modules if they are all of the current one). A definition uses only
+constants of its module and of the modules it imports, which come before it:
+none of a module before that one leads to a target. -/
+meta def firstModuleOf (env : Environment) (targets : NameSet) : Nat :=
+  targets.foldl (init := env.header.moduleNames.size) fun i c =>
+    match env.getModuleIdxFor? c with
+    | some j => min i j.toNat
+    | none => i
+
 /-- Whether the definition `c` uses one of `targets`, directly or through
-definitions of this project, memoized in the state. -/
-meta partial def reaches (targets : NameSet) (mods : Array Name) (c : Name) :
+definitions of this project, memoized in the state; `first` is
+`firstModuleOf targets`. -/
+meta partial def reaches (targets : NameSet) (mods : Array Name) (first : Nat) (c : Name) :
     StateT (NameMap Bool) MetaM Bool := do
   if let some b := (← get).find? c then return b
   modify (·.insert c false)
   let env ← getEnv
+  if let some i := env.getModuleIdxFor? c then
+    if i.toNat < first then return false
   unless codeModule env mods c do return false
   let some (.defnInfo d) := env.find? c | return false
   -- Only data: unfolding a proposition could hide its `Decidable` instance.
@@ -151,7 +173,7 @@ meta partial def reaches (targets : NameSet) (mods : Array Name) (c : Name) :
   for u in d.value.getUsedConstants do
     if targets.contains u then r := true
     else if u.getRoot == `VG && !(u matches .str _ "lit") then
-      if ← reaches targets mods u then r := true
+      if ← reaches targets mods first u then r := true
   -- Rewriting code inside a structure with proofs about it would change the
   -- types of those proofs.
   if r then r := !(← hasProofFields d.type.getForallBody.getAppFn)
@@ -175,15 +197,19 @@ meta partial def unfoldWhere (env : Environment) (p : Name → Bool) (e : Expr)
     | _ => none
 
 /-- The maximal closed subterms of `e` whose head is a definition that leads
-to constants with a literal (`reaches`), or one of them. -/
-meta def reachingSubterms (e : Expr) : MetaM (Array Expr) := do
-  let targets := (litConsts (← getEnv)).foldl (fun s c => s.insert c) ({} : NameSet)
+to constants with a literal (`reaches`), or one of them: the literal's own
+constant or another (`materialize_value N := c`, which `unfoldToLits`
+rewrites as an atom), given the names of the literals (`litNames`). -/
+meta def reachingSubterms (names : Array Name) (e : Expr) : MetaM (Array Expr) := do
+  let env ← getEnv
+  let targets := (litConsts env names ++ litAliases env names).foldl (fun s c => s.insert c) ({} : NameSet)
   if targets.isEmpty then return #[]
   let mods := (← getEnv).header.moduleNames
+  let first := firstModuleOf env targets
   let mut memo : NameMap Bool := {}
   for u in e.getUsedConstants do
     if !targets.contains u then
-      (_, memo) ← (reaches targets mods u).run memo
+      (_, memo) ← (reaches targets mods first u).run memo
   let memo' := memo
   let hit (c : Name) := targets.contains c || memo'.find? c == some true
   unless e.getUsedConstants.any hit do return #[]
@@ -213,14 +239,16 @@ then, evaluating `x'`, reads each literal rather than running again the
 functions it was evaluated from: functions that build code (a register
 allocator, tables of constants) are evaluated once, in their own `lit_eq`,
 rather than in every literal or check of the code that uses them. -/
-meta def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
+meta def unfoldToLits (N : Name) (x : Expr) (names? : Option (Array Name) := none) :
+    MetaM (Option (Expr × Expr)) := do
   let env ← getEnv
-  let targets := (litConsts env).foldl (fun s c => if c == N then s else s.insert c) {}
+  let names := match names? with | some n => n | none => litNames env
+  let targets := (litConsts env names).foldl (fun s c => if c == N then s else s.insert c) {}
   -- The code with a literal that is an application (`materialize_code M := f a`):
   -- its occurrences are rewritten to `M.lit` as a whole (and not unfolded), so
   -- the definitions that lead to `f` are unfolded too.
   let mut atoms : Array (Name × Expr) := #[]
-  for M in litNames env do
+  for M in names do
     if M == N || targets.contains M then continue
     let lhs ← lhsOf M
     if lhs.getAppFn.isConst && !lhs.hasLooseBVars && !lhs.hasFVar && !lhs.hasMVar then
@@ -230,10 +258,11 @@ meta def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := d
   if reachT.isEmpty then return none
   let consts := x.getUsedConstants
   let mods := env.header.moduleNames
+  let first := firstModuleOf env reachT
   let mut memo : NameMap Bool := {}
   for u in consts do
     if !reachT.contains u then
-      (_, memo) ← (reaches reachT mods u).run memo
+      (_, memo) ← (reaches reachT mods first u).run memo
   unless memo.any (fun _ b => b) || consts.any reachT.contains do return none
   -- The heads of the applications are unfolded where they are not one of
   -- them, if they lead to constants with a literal (or other applications).
@@ -245,7 +274,7 @@ meta def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := d
     for v in d.value.getUsedConstants do
       if reachT.contains v then r := true
       else if v.getRoot == `VG && !(v matches .str _ "lit") then
-        let (b, m) ← (reaches reachT mods v).run memo
+        let (b, m) ← (reaches reachT mods first v).run memo
         memo := m
         if b then r := true
     if r && !(← hasProofFields d.type.getForallBody.getAppFn) then headReach := headReach.insert c
@@ -971,7 +1000,9 @@ elab "rw_lit" : tactic => withMainContext do
   let used := (← instantiateMVars (← getMainTarget)).getUsedConstantsAsSet
   let env ← getEnv
   let mods := env.header.moduleNames
-  for N in litNames env do
+  -- (`litNames` scans every constant of the project's modules: once a call.)
+  let names := litNames env
+  for N in names do
     let lhs ← lhsOf N
     -- A constant's code as the goal may have it unfolded: a generic proof's
     -- `Cfg.verify p384` for `verifyP384 := Cfg.verify p384`. Rewritten as a whole
@@ -1012,8 +1043,8 @@ elab "rw_lit" : tactic => withMainContext do
   -- the goal can be large (a hint of `taint_decide`), and the kernel
   -- instantiates the motive of each rewrite of it.
   let tgt ← instantiateMVars (← getMainTarget)
-  for s in ← reachingSubterms tgt do
-    let some (s', prf) ← unfoldToLits .anonymous s | continue
+  for s in ← reachingSubterms names tgt do
+    let some (s', prf) ← unfoldToLits .anonymous s (some names) | continue
     let g ← getMainGoal
     let tgt ← instantiateMVars (← g.getType)
     let ty ← inferType s

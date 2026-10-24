@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Spec.Hmac.Generic
+public import VerifiedGarbage.Spec.Pbkdf2
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: the contracts

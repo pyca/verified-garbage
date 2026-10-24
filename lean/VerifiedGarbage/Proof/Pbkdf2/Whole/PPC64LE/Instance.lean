@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: an instance

@@ -62,9 +62,9 @@ fn generate_from(params: &Parameters, draw: &[u8]) -> PrivateKey {
         .unwrap();
     assert_eq!(calls, 1);
     // The retained schedule is a public encoding width, even for x = 3.
-    #[cfg(target_arch = "arm")]
+    #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
     assert_eq!(key.exponent_len, params.domain.exponent_len());
-    #[cfg(not(target_arch = "arm"))]
+    #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
     assert_eq!(
         key.exponent_len,
         params.q.as_ref().map_or(params.p.len(), Vec::len)
@@ -80,13 +80,13 @@ fn vetted_rfc_groups_use_exact_public_bit_caps() {
             let params = Parameters::from_components(&p, &[2], None).unwrap();
             let draw = marked_draw(p.len(), cap);
             let key = generate_from(&params, &draw);
-            #[cfg(target_arch = "arm")]
+            #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
             {
                 assert_eq!(key.exponent_len, cap.div_ceil(8));
                 assert_eq!(canonical(key.private_component()), &[3]);
                 assert_eq!(key.public_key().component(), &[8]);
             }
-            #[cfg(not(target_arch = "arm"))]
+            #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
             {
                 assert_eq!(key.private_component(), draw);
             }

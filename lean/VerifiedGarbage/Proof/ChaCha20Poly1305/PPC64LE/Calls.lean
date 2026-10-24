@@ -15,6 +15,7 @@ public import VerifiedGarbage.Spec.ChaCha20
 public import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: the calls

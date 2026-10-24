@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Exp
+import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Exp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Window
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 
 /-!
 # The Miller–Rabin round on PPC64LE: the last squarings

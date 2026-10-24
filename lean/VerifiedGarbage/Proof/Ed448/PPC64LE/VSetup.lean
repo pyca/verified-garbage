@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's verification on PPC64LE: the setup

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 
 /-!
 # Deterministic ECDSA on PPC64LE: HMAC's functions over a streaming hash

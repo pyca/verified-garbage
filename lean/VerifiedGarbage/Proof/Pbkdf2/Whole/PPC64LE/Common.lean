@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Save
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Sha256.Stream
 

@@ -3,9 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSaved
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpCode
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpWords
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpPrepare
 import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
-import VerifiedGarbage.Proof.Mont.X86.ArgFar
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBody

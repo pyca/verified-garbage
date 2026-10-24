@@ -24,6 +24,7 @@ impl Precomputed {
         let mut words = alloc::vec![0; 3 + 34 * p_len.div_ceil(8)];
         let f = match backend {
             Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_precompute,
+            #[cfg(target_arch = "arm")]
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_precompute_umaal,
         };
         // SAFETY: the domain was accepted by vg_ffdh_check_domain. Its

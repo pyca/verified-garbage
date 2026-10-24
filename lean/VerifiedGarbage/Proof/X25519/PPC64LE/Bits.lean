@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Ladder
 public import VerifiedGarbage.Spec.X25519.Contract
 
-import VerifiedGarbage.Proof.X25519.PPC64LE.Setup
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes

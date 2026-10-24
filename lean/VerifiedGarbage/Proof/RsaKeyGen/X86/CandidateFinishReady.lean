@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinish
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
-import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The native finish paths expose exact status, output bytes, and entropy consumption -/

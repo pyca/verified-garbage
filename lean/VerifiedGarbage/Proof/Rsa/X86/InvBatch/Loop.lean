@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatch.Count
 import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import Mathlib.Algebra.Order.Ring.Abs
 public import VerifiedGarbage.Proof.Divstep.Alg32Def

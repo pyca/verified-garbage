@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill

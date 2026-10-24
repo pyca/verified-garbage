@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Instance
+import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_224
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Instance
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_224
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Contract
+import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Shared
+meta import VerifiedGarbage.Impl.Pbkdf2.Stream.PPC64LE
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Shared
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # PBKDF2-HMAC-SHA-512/224 on PPC64LE: `iterate`

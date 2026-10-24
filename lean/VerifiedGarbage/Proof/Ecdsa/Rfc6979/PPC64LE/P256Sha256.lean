@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Sha256
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.CT
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-256 on PPC64LE
@@ -45,12 +47,12 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) : Rfc where
   hcl := rfl
   hcn := rfl
   hct := rfl
-  hk := rfl
-  hk16 := by decide
-  hbits := p256_nBits
-  hn₁ := by decide +kernel
-  hn₂ := by decide +kernel
-  hQD := by decide
+  hk := fun _ => rfl
+  hk16 := fun _ => by decide
+  hbits := fun _ => p256_nBits
+  hn₁ := fun _ => by decide +kernel
+  hn₂ := fun _ => by decide +kernel
+  hW := fun h => absurd h (by decide)
   hT := by decide
   hT' := by decide
 
@@ -65,7 +67,8 @@ theorem blks : Blks sha256K cfg where
   m₀ := ⟨_, by taint_decide⟩
   m₁ := ⟨_, by taint_decide⟩
   mR := ⟨_, by taint_decide⟩
-  red := ⟨_, by taint_decide⟩
+  red := by intro; exact ⟨_, by taint_decide⟩
+  wide := fun h => absurd h (by decide)
   cnt := ⟨_, by taint_decide⟩
 
 theorem implies :

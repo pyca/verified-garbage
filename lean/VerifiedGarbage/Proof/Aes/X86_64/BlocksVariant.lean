@@ -84,7 +84,7 @@ def scalar : BlocksImpl where
   encDepth := by lit_decide
   encOk := encryptBlocks_correct
   encCt := encryptBlocks_ct
-  encNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  encNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   encMxcsr := by lit_decide
   encSpSafe := Code.all_of_allInstrs (by lit_decide)
   encNoStack := by lit_decide
@@ -92,7 +92,7 @@ def scalar : BlocksImpl where
   decDepth := by lit_decide
   decOk := decryptBlocks_correct
   decCt := decryptBlocks_ct
-  decNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  decNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   decMxcsr := by lit_decide
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
   decNoStack := by lit_decide
@@ -114,7 +114,7 @@ def aesni : BlocksImpl where
   encDepth := by lit_decide
   encOk := AesNi.encryptBlocks_correct
   encCt := AesNi.encryptBlocks_ct
-  encNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  encNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   encMxcsr := by lit_decide
   encSpSafe := Code.all_of_allInstrs (by lit_decide)
   encNoStack := by lit_decide
@@ -122,7 +122,7 @@ def aesni : BlocksImpl where
   decDepth := by lit_decide
   decOk := AesNi.decryptBlocks_correct
   decCt := AesNi.decryptBlocks_ct
-  decNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  decNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   decMxcsr := by lit_decide
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
   decNoStack := by lit_decide
@@ -145,7 +145,7 @@ def vaes : BlocksImpl where
   encDepth := by lit_decide
   encOk := VaesBlocks.encryptBlocks_correct
   encCt := VaesBlocks.encryptBlocks_ct
-  encNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  encNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   encMxcsr := by lit_decide
   encSpSafe := Code.all_of_allInstrs (by lit_decide)
   encNoStack := by lit_decide
@@ -153,7 +153,7 @@ def vaes : BlocksImpl where
   decDepth := by lit_decide
   decOk := VaesBlocks.decryptBlocks_correct
   decCt := VaesBlocks.decryptBlocks_ct
-  decNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  decNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   decMxcsr := by lit_decide
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
   decNoStack := by lit_decide

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingEqual
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Squaring and masked flag updates have a public-address trace -/
 

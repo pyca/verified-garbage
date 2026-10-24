@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.ScalarBase
-public import VerifiedGarbage.Proof.X448.PPC64LE.Field
+import VerifiedGarbage.Proof.X448.PPC64LE.Field
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.PPC64LE.Invert
@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.X448.PPC64LE
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448 on PPC64LE: the bits of the scalar

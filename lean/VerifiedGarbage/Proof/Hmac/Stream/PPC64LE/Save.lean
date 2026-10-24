@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # HMAC over any streaming hash function on PPC64LE: saving `r20`–`r25`

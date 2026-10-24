@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
+import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.MulMod
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
-import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
 
 /-! # Computing Montgomery R squared inside the recovery workspace
 

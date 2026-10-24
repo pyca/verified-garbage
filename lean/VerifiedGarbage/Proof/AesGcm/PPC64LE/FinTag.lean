@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: the tag after the last piece (`finTag o`)

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
-import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -12,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: `crypt`

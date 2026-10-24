@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Absorb
-public import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Poly1305
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Poly1305 on PPC64LE: the state, and `setup`

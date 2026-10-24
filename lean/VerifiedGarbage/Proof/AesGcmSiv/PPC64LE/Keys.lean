@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Derive
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Derive
 public import VerifiedGarbage.Proof.GcmSiv.Words
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
@@ -9,6 +9,12 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 
 /-!
 # AES-GCM-SIV on PPC64LE: the keys (`keys`)

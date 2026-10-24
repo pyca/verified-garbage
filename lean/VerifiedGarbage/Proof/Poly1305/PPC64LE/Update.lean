@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Buffer
-public import VerifiedGarbage.Proof.Poly1305.Scratch
+import VerifiedGarbage.Proof.Poly1305.Scratch
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Poly1305.BlocksScratch
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Poly1305.PPC64LE.Buffer
@@ -26,6 +25,12 @@ public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Init
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Save
+public import VerifiedGarbage.Spec.Poly1305
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Poly1305 on PPC64LE: `update`

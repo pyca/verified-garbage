@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Encode
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarMulAdd
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.ScalarBase
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
-import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Field

@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
+public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 
 /-!
 # Deterministic ECDSA on PPC64LE: one HMAC

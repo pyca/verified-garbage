@@ -1,13 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Init
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Init
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Spec.Aes
+meta import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_init` is constant time

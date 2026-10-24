@@ -13,6 +13,10 @@ public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Absorb
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.B0
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Callee
+import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 
 /-!
 # AES-CCM on PPC64LE: a chunk of counter mode (`ctrChunk`)

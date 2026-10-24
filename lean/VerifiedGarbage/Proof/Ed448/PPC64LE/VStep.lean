@@ -1,14 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VLadder
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VSel
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
+import VerifiedGarbage.Proof.Ed448.PPC64LE.VSel
 import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseInit
 import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseStep
+public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
+import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's verification on PPC64LE: one iteration of the loop

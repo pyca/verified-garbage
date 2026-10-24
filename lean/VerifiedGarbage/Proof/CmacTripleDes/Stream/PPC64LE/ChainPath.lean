@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Absorb
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Chain
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Chain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.TripleDes.Schedule
@@ -11,6 +10,10 @@ import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Common
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Cmac
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Calls
 
 /-!
 # Streaming TDEA-CMAC on PPC64LE: `absorb`'s chaining path

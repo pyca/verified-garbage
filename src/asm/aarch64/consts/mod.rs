@@ -35,6 +35,10 @@ mod vg_ed448_verify_odd_base;
 pub(crate) use vg_ed448_verify_odd_base::VG_ED448_VERIFY_ODD_BASE;
 
 #[rustfmt::skip]
+mod vg_ffdh_vetted_groups_a64;
+pub(crate) use vg_ffdh_vetted_groups_a64::VG_FFDH_VETTED_GROUPS_A64;
+
+#[rustfmt::skip]
 mod vg_gcm_tail_idx;
 pub(crate) use vg_gcm_tail_idx::VG_GCM_TAIL_IDX;
 

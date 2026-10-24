@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveContext
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialFilter
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoop
@@ -15,6 +15,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Spec.Dsa
 
 /-!
 # The FFDH candidate on i686: RSA's small-prime sieve
