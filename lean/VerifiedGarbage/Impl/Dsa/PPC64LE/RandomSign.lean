@@ -30,10 +30,11 @@ open VG VG.PPC64LE VG.Impl.Dsa.PPC64LE Random
 registers, and zero the nonce. -/
 def entry : List Instr :=
   saveRegs ++
-    [.load .d .r0 .r12 (argOff 0), .store .d .r0 .r12 oArgs, .load .d .r0 .r12 (argOff 3),
-      .store .d .r0 .r12 (oArgs + 8), .load .d .r0 .r12 (argOff 4), .store .d .r0 .r12 (oArgs + 16),
-      .load .d .r23 .r12 (argOff 1), .load .d .r24 .r12 (argOff 2), .addi .r18 .r3 0, .addi .r30 .r5 0,
-      .addi .r19 .r6 0, .addi .r20 .r8 0, .addi .r21 .r9 0, .addi .r22 .r10 0, .li .r25 0, .li .r26 8] ++
+    [.addi .r18 .r3 0, .addi .r30 .r5 0, .addi .r19 .r6 0, .addi .r20 .r8 0, .addi .r21 .r9 0,
+      .addi .r22 .r10 0, .load .d .r23 .r12 (argOff 1), .load .d .r24 .r12 (argOff 2),
+      .load .d .r3 .r12 (argOff 0), .load .d .r4 .r12 (argOff 3), .load .d .r5 .r12 (argOff 4),
+      .store .d .r3 .r12 oArgs, .store .d .r4 .r12 (oArgs + 8), .store .d .r5 .r12 (oArgs + 16), .li .r25 0,
+      .li .r26 8] ++
     clearNonce
 
 /-- `vg_dsa_sign(out, 2 q_len, key, 3 p_len + 2 q_len, p_len, nonce, q_len,

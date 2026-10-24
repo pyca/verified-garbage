@@ -68,7 +68,7 @@ def nv (i : Nat) : Reg :=
 
 /-- Save `r14`–`r31` and the return address, through `r12 = r1`. -/
 def saveRegs : List Instr :=
-  [.addSp .r12 0] ++ (List.range 18).map (fun i => .store .d (nv i) .r12 (oSave + 8 * i)) ++
+  [.addSp .r12 0] ++ (List.range 18).flatMap (fun i => [.store .d (nv i) .r12 (oSave + 8 * i)]) ++
     [.mflr .r0, .store .d .r0 .r12 oLr]
 
 /-- Zero the nonce's 32 octets, through `r12 = r1`. -/
@@ -79,7 +79,7 @@ def clearNonce : List Instr :=
 /-- Restore the return address and `r14`–`r31`. -/
 def restoreRegs : List Instr :=
   [.addSp .r12 0, .load .d .r0 .r12 oLr, .mtlr .r0] ++
-    (List.range 18).map (fun i => .load .d (nv i) .r12 (oSave + 8 * i))
+    (List.range 18).flatMap (fun i => [.load .d (nv i) .r12 (oSave + 8 * i)])
 
 /-! ## The scan of q -/
 
@@ -146,7 +146,7 @@ def drawFinish : Prog isa :=
 
 /-- One draw: a short tape (status 2), or a candidate. -/
 def draw : Prog isa :=
-  .seq (.block shortTest) (.ite (.nonzero .d .r3) (.block [.li .r31 2]) (.seq copy (.seq inRange drawFinish)))
+  .seq (.block shortTest) (.ite (.nonzero .d .r3) (.block [.li .r31 2]) (.seq (.seq copy inRange) drawFinish))
 
 /-- Up to 128 draws, while the status is 4. -/
 def sample : Prog isa :=
