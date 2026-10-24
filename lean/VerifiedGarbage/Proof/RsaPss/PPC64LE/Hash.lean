@@ -33,29 +33,29 @@ theorem pres_of {rs : List Reg} {t t' : State} (o : Only rs t t') (hrs : ∀ r �
     ∀ r ∈ preserved, t'.gpr r = t.gpr r := fun r hr => o.gpr r fun h => hrs r h hr
 
 section
-variable {D : Nat} {s : State} (F : Fits Sp s) {H : Hash} (hH : HashOK H)
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (F : Fits S s) {H : Hash} (hH : HashOK H)
 include F hH
 
-theorem hInit_ok {t : State} (h : Base Sp (vP D) s t) :
-    WP isa (hInit H) t fun t' => Base Sp (vP D) s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
-      Same (Sp s) t t' [(oSt, H.S)] ∧ hH.SH.Repr t'.mem (off (Sp s) oSt) [] := by
+theorem hInit_ok {t : State} (h : Base S vf s t) :
+    WP isa (hInit H) t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+      Same (S s) t t' [(oSt, H.S)] ∧ hH.SH.Repr t'.mem (off (S s) oSt) [] := by
   refine WP.seq (wp_addi fun t₁ o₁ e₁ => wp_nil ?_)
   refine WP.mono (init_ok F hH (h.only F o₁) (by rw [e₁, h.r14])) fun t' ⟨b, g, sm, r⟩ =>
     ⟨b, fun r hr => by rw [g r hr, pres_of o₁ (by decide) r hr], (Same.of_mem o₁.mem _).trans sm, r⟩
 
-theorem hUpd_ok {t : State} (h : Base Sp (vP D) s t) {m : List Byte} (hr : hH.SH.Repr t.mem (off (Sp s) oSt) m)
-    (h4 : t.gpr .r4 = BitVec.ofNat 64 m.length) {d len : Nat} (h5 : t.gpr .r5 = off (Sp s) d)
+theorem hUpd_ok {t : State} (h : Base S vf s t) {m : List Byte} (hr : hH.SH.Repr t.mem (off (S s) oSt) m)
+    (h4 : t.gpr .r4 = BitVec.ofNat 64 m.length) {d len : Nat} (h5 : t.gpr .r5 = off (S s) d)
     (h6 : t.gpr .r6 = BitVec.ofNat 64 len) (hd : oY ≤ d) (hl : d + len ≤ oRsa) :
-    WP isa (hUpd H) t fun t' => Base Sp (vP D) s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
-      Same (Sp s) t t' [(oSt, H.S), (oW, H.W)] ∧
-      hH.SH.Repr t'.mem (off (Sp s) oSt) (m ++ Spec.Sha256.bytesAt t.mem (off (Sp s) d) len) := by
+    WP isa (hUpd H) t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+      Same (S s) t t' [(oSt, H.S), (oW, H.W)] ∧
+      hH.SH.Repr t'.mem (off (S s) oSt) (m ++ Spec.Sha256.bytesAt t.mem (off (S s) d) len) := by
   have Fh := hfits hH
   obtain ⟨_, _, _, _, _, _⟩ := offs
   have hY : oY = 2560 := rfl
   refine WP.seq (wp_addi fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ => wp_nil ?_)
   have k₂ : Only [.r3, .r7] t t₂ := (o₁.trans o₂).mono
   have b₂ := h.only F k₂
-  refine WP.mono (upd_ok F hH b₂ (dat := off (Sp s) d) (len := len) (by rw [o₂.get .r3, e₁, h.r14])
+  refine WP.mono (upd_ok F hH b₂ (dat := off (S s) d) (len := len) (by rw [o₂.get .r3, e₁, h.r14])
     (by rw [k₂.get .r5, h5]) (by rw [k₂.get .r6, h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold oRsa at hl; omega)])
     (by rw [e₂, o₁.get .r14, h.r14]) (Covers.right (by rw [b₂.wr]; exact sc_cov F hl))
     (sdis (.inr (by omega)) hl (by omega)) (sdis (.inr (by omega)) hl (by omega)) (cR_dis F hl))
@@ -64,11 +64,11 @@ theorem hUpd_ok {t : State} (h : Base Sp (vP D) s t) {m : List Byte} (hr : hH.SH
   have := r m (by rw [k₂.mem]; exact hr) (by rw [k₂.get .r4, h4])
   rwa [k₂.mem] at this
 
-theorem hFin_ok {t : State} (h : Base Sp (vP D) s t) {m : List Byte} (hr : hH.SH.Repr t.mem (off (Sp s) oSt) m)
+theorem hFin_ok {t : State} (h : Base S vf s t) {m : List Byte} (hr : hH.SH.Repr t.mem (off (S s) oSt) m)
     (h4 : t.gpr .r4 = BitVec.ofNat 64 m.length) (hm : m.length < 2 ^ 64) :
-    WP isa (hFin H) t fun t' => Base Sp (vP D) s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
-      Same (Sp s) t t' [(oSt, H.S), (oDig, H.FD), (oW, H.W)] ∧
-      Spec.Sha256.bytesAt t'.mem (off (Sp s) oDig) H.FD = hH.fh m := by
+    WP isa (hFin H) t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+      Same (S s) t t' [(oSt, H.S), (oDig, H.FD), (oW, H.W)] ∧
+      Spec.Sha256.bytesAt t'.mem (off (S s) oDig) H.FD = hH.fh m := by
   refine WP.seq (wp_addi fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ => wp_addi fun t₃ o₃ e₃ => wp_nil ?_)
   have k₃ : Only [.r3, .r5, .r6] t t₃ := (o₁.trans (o₂.trans o₃)).mono
   have b₃ := h.only F k₃
