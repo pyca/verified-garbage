@@ -67,12 +67,11 @@ def sth (r : Reg) (i : Nat) : Instr := .store .d r .r31 (8 * i)
 
 /-! ## Comparisons -/
 
-/-- `d := 1` if `a ≥ b` (unsigned), else 0, through `r0` and `t`: the
-borrow of `a − b` is the top bit of `(¬a ∧ b) ∨ (¬(a ⊕ b) ∧ (a − b))`
-(`t` other than `r0`). -/
-def geFlag (d a b t : Reg) : List Instr :=
-  [.li t 0, .subi t t 1, .logic .xor .r0 a t, .logic .and .r0 .r0 b, .logic .xor d a b, .logic .xor d d t,
-    .sub t a b, .logic .and d d t, .logic .or d d .r0, .lsr .d d d 63, .li t 1, .logic .xor d d t]
+/-- `d := 1` if `a ≥ b`, else 0, through `r0`, for `b` below `2^63`: when
+`a` is too, the top bit of `a − b` is its borrow; otherwise `a`'s top bit
+is set. -/
+def geFlag (d a b : Reg) : List Instr :=
+  [.sub d a b, .lsr .d d d 63, .li .r0 1, .logic .xor d d .r0, .lsr .d .r0 a 63, .logic .or d d .r0]
 
 /-! ## The sieve -/
 
@@ -169,7 +168,7 @@ def draw (name : String) (roundCode : Prog isa) : Prog isa :=
 are left (`rand_len − used`, which does not wrap). -/
 def millerRabin (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (.block [.li .r3 0, sth .r3 hIdx, .li .r3 4, sth .r3 hStat])
-    (.loop (.seq (.block ([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] ++ geFlag .r5 .r3 .r4 .r6))
+    (.loop (.seq (.block ([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] ++ geFlag .r5 .r3 .r4))
         (.seq (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw name roundCode))
           (.block [ldh .r3 hStat, .subi .r3 .r3 4])))
       (.zero .d .r3))
