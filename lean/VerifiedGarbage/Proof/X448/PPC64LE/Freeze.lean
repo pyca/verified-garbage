@@ -41,7 +41,7 @@ structure OutInv (O : Addr) (r : Nat → Nat) (s0 : State) (j : Nat) (s : State)
   words : ∀ i < j, wd s.mem O (4 * i) = r i
 
 theorem out_ok {s0 : State} (hc : Ctx b s0) {o : Addr} (h3 : s0.gpr .r3 = o)
-    {n : Nat} (hn : 56 ≤ n) (hout : (⟨o, n⟩ : Region) ∈ s0.wr)
+    (hout : ∀ k < 14, InRegions s0.wr (o + BitVec.ofNat 64 (4 * k)) 4)
     (hdisj : Region.Disjoint ⟨b, 4096⟩ ⟨o, 56⟩) {sw : Nat} (hsw : sw ≤ 1)
     (h11 : s0.gpr .r11 = 0 - BitVec.ofNat 64 sw) :
     WP isa (.block ((List.range 14).flatMap outStep)) s0
@@ -67,7 +67,7 @@ theorem out_ok {s0 : State} (hc : Ctx b s0) {o : Addr} (h3 : s0.gpr .r3 = o)
   have e3 : t5.gpr .r3 = o := by rw [hr5.gpr _ (by decide), h.rest.gpr _ (by decide), h3]
   have hwr : t5.wr = s0.wr := by rw [hr5.wr, h.rest.wr]
   refine wp_sw (a := o + BitVec.ofNat 64 (4 * k)) (by decide) (by omega_using [hk])
-    (by rw [e3]) (by rw [hwr]; exact in_base hout (by omega_using [hk, hn]) (by omega_using [hk]))
+    (by rw [e3]) (by rw [hwr]; exact hout k hk)
     fun t6 v6 => WP.block_nil ?_
   -- The limb selected.
   have ev : ((t5.gpr .r5).setWidth 32).toNat = sel sw (limb s0.mem b X2 k) (limb s0.mem b Y k) := by
@@ -97,11 +97,12 @@ theorem out_ok {s0 : State} (hc : Ctx b s0) {o : Addr} (h3 : s0.gpr .r3 = o)
     · rw [wd_write_self, ev]
 
 theorem freeze_ok {s : State} (hc : Ctx b s) {o : Addr}
-    (h3 : s.gpr .r3 = o) {n : Nat} (hn : 56 ≤ n) (hout : (⟨o, n⟩ : Region) ∈ s.wr)
+    (h3 : s.gpr .r3 = o) (hout : ∀ k < 14, InRegions s.wr (o + BitVec.ofNat 64 (4 * k)) 4)
     (hdisj : Region.Disjoint ⟨b, 4096⟩ ⟨o, 56⟩) :
     WP isa (.block freeze) s fun s' =>
       bytesAt s'.mem o 56 = leBytes 56 (V s.mem b X2 % P) ∧ Rest clob s s' ∧
-      Frame [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨o, 56⟩] s.mem s'.mem := by
+      Frame [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨o, 56⟩] s.mem s'.mem ∧
+      val32 (fun j => wd s'.mem o (4 * j)) 14 = V s.mem b X2 % P := by
   have hX : X2 = 56 := rfl
   have hY : Y = 896 := rfl
   have hA := ACC_eq
@@ -157,8 +158,8 @@ theorem freeze_ok {s : State} (hc : Ctx b s) {o : Addr}
     intro k hk; rw [limb, hm5, hpo3 k hk]
   have hr45 : Rest [.r4, .r5, .r7, .r8, .r10, .r11] s s5 :=
     (hr2.mono (by decide)).trans ((hp3.rest.mono (by decide)).trans (hr5.mono (by decide)))
-  refine WP.mono (out_ok hc5 (o := o) (by rw [hr45.gpr _ (by decide), h3]) hn (by rw [hr45.wr]; exact hout)
-    hdisj hS h11) fun s6 h6' => ⟨?_, ?_, ?_⟩
+  refine WP.mono (out_ok hc5 (o := o) (by rw [hr45.gpr _ (by decide), h3]) (by rw [hr45.wr]; exact hout)
+    hdisj hS h11) fun s6 h6' => ⟨?_, ?_, ?_, ?_⟩
   · rw [V, ← hv]
     refine bytesAt_words14 _ _ fun j hj => ?_
     rw [h6'.words j hj, hx5 j hj, hy5 j hj]; rfl
@@ -171,6 +172,8 @@ theorem freeze_ok {s : State} (hc : Ctx b s) {o : Addr}
     rw [hm5] at f2
     rw [← hm2]
     exact f1.trans f2
+  · rw [V, ← hv]
+    exact val32_congr fun j hj => by rw [h6'.words j hj, hx5 j hj, hy5 j hj]; rfl
 
 end
 
