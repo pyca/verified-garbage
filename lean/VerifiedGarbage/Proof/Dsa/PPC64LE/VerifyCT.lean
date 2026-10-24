@@ -41,26 +41,12 @@ theorem body_rel : RelCT isa (Two K9) Verify.body (Two End) :=
 
 theorem checkKey_rel : RelCT isa (Two S0) (checkKey Verify.body (.block [.li .r3 0])) (Two End) :=
   (sizes_rel (G := fun _ => True) (oddsTail_rel (body_rel.mono (fun _ _ => two_mono fun _ _ h => h.1)
-      fun _ _ h => h) fun _ h => fail_rel h) fun _ h => fail_rel h).mono
+      fun _ _ h => h) fun _ h => fail_rel fun v s h' => (h v s h').1) fun _ h => fail_rel fun v s h' => (h v s h').1).mono
     (fun _ _ => two_mono fun _ _ h => ⟨h, trivial⟩) fun _ _ h => h
-
-theorem pins_End : Pins End [.r21] := by
-  intro v s₁ s₂ h₁ h₂ r hr
-  simp only [List.mem_singleton] at hr
-  subst hr
-  rw [h₁, h₂]
 
 theorem verify_rel : RelCT isa (Two C0) Verify.verify fun _ _ => True := by
   unfold Verify.verify
   exact RelCT.seq entry_rel (RelCT.seq checkKey_rel (two_taint _ pins_End (by taint_decide)))
-
-theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.map (·.toNat) → l₁ = l₂
-  | [], [], _ => rfl
-  | [], _ :: _, h => by simp at h
-  | _ :: _, [], h => by simp at h
-  | a :: l₁, b :: l₂, h => by
-    simp only [List.map_cons, List.cons.injEq] at h
-    rw [BitVec.eq_of_toNat_eq h.1, map_toNat_inj h.2]
 
 /-- Runs that agree on the contract's public data have the same public data `vdOf`. -/
 theorem vdOf_eq {s t : State} (hs : vContract.pre s) (hp : vContract.pub s t) : vdOf s = vdOf t := by

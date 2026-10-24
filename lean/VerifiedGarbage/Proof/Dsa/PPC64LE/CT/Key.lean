@@ -267,7 +267,7 @@ theorem KM_p {v : VD} (h : KM v) : 2 ≤ v.p ∧ v.p % 2 = 1 := ⟨h.1.bounds.1,
 /-- The checks after the sizes, for public data satisfying `G`. -/
 theorem oddsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : VD → Prop}
     (hrest : RelCT isa (Two fun v s => K9 v s ∧ G v) rest Q)
-    (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s) → RelCT isa (Two Φ) fail Q) :
+    (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
     RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
       checkElem) (andThen (.seq (.block ptrY) checkElem) rest fail) fail)) fail) fail) Q := by
   have hG := elem_rel ptrG (fun L => L.pl + L.ql) (fun L => by omega) (fun h => ptrG_ok h) t5 (K := KM)
@@ -276,16 +276,16 @@ theorem oddsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : 
     (K := fun v => KM v ∧ EOk (fun L => L.pl + L.ql) v) (fun _ h => KM_p h.1) (G := G)
   unfold odds andThen
   refine RelCT.seq (two_postG (rel_pins pins_S5' t1) fun _ _ h => w_O1 h)
-    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => h.1.1.1))
+    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_O1) t2) fun _ _ h => w_O2 h)
-    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => h.1.1.1))
+    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_O2) t3) fun _ _ h => w_OM h)
-    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => h.1.1.1))
+    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_OM) t4) fun _ _ h => w_P h) (RelCT.seq
-    hG (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => h.1.1.1)))
+    hG (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)))
   refine RelCT.seq (hY.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, fx, pf, k, e⟩, z⟩, g⟩ =>
       ⟨⟨B, r2, fx, pf, k, e.mp z⟩, g⟩) fun _ _ h => h)
-    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => h.1.1.1))
+    (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   exact hrest.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, _, pf, k, e⟩, z⟩, g⟩ =>
     ⟨⟨B, r2, fixL_nil _, pf, k, e.mp z⟩, g⟩) fun _ _ h => h
 

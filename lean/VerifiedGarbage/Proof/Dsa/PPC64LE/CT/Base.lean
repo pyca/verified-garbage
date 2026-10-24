@@ -221,4 +221,18 @@ theorem rel_end {Φ : VD → State → Prop} {c : Prog isa} (h : RelCT isa (Two 
   exact ⟨ht, v, (Exec.gpr hc e₁ (.inl hn)).trans (h21 v _ h₁), (Exec.gpr hc e₂ (.inl hn)).trans (h21 v _ h₂),
     by rw [Exec.sp e₁, Exec.sp e₂, hsp]⟩
 
+theorem pins_End : Pins End [.r21] := by
+  intro v s₁ s₂ h₁ h₂ r hr
+  simp only [List.mem_singleton] at hr
+  subst hr
+  rw [h₁, h₂]
+
+theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.map (·.toNat) → l₁ = l₂
+  | [], [], _ => rfl
+  | [], _ :: _, h => by simp at h
+  | _ :: _, [], h => by simp at h
+  | a :: l₁, b :: l₂, h => by
+    simp only [List.map_cons, List.cons.injEq] at h
+    rw [BitVec.eq_of_toNat_eq h.1, map_toNat_inj h.2]
+
 end VG.Proof.Dsa.PPC64LE

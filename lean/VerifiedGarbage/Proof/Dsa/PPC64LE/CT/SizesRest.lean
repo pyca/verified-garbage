@@ -118,19 +118,19 @@ theorem w_pairs {v : VD} {s : State} (h : S3 v s ∧ s.gpr .r0 = 0) :
 /-- The check of the sizes, for public data satisfying `G`. -/
 theorem sizes_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : VD → Prop}
     (hrest : RelCT isa (Two fun v s => S5 v s ∧ G v) rest Q)
-    (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s) → RelCT isa (Two Φ) fail Q) :
+    (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
     RelCT isa (Two fun v s => S0 v s ∧ G v) (sizes rest fail) Q := by
   unfold sizes andThen
   refine RelCT.seq bitsP_rel (rel_ite_zeroG (zero_iff_agree (fun (v : VD) => 128 ≤ v.tP)
-    fun _ _ h => h.2.2.2) ?_ (hfail _ fun _ _ h => h.1.1.1))
+    fun _ _ h => h.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (two_taint _ (pins_and pins_S1) (by taint_decide)) fun _ _ h => w_a24 h) ?_
   refine RelCT.seq bitsQ_rel (rel_ite_zeroG (zero_iff_agree (fun (v : VD) => 128 ≤ v.tQ)
-    fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => h.1.1.1))
+    fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.assoc (RelCT.seq (two_postG (two_taint _ (pins_and pins_S3) (by taint_decide))
     fun _ _ h => w_pairs h) ?_)
   refine rel_ite_zeroG (zero_iff_agree (fun (v : VD) => Spec.Dsa.supportedSizes (8 * v.sP) (8 * v.qb))
     fun _ _ h => h.2.2.2.2.2) (hrest.mono (fun _ _ => two_mono fun v s ⟨⟨⟨B, r2, _, tp, tq, h0⟩, z⟩, g⟩ =>
       ⟨⟨B, r2, fixL_nil s, (VG.Proof.Dsa.supported_scans v.pB v.qB).mpr ⟨tp, tq, h0.mp z⟩⟩, g⟩) fun _ _ h => h)
-    (hfail _ fun _ _ h => h.1.1.1)
+    (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)
 
 end VG.Proof.Dsa.PPC64LE
