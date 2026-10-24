@@ -353,5 +353,153 @@ theorem maskR_piece {t r : Nat} (hr : r < p.ℓ) :
 
 end
 
+/-! ## `w` -/
+
+theorem aVal_ij {p : Params} {σ : State} {i j : Nat} (hj : j < p.ℓ) : aVal p σ (p.ℓ * i + j) = Am p σ i j := by
+  have hl : 0 < p.ℓ := by omega
+  have e1 : (p.ℓ * i + j) / p.ℓ = i := by
+    rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
+  have e2 : (p.ℓ * i + j) % p.ℓ = j := by
+    rw [Nat.add_comm, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hj]
+  simp only [aVal, Am, e1, e2]
+
+theorem aP_ij (p : Params) (i j : Nat) : aP p i j = pS (aBase p + (p.ℓ * i + j)) := by
+  show pS (5 + 4 * p.k + 3 * p.ℓ + p.ℓ * i + j) = _
+  rw [Nat.add_assoc (5 + 4 * p.k + 3 * p.ℓ)]
+
+theorem ij_lt {p : Params} {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ * i + j < p.k * p.ℓ := by
+  have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
+  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega
+
+/-- `∑_{j < m} Â[i, j] ŷ[j]`, summed from `j = 0` with `AddNTT`. -/
+abbrev wAcc (p : Params) (σ : State) (κ i m : Nat) : Poly :=
+  ((List.range m).map fun j => multiplyNTT (Am p σ i j) (YHv p σ κ j)).foldl add zero
+
+theorem add_zero_left (x : Poly) : add zero x = x := by
+  apply Vector.ext
+  intro j hj
+  simp [add, zero]
+
+theorem wAcc_one (p : Params) (σ : State) (κ i : Nat) :
+    wAcc p σ κ i 1 = multiplyNTT (Am p σ i 0) (YHv p σ κ 0) := by
+  simp only [wAcc, List.range_one, List.map_cons, List.map_nil, List.foldl_cons, List.foldl_nil, add_zero_left]
+
+theorem wAcc_succ (p : Params) (σ : State) (κ i m : Nat) :
+    wAcc p σ κ i (m + 1) = add (wAcc p σ κ i m) (multiplyNTT (Am p σ i m) (YHv p σ κ m)) := by
+  simp only [wAcc, List.range_succ, List.map_append, List.map_cons, List.map_nil, List.foldl_append,
+    List.foldl_cons, List.foldl_nil]
+
+/-- Row `i` of `w`, with `m` terms of its sum. -/
+abbrev WA (p : Params) (STK t i m : Nat) (σ s : State) : Prop :=
+  IC p STK σ t p.ℓ p.ℓ i 0 s ∧ PolyIs s.mem ((slay2 p STK σ).A 0 (oP (wBase p + i))) (wAcc p σ (p.ℓ * t) i m)
+
+theorem IC.aij {p : Params} {STK : Nat} {σ : State} {t ny nyh nw nh : Nat} {s : State}
+    (h : IC p STK σ t ny nyh nw nh s) {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) :
+    PolyIs s.mem ((slay2 p STK σ).A 0 (oP (aBase p + (p.ℓ * i + j)))) (Am p σ i j) := by
+  rw [← aVal_ij hj]; exact h.l.k.A _ (ij_lt hi hj)
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+omit hP hS in
+theorem mw_m {σ : State} {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) :
+    KeyGen.MulOk (slay2 p STK σ) sWb2 (wP p i) (pS (aBase p + (p.ℓ * i + j))) (yhP p j) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  have he := ij_lt hi hj
+  generalize p.ℓ * i + j = e at he ⊢
+  exact ⟨⟨sptr_ok rfl (by slt hF), by ssep hF⟩, ⟨sptr_ok rfl (by slt hF), by ssep hF⟩,
+    ⟨sptr_ok rfl (by slt hF), by ssep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, by ssep hF, by ssep hF⟩
+
+omit hP hS in
+theorem ntw_m {σ : State} {i : Nat} (hi : i < p.k) : KeyGen.IpOk (slay2 p STK σ) sWb2 (wP p i) (sc oPS) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  exact ⟨⟨sptr_ok rfl (by slt hF), by ssep hF⟩, ⟨sptr_ok rfl (by decide), by ssep hF⟩,
+    show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by ssep hF⟩
+
+theorem mulW_piece {t i : Nat} (hi : i < p.k) :
+    SPiece p STK (fun σ s => IC p STK σ t p.ℓ p.ℓ i 0 s) (WA p STK t i 1) (mulAt P (wP p i) (aP p i 0) (yhP p 0)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  have h0 : 0 < p.ℓ := by omega
+  rw [aP_ij]
+  refine ⟨fun σ s _ h => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.mul_tr hP.mul hS (mw_m hF (σ := σ) hi h0)
+    (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (aBase p + (p.ℓ * i + 0)))) ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (yhBase p + 0))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (aBase p + (p.ℓ * i + 0)))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (yhBase p + 0))))
+    fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.l.k.sc h₂.l.k.sc, (h₁.aij hi h0).1, (h₁.yh 0 h0).1,
+      by rw [slay2_pub pub]; exact (h₂.aij hi h0).1, by rw [slay2_pub pub]; exact (h₂.yh 0 h0).1⟩⟩
+  unfold mulAt
+  refine KeyGen.mul_ok hP.mul h.l.k.sc.site hS (mw_m hF hi h0) (h.aij hi h0).1 (h.yh 0 h0).1 fun s' k' hq => ?_
+  refine ⟨h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+    (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide)), ?_⟩
+  have e1 : polyAt s.mem (lpa (slay2 p STK σ) (pS (aBase p + (p.ℓ * i + 0)))) = Am p σ i 0 := (h.aij hi h0).2
+  have e2 : polyAt s.mem (lpa (slay2 p STK σ) (yhP p 0)) = YHv p σ (p.ℓ * t) 0 := (h.yh 0 h0).2
+  rw [e1, e2, ← wAcc_one] at hq
+  exact hq
+
+theorem mulAddW_piece {t i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) :
+    SPiece p STK (WA p STK t i j) (WA p STK t i (j + 1)) (mulAddAt P (wP p i) (aP p i j) (yhP p j)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  rw [aP_ij]
+  refine ⟨fun σ s _ ⟨h, hw⟩ => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.mulAdd_tr hP.mulAdd hS
+    (mw_m hF (σ := σ) hi hj)
+    (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (wBase p + i))) ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (aBase p + (p.ℓ * i + j)))) ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (yhBase p + j))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (wBase p + i))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (aBase p + (p.ℓ * i + j)))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (yhBase p + j))))
+    fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.1.l.k.sc h₂.1.l.k.sc, h₁.2.1, (h₁.1.aij hi hj).1,
+      (h₁.1.yh j hj).1, by rw [slay2_pub pub]; exact h₂.2.1, by rw [slay2_pub pub]; exact (h₂.1.aij hi hj).1,
+      by rw [slay2_pub pub]; exact (h₂.1.yh j hj).1⟩⟩
+  unfold mulAddAt
+  refine KeyGen.mulAdd_ok hP.mulAdd h.l.k.sc.site hS (mw_m hF hi hj) hw.1 (h.aij hi hj).1 (h.yh j hj).1
+    fun s' k' hq => ?_
+  refine ⟨h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+    (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide)), ?_⟩
+  have e0 : polyAt s.mem (lpa (slay2 p STK σ) (wP p i)) = wAcc p σ (p.ℓ * t) i j := hw.2
+  have e1 : polyAt s.mem (lpa (slay2 p STK σ) (pS (aBase p + (p.ℓ * i + j)))) = Am p σ i j := (h.aij hi hj).2
+  have e2 : polyAt s.mem (lpa (slay2 p STK σ) (yhP p j)) = YHv p σ (p.ℓ * t) j := (h.yh j hj).2
+  rw [e0, e1, e2, ← wAcc_succ] at hq
+  exact hq
+
+theorem invW_piece {t i : Nat} (hi : i < p.k) :
+    SPiece p STK (WA p STK t i p.ℓ) (fun σ s => IC p STK σ t p.ℓ p.ℓ (i + 1) 0 s) (invNttAt P (wP p i)) := by
+  have hk := hF.k; have hl := hF.l; have hkl := hF.kl
+  refine ⟨fun σ s _ ⟨h, hw⟩ => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.ip_tr (t := nttInv) hP.invNtt hS
+    (ntw_m hF (σ := σ) hi) (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
+      Reduced x.mem ((slay2 p STK σ).A 0 (oP (wBase p + i))) ∧
+      Reduced y.mem ((slay2 p STK σ).A 0 (oP (wBase p + i))))
+      fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2.1, h.2.2⟩)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.1.l.k.sc h₂.1.l.k.sc, h₁.2.1, by
+      rw [slay2_pub pub]; exact h₂.2.1⟩⟩
+  unfold invNttAt
+  refine KeyGen.ip_ok (t := nttInv) hP.invNtt h.l.k.sc.site hS (ntw_m hF hi) hw.1 fun s' k' hq => ?_
+  have I := h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
+    (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide))
+  refine ⟨I.l, I.y, I.yh, fun i' hi' => ?_, I.w1, I.w1b⟩
+  rcases (by omega : i' < i ∨ i' = i) with h' | rfl
+  · exact I.w i' h'
+  · have e : polyAt s.mem (lpa (slay2 p STK σ) (wP p i')) = wAcc p σ (p.ℓ * t) i' p.ℓ := hw.2
+    rw [e] at hq
+    exact hq
+
+theorem rowW_piece {t i : Nat} (hi : i < p.k) :
+    SPiece p STK (fun σ s => IC p STK σ t p.ℓ p.ℓ i 0 s) (fun σ s => IC p STK σ t p.ℓ p.ℓ (i + 1) 0 s)
+      (rowW P p i) := by
+  have hl := hF.l
+  unfold rowW
+  refine (mulW_piece hP hF hS hi).seq ((Piece.mono (Piece.seqR (I := fun j => WA p STK t i j) (p.ℓ - 1) 1
+    fun j h1 h2 => mulAddW_piece hP hF hS hi (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_).seq
+    (invW_piece hP hF hS hi))
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+
+end
+
 end VG.Proof.MlDsa.PPC64LE.Sign
 
