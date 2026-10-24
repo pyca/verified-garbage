@@ -23,12 +23,14 @@ namespace VG.Proof.RsaPkcs1Sig.PPC64LE.Ver
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Sig.PPC64LE VG.Impl.RsaPkcs1Sig.PPC64LE.Precomputed
 
 /-- In the frame, `k`, `hash`, `digest` and `digest_len` kept. -/
-abbrev VMid (s t : State) : Prop := Mid s (s.gpr .r4) ((s.gpr .r7).setWidth 32 |>.setWidth 64) (s.gpr .r8) (s.gpr .r9) t
+abbrev VMid (s t : State) : Prop :=
+  Mid (sR s) s (s.gpr .r4) ((s.gpr .r7).setWidth 32 |>.setWidth 64) (s.gpr .r8) (s.gpr .r9) t
 
 /-- At the call: the arguments of `vg_rsa_public_precomputed_checked`, `EM₁`,
 `n_len`, `pre`, `pre_len`, `e`, `e_len`, `sig` and `n_len`, and on the stack
 `scratch` and `scratch_len`. -/
-structure AtCall (s t : State) : Prop extends Mid s (s.gpr .r4) ((s.gpr .r7).setWidth 32 |>.setWidth 64) (s.gpr .r8) (s.gpr .r9) t where
+structure AtCall (s t : State) : Prop extends
+    Mid (sR s) s (s.gpr .r4) ((s.gpr .r7).setWidth 32 |>.setWidth 64) (s.gpr .r8) (s.gpr .r9) t where
   g3 : t.gpr .r3 = fb s + BitVec.ofNat 64 oEM1
   g4 : t.gpr .r4 = s.gpr .r4
   g5 : t.gpr .r5 = stackArg s 3
@@ -241,7 +243,8 @@ theorem pdOk_of {s t : State} (hp : PreV s) (ha : AtCall s t) (hsig : stackArg s
 
 /-- After the call: `VMid`, and `EM₁` written with RSAVP1's result if `pre`
 holds the modulus' values. -/
-structure AfterCall (s t : State) : Prop extends Mid s (s.gpr .r4) ((s.gpr .r7).setWidth 32 |>.setWidth 64) (s.gpr .r8) (s.gpr .r9) t where
+structure AfterCall (s t : State) : Prop extends
+    Mid (sR s) s (s.gpr .r4) ((s.gpr .r7).setWidth 32 |>.setWidth 64) (s.gpr .r8) (s.gpr .r9) t where
   res : PreOk s →
     Spec.Rsa.written t.mem (fb s + BitVec.ofNat 64 oEM1) (s.gpr .r4).toNat ((t.gpr .r3).setWidth 32) (pubOut s)
 

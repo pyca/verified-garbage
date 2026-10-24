@@ -117,8 +117,8 @@ theorem preserved_split {r : Reg} (h : r ∈ preserved) : r ∈ saved.map Prod.f
 /-- In the frame, from the entry state `s`: our caller's registers and
 return address in their slots, `a`–`d` in `r28`–`r31`, the other
 callee-saved registers as on entry, memory changed only in the stack the
-function uses and the working space. -/
-structure Mid (s : State) (a b c d : BitVec 64) (t : State) : Prop where
+function uses and the working space `S`. -/
+structure Mid (S : Region) (s : State) (a b c d : BitVec 64) (t : State) : Prop where
   sp : t.sp = fb s
   rd : t.rd = s.rd
   wr : t.wr = fr s :: s.wr
@@ -127,18 +127,18 @@ structure Mid (s : State) (a b c d : BitVec 64) (t : State) : Prop where
   r30 : t.gpr .r30 = c
   r31 : t.gpr .r31 = d
   hi : ∀ r ∈ hiRegs, t.gpr r = s.gpr r
-  mem : Frame [kR s, sR s] s.mem t.mem
+  mem : Frame [kR s, S] s.mem t.mem
   sv : Spill.Saved (fb s) s.gpr saved t.mem
   ls : t.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr
 
 section
-variable {s t w : State} {a b c d : BitVec 64} {rs : List Reg}
+variable {S : Region} {s t w : State} {a b c d : BitVec 64} {rs : List Reg}
 
 theorem not_kept {r : Reg} (hrs : ∀ r ∈ rs, r ∉ kept) (hr : r ∈ kept) : r ∉ rs := fun h => hrs r h hr
 
-theorem Mid.of (h : Mid s a b c d t) (hg : ∀ r ∈ kept, w.gpr r = t.gpr r) (hsp : w.sp = t.sp) (hrd : w.rd = t.rd)
-    (hwr : w.wr = t.wr) (hm : Frame [kR s, sR s] s.mem w.mem) (hsv : Spill.Saved (fb s) s.gpr saved w.mem)
-    (hls : w.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr) : Mid s a b c d w where
+theorem Mid.of (h : Mid S s a b c d t) (hg : ∀ r ∈ kept, w.gpr r = t.gpr r) (hsp : w.sp = t.sp) (hrd : w.rd = t.rd)
+    (hwr : w.wr = t.wr) (hm : Frame [kR s, S] s.mem w.mem) (hsv : Spill.Saved (fb s) s.gpr saved w.mem)
+    (hls : w.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr) : Mid S s a b c d w where
   sp := hsp.trans h.sp
   rd := hrd.trans h.rd
   wr := hwr.trans h.wr
@@ -153,23 +153,23 @@ theorem Mid.of (h : Mid s a b c d t) (hg : ∀ r ∈ kept, w.gpr r = t.gpr r) (h
 
 /-- `Mid` is kept by code writing registers other than those it keeps, and
 memory `hm` says is kept. -/
-theorem Mid.keep (h : Mid s a b c d t) (o : Keep rs t w) (hm : Frame [kR s, sR s] s.mem w.mem)
+theorem Mid.keep (h : Mid S s a b c d t) (o : Keep rs t w) (hm : Frame [kR s, S] s.mem w.mem)
     (hsv : Spill.Saved (fb s) s.gpr saved w.mem) (hls : w.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr)
-    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid s a b c d w :=
+    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S s a b c d w :=
   h.of (fun r hr => o.gpr r (not_kept hrs hr)) o.sp o.rd o.wr hm hsv hls
 
 /-- `Mid` is kept by code writing registers other than those it keeps. -/
-theorem Mid.only (h : Mid s a b c d t) (o : Only rs t w) (hrs : ∀ r ∈ rs, r ∉ kept := by decide) :
-    Mid s a b c d w :=
+theorem Mid.only (h : Mid S s a b c d t) (o : Only rs t w) (hrs : ∀ r ∈ rs, r ∉ kept := by decide) :
+    Mid S s a b c d w :=
   h.keep o.keep (by rw [o.mem]; exact h.mem) (by rw [o.mem]; exact h.sv) (by rw [o.mem]; exact h.ls) hrs
 
 /-- Writes of the frame above the slots and of the working space keep
 `Mid`'s memory. -/
-theorem Mid.frameMem (h : Mid s a b c d t) (hks : (kR s).Disjoint (sR s)) {e n : Nat} {m : Mem}
-    (he : oLr + 8 ≤ e) (hen : e + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 e, n⟩, sR s] t.mem m) :
-    Frame [kR s, sR s] s.mem m ∧ Spill.Saved (fb s) s.gpr saved m ∧
+theorem Mid.frameMem (h : Mid S s a b c d t) (hks : (kR s).Disjoint S) {e n : Nat} {m : Mem}
+    (he : oLr + 8 ≤ e) (hen : e + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 e, n⟩, S] t.mem m) :
+    Frame [kR s, S] s.mem m ∧ Spill.Saved (fb s) s.gpr saved m ∧
       m.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr := by
-  have hd : ∀ {d' k : Nat}, d' + k ≤ oLr + 8 → ∀ r ∈ [(⟨fb s + BitVec.ofNat 64 e, n⟩ : Region), sR s],
+  have hd : ∀ {d' k : Nat}, d' + k ≤ oLr + 8 → ∀ r ∈ [(⟨fb s + BitVec.ofNat 64 e, n⟩ : Region), S],
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 d', k⟩ r := fun hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -184,24 +184,24 @@ theorem Mid.frameMem (h : Mid s a b c d t) (hks : (kR s).Disjoint (sR s)) {e n :
 
 /-- `Mid` is kept by code writing registers other than those it keeps, the
 frame above the slots and the working space. -/
-theorem Mid.frameW (h : Mid s a b c d t) (o : Keep rs t w) (hks : (kR s).Disjoint (sR s)) {e n : Nat}
-    (he : oLr + 8 ≤ e) (hen : e + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 e, n⟩, sR s] t.mem w.mem)
-    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid s a b c d w :=
+theorem Mid.frameW (h : Mid S s a b c d t) (o : Keep rs t w) (hks : (kR s).Disjoint S) {e n : Nat}
+    (he : oLr + 8 ≤ e) (hen : e + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 e, n⟩, S] t.mem w.mem)
+    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S s a b c d w :=
   have hf := h.frameMem hks he hen hm
   h.keep o hf.1 hf.2.1 hf.2.2 hrs
 
 /-- `Mid.frameW` for a write of the frame alone. -/
-theorem Mid.frameW1 (h : Mid s a b c d t) (o : Keep rs t w) (hks : (kR s).Disjoint (sR s)) {e n : Nat}
+theorem Mid.frameW1 (h : Mid S s a b c d t) (o : Keep rs t w) (hks : (kR s).Disjoint S) {e n : Nat}
     (he : oLr + 8 ≤ e) (hen : e + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 e, n⟩] t.mem w.mem)
-    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid s a b c d w :=
+    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S s a b c d w :=
   h.frameW o hks he hen (hm.mono fun _ hr => by
     rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..) hrs
 
 end
 
 /-- A buffer of the caller that the function does not write. -/
-theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [kR s, sR s] s.mem m) {p : Addr}
-    {len : Nat} (hk : (kR s).Disjoint ⟨p, len⟩) (hs : (sR s).Disjoint ⟨p, len⟩) (hl : len ≤ 2 ^ 64) :
+theorem bytes_of_frame {S : Region} {s : State} {m : Mem} (hf : Frame [kR s, S] s.mem m) {p : Addr}
+    {len : Nat} (hk : (kR s).Disjoint ⟨p, len⟩) (hs : S.Disjoint ⟨p, len⟩) (hl : len ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p len = Spec.Rsa.bytesAt s.mem p len := by
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => hf.bytes (R := ⟨p, len⟩) (fun r hr => ?_) hl (List.mem_range.mp hi)
@@ -210,8 +210,8 @@ theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [kR s, sR s] s.mem m) {
   · exact hk.symm
   · exact hs.symm
 
-theorem words_of_frame {s : State} {m : Mem} (hf : Frame [kR s, sR s] s.mem m) {p : Addr}
-    {n : Nat} (hk : (kR s).Disjoint ⟨p, n * 8⟩) (hs : (sR s).Disjoint ⟨p, n * 8⟩) (hl : p.toNat + n * 8 ≤ 2 ^ 64) :
+theorem words_of_frame {S : Region} {s : State} {m : Mem} (hf : Frame [kR s, S] s.mem m) {p : Addr}
+    {n : Nat} (hk : (kR s).Disjoint ⟨p, n * 8⟩) (hs : S.Disjoint ⟨p, n * 8⟩) (hl : p.toNat + n * 8 ≤ 2 ^ 64) :
     Spec.Rsa.wordsAt m p n = Spec.Rsa.wordsAt s.mem p n := by
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => hf.readW (r := ⟨p, n * 8⟩) ?_ (fun r hr => ?_) (by decide)
@@ -290,7 +290,7 @@ structure Saves (s t : State) : Prop where
   sv : Spill.Saved (fb s) s.gpr saved t.mem
   ls : t.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr
 
-theorem Mid.saves {s t : State} {a b c d : BitVec 64} (h : Mid s a b c d t) : Saves s t :=
+theorem Mid.saves {S : Region} {s t : State} {a b c d : BitVec 64} (h : Mid S s a b c d t) : Saves s t :=
   ⟨h.sp, h.wr, h.hi, h.sv, h.ls⟩
 
 /-- `Saves` is kept by code writing registers other than the callee-saved
