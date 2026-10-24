@@ -164,22 +164,22 @@ scratch = r9) -> r3`, `F` in `r10`
 `F`: the header of `dom4` at 0, the hash at 16, the challenge `k` at 136, the saves at 200. If
 `ctxlen ≥ 256`, it returns 0 at once. -/
 
-def verifyRegs : List Reg := [.r20, .r21, .r22, .r23, .r24, .r25, .r28, .r29]
+def verifyRegs : List Reg := [.r20, .r21, .r22, .r24, .r25, .r28, .r29, .r23]
 
 /-- The setup, the challenge and the arguments of `verify_equation`. -/
 def verifyHash : Prog isa :=
   .seq (.block (saveRegs .r10 200 verifyRegs ++
-    [mov .r20 .r3, mov .r21 .r4, mov .r22 .r5, mov .r23 .r6, mov .r24 .r7, mov .r25 .r8, mov .r28 .r9,
-      mov .r29 .r10] ++ hdr .r29 .r22)) <|
-  .seq (hash .r28 (dom4Pieces .r29 .r21 .r22 ++ [⟨.r25, 0, .imm 57⟩, ⟨.r20, 0, .imm 57⟩, ⟨.r23, 0, .reg .r24⟩])
-    .r29 16) <|
-  .seq (.block [.addi .r3 .r29 136, .addi .r4 .r29 16, mov .r5 .r28]) <|
+    [mov .r20 .r3, mov .r21 .r8, mov .r22 .r9, mov .r24 .r4, mov .r25 .r5, mov .r28 .r6, mov .r29 .r7,
+      mov .r23 .r10] ++ hdr .r23 .r25)) <|
+  .seq (hash .r22 (dom4Pieces .r23 .r24 .r25 ++ [⟨.r21, 0, .imm 57⟩, ⟨.r20, 0, .imm 57⟩, ⟨.r28, 0, .reg .r29⟩])
+    .r23 16) <|
+  .seq (.block [.addi .r3 .r23 136, .addi .r4 .r23 16, mov .r5 .r22]) <|
   .seq (.call "vg_ed448_scalar_reduce" scalarReduce) <|
-  .block [mov .r3 .r20, mov .r4 .r25, .addi .r5 .r29 136, mov .r6 .r28]
+  .block [mov .r3 .r20, mov .r4 .r21, .addi .r5 .r23 136, mov .r6 .r22]
 
 def verifyMain : Prog isa :=
   .seq verifyHash <| .seq (.call "vg_ed448_verify_equation" verifyEquation) <|
-  .block (restoreRegs .r29 200 verifyRegs)
+  .block (restoreRegs .r23 200 verifyRegs)
 
 /-- `ctxlen < 256`: `ctxlen >> 8` is zero. -/
 def verifyMessage : Prog isa :=
