@@ -10,8 +10,8 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # SEC 1 point conversion over P-256 on PPC64LE: the code as literals
 
-`vg_ec_p256_compress_public_key` as a literal (`materialize_code`,
-`Proof/Framework/Lit.lean`), which its constant time and `spSafe` evaluate.
+`vg_ec_p256_compress_public_key` and `_decompress_public_key` as literals (`materialize_code`,
+`Proof/Framework/Lit.lean`), which their constant time and `spSafe` evaluate.
 -/
 
 @[expose] public section
@@ -19,5 +19,6 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 namespace VG
 
 materialize_code Impl.EcKey.Compressed.PPC64LE.compressP256
+materialize_code Impl.EcKey.Compressed.PPC64LE.decompressP256
 
 end VG
