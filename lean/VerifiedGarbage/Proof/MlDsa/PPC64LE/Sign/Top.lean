@@ -29,7 +29,7 @@ and results, the loop what `signLeakT` says, and the signature its hint.
 namespace VG.Proof.MlDsa.PPC64LE.Sign
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
-open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relStart)
+open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relStart relInv)
 open VG.Impl.MlDsa.PPC64LE.Sign
 open VG.Impl.MlDsa.PPC64LE.KeyGen (callAt seqR)
 open VG.Spec.MlDsa
@@ -164,6 +164,125 @@ theorem sign_ok {σ : State} (hpre : SPre p STK σ) (h48 : 48 ≤ STK) :
     rcases h₄.r01 with h0 | h1
     · exact .inr ⟨by rw [h0]; rfl, h₄.bad h0⟩
     · exact .inl ⟨by rw [h1]; rfl, maxBounds, h₄.ok h1⟩
+
+/-! ## Two runs -/
+
+omit hP hF hS hp in
+/-- Two runs whose `ExpandA` finished agree on what their loops leak. -/
+theorem pub_leq {σ₁ σ₂ : State} (hpub : sPub p σ₁ σ₂)
+    (hA₁ : expandA p maxBounds (rhoOf p σ₁) = some (amat p (Am p σ₁)))
+    (hA₂ : expandA p maxBounds (rhoOf p σ₂) = some (amat p (Am p σ₂))) : LeakEq p 0 σ₁ σ₂ := by
+  have e := hpub.2.2.2.2.2.2
+  rw [← Proof.MlDsa.Sign.signLeakT_eq_signLeak, ← Proof.MlDsa.Sign.signLeakT_eq_signLeak,
+    Proof.MlDsa.Sign.signLeakT_eq hA₁, Proof.MlDsa.Sign.signLeakT_eq hA₂, pub_rho hpub] at e
+  exact List.append_cancel_left e
+
+omit hP hF hS hp in
+theorem relct_nil {Q : State → State → Prop} {P : State → State → Prop} (h : ∀ x y, P x y → Q x y) :
+    RelCT isa P (.block []) Q := by
+  intro _ _ _ _ _ _ hr e₁ e₂
+  rw [Exec.block_iff] at e₁ e₂
+  simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at e₁ e₂
+  obtain ⟨rfl, rfl⟩ := e₁
+  obtain ⟨rfl, rfl⟩ := e₂
+  exact ⟨rfl, h _ _ hr⟩
+
+omit hP hF hS hp in
+theorem hintIs_unique {m : Mem} {a : Addr} {h h' : Vector Bool n} (H : HintIs m a 1 [h]) (H' : HintIs m a 1 [h']) :
+    h = h' := by
+  apply Vector.ext
+  intro j hj
+  have e := H.2 0 (by decide) j hj
+  have e' := H'.2 0 (by decide) j hj
+  simp only [Nat.mul_zero, Nat.zero_add, List.getD_cons_zero, getElem!_pos h j hj, getElem!_pos h' j hj] at e e'
+  rw [e] at e'
+  revert e'
+  cases h[j] <;> cases h'[j] <;> decide
+
+omit hp in
+/-- The two runs of the signature, from the end of the loop. -/
+theorem outIf_tr :
+    RelCT isa (OX p STK) (ifOk (output P p)) fun x y => Rel2 (SPre p STK) (sPub p) (SC2 p STK) x y := by
+  unfold ifOk ifOkElse
+  refine RelCT.ite (fun x y ⟨_, _, _, _, _, _, _, e, _⟩ => by rw [eval_nonzero, eval_nonzero, e]) ?_ ?_
+  · refine liftG (Q₀ := fun _ _ => True) (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂, e24, hh⟩, hb⟩ => ?_)
+      (RelCT.mono (output_tr hP hF hS) (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂, e24, hh⟩, hb⟩ => ?_) fun _ _ h => h)
+    · have hx := r24_one h₁.r01 (by rw [eval_nonzero] at hb; simpa using hb)
+      have hy := r24_one h₂.r01 (by rw [← e24]; rw [eval_nonzero] at hb; simpa using hb)
+      obtain ⟨t₁, -, -, -, ps₁, ct₁, z₁, hh₁⟩ := h₁.pass hx
+      obtain ⟨t₂, -, -, -, ps₂, ct₂, z₂, hh₂⟩ := h₂.pass hy
+      exact ⟨_, _, output_ok hP hF hS ⟨h₁.k, z₁, hh₁, ps₁, hx⟩ ct₁, output_ok hP hF hS ⟨h₂.k, z₂, hh₂, ps₂, hy⟩ ct₂,
+        fun x' y' a b _ => ⟨σ₁, σ₂, p₁, p₂, pub, a.1.sc, b.1.sc⟩⟩
+    · have hx := r24_one h₁.r01 (by rw [eval_nonzero] at hb; simpa using hb)
+      have hy := r24_one h₂.r01 (by rw [← e24]; rw [eval_nonzero] at hb; simpa using hb)
+      obtain ⟨t₁, -, -, -, ps₁, ct₁, z₁, hh₁⟩ := h₁.pass hx
+      obtain ⟨t₂, -, -, -, ps₂, ct₂, z₂, hh₂⟩ := h₂.pass hy
+      obtain ⟨f, f₁, f₂⟩ := hh hx
+      refine ⟨σ₁, σ₂, p.ℓ * t₁, p.ℓ * t₂, p₁, p₂, pub, ⟨⟨h₁.k, z₁, hh₁, ps₁, hx⟩, ct₁⟩,
+        ⟨⟨h₂.k, z₂, hh₂, ps₂, hy⟩, ct₂⟩, fun i hi => ?_⟩
+      have a₂ := hh₂ i hi
+      rw [← SL_pub pub] at a₂
+      exact (hintIs_unique (hh₁ i hi) (f₁ i hi)).trans (hintIs_unique (f₂ i hi) a₂)
+  · exact relct_nil fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂, _⟩, _⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, h₁.k.sc, h₂.k.sc⟩
+
+/-- `rest`, from runs whose `ExpandA` finished. -/
+theorem rest_tr :
+    RelCT isa (Rel2 (SPre p STK) (sPub p) (IM p STK)) (rest P p)
+      fun x y => Rel2 (SPre p STK) (sPub p) (SC2 p STK) x y := by
+  unfold rest
+  refine RelCT.mono (P := RS p STK (LeakEq p 0) (IM p STK)) ?_
+    (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub,
+      pub_leq pub (expandA_max h₁.ok) (expandA_max h₂.ok), h₁, h₂⟩) fun _ _ h => h
+  refine RelCT.seq (pieceRS (decode_piece hP hF hS)) (RelCT.seq ?_ (outIf_tr hP hF hS))
+  exact RelCT.mono (signLoop_tr hP hF hS hp) (fun x y h => h.mono fun _ _ h => h.ik) fun _ _ h => h
+
+/-- Two runs whose entry states agree on the public data leak the same. -/
+theorem sign_tr (h48 : 48 ≤ STK) :
+    RelCT isa (Rel2 (SPre p STK) (sPub p) fun σ s => s = σ) (sign P p) fun _ _ => True := by
+  unfold sign
+  refine RelCT.seq (relInv (spro_piece hF h48).ok (spro_piece hF h48).tr) ?_
+  refine RelCT.seq (RelCT.mono (expandA_tr hP hF hS) (fun x y h => ⟨h, trivial⟩) fun _ _ h => h) ?_
+  refine RelCT.seq (Q := fun _ _ => True) (R := fun x y => Rel2 (SPre p STK) (sPub p) (SC1 p STK) x y ∨
+      Rel2 (SPre p STK) (sPub p) (SC2 p STK) x y) ?_
+    (relOr (srel1 (fun _ _ h => h) (by taint_decide)) (srel2 (fun _ _ h => h) (by taint_decide)))
+  unfold ifOk ifOkElse
+  refine RelCT.ite (fun x y ⟨_, e⟩ => by rw [eval_nonzero, eval_nonzero, e]) ?_ ?_
+  · refine RelCT.mono (rest_tr hP hF hS hp) (fun x y ⟨⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩, e⟩, hb⟩ => ?_)
+      fun _ _ h => .inr h
+    have hx := r24_one h₁.r01 (by rw [eval_nonzero] at hb; simpa using hb)
+    exact ⟨σ₁, σ₂, p₁, p₂, pub, h₁.im hx, h₂.im (r24_one h₂.r01 (by rw [← e, hx]; decide))⟩
+  · exact relct_nil fun x y ⟨⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩, _⟩, _⟩ => .inl ⟨σ₁, σ₂, p₁, p₂, pub, h₁.sc, h₂.sc⟩
 end
+
+/-! ## The contract -/
+
+/-- A state that satisfies `signContract`'s precondition, for the contract's satisfiability. -/
+def signSat (p : Params) : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x8000 | .r5 => 0x9000 | .r6 => 0xA000 | .r7 => 0x10000 | _ => 0
+  lr := 0
+  sp := 0x80000
+  mem _ := 0
+  rd := [⟨0x1000, p.skLen⟩, ⟨0x8000, 64⟩, ⟨0x9000, 32⟩]
+  wr := [⟨0xA000, p.sigLen⟩, ⟨0x10000, scrLen p⟩]
+
+/-- `vg_mldsa*_sign` of the parameter set `p` meets its contract with `S`
+bytes of stack, for any verified implementations `P` of the primitives it
+calls with at most `S` bytes of stack whose samplers' results are public
+(`SPrimsOk`), and `S` at least the 48 bytes the sponge needs. The contract's
+satisfiability (`hsat`, by `signSat`) is evaluated once `S` is known. -/
+theorem sign_verified {P : Prims} {S : Nat} (hP : SPrimsOk P S) (h48 : 48 ≤ S)
+    (p : Spec.MlDsa.Params) (hp3 : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
+    (hsat : (Spec.MlDsa.signContract p PPC64LE.abi S).pre (signSat p)) :
+    Verified PPC64LE.target (sign P p) (Spec.MlDsa.signContract p PPC64LE.abi S) := by
+  have hF := sfacts hp3
+  have hp : ParamsOk p := by rcases hp3 with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide⟩
+  obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega⟩
+  refine ⟨fun s hs => sign_ok hP hF (Nat.le_refl _) hp (spre_of hs) h48,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨signSat p, hsat⟩⟩
+  sig_pub [Spec.MlDsa.signContract, Spec.MlDsa.signSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+  obtain ⟨hsp, hl, h3, h4, h5, h6, h7⟩ := hpub
+  exact relStart (sign_tr hP hF (Nat.le_refl _) hp h48) s₁ s₂ t₁ t₂ s₁' s₂' (spre_of h₁) (spre_of h₂)
+    ⟨hsp, h3, h4, h5, h6, h7, hl⟩ e₁ e₂
 
 end VG.Proof.MlDsa.PPC64LE.Sign
