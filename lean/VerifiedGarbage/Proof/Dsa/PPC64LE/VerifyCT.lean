@@ -40,7 +40,9 @@ theorem body_rel : RelCT isa (Two K9) Verify.body (Two End) :=
     (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
 
 theorem checkKey_rel : RelCT isa (Two S0) (checkKey Verify.body (.block [.li .r3 0])) (Two End) :=
-  sizes_rel (oddsTail_rel body_rel fun _ h => fail_rel h) fun _ h => fail_rel h
+  (sizes_rel (G := fun _ => True) (oddsTail_rel (body_rel.mono (fun _ _ => two_mono fun _ _ h => h.1)
+      fun _ _ h => h) fun _ h => fail_rel h) fun _ h => fail_rel h).mono
+    (fun _ _ => two_mono fun _ _ h => ⟨h, trivial⟩) fun _ _ h => h
 
 theorem pins_End : Pins End [.r21] := by
   intro v s₁ s₂ h₁ h₂ r hr

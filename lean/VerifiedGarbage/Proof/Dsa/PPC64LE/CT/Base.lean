@@ -171,6 +171,26 @@ theorem rel_ite_zero {α : Type} {Φ : α → State → Prop} {r : Reg} {t e : P
     exact ⟨a, ⟨h₁, fun e => by rw [e] at hc; exact absurd hc (by decide)⟩,
       ⟨h₂, fun e => by rw [e] at hc₂; exact absurd hc₂ (by decide)⟩, hsp⟩
 
+/-- A phase step that keeps a fact `G` of the public data, which the taint
+analysis and the step need not know (`G` restricts the public data a caller
+relates, e.g. to signing's). -/
+theorem two_postG {α : Type} {Φ Ψ : α → State → Prop} {G : α → Prop} {c : Prog isa}
+    (hct : RelCT isa (Two Φ) c fun _ _ => True) (hw : ∀ a s, Φ a s → WP isa c s (Ψ a)) :
+    RelCT isa (Two fun a s => Φ a s ∧ G a) c (Two fun a s => Ψ a s ∧ G a) :=
+  two_post (hct.mono (fun _ _ => two_mono fun _ _ h => h.1) fun _ _ h => h) fun a s h =>
+    (hw a s h.1).mono fun _ x => ⟨x, h.2⟩
+
+/-- `rel_ite_zero`, keeping a fact `G` of the public data. -/
+theorem rel_ite_zeroG {α : Type} {Φ : α → State → Prop} {G : α → Prop} {r : Reg} {t e : Prog isa}
+    {Q : State → State → Prop}
+    (hz : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → (s₁.gpr r == 0) = (s₂.gpr r == 0))
+    (ht : RelCT isa (Two fun a s => (Φ a s ∧ s.gpr r = 0) ∧ G a) t Q)
+    (he : RelCT isa (Two fun a s => (Φ a s ∧ s.gpr r ≠ 0) ∧ G a) e Q) :
+    RelCT isa (Two fun a s => Φ a s ∧ G a) (.ite (.zero .d r) t e) Q :=
+  rel_ite_zero (fun a s₁ s₂ h₁ h₂ => hz a s₁ s₂ h₁.1 h₂.1)
+    (ht.mono (fun _ _ => two_mono fun _ _ ⟨⟨h, g⟩, z⟩ => ⟨⟨h, z⟩, g⟩) fun _ _ h => h)
+    (he.mono (fun _ _ => two_mono fun _ _ ⟨⟨h, g⟩, z⟩ => ⟨⟨h, z⟩, g⟩) fun _ _ h => h)
+
 /-- Both runs agree whether `r` is zero when the predicate says exactly when. -/
 theorem zero_iff_agree {α : Type} {Φ : α → State → Prop} {r : Reg} (C : α → Prop)
     (h : ∀ a s, Φ a s → (s.gpr r = 0 ↔ C a)) :
