@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Verified
+public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
@@ -14,7 +15,9 @@ them.
 Both functions run in a frame of 3936 bytes holding their working space
 (`Proof/AesGcmSiv/PPC64LE/Verified.lean`). A call (`bl`) stores nothing in
 memory, and the functions they call use no stack: their `stack` is that
-frame.
+frame. The proofs take the tag input computed with GHASH to be RFC 8452's
+(`TagInputEq`), bound here to `Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`,
+so that only this file imports the algebra of its proof.
 -/
 
 @[expose] public section
@@ -32,12 +35,12 @@ def artifacts : List Artifact := [
     notes := [note]
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«seal»
     stack := 3936
-    verified := seal_framed },
+    verified := seal_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG },
   Spec.GcmSiv.openApi.artifact PPC64LE.target {
     notes := [note,
       "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«open»
     stack := 3936
-    verified := open_framed }]
+    verified := open_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG }]
 
 end VG.Artifacts.AesGcmSiv.PPC64LE

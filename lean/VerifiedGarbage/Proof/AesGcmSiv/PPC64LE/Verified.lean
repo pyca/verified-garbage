@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.TopCT
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Open
-import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
@@ -15,9 +14,10 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 # AES-GCM-SIV on PPC64LE: `Verified`
 
 Untrusted: everything here is checked by Lean. Correctness and constant
-time, with the tag input computed with GHASH equal to the RFC's
-(`tagInput_eq`, from `Proof.GcmSiv.Polyval`, imported here only so that the
-other proofs need not import its algebra), a state satisfying each
+time, given that the tag input computed with GHASH is the RFC's
+(`TagInputEq`, which the registration file binds to
+`Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`, so that only that leaf
+imports its algebra), a state satisfying each
 precondition, and the shared contracts of `Spec/GcmSiv/Contract.lean` with
 the working space as a last argument (`Proof/AesGcmSiv/Scratch.lean`, 478
 doublewords), with no stack: a call (`bl`) stores nothing in memory, and
@@ -34,20 +34,15 @@ namespace VG.Proof.AesGcmSiv.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.AesGcmSiv.PPC64LE
 
-/-- RFC 8452 Appendix A: POLYVAL with `H` is GHASH with `H · x`. -/
-theorem tagInput_eq : TagInputEq := fun a n pt d => by
-  rw [GcmSiv.tagInput_eq, Spec.GcmSiv.polyval, GcmSiv.Polyval.polyvalFrom_eq]
-  rfl
-
 /-! ## Correctness and constant time -/
 
-theorem seal_correct (s : State) (hs : sealPPC64LE.pre s) :
+theorem seal_correct (hti : TagInputEq) (s : State) (hs : sealPPC64LE.pre s) :
     ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
-  seal_wp tagInput_eq hs
+  seal_wp hti hs
 
-theorem open_correct (s : State) (hs : openPPC64LE.pre s) :
+theorem open_correct (hti : TagInputEq) (s : State) (hs : openPPC64LE.pre s) :
     ∃ t s', Exec isa «open» s t s' ∧ abiPreserved s s' ∧ openPPC64LE.post s s' :=
-  open_wp tagInput_eq hs
+  open_wp hti hs
 
 /-- A state satisfying the precondition of `vg_aes_gcm_siv_seal`: no
 additional data, no data, the tag at `0x4800` and `work` at `0x5000`, its
@@ -69,9 +64,9 @@ def openSat : State :=
 
 /-! ## The shared contracts -/
 
-theorem seal_verified :
+theorem seal_verified (hti : TagInputEq) :
     Verified PPC64LE.target «seal» (Proof.AesGcmSiv.sealScratchContract PPC64LE.abi 478) :=
-  Verified.of_correct seal_correct seal_ct
+  Verified.of_correct (seal_correct hti) seal_ct
       { pre := by
           intro s h
           sig_pre [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
@@ -106,9 +101,9 @@ theorem seal_verified :
             List.range.loop]
             [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat }
 
-theorem open_verified :
+theorem open_verified (hti : TagInputEq) :
     Verified PPC64LE.target «open» (Proof.AesGcmSiv.openScratchContract PPC64LE.abi 478) :=
-  Verified.of_correct open_correct open_ct
+  Verified.of_correct (open_correct hti) open_ct
       { pre := by
           intro s h
           sig_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
@@ -168,13 +163,13 @@ theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract PPC64LE.abi 3936).pr
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed :
+theorem seal_framed (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «seal»)
       (Spec.GcmSiv.sealContract PPC64LE.abi 3936) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 478) (pre := Spec.GcmSiv.sealPre PPC64LE.abi.ptrBits)
     (post := Spec.GcmSiv.sealPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
-    seal_verified (by decide) (by decide) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _)
+    (seal_verified hti) (by decide) (by decide) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _)
     sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
@@ -188,14 +183,14 @@ theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract PPC64LE.abi 3936).pr
     List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
-theorem open_framed :
+theorem open_framed (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «open»)
       (Spec.GcmSiv.openContract PPC64LE.abi 3936) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 478) (pre := Spec.GcmSiv.openPre PPC64LE.abi.ptrBits)
     (post := Spec.GcmSiv.openPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
     (leak := some (Spec.GcmSiv.openLeak PPC64LE.abi.ptrBits))
-    (Proof.AesGcmSiv.Verified.of_openScratch open_verified) (by decide) (by decide)
+    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hti)) (by decide) (by decide)
     (Proof.AesGcmSiv.openPre_local _) (Proof.AesGcmSiv.openPost_local _)
     openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
