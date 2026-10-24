@@ -61,12 +61,13 @@ def MrMid (p : PP) (mb N i u : Nat) (t : State) : Prop :=
       word t.mem p.B 160 = BitVec.ofNat 64 (dStat N (Spec.Ffdh.primeChecks mb) i (wA mb p.r u)) ∧
       word t.mem p.B 176 = BitVec.ofNat 64 (dIdx N i (wA mb p.r u))))
 
-/-- The head: room for a witness, and the draw if there is. -/
-theorem mrHead_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i u : Nat} {s : State}
+/-- The head's block: `r5 = 1` exactly when there is room for a witness. -/
+theorem mrHeadBlk_ok {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i u : Nat} {s : State}
     (h : MrSt p mb N res i u s) :
-    WP isa (.seq (.block (([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] : List Instr) ++
-        geFlag .r5 .r3 .r4))
-      (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw R.name R.code))) s (MrMid p mb N i u) := by
+    WP isa (.block (([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] : List Instr) ++
+        geFlag .r5 .r3 .r4)) s fun t =>
+      (t.gpr .r5 = BitVec.ofNat 64 (if (mb + 7) / 8 ≤ p.r.length - u then 1 else 0) ∧ t.mem = s.mem) ∧
+      Keep (([.r3, .r4] : List Reg) ++ ([.r5, .r0] : List Reg)) s t := by
   have hrl := h.m.st.dims.rl
   have hm2 := h.m.mb2
   have hb2 := h.m.st.dims.b2
@@ -78,16 +79,25 @@ theorem mrHead_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega
-  refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r3, .r4] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 (p.r.length - u) ∧
       t.gpr .r4 = BitVec.ofNat 64 ((mb + 7) / 8) ∧ t.mem = s.mem) ?_ (by decide)) fun s₁ ⟨⟨a3, a4, m₁⟩, k₁⟩ => ?_
   · simp only [ldh, hRandLen, hUsed, Impl.MillerRabin.PPC64LE.Search.hK]
     prun [h.m.st.r31, h.m.st.ld (d := 144) (by decide), h.m.st.ld (d := 152) (by decide),
       h.m.st.ld (d := 216) (by decide), h.m.st.args.rlen', hU, hKw, hsub]
-  refine WP.mono (geFlag_ok a3 a4 (by omega) (by omega)) fun s₂ ⟨⟨a5, m₂⟩, k₂⟩ => ?_
-  have k12 := k₁.trans k₂
-  have m12 : s₂.mem = s.mem := m₂.trans m₁
+  exact WP.mono (geFlag_ok a3 a4 (by omega) (by omega)) fun s₂ ⟨⟨a5, m₂⟩, k₂⟩ => ⟨⟨a5, m₂.trans m₁⟩, k₁.trans k₂⟩
+
+/-- The head: room for a witness, and the draw if there is. -/
+theorem mrHead_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i u : Nat} {s : State}
+    (h : MrSt p mb N res i u s) :
+    WP isa (.seq (.block (([ldh .r3 hRandLen, ldh .r4 hUsed, .sub .r3 .r3 .r4, ldh .r4 hK] : List Instr) ++
+        geFlag .r5 .r3 .r4))
+      (.ite (.zero .d .r5) (.block [.li .r3 0, sth .r3 hStat]) (draw R.name R.code))) s (MrMid p mb N i u) := by
+  have hrl := h.m.st.dims.rl
+  have hm2 := h.m.mb2
+  have hb2 := h.m.st.dims.b2
+  have hul := h.ul
+  refine WP.seq (WP.mono (mrHeadBlk_ok h) fun s₂ ⟨⟨a5, m12⟩, k12⟩ => ?_)
   refine WP.ite (decide ((if (mb + 7) / 8 ≤ p.r.length - u then 1 else 0) = 0))
     (eval_zero_ofNat s₂ .r5 (by split <;> decide) a5) (fun hb => ?_) (fun hb => ?_)
   · -- No room: `hStat := 0`.
@@ -195,18 +205,17 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
       fun _ => ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hik, ?_⟩⟩
     rw [show Spec.Ffdh.primeChecks mb - i = Spec.Ffdh.primeChecks mb - i - 1 + 1 by omega]; exact hres
 
-/-- The witnesses of `N`, drawn from octet `u` of the tape. -/
-theorem millerRabin_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State}
-    (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (h : MSt p mb N s)
+/-- The witness loop's start: `hIdx := 0`, `hStat := 4`. -/
+theorem mrInit_ok {p : PP} {mb N u : Nat} {s : State} (h : MSt p mb N s)
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
-    WP isa (millerRabin R.name R.code) s
-      (MrEnd p mb N (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u))) := by
+    WP isa (.block [.li .r3 0, sth .r3 hIdx, .li .r3 4, sth .r3 hStat]) s
+      (MrSt p mb N (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u)) 0 u) := by
   have hm1 := h.mb1
   have l160 : InRegions s.wr (p.B + BitVec.ofNat 64 160) 8 := h.st.st (d := 160) (by decide)
   have l176 : InRegions s.wr (p.B + BitVec.ofNat 64 176) 8 := h.st.st (d := 176) (by decide)
-  refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun t => t.mem = (s.mem.writeW (p.B + BitVec.ofNat 64 176)
+  refine WP.mono (WP.keep [.r3] (Q := fun t => t.mem = (s.mem.writeW (p.B + BitVec.ofNat 64 176)
       (BitVec.ofNat 64 0)).writeW (p.B + BitVec.ofNat 64 160) (BitVec.ofNat 64 4))
-      (by simp only [sth, hIdx, hStat]; prun [h.st.r31, l160, l176]) (by decide)) fun t ⟨tm, kt⟩ => ?_)
+      (by simp only [sth, hIdx, hStat]; prun [h.st.r31, l160, l176]) (by decide)) fun t ⟨tm, kt⟩ => ?_
   have hf : Frm p.B [(176, 8), (160, 8)] s.mem t.mem := by
     rw [tm]
     exact frm_writeW (frm_writeW (Frm.refl _ _ _) _ ⟨(176, 8), by simp, by decide, by decide⟩ (by decide)) _
@@ -223,6 +232,17 @@ theorem millerRabin_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State}
     simp only [word, off]; rw [tm, rw_self]
   have t176 : word t.mem p.B 176 = BitVec.ofNat 64 0 := by
     simp only [word, off]; rw [tm, rw_off _ _ _ (by omega) (by omega) (by omega), rw_self]
+  have hK : 0 < Spec.Ffdh.primeChecks mb := by unfold Spec.Ffdh.primeChecks; split <;> omega
+  exact ⟨M, t152, t176, t160, hul, hK, by rw [Nat.sub_zero]⟩
+
+/-- The witnesses of `N`, drawn from octet `u` of the tape. -/
+theorem millerRabin_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State}
+    (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (h : MSt p mb N s)
+    (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
+    WP isa (millerRabin R.name R.code) s
+      (MrEnd p mb N (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u))) := by
+  have hm1 := h.mb1
+  refine WP.seq (WP.mono (mrInit_ok h hu hul) fun t ht => ?_)
   show WP isa (.loop _ _) t _
   refine WP.loop (fun m v => ∃ i u', m = p.r.length + 1 - u' ∧
       MrSt p mb N (checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u)) i u' v) ?_ (p.r.length + 1 - u) t ?_
@@ -235,7 +255,6 @@ theorem millerRabin_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State}
       have hul' := hw.ul
       have hlt : p.r.length + 1 - (u' + (mb + 7) / 8) < p.r.length + 1 - u' := by omega_using [hul', hm1]
       exact Or.inr ⟨by rw [he, hg], p.r.length + 1 - (u' + (mb + 7) / 8), hlt, _, u' + (mb + 7) / 8, rfl, hw⟩
-  · have hK : 0 < Spec.Ffdh.primeChecks mb := by unfold Spec.Ffdh.primeChecks; split <;> omega
-    exact ⟨0, u, rfl, M, t152, t176, t160, hul, hK, by rw [Nat.sub_zero]⟩
+  · exact ⟨0, u, rfl, ht⟩
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
