@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr
 public import VerifiedGarbage.Spec.Sm4.Ctr
@@ -20,6 +20,9 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesConstantTime
+public import VerifiedGarbage.Impl.StackScratch.PPC64LE
+public import VerifiedGarbage.Spec.Ctr
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # SM4-CTR on PPC64LE meets its contract

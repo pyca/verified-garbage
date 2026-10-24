@@ -341,6 +341,9 @@ pub(crate) mod sm4_cbc;
 pub(crate) mod sm4_cfb;
 
 #[rustfmt::skip]
+pub(crate) mod sm4_ctr;
+
+#[rustfmt::skip]
 pub(crate) mod sm4_ofb;
 
 #[rustfmt::skip]
