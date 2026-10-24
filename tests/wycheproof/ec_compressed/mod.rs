@@ -61,6 +61,7 @@ macro_rules! compressed_peers {
     ($test:ident, $curve:ident, $len:literal, $file:literal) => {
         #[test]
         fn $test() {
+            use crate::wycheproof::harness::Expectation;
             crate::require_vectors!();
             let file = crate::wycheproof::harness::load::<
                 crate::wycheproof::harness::Fields,
@@ -76,12 +77,7 @@ macro_rules! compressed_peers {
                 };
                 let public = $curve::decompress_public_key(&compressed);
                 if let Some(public) = public {
-                    assert_ne!(
-                        test.result,
-                        crate::wycheproof::harness::Expectation::Invalid,
-                        "tcId {}",
-                        test.tc_id
-                    );
+                    assert_ne!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
                     assert_eq!($curve::compress_public_key(&public), Some(compressed));
                     let bytes = test
                         .case
@@ -96,12 +92,7 @@ macro_rules! compressed_peers {
                     assert_eq!(shared, test.case.shared.0, "tcId {}", test.tc_id);
                     checked.add();
                 } else {
-                    assert_eq!(
-                        test.result,
-                        crate::wycheproof::harness::Expectation::Invalid,
-                        "tcId {}",
-                        test.tc_id
-                    );
+                    assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
                     rejected.add();
                 }
             });
