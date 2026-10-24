@@ -7,7 +7,8 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use alloc::{vec, vec::Vec};
@@ -122,7 +123,12 @@ type Generate = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 type Generate = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -231,6 +237,17 @@ fn select_backends(
         (H1::Scalar, H256::Sha2) => vg_dsa_generate_parameters_sha256_sha2,
         (H1::Sha2, H256::Scalar) => vg_dsa_generate_parameters_sha1_sha2,
         (H1::Sha2, H256::Sha2) => vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
+    }
+}
+
+/// The PPC64LE implementation: neither hash has a variant there, so the
+/// match names only their baselines, and a new hash backend does not compile
+/// until generation handles it.
+#[cfg(target_arch = "powerpc64")]
+fn select(features: Features, _p_len: usize) -> Generate {
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    match (H1::select(features), H256::select(features)) {
+        (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
     }
 }
 

@@ -6,11 +6,12 @@
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use alloc::{vec, vec::Vec};
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 use core::sync::atomic::AtomicU8;
 
 use super::{Backend, Error, PrivateKey, PublicKey, Secret};
@@ -33,7 +34,7 @@ impl PrivateKey {
     /// `g` must have `p`'s width and `x` must have `q`'s width.
     /// Checks the domain's algebraic consistency and `0 < x < q`;
     /// callers must assure domain primality separately.
-    /// Available on x86, x86-64, AArch64 and 32-bit ARM.
+    /// Available on x86, x86-64, AArch64, 32-bit ARM and PPC64LE.
     pub fn from_private_components(p: &[u8], q: &[u8], g: &[u8], x: &[u8]) -> Result<Self, Error> {
         if !matches!(
             (p.len(), q.len()),
@@ -82,7 +83,7 @@ impl PrivateKey {
                 p_len,
                 q_len,
                 backend,
-                #[cfg(target_arch = "aarch64")]
+                #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
                 validated: AtomicU8::new(0),
             },
             packed: output,
@@ -176,7 +177,7 @@ impl PrivateKey {
             p_len,
             q_len,
             backend,
-            #[cfg(target_arch = "aarch64")]
+            #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
             validated: AtomicU8::new(0),
         };
         // The packed private key p || q || g || y || x is the output itself.

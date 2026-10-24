@@ -489,3 +489,17 @@ fn backend_combinations() {
         }
     }
 }
+
+#[test]
+#[cfg(target_arch = "powerpc64")]
+fn backend_combinations() {
+    // Neither hash has a variant on PPC64LE: every CPU takes the baseline.
+    for features in [Features(0), detected()] {
+        for p_len in [128, 256, 384] {
+            assert!(core::ptr::fn_addr_eq(
+                select(features, p_len),
+                vg_dsa_generate_parameters as Generate
+            ));
+        }
+    }
+}

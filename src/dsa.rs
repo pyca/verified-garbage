@@ -4,7 +4,7 @@
 //! The verified operations check domain and key algebraic consistency and
 //! scalar ranges. As with this crate's RSA operations, they do not prove
 //! primality: callers must obtain domain parameters from a trusted source
-//! or validate them separately. On x86-64 and AArch64, `Parameters::generate` runs
+//! or validate them separately. `Parameters::generate` runs
 //! probable-prime parameter generation entirely in verified assembly. FIPS 186-5 retains DSA for legacy verification.
 //!
 //! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 20)`, `(256, 28)`,
@@ -20,14 +20,15 @@
         target_arch = "x86",
         target_arch = "x86_64",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        all(target_arch = "powerpc64", target_endian = "little")
     ),
     feature = "alloc"
 ))]
 
 use alloc::{vec, vec::Vec};
 use core::fmt;
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 use core::sync::atomic::{AtomicU8, Ordering};
 
 #[cfg(test)]
@@ -35,14 +36,14 @@ use crate::arch::dsa::vg_dsa_sign;
 #[cfg(all(target_arch = "x86_64", test))]
 use crate::arch::dsa::vg_dsa_sign_adx;
 use crate::arch::dsa::vg_dsa_sign_random;
-#[cfg(any(not(target_arch = "aarch64"), test))]
+#[cfg(any(not(any(target_arch = "aarch64", target_arch = "powerpc64")), test))]
 use crate::arch::dsa::vg_dsa_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
     VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES,
     vg_dsa_sign_random_adx, vg_dsa_verify_adx,
 };
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
 use crate::cpu::{Features, detected};
 use crate::zeroize::{Int, zeroize};
@@ -101,18 +102,21 @@ impl core::error::Error for Error {}
 /// An owned DSA public key. Import checks widths; verification checks the
 /// domain and public value. Domain primality is the caller's responsibility.
 #[derive(Debug)]
-#[cfg_attr(not(target_arch = "aarch64"), derive(Clone))]
+#[cfg_attr(
+    not(any(target_arch = "aarch64", target_arch = "powerpc64")),
+    derive(Clone)
+)]
 pub struct PublicKey {
     packed: Vec<u8>,
     p_len: usize,
     q_len: usize,
     backend: Backend,
     // 0 = unchecked, 1 = valid, 2 = invalid. The owned key bytes never change.
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
     validated: AtomicU8,
 }
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 impl Clone for PublicKey {
     fn clone(&self) -> Self {
         Self {
@@ -120,7 +124,7 @@ impl Clone for PublicKey {
             p_len: self.p_len,
             q_len: self.q_len,
             backend: self.backend,
-            #[cfg(target_arch = "aarch64")]
+            #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
             validated: AtomicU8::new(self.validated.load(Ordering::Relaxed)),
         }
     }
@@ -147,27 +151,27 @@ impl PublicKey {
             p_len: p.len(),
             q_len: q.len(),
             backend: Backend::select(detected()),
-            #[cfg(target_arch = "aarch64")]
+            #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
             validated: AtomicU8::new(0),
         })
     }
 
     /// Verify a prehashed digest and a fixed-width big-endian `r || s`
     /// signature. Invalid keys, signatures and signature lengths return false.
-    /// On AArch64, the first verification validates the immutable public key;
+    /// On AArch64 and PPC64LE, the first verification validates the immutable public key;
     /// later calls reuse that result while checking every signature independently.
     pub fn verify(&self, digest: &[u8], signature: &[u8]) -> bool {
         if signature.len() != 2 * self.q_len {
             return false;
         }
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
         let validation = self.validated.load(Ordering::Relaxed);
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
         if validation == 2 {
             return false;
         }
         let mut scratch = Secret(vec![0u64; 16 * self.p_len]);
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
         if validation == 0 {
             // SAFETY: import establishes widths, the key owns its immutable
             // bytes, and scratch is a separate allocation of 16*p_len words.
@@ -213,11 +217,11 @@ impl PublicKey {
             };
         }
         let result = match self.backend {
-            #[cfg(target_arch = "aarch64")]
+            #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
             // SAFETY: successful validation above, or a cached result for the
             // exact same immutable owned bytes, establishes the new precondition.
             Backend::Baseline => verify!(vg_dsa_verify_prevalidated),
-            #[cfg(not(target_arch = "aarch64"))]
+            #[cfg(not(any(target_arch = "aarch64", target_arch = "powerpc64")))]
             Backend::Baseline => verify!(vg_dsa_verify),
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => verify!(vg_dsa_verify_adx),
