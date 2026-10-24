@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Proof.Dsa.Accepted
-import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Public-key validation, on any target
