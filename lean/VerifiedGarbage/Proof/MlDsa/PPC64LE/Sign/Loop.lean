@@ -307,4 +307,56 @@ theorem dec_end {p : Params} {STK : Nat} (hp : ParamsOk p) {σ : State} {t : Nat
     exact .inr ⟨z, K, .inl (e24.trans h.r24), fun h1 => absurd (h1.symm.trans (e24.trans h.r24)) (by decide),
       fun _ => loop_none_ball h.rej h.none⟩
 
+/-! ## An iteration, and the loop -/
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+theorem checks_ok {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h : KA p STK t σ s) :
+    WP isa (checks P p) s fun s' => EP p STK σ t s' ∨ EF p STK σ t s' := by
+  unfold checks
+  refine WP.seq (WP.mono ((cntt_piece hP hF hS).ok σ s hpre h) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (kinit_piece.ok σ s1 hpre h1) fun s2 h2 => ?_)
+  refine WP.seq (WP.mono ((zs_piece hP hF hS).ok σ s2 hpre h2) fun s3 h3 => ?_)
+  refine WP.seq (WP.mono ((r0s_piece hP hF hS).ok σ s3 hpre h3) fun s4 h4 => ?_)
+  refine WP.seq (WP.mono ((hs_piece hP hF hS).ok σ s4 hpre h4) fun s5 h5 => ?_)
+  exact WP.seq (WP.mono ((onesOk_piece hF).ok σ s5 hpre h5) fun s6 h6 => kbranch_ok (by have := hF.l; omega) h6)
+
+theorem iter_ok (hp : ParamsOk p) {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h : IL p STK σ t s) :
+    WP isa (iter P p) s (LP p STK σ t) := by
+  unfold iter
+  refine WP.seq (WP.mono ((commit_piece hP hF hS).ok σ s hpre h) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (ball_ok hP hF hS h1) fun s2 h2 => ?_)
+  refine WP.seq (WP.ite _ (eval_nonzero_w s2 .r3) (fun hb => ?_) fun hb => ?_)
+  · have h1' : (s2.gpr .r3).setWidth 32 = 1 := by
+      rcases h2.r01 with e | e
+      · rw [e] at hb; exact absurd hb (by decide)
+      · exact e
+    exact WP.mono (checks_ok hP hF hS hpre ⟨h2.c, (h2.ok h1').1, (h2.ok h1').2⟩) fun s' h' =>
+      dec_end hp (h'.elim .inl (fun h => .inr (.inl h)))
+  · exact WP.mono (eb_ok h2 (by simpa using hb)) fun s' h' => dec_end hp (.inr (.inr h'))
+
+omit hP hF hS in
+theorem loopInit_ok {σ s : State} (h : IK p STK σ s) :
+    WP isa (.block [.li .r27 0, .li .r25 814]) s (IL p STK σ 0) := by
+  rw [show ([.li .r27 0, .li .r25 814] : List Instr) = [.li .r27 0] ++ [.li .r25 814] from rfl, WP.block_append_iff]
+  refine WP.mono (li_ok .r27 (by decide) s) fun s1 w1 => WP.mono (li_ok .r25 (by decide) s1) fun s2 w2 => ?_
+  have k1 := h.of_regs (W1.of_regs (by decide) w1) w1.2.2.1 w1.2.2.2.1 w1.2.2.2.2.1 w1.2.2.2.2.2
+  exact ⟨k1.of_regs (W1.of_regs (by decide) w2) w2.2.2.1 w2.2.2.2.1 w2.2.2.2.2.1 w2.2.2.2.2.2,
+    by rw [w2.2.1 .r27 (by decide), w1.1, Nat.mul_zero], w2.1, by decide, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+
+theorem signLoop_ok (hp : ParamsOk p) {σ : State} (hpre : SPre p STK σ) {s : State} (h : IK p STK σ s) :
+    WP isa (Impl.MlDsa.PPC64LE.Sign.signLoop P p) s (XS p STK σ) := by
+  unfold Impl.MlDsa.PPC64LE.Sign.signLoop
+  refine WP.seq (WP.mono (loopInit_ok h) fun s2 I0 => ?_)
+  refine WP.loop (M := isa) (fun n s => ∃ t, n = 814 - t ∧ IL p STK σ t s) (fun n s ⟨t, hn, hs⟩ => ?_) 814 s2
+    ⟨0, rfl, I0⟩
+  refine WP.mono (iter_ok hP hF hS hp hpre hs) fun s' h' => ?_
+  rcases h' with ⟨hz, hI⟩ | ⟨hz, hX⟩
+  · exact .inr ⟨by rw [eval_nonzero]; exact congrArg some (bne_iff_ne.mpr hz), 814 - (t + 1), by have := hs.t_lt; omega, t + 1, rfl, hI⟩
+  · exact .inl ⟨by rw [eval_nonzero, hz]; rfl, hX⟩
+
+end
+
 end VG.Proof.MlDsa.PPC64LE.Sign
