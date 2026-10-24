@@ -207,36 +207,38 @@ theorem restoreLoads_mem : ∀ i < 18, (saved.getD i .r14, fSave + 8 * i) ∈ re
 
 theorem preserved_cases : ∀ r ∈ preserved, r = .r28 ∨ ∃ i < 18, saved.getD i .r14 = r := by decide
 
-/-- `restore`: our caller's registers and return address back. -/
-theorem restore_ok {G : GP} {STK : Nat} {σ : State} {V : Nat → BitVec 64} {LS : List Nat} {s : State}
-    (h : GI G STK σ V LS s) :
+/-- `restore`, from a state whose header holds our caller's registers and
+return address: those back. -/
+theorem restore_ok' {G : GP} {σ s : State} (h28 : s.gpr .r28 = G.scr)
+    (hsaved : ∀ i < 19, fw s.mem G (fSave + 8 * i) = σ.gpr (saved.getD i .r14)) (hlr : fw s.mem G fLR = σ.lr)
+    (hsp : s.sp = σ.sp) (hin : ∀ o, o + 8 ≤ hEnd → InRegions (s.rd ++ s.wr) (G.sa o) 8) :
     WP isa (.block restore) s fun t => abiPreserved σ t ∧ t.mem = s.mem ∧ t.gpr .r3 = s.gpr .r3 := by
-  have hE := h.hEnd_le
   refine WP.sp_eq ?_
   simp only [restore, List.cons_append, List.append_assoc]
-  refine h.ldV (o := fLR) (by decide) (by decide) h.lr fun s₁ u₁ => ?_
+  refine wp_ld (by decide) ⟨by decide, by decide⟩ (by rw [h28]) (hin fLR (by decide)) fun s₁ u₁' => ?_
+  have u₁ : Upd s s₁ .r0 σ.lr := by rw [← hlr]; exact u₁'
   refine WP.cons exec_mtlr ?_
   have g₂ : ∀ r, ({ s₁ with lr := s₁.gpr .r0 } : State).gpr r = s₁.gpr r := fun _ => rfl
   refine loads_ok (B := G.scr) (b := .r28) (by decide) restoreLoads _ _ _
-    (by rw [g₂, u₁.other _ (by decide), h.r28]) (fun p hp => ?_) restoreLoads_nodup
+    (by rw [g₂, u₁.other _ (by decide), h28]) (fun p hp => ?_) restoreLoads_nodup
     fun t v o m _ lr rd wr => ?_
   · obtain ⟨a, b, c, d⟩ := restoreLoads_ok p hp
     refine ⟨a, b, c, ?_⟩
     show InRegions (s₁.rd ++ s₁.wr) _ 8
-    rw [u₁.rd, u₁.wr]; exact h.inRdWr (by omega)
-  have t28 : t.gpr .r28 = G.scr := by rw [o _ (by decide), g₂, u₁.other _ (by decide), h.r28]
+    rw [u₁.rd, u₁.wr]; exact hin _ d
+  have t28 : t.gpr .r28 = G.scr := by rw [o _ (by decide), g₂, u₁.other _ (by decide), h28]
   have tm : t.mem = s.mem := by rw [m]; exact u₁.mem
   have ea : t.gpr .r28 + BitVec.ofNat 64 (fSave + 8 * 18) = G.sa (fSave + 8 * 18) := by rw [t28]
-  have hin : InRegions (t.rd ++ t.wr) (G.sa (fSave + 8 * 18)) 8 := by
+  have hin' : InRegions (t.rd ++ t.wr) (G.sa (fSave + 8 * 18)) 8 := by
     rw [rd, wr]; show InRegions (s₁.rd ++ s₁.wr) _ 8
-    rw [u₁.rd, u₁.wr]; exact h.inRdWr (o := fSave + 8 * 18) (n := 8) (by simp only [hEnd] at hE; omega)
+    rw [u₁.rd, u₁.wr]; exact hin _ (by decide)
   refine WP.cons (s' := t.write .r28 (t.mem.readW (G.sa (fSave + 8 * 18)) 64)) ?_ (WP.block_nil fun sp' => ?_)
   · show exec (.load .d .r28 .r28 (fSave + 8 * 18)) t = _
     rw [exec_load_d (t := .r28) (n := .r28) (off := fSave + 8 * 18) (by decide) ⟨by decide, by decide⟩
-      (by rw [ea]; exact hin), ea]
+      (by rw [ea]; exact hin'), ea]
   have v28 : t.mem.readW (G.sa (fSave + 8 * 18)) 64 = σ.gpr .r28 := by
-    rw [tm]; exact h.saved 18 (by decide)
-  have spT : (t.write .r28 (t.mem.readW (G.sa (fSave + 8 * 18)) 64)).sp = σ.sp := by rw [sp', h.sp]
+    rw [tm]; exact hsaved 18 (by decide)
+  have spT : (t.write .r28 (t.mem.readW (G.sa (fSave + 8 * 18)) 64)).sp = σ.sp := by rw [sp', hsp]
   refine ⟨⟨fun r hr => ?_, spT, ?_⟩, ?_, ?_⟩
   · rcases preserved_cases r hr with rfl | ⟨i, hi, rfl⟩
     · simp only [State.write, ite_true]; exact v28
@@ -244,12 +246,18 @@ theorem restore_ok {G : GP} {STK : Nat} {σ : State} {V : Nat → BitVec 64} {LS
       simp only [State.write, ne, ite_false]
       rw [v _ (restoreLoads_mem i hi)]
       show s₁.mem.readW _ 64 = _
-      rw [u₁.mem]; exact h.saved i (by omega)
+      rw [u₁.mem]; exact hsaved i (by omega)
   · show t.lr = σ.lr
     rw [lr]; show s₁.gpr .r0 = σ.lr; rw [u₁.gpr]
   · show t.mem = s.mem; exact tm
   · show (t.write .r28 _).gpr .r3 = _
     simp only [State.write, show Reg.r3 ≠ .r28 by decide, ite_false]
     rw [o _ (by decide), g₂, u₁.other _ (by decide)]
+
+/-- `restore`: our caller's registers and return address back. -/
+theorem restore_ok {G : GP} {STK : Nat} {σ : State} {V : Nat → BitVec 64} {LS : List Nat} {s : State}
+    (h : GI G STK σ V LS s) :
+    WP isa (.block restore) s fun t => abiPreserved σ t ∧ t.mem = s.mem ∧ t.gpr .r3 = s.gpr .r3 :=
+  restore_ok' h.r28 h.saved h.lr h.sp fun o ho => h.inRdWr (by have := h.hEnd_le; omega)
 
 end VG.Proof.Dsa.PPC64LE.Gen
