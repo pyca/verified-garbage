@@ -76,6 +76,7 @@ mod tests {
             crate::rc2_cbc::Error::OutputTooSmall,
             crate::rc4::Error::InvalidKeyLength,
             crate::seed_ecb::Error::IncompleteBlock,
+            crate::sm4_cbc::Error::IncompleteBlock,
             crate::sm4_ecb::Error::IncompleteBlock,
             crate::x25519::Error::ZeroSharedSecret,
             crate::x25519::Error::Randomness,
@@ -87,12 +88,20 @@ mod tests {
             crate::triple_des_ecb::Error::IncompleteBlock,
             crate::triple_des_cbc::Error::InvalidKeyLength,
             crate::triple_des_cbc::Error::IncompleteBlock,
+            crate::idea_cbc::Error::InvalidKeyLength,
+            crate::idea_cbc::Error::IncompleteBlock,
             crate::aes_xts::Error::InvalidKeyLength,
             crate::aes_xts::Error::EqualKeyHalves,
             crate::aes_xts::Error::DataUnitTooShort,
             crate::aes_xts::Error::DataUnitTooLong,
             crate::blowfish_cbc::Error::InvalidKeyLength,
             crate::blowfish_cbc::Error::IncompleteBlock,
+        );
+        check!(
+            crate::aes_ccm::Error::InvalidKeyLength,
+            crate::aes_ccm::Error::InvalidNonceLength,
+            crate::aes_ccm::Error::InvalidTextLength,
+            crate::aes_ccm::Error::TagMismatch,
         );
         #[cfg(any(
             target_arch = "x86_64",
@@ -101,10 +110,6 @@ mod tests {
             target_arch = "x86"
         ))]
         check!(
-            crate::aes_ccm::Error::InvalidKeyLength,
-            crate::aes_ccm::Error::InvalidNonceLength,
-            crate::aes_ccm::Error::InvalidTextLength,
-            crate::aes_ccm::Error::TagMismatch,
             crate::aes_gcm::Error::InvalidKeyLength,
             crate::aes_gcm::Error::InvalidNonceLength,
             crate::aes_gcm::Error::InvalidTextLength,
@@ -134,8 +139,6 @@ mod tests {
             crate::ed25519::Error::InvalidSignature,
             crate::ed448::Error::InvalidSignature,
             crate::ed448::Error::ContextTooLong,
-            crate::idea_cbc::Error::InvalidKeyLength,
-            crate::idea_cbc::Error::IncompleteBlock,
             crate::mldsa44::Error::LoopBound,
             crate::mldsa44::Error::ContextTooLong,
             crate::mldsa44::Error::InvalidSignature,
@@ -153,7 +156,6 @@ mod tests {
             crate::mlkem_common::Error::Randomness,
             crate::seed_cbc::Error::InvalidKeyLength,
             crate::seed_cbc::Error::IncompleteBlock,
-            crate::sm4_cbc::Error::IncompleteBlock,
             crate::sm4_ecb::Error::IncompleteBlock,
             crate::triple_des_cbc::Error::InvalidKeyLength,
             crate::triple_des_cbc::Error::IncompleteBlock,

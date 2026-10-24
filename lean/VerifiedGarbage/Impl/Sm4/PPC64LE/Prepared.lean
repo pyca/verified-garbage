@@ -32,10 +32,14 @@ namespace VG.Impl.Sm4.PPC64LE
 
 open VG.PPC64LE VG.Impl.Aes.PPC64LE
 
-/-- `vg_sm4_prepare_keys`: the table of the direction `r4` selects. -/
+/-- `vg_sm4_prepare_keys`: the table of the direction `r4` selects. Each
+direction's table is the code a branch skips (its `ite`'s first branch), not
+the code a conditional branch jumps over (the second branch, here empty):
+the unrolled tables are longer than a conditional branch reaches. -/
 def prepareKeys : Prog isa :=
   .seq (.block ([movR sb .r5] ++ saveRegs ++ setSlots keyMasks))
-    (.seq (.ite (.zero .d .r4) (keys .encrypt) (keys .decrypt)) (.block restoreRegs))
+    (.seq (.seq (.ite (.nonzero .d .r4) (keys .decrypt) (.block [])) (.ite (.zero .d .r4) (keys .encrypt) (.block [])))
+      (.block restoreRegs))
 
 /-- `vg_sm4_crypt_prepared`: the sixteen blocks of the tail buffer. -/
 def cryptPrepared : Prog isa :=

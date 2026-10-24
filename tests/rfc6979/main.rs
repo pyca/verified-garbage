@@ -7,7 +7,8 @@
     target_arch = "x86_64",
     target_arch = "x86",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 mod p192;
@@ -15,6 +16,17 @@ mod p224;
 mod p256;
 mod p384;
 mod p521;
+
+/// The errors' messages.
+#[test]
+fn errors() {
+    use verified_garbage::ecdsa::Error;
+    assert_eq!(Error::InvalidKey.to_string(), "invalid ECDSA private key");
+    assert_eq!(
+        Error::InvalidSignature.to_string(),
+        "invalid ECDSA signature"
+    );
+}
 
 const TEXT: &str = include_str!("../../vectors/rfc6979/rfc6979.txt");
 

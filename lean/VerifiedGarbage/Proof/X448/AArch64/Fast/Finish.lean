@@ -28,30 +28,6 @@ open VG.Proof.Curve448.AArch64.Fast (Mb Ib ld_ok)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
-theorem restoreX_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitVec 64}
-    (hsv : SavedX base g s.mem) :
-    WP isa (.block restore) s fun t =>
-      (∀ k < 8, t.gpr (saved k) = g (saved k)) ∧ t.mem = s.mem ∧
-      Keeps [.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28] s t := by
-  have e : restore = (List.range 8).flatMap fun k => [ld (saved k) (SAVE + 8 * k)] := by
-    simp only [restore]; rfl
-  rw [e]
-  have sinj : ∀ k < 8, ∀ j < 8, j ≠ k → saved j ≠ saved k := by decide
-  have smem : ∀ k < 8, saved k ∈ [Reg.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28] := by decide
-  let inv := fun n (t : State) =>
-    (∀ k < n, t.gpr (saved k) = g (saved k)) ∧ t.mem = s.mem ∧
-      Keeps [.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28] s t
-  refine wp_range_flatMap (M := isa) (N := 8) inv (fun n t hn ⟨tv, tm, tk⟩ => ?_) 8 (by decide) s
-    ⟨fun _ h => absurd h (Nat.not_lt_zero _), rfl, Keeps.refl _ _⟩
-  have ts : Scr t base := hs.of_keeps tk (by decide)
-  refine WP.mono (ld_ok ts (saved n) (d := SAVE + 8 * n) (by simp only [SAVE]; omega)
-    (by simp only [SAVE]; omega)) fun u ⟨uv, um, uk⟩ => ⟨fun k hk => ?_, um.trans tm, tk.trans (uk.mono ?_)⟩
-  · by_cases h : k = n
-    · subst h; rw [uv, tm]; exact hsv k hn
-    · rw [uk.1 _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact sinj n hn k (by omega) h)]
-      exact tv k (by omega)
-  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rw [hr]; exact smem n hn
-
 def finishRegs : List Reg := .x19 :: .x20 :: fclob
 
 theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem base)

@@ -34,7 +34,7 @@ variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {
 /-- The saved arguments, and the comb's words. -/
 def Args (L : Lay) (m : Mem) : Prop :=
   (∀ j < 6, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.arg j) ∧
-    VG.Proof.Ed448.AArch64.Whole.TblWords L.T m
+    VG.Proof.Ed448.AArch64.Whole.TblWords L.T m VG.Impl.Ed448.AArch64.Sparse.baseWords
 
 abbrev Ctx0 (L : Lay) (g : Reg → Addr) (vec : VReg → BitVec 128) (m₀ : Mem) (t : State) : Prop :=
   VG.Proof.Ed25519.AArch64.Whole.Ctx L.E g vec m₀ L.env.ins L.env.outs t
@@ -78,7 +78,7 @@ theorem in_bytes (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) {R : Region} (hR : R ∈
 
 /-- `scratch` kept, and the header of `dom4`. -/
 theorem entry_ok (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.scr)
-    (hsy : t.syms Impl.X448.AArch64.Base.combSym = L.T) :
+    (hsy : t.syms Impl.Ed448.AArch64.Sparse.baseSym = L.T) :
     WP isa (.block entry) t fun u => WCtx L.env g vec m₀ u := by
   have hfr : (⟨t.sp, 256⟩ : Region) ∈ t.wr := by rw [hc.sp, hc.wr]; exact List.mem_cons_self
   rw [entry, WP.block_append_iff]

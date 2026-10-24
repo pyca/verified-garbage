@@ -31,6 +31,10 @@ mod vg_ed25519_verify_neg_base;
 pub(crate) use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 
 #[rustfmt::skip]
+mod vg_ed448_verify_odd_base;
+pub(crate) use vg_ed448_verify_odd_base::VG_ED448_VERIFY_ODD_BASE;
+
+#[rustfmt::skip]
 mod vg_gcm_tail_idx;
 pub(crate) use vg_gcm_tail_idx::VG_GCM_TAIL_IDX;
 

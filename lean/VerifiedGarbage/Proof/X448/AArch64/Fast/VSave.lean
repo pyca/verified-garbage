@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.X448.AArch64.Fast
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.NFinish
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

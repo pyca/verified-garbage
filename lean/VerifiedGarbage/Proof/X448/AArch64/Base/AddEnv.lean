@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 import VerifiedGarbage.Proof.X448.BaseAdd
 
 /-!

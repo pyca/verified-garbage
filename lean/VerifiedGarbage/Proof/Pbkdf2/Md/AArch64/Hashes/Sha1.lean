@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Shared
+meta import VerifiedGarbage.Proof.Sha1.AArch64.OneShot
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
 meta import VerifiedGarbage.Spec.Sha1.Contract
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha1.AArch64.Shared
+public import VerifiedGarbage.Proof.Sha1.AArch64.OneShot
 
 /-!
 # SHA-1 on AArch64, as a Merkle–Damgård hash function
@@ -180,8 +182,9 @@ theorem satPF :
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, and `update_scratch` and
-`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, which
+working space in a frame of their own, `update_scratch` and
+`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, and the
+one-shot `digest` (`Proof/Sha1/AArch64/OneShot.lean`), which
 `Generic/MdHash/AArch64/Stream.lean` emits. -/
 def stream : List StreamFn := [
   { api := Spec.Sha1.updateApi
@@ -207,6 +210,12 @@ def stream : List StreamFn := [
     contract := Spec.Sha1.finalizeScratchContract AArch64.abi 16
     stack := 16
     verified := Proof.Sha1.AArch64.Shared.finalizeScratch_of v.finalize_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha1.digestApi
+    code := Proof.Sha1.AArch64.oneShotWith v.name v.code
+    contract := Spec.Sha1.digestContract AArch64.abi Proof.Sha1.AArch64.OneShot.stack
+    stack := Proof.Sha1.AArch64.OneShot.stack
+    verified := v.oneShot_verified.of_implies Proof.Sha1.AArch64.OneShot.implies
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/

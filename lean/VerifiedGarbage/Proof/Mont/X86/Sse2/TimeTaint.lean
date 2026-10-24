@@ -38,7 +38,7 @@ theorem columns_constantTime :
   VG.Taint.constantTime (A := sseTaint) colTaint (fun _ _ _ _ H => H) (by taint_decide)
 
 /-- The reduction after the columns. -/
-def rest : Prog isa := seqs [.block top, subM, .block VG.Impl.Mont.X86.Rt.mask, select]
+def rest : Prog isa := seqs [subM, .block mask, select]
 
 theorem rest_constantTime :
     ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (argTaint [] 28)) rest :=

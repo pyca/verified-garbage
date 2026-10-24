@@ -45,24 +45,26 @@ open VG.Impl.X448.AArch64.Base (combSym combWords)
 open VG.Proof.X448.AArch64.Base (CombHeld)
 
 /-- A writable region is apart from the comb's tables. -/
-theorem Writable.tbl (hV : V.Ok) {r : Region} (h : Writable V r) : (TBL V.T).Disjoint r := by
+theorem Writable.tbl (hV : V.Ok) {r : Region} (h : Writable V r) : (TBL V.T V.words).Disjoint r := by
   rcases h with ⟨⟨off, hb, hl⟩, _⟩ | ⟨R, hR, hs⟩
   · exact hV.tfr.sub_right (Within.sub ⟨off, hb, hl⟩)
   · exact (hV.tout R hR).sub_right hs.sub
 
 /-- The comb's tables are readable. -/
-theorem tbl_readable (hV : V.Ok) : Readable V (TBL V.T) :=
-  .inr ⟨TBL V.T, List.mem_append_left _ hV.tin, 0, (BitVec.add_zero _).symm, by simp⟩
+theorem tbl_readable (hV : V.Ok) : Readable V (TBL V.T V.words) :=
+  .inr ⟨TBL V.T V.words, List.mem_append_left _ hV.tin, 0, (BitVec.add_zero _).symm, by simp⟩
 
 /-- The comb's tables, as a callee's contract states them, from the body's. -/
-theorem combHeld_of (hV : V.Ok) (hu : WCtx V g vec m₀ u) (hm : TblWords V.T m₀) {ws : List Region}
+theorem combHeld_of (hV : V.Ok) (hcfg:V.sym=combSym ∧ V.words=combWords) (hu : WCtx V g vec m₀ u) (hm : TblWords V.T m₀) {ws : List Region}
     (hw : ∀ r ∈ ws, Writable V r) (rd wr : List Region) :
     CombHeld (u.callEntry.withRegions rd wr) ws := by
-  have hT : (u.callEntry.withRegions rd wr).syms combSym = V.T := hu.2.2
+  have hT : (u.callEntry.withRegions rd wr).syms combSym = V.T := by rw [←hcfg.1];exact hu.2.2
   refine ⟨fun i hi => ?_, ?_, fun r hr => ?_⟩
-  · rw [hT]; exact hu.tbl hV hm i hi
-  · rw [hT]; exact hV.tfit
-  · rw [hT]; exact (hw r hr).tbl hV
+  · rw [hT]; have hh:=hu.tbl hV (by rw [hcfg.2];exact hm)
+    rw [hcfg.2] at hh
+    exact hh i hi
+  · rw [hT]; simpa only [hcfg.2] using hV.tfit
+  · rw [hT]; simpa only [hcfg.2] using (hw r hr).tbl hV
 
 theorem covers_rw {rd wr : List Region} (hr : ∀ r ∈ rd, Readable V r) (hw : ∀ r ∈ wr, Writable V r) :
     Covers (rd ++ wr) (V.ins ++ FR V.E :: V.outs) :=
@@ -131,7 +133,7 @@ theorem base_pre {op sp scr T : Addr} (h0 : u.gpr .x0 = op) (h1 : u.gpr .x1 = sp
     Proof.Ed448.AArch64.tblRegion]
   exacts [hos, hss, hn, by rw [e0, e2, h0, h2] at *; exact ht]
 
-theorem base_call (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (hu : WCtx V g vec m₀ u) {op sp scr : Addr}
+theorem base_call (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (hcfg:V.sym=combSym ∧ V.words=combWords) (hu : WCtx V g vec m₀ u) {op sp scr : Addr}
     (h0 : u.gpr .x0 = op) (h1 : u.gpr .x1 = sp) (h2 : u.gpr .x2 = scr)
     (hos : Region.Disjoint ⟨op, 57⟩ ⟨scr, 8192⟩) (hss : Region.Disjoint ⟨sp, 57⟩ ⟨scr, 8192⟩)
     (hn : scr.toNat + 8192 ≤ 2 ^ 64) (hr : Readable V ⟨sp, 57⟩)
@@ -144,11 +146,12 @@ theorem base_call (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (hu : WCtx V g v
     rintro r (rfl | rfl)
     exacts [hwo, hws]
   refine wcall hV hu hb.ok (noFrames_depth base_noFrames)
-    (base_pre h0 h1 h2 hos hss hn hu.2.2 (combHeld_of hV hu hm hw _ _))
+    (base_pre h0 h1 h2 hos hss hn (by simpa only [hcfg.1] using hu.2.2) (combHeld_of hV hcfg hu hm hw _ _))
     (covers_rw (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      exacts [hr, tbl_readable hV]) hw) hw fun w hw' hf hp => ⟨hw', hf, ?_⟩
+      exact hr
+      · simpa only [hcfg.2] using tbl_readable hV) hw) hw fun w hw' hf hp => ⟨hw', hf, ?_⟩
   change Spec.Ed448.bytesAt w.mem (u.callEntry.gpr .x0) 57 =
     Spec.Ed448.scalarBase (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x1) 57) at hp
   rw [State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
@@ -220,7 +223,7 @@ theorem equation_pre {pk sig ch scr T : Addr} (h0 : u.gpr .x0 = pk) (h1 : u.gpr 
     State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), h0, h1, h2, h3, syms_entry, hT]
   exacts [hp, hs, hc, hn, by rw [e3, h3] at *; exact ht]
 
-theorem equation_call (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
+theorem equation_call (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok) (hcfg:V.sym=combSym ∧ V.words=combWords)
     (hu : WCtx V g vec m₀ u) {pk sig ch scr : Addr}
     (h0 : u.gpr .x0 = pk) (h1 : u.gpr .x1 = sig) (h2 : u.gpr .x2 = ch) (h3 : u.gpr .x3 = scr)
     (hdp : Region.Disjoint ⟨pk, 57⟩ ⟨scr, 8192⟩) (hds : Region.Disjoint ⟨sig, 114⟩ ⟨scr, 8192⟩)
@@ -237,9 +240,12 @@ theorem equation_call (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
   have hrd : ∀ r ∈ [(⟨pk, 57⟩ : Region), ⟨sig, 114⟩, ⟨ch, 57⟩, TBL V.T], Readable V r := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
-    exacts [hrp, hrs, hrc, tbl_readable hV]
+    exact hrp
+    · exact hrs
+    · exact hrc
+    · simpa only [hcfg.2] using tbl_readable hV
   refine wcall hV hu (hQ.ok) (noFrames_depth equation_noFrames)
-    (equation_pre h0 h1 h2 h3 hdp hds hdc hn hu.2.2 (combHeld_of hV hu hm hw _ _))
+    (equation_pre h0 h1 h2 h3 hdp hds hdc hn (by simpa only [hcfg.1] using hu.2.2) (combHeld_of hV hcfg hu hm hw _ _))
     (covers_rw hrd hw) hw fun w hw' hf hp => ⟨hw', hf, ?_⟩
   change w.gpr .x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x0) 57)
     (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x1) 114)

@@ -25,7 +25,10 @@ as `vg_rsa_public` checks it (it is public). Then x86-64's computation
   tried (`candLoop`, whose number of iterations is the number of tries,
   which the contract lets leak): `y = g^r` by a square and a multiplication
   per bit of `r` (all `64 Bw` of them), the multiplicand `g` or 1 chosen by
-  a mask (`expLoop`); then `64 Bw` squarings under masks that stop at
+  a mask (`expLoop`), or for `g = 2` and `g = 3`, whose `Y g` is one or two
+  modular additions, a square and `Y g` selected by the bit (`bitSmall`;
+  `expSel` branches on the candidate's number, which the contract lets
+  leak); then `64 Bw` squarings under masks that stop at
   `y² = 1` (found), at `y² = -1` or after `t` of them (not found)
   (`sqBody`).
 * `p = gcd(y - 1, n)` by `inverse`, `q = n / p` by `divmod`, the larger
@@ -186,12 +189,43 @@ def bitBody : Prog isa :=
 /-- The words left, into `x3`. -/
 def wordNext : List Instr := [ldh .x3 sC1, .subImm .x .x3 .x3 1, sth .x3 sC1]
 
+/-- `Y := Y · g^r` (in Montgomery form) by `body` for each of the bits of
+the `Bw` words of `r`, most significant first. -/
+def expLoopWith (body : Prog isa) : Prog isa :=
+  .seq (.block expInit)
+    (.loop (.seq (.block wordHead) (.seq (.loop body (.nonzero .x .x3)) (.block wordNext)))
+      (.nonzero .x .x3))
+
 /-- `Y := Y · g^r` (in Montgomery form), over all the bits of the `Bw` words
 of `r`, most significant first. -/
-def expLoop : Prog isa :=
-  .seq (.block expInit)
-    (.loop (.seq (.block wordHead) (.seq (.loop (bitBody mul) (.nonzero .x .x3)) (.block wordNext)))
-      (.nonzero .x .x3))
+def expLoop : Prog isa := expLoopWith (bitBody mul)
+
+/-! For the candidates 2 and 3, `Y g` (in Montgomery form, as `Y` is) is one
+or two modular additions, not a Montgomery product. -/
+
+/-- `[aXm] := 2 Y mod n`. -/
+def twice : List (Prog isa) := [Crt.addMod aXm aY aY]
+
+/-- `[aXm] := 3 Y mod n`. -/
+def three : List (Prog isa) := [Crt.addMod aXm aY aY, Crt.addMod aXm aXm aY]
+
+/-- `bitSel`, with the bases of `Y g` and of `Y`. -/
+def bitSelS : List Instr :=
+  [ldh .x3 sC2, .lsr .x .x4 .x3 63, .add .x .x3 .x3 .x3, sth .x3 sC2, movi .x7 0, .sub .x .x15 .x7 .x4] ++ ws ++
+    base aXm .x16 ++ base aY .x17 ++ [mov .x14 .x12]
+
+/-- A bit of `r` for a small `g`: `Y := Y²`, `Y g` into `aXm` by `times`,
+and `Y := Y g` if the bit is set. -/
+def bitSmall (times : List (Prog isa)) : Prog isa :=
+  seqs ([mul aY aY aY] ++ times ++ [.block bitSelS, Crt.selLoop, .block bitNext])
+
+/-- `expLoop`, by additions for the candidates 2 and 3 (`sCand` 0 and 1, a
+public count). -/
+def expSel : Prog isa :=
+  .seq (.block [ldh .x3 sCand])
+    (.ite (.zero .x .x3) (expLoopWith (bitSmall mul twice))
+      (.seq (.block [ldh .x3 sCand, .subImm .x .x3 .x3 1])
+        (.ite (.zero .x .x3) (expLoopWith (bitSmall mul three)) (expLoop mul))))
 
 /-- `x15 :=` the mask of `x9 = 0` (`x9 - 1` borrows). -/
 def zeroMask : List Instr := [movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ borrowMask
@@ -239,7 +273,7 @@ def candNext : List Instr :=
 /-- A candidate: `g R mod n`, `Y = g^r R mod n`, the check of `y = ±1`,
 and the squarings. -/
 def candBody : Prog isa :=
-  seqs ([.block gBlk, setWord aX, mul aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop mul] ++ eqA aY aO ++
+  seqs ([.block gBlk, setWord aX, mul aXm aX aR2, copyA aG aXm, copyA aY aO, expSel mul] ++ eqA aY aO ++
     [.block (zeroMask ++ [sth .x15 sC2])] ++ eqA aY aNg ++
     [.block chkBlk, .loop (sqBody mul) (.nonzero .x .x3), .block candNext])
 

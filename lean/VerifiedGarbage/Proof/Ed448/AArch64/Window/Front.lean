@@ -4,7 +4,8 @@ import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.SaveX
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 public import VerifiedGarbage.Proof.Framework.KernelRfl

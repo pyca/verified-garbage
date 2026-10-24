@@ -8,6 +8,9 @@ pub(crate) mod aes;
 pub(crate) mod aes_cbc;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ccm;
+
+#[rustfmt::skip]
 pub(crate) mod aes_cfb;
 
 #[rustfmt::skip]
@@ -68,6 +71,9 @@ pub(crate) mod chacha20;
 pub(crate) mod chacha20poly1305;
 
 #[rustfmt::skip]
+pub(crate) mod cmac_aes;
+
+#[rustfmt::skip]
 pub(crate) mod cmac_triple_des;
 
 #[rustfmt::skip]
@@ -119,28 +125,58 @@ pub(crate) mod ecdh_secp256k1;
 pub(crate) mod ecdsa_brainpoolp256r1;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp256r1_sha256;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1_sha384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p192;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_p192_sha256;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_p224;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p224_sha224;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p256;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_p256_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p256_sha384;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_p384;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_p384_sha384;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_secp256k1_sha256;
 
 #[rustfmt::skip]
 pub(crate) mod ed25519;
 
 #[rustfmt::skip]
 pub(crate) mod ed25519_r32;
+
+#[rustfmt::skip]
+pub(crate) mod ed448;
+
+#[rustfmt::skip]
+pub(crate) mod ffdh;
 
 #[rustfmt::skip]
 pub(crate) mod gcm;
@@ -174,6 +210,15 @@ pub(crate) mod hmac_sha512_256;
 
 #[rustfmt::skip]
 pub(crate) mod idea;
+
+#[rustfmt::skip]
+pub(crate) mod idea_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod idea_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod idea_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod md5;
@@ -281,6 +326,15 @@ pub(crate) mod sm3;
 pub(crate) mod sm4;
 
 #[rustfmt::skip]
+pub(crate) mod sm4_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod triple_des;
 
 #[rustfmt::skip]
@@ -297,6 +351,9 @@ pub(crate) mod triple_des_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod x25519;
+
+#[rustfmt::skip]
+pub(crate) mod x448;
 
 #[rustfmt::skip]
 pub(crate) mod zeroize;

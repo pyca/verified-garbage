@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Shared
+meta import VerifiedGarbage.Proof.Sha1.X86_64.OneShot
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 meta import VerifiedGarbage.Spec.Sha1.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -16,6 +17,7 @@ meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
+public import VerifiedGarbage.Proof.Sha1.X86_64.OneShot
 
 /-!
 # SHA-1 on x86-64, as a Merkle–Damgård hash function
@@ -28,7 +30,8 @@ is the generic Merkle–Damgård code (`Stream.params`), its specification
 depend on `v`, are checked once (`coreOK`).
 
 `stream v` are the streaming `update` and `finalize` made with `v` (and
-their `_scratch` forms, which HMAC and PBKDF2 call), which
+their `_scratch` forms, which HMAC and PBKDF2 call) and the one-shot `digest`
+(`Proof/Sha1/X86_64/OneShot.lean`), which
 `Generic/MdHash/X86_64/Stream.lean` emits from their `Api`s, named with
 its suffix.
 -/
@@ -192,8 +195,9 @@ theorem satPF :
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, and `update_scratch` and
-`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs. -/
+working space in a frame of their own, `update_scratch` and
+`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, and the
+one-shot `digest`. -/
 def stream : List StreamFn := [
   { api := Spec.Sha1.updateApi
     code := Impl.StackScratch.X86_64.withStackScratch 168 .r8 (Impl.Sha1.X86_64.Stream.update v.callee)
@@ -220,7 +224,13 @@ def stream : List StreamFn := [
     contract := Spec.Sha1.finalizeScratchContract X86_64.abi 8
     stack := 8
     verified := Proof.Sha1.X86_64.Shared.finalizeScratch v.ok v.mxcsr
-    spSafe := Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe }]
+    spSafe := Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe },
+  { api := Spec.Sha1.digestApi
+    code := Proof.Sha1.X86_64.OneShot.digest v.callee
+    contract := Spec.Sha1.digestContract X86_64.abi (8 + Proof.Sha1.X86_64.OneShot.frame)
+    stack := 8 + Proof.Sha1.X86_64.OneShot.frame
+    verified := Proof.Sha1.X86_64.OneShot.verified v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := Proof.Sha1.X86_64.OneShot.spSafe v.spSafe }]
 
 /-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
 theorem pss_sha1 : Proof.RsaPss.X86_64.PssChecks Impl.Sha1.X86_64.Stream.params 20 := by

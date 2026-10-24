@@ -184,4 +184,29 @@ theorem seal_framed :
     (wa := true) (stack := 0) (bytes := 2672) (m := 1) seal_verified (by decide) (by decide)
     (Proof.AesGcm.sealPre_local _) (Proof.AesGcm.sealPost_local _) sealFrameSat_pre
 
+/-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
+space: `tag` and `tag_len` alone on the stack. -/
+def openFrameSat : State where
+  gpr := openSat.gpr
+  lr := 0
+  sp := 0x9000
+  mem := openSat.mem
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9060, 16⟩]
+  wr := [⟨0x4000, 0⟩]
+
+theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract PPC64LE.abi 2688).pre s := by
+  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
+    PPC64LE.abi, PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+    [openFrameSat, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
+
+/-- `open`, whose `tag` and `tag_len` arrive on the stack, as `seal`'s `tag` does. -/
+theorem open_framed :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
+      (Spec.Gcm.openContract PPC64LE.abi 2688) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.openPre PPC64LE.abi.ptrBits) (post := Spec.Gcm.openPost PPC64LE.abi.ptrBits)
+    (wa := true) (stack := 0) (bytes := 2688) (m := 2) (leak := some (Spec.Gcm.openLeak PPC64LE.abi.ptrBits))
+    open_verified (by decide) (by decide) (Proof.AesGcm.openPre_local _) (Proof.AesGcm.openPost_local _)
+    openFrameSat_pre (hleak := Proof.AesGcm.openLeak_local _)
+
 end VG.Proof.AesGcm.PPC64LE

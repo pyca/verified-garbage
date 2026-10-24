@@ -8,7 +8,8 @@
     target_arch = "x86_64",
     target_arch = "x86",
     target_arch = "aarch64",
-    target_arch = "arm"
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use super::{Error, P256, SignatureHash, SigningKey, sealed};
@@ -61,7 +62,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut [u64; 1024],
 ) -> u32;
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(not(target_arch = "x86_64"))]
 type SignFn<const N: usize> =
     unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 

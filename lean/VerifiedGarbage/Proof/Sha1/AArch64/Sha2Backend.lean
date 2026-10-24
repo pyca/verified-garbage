@@ -36,5 +36,7 @@ def backend : Compress where
   finalizeKeeps := instrs_keeps (by lit_decide)
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
+  oneShot := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])
+    (fun _ _ _ _ hp => MdStream.AArch64.OneShot.agree₀ hp) (by taint_decide))
 
 end VG.Proof.Sha1.AArch64.Sha2

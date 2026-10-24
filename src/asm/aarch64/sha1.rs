@@ -2312,6 +2312,190 @@ ret
     )
 }
 
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #272
+add x10, sp, #208
+stp x19, x21, [x10, #0]
+stp x22, x25, [x10, #16]
+stp x26, x27, [x10, #32]
+stp x28, x30, [x10, #48]
+add x25, x1, #0
+add x26, x2, #0
+add x27, x0, #0
+add x0, sp, #0
+movz w9, #8961, lsl #0
+movk w9, #26437, lsl #16
+str w9, [x0, #0]
+movz w9, #43913, lsl #0
+movk w9, #61389, lsl #16
+str w9, [x0, #4]
+movz w9, #56574, lsl #0
+movk w9, #39098, lsl #16
+str w9, [x0, #8]
+movz w9, #21622, lsl #0
+movk w9, #4146, lsl #16
+str w9, [x0, #12]
+movz w9, #57840, lsl #0
+movk w9, #50130, lsl #16
+str w9, [x0, #16]
+lsr x28, x25, #6
+cbz x28, 20f
+add x0, sp, #0
+add x1, x27, #0
+add x2, x28, #0
+add x3, sp, #96
+bl {vg_sha1_compress}
+lsl x9, x28, #6
+add x27, x27, x9
+b 21f
+20:
+21:
+movz x9, #0, lsl #0
+add x12, sp, #20
+stp x9, x9, [x12, #0]
+stp x9, x9, [x12, #16]
+stp x9, x9, [x12, #32]
+stp x9, x9, [x12, #48]
+movz x9, #63, lsl #0
+and x28, x25, x9
+lsr x13, x28, #4
+cbz x13, 22f
+24:
+ldp x9, x10, [x27, #0]
+stp x9, x10, [x12, #0]
+add x27, x27, #16
+add x12, x12, #16
+sub x13, x13, #1
+cbnz x13, 24b
+b 23f
+22:
+23:
+movz x9, #15, lsl #0
+and x11, x28, x9
+cbz x11, 25f
+lsr x9, x25, #4
+cbz x9, 27f
+add x13, x27, x11
+sub x13, x13, #16
+movz x9, #128, lsl #0
+ldr q0, [x13, #0]
+movi v1.2d, #0
+mov v1.d[0], x9
+movz x6, #4368, lsl #0
+movk x6, #4882, lsl #16
+movk x6, #5396, lsl #32
+movk x6, #5910, lsl #48
+movz x7, #6424, lsl #0
+movk x7, #6938, lsl #16
+movk x7, #7452, lsl #32
+movk x7, #7966, lsl #48
+mov v2.d[0], x6
+mov v2.d[1], x7
+dup v3.16b, w11
+sub v2.16b, v2.16b, v3.16b
+tbl v4.16b, {{v0.16b, v1.16b}}, v2.16b
+str q4, [x12, #0]
+b 28f
+27:
+29:
+ldrb w9, [x27, #0]
+strb w9, [x12, #0]
+add x27, x27, #1
+add x12, x12, #1
+sub x11, x11, #1
+cbnz x11, 29b
+movz x9, #128, lsl #0
+strb w9, [x12, #0]
+28:
+b 26f
+25:
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x12, #0]
+26:
+add x9, x28, #8
+lsr x9, x9, #6
+cbz x9, 210f
+add x0, sp, #0
+add x1, sp, #20
+movz x2, #1, lsl #0
+add x3, sp, #96
+bl {vg_sha1_compress}
+movz x9, #0, lsl #0
+add x12, sp, #20
+stp x9, x9, [x12, #0]
+stp x9, x9, [x12, #16]
+stp x9, x9, [x12, #32]
+stp x9, x9, [x12, #48]
+b 211f
+210:
+211:
+add x19, sp, #0
+add x22, x25, #0
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+add x12, x19, #76
+str x9, [x12, #0]
+add x12, sp, #68
+ldr x9, [x12, #0]
+ldr x10, [x12, #8]
+stp x9, x10, [x12, #0]
+add x0, sp, #0
+add x1, sp, #20
+movz x2, #1, lsl #0
+add x3, sp, #96
+bl {vg_sha1_compress}
+add x19, sp, #0
+add x21, x26, #0
+ldr w9, [x19, #0]
+rev w9, w9
+str w9, [x21, #0]
+ldr w9, [x19, #4]
+rev w9, w9
+str w9, [x21, #4]
+ldr w9, [x19, #8]
+rev w9, w9
+str w9, [x21, #8]
+ldr w9, [x19, #12]
+rev w9, w9
+str w9, [x21, #12]
+ldr w9, [x19, #16]
+rev w9, w9
+str w9, [x21, #16]
+add x16, sp, #0
+movz x17, #0, lsl #0
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+add x16, sp, #208
+ldp x19, x21, [x16, #0]
+ldp x22, x25, [x16, #16]
+ldp x26, x27, [x16, #32]
+ldp x28, x30, [x16, #48]
+add sp, sp, #272
+ret
+.p2align 6",
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+    )
+}
+
 /// The CPU features `vg_sha1_update_sha2` requires (`Artifact.features`).
 pub(crate) const VG_SHA1_UPDATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
@@ -2897,6 +3081,196 @@ ldr x23, [x20, #144]
 ldr x24, [x20, #152]
 ldr x20, [x20, #120]
 ldr x30, [sp], #16
+ret
+.arch_extension nosha2
+.p2align 6",
+        vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
+    )
+}
+
+/// The CPU features `vg_sha1_digest_sha2` requires (`Artifact.features`).
+pub(crate) const VG_SHA1_DIGEST_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
+
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha2` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r".arch_extension sha2
+sub sp, sp, #272
+add x10, sp, #208
+stp x19, x21, [x10, #0]
+stp x22, x25, [x10, #16]
+stp x26, x27, [x10, #32]
+stp x28, x30, [x10, #48]
+add x25, x1, #0
+add x26, x2, #0
+add x27, x0, #0
+add x0, sp, #0
+movz w9, #8961, lsl #0
+movk w9, #26437, lsl #16
+str w9, [x0, #0]
+movz w9, #43913, lsl #0
+movk w9, #61389, lsl #16
+str w9, [x0, #4]
+movz w9, #56574, lsl #0
+movk w9, #39098, lsl #16
+str w9, [x0, #8]
+movz w9, #21622, lsl #0
+movk w9, #4146, lsl #16
+str w9, [x0, #12]
+movz w9, #57840, lsl #0
+movk w9, #50130, lsl #16
+str w9, [x0, #16]
+lsr x28, x25, #6
+cbz x28, 20f
+add x0, sp, #0
+add x1, x27, #0
+add x2, x28, #0
+add x3, sp, #96
+bl {vg_sha1_compress_sha2}
+lsl x9, x28, #6
+add x27, x27, x9
+b 21f
+20:
+21:
+movz x9, #0, lsl #0
+add x12, sp, #20
+stp x9, x9, [x12, #0]
+stp x9, x9, [x12, #16]
+stp x9, x9, [x12, #32]
+stp x9, x9, [x12, #48]
+movz x9, #63, lsl #0
+and x28, x25, x9
+lsr x13, x28, #4
+cbz x13, 22f
+24:
+ldp x9, x10, [x27, #0]
+stp x9, x10, [x12, #0]
+add x27, x27, #16
+add x12, x12, #16
+sub x13, x13, #1
+cbnz x13, 24b
+b 23f
+22:
+23:
+movz x9, #15, lsl #0
+and x11, x28, x9
+cbz x11, 25f
+lsr x9, x25, #4
+cbz x9, 27f
+add x13, x27, x11
+sub x13, x13, #16
+movz x9, #128, lsl #0
+ldr q0, [x13, #0]
+movi v1.2d, #0
+mov v1.d[0], x9
+movz x6, #4368, lsl #0
+movk x6, #4882, lsl #16
+movk x6, #5396, lsl #32
+movk x6, #5910, lsl #48
+movz x7, #6424, lsl #0
+movk x7, #6938, lsl #16
+movk x7, #7452, lsl #32
+movk x7, #7966, lsl #48
+mov v2.d[0], x6
+mov v2.d[1], x7
+dup v3.16b, w11
+sub v2.16b, v2.16b, v3.16b
+tbl v4.16b, {{v0.16b, v1.16b}}, v2.16b
+str q4, [x12, #0]
+b 28f
+27:
+29:
+ldrb w9, [x27, #0]
+strb w9, [x12, #0]
+add x27, x27, #1
+add x12, x12, #1
+sub x11, x11, #1
+cbnz x11, 29b
+movz x9, #128, lsl #0
+strb w9, [x12, #0]
+28:
+b 26f
+25:
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x12, #0]
+26:
+add x9, x28, #8
+lsr x9, x9, #6
+cbz x9, 210f
+add x0, sp, #0
+add x1, sp, #20
+movz x2, #1, lsl #0
+add x3, sp, #96
+bl {vg_sha1_compress_sha2}
+movz x9, #0, lsl #0
+add x12, sp, #20
+stp x9, x9, [x12, #0]
+stp x9, x9, [x12, #16]
+stp x9, x9, [x12, #32]
+stp x9, x9, [x12, #48]
+b 211f
+210:
+211:
+add x19, sp, #0
+add x22, x25, #0
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+add x12, x19, #76
+str x9, [x12, #0]
+add x12, sp, #68
+ldr x9, [x12, #0]
+ldr x10, [x12, #8]
+stp x9, x10, [x12, #0]
+add x0, sp, #0
+add x1, sp, #20
+movz x2, #1, lsl #0
+add x3, sp, #96
+bl {vg_sha1_compress_sha2}
+add x19, sp, #0
+add x21, x26, #0
+ldr w9, [x19, #0]
+rev w9, w9
+str w9, [x21, #0]
+ldr w9, [x19, #4]
+rev w9, w9
+str w9, [x21, #4]
+ldr w9, [x19, #8]
+rev w9, w9
+str w9, [x21, #8]
+ldr w9, [x19, #12]
+rev w9, w9
+str w9, [x21, #12]
+ldr w9, [x19, #16]
+rev w9, w9
+str w9, [x21, #16]
+add x16, sp, #0
+movz x17, #0, lsl #0
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+stp x17, x17, [x16, #64]
+stp x17, x17, [x16, #80]
+add x16, sp, #208
+ldp x19, x21, [x16, #0]
+ldp x22, x25, [x16, #16]
+ldp x26, x27, [x16, #32]
+ldp x28, x30, [x16, #48]
+add sp, sp, #272
 ret
 .arch_extension nosha2
 .p2align 6",

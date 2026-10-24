@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.Verify
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Static
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -26,9 +26,18 @@ namespace VG.Proof.Ed448.AArch64.Verify
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64.Verify
 open VG.Proof.Ed448.AArch64.Whole (Env WCtx sigWord TBL)
-open VG.Impl.X448.AArch64.Base (combSym combWords)
-open VG.Proof.X448.AArch64.Base (CombHeld)
+open VG.Impl.Ed448.AArch64.Sparse (baseSym baseWords)
+open VG.Proof.Ed448.AArch64.Sparse (BaseHeld)
 open VG.Proof.Ed25519.AArch64.Whole (Within FR ARGS CK)
+
+/-- Public verification inputs, as permitted by the reviewed API leak. -/
+def PublicBytes (s t:State) : Prop :=
+  Spec.Ed448.bytesAt s.mem (s.gpr .x0) 57=Spec.Ed448.bytesAt t.mem (t.gpr .x0) 57 ∧
+  Spec.Ed448.bytesAt s.mem (s.gpr .x1) (s.gpr .x2).toNat=
+    Spec.Ed448.bytesAt t.mem (t.gpr .x1) (t.gpr .x2).toNat ∧
+  Spec.Ed448.bytesAt s.mem (s.gpr .x3) (s.gpr .x4).toNat=
+    Spec.Ed448.bytesAt t.mem (t.gpr .x3) (t.gpr .x4).toNat ∧
+  Spec.Ed448.bytesAt s.mem (s.gpr .x5) 114=Spec.Ed448.bytesAt t.mem (t.gpr .x5) 114
 
 /-- `vg_ed448_verify(pk = x0, context = x1, ctxlen = x2, message = x3, len = x4,
 signature = x5, scratch = x6)`, with 352 bytes of stack. -/
@@ -40,18 +49,18 @@ def vLocal : Contract isa where
     let sig : Region := ⟨s.gpr .x5, 114⟩
     let scr : Region := ⟨s.gpr .x6, 8192⟩
     let stk : Region := below s.sp 352
-    s.rd = [pk, ctx, msg, sig, TBL (s.syms combSym)] ∧ s.wr = [scr] ∧
+    s.rd = [pk, ctx, msg, sig, TBL (s.syms baseSym) baseWords] ∧ s.wr = [scr] ∧
       pk.Disjoint scr ∧ ctx.Disjoint scr ∧ msg.Disjoint scr ∧ sig.Disjoint scr ∧
       stk.Disjoint pk ∧ stk.Disjoint ctx ∧ stk.Disjoint msg ∧ stk.Disjoint sig ∧ stk.Disjoint scr ∧
       (s.gpr .x0).toNat + 57 ≤ 2 ^ 64 ∧ (s.gpr .x5).toNat + 114 ≤ 2 ^ 64 ∧
-      (s.gpr .x6).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat ∧ CombHeld s [scr, stk]
+      (s.gpr .x6).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat ∧ BaseHeld s [scr, stk]
   post s t := t.gpr .x0 = if Spec.Ed448.verify (Spec.Ed448.bytesAt s.mem (s.gpr .x0) 57)
     (Spec.Ed448.bytesAt s.mem (s.gpr .x1) (s.gpr .x2).toNat)
     (Spec.Ed448.bytesAt s.mem (s.gpr .x3) (s.gpr .x4).toNat)
     (Spec.Ed448.bytesAt s.mem (s.gpr .x5) 114) then 1 else 0
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧
     s.gpr .x3 = t.gpr .x3 ∧ s.gpr .x4 = t.gpr .x4 ∧ s.gpr .x5 = t.gpr .x5 ∧ s.gpr .x6 = t.gpr .x6 ∧
-    s.syms combSym = t.syms combSym
+    s.syms baseSym = t.syms baseSym ∧ PublicBytes s t
 
 structure Lay where
   pk : Addr
@@ -62,7 +71,7 @@ structure Lay where
   sig : Addr
   scr : Addr
   E : Addr
-  /-- The comb's tables (the static `combSym`), which `vg_ed448_verify_equation` reads. -/
+  /-- The comb's tables (the static `baseSym`), which `vg_ed448_verify_equation` reads. -/
   T : Addr
 
 namespace Lay
@@ -73,7 +82,7 @@ abbrev MSG : Region := ⟨L.msg, L.len.toNat⟩
 abbrev SIG : Region := ⟨L.sig, 114⟩
 abbrev SCR : Region := ⟨L.scr, 8192⟩
 abbrev STK : Region := ⟨L.E, 336⟩
-abbrev TB : Region := TBL L.T
+abbrev TB : Region := TBL L.T baseWords
 
 /-- The saved argument `j`. -/
 def arg (j : Nat) : Addr :=
@@ -89,6 +98,8 @@ def env : Env where
   outs := [L.SCR]
   ls := [(fScr, L.scr), (fHdr, sigWord), (fHdr + 8, L.ctxLen <<< 8)]
   T := L.T
+  sym := baseSym
+  words := baseWords
 
 structure Ok : Prop where
   pc : L.PK.Disjoint L.SCR
@@ -113,40 +124,45 @@ structure Ok : Prop where
   tbc : L.TB.Disjoint L.SCR
   tbk : L.TB.Disjoint L.STK
   tbck : L.TB.Disjoint (CK L.E)
-  tbfit : L.T.toNat + 8 * combWords.length ≤ 2 ^ 64
+  tbfit : L.T.toNat + 8 * baseWords.length ≤ 2 ^ 64
 
 end Lay
 
 theorem frame_sub (L : Lay) : Region.Sub (FR L.E) L.STK := Region.sub_prefix (by decide : 256 ≤ 336)
 
-theorem env_ok {L : Lay} (hL : L.Ok) : L.env.Ok where
-  args := by simp [Lay.env]
-  ls := by simp [Lay.env, fScr, fHdr]
-  fo := by
+attribute [local irreducible] baseWords VG.Impl.X448.AArch64.Base.combWords
+
+theorem env_ok {L : Lay} (hL : L.Ok) : L.env.Ok:=by
+  refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · exact List.mem_append_right _ (List.mem_singleton_self _)
+  · simp [Lay.env, fScr, fHdr]
+  ·
     intro R hR
     simp only [Lay.env, List.mem_singleton] at hR
     subst hR
     exact hL.kc.sub_left (frame_sub L)
-  co := by
+  ·
     intro R hR
     simp only [Lay.env, List.mem_singleton] at hR
     subst hR
     exact hL.ck
-  e16 := hL.e16
-  tin := by simp [Lay.env, Lay.inputs]
-  tfr := hL.tbk.sub_right (frame_sub L)
-  tck := hL.tbck
-  tout := by
+  · exact hL.e16
+  · exact List.mem_append_left _ (List.mem_of_getElem? (i:=4) rfl)
+  ·
+    change L.TB.Disjoint (FR L.E)
+    exact hL.tbk.sub_right (frame_sub L)
+  · change L.TB.Disjoint (CK L.E);exact hL.tbck
+  ·
     intro R hR
     simp only [Lay.env, List.mem_singleton] at hR
     subst hR
     exact hL.tbc
-  tfit := hL.tbfit
+  · change L.T.toNat+8*baseWords.length≤2^64;exact hL.tbfit
 
 /-- The layout of a call from `s`. -/
 def lay (s : State) : Lay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6,
-    VG.Proof.Ed25519.AArch64.Whole.base s, s.syms combSym⟩
+    VG.Proof.Ed25519.AArch64.Whole.base s, s.syms baseSym⟩
 
 theorem lay_ok {s : State} (h : vLocal.pre s) (hc : (s.gpr .x2).toNat < 256) : (lay s).Ok := by
   obtain ⟨_, _, pc, cc, mc, sc, kp, kx, km, ks, kc, np, ns, nc, hsp, -, fit, dj⟩ := h

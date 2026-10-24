@@ -2,6 +2,134 @@
 //! Verified `mlkem` functions for `powerpc64le`.
 #![allow(dead_code)]
 
+/// `SampleNTT` (FIPS 203 Algorithm 7): writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes `*seed` to `*a` (256 coefficients less than `q` = 3329), and returns 1. Returns 0 if the loop reaches its bound, which is at least 280 iterations (FIPS 203 Appendix B; this happens with probability less than 2^-261): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.sampleNTTContract`. Not constant time in the seed: timing may depend on the pointer and on `*seed` (public in ML-KEM: the seed `ρ` of the matrix and two indices), but not on anything else.
+///
+/// The function has no stack frame of its own: it saves `r29`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 34 bytes.
+/// * `a` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `a` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+    core::arch::naked_asm!(
+        r"mflr %r0
+std %r29, 1680(%r5)
+std %r30, 1688(%r5)
+std %r31, 1696(%r5)
+std %r0, 1704(%r5)
+addi %r29, %r3, 0
+addi %r30, %r4, 0
+addi %r31, %r5, 0
+li %r0, 0
+std %r0, 0(%r31)
+std %r0, 8(%r31)
+std %r0, 16(%r31)
+std %r0, 24(%r31)
+std %r0, 32(%r31)
+std %r0, 40(%r31)
+std %r0, 48(%r31)
+std %r0, 56(%r31)
+std %r0, 64(%r31)
+std %r0, 72(%r31)
+std %r0, 80(%r31)
+std %r0, 88(%r31)
+std %r0, 96(%r31)
+std %r0, 104(%r31)
+std %r0, 112(%r31)
+std %r0, 120(%r31)
+std %r0, 128(%r31)
+std %r0, 136(%r31)
+std %r0, 144(%r31)
+std %r0, 152(%r31)
+std %r0, 160(%r31)
+std %r0, 168(%r31)
+std %r0, 176(%r31)
+std %r0, 184(%r31)
+std %r0, 192(%r31)
+addi %r3, %r31, 0
+li %r4, 168
+li %r5, 0
+addi %r6, %r29, 0
+li %r7, 34
+addi %r8, %r31, 200
+bl {vg_keccak_absorb_scratch}
+addi %r5, %r3, 0
+addi %r3, %r31, 0
+li %r4, 168
+li %r6, 31
+addi %r7, %r31, 200
+bl {vg_keccak_pad_scratch}
+addi %r3, %r31, 0
+li %r4, 168
+li %r5, 0
+addi %r6, %r31, 840
+li %r7, 840
+addi %r8, %r31, 200
+bl {vg_keccak_squeeze_scratch}
+addi %r3, %r31, 840
+addi %r4, %r30, 0
+li %r5, 0
+li %r6, 280
+20:
+lbz %r7, 0(%r3)
+lbz %r8, 1(%r3)
+lbz %r9, 2(%r3)
+rldicr %r10, %r8, 60, 3
+rldicl %r10, %r10, 12, 52
+add %r10, %r7, %r10
+rldicl %r11, %r8, 60, 4
+rldicr %r12, %r9, 4, 59
+add %r11, %r11, %r12
+addi %r12, %r10, -3329
+rldicl %r12, %r12, 1, 63
+addi %r7, %r5, -256
+rldicl %r7, %r7, 1, 63
+and %r12, %r12, %r7
+cmpldi %cr0, %r12, 0
+beq %cr0, 21f
+stw %r10, 0(%r4)
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+b 22f
+21:
+22:
+addi %r12, %r11, -3329
+rldicl %r12, %r12, 1, 63
+addi %r7, %r5, -256
+rldicl %r7, %r7, 1, 63
+and %r12, %r12, %r7
+cmpldi %cr0, %r12, 0
+beq %cr0, 23f
+stw %r11, 0(%r4)
+addi %r4, %r4, 4
+addi %r5, %r5, 1
+b 24f
+23:
+24:
+addi %r3, %r3, 3
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 20b
+rldicl %r3, %r5, 56, 8
+ld %r0, 1704(%r31)
+mtlr %r0
+ld %r29, 1680(%r31)
+ld %r30, 1688(%r31)
+ld %r31, 1696(%r31)
+blr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+    )
+}
+
 /// The ML-KEM number-theoretic transform, `NTT` (FIPS 203 Algorithm 9), of the polynomial `*f` (256 coefficients less than `q` = 3329), in place.
 ///
 /// Contract: `VG.Spec.MlKem.nttContract`. Constant time: only the pointers may affect timing, not the data.
@@ -1220,6 +1348,330 @@ addi %r4, %r4, 8
 addi %r5, %r5, -1
 cmpldi %cr0, %r5, 0
 bne %cr0, 20b
+blr",
+    )
+}
+
+/// `ByteEncode_d(Compress_d(f))` (FIPS 203 (4.7) and Algorithm 5): writes the 256 coefficients of `*f` (each less than `q` = 3329), compressed to `d` bits, to `out` as `d`-bit little-endian fields.
+///
+/// Contract: `VG.Spec.MlKem.compressEncodeContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of `len` bytes.
+/// * `d` must be 1, 4 or 10, and `len` must be `32 * d`.
+/// * Each of the 256 `u32`s of `f` must be less than 3329.
+/// * `out` must not overlap `f` (distinct Rust objects never do).
+/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"rlwinm %r4, %r4, 0, 0, 31
+addi %r7, %r4, -1
+cmplwi %cr0, %r7, 0
+beq %cr0, 20f
+addi %r7, %r4, -4
+cmplwi %cr0, %r7, 0
+beq %cr0, 22f
+lis %r10, 3
+ori %r10, %r10, 65472
+lis %r9, 2
+ori %r9, %r9, 30199
+li %r11, 64
+24:
+li %r8, 0
+lwz %r7, 0(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 54, 9
+rldicl %r7, %r7, 10, 54
+add %r8, %r8, %r7
+lwz %r7, 4(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 54, 9
+rldicl %r7, %r7, 20, 44
+add %r8, %r8, %r7
+lwz %r7, 8(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 54, 9
+rldicl %r7, %r7, 30, 34
+add %r8, %r8, %r7
+lwz %r7, 12(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 54, 9
+rldicl %r7, %r7, 40, 24
+add %r8, %r8, %r7
+stb %r8, 0(%r5)
+rldicl %r7, %r8, 56, 8
+stb %r7, 1(%r5)
+rldicl %r7, %r8, 48, 16
+stb %r7, 2(%r5)
+rldicl %r7, %r8, 40, 24
+stb %r7, 3(%r5)
+rldicl %r7, %r8, 32, 32
+stb %r7, 4(%r5)
+addi %r3, %r3, 16
+addi %r5, %r5, 5
+addi %r11, %r11, -1
+cmpldi %cr0, %r11, 0
+bne %cr0, 24b
+b 23f
+22:
+lis %r10, 3
+ori %r10, %r10, 65472
+li %r9, 2520
+li %r11, 128
+25:
+lwz %r7, 0(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 60, 3
+rldicl %r8, %r7, 4, 60
+lwz %r7, 4(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 60, 3
+rldicl %r7, %r7, 8, 56
+add %r8, %r8, %r7
+stb %r8, 0(%r5)
+addi %r3, %r3, 8
+addi %r5, %r5, 1
+addi %r11, %r11, -1
+cmpldi %cr0, %r11, 0
+bne %cr0, 25b
+23:
+b 21f
+20:
+lis %r10, 3
+ori %r10, %r10, 65472
+li %r9, 315
+li %r11, 32
+26:
+li %r8, 0
+lwz %r7, 0(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 1, 63
+add %r8, %r8, %r7
+lwz %r7, 4(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 2, 62
+add %r8, %r8, %r7
+lwz %r7, 8(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 3, 61
+add %r8, %r8, %r7
+lwz %r7, 12(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 4, 60
+add %r8, %r8, %r7
+lwz %r7, 16(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 5, 59
+add %r8, %r8, %r7
+lwz %r7, 20(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 6, 58
+add %r8, %r8, %r7
+lwz %r7, 24(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 7, 57
+add %r8, %r8, %r7
+lwz %r7, 28(%r3)
+mulld %r7, %r7, %r9
+add %r7, %r7, %r10
+rldicl %r7, %r7, 45, 19
+rldicr %r7, %r7, 63, 0
+rldicl %r7, %r7, 8, 56
+add %r8, %r8, %r7
+stb %r8, 0(%r5)
+addi %r3, %r3, 32
+addi %r5, %r5, 1
+addi %r11, %r11, -1
+cmpldi %cr0, %r11, 0
+bne %cr0, 26b
+21:
+blr",
+    )
+}
+
+/// `Decompress_d(ByteDecode_d(b))` (FIPS 203 Algorithm 6 and (4.8)): writes the 256 `d`-bit little-endian fields of the `len` bytes at `b`, decompressed, to `*f` (each less than `q` = 3329).
+///
+/// Contract: `VG.Spec.MlKem.decodeDecompressContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `b` must be valid for reads of `len` bytes.
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `d` must be 1, 4 or 10, and `len` must be `32 * d`.
+/// * `f` must not overlap `b` (distinct Rust objects never do).
+/// * Neither `b` nor `f` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"rlwinm %r5, %r5, 0, 0, 31
+li %r9, 3329
+addi %r7, %r5, -1
+cmplwi %cr0, %r7, 0
+beq %cr0, 20f
+addi %r7, %r5, -4
+cmplwi %cr0, %r7, 0
+beq %cr0, 22f
+li %r11, 64
+24:
+lbz %r8, 0(%r3)
+lbz %r7, 1(%r3)
+rldicr %r7, %r7, 8, 55
+add %r8, %r8, %r7
+lbz %r7, 2(%r3)
+rldicr %r7, %r7, 16, 47
+add %r8, %r8, %r7
+lbz %r7, 3(%r3)
+rldicr %r7, %r7, 24, 39
+add %r8, %r8, %r7
+lbz %r7, 4(%r3)
+rldicr %r7, %r7, 32, 31
+add %r8, %r8, %r7
+rldicr %r7, %r8, 54, 9
+rldicl %r7, %r7, 10, 54
+mulld %r7, %r7, %r9
+addi %r7, %r7, 512
+rldicl %r7, %r7, 54, 10
+stw %r7, 0(%r6)
+rldicr %r7, %r8, 44, 19
+rldicl %r7, %r7, 10, 54
+mulld %r7, %r7, %r9
+addi %r7, %r7, 512
+rldicl %r7, %r7, 54, 10
+stw %r7, 4(%r6)
+rldicr %r7, %r8, 34, 29
+rldicl %r7, %r7, 10, 54
+mulld %r7, %r7, %r9
+addi %r7, %r7, 512
+rldicl %r7, %r7, 54, 10
+stw %r7, 8(%r6)
+rldicr %r7, %r8, 24, 39
+rldicl %r7, %r7, 10, 54
+mulld %r7, %r7, %r9
+addi %r7, %r7, 512
+rldicl %r7, %r7, 54, 10
+stw %r7, 12(%r6)
+addi %r3, %r3, 5
+addi %r6, %r6, 16
+addi %r11, %r11, -1
+cmpldi %cr0, %r11, 0
+bne %cr0, 24b
+b 23f
+22:
+li %r11, 128
+25:
+lbz %r8, 0(%r3)
+rldicr %r7, %r8, 60, 3
+rldicl %r7, %r7, 4, 60
+mulld %r7, %r7, %r9
+addi %r7, %r7, 8
+rldicl %r7, %r7, 60, 4
+stw %r7, 0(%r6)
+rldicl %r7, %r8, 60, 4
+mulld %r7, %r7, %r9
+addi %r7, %r7, 8
+rldicl %r7, %r7, 60, 4
+stw %r7, 4(%r6)
+addi %r3, %r3, 1
+addi %r6, %r6, 8
+addi %r11, %r11, -1
+cmpldi %cr0, %r11, 0
+bne %cr0, 25b
+23:
+b 21f
+20:
+li %r11, 32
+26:
+lbz %r8, 0(%r3)
+rldicr %r7, %r8, 63, 0
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 0(%r6)
+rldicr %r7, %r8, 62, 1
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 4(%r6)
+rldicr %r7, %r8, 61, 2
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 8(%r6)
+rldicr %r7, %r8, 60, 3
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 12(%r6)
+rldicr %r7, %r8, 59, 4
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 16(%r6)
+rldicr %r7, %r8, 58, 5
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 20(%r6)
+rldicr %r7, %r8, 57, 6
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 24(%r6)
+rldicr %r7, %r8, 56, 7
+rldicl %r7, %r7, 1, 63
+mulld %r7, %r7, %r9
+addi %r7, %r7, 1
+rldicl %r7, %r7, 63, 1
+stw %r7, 28(%r6)
+addi %r3, %r3, 1
+addi %r6, %r6, 32
+addi %r11, %r11, -1
+cmpldi %cr0, %r11, 0
+bne %cr0, 26b
+21:
 blr",
     )
 }
