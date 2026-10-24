@@ -38,9 +38,11 @@ for each value.
   (`(x + 63) >> 6`, as `x < 64`) exactly when the hint is 1; `r0` counts
   the 1s.
 * `useHint(h = r3, r = r4, gamma2 = r5, out = r6)`: `(f + m + δ) mod m`, for
-  `δ` 0 if the hint is 0 (the sign of `h[i] - 1`) and else 1 if
-  `f · 2γ₂ < a` (`r₀ > 0`), -1 otherwise: `f + δ` is in `[-1, m + 1]`, so
-  `fixup` and then a conditional subtraction of `m` reduce it.
+  `δ` 0 if the hint is 0 and else `2s - 1`, with `s` 1 if `f · 2γ₂ < a`
+  (`r₀ > 0`) and 0 otherwise: with `z` 1 if the hint is 0 (the sign of
+  `h[i] - 1`), `f + δ = f + 2s - 2sz + z - 1` (no `addi` or `subi` of
+  `r0`, which reads as 0). It is in `[-1, m + 1]`, so `fixup` and then a
+  conditional subtraction of `m` reduce it.
 -/
 
 @[expose] public section
@@ -141,9 +143,10 @@ def makeHint : Prog isa := .seq (.block (gSel .r5)) (.ite (.zero .w .r0) (mhLoop
 /-- `UseHint` of `[r3]` and `[r4]` stored to `[r6]`. -/
 def uhBody (g : Nat) : List Instr :=
   [.load .w .r8 .r4 0, .load .w .r9 .r4 0] ++ hbRaw g .r9 ++
-  [.mul .r0 .r9 .r5, .sub .r0 .r0 .r8, .lsr .d .r0 .r0 63, .lsl .r0 .r0 1, .subi .r0 .r0 1,
-    .load .w .r8 .r3 0, .subi .r8 .r8 1, .lsr .d .r8 .r8 63, .mul .r8 .r8 .r0, .sub .r0 .r0 .r8,
-    .add .r9 .r9 .r0] ++ fixup .r9 .r8 .r12 ++
+  [.mul .r0 .r9 .r5, .sub .r0 .r0 .r8, .lsr .d .r0 .r0 63, .lsl .r0 .r0 1,
+    .load .w .r8 .r3 0, .subi .r8 .r8 1, .lsr .d .r8 .r8 63,
+    .add .r9 .r9 .r0, .mul .r0 .r0 .r8, .sub .r9 .r9 .r0, .add .r9 .r9 .r8, .subi .r9 .r9 1] ++
+    fixup .r9 .r8 .r12 ++
   [.subi .r9 .r9 (dMod g)] ++ fixup .r9 .r8 .r12 ++
   [.store .w .r9 .r6 0, .addi .r3 .r3 4, .addi .r4 .r4 4, .addi .r6 .r6 4, .subi .r7 .r7 1]
 
