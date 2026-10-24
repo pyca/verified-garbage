@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Keep
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Draw
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawRange
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.StCall
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Witnesses
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -27,8 +28,6 @@ open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 open VG.Proof.MillerRabin.PPC64LE (RoundImpl arr)
 open VG.Proof.Mont (val32)
 
-/-- The witness drawn at offset `u` of the tape, for a modulus of `mb` bits. -/
-def wA (mb : Nat) (r : List Byte) (u : Nat) : Nat := Spec.Rsa.os2ip ((r.drop u).take ((mb + 7) / 8)) % 2 ^ mb
 
 /-- `hStat` after a draw of `a`, from 4. -/
 def dStat (N K i a : Nat) : Nat :=
