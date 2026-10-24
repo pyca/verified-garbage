@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Spec.Weierstrass
@@ -45,29 +46,17 @@ open VG.Spec.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
 tactic_template "ppc_apart" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append, List.not_mem_nil,
   or_false, or_imp, forall_and, forall_eq_or_imp, forall_eq, List.mem_singleton]; omega))
 
-/-- What a slot holding `x` stands for, modulo `C.p`. -/
-abbrev tmv (C : Curve) (n : Nat) (base : Addr) (s : State) (x : Nat) : Fe C :=
-  toM C.p (2 ^ (64 * n)) (wordsVal s.mem base x n)
-
-/-- That an iteration keeps the invariant `Q`: from `(X : Y : Z)` that
-`Q (j + 1)` accepts, `Q j` accepts `T = D + G` if bit `j` of `k` is set, else
-`D = (X : Y : Z) + (X : Y : Z)`, by the complete addition with the curve's
-`a`, `3b` and `G` as the slots `L.S.a`, `L.S.b3` and `L.G` hold them. -/
-def Step (L : LadderCfg) (C : Curve) (base : Addr) (s : State) (k : Nat)
-    (Q : Nat → Fe C → Fe C → Fe C → Prop) : Prop :=
-  ∀ j < L.nbits, ∀ X Y Z X2 Y2 Z2 X3 Y3 Z3 : Fe C, Q (j + 1) X Y Z →
-    VG.Proof.Weierstrass.rcbAdd (tmv C L.M.n base s L.S.a) (tmv C L.M.n base s L.S.b3) X Y Z X Y Z =
-      (X2, Y2, Z2) →
-    VG.Proof.Weierstrass.rcbAdd (tmv C L.M.n base s L.S.a) (tmv C L.M.n base s L.S.b3) X2 Y2 Z2
-      (tmv C L.M.n base s L.G.x) (tmv C L.M.n base s L.G.y) (tmv C L.M.n base s L.G.z) =
-      (X3, Y3, Z3) →
-    Q j (if k.testBit j then X3 else X2) (if k.testBit j then Y3 else Y2)
-      (if k.testBit j then Z3 else Z2)
-
-/-- What `ladderP` writes: `R` and the point functions' slots and own
-working space. -/
-def ladWp (L : LadderCfg) : List (Nat × Nat) :=
+/-- What the ladder by calls of the point functions writes: `R` and the
+point functions' slots and own working space. -/
+def ladWpt (L : LadderCfg) : List (Nat × Nat) :=
   [(L.R.x, 8 * L.M.n), (L.R.y, 8 * L.M.n), (L.R.z, 8 * L.M.n), (oAt L.M.n, 4096 - oAt L.M.n)]
+
+/-- The point functions' slots and own working space, which the ladder
+writes if it calls them. -/
+def ptW (n : Nat) : List (Nat × Nat) := if n ≤ 6 then [(oAt n, 4096 - oAt n)] else []
+
+/-- What `ladderP` writes, whether it calls the point functions or not. -/
+def ladWp (L : LadderCfg) : List (Nat × Nat) := ladWx L ++ ptW L.M.n
 
 /-- The ladder's slots: `a`, `3b`, `G` and `R` below the point functions'
 slots, at multiples of 4, `R`'s apart; and its table of bits above the
@@ -153,7 +142,7 @@ structure LadInvP (L : LadderCfg) (C : Curve) (base : Addr)
   ws : WsReg s base
   r31 : s.gpr .r31 = BitVec.ofNat 64 j
   keep : Rk powClob s₀ s
-  unch : Unch base (ladWp L) s₀.mem s.mem
+  unch : Unch base (ladWpt L) s₀.mem s.mem
   lt : ∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s.mem base x L.M.n < C.p
   q : Q j (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z)
   cp : CpOk L base s.mem s₀.mem
@@ -358,13 +347,13 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
       (show Unch base _ s₃.mem s₄.mem from O₄)).trans U₅).cover (pt_cover hk3 hk6 fun w hw => by
         simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with (((rfl | rfl | rfl) | rfl | rfl) | rfl | rfl | rfl) | rfl | rfl <;> (simp only; omega))
-  have hU₅ : Unch base (ladWp L) s₀.mem s₅.mem :=
+  have hU₅ : Unch base (ladWpt L) s₀.mem s₅.mem :=
     (hI.unch.trans U₁₅).mono fun w hw => by
-      simp only [ladWp, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      simp only [ladWpt, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with (h | h | h | h) | h <;> simp [h]
   have hbyte : s₅.mem (off base (L.bits + (j - 1))) = if k.testBit (j - 1) then 1 else 0 := by
     rw [hU₅.byte (fun w hw => by
-      simp only [ladWp, List.mem_cons, List.not_mem_nil, or_false] at hw
+      simp only [ladWpt, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl <;> (simp only; omega)) (by omega), hbits _ (by omega)]
   have K₅ : Rk powClob s s₅ :=
     (K₁.rk (rs' := powClob)).trans <| (k₂.rk (rs' := powClob)).trans <| (k₃.mono (rs' := powClob)).trans <|
@@ -385,7 +374,7 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
   have K₇ : Rk powClob s₅ s₇ := (k₆.rk (rs' := powClob)).trans (k₇.rk (rs' := powClob))
   refine ⟨w₅.of_rk K₇, by rw [k₇.g, k₆.g, c₅], (hI.keep.trans K₅).trans K₇, ?_, ?_, ?_, ?_⟩
   · exact (hU₅.trans U₅₇).mono fun w hw => by
-      simp only [ladWp, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      simp only [ladWpt, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with (h | h | h | h) | (h | h | h) <;> simp [h]
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -428,8 +417,9 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
 
 /-- `Q 0` accepts what `R` holds at the end, if `Q L.nbits` accepts what it
 holds at the start and an iteration keeps `Q` (`Step`), for the scalar `k`
-whose bits are the table at `L.bits`; only `powClob` and `ladWp` change. -/
-theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
+whose bits are the table at `L.bits`, by calls of the point functions; only
+`powClob` and `ladWpt` change. -/
+theorem ladderPt_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
     (hkS : S.k = L.M.n) (hmS : S.m = C.p) (hM : ModOk L.M.n C.p) (hodd : C.p % 2 = 1) (hL : LadPtLay L)
     {s : State} (hs : WsReg s base)
     (hlt : ∀ x ∈ [L.S.a, L.S.b3, L.G.x, L.G.y, L.G.z, L.R.x, L.R.y, L.R.z],
@@ -437,7 +427,7 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : 
     (hstep : Step L C base s k Q)
     (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
     (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0) :
-    WP isa (ladderP L S) s fun s' => Rk powClob s s' ∧ Unch base (ladWp L) s.mem s'.mem ∧
+    WP isa (ladderP L S) s fun s' => Rk powClob s s' ∧ Unch base (ladWpt L) s.mem s'.mem ∧
       (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by
   have hk3 := hL.k3
@@ -464,7 +454,7 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : 
       rcases hx with h | h | h | h | h <;> simp [h])) hstep hbits h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, hi.q⟩) hnb.1 (by omega)
     ⟨hs.of_rk (K₄.rk (rs' := powClob)), by simp only [write_gpr, ite_true], K₄.rk,
-      U₃.mono fun w hw => by simp at hw; simp [hw, ladWp], fun x hx => ?_, ?_, cp₃⟩
+      U₃.mono fun w hw => by simp at hw; simp [hw, ladWpt], fun x hx => ?_, ?_, cp₃⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
     · rw [low rx]; exact hlt _ (by simp)
@@ -473,6 +463,40 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : 
   · show Q L.nbits (toM _ _ _) (toM _ _ _) (toM _ _ _)
     rw [low rx, low ry, low rz]
     exact hR
+
+/-- `Q 0` accepts what `R` holds at the end, if `Q L.nbits` accepts what it
+holds at the start and an iteration keeps `Q` (`Step`), for the scalar `k`
+whose bits are the table at `L.bits`: by calls of the point functions for
+coordinates of at most 6 words (`ladderPt_ok`, whose slots `LadPtLay` gives),
+else by the complete addition inlined (`ladder_ok`, `LadLayI`); only
+`powClob` and `ladWp` change. -/
+theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
+    (hkS : S.k = L.M.n) (hmS : S.m = C.p) (hM : ModOk L.M.n C.p) (hodd : C.p % 2 = 1)
+    (hp : UnitMod C.p (2 ^ (64 * L.M.n))) (hP : L.M.n ≤ 6 → LadPtLay L) (hX : 6 < L.M.n → LadLayI L)
+    {s : State} (hs : WsReg s base)
+    (hlt : ∀ x ∈ [L.S.a, L.S.b3, L.G.x, L.G.y, L.G.z, L.R.x, L.R.y, L.R.z],
+      wordsVal s.mem base x L.M.n < C.p)
+    (hstep : Step L C base s k Q)
+    (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
+    (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0) :
+    WP isa (ladderP L S) s fun s' => Rk powClob s s' ∧ Unch base (ladWp L) s.mem s'.mem ∧
+      (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
+      Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by
+  by_cases hk6 : L.M.n ≤ 6
+  · refine WP.mono (ladderPt_ok hkS hmS hM hodd (hP hk6) hs hlt hstep hR hbits)
+      fun s' ⟨K, U, l, q⟩ => ⟨K, U.mono fun w hw => ?_, l, q⟩
+    simp only [ladWpt, List.mem_cons, List.not_mem_nil, or_false] at hw
+    simp only [ladWp, ptW, hk6, ↓reduceIte, List.mem_append, List.mem_singleton]
+    rcases hw with rfl | rfl | rfl | rfl
+    · exact .inl (List.mem_append_left _ (mem_ladW_R _ (by simp)))
+    · exact .inl (List.mem_append_left _ (mem_ladW_R _ (by simp)))
+    · exact .inl (List.mem_append_left _ (mem_ladW_R _ (by simp)))
+    · exact .inr rfl
+  · unfold ladderP
+    simp only [hk6, ↓reduceIte]
+    have hM' : ModOk S.k S.m := by rw [hkS, hmS]; exact hM
+    exact WP.mono (ladder_ok hM' hkS hmS hp (hX (by omega)) hs hlt hstep hR hbits)
+      fun s' ⟨K, U, l, q⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, l, q⟩
 
 end body
 

@@ -50,7 +50,7 @@ theorem post_of {s s' : State} (h : EPost secp256k1 s s') : ecdhPPC.post s s' :=
 
 theorem ecdh_ppc (hL : Weierstrass.Law Spec.Secp256k1.curve) (s : State) (hs : ecdhPPC.pre s) :
     ∃ t s', Exec isa exchangeSecp256k1 s t s' ∧ abiPreserved s s' ∧ ecdhPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok secp256k1_ok (by decide) (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok secp256k1_ok (by decide) hL (pre_of hs)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhPPC.pre ecdhPPC.pub exchangeSecp256k1 :=

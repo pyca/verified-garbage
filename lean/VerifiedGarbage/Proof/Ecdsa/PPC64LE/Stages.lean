@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Rep
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderP
@@ -185,17 +186,6 @@ theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont 
 theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
-/-- A numbered slot is below the point functions' slots. -/
-theorem sl_below_pt (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
-    c.sl i + 8 * c.n ≤ Spec.Weierstrass.Point.oAt c.n := by
-  obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
-  have := sl_lt c hi
-  rw [sl_eq c 45] at this
-  omega
-
-/-- The ladder of `c`, from the point at `gx`, `gy`, `ONEP`. -/
-abbrev ladderAt (c : Cfg) (gx gy : Nat) : LadderCfg := { c.ladderCfg with G := c.pt gx gy ONEP }
-
 theorem ladPtLay (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {gx gy : Nat} (hgx : gx < 45) (hgy : gy < 45) :
     LadPtLay (ladderAt c gx gy) where
   k3 := h3
@@ -272,56 +262,8 @@ structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (F : BitVec 64
   acc_lt : sv c base s ACC < c.C.p
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) = tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2)
 
-theorem ladWp_eq (gx gy : Nat) : ladWp (ladderAt c gx gy) =
-    [(c.sl RX, 8 * c.n), (c.sl RY, 8 * c.n), (c.sl RZ, 8 * c.n),
-      (Spec.Weierstrass.Point.oAt c.n, 4096 - Spec.Weierstrass.Point.oAt c.n)] := rfl
-
 theorem powWxP_eq : powWx c.powP c.n = [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)] := rfl
 theorem powWxN_eq : powWx c.powN c.n = [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)] := rfl
-
-/-- A slot but `R`'s apart from what the ladder writes. -/
-theorem apart_ladWp (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {gx gy i : Nat} (hi : i < 45) (hr : i ∉ [RX, RY, RZ]) :
-    ∀ w ∈ ladWp (ladderAt c gx gy), c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
-  rw [ladWp_eq]
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl | rfl
-  · exact sl_apart c hr.1
-  · exact sl_apart c hr.2.1
-  · exact sl_apart c hr.2.2
-  · exact Or.inl (sl_below_pt h3 h6 hi)
-
-theorem fixedOk_ladWp (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (gx gy : Nat) : FixedOk c (ladWp (ladderAt c gx gy)) := by
-  rw [ladWp_eq]
-  refine (fixedOk_slW (l := [RX, RY, RZ]) (by decide)).append ?_
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_pt h3 h6 (i := 12) (by decide)))
-
-theorem ladWp_le (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (gx gy : Nat) : ∀ w ∈ ladWp (ladderAt c gx gy), w.1 + w.2 ≤ size := by
-  rw [ladWp_eq]
-  have := sl_below_pt h3 h6 (i := 44) (by decide)
-  have hsz : size = 8192 := rfl
-  obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  have hz := sl_lt c (i := RZ) (j := 44) (by decide)
-  have hy := sl_lt c (i := RY) (j := 44) (by decide)
-  have hx := sl_lt c (i := RX) (j := 44) (by decide)
-  rcases hw with rfl | rfl | rfl | rfl <;> (dsimp only; omega)
-
-theorem tbl_apart_ladWp (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (gx gy j t : Nat) :
-    ∀ w ∈ ladWp (ladderAt c gx gy), bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
-  rw [ladWp_eq]
-  obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
-  have := sl_below_bits c (by omega) (i := RZ) (by decide) j t
-  have := sl_below_bits c (by omega) (i := RY) (by decide) j t
-  have := sl_below_bits c (by omega) (i := RX) (by decide) j t
-  have hb := bitsAt_eq c j
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl | rfl <;> (dsimp only; omega)
 
 theorem apart_powWx (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hr : i ∉ [ACC, PT]) :
     ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
@@ -362,7 +304,7 @@ theorem tbl_apart_powWx (h7 : c.n < 10) (j t : Nat) :
 unchanged. -/
 structure LadPost (c : Cfg) (s₀ : State) (base : Addr) (k : Nat) (P : Point c.C) (s s' : State) : Prop
     extends Keep c s₀ base s' where
-  same : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ, ACC, PT] → sv c base s' i = sv c base s i
+  same : ∀ {i}, i < 45 → i ∉ ACC :: PT :: ladIx → sv c base s' i = sv c base s i
   flag : flagW c base s' = flagW c base s
   t₂ : ∀ t < 64 * c.n, s'.mem (off base (bitsAt c.n 2 + t)) = s.mem (off base (bitsAt c.n 2 + t))
   rep : Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
@@ -376,8 +318,8 @@ structure LadPost (c : Cfg) (s₀ : State) (base : Addr) (k : Nat) (P : Point c.
 /-- `[k]P` by the ladder over the point functions, for the point `P` the
 slots `gx`, `gy` and `ONEP` represent and the table of bits of any `k` of
 `8 len` bits, from `R = O`, then `Z^(p-2)`. -/
-theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {gx gy : Nat} (hgx : gx < 45)
-    (hgy : gy < 45) {s₀ : State} {base : Addr} {s : State} (S : Keep c s₀ base s) {k : Nat}
+theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (hgx : gx < 45)
+    (hgy : gy < 45) (hgw : gx ∉ MP :: ladIx) (hgw' : gy ∉ MP :: ladIx) {s₀ : State} {base : Addr} {s : State} (S : Keep c s₀ base s) {k : Nat}
     (hkl : k < 2 ^ (8 * c.C.len)) (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1)
     (hrz : sv c base s RZ = 0)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -419,15 +361,15 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
     show Rep c.C (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ)) _
     rw [hrx, hry, hrz, toM_cmont hc, toM_zero, shiftRight_eq_zero hkl, mul_zero_pt]
     exact rep_infinity' hC
-  refine WP.seq (WP.mono (ladderP_ok (L := ladderAt c gx gy) (S := c.SP) hc.fpk hc.fpm (modP hc) hc.p_odd
-    (ladPtLay hc h3 h6 hgx hgy) S.ws hlt hstep hR
+  refine WP.seq (WP.mono (ladderP_ok (L := ladderAt c gx gy) (S := c.SP) hc.fpk hc.fpm (modP hc) hc.p_odd hpR
+    (fun h6 => ladPtLay hc h3 h6 hgx hgy) (fun _ => ladLayI hc hgx hgy hgw hgw') S.ws hlt hstep hR
     (fun t ht => ht₀ t (by have := hc.len_hi; show t < 64 * c.n; change t < 8 * c.C.len at ht; omega)))
     fun s₅ ⟨K₅, U₅, L₅, R₅⟩ => ?_)
   rw [Nat.shiftRight_zero] at R₅
-  have K₅' : Keep c s₀ base s₅ := S.step h7 K₅ (hU := U₅) (hW := fixedOk_ladWp h3 h6 gx gy)
-    (hWs := ladWp_le h3 h6 gx gy)
-  have e₅ : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ] → sv c base s₅ i = sv c base s i := fun hi hr =>
-    sv_unch U₅ h7 hn hi (apart_ladWp h3 h6 hi hr)
+  have K₅' : Keep c s₀ base s₅ := S.step h7 K₅ (hU := U₅) (hW := fixedOk_ladWp h3 h7 gx gy)
+    (hWs := ladWp_le h3 h7 gx gy)
+  have e₅ : ∀ {i}, i < 45 → i ∉ ladIx → sv c base s₅ i = sv c base s i := fun hi hr =>
+    sv_unch U₅ h7 hn hi (apart_ladWp h3 h7 hi hr)
   have lx₅ : sv c base s₅ RX < c.C.p := L₅ _ (List.mem_cons_self ..)
   have ly₅ : sv c base s₅ RY < c.C.p := L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   have lz₅ : sv c base s₅ RZ < c.C.p :=
@@ -436,7 +378,7 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
     (powLayP hc) hpR K₅'.ws lz₅ K₅'.fixed.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_ladWp h3 h6 gx gy 1 t)]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_ladWp h3 h7 gx gy 1 t)]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆
@@ -445,7 +387,7 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
     sv_unch U₆ h7 hn hi (apart_powWx h7 hi hr)
   have hF := sl_le c h7 (i := FLAG) (by decide)
   have apF₅ : ∀ w ∈ ladWp (ladderAt c gx gy), c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
-    rcases apart_ladWp h3 h6 (i := FLAG) (gx := gx) (gy := gy) (by decide) (by decide) w hw with h | h
+    rcases apart_ladWp h3 h7 (i := FLAG) (gx := gx) (gy := gy) (by decide) (by decide) w hw with h | h
     · exact Or.inl (by omega)
     · exact Or.inr h
   have apF₆ : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
@@ -463,22 +405,21 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
     by rw [e₆ (by decide) (by decide)]; exact lx₅,
     by rw [e₆ (by decide) (by decide)]; exact ly₅,
     by rw [e₆ (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
-    rw [e₆ hi (by simp [hl.2.2.2.1, hl.2.2.2.2]), e₅ hi (by simp [hl.1, hl.2.1, hl.2.2.1])]
+  · rw [e₆ hi (nmem_of hl (by decide)), e₅ hi (nmem_of hl (by decide))]
   · intro t ht
     rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_powWx h7 2 t),
-      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_ladWp h3 h6 gx gy 2 t)]
+      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_ladWp h3 h7 gx gy 2 t)]
   · rw [tR RZ (by simp)]; exact v₆
 
 /-- `[k]P` and `Z^(p-2)`, after the setup and the tables. -/
-theorem stage₂ (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {gx gy : Nat} (hgx : gx < 45)
-    (hgy : gy < 45) {s₀ : State} {base : Addr} {F : BitVec 64} {s : State} (S : St₁ c A s₀ base F s)
+theorem stage₂ (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (hgx : gx < 45)
+    (hgy : gy < 45) (hgw : gx ∉ MP :: ladIx) (hgw' : gy ∉ MP :: ladIx) {s₀ : State} {base : Addr} {F : BitVec 64} {s : State} (S : St₁ c A s₀ base F s)
     {P : Point c.C} (hP : onCurve c.C P = true)
     (hG : Rep c.C (tmv c.C c.n base s (c.sl gx)) (tmv c.C c.n base s (c.sl gy)) (tmv c.C c.n base s (c.sl ONEP)) P)
     (hlx : sv c base s gx < c.C.p) (hly : sv c base s gy < c.C.p)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base F P s' → WP isa rest s' Q) :
     WP isa (.seq (Point.ladderP (ladderAt c gx gy) c.SP) (.seq (pow c.powP c.SP) rest)) s Q :=
-  ladPow_ok hc h3 h6 hC hgx hgy S.toKeep (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _))
+  ladPow_ok hc h3 hC hgx hgy hgw hgw' S.toKeep (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _))
     S.rx S.ry S.rz S.t₀ S.t₁ hP hG hlx hly fun s' L => h s'
       ⟨L.toKeep, by rw [L.same (by decide) (by decide), S.k], by rw [L.same (by decide) (by decide), S.d],
         by rw [L.same (by decide) (by decide), S.e], by rw [L.flag, S.flag],

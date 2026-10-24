@@ -49,7 +49,7 @@ theorem post_of {s s' : State} (h : SignPost brainpoolp384r1 s s') : signPPC.pos
 
 theorem sign_ppc (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s : State) (hs : signPPC.pre s) :
     ∃ t s', Exec isa signBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ signPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok brainpoolp384r1_ok (by decide) (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok brainpoolp384r1_ok (by decide) hL (pre_of hs)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem sign_ct : ConstantTime isa signPPC.pre signPPC.pub signBrainpoolP384r1 :=

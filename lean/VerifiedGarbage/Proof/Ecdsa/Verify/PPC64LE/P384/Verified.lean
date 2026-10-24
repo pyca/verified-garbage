@@ -38,7 +38,7 @@ theorem pre_of {s : State} (h : verifyPPC.pre s) : VPre p384 s := by
 
 theorem verify_ppc (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : verifyPPC.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p384_ok (by decide) (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p384_ok (by decide) hL (pre_of hs)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
 
 theorem verify_ct : ConstantTime isa verifyPPC.pre verifyPPC.pub verifyP384 :=

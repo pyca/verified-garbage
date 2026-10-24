@@ -235,7 +235,7 @@ theorem publicKey_eq' (c : Cfg) : Impl.EcKey.PPC64LE.Cfg.publicKey c =
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers and `lr`. -/
-theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {s₀ : State}
+theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State}
     {extra : List Region} (hp : PkPre c s₀ extra) :
     WP isa (Impl.EcKey.PPC64LE.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -250,7 +250,7 @@ theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law 
       (toM _ _ (wordsVal s₁.mem _ (c.sl ONEP) c.n)) (G c.C)
     rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
     exact rep_affine' hC _ _
-  refine stage₂ hc h3 h6 hC (gx := GX) (gy := GY) (by decide) (by decide) S₁ hc.onG hG
+  refine stage₂ hc h3 hC (gx := GX) (gy := GY) (by decide) (by decide) (by decide) (by decide) S₁ hc.onG hG
     (lt_of_eq_of_lt F.gx (hmont _)) (lt_of_eq_of_lt F.gy (hmont _)) fun s₂ S₂ => WP.block_nil ?_
   have hd' : Region.Disjoint ⟨s₀.gpr .r3, 1 + 2 * c.C.len⟩ ⟨s₀.gpr .r5, size⟩ := hp.out_sc
   refine WP.mono (middle_ok hc S₂.toKeep S₂.acc_lt S₂.flag hp.out_fit (by rw [hp.wr]; simp) hd')

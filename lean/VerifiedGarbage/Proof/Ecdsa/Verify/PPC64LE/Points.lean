@@ -250,10 +250,10 @@ theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.points c =
       (.seq (Point.ladderP (ladderAt c PX PY) c.SP) (Impl.Ecdsa.Verify.PPC64LE.Cfg.sum c))))) := rfl
 
 /-- The slots the ladders, `save` and the sum write. -/
-abbrev ptsW : List Nat := [RX, RY, RZ, UX, UY, UZ, DX, DY, DZ, T0, T1, T2, T3, T4, T5]
+abbrev ptsW : List Nat := [RX, RY, RZ, UX, UY, UZ, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP]
 
 /-- `[u]G + [v]Q`, into `R`. -/
-theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C) {s₀ : State} {base : Addr}
+theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {base : Addr}
     {s : State} (hM : Mid c s₀ base s) {P : Point c.C} (hP : onCurve c.C P = true)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) (tmv c.C c.n base s (c.sl ONEP)) P)
     {rest : Prog isa} {Q : State → Prop}
@@ -290,7 +290,8 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
     rw [K₁.fixed.gx, K₁.fixed.gy, K₁.fixed.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
     exact rep_affine' hC _ _
   refine WP.seq (WP.mono (ladderP_ok (L := ladderAt c GX GY) (S := c.SP) (k := sv c base s U) hc.fpk hc.fpm
-    (modP hc) hc.p_odd (ladPtLay hc h3 h6 (by decide) (by decide)) K₁.ws
+    (modP hc) hc.p_odd hpR (fun h6 => ladPtLay hc h3 h6 (by decide) (by decide))
+    (fun _ => ladLayI hc (by decide) (by decide) (by decide) (by decide)) K₁.ws
     (fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -313,16 +314,14 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t (Nat.lt_of_lt_of_le ht hlen), show wordsVal s.mem base (c.sl U) c.n = sv c base s U from rfl]))
     fun s₂ ⟨k₂, U₂, L₂, R₂⟩ => ?_)
-  have K₂ := K₁.step h7 k₂ (hU := U₂) (hW := fixedOk_ladWp h3 h6 GX GY) (hWs := ladWp_le h3 h6 GX GY)
+  have K₂ := K₁.step h7 k₂ (hU := U₂) (hW := fixedOk_ladWp h3 h7 GX GY) (hWs := ladWp_le h3 h7 GX GY)
   -- `U = [u]G`, `R = O`.
   refine WP.seq (WP.mono (save_ok hc K₂.ws) fun s₃ ⟨k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
   have K₃ := K₂.step h7 (k₃.rk (rs' := [.r4, .r11])) (hU := U₃) (hW := fixedOk_slW (by decide))
     (hWs := slW_le h7 (by decide))
-  have W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun hi hl => by
-    simp only [ptsW, List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
-    exact (sv_unch U₃ h7 hn hi (apart_slW (by simp [saveW, hl.1, hl.2.1, hl.2.2.1, hl.2.2.2.1, hl.2.2.2.2.1,
-        hl.2.2.2.2.2.1]))).trans
-      ((sv_unch U₂ h7 hn hi (apart_ladWp h3 h6 hi (by simp [hl.1, hl.2.1, hl.2.2.1]))).trans (v₁ hi))
+  have W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun hi hl =>
+    (sv_unch U₃ h7 hn hi (apart_slW (nmem_of hl (by decide)))).trans
+      ((sv_unch U₂ h7 hn hi (apart_ladWp h3 h7 hi (nmem_of hl (by decide)))).trans (v₁ hi))
   -- The table of `v`.
   refine WP.seq (WP.mono (tbl_bits_ok hc K₃.ws (i := V) (j := 0) (by decide) (by decide)) fun s₄ ⟨b₄, k₄, O₄⟩ => ?_)
   have K₄ := K₃.step h7 (k₄.rk (rs' := bitsClob)) (hU := O₄.unch) (hW := fixedOk_tbl h7 0) (hWs := tblW)
@@ -337,7 +336,8 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
       (tmv c.C c.n base s₄ (c.sl ONEP)) P := by
     rw [tv₄ (by decide) (by decide), tv₄ (by decide) (by decide), tv₄ (by decide) (by decide)]; exact hQ
   refine WP.seq (WP.mono (ladderP_ok (L := ladderAt c PX PY) (S := c.SP) (k := sv c base s V) hc.fpk hc.fpm
-    (modP hc) hc.p_odd (ladPtLay hc h3 h6 (by decide) (by decide)) K₄.ws
+    (modP hc) hc.p_odd hpR (fun h6 => ladPtLay hc h3 h6 (by decide) (by decide))
+    (fun _ => ladLayI hc (by decide) (by decide) (by decide) (by decide)) K₄.ws
     (fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -361,11 +361,11 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
       rw [b₄ t (Nat.lt_of_lt_of_le ht hlen),
         show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from W₃ (by decide) (by decide)]))
     fun s₅ ⟨k₅, U₅, L₅, R₅⟩ => ?_)
-  have K₅ := K₄.step h7 k₅ (hU := U₅) (hW := fixedOk_ladWp h3 h6 PX PY) (hWs := ladWp_le h3 h6 PX PY)
+  have K₅ := K₄.step h7 k₅ (hU := U₅) (hW := fixedOk_ladWp h3 h7 PX PY) (hWs := ladWp_le h3 h7 PX PY)
   have u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
-      exact (sv_unch U₅ h7 hn (by decide) (apart_ladWp h3 h6 (by decide) (by decide))).trans (v₄ (by decide))
+      exact (sv_unch U₅ h7 hn (by decide) (apart_ladWp h3 h7 (by decide) (by decide))).trans (v₄ (by decide))
   -- The sum.
   refine WP.mono (sum_ok hc K₅ (fun i hi => ?_)) fun s₆ ⟨K₆, U₆, _, _, rz₆, t₆⟩ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -380,17 +380,9 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
     · exact L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     · exact L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   -- Facts kept from `s`.
-  have W₆ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₆ i = sv c base s i := fun hi hl => by
-    simp only [ptsW, List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
-    refine (sv_unch U₆ h7 hn hi (apart_append (apart_slW (by simp [sumW, hl.1, hl.2.1, hl.2.2.1, hl.2.2.2.2.2.2.1,
-        hl.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.2.1,
-        hl.2.2.2.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.2.2.2.2.1,
-        hl.2.2.2.2.2.2.2.2.2.2.2.2.2.2])) (apart_own h7 hi))).trans
-      ((sv_unch U₅ h7 hn hi (apart_ladWp h3 h6 hi (by simp [hl.1, hl.2.1, hl.2.2.1]))).trans ((v₄ hi).trans (W₃ hi (by
-        simp [hl.1, hl.2.1, hl.2.2.1, hl.2.2.2.1, hl.2.2.2.2.1, hl.2.2.2.2.2.1, hl.2.2.2.2.2.2.1,
-          hl.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.2.1,
-          hl.2.2.2.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.2.2.2.1, hl.2.2.2.2.2.2.2.2.2.2.2.2.2.1,
-          hl.2.2.2.2.2.2.2.2.2.2.2.2.2.2]))))
+  have W₆ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₆ i = sv c base s i := fun hi hl =>
+    (sv_unch U₆ h7 hn hi (apart_append (apart_slW (nmem_of hl (by decide))) (apart_own h7 hi))).trans
+      ((sv_unch U₅ h7 hn hi (apart_ladWp h3 h7 hi (nmem_of hl (by decide)))).trans ((v₄ hi).trans (W₃ hi hl)))
   have hFl := sl_le c h7 (i := FLAG) (by decide)
   have flagOk : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch base W m m' →
       (∀ w ∈ W, c.sl FLAG + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG) →
@@ -399,8 +391,8 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
   have fl₆ : flagW c base s₆ = flagW c base s := by
     simp only [flagW]
     rw [flagOk U₆ (apart_append (apart_slW (by decide)) (apart_own h7 (by decide))),
-      flagOk U₅ (apart_ladWp h3 h6 (by decide) (by decide)), flagOk O₄.unch (apart_tbl h7 (by decide) 0),
-      flagOk U₃ (apart_slW (by decide)), flagOk U₂ (apart_ladWp h3 h6 (by decide) (by decide)),
+      flagOk U₅ (apart_ladWp h3 h7 (by decide) (by decide)), flagOk O₄.unch (apart_tbl h7 (by decide) 0),
+      flagOk U₃ (apart_slW (by decide)), flagOk U₂ (apart_ladWp h3 h7 (by decide) (by decide)),
       flagOk O₁.unch (apart_tbl h7 (by decide) 0)]
   have rm₆ : sv c base s₆ RM' = sv c base s RM' := W₆ (by decide) (by decide)
   have tU : ∀ {i j}, i ∈ [UX, UY, UZ] → sv c base s₃ i = sv c base s₂ j →
@@ -411,10 +403,10 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c.C
     rz₆, ⟨_, _, _, _, _, _, by rw [Nat.shiftRight_zero] at R₂; exact R₂, by rw [Nat.shiftRight_zero] at R₅; exact R₅,
       by rw [t₆, ha K₅.fixed, hb K₅.fixed, tU (by decide) ux₃, tU (by decide) uy₃, tU (by decide) uz₃]; rfl⟩⟩
   rw [tbl_unch U₆ h7 (j := 1) (by decide) ht (apart_append (tbl_apart_slW h7 (by decide) 1 t) (tbl_apart_own h7 1 t)),
-    tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_ladWp h3 h6 PX PY 1 t),
+    tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_ladWp h3 h7 PX PY 1 t),
     tbl_unch O₄.unch h7 (j := 1) (by decide) ht (tbl_apart_tbl (by decide) ht),
     tbl_unch U₃ h7 (j := 1) (by decide) ht (tbl_apart_slW h7 (by decide) 1 t),
-    tbl_unch U₂ h7 (j := 1) (by decide) ht (tbl_apart_ladWp h3 h6 GX GY 1 t),
+    tbl_unch U₂ h7 (j := 1) (by decide) ht (tbl_apart_ladWp h3 h7 GX GY 1 t),
     tbl_unch O₁.unch h7 (j := 1) (by decide) ht (tbl_apart_tbl (by decide) ht)]
   exact hM.t₁ t ht
 
