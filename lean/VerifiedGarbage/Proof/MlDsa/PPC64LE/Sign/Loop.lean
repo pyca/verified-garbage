@@ -250,24 +250,32 @@ structure XS (p : Params) (STK : Nat) (σ : State) (s : State) : Prop where
 def LP (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop :=
   (s.gpr .r25 ≠ 0 ∧ IL p STK σ (t + 1) s) ∨ (s.gpr .r25 = 0 ∧ XS p STK σ s)
 
+theorem kthen_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h : KO p STK σ t s)
+    (hb : s.gpr .r24 ≠ 0) : WP isa (.block [.li .r25 1]) s (EP p STK σ t) := by
+  refine WP.mono (li_ok .r25 (by decide) s) fun s' w => ?_
+  have hpass : PassV p σ (p.ℓ * t) := by
+    by_contra hc
+    rw [h.r24, bit_neg hc] at hb; exact hb rfl
+  have e24 : s.gpr .r24 = 1 := by rw [h.r24, bit_pos hpass]
+  exact ⟨h.b.l.k.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2,
+    by rw [w.2.2.1]; exact h.b.ct, fun r hr => by rw [w.2.2.1]; exact h.z r hr,
+    fun i hi => by rw [w.2.2.1]; exact h.h i hi, h.b.some, hpass,
+    by rw [w.2.1 .r24 (by decide)]; exact e24, w.1, h.b.l.t_lt, h.b.l.rej⟩
+
+theorem kelse_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (hl : p.ℓ < 2 ^ 15) (h : KO p STK σ t s)
+    (hb : s.gpr .r24 = 0) : WP isa (.block [.addi .r27 .r27 p.ℓ]) s (EF p STK σ t) := by
+  refine WP.mono (addi_ok (by decide) hl s) fun s' w => ?_
+  have hfail : ¬ PassV p σ (p.ℓ * t) := fun hp => by
+    rw [h.r24, bit_pos hp] at hb; exact absurd hb (by decide)
+  exact ⟨h.b.l.k.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2,
+    by rw [w.1, h.b.l.r27, ← BitVec.ofNat_add, Nat.mul_succ], by rw [w.2.1 .r25 (by decide)]; exact h.b.l.r25,
+    h.b.some, hfail, by rw [w.2.1 .r24 (by decide), h.r24, bit_neg hfail], h.b.l.t_lt, h.b.l.rej⟩
+
 theorem kbranch_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (hl : p.ℓ < 2 ^ 15)
     (h : KO p STK σ t s) :
-    WP isa (ifOkElse (.block [.li .r25 1]) (.block [.addi .r27 .r27 p.ℓ])) s fun s' => EP p STK σ t s' ∨ EF p STK σ t s' := by
-  refine WP.ite _ (eval_nonzero s .r24) (fun hb => WP.mono (li_ok .r25 (by decide) s) fun s' w => ?_)
-    fun hb => WP.mono (addi_ok (by decide) hl s) fun s' w => ?_
-  · have hpass : PassV p σ (p.ℓ * t) := by
-      by_contra hc
-      rw [h.r24, bit_neg hc] at hb; exact absurd hb (by decide)
-    have e24 : s.gpr .r24 = 1 := by rw [h.r24, bit_pos hpass]
-    refine .inl ⟨h.b.l.k.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2,
-      by rw [w.2.2.1]; exact h.b.ct, fun r hr => by rw [w.2.2.1]; exact h.z r hr,
-      fun i hi => by rw [w.2.2.1]; exact h.h i hi, h.b.some, hpass,
-      by rw [w.2.1 .r24 (by decide)]; exact e24, w.1, h.b.l.t_lt, h.b.l.rej⟩
-  · have hfail : ¬ PassV p σ (p.ℓ * t) := fun hp => by
-      rw [h.r24, bit_pos hp] at hb; exact absurd hb (by decide)
-    refine .inr ⟨h.b.l.k.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2,
-      by rw [w.1, h.b.l.r27, ← BitVec.ofNat_add, Nat.mul_succ], by rw [w.2.1 .r25 (by decide)]; exact h.b.l.r25,
-      h.b.some, hfail, by rw [w.2.1 .r24 (by decide), h.r24, bit_neg hfail], h.b.l.t_lt, h.b.l.rej⟩
+    WP isa (ifOkElse (.block [.li .r25 1]) (.block [.addi .r27 .r27 p.ℓ])) s fun s' => EP p STK σ t s' ∨ EF p STK σ t s' :=
+  WP.ite _ (eval_nonzero s .r24) (fun hb => WP.mono (kthen_ok h (by simpa using hb)) fun _ h => .inl h)
+    fun hb => WP.mono (kelse_ok hl h (by simpa using hb)) fun _ h => .inr h
 
 theorem eb_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h : IB p STK σ t s)
     (h0 : (s.gpr .r3).setWidth 32 = 0) : WP isa (.block [.li .r24 0, .li .r25 1]) s (EB p STK σ t) := by
