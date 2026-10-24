@@ -25,7 +25,8 @@ take it compare it with `(q - 1)/32` once (`gSel`), and branch to one loop
 for each value.
 
 * `power2Round(t = r3, t1 = r4, t0 = r5)`: `x = a + 4095`, `t1 = x >> 13`
-  and `t0 = (x mod 2¹³) - 4095`, plus `q` if negative.
+  and `t0 = x - (t1 << 13) - 4095` (`(x mod 2¹³) - 4095`), plus `q` if
+  negative.
 * `highBits(r = r3, gamma2 = r4, out = r5)`: `r₁`.
 * `lowBits(r = r3, gamma2 = r4, out = r5)`: `a - r₁ · 2γ₂`, plus `q` if
   negative (`a` kept in `r0`, `2γ₂` in `r4`).
@@ -84,12 +85,12 @@ def gSel (r : Reg) : List Instr := loadImm .r7 261888 ++ [.sub .r0 r .r7]
 /-! ## `power2Round` -/
 
 def p2rBody : List Instr :=
-  [.load .w .r8 .r3 0, .addi .r8 .r8 4095, .lsr .d .r9 .r8 13, .store .w .r9 .r4 0, .logic .and .r8 .r8 .r10,
-    .subi .r8 .r8 4095] ++ fixup .r8 .r9 .r7 ++
+  [.load .w .r8 .r3 0, .addi .r8 .r8 4095, .lsr .d .r9 .r8 13, .store .w .r9 .r4 0, .lsl .r10 .r9 13,
+    .sub .r8 .r8 .r10, .subi .r8 .r8 4095] ++ fixup .r8 .r9 .r7 ++
   [.store .w .r8 .r5 0, .addi .r3 .r3 4, .addi .r4 .r4 4, .addi .r5 .r5 4, .subi .r6 .r6 1]
 
 def power2Round : Prog isa :=
-  .seq (.block ([.li .r6 256, .li .r10 8191] ++ loadQ .r7)) (.loop (.block p2rBody) (.nonzero .d .r6))
+  .seq (.block (.li .r6 256 :: loadQ .r7)) (.loop (.block p2rBody) (.nonzero .d .r6))
 
 /-! ## `highBits` and `lowBits` -/
 
