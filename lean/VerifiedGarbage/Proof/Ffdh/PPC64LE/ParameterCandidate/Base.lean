@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ffdh.PPC64LE.ParameterCandidate
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Domain
@@ -41,6 +42,8 @@ structure PP where
   g : Nat
   rp : Addr
   r : List Byte
+  /-- The stack pointer, which the candidate keeps. -/
+  sp : Addr
 
 /-- `out_len`. -/
 abbrev PP.L (p : PP) : Nat := (p.bits + 7) / 8
@@ -111,6 +114,9 @@ structure Bufs (p : PP) (s : State) : Prop where
   sepO : ∀ x, ofs p.op x < p.L → p.Z ≤ ofs p.B x
   scrU : Scr s p.up 8
   sepU : ∀ x, ofs p.up x < 8 → p.Z ≤ ofs p.B x
+  stkR : (below p.sp 176).Disjoint ⟨p.rp, p.r.length⟩
+  stkO : (below p.sp 176).Disjoint ⟨p.op, p.L⟩
+  stkU : (below p.sp 176).Disjoint ⟨p.up, 8⟩
 
 /-- The tape's bytes are kept by a change in the working space. -/
 theorem bytes_frm {p : PP} {m m' : Mem} {rs : List (Nat × Nat)} (hf : Frm p.B rs m m')
@@ -133,6 +139,9 @@ theorem Bufs.step {p : PP} {s t : State} {rs : List (Nat × Nat)} {regs : List R
   sepO := h.sepO
   scrU := h.scrU.congr k.wr
   sepU := h.sepU
+  stkR := h.stkR
+  stkO := h.stkO
+  stkU := h.stkU
 
 /-- Between the pieces: the working space at `r31`, the arguments, the
 buffers and the bounds. -/
@@ -142,6 +151,10 @@ structure St (p : PP) (s : State) : Prop where
   args : Args s.mem p
   bufs : Bufs p s
   dims : Dims p
+  ws : (⟨p.B, p.Z⟩ : Region) ∈ s.wr
+  sp : s.sp = p.sp
+  stk : 176 ≤ p.sp.toNat
+  stkB : (below p.sp 176).Disjoint ⟨p.B, p.Z⟩
 
 /-- `St` survives a piece that keeps `r31` and changes only `mutR` ranges of
 the working space. -/
@@ -155,6 +168,10 @@ theorem St.step {p : PP} {s t : State} {regs : List Reg} (h : St p s) (hf : Frm 
     simp only [mutR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> dsimp only [PP.Z, saveBytes] <;> omega) k
   dims := h.dims
+  ws := by rw [k.wr]; exact h.ws
+  sp := k.sp.trans h.sp
+  stk := h.stk
+  stkB := h.stkB
 
 /-- A header word of `St`'s working space: its load and its store. -/
 theorem St.ld {p : PP} {s : State} (h : St p s) {d : Nat} (hd : d + 8 ≤ 256) :
