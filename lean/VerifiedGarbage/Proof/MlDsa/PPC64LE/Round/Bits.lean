@@ -295,15 +295,14 @@ def kgpr (g : Nat) (f : Reg → BitVec 64) (r : Reg) : BitVec 64 :=
   if r = .r12 then BitVec.ofNat 64 (dMod g) else if r = .r11 then BitVec.ofNat 64 (dAdd g)
   else if r = .r10 then BitVec.ofNat 64 (dMul g) else f r
 
-/-- What the head of a loop leaves: `hbConsts g`, then `extra`, then the count. -/
-theorem head_ok {g : Nat} {extra : List Instr} {s : State} {Q : State → Prop}
-    (hx : WP isa (.block (extra ++ [Instr.li .r6 256])) ({ s with gpr := kgpr g s.gpr }) Q) :
-    WP isa (.block (hbConsts g ++ extra ++ [Instr.li .r6 256])) s Q := by
+/-- What `hbConsts g` leaves, before the rest of a loop's head. -/
+theorem consts_ok {g : Nat} {rest : List Instr} {s : State} {Q : State → Prop}
+    (hx : WP isa (.block rest) ({ s with gpr := kgpr g s.gpr }) Q) :
+    WP isa (.block (hbConsts g ++ rest)) s Q := by
   obtain ⟨b1, b2, b3⟩ := dMul_lt g
-  rw [List.append_assoc]
   refine WP.cons exec_lis (WP.cons exec_ori (WP.cons exec_lis (WP.cons exec_ori
     (WP.cons (exec_li b3) ?_))))
-  refine (congrArg (fun t => WP isa (.block (extra ++ [Instr.li .r6 256])) t Q) ?_).mp hx
+  refine (congrArg (fun t => WP isa (.block rest) t Q) ?_).mp hx
   cases s
   simp only [State.write, State.mk.injEq, and_true]
   funext r
@@ -315,5 +314,11 @@ theorem head_ok {g : Nat} {extra : List Instr} {s : State} {Q : State → Prop}
     · by_cases h10 : r = .r10
       · subst h10; simpa using (VG.Proof.MlDsa.PPC64LE.Arith.loadImm_val b1).symm
       · simp [h12, h11, h10]
+
+/-- What the head of a loop leaves: `hbConsts g`, then `extra`, then the count. -/
+theorem head_ok {g : Nat} {extra : List Instr} {s : State} {Q : State → Prop}
+    (hx : WP isa (.block (extra ++ [Instr.li .r6 256])) ({ s with gpr := kgpr g s.gpr }) Q) :
+    WP isa (.block (hbConsts g ++ extra ++ [Instr.li .r6 256])) s Q := by
+  rw [List.append_assoc]; exact consts_ok hx
 
 end VG.Proof.MlDsa.PPC64LE.Round.Bits

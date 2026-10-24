@@ -133,10 +133,10 @@ def mhBody (g : Nat) : List Instr :=
     .add .r0 .r0 .r8, .addi .r3 .r3 4, .addi .r4 .r4 4, .addi .r6 .r6 4, .subi .r7 .r7 1]
 
 def mhLoop (g : Nat) : Prog isa :=
-  .seq (.block (hbConsts g ++ loadQ .r5 ++ [.li .r7 256, .li .r0 0])) (.loop (.block (mhBody g)) (.nonzero .d .r7))
+  .seq (.block (hbConsts g ++ loadQ .r5 ++ [.li .r7 256, .li .r0 0]))
+    (.seq (.loop (.block (mhBody g)) (.nonzero .d .r7)) (.block [.logic .or .r3 .r0 .r0]))
 
-def makeHint : Prog isa :=
-  .seq (.block (gSel .r5)) (.seq (.ite (.zero .w .r0) (mhLoop g32) (mhLoop g88)) (.block [.logic .or .r3 .r0 .r0]))
+def makeHint : Prog isa := .seq (.block (gSel .r5)) (.ite (.zero .w .r0) (mhLoop g32) (mhLoop g88))
 
 /-- `UseHint` of `[r3]` and `[r4]` stored to `[r6]`. -/
 def uhBody (g : Nat) : List Instr :=
