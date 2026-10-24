@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignSetup
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

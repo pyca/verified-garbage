@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
 /-!
 # `vg_rsa_pkcs1_sign` on PPC64LE: zeros and the restores

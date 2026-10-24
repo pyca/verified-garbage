@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignTail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignTail
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCall
 
 /-!
 # `vg_rsa_pkcs1_sign` on PPC64LE: correctness

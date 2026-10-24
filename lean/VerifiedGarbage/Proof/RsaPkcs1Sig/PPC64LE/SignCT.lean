@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCorrect
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignTaint
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCall
 
 /-!
 # `vg_rsa_pkcs1_sign` on PPC64LE: constant time
