@@ -18217,3 +18217,266 @@ ld %r21, 248(%r21)
 blr",
     )
 }
+
+/// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
+///
+/// Rejection sampling and signing retries are verified against the bounded random-tape specification; each signing attempt calls `vg_dsa_sign`. A draw is copied, its first octet masked, into the last octets of a zeroed nonce in the stack frame and compared with q by a borrow chain without a branch: only the tape's length, the draws' acceptance and each attempt's success affect the leakage trace. Every failure zeroes `out`, and every exit zeroes the nonce. The nonvolatile registers, which hold the loop's state, are saved in the frame.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
+/// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"stdu %r1, -304(%r1)
+addi %r12, %r1, 0
+std %r14, 152(%r12)
+std %r15, 160(%r12)
+std %r16, 168(%r12)
+std %r17, 176(%r12)
+std %r18, 184(%r12)
+std %r19, 192(%r12)
+std %r20, 200(%r12)
+std %r21, 208(%r12)
+std %r22, 216(%r12)
+std %r23, 224(%r12)
+std %r24, 232(%r12)
+std %r25, 240(%r12)
+std %r26, 248(%r12)
+std %r27, 256(%r12)
+std %r28, 264(%r12)
+std %r29, 272(%r12)
+std %r30, 280(%r12)
+std %r31, 288(%r12)
+mflr %r0
+std %r0, 296(%r12)
+addi %r18, %r3, 0
+addi %r30, %r5, 0
+addi %r19, %r6, 0
+addi %r20, %r8, 0
+addi %r21, %r9, 0
+addi %r22, %r10, 0
+ld %r23, 408(%r12)
+ld %r24, 416(%r12)
+ld %r3, 400(%r12)
+ld %r4, 424(%r12)
+ld %r5, 432(%r12)
+std %r3, 96(%r12)
+std %r4, 104(%r12)
+std %r5, 112(%r12)
+li %r25, 0
+li %r26, 8
+addi %r12, %r1, 0
+li %r0, 0
+std %r0, 120(%r12)
+std %r0, 128(%r12)
+std %r0, 136(%r12)
+std %r0, 144(%r12)
+add %r12, %r19, %r20
+addi %r6, %r21, 0
+addi %r14, %r12, 0
+addi %r17, %r6, 0
+li %r15, 0
+li %r16, 0
+20:
+lbz %r0, 0(%r14)
+or %r15, %r15, %r0
+li %r3, 0
+subf %r3, %r15, %r3
+rldicl %r3, %r3, 1, 63
+add %r16, %r16, %r3
+addi %r14, %r14, 1
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 20b
+addi %r28, %r16, 0
+add %r27, %r12, %r6
+subf %r27, %r16, %r27
+lbz %r3, 0(%r27)
+rldicl %r4, %r3, 63, 1
+or %r29, %r3, %r4
+rldicl %r4, %r29, 62, 2
+or %r29, %r29, %r4
+rldicl %r4, %r29, 60, 4
+or %r29, %r29, %r4
+rldicl %r4, %r16, 63, 1
+rldicl %r5, %r3, 63, 1
+or %r4, %r4, %r5
+li %r5, 0
+subf %r4, %r4, %r5
+rldicl %r4, %r4, 1, 63
+subf %r5, %r16, %r5
+rldicl %r5, %r5, 1, 63
+and %r0, %r4, %r5
+cmpldi %cr0, %r0, 0
+beq %cr0, 21f
+23:
+li %r17, 128
+li %r31, 4
+24:
+subf %r3, %r25, %r24
+subf %r4, %r28, %r3
+rldicl %r4, %r4, 1, 63
+rldicl %r3, %r3, 1, 63
+li %r5, 1
+xor %r3, %r3, %r5
+and %r3, %r3, %r4
+cmpldi %cr0, %r3, 0
+bne %cr0, 25f
+add %r3, %r23, %r25
+addi %r4, %r1, 120
+add %r4, %r4, %r21
+subf %r4, %r28, %r4
+addi %r5, %r28, 0
+addi %r6, %r29, 0
+27:
+lbz %r0, 0(%r3)
+and %r0, %r0, %r6
+stb %r0, 0(%r4)
+li %r6, 255
+addi %r3, %r3, 1
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 27b
+add %r25, %r25, %r28
+addi %r3, %r1, 120
+add %r3, %r3, %r21
+add %r4, %r27, %r28
+addi %r5, %r28, 0
+li %r6, 0
+li %r7, 0
+28:
+addi %r3, %r3, -1
+addi %r4, %r4, -1
+lbz %r0, 0(%r3)
+or %r7, %r7, %r0
+lbz %r8, 0(%r4)
+add %r8, %r8, %r6
+subf %r0, %r8, %r0
+rldicl %r6, %r0, 1, 63
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 28b
+li %r0, 0
+subf %r0, %r7, %r0
+rldicl %r0, %r0, 1, 63
+and %r6, %r6, %r0
+cmpldi %cr0, %r6, 0
+bne %cr0, 29f
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+beq %cr0, 211f
+b 212f
+211:
+li %r31, 0
+212:
+b 210f
+29:
+li %r31, 1
+210:
+b 26f
+25:
+li %r31, 2
+26:
+addi %r3, %r31, -4
+cmpldi %cr0, %r3, 0
+beq %cr0, 24b
+addi %r3, %r31, -1
+cmpldi %cr0, %r3, 0
+beq %cr0, 213f
+b 214f
+213:
+addi %r3, %r18, 0
+add %r4, %r21, %r21
+addi %r5, %r19, 0
+add %r6, %r20, %r20
+add %r6, %r6, %r20
+add %r6, %r6, %r4
+addi %r7, %r20, 0
+addi %r8, %r1, 120
+addi %r9, %r21, 0
+addi %r10, %r22, 0
+bl {vg_dsa_sign}
+cmplwi %cr0, %r3, 0
+beq %cr0, 215f
+li %r31, 1
+b 216f
+215:
+addi %r26, %r26, -1
+cmpldi %cr0, %r26, 0
+bne %cr0, 217f
+li %r31, 0
+b 218f
+217:
+li %r31, 4
+218:
+216:
+214:
+addi %r3, %r31, -4
+cmpldi %cr0, %r3, 0
+beq %cr0, 23b
+b 22f
+21:
+li %r31, 0
+22:
+addi %r3, %r31, -1
+cmpldi %cr0, %r3, 0
+beq %cr0, 219f
+addi %r16, %r18, 0
+add %r17, %r21, %r21
+li %r0, 0
+221:
+stb %r0, 0(%r16)
+addi %r16, %r16, 1
+addi %r17, %r17, -1
+cmpldi %cr0, %r17, 0
+bne %cr0, 221b
+b 220f
+219:
+220:
+addi %r12, %r1, 0
+li %r0, 0
+std %r0, 120(%r12)
+std %r0, 128(%r12)
+std %r0, 136(%r12)
+std %r0, 144(%r12)
+std %r25, 0(%r30)
+addi %r3, %r31, 0
+addi %r12, %r1, 0
+ld %r0, 296(%r12)
+mtlr %r0
+ld %r14, 152(%r12)
+ld %r15, 160(%r12)
+ld %r16, 168(%r12)
+ld %r17, 176(%r12)
+ld %r18, 184(%r12)
+ld %r19, 192(%r12)
+ld %r20, 200(%r12)
+ld %r21, 208(%r12)
+ld %r22, 216(%r12)
+ld %r23, 224(%r12)
+ld %r24, 232(%r12)
+ld %r25, 240(%r12)
+ld %r26, 248(%r12)
+ld %r27, 256(%r12)
+ld %r28, 264(%r12)
+ld %r29, 272(%r12)
+ld %r30, 280(%r12)
+ld %r31, 288(%r12)
+addi %r1, %r1, 304
+blr",
+        vg_dsa_sign = sym super::dsa::vg_dsa_sign,
+    )
+}

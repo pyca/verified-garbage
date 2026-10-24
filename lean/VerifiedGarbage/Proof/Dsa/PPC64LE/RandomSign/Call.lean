@@ -133,10 +133,10 @@ structure Signed (L : RL) (s₀ : State) (t t' : State) : Prop where
   r3 : ((t'.gpr .r3).setWidth 32).toNat = Spec.Dsa.signStatus (sresOf L t.mem)
   out : Spec.Rsa.bytesAt t'.mem L.out (2 * L.ql) = (sresOf L t.mem).getD (List.replicate (2 * L.ql) 0)
 
-theorem sign_ok {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
-    WP isa (.call "vg_dsa_sign" Impl.Dsa.PPC64LE.Sign.sign) t (Signed (rlOf s₀) s₀ t) := by
+/-- The regions given to `vg_dsa_sign` are within the caller's. -/
+theorem sign_cov {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀) s₀ t) :
+    Covers (signRd (rlOf s₀) ++ signWr (rlOf s₀)) (t.rd ++ t.wr) ∧ Covers (signWr (rlOf s₀)) t.wr := by
   have hL := rlOf_ok h
-  have hc := ha.ctx
   have hp := hL.pl
   have hq := hL.ql
   obtain ⟨hrd, hwr⟩ := regions_eq h
@@ -164,21 +164,39 @@ theorem sign_ok {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀
     rw [hc.wr, hwr]
     simp only [signWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp
+  exact ⟨hcov, hcovw⟩
+
+/-- The result `vg_dsa_sign` computes, from the state the call enters. -/
+theorem sres_eq {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
+    sRes (t.callEntry.withRegions (signRd (rlOf s₀)) (signWr (rlOf s₀))) = sresOf (rlOf s₀) t.mem := by
+  have hL := rlOf_ok h
+  have hc := ha.ctx
+  have hp := hL.pl
+  have hq := hL.ql
+  have g := fun (r : Reg) (hr : r ∉ linkRegs) => entry_gpr t (signRd (rlOf s₀)) (signWr (rlOf s₀)) hr
+  have hdl := hL.dl
+  simp only [sRes, State.withRegions_mem, State.callEntry_mem]
+  rw [g .r5 (by decide), g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), g .r9 (by decide),
+    g .r10 (by decide), ha.r5, ha.r6, ha.r7, ha.r8, ha.r9, ha.r10, entry_stackArg, hc.sp]
+  have a0' : t.mem.readW ((rlOf s₀).F + BitVec.ofNat 64 (32 + 8 * (8 + 0))) 64 = BitVec.ofNat 64 (rlOf s₀).dl := hc.a0
+  rw [a0']
+  simp only [BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
+    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), Nat.mod_eq_of_lt hdl]
+
+theorem sign_ok {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
+    WP isa (.call "vg_dsa_sign" Impl.Dsa.PPC64LE.Sign.sign) t (Signed (rlOf s₀) s₀ t) := by
+  have hL := rlOf_ok h
+  have hc := ha.ctx
+  have hp := hL.pl
+  have hq := hL.ql
+  obtain ⟨hcov, hcovw⟩ := sign_cov h hc
   refine WP.call (k := sContract) sign_correct (sign_pre h ha) hcov hcovw
     fun t' hrd' hwr' hsp' hf hpres _ hpost => ?_
   have hdis : ∀ r ∈ ctxRegs, r ∈ preserved := by decide
   obtain ⟨p3, pout⟩ := hpost
   have g := fun (r : Reg) (hr : r ∉ linkRegs) => entry_gpr t (signRd (rlOf s₀)) (signWr (rlOf s₀)) hr
-  have es : sRes (t.callEntry.withRegions (signRd (rlOf s₀)) (signWr (rlOf s₀))) = sresOf (rlOf s₀) t.mem := by
-    have hdl := hL.dl
-    simp only [sRes, State.withRegions_mem, State.callEntry_mem]
-    rw [g .r5 (by decide), g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), g .r9 (by decide),
-      g .r10 (by decide), ha.r5, ha.r6, ha.r7, ha.r8, ha.r9, ha.r10, entry_stackArg, hc.sp]
-    have a0' : t.mem.readW ((rlOf s₀).F + BitVec.ofNat 64 (32 + 8 * (8 + 0))) 64 = BitVec.ofNat 64 (rlOf s₀).dl := hc.a0
-    rw [a0']
-    simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
-      Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), Nat.mod_eq_of_lt hdl]
+  have es := sres_eq h ha
   rw [es] at p3 pout
   refine ⟨hc.step hL hsp' hrd' hwr' (fun r hr => hpres r (hdis r hr)) (hf.mono (by simp)), hpres, hf, p3, ?_⟩
   simp only [State.withRegions_mem, State.withRegions_gpr] at pout

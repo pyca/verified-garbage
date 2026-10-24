@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Finish
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Spec
+public import VerifiedGarbage.Proof.Dsa.RandomSignTraceResult
 import VerifiedGarbage.Proof.Dsa.RandomSign
 import VerifiedGarbage.Proof.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
@@ -9,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Draw
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Call
 
 /-!
 # Randomized DSA signing on PPC64LE: the attempts
@@ -26,7 +30,7 @@ namespace VG.Proof.Dsa.PPC64LE.RS
 open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE.Random VG.Impl.Dsa.PPC64LE.RandomSign
 open VG.Proof.Mont
 open VG.Proof.Dsa.PPC64LE.Rnd
-open VG.Proof.Dsa (RandomSignInput RandomSignResultRel randomSignDraw randomSignRemaining)
+open VG.Proof.Dsa (RandomSignInput RandomSignResultRel randomSignDraw randomSignRemaining randomSignAttemptStatus)
 open VG.Proof.Dsa.Random (sampleStatus)
 
 /-- The result, on entry. -/
@@ -144,8 +148,10 @@ theorem frame_byte {L : RL} (hL : L.Ok) {m m' : Mem} (hf : Frame (signWr L) m m'
 /-- One attempt. -/
 theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 1 < qOf s₀) (hi : AttInv s₀ a u t) :
     WP isa (.seq attempt (.block [.subi .r3 .r31 4])) t fun t' =>
-      (isa.eval (.zero .d .r3) t' = some false ∧ AttOut s₀ t') ∨
-        (isa.eval (.zero .d .r3) t' = some true ∧ ∃ m < a, ∃ u', AttInv s₀ m u' t') := by
+      isa.eval (.zero .d .r3) t' = some (decide (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a = 4)) ∧
+        (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a ≠ 4 → AttOut s₀ t') ∧
+        (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a = 4 → 1 < a ∧
+          AttInv s₀ (a - 1) (u + (randomSignDraw (inpOf (rlOf s₀) s₀.mem) u).used) t') := by
   have hL := rlOf_ok h
   have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
   have hQ := seOf_Q (L := rlOf s₀) s₀.mem hq
@@ -209,7 +215,12 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
       obtain ⟨c31, -⟩ := hs1 (by rw [hsr]; exact Nat.one_ne_zero)
       obtain ⟨rsig, rst, ru⟩ := hi.rel.success hdk' hsr
       rw [hD] at ru
-      refine WP.mono (tail_ok c31 (by decide)) fun t₆ ⟨⟨ev, m6⟩, k6⟩ => .inl ⟨by rw [ev]; rfl, ?_⟩
+      have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = 1 := by
+        simp only [randomSignAttemptStatus, hdk']
+        simp only [inpOf] at hsr ⊢
+        simp [hsr]
+      refine WP.mono (tail_ok c31 (by decide)) fun t₆ ⟨⟨ev, m6⟩, k6⟩ =>
+        ⟨by rw [ev, hAS], fun _ => ?_, fun h4 => by rw [hAS] at h4; cases h4⟩
       refine ⟨sc₅.step (sc₅.ctx.step hL k6.sp k6.rd k6.wr (fun r hr => k6.gpr r (ctx_r3 r hr))
         (by rw [m6]; exact Frame.refl _ _)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)),
         ?_, ?_, fun _ => ?_⟩
@@ -224,15 +235,25 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
       · subst ha0
         rw [ite_eq_left rfl] at c31
         obtain ⟨-, rst, ru⟩ := rel'.exhausted
-        refine WP.mono (tail_ok c31 (by decide)) fun t₆ ⟨⟨ev, m6⟩, k6⟩ => .inl ⟨by rw [ev]; rfl, ?_⟩
+        have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (0 + 1) = 0 := by
+          simp only [randomSignAttemptStatus, hdk']
+          simp only [inpOf] at hsr ⊢
+          simp [hsr]
+        refine WP.mono (tail_ok c31 (by decide)) fun t₆ ⟨⟨ev, m6⟩, k6⟩ =>
+          ⟨by rw [ev, hAS], fun _ => ?_, fun h4 => by rw [hAS] at h4; cases h4⟩
         refine ⟨sc₅.step (sc₅.ctx.step hL k6.sp k6.rd k6.wr (fun r hr => k6.gpr r (ctx_r3 r hr))
           (by rw [m6]; exact Frame.refl _ _)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)),
           ?_, ?_, fun h1 => absurd (rst ▸ h1) (by decide)⟩
         · rw [k6.gpr _ (by decide), b25'', ← ru, Nat.zero_add]
         · rw [k6.gpr _ (by decide), c31, rst]
       · rw [Nat.add_sub_cancel, ite_eq_right ha0] at c31
-        refine WP.mono (tail_ok c31 (by decide)) fun t₆ ⟨⟨ev, m6⟩, k6⟩ => .inr ⟨by rw [ev]; rfl, a', by omega,
-          u + D.used, ?_⟩
+        have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = 4 := by
+          simp only [randomSignAttemptStatus, hdk']
+          simp only [inpOf] at hsr ⊢
+          simp [hsr, ha0]
+        refine WP.mono (tail_ok c31 (by decide)) fun t₆ ⟨⟨ev, m6⟩, k6⟩ =>
+          ⟨by rw [ev, hAS], fun h => absurd hAS h, fun _ => ⟨by omega, ?_⟩⟩
+        rw [Nat.add_sub_cancel]
         refine ⟨sc₅.step (sc₅.ctx.step hL k6.sp k6.rd k6.wr (fun r hr => k6.gpr r (ctx_r3 r hr))
           (by rw [m6]; exact Frame.refl _ _)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)),
           (k6.gpr _ (by decide)).trans b25'', hDu, (k6.gpr _ (by decide)).trans (c26.trans (by rw [Nat.add_sub_cancel])), by omega, by have := hi.ha8; omega, ?_, rel'⟩
@@ -246,10 +267,14 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
       | some k => exact absurd (sampleStatus_some.mpr (by rw [hc]; rfl)) hs
     obtain ⟨rs, rst, ru⟩ := hi.rel.sample_none (hD ▸ hk)
     rw [hD] at rst ru
+    have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = sampleStatus D := by
+      unfold randomSignAttemptStatus
+      rw [hD]
+      simp only [hk]
     refine WP.mono (WP.block_nil rfl) fun t₃ e₃ => ?_
     subst e₃
-    refine WP.mono (tail_ok b31 (by omega)) fun t₄ ⟨⟨ev, m4⟩, k4⟩ => .inl ⟨?_, ?_⟩
-    · rw [ev, decide_eq_false (by omega)]
+    refine WP.mono (tail_ok b31 (by omega)) fun t₄ ⟨⟨ev, m4⟩, k4⟩ =>
+      ⟨by rw [ev, hAS], fun _ => ?_, fun h4 => by rw [hAS] at h4; omega⟩
     · refine ⟨sc₂.step (sc₂.ctx.step hL k4.sp k4.rd k4.wr (fun r hr => k4.gpr r (ctx_r3 r hr))
         (by rw [m4]; exact Frame.refl _ _)) (k4.gpr _ (by decide)) (k4.gpr _ (by decide)) (k4.gpr _ (by decide)),
         ?_, ?_, fun h1 => absurd (rst ▸ h1) hs⟩

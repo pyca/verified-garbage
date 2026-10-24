@@ -64,7 +64,7 @@ theorem sampleLoop_ok {E : SE} {qb R : List Byte} {s₀ : State} {u₀ : Nat} {S
   have h2 : SEnv E R t₂ := h1.step hE k2 (o := 0) (n := 0) (by omega) (by rw [m2]; exact Outside.refl _ _ _ _)
   have o2 : Outside E.F E.o E.W s₀.mem t₂.mem := by rw [m2]; exact ho.trans o1
   have k02 : Keep drawRegs s₀ t₂ := ((hk.trans k1).trans k2).mono (by decide)
-  rcases hc with ⟨b31, h2d, b17, b25, hu', hrej⟩ | ⟨b31, b25, bc⟩
+  rcases hc with ⟨b31, h2d, b17, b25, hu', hrej⟩ | ⟨b31, b25, bc, -⟩
   · refine .inr ⟨?_, n - 1, by omega, n - 1, u + E.W, rfl, by omega, by omega, h2,
       (k2.gpr .r25 (by decide)).trans b25, hu', (k2.gpr .r17 (by decide)).trans b17,
       (k2.gpr .r31 (by decide)).trans b31, o2, k02, ?_, ?_, ?_⟩

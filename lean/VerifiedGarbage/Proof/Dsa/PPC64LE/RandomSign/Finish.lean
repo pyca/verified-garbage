@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Call
+import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.RandomSign
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Ctx
+public import VerifiedGarbage.Spec.RsaPss
 
 /-!
 # Randomized DSA signing on PPC64LE: after a call of `vg_dsa_sign`

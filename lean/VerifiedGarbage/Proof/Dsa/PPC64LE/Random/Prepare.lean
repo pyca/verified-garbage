@@ -1,14 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Q
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Q
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Math
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Math
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Random
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Env
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # DSA sampling on PPC64LE: the scan of q

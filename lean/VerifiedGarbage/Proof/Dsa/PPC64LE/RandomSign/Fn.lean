@@ -27,7 +27,7 @@ namespace VG.Proof.Dsa.PPC64LE.RS
 open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE.Random VG.Impl.Dsa.PPC64LE.RandomSign
 open VG.Proof.Mont
 open VG.Proof.Dsa.PPC64LE.Rnd
-open VG.Proof.Dsa (RandomSignInput RandomSignResultRel randomSignDraw randomSignRemaining)
+open VG.Proof.Dsa (RandomSignInput RandomSignResultRel randomSignDraw randomSignRemaining randomSignAttemptStatus)
 open VG.Proof.Dsa.Random (sampleStatus)
 
 theorem attempts_ok {s₀ : State} (h : rsContract.pre s₀) (hq : 1 < qOf s₀) :
@@ -35,10 +35,11 @@ theorem attempts_ok {s₀ : State} (h : rsContract.pre s₀) (hq : 1 < qOf s₀)
   intro a u t hi
   unfold attempts
   refine WP.loop (M := isa) (fun n (t : State) => ∃ u, AttInv s₀ n u t) (fun n t ⟨u, hi⟩ =>
-    WP.mono (attempt_ok h hq hi) fun t' h' => ?_) a t ⟨u, hi⟩
-  rcases h' with ⟨e, o⟩ | ⟨e, m, hm, u', hi'⟩
-  · exact .inl ⟨e, o⟩
-  · exact .inr ⟨e, m, hm, u', hi'⟩
+    WP.mono (attempt_ok h hq hi) fun t' ⟨e, ho, hc⟩ => ?_) a t ⟨u, hi⟩
+  by_cases h4 : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u n = 4
+  · obtain ⟨hn, hi'⟩ := hc h4
+    exact .inr ⟨by rw [e, decide_eq_true h4], n - 1, by omega, _, hi'⟩
+  · exact .inl ⟨by rw [e, decide_eq_false h4], ho h4⟩
 
 /-- The specification's result is the attempts'. -/
 theorem rsRes_eq {s₀ : State} (h : rsContract.pre s₀) : rsRes s₀ = resOf s₀ := by
@@ -52,7 +53,7 @@ theorem rsRes_eq {s₀ : State} (h : rsContract.pre s₀) : rsRes s₀ = resOf s
 
 theorem ctx_012 : ∀ r ∈ ctxRegs, r ∉ ([.r0, .r12] : List Reg) := by decide
 
-theorem ctx_z : ∀ r ∈ ctxRegs, r ∉ ([.r0, .r16, .r17] ++ [.r16, .r17] : List Reg) := by decide
+theorem ctx_z : ∀ r ∈ ctxRegs, r ∉ (([.r0, .r16, .r17] : List Reg) ++ ([.r16, .r17] : List Reg)) := by decide
 
 /-- What the exit leaves. -/
 structure Fin (s₀ : State) (R : Spec.Dsa.RandomSignResult) (t : State) : Prop where

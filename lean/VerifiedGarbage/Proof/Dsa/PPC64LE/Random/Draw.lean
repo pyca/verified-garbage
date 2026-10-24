@@ -131,8 +131,9 @@ theorem draw_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
               rejectOf E.W (sample (Spec.Dsa.decodeBE qb) (d - 1) (R.drop (u + E.W)))) ∨
           (t.gpr .r31 = BitVec.ofNat 64 (sampleStatus (sample (Spec.Dsa.decodeBE qb) d (R.drop u))) ∧
             t.gpr .r25 = BitVec.ofNat 64 (u + (sample (Spec.Dsa.decodeBE qb) d (R.drop u)).used) ∧
-            ∀ k, (sample (Spec.Dsa.decodeBE qb) d (R.drop u)).scalar = some k →
-              Spec.Dsa.decodeBE (cands E t.mem) = k)) := by
+            (∀ k, (sample (Spec.Dsa.decodeBE qb) d (R.drop u)).scalar = some k →
+              Spec.Dsa.decodeBE (cands E t.mem) = k) ∧
+            ((sample (Spec.Dsa.decodeBE qb) d (R.drop u)).trace.head? = some 0 → d = 1))) := by
   have hRl := h.R_length
   have hq := hQ.gt
   have hdw := hQ.draw
@@ -153,7 +154,7 @@ theorem draw_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
     have hS : sample (Spec.Dsa.decodeBE qb) (d' + 1) (R.drop u) = ⟨none, 0, [2]⟩ :=
       Dsa.Random.sample_short _ _ _ hq (by rw [hlen, hdw]; exact hs)
     rw [hS, t31, (k2.gpr .r25 (by decide)).trans ((k1.gpr .r25 (by decide)).trans h25)]
-    exact ⟨rfl, rfl, fun k hk => by cases hk⟩
+    exact ⟨rfl, rfl, (fun k hk => by cases hk), by simp⟩
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hs
     have h25' : s₁.gpr .r25 = BitVec.ofNat 64 u := (k1.gpr .r25 (by decide)).trans h25
     refine WP.seq (WP.mono (copyRange_ok hE hQ h1 h25' (by omega)) fun s₂ ⟨⟨h2, o2, a25, a6, hc⟩, k2⟩ => ?_)
@@ -171,19 +172,20 @@ theorem draw_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
     by_cases ha : acc qb R u E.W
     · have hS := Dsa.Random.sample_accept _ d' _ hq hs' (by rw [hdw]; exact ha)
       rw [hdw] at hS
-      refine .inr ⟨?_, ?_, ?_⟩
+      refine .inr ⟨?_, ?_, ?_, ?_⟩
       · rw [hacc (by simp [ha]), hS]; rfl
       · rw [t25, hS]
       · intro k hk
         rw [hS] at hk
         cases hk
         rw [tm]; exact hc
+      · rw [hS]; simp
     · have hS := Dsa.Random.sample_reject _ d' _ hq hs' (by rw [hdw]; exact ha)
       rw [hdw, List.drop_drop] at hS
       obtain ⟨r17', r31z, r31k⟩ := hrej (by simp [ha])
       by_cases hd1 : d' = 0
       · subst hd1
-        refine .inr ⟨?_, ?_, ?_⟩
+        refine .inr ⟨?_, ?_, ?_, fun _ => rfl⟩
         · rw [r31z rfl, hS]; rfl
         · rw [t25, hS]; rfl
         · intro k hk; rw [hS] at hk; cases hk

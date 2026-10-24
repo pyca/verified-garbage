@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyVerified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA on PPC64LE -/
@@ -41,6 +42,16 @@ def artifacts : List Artifact := [
         y ≠ 1 and 0 < x < q as a mask, and'ed into each octet of p||q||g||y||x as it goes to out: x and y \
         do not affect the leakage trace."]
     code := Impl.Dsa.PPC64LE.Derive.derive
-    verified := Proof.Dsa.PPC64LE.deriveKey_verified }]
+    verified := Proof.Dsa.PPC64LE.deriveKey_verified },
+  Spec.Dsa.randomSignApi.artifact PPC64LE.target {
+    notes := ["Rejection sampling and signing retries are verified against the bounded random-tape \
+        specification; each signing attempt calls `vg_dsa_sign`. A draw is copied, its first octet \
+        masked, into the last octets of a zeroed nonce in the stack frame and compared with q by a \
+        borrow chain without a branch: only the tape's length, the draws' acceptance and each \
+        attempt's success affect the leakage trace. Every failure zeroes `out`, and every exit zeroes \
+        the nonce. The nonvolatile registers, which hold the loop's state, are saved in the frame."]
+    stack := 304
+    code := Impl.Dsa.PPC64LE.RandomSign.code
+    verified := Proof.Dsa.PPC64LE.randomSign_verified }]
 
 end VG.Artifacts.Dsa.PPC64LE

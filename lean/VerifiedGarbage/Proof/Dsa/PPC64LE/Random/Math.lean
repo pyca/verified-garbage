@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.Random
-public import VerifiedGarbage.Proof.Dsa.DomainShape
-public import VerifiedGarbage.Proof.Dsa.RandomRange
+import VerifiedGarbage.Proof.Dsa.DomainShape
+import VerifiedGarbage.Proof.Dsa.RandomRange
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Dsa.RandomBytes
 import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # DSA sampling on PPC64LE: the arithmetic of the registers

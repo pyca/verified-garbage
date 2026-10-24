@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Entry
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Prepare
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Q
 
 /-!
 # Randomized DSA signing on PPC64LE: the sampler's data
@@ -110,7 +111,7 @@ theorem Ctx.qb {L : RL} {s₀ t : State} (hL : L.Ok) (hc : Ctx L s₀ t) :
 theorem prepareQ_ok {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀) s₀ t) :
     WP isa prepareQ t fun t' => Scanned (rlOf s₀) s₀ t' ∧
       (t'.gpr .r0 = 0 ↔ ¬ 1 < Spec.Dsa.decodeBE (qbOf (rlOf s₀) s₀.mem)) ∧ t'.mem = t.mem ∧
-      Keep ([.r6, .r12] ++ prepRegs) t t' := by
+      Keep (([.r6, .r12] : List Reg) ++ prepRegs) t t' := by
   have hL := rlOf_ok h
   have hq := hL.ql
   have hp := hL.pl
