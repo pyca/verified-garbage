@@ -18,11 +18,11 @@ theorem validateArgs_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
     WP isa (.block (Impl.Dsa.X86_64.Generation.validateArgs pLen qLen)) s fun t =>
       t.gpr .rdi = off (W 5) packed ∧ t.gpr .r8 = off (W 5) domainCheck ∧
       t.gpr .rdx = BitVec.ofNat 64 pLen ∧ t.gpr .rcx = BitVec.ofNat 64 qLen ∧
-      t.mem = s.mem ∧ Keep [.rdi, .r8, .rdx, .rcx] s t := by
+      t.mem = s.mem ∧ Keep [.rdi, .r8, .rdx, .rcx, .rsi, .r9] s t := by
   have cast (n : Nat) (hn : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
     apply BitVec.eq_of_toNat_eq
     simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
-  refine WP.mono (WP.keep [.rdi, .r8, .rdx, .rcx] (Q := fun t =>
+  refine WP.mono (WP.keep [.rdi, .r8, .rdx, .rcx, .rsi, .r9] (Q := fun t =>
       t.gpr .rdi = off (W 5) packed ∧ t.gpr .r8 = off (W 5) domainCheck ∧
       t.gpr .rdx = BitVec.ofNat 64 pLen ∧ t.gpr .rcx = BitVec.ofNat 64 qLen ∧ t.mem = s.mem) (by
     xrun [Impl.Dsa.X86_64.Generation.validateArgs, ea_sp, L.rsp,

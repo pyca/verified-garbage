@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DomainCall
+import VerifiedGarbage.Proof.Framework.X86_64.CallBody
 
 /-! # Call the existing domain checker with public packed bytes and pointers -/
 
@@ -31,5 +33,23 @@ theorem domainCall_related {s t : State} (h : Two DomainCallBefore s t) : Two Pa
 theorem domainCall_ct (M : Mont) (Sq : MontS) :
     RelCT isa (Two DomainCallBefore) (Generate.checkParameters Sq.mm M.mm) (fun _ _ => True) :=
   (parametersMain_ct M Sq).mono (fun _ _ h => domainCall_related h) (fun _ _ h => h)
+
+
+def DomainCalledBefore (p : DomainCallPublic × Addr) (s : State) : Prop :=
+  DomainCallBefore p.1 s ∧ s.gpr .rsp = p.2 ∧
+  (domainReturn s).Disjoint ⟨p.1.input.base, Impl.Dsa.Layout.usedBytes⟩ ∧
+  (domainReturn s).Disjoint ⟨s.gpr .rdi, p.1.input.params.length⟩
+
+theorem domainCall_called_ct (M : Mont) (Sq : MontS) (name : String) :
+    RelCT isa (Two DomainCalledBefore)
+      (.call name (Generate.checkParameters Sq.mm M.mm)) (fun _ _ => True) := by
+  apply RelCT.callBody (domainCall_ct M Sq)
+  · rintro s t ⟨p, hs, ht⟩
+    refine ⟨p.1, ⟨parameters_callEntry hs.1.1 hs.2.2.2, ?_⟩,
+      ⟨parameters_callEntry ht.1.1 ht.2.2.2, ?_⟩⟩
+    · exact (State.callEntry_gpr s (by decide)).trans hs.1.2
+    · exact (State.callEntry_gpr t (by decide)).trans ht.1.2
+  · rintro s t ⟨p, hs, ht⟩
+    exact hs.2.1.trans ht.2.1.symm
 
 end VG.Proof.Dsa.X86_64.Generation

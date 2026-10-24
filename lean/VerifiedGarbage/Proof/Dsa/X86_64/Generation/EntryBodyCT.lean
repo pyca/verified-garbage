@@ -12,6 +12,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Proof.MillerRabin.X86_64 VG.Impl.Dsa.X86_64.Generation
 
+
+variable {checkName : String}
+
 def EntryBefore (n : Nat) (p : ParameterPublic) (s : State) : Prop :=
   EntryState p.context s ∧ FrV n p.context.geo.F p.ws s ∧ s.wr = p.wr ∧ p.randUsed = 0
 
@@ -28,7 +31,7 @@ theorem entryReady_ct (n : Nat) :
 
 theorem entryBody_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     (n : Nat) (hn : n = 2 ∨ n = 3) :
-    RelCT isa (Two (EntryBefore n)) (entryBody H.sha1 H.sha256 Sq.mm M.mm K.run) (fun _ _ => True) :=
-  RelCT.seq (entryReady_ct n) (dispatch_ct H M Sq K n hn)
+    RelCT isa (Two (EntryBefore n)) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (fun _ _ => True) :=
+  RelCT.seq (entryReady_ct n) (dispatch_ct (checkName := checkName) H M Sq K n hn)
 
 end VG.Proof.Dsa.X86_64.Generation

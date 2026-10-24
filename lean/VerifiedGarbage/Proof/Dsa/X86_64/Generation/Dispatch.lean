@@ -16,6 +16,9 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp)
 
+
+variable {checkName : String}
+
 theorem lengthTest_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay s F S) (R : Rep s.mem F S V W) :
     WP isa (.block [.mov .rax (.mem (sp 136)), .alu .cmp .rax (.imm 128)]) s fun t =>
@@ -37,8 +40,8 @@ theorem dispatch_ok (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream) (sq : Prog isa)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State} {Q : State → Prop}
     (h : GenerationMemory p W s)
     (run : ∀ t, GenerationMemory p W t → t.mem = s.mem → Keep [.rax] s t →
-      WP isa (Impl.Dsa.X86_64.Generation.generate G1 G256 sq mul round p.geo.pLen p.geo.qLen) t Q) :
-    WP isa (Impl.Dsa.X86_64.Generation.dispatch G1 G256 sq mul round) s Q := by
+      WP isa (Impl.Dsa.X86_64.Generation.generate (checkName := checkName) G1 G256 sq mul round p.geo.pLen p.geo.qLen) t Q) :
+    WP isa (Impl.Dsa.X86_64.Generation.dispatch (checkName := checkName) G1 G256 sq mul round) s Q := by
   obtain ⟨V, R⟩ := h.rep
   have h17 := (h.slots 17 (by simp [generationSlots])).trans p.pLenSlot
   unfold Impl.Dsa.X86_64.Generation.dispatch
