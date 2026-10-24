@@ -121,27 +121,30 @@ def fp : Instr := .addSp .r12 0
 
 /-! ## 1. The private-key operation -/
 
-/-- Our return address and the registers' arguments to the slots. -/
-def saves : List Instr :=
-  [fp, .mflr .r0, .store .d .r0 .r12 oLr, .store .d .r3 .r12 oOut, .store .d .r5 .r12 oML,
-    .store .d .r6 .r12 oN, .store .d .r7 .r12 oK, .store .d .r8 .r12 oE, .store .d .r9 .r12 oEl,
-    .store .d .r10 .r12 oD]
+/-- The slots of our return address (in `r0`, once moved there) and of the
+registers' arguments. -/
+def savedSlots : List (Reg × Nat) :=
+  [(.r0, oLr), (.r3, oOut), (.r5, oML), (.r6, oN), (.r7, oK), (.r8, oE), (.r9, oEl), (.r10, oD)]
 
-/-- The stack arguments kept in the frame: `d_len`, the input and `scratch`
-to their slots, and ours from `p` on to the Parameter Save Area, the
-private-key operation's stack arguments. -/
-def argMoves : List (Nat × Nat) :=
-  [(0, oDl), (1, oIn), (13, oScr)] ++ (List.range 12).map fun j => (j + 3, 96 + 8 * j)
+/-- Our return address and the registers' arguments to the slots. -/
+def saves : List Instr := [fp, .mflr .r0] ++ savedSlots.map fun (r, d) => .store .d r .r12 d
 
 /-- Our stack argument `j` to the frame's word at `d`. -/
 def mvArg (j d : Nat) : List Instr := [.load .d .r0 .r12 (arg j), .store .d .r0 .r12 d]
+
+/-- `d_len`, the input and `scratch` to their slots. -/
+def slotMoves : List Instr := mvArg 0 oDl ++ mvArg 1 oIn ++ mvArg 13 oScr
+
+/-- Our stack argument `3 + j` (`p` … `scratch_len`) to the private-key
+operation's stack argument `j`. -/
+def copyArg (j : Nat) : List Instr := mvArg (3 + j) (96 + 8 * j)
 
 /-- Its registers: `out`, `n_len`, `n`, `n_len`, `e`, `e_len`, the input,
 `n_len`. -/
 def privRegs : List Instr :=
   [mov .r4 .r7, mov .r5 .r6, mov .r6 .r7, mov .r7 .r8, mov .r8 .r9, .load .d .r9 .r12 oIn, mov .r10 .r4]
 
-def setup : List Instr := saves ++ (argMoves.flatMap (fun p => mvArg p.1 p.2) ++ privRegs)
+def setup : List Instr := saves ++ slotMoves ++ (List.range 12).flatMap copyArg ++ privRegs
 
 /-! ## 2. The key derivation key -/
 
