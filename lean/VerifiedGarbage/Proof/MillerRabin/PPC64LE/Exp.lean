@@ -99,4 +99,78 @@ theorem inner_ok {s₀ u : State} {B : Addr} {Z w c b k : Nat} {V : BitVec 64} (
   · rw [kz.gpr .r26 (by decide), hx.keep.gpr .r26 (by decide), t26]
   · rw [z27, hx.keep.gpr .r27 (by decide)]
 
+theorem shl3_ofNat (w : Nat) : BitVec.ofNat 64 w <<< 3 = BitVec.ofNat 64 (8 * w) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  omega
+
+theorem shr1_ofNat (w : Nat) (hw : w ≤ 128) : BitVec.ofNat 64 (2 * w) >>> 1 = BitVec.ofNat 64 w := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega
+
+/-- The windows of `E`: `RsaKeyGen.wRun` over all `16 w` windows, from
+`y = R mod c` (`1`) and a clear flag. -/
+theorem windows_ok {s : State} {B : Addr} {Z w c b : Nat} (h : WSt expRegs s s B Z w c b) (hc3 : 3 ≤ c)
+    (hodd : c % 2 = 1) (hy : arr s.mem B w aY = 2 ^ (64 * w) % c) :
+    WP isa windows s fun t => ExpAt s t B Z w c b (16 * w) := by
+  have hw := h.ctx.hw
+  have hw' := h.ctx.hw'
+  have hZ := h.ctx.hZ
+  have hnw := h.ctx.hs.nowrap
+  have hE := slot_lt (w := w) (show aE < 28 by decide)
+  unfold windows
+  refine WP.seq ?_
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  have h1 : WP isa (.block [.li .r23 0, .lsr .d .r26 .r11 1]) s fun t =>
+      (t.gpr .r23 = mask false ∧ t.gpr .r26 = BitVec.ofNat 64 w ∧ t.mem = s.mem) ∧ Keep [.r23, .r26] s t := by
+    refine WP.keep _ ?_ (by decide)
+    prun [h.ctx.h11, shr1_ofNat w hw']
+    rfl
+  refine WP.mono h1 fun t₁ ⟨⟨a23, a26, m1⟩, k1⟩ => ?_
+  have f1 := h.step (by rw [m1]; exact Outs.refl _ _ _) k1 (by decide) (by rw [m1])
+  rw [WP.block_append_iff]
+  refine WP.mono (f1.ctx.base (rd := .r25) (by decide) (by decide) aE) fun t₂ ⟨⟨a25, m2⟩, k2⟩ => ?_
+  have f2 := f1.step (by rw [m2]; exact Outs.refl _ _ _) k2 (by decide) (by rw [m2])
+  have h3 : WP isa (.block [.lsl .r0 .r26 3, .add .r25 .r25 .r0]) t₂ fun t =>
+      (t.gpr .r25 = off B (slot w aE + 8 * w) ∧ t.mem = t₂.mem) ∧ Keep [.r0, .r25] t₂ t := by
+    refine WP.keep _ ?_ (by decide)
+    prun [k2.gpr .r26 (by decide), a26, a25, shl3_ofNat w, off_add]
+  refine WP.mono h3 fun t₃ ⟨⟨b25, m3⟩, k3⟩ => ?_
+  have f3 := f2.step (by rw [m3]; exact Outs.refl _ _ _) k3 (by decide) (by rw [m3])
+  have e0 : ExpAt s t₃ B Z w c b (16 * 0) :=
+    ⟨f3, by rw [m3, m2, m1, hy]; simp [wRun], by simp [wRun]; omega,
+      by rw [k3.gpr .r23 (by decide), k2.gpr .r23 (by decide), a23]; rfl⟩
+  have c26 : t₃.gpr .r26 = BitVec.ofNat 64 w := by rw [k3.gpr .r26 (by decide), k2.gpr .r26 (by decide), a26]
+  let I : Nat → State → Prop := fun k t => ExpAt s t B Z w c b (16 * k) ∧
+    t.gpr .r25 = off B (slot w aE + 8 * (w - k))
+  refine WP.mono (wp_countdown (cnt := .r26) (N := w) (by omega) (by omega) I
+    (fun k hk t ⟨ht, t25⟩ _ => ?_) ⟨e0, by rw [b25, Nat.sub_zero]⟩ c26) fun t ⟨ht, _⟩ => ht
+  -- the next word
+  have hy8 : slot w aE + 8 * (w - k) = (slot w aE + 8 * (w - 1 - k)) + 8 := by omega
+  have hld : WP isa (.block [.subi .r25 .r25 8, .load .d .r24 .r25 0, .li .r27 16]) t fun u =>
+      (u.gpr .r25 = off B (slot w aE + 8 * (w - 1 - k)) ∧
+        u.gpr .r24 = word t.mem B (slot w aE + 8 * (w - 1 - k)) ∧ u.gpr .r27 = BitVec.ofNat 64 16 ∧
+        u.mem = t.mem) ∧ Keep [.r24, .r25, .r27] t u := by
+    refine WP.keep _ ?_ (by decide)
+    prun [t25, hy8, off_sub8, (ht.ws.ctx.hs).ld (show slot w aE + 8 * (w - 1 - k) + 8 ≤ Z by omega)]
+  refine WP.seq (WP.mono hld fun u ⟨⟨u25, u24, u27, um⟩, ku⟩ => ?_)
+  have eu : ExpAt s u B Z w c b (16 * k) :=
+    ⟨ht.ws.step (by rw [um]; exact Outs.refl _ _ _) ku (by decide) (by rw [um]), by rw [um]; exact ht.y, ht.lt,
+      by rw [ku.gpr .r23 (by decide)]; exact ht.p⟩
+  have hV : (word t.mem B (slot w aE + 8 * (w - 1 - k))).toNat =
+      VG.Proof.RsaKeyGen.mrE c / 2 ^ (64 * (w - 1 - k)) % 2 ^ 64 := by
+    rw [word_digit _ _ _ _ _ (show w - 1 - k < w by omega)]
+    rw [show val32 t.mem B (slot w aE) (2 * w) = arr t.mem B w aE from rfl, ht.ws.consts.e]
+  refine WP.seq (WP.mono (inner_ok hk hc3 hodd hV eu u24 u27) fun x ⟨ex, x25, x26⟩ => ?_)
+  have hsub : WP isa (.block [.subi .r26 .r26 1]) x fun z =>
+      (z.gpr .r26 = x.gpr .r26 - BitVec.ofNat 64 1 ∧ z.mem = x.mem) ∧ Keep [.r26] x z := by
+    refine WP.keep _ ?_ (by decide)
+    prun
+  refine WP.mono hsub fun z ⟨⟨z26, zm⟩, kz⟩ => ⟨⟨⟨ex.ws.step (by rw [zm]; exact Outs.refl _ _ _) kz (by decide)
+    (by rw [zm]), by rw [zm]; exact ex.y, ex.lt, by rw [kz.gpr .r23 (by decide)]; exact ex.p⟩, ?_⟩, ?_⟩
+  · rw [kz.gpr .r25 (by decide), x25, u25, show w - 1 - k = w - (k + 1) by omega]
+  · rw [z26, x26, ku.gpr .r26 (by decide)]
+
 end VG.Proof.MillerRabin.PPC64LE
