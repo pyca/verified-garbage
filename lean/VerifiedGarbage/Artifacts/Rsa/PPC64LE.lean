@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubVerified
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -30,6 +31,19 @@ def artifacts : List Artifact := [
         The nonvolatile registers it uses are saved in the working space's header."]
     code := Impl.Bignum.PPC64LE.PublicChecked.publicChecked
     verified := Proof.Bignum.PPC64LE.Pub.publicChecked_verified },
+  Spec.Rsa.privateCrtApi.artifact PPC64LE.target {
+    notes := ["The model has no carry bit, so numbers are 32-bit digits. The checks (`n` as \
+        `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a Montgomery \
+        product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask \
+        the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever \
+        the key, and the result is stored masked. Each prime has its own working space of \
+        `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a bit at a \
+        time, and every bit of the exponent is scanned from the top, a Montgomery square and a \
+        multiplication selected by a mask of the bit. `q h + m₂` is a Montgomery product modulo \
+        `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the \
+        working space's header."]
+    code := Impl.Bignum.PPC64LE.Crt.crt
+    verified := Proof.Bignum.PPC64LE.Crt.crt_verified },
   Spec.Rsa.crtValuesApi.artifact PPC64LE.target {
     notes := ["`n` is checked as `vg_rsa_public_precompute` checks it; then the checks (`p q = n`, \
         as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p | 1) = 1`) give a mask, the \
