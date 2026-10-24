@@ -13,3 +13,7 @@ pub(crate) use vg_cast5_s1234::VG_CAST5_S1234;
 #[rustfmt::skip]
 mod vg_cast5_s5678;
 pub(crate) use vg_cast5_s5678::VG_CAST5_S5678;
+
+#[rustfmt::skip]
+mod vg_rsa_keygen_trial32;
+pub(crate) use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
