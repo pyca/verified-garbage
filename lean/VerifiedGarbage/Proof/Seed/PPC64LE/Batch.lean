@@ -217,7 +217,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
   refine WP.mono (rounds_ok d room₃ keys₃) fun s₄ ⟨q₄, room₄, rd₄, wr₄, sp₄, g₄, f₄⟩ => ?_
   have G₄ : ∀ r ∈ [Reg.r3, .r4, .r5, .r8], s₄.gpr r = s.gpr r := by
     intro r hr
-    rw [g₄ r hr]
+    rw [g₄ r (by simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> simp)]
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact G₃ _ (by simp)
