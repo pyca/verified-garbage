@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Range
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Range
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 
 /-!
 # DSA on PPC64LE: helpers of the checks of p, q, g and y
