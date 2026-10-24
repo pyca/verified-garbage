@@ -140,10 +140,15 @@ def checkN : Prog isa :=
     (.block [.lsr .d .r3 .r0 1, .li .r4 1, .logic .and .r4 .r0 .r4, .logic .or .r3 .r3 .r4, .subi .r3 .r3 1,
       .lsr .d .r3 .r3 63, .li .r4 0, .sub .r26 .r4 .r3]))
 
-/-- `r26 &=` all ones if array `a` is below array `m`: `subMod` into array 3. -/
-def checkLt (a m : Nat) : Prog isa :=
+/-- `r20 :=` all ones if array `a` is below array `m`, else 0: `subMod` into
+array 3; `r10` back to array 0. -/
+def cmpLt (a m : Nat) : Prog isa :=
   .seq (.block (PublicChecked.base .r8 a ++ PublicChecked.base .r9 3 ++ PublicChecked.base .r10 m))
-    (.seq subMod (.block [.logic .and .r26 .r26 .r20, .addi .r10 .r21 0]))
+    (.seq subMod (.block [.addi .r10 .r21 0]))
+
+/-- `r26 &=` all ones if array `a` is below array `m`. -/
+def checkLt (a m : Nat) : Prog isa :=
+  .seq (cmpLt a m) (.block [.logic .and .r26 .r26 .r20])
 
 /-- `p q` into array 6 (Montgomery multiplication modulo `M`, `-M⁻¹ = 1`),
 its word `W` := 0; then `r26 &=` all ones if it equals `n` (array 1): neither
@@ -151,12 +156,10 @@ is below the other. -/
 def checkPQ : Prog isa :=
   .seq (.block [.li .r12 1]) (.seq (PublicChecked.montOp 6 4 5)
     (.seq (.block (PublicChecked.base .r14 6 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
-        .store .d .r0 .r14 0] ++ PublicChecked.base .r8 6 ++ PublicChecked.base .r9 3 ++
-        PublicChecked.base .r10 1))
-      (.seq subMod (.seq (.block ([.addi .r24 .r20 0, .addi .r10 .r21 0] ++ PublicChecked.base .r8 1 ++
-          PublicChecked.base .r9 3 ++ PublicChecked.base .r10 6))
-        (.seq subMod (.block [.logic .or .r0 .r24 .r20, .li .r3 0, .subi .r3 .r3 1,
-          .logic .xor .r0 .r0 .r3, .logic .and .r26 .r26 .r0, .addi .r10 .r21 0]))))))
+        .store .d .r0 .r14 0]))
+      (.seq (cmpLt 6 1) (.seq (.block [.addi .r24 .r20 0]) (.seq (cmpLt 1 6)
+        (.block [.logic .or .r0 .r24 .r20, .li .r3 0, .subi .r3 .r3 1, .logic .xor .r0 .r0 .r3,
+          .logic .and .r26 .r26 .r0]))))))
 
 /-- The `r11 / 2` words at `r14` `&= r26`. -/
 def maskWords : Prog isa :=
