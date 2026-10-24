@@ -47,9 +47,9 @@ def montRegs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9] ++ tailRegs
 
 /-- `montOp o a b`, in the working space at `B` with array 0 at `r10`, the
 arrays' size in `r29`, `2 w` in `r11` and `-n⁻¹ mod 2³²` in `r12`. -/
-theorem montOp_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
-    {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
-    (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+theorem montOpN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    {n o a b : Nat} (hn : 4 ≤ n) (ho : o < n) (ha : a < n) (hb : b < n) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
+    (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w n ≤ Z)
     (h10 : s.gpr .r10 = off B (slot w 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h12 : (s.gpr .r12).toNat < 2 ^ 32)
     (hinv : (w32 s.mem B (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
@@ -96,8 +96,25 @@ theorem montOp_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have g8 : t₆.gpr .r8 = off B (slot w 2) := by rw [k6.gpr .r8 (by decide), k5.gpr .r8 (by decide), a8]
   have g9 : t₆.gpr .r9 = off B (slot w 3) := by rw [k6.gpr .r9 (by decide), a9]
   rw [← hm] at hinv hB ⊢
-  refine WP.mono (tail_ok (hs.congr k16.wr) ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ g5 g6 g7 g8 g9
+  refine WP.mono (tailN_ok (hs.congr k16.wr) hn ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ g5 g6 g7 g8 g9
     ((g _ (by decide)).trans h10) ((g _ (by decide)).trans h11) a4 (by rw [g _ (by decide)]; exact h12)
     (by rw [g _ (by decide)]; exact hinv) hB) fun t ⟨h, k⟩ => ⟨h, (k16.trans k).mono⟩
+
+/-- `montOpN_ok` for arrays below 8. -/
+theorem montOp_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2)
+    (hb2 : b ≠ 2) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h12 : (s.gpr .r12).toNat < 2 ^ 32)
+    (hinv : (w32 s.mem B (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
+    (hB : val32 s.mem B (slot w b) (2 * w) < val32 s.mem B (slot w 0) (2 * w)) :
+    WP isa (montOp o a b) s fun t =>
+      (val32 t.mem B (slot w o) (2 * w) < val32 s.mem B (slot w 0) (2 * w) ∧
+        val32 t.mem B (slot w o) (2 * w) * 2 ^ (64 * w) % val32 s.mem B (slot w 0) (2 * w) =
+          val32 s.mem B (slot w a) (2 * w) * val32 s.mem B (slot w b) (2 * w) %
+            val32 s.mem B (slot w 0) (2 * w) ∧
+        Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))] s.mem t.mem) ∧
+      Keep montRegs s t :=
+  montOpN_ok hs (by decide) ho ha hb ho2 ho3 ha2 hb2 hw2 hw' hZ h10 h29 h11 h12 hinv hB
 
 end VG.Proof.Bignum.PPC64LE.Pub
