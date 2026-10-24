@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Base
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -44,17 +45,14 @@ def ix : Reg → Nat
 abbrev tri (q : Ptr) (l : Nat) : Nat × Nat × Nat := (ix q.1, q.2, l)
 
 /-- The address of the pointer `q`. -/
-abbrev lpa (L : Lay) (q : Ptr) : Addr := L.ptr (ix q.1) + BitVec.ofNat 64 q.2
-
-/-- Buffer `i`. -/
-abbrev bufR (L : Lay) (i : Nat) : Region := ⟨L.ptr i, L.size i⟩
+abbrev lpa (L : Lay) (q : Ptr) : Addr := L.A (ix q.1) q.2
 
 /-- The buffers fit in the address space, and a buffer of `Wb` (written, or
 the stack) is apart from every other: buffers only read may overlap each
 other. -/
 structure OkW (L : Lay) (Wb : List Nat) : Prop where
   fit : ∀ i < L.sizes.length, (L.ptr i).toNat + L.size i ≤ 2 ^ 64
-  disj : ∀ i < L.sizes.length, ∀ j < L.sizes.length, i ≠ j → (i ∈ Wb ∨ j ∈ Wb) → (bufR L i).Disjoint (bufR L j)
+  disj : ∀ i < L.sizes.length, ∀ j < L.sizes.length, i ≠ j → (i ∈ Wb ∨ j ∈ Wb) → (L.buf i).Disjoint (L.buf j)
 
 theorem OkW.ok {L : Lay} {Wb : List Nat} (h : OkW L Wb) (hall : ∀ i < L.sizes.length, i ∈ Wb) : L.Ok :=
   ⟨h.fit, fun i hi j hj hij => h.disj i hi j hj hij (.inl (hall i hi))⟩
@@ -100,8 +98,8 @@ structure Site (L : Lay) (Wb : List Nat) (STK : Nat) (s : State) : Prop where
   r30 : s.gpr .r30 = L.ptr 2
   r29 : s.gpr .r29 = L.ptr 3
   r28 : s.gpr .r28 = L.ptr 4
-  cw : ∀ i ∈ Wb, i ≠ 1 → bufR L i ∈ s.wr
-  cr : ∀ i < 5, i ≠ 1 → bufR L i ∈ s.rd ++ s.wr
+  cw : ∀ i ∈ Wb, i ≠ 1 → L.buf i ∈ s.wr
+  cr : ∀ i < 5, i ≠ 1 → L.buf i ∈ s.rd ++ s.wr
 
 theorem Site.kept {L : Lay} {Wb : List Nat} {STK : Nat} {s s' : State} (h : Site L Wb STK s) {rs : List Region}
     (hk : Kept rs s s') : Site L Wb STK s' :=
@@ -299,12 +297,12 @@ include h hK
 
 theorem hashLay_ok : (hashLay L s K).Ok := by
   have hL := h.ok
-  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 48, 48⟩ (bufR L 1) := by
-    rw [bufR, show (⟨L.ptr 1, L.size 1⟩ : Region) = L.R 1 0 STK by
+  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 48, 48⟩ (L.buf 1) := by
+    rw [Lay.buf, show (⟨L.ptr 1, L.size 1⟩ : Region) = L.R 1 0 STK by
       rw [h.sz1]; simp only [Lay.R, BitVec.add_zero]]
     exact h.belowSub h.s48
   have hl5 := h.len
-  have bi : ∀ k, k < 5 → k ≠ 1 → Region.Sub ⟨(hashLay L s K).ptr k, (hashLay L s K).size k⟩ (bufR L k) :=
+  have bi : ∀ k, k < 5 → k ≠ 1 → Region.Sub ⟨(hashLay L s K).ptr k, (hashLay L s K).size k⟩ (L.buf k) :=
     fun k hk hk1 => by
       rw [hashLay_ptr L s K hk1]
       intro x hx
@@ -365,7 +363,7 @@ theorem hashLay_ok : (hashLay L s K).Ok := by
 theorem Site.ctx : Ctx (hashLay L s K) s :=
   ⟨hashLay_ok h hK, by rw [hashLay_size L s (by decide) (.inl rfl) (by decide)]; exact h.sz0, rfl,
     by simp [hashLay], by rw [h.r31]; rfl, Nat.le_trans h.s48 h.spk, by simp [hashLay],
-    by rw [show (⟨(hashLay L s K).ptr 0, (hashLay L s K).size 0⟩ : Region) = bufR L 0 from rfl]
+    by rw [show (⟨(hashLay L s K).ptr 0, (hashLay L s K).size 0⟩ : Region) = L.buf 0 from rfl]
        exact h.cw 0 h.w0 (by decide)⟩
 
 end
