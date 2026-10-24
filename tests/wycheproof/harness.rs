@@ -63,7 +63,8 @@ pub const HOST_WITHOUT_IFMA_VAR: &str = "VG_TEST_HOST_WITHOUT_IFMA";
         target_arch = "x86_64",
         target_arch = "x86",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
@@ -86,7 +87,8 @@ pub fn rsa_bits_tested(bits: usize) -> bool {
         target_arch = "x86_64",
         target_arch = "x86",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
@@ -100,7 +102,8 @@ pub fn rsa_bits_signed(bits: usize) -> bool {
         target_arch = "x86_64",
         target_arch = "x86",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
@@ -116,7 +119,8 @@ pub fn rsa_key_tested(n: &[u8]) -> bool {
         target_arch = "x86_64",
         target_arch = "x86",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
@@ -265,7 +269,8 @@ impl<P, T> TestFile<P, T> {
             target_arch = "x86_64",
             target_arch = "x86",
             target_arch = "aarch64",
-            target_arch = "arm"
+            target_arch = "arm",
+            target_arch = "powerpc64"
         ),
         feature = "alloc"
     ))]

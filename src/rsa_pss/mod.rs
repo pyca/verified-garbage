@@ -33,7 +33,8 @@
         target_arch = "x86",
         target_arch = "x86_64",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
@@ -159,7 +160,12 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 type SignFn<const N: usize> = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -202,7 +208,12 @@ type VerifyFn<const N: usize> = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`'s signature, for `N`-byte hash values.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 type VerifyFn<const N: usize> = unsafe extern "C" fn(
     *const u8,
     usize,

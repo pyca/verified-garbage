@@ -34,7 +34,8 @@
         target_arch = "x86",
         target_arch = "x86_64",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
@@ -117,7 +118,7 @@ macro_rules! verified_fn_types {
         #[cfg(target_arch = "x86_64")]
         type $name $(<const $l: usize>)? = unsafe extern "sysv64" fn($($arg),*) -> $ret;
         $(#[$doc])*
-        #[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+        #[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm", target_arch = "powerpc64"))]
         type $name $(<const $l: usize>)? = unsafe extern "C" fn($($arg),*) -> $ret;
     )*};
 }

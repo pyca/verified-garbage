@@ -43,7 +43,8 @@
         target_arch = "x86",
         target_arch = "x86_64",
         target_arch = "aarch64",
-        target_arch = "arm"
+        target_arch = "arm",
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
@@ -246,7 +247,12 @@ type DecryptFn = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 type DecryptFn = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -466,6 +472,11 @@ mod tests {
         #[cfg(target_arch = "aarch64")]
         let (shas, crts) = (
             [Sha256Backend::Scalar, Sha256Backend::Sha2].as_slice(),
+            [Backend::Baseline].as_slice(),
+        );
+        #[cfg(target_arch = "powerpc64")]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar].as_slice(),
             [Backend::Baseline].as_slice(),
         );
         #[cfg(all(
