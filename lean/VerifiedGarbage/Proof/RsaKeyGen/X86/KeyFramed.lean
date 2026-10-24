@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallValid
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySaved
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyNoSpCode
 import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
-import VerifiedGarbage.Proof.Mont.X86.ArgFar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySized
