@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Call
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Exits
+import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Exits
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
+import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # After an attempt (x86)
 

@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Poly1305.Spec
+meta import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Poly1305 on PPC64LE: `init`

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentFilter
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64
 public import VerifiedGarbage.Proof.Mont.Words32

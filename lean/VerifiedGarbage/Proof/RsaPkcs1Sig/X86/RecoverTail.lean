@@ -6,7 +6,6 @@ public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Compare
 
 /-! # Compare the reconstructed encoding and release the trailing digest under its mask -/
 

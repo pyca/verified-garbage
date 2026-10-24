@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Scrypt.Whole
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Correct
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Correct
 
 /-!
 # scrypt on PPC64LE: constant time, up to the indices `j`, and the shared contract

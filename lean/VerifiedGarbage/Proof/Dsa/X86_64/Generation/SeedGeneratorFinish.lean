@@ -16,6 +16,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 
+
+variable {checkName : String}
+
 theorem seedGeneratorFinish_ok (M : Mont) (Sq : MontS)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (value qval : Nat)
@@ -25,7 +28,7 @@ theorem seedGeneratorFinish_ok (M : Mont) (Sq : MontS)
     (bq : Spec.Rsa.bytesAt s.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen qval)
     {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
     WP isa (.seq (Impl.Dsa.X86_64.Generation.generatorSearch Sq.mm M.mm p.geo.pLen)
-      (Impl.Dsa.X86_64.Generation.onSuccess (Impl.Dsa.X86_64.Generation.finishDomain Sq.mm M.mm p.geo.pLen p.geo.qLen))) s
+      (Impl.Dsa.X86_64.Generation.onSuccess (Impl.Dsa.X86_64.Generation.finishDomain (checkName := checkName) Sq.mm M.mm p.geo.pLen p.geo.qLen))) s
       (SeedFinished p W (VG.Proof.Dsa.Generation.generatorResult value qval
         ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used)) s) := by
   have pfit : value < 256 ^ p.geo.pLen := by
@@ -48,7 +51,7 @@ theorem seedGeneratorFinish_ok (M : Mont) (Sq : MontS)
       have pv : Spec.Rsa.bytesAt v.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen value := hm ▸ bpu
       have qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen qval := hm ▸ bqu
       have gvbytes : Spec.Rsa.bytesAt v.mem (off p.geo.B g) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen gv := hm ▸ bgu
-      refine WP.mono (finishDomain_ok M Sq mv ⟨value, qval, gv⟩ pfit qfit (Nat.lt_trans upper pfit) pv qv gvbytes)
+      refine WP.mono (finishDomain_ok (checkName := checkName) M Sq mv ⟨value, qval, gv⟩ pfit qfit (Nat.lt_trans upper pfit) pv qv gvbytes)
         fun t ⟨mt, bytes, ft, rt, wt⟩ => ?_
       refine ⟨_, used, mt, hu, ?_, ?_, ?_, ?_, rt.trans (kv.2.1.trans ru), wt.trans (kv.2.2.trans wu)⟩
       · simpa [upd] using u16

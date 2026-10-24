@@ -5,12 +5,13 @@ public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.PPC64LE.Freeze
 import VerifiedGarbage.Proof.X448.PPC64LE.Invert
-import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.X448.Invert
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448 on PPC64LE: the encoding of `R`

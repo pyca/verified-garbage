@@ -19,6 +19,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.X86_64.Spill VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MillerRabin.X86_64
 
+
+variable {checkName : String}
+
 def abiResult (s : State) : Option (List Byte) :=
   Spec.Dsa.generateParametersBytes (s.gpr .rdx).toNat (s.gpr .rcx).toNat
     (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
@@ -43,7 +46,7 @@ theorem entryBody_abi (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel
     (hw : u.wr = (allocState 48 s).wr)
     (hf : Frame [⟨savedBase s, 48⟩] s.mem u.mem)
     (saved : Saved u.mem (savedBase s) s.gpr spillSlots) :
-    WP isa (Impl.Dsa.X86_64.Generation.entryBody H.sha1 H.sha256 Sq.mm M.mm K.run)
+    WP isa (Impl.Dsa.X86_64.Generation.entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run)
       (allocState 296 u) fun t =>
       EntryResult s t ∧ Saved t.mem (savedBase s) s.gpr spillSlots ∧
       t.gpr .rsp = (allocState 296 u).gpr .rsp ∧ t.rd = u.rd ∧ t.wr = (allocState 296 u).wr := by
@@ -62,7 +65,7 @@ theorem entryBody_abi (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel
     simpa only [contextOf, tapeOf, geometryOf, bytesAt_length] using h.seedsLength
   have hs : (contextOf h).hs.bytes.length % (contextOf h).geo.pLen = 0 := by
     simpa only [contextOf, tapeOf, geometryOf, bytesAt_length] using h.hsLength
-  apply WP.mono (entryBody_ok H M Sq K init (outputPlanOf h) output seeds hs)
+  apply WP.mono (entryBody_ok (checkName := checkName) H M Sq K init (outputPlanOf h) output seeds hs)
   intro t ⟨status, bytes, ft, sp, rd, wr⟩
   have outlen : 2 * (contextOf h).geo.pLen + (contextOf h).geo.qLen = (s.gpr .rsi).toNat := h.outLength.symm
   rw [outlen] at bytes ft

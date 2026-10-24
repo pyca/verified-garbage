@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.MulFn
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Field
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Word
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed25519 on PPC64LE: `vg_gf25519_r32_mul`'s code

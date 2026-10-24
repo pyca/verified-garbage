@@ -38,6 +38,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.Generation.Layout VG.Impl.RsaOaep.X86_64
 
+
+variable {checkName : String}
+
 structure ValidationContext where
   context : GenerationContext
   params : List Byte
@@ -57,6 +60,16 @@ def ValidationContext.plan (p : ValidationContext) : ValidatePublic where
   hash := p.context.geo.parts_disjoint
     (p.context.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide))
     p.context.geo.validationRoom (Or.inl (by decide))
+  stack := (p.context.geo.stack_part p.context.geo.validationRoom).sub_left
+    (below_sub (by decide) (by decide))
+  paramsStack := by
+    change (below p.context.geo.F 8).Disjoint ⟨off p.context.geo.B packed, p.params.length⟩
+    rw [p.length]
+    have pn : p.context.geo.pLen ≤ 384 := by rcases p.context.geo.width with h | h | h <;> omega
+    have qn : p.context.geo.qLen ≤ 32 := by rcases p.context.geo.qWidth with h | h <;> omega
+    exact (p.context.geo.stack_part (p.context.geo.small_bound (d := packed)
+      (n := 2 * p.context.geo.pLen + p.context.geo.qLen) (by decide)
+      (by unfold arithmeticBytes; omega))).sub_left (below_sub (by decide) (by decide))
 
 def SeedValidateBefore (pLen qLen : Nat) (p : ValidationContext) (s : State) : Prop :=
   GenerationMemoryBefore p.context s ∧
@@ -86,7 +99,7 @@ theorem seedValidate_before {pLen qLen : Nat} {p : ValidationContext} {s : State
 theorem seedValidate_ct (M : Mont) (Sq : MontS) (pLen qLen : Nat)
     (sizes : (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ qLen = 32) ∨ (pLen = 384 ∧ qLen = 32)) :
     RelCT isa (Two (SeedValidateBefore pLen qLen))
-      (Impl.Dsa.X86_64.Generation.validate Sq.mm M.mm pLen qLen) (fun _ _ => True) :=
-  two_map ValidationContext.plan (fun _ _ h => seedValidate_before h) (validate_ct M Sq pLen qLen sizes)
+      (Impl.Dsa.X86_64.Generation.validate (checkName := checkName) Sq.mm M.mm pLen qLen) (fun _ _ => True) :=
+  two_map ValidationContext.plan (fun _ _ h => seedValidate_before h) (validate_ct (checkName := checkName) M Sq pLen qLen sizes)
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -1,13 +1,15 @@
 module
 public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
-public import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.Bytes
 
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
 import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.X448.Ladder
+public import VerifiedGarbage.Spec.X448.Contract
 
 /-!
 # X448 on PPC64LE: the setup

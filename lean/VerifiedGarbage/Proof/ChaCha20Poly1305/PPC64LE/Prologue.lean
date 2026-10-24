@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: the prologue

@@ -16,6 +16,9 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MillerRabin.X86_64 VG.Impl.Dsa.X86_64.Generation
 
+
+variable {checkName : String}
+
 theorem generation_alloc {s : State} {bytes : Nat}
     (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0) (hl : bytes ≤ (s.gpr .rsp).toNat) :
     isa.push (.alloc bytes) s = some (allocState bytes s) := by
@@ -37,8 +40,8 @@ theorem entryInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel
     (fa : Frame [⟨savedBase s, 48⟩] s.mem a.mem)
     (gb : b.gpr = (allocState 48 t).gpr) (rb : b.rd = t.rd) (wb : b.wr = (allocState 48 t).wr)
     (fb : Frame [⟨savedBase t, 48⟩] t.mem b.mem) {tsa tsb : List Leak}
-    (ea : Exec isa (.frame (.alloc 296) (entryBody H.sha1 H.sha256 Sq.mm M.mm K.run) (.free 296)) a tsa u)
-    (eb : Exec isa (.frame (.alloc 296) (entryBody H.sha1 H.sha256 Sq.mm M.mm K.run) (.free 296)) b tsb v) :
+    (ea : Exec isa (.frame (.alloc 296) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (.free 296)) a tsa u)
+    (eb : Exec isa (.frame (.alloc 296) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (.free 296)) b tsb v) :
     tsa = tsb ∧ u.gpr .rsp = v.gpr .rsp := by
   cases ea with
   | frame pa ba qa =>
@@ -50,7 +53,7 @@ theorem entryInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel
       have ha := entryInitial_ct hs ga ra wa fa
       have hb := entryInitial_ct ht gb rb wb fb
       rw [← hp.parameter (hs := hs) (ht := ht)] at hb
-      have traces := (entryBody_ct H M Sq K 3 (Or.inr rfl) _ _ _ _ _ _ ⟨parameterOf hs, ha, hb⟩ ba bb).1
+      have traces := (entryBody_ct (checkName := checkName) H M Sq K 3 (Or.inr rfl) _ _ _ _ _ _ ⟨parameterOf hs, ha, hb⟩ ba bb).1
       refine ⟨by simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using traces, ?_⟩
       rw [generation_free_rsp qa, generation_free_rsp qb, ga, gb]
       change s.gpr .rsp - BitVec.ofNat 64 48 = t.gpr .rsp - BitVec.ofNat 64 48

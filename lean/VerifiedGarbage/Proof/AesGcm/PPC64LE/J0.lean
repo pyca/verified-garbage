@@ -5,10 +5,10 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 public import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Cmac.Dbl32
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: the pre-counter block (`j0`)

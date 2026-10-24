@@ -18,13 +18,16 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 open VG.Proof.MillerRabin.X86_64
 
+
+variable {checkName : String}
+
 theorem generate_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (h16 : W 16 = 0) (o : OutputPlan p)
     (hw : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ s.wr)
     (seedLength : p.seeds.bytes.length % p.geo.qLen = 0)
     (hLength : p.hs.bytes.length % p.geo.pLen = 0) :
-    WP isa (Impl.Dsa.X86_64.Generation.generate H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) s fun t =>
       let result := Spec.Dsa.generateParametersBytes p.geo.pLen p.geo.qLen p.seeds.bytes p.hs.bytes p.rand.bytes
       t.gpr .rax = BitVec.ofNat 64 (Spec.Dsa.signStatus result) ∧
       Spec.Rsa.bytesAt t.mem (p.saved 6) (2 * p.geo.pLen + p.geo.qLen) =
@@ -36,7 +39,7 @@ theorem generate_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     rw [VG.Proof.Dsa.Generation.generateParametersBytes_attempt p.geo.lengths _ _ _ seedLength hLength]
     simp only [GenerationContext.remaining, List.drop_zero]
   unfold Impl.Dsa.X86_64.Generation.generate
-  refine WP.seq (WP.mono (nativeParameters_ok H M Sq K h (randUsed := 0) h16 (Nat.zero_le _))
+  refine WP.seq (WP.mono (nativeParameters_ok (checkName := checkName) H M Sq K h (randUsed := 0) h16 (Nat.zero_le _))
     fun u ⟨Wu, mu, result, fu, ru, wu⟩ => ?_)
   refine WP.mono (finishOutput_ok mu o (by rw [wu]; exact hw) (p.remaining 0 0) result)
     fun t ⟨status, bytes, ft, kt⟩ => ?_

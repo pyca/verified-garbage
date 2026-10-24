@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestCoreTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrivateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateStack
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-! # All prepared witnesses share one public private frame and one released iteration count -/
 

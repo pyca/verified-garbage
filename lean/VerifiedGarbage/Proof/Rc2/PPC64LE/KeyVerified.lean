@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Key
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Key
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rc2.PPC64LE.Key
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -14,6 +14,10 @@ meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.ExpandKey
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+public import VerifiedGarbage.Proof.Rc2.PiLit
 
 /-! # Verified RC2 key expansion on PPC64LE -/
 

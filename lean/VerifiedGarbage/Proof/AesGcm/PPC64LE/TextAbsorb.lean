@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
-public import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: absorbing the text (`textAbsorb`)

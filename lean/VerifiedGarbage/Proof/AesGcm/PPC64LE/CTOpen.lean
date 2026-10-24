@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_open` is constant time

@@ -17,6 +17,8 @@ public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Absorb
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 
 /-!
 # AES-GCM-SIV on PPC64LE: POLYVAL in two runs

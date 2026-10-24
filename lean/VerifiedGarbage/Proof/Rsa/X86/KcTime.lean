@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.KcTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.KcSized
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
-import VerifiedGarbage.Proof.Rsa.X86.KcPair
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Taint

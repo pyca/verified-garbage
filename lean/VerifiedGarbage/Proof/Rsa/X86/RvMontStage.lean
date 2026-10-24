@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 import VerifiedGarbage.Proof.Rsa.X86.RvMontArgs
@@ -10,8 +9,9 @@ import VerifiedGarbage.Proof.Rsa.X86.RvMontClear
 import VerifiedGarbage.Proof.Rsa.X86.RvFrameStep
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.RvViews
-import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Rsa.MontMul
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # A Montgomery multiplication advances the tracked recovery stage
 

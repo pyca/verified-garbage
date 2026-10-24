@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
-import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset

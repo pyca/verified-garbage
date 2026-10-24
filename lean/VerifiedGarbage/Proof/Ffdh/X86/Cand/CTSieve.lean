@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTSmall
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoopTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoopTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import VerifiedGarbage.Proof.Framework.X86.Syms
@@ -11,6 +11,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
+import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
 
 /-!
 # The FFDH candidate on i686: the sieve's timing

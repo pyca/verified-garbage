@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.WorkspaceTaint
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Time
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.TimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvBatchTimeCheck
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.RvGcdSet
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.FrameBase

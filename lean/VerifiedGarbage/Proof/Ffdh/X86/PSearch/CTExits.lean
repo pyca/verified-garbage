@@ -9,6 +9,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Two runs of the parameter search's exits (x86)
 

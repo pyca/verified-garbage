@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingBase
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Args
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Metadata
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Bounds
-import VerifiedGarbage.Proof.Mont.X86.Rt.Sub
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+import VerifiedGarbage.Proof.Mont.X86.OutsZ
 
 /-! # Read-only prepared metadata across the multiplication's timing proof -/
 

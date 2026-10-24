@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 import VerifiedGarbage.Proof.Rsa.X86.InvChoose
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Framework.Mem

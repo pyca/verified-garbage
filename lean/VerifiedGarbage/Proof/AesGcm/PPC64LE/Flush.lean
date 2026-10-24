@@ -1,15 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 public import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
 # AES-GCM on PPC64LE: padding the buffer (`flush`) and the lengths block (`lens`)

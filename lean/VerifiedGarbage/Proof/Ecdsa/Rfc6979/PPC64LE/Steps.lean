@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Msg
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Msg
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Args
 
 /-!
 # Deterministic ECDSA on PPC64LE: the steps on `K` and `V`

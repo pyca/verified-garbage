@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedDispatch
 import VerifiedGarbage.Proof.Rsa.X86.RvFailure
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Recovery and refusal for a selected public modulus width -/
 

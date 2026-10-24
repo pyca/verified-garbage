@@ -1,17 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Stream.Copy
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Stream.Copy
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Stream.Checks
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Verified
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Rc2.Stream
 import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.Stream
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-! # Streaming RC2-CBC on PPC64LE: `update` -/
 

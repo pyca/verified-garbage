@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFn
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontContract
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontContract
 public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontFn
 
 /-!
 # Complete point addition and doubling as functions, on PPC64LE: the contracts

@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # The x86 RSA padding functions: byte loops

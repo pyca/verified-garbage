@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.PPC64LE.Mul
+import VerifiedGarbage.Proof.Idea.PPC64LE.Mul
 import VerifiedGarbage.Proof.Idea.Arith
+public import VerifiedGarbage.Impl.Idea.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Spec.Idea
 
 /-!
 # IDEA on PPC64LE: a round

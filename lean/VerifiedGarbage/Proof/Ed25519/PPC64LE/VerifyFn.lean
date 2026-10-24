@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

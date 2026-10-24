@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Minv
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # A prime search on PPC64LE: calling the round
@@ -192,13 +193,37 @@ structure RcPost (s : State) (B : Addr) (L w c a : Nat) (t : State) : Prop where
   sp : t.sp = s.sp
   cs : ∀ r ∈ preserved, r ∉ Pub.montRegs → t.gpr r = s.gpr r
 
-theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
+/-- Before the call: the witness in Montgomery form in array 5, and the
+arguments in `r3` and `r4`. -/
+structure RcMid (s : State) (B : Addr) (L w c a : Nat) (t : State) : Prop where
+  prep : Prep t B L w c
+  a5 : val32 t.mem B (slot w 5) (2 * w) = a % c * 2 ^ (64 * w) % c
+  r3 : t.gpr .r3 = B
+  r4 : t.gpr .r4 = BitVec.ofNat 64 L
+  outs : Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w 5, 8 * (w + 2))] s.mem t.mem
+  keep : Keep (Pub.montRegs ++ ([.r3, .r4] : List Reg)) s t
+
+/-- The arrays `montOp` changes are not kept by the round. -/
+theorem kept_sep {w : Nat} : ∀ d k, 0 < k → (∀ i, d ≤ i → i < d + k → Kept w i) → ∀ r ∈ [(slot w 2, 8 * (w + 2)),
+    (slot w 3, 8 * (w + 2)), (slot w 5, 8 * (w + 2))], d + k ≤ r.1 ∨ r.1 + r.2 ≤ d := by
+  intro d k hk0 hk r hr
+  have hj : ∃ j ∈ [2, 3, 5, 6, 8], r = (slot w j, 8 * (w + 2)) := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    exacts [⟨2, by simp, rfl⟩, ⟨3, by simp, rfl⟩, ⟨5, by simp, rfl⟩]
+  obtain ⟨j, hjm, rfl⟩ := hj
+  show d + k ≤ slot w j ∨ slot w j + 8 * (w + 2) ≤ d
+  by_contra hc
+  simp only [not_or, Nat.not_le] at hc
+  by_cases hd : d ≤ slot w j
+  · have := (hk (slot w j) hd (by omega)).2.1 j hjm; omega
+  · have := (hk d (Nat.le_refl _) (by omega)).2.1 j hjm; omega
+
+theorem rcHead_ok {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
     (h12 : s.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32)
-    (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
-    (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩) :
-    WP isa (.seq (PublicChecked.montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen])
-      (.seq (.call R.name R.code) (.block (([.lsl .r3 .r3 32, .lsr .d .r3 .r3 32] : List Instr) ++ regsBack))))) s
-      (RcPost s B L w c a) := by
+    (ha : arr s.mem B w 4 = a) (hac : a < c) :
+    WP isa (.seq (PublicChecked.montOp 5 4 1) (.block [.addi .r3 .r31 0, ldh .r4 hWsLen])) s
+      (RcMid s B L w c a) := by
   have e := h.env
   have hnw := e.hs.nowrap
   have hZ := e.hZ
@@ -222,20 +247,7 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
     refine VG.Proof.Bignum.mont_cancel hR ?_
     rw [eq₁, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
   -- What `montOp` keeps.
-  have sep₁ : ∀ d k, 0 < k → (∀ i, d ≤ i → i < d + k → Kept w i) → ∀ r ∈ [(slot w 2, 8 * (w + 2)),
-      (slot w 3, 8 * (w + 2)), (slot w 5, 8 * (w + 2))], d + k ≤ r.1 ∨ r.1 + r.2 ≤ d := by
-    intro d k hk0 hk r hr
-    have hj : ∃ j ∈ [2, 3, 5, 6, 8], r = (slot w j, 8 * (w + 2)) := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      exacts [⟨2, by simp, rfl⟩, ⟨3, by simp, rfl⟩, ⟨5, by simp, rfl⟩]
-    obtain ⟨j, hjm, rfl⟩ := hj
-    show d + k ≤ slot w j ∨ slot w j + 8 * (w + 2) ≤ d
-    by_contra hc
-    simp only [not_or, Nat.not_le] at hc
-    by_cases hd : d ≤ slot w j
-    · have := (hk (slot w j) hd (by omega)).2.1 j hjm; omega
-    · have := (hk d (Nat.le_refl _) (by omega)).2.1 j hjm; omega
+  have sep₁ := @kept_sep w
   have w₁ : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s₁.mem B d = word s.mem B d :=
     fun d hd hk => Outs.word o₁ (sep₁ d 8 (by decide) hk) (by omega)
   have v₁ : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
@@ -251,12 +263,34 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
   have r0 : s₁.mem.readW B 64 = BitVec.ofNat 64 L := by
     have := p₁.len
     simpa only [word, off, BitVec.add_zero] using this
-  refine WP.seq (WP.mono (WP.keep [.r3, .r4] (Q := fun u => u.gpr .r3 = B ∧ u.gpr .r4 = BitVec.ofNat 64 L ∧
+  refine WP.mono (WP.keep [.r3, .r4] (Q := fun u => u.gpr .r3 = B ∧ u.gpr .r4 = BitVec.ofNat 64 L ∧
       u.mem = s₁.mem) (by simp only [ldh, hWsLen]; prun [h31₁, BitVec.add_zero, l0, r0]) (by decide))
-    fun s₂ ⟨⟨r3₂, r4₂, m₂⟩, k₂⟩ => ?_)
+    fun s₂ ⟨⟨r3₂, r4₂, m₂⟩, k₂⟩ => ?_
   have p₂ : Prep s₂ B L w c := p₁.transfer (p₁.env.keep k₂ (by decide))
     (fun d _ _ => by rw [m₂]) (fun j _ _ => by rw [m₂])
   have k12 := k₁.trans k₂
+  exact ⟨p₂, by rw [m₂]; exact h5, r3₂, r4₂, by rw [m₂]; exact o₁, k12⟩
+
+theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
+    (h12 : s.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32)
+    (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
+    (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩) :
+    WP isa (.seq (PublicChecked.montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen])
+      (.seq (.call R.name R.code) (.block (([.lsl .r3 .r3 32, .lsr .d .r3 .r3 32] : List Instr) ++ regsBack))))) s
+      (RcPost s B L w c a) := by
+  have e := h.env
+  have hnw := e.hs.nowrap
+  have hZ := e.hZ
+  have hw4 := e.hw
+  have hw128 := e.hw'
+  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
+  refine WP.assoc (WP.seq (WP.mono (rcHead_ok h h12 ha hac) fun s₂ mid => ?_))
+  have sep₁ := @kept_sep w
+  have p₂ := mid.prep
+  have k12 := mid.keep
+  have r3₂ := mid.r3
+  have r4₂ := mid.r4
   have hL64 : L < 2 ^ 64 := by omega
   have hwr₂ : (⟨B, 8 * L⟩ : Region) ∈ s₂.wr := by rw [k12.wr]; exact hwr
   -- The round.
@@ -265,7 +299,7 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
   · sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
     simp only [r3₂, r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm L 8, k12.sp]
     exact ⟨hsp, trivial, hstk, by omega, p₂.layout, p₂.prepared (by
-      show val32 s₂.mem B (slot w 5) (2 * w) < c; rw [m₂, h5]; exact Nat.mod_lt _ (by have := h.c3; omega))⟩
+      show val32 s₂.mem B (slot w 5) (2 * w) < c; rw [mid.a5]; exact Nat.mod_lt _ (by have := h.c3; omega))⟩
   · exact fun x n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ (by
       simp only [List.nil_append, List.mem_singleton] at hr; rw [hr]; exact hwr₂), hc⟩
   · exact fun x n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton] at hr; rw [hr]; exact hwr₂, hc⟩
@@ -275,7 +309,7 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
   rw [r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64] at hk3
   have hn₂ : Spec.Rsa.Mont.numAt s₂.mem B w 0 = c := (numAt_eq _ _ _ _).trans p₂.n
   have h5₂ : Spec.Rsa.Mont.numAt s₂.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
-    rw [numAt_eq, m₂]; exact h5
+    rw [numAt_eq]; exact mid.a5
   rw [hn₂] at hres
   have hr3 := hres a h5₂
   have h31₃ : s₃.gpr .r31 = B := (hcs .r31 (by decide)).trans ((k12.gpr .r31 (by decide)).trans e.h31)
@@ -314,8 +348,8 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
     rw [hx, ← BitVec.toNat_setWidth, hr3]
     split <;> rfl
   · intro i hi hk hj ht
-    rw [tm, hk3 i hi hk hj ht, m₂]
-    refine o₁ _ fun r hr => ?_
+    rw [tm, hk3 i hi hk hj ht]
+    refine mid.outs _ fun r hr => ?_
     rw [ofs_add i (by omega)]
     have := sep₁ i 1 (by decide) (fun i' h1 h2 => by
       rw [show i' = i by omega]; exact ⟨hk, hj, ht⟩) r hr
@@ -323,8 +357,8 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
   · intro x hx
     have hx1 : ¬ (⟨B, 8 * L⟩ : Region).Contains x 1 := hx _ (List.mem_cons_self)
     have hx2 : ¬ (below s.sp 176).Contains x 1 := hx _ (List.mem_cons_of_mem _ List.mem_cons_self)
-    rw [tm, hf x fun r hr => ?_, m₂]
-    · refine o₁ _ fun r hr => ?_
+    rw [tm, hf x fun r hr => ?_]
+    · refine mid.outs _ fun r hr => ?_
       simp only [Region.Contains] at hx1
       simp only [ofs]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

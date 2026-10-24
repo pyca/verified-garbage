@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
-import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.Words
 /-! # The transition matrix stored in the RSA workspace -/
 @[expose] public section

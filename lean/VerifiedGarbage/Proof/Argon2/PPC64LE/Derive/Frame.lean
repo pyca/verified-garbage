@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 
 /-!
 # Argon2 on PPC64LE: the derivation's frame

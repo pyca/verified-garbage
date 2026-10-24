@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Absorb
 public import VerifiedGarbage.Proof.GcmSiv.Words
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 public import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCcm.BytesAt
@@ -10,10 +10,15 @@ import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 
 /-!
 # AES-GCM-SIV on PPC64LE: POLYVAL (`polyval`)

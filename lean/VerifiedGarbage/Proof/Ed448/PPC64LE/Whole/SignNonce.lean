@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignSteps
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
