@@ -231,6 +231,75 @@ theorem power_vp {pv ev : Nat} {H : Addr} {hb : List Byte} (cert : CertC G.pLen 
   VP.assoc (VP.assoc (VP.assoc (VP.seq (powA_vp hPc hpv hp2 hcl)
     (VP.seq (hPtr_vp hH hHv) (powC_vp cert hEc hev hp2 hpo hcl hsrc)))))
 
+/-- `g`, array 4 of the P space, big-endian at `sG`. -/
+theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, Apart sG G.pLen x) :
+    VP (fun σ s => St G c X σ s ∧ Env s G.pS (pZ G.pLen) (pw G.pLen) ∧ arr s.mem G.pS (pw G.pLen) 4 = g)
+      (.seq (.block [scr .r12 sG, .li .r6 G.pLen]) (VG.Impl.Dsa.PPC64LE.storeBE 4))
+      (St G { c with cl := (sG, Spec.Rsa.i2osp g G.pLen) :: c.cl } X) := by
+  refine VP.pub (SS.pub fun σ s h => h.1.1) [.r10, .r29] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
+    (Taint.ofRegs [.r28, .r10, .r29]) (.seq (.block [scr .r12 sG, .li .r6 G.pLen]) (VG.Impl.Dsa.PPC64LE.storeBE 4)),
+    rfl⟩ (fun σ₁ σ₂ s₁ s₂ ⟨_, e₁, _⟩ ⟨_, e₂, _⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [e₁.h10, e₂.h10]
+      · rw [e₁.h29, e₂.h29]) fun σ s ⟨⟨h, x⟩, en, v4⟩ => ?_
+  have gi := h.gi
+  have l := gi.lens3
+  have ⟨pb, pk⟩ := gi.pBig
+  have hE := gi.hEnd_le
+  have hl : G.pLen < 2 ^ 15 ∧ 1 ≤ G.pLen ∧ G.pLen ≤ 8 * pw G.pLen ∧ sG + G.pLen ≤ pB := by
+    rcases l with e | e | e <;> rw [e] <;> decide
+  refine WP.seq (WP.cons (s' := s.write .r12 (off G.scr sG)) ?_ (WP.cons
+    (s' := (s.write .r12 (off G.scr sG)).write .r6 (BitVec.ofNat 64 G.pLen)) (exec_li hl.1) (WP.block_nil ?_)))
+  · rw [show scr .r12 sG = .addi .r12 .r28 sG from rfl, exec_addi (by decide) (by decide), gi.r28]
+  have k : BKeep [.r12, .r6] s ((s.write .r12 (off G.scr sG)).write .r6 (BitVec.ofNat 64 G.pLen)) :=
+    (VG.Proof.Bignum.PPC64LE.Keep.write s .r12 _).trans (VG.Proof.Bignum.PPC64LE.Keep.write _ .r6 _)
+  refine WP.mono (VG.Proof.Dsa.PPC64LE.storeBE_ok (j := 4) (O := off G.scr sG) (k := G.pLen)
+    (en.keep k (by decide)) (by decide) ((gi.scrAt (o := sG) (n := G.pLen) (by omega) hl.2.1).congr k.wr)
+    (by rw [(Upd.write _ .r6 _).other .r12 (by decide), (Upd.write _ _ _).gpr]) (Upd.write _ _ _).gpr hl.2.1
+    hl.2.2.1 ?_) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
+  · intro x hx
+    have fit := gi.scrFit
+    have e := Offset.toNat_sub_add x G.scr (d := sG) (by decide)
+    have hlt := (x - G.scr).isLt
+    change (x - (G.scr + BitVec.ofNat 64 sG)).toNat < G.pLen at hx
+    rw [e] at hx
+    exact le_ofs_off (by decide) (by omega) (.inl (by
+      by_cases hy : sG ≤ (x - G.scr).toNat
+      · rw [show 2 ^ 64 - sG + (x - G.scr).toNat = (x - G.scr).toNat - sG + 2 ^ 64 by omega, Nat.add_mod_right,
+          Nat.mod_eq_of_lt (by omega)] at hx
+        omega
+      · rw [Nat.mod_eq_of_lt (by omega)] at hx; omega))
+  have kk := k.trans kt
+  have bt : Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen = Spec.Rsa.i2osp g G.pLen := by
+    have e1 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen) = g := by
+      rw [vt, VG.Proof.Dsa.PPC64LE.read_low _ _ hl.2.2.1 (by
+        show arr s.mem G.pS (pw G.pLen) 4 < _; rw [v4]; exact hg)]
+      exact v4
+    have := VG.Proof.Rsa.i2osp_os2ip (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen)
+    rw [e1, show (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen).length = G.pLen by simp [Spec.Rsa.bytesAt]] at this
+    exact this.symm
+  have f0 : Frame [G.rs sG G.pLen] s.mem t.mem := frame_of_outside (L := G.pLen) ot
+  refine ⟨h.of_scrs (ws := [.r12, .r6] ++ VG.Proof.Dsa.PPC64LE.storeRegs) ⟨kk.gpr, kk.rd, kk.wr⟩ kk.sp
+    (os := [(sG, G.pLen)]) (fun p hp => by
+      rw [List.mem_singleton] at hp; subst hp
+      refine ⟨by show hEnd ≤ sG; decide, .inl (by simp only [List.length_replicate]; omega),
+        by simp only [List.length_replicate]; omega⟩)
+    (f0.mono fun r hr => List.mem_append_left _ hr) (fun y hy => ?_), x⟩
+  rcases List.mem_cons.mp hy with rfl | hy
+  · refine .inr ⟨by simp only [VG.Proof.Rsa.i2osp_length]; exact bt, ?_⟩
+    refine ⟨by show hEnd ≤ sG; decide, .inl (by simp only [VG.Proof.Rsa.i2osp_length]; omega),
+      by simp only [VG.Proof.Rsa.i2osp_length]; omega⟩
+  · exact .inl ⟨hy, fun p hp => by rw [List.mem_singleton] at hp; subst hp; exact hcl y hy⟩
+
+/-- `g` stored, and `fG` := 1. -/
+theorem gOut_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, Apart sG G.pLen x) :
+    VP (fun σ s => St G c X σ s ∧ Env s G.pS (pZ G.pLen) (pw G.pLen) ∧ arr s.mem G.pS (pw G.pLen) 4 = g)
+      (VG.Impl.Rsa.PPC64LE.Keys.seqs [.block [scr .r12 sG, .li .r6 G.pLen], VG.Impl.Dsa.PPC64LE.storeBE 4, .block (stImm fG 1)])
+      (St G ({ c with cl := (sG, Spec.Rsa.i2osp g G.pLen) :: c.cl }.setV fG 1) X) :=
+  VP.assoc (VP.seq (gStore_vp hg hcl) (stImm_vp (o := fG) (v := 1) (fun σ s h => h.1) (by decide) (varOk_of (by decide))
+    fun σ s t h h' _ => ⟨h', h.2⟩))
+
 end
 
 end VG.Proof.Dsa.PPC64LE.Gen

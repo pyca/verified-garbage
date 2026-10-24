@@ -109,6 +109,46 @@ theorem loadAt_vp {j n : Nat} {P : Addr} {bs : List Byte} (cert : CertL j)
         (hw.fit64 hi)]
       exact top i hi hne
 
+/-- `loadAt_vp` without the top words: array `j`, zero, := the `n` bytes `bs`
+at `r6` (`r8 = n`). -/
+theorem loadZ_vp {j n : Nat} {P : Addr} {bs : List Byte} (cert : CertL j)
+    (hj : j < nArrs) (hjl : j ∈ c.live) (hj0 : c.A j = 0) (hn0 : 0 < n) (hnw : n ≤ 4 * G.w)
+    (hsrc : ∀ σ s, St G c X σ s → Covers [⟨P, n⟩] (s.rd ++ s.wr) ∧
+      Region.Disjoint ⟨P, n⟩ G.rK ∧ Spec.Rsa.bytesAt s.mem P n = bs) :
+    VP (fun σ s => KSt G c X σ s ∧ s.gpr .r6 = P ∧ s.gpr .r8 = BitVec.ofNat 64 n)
+      (VG.Impl.Rsa.PPC64LE.CrtValues.load j)
+      (KSt G { c with A := KU c.A j (Spec.Dsa.decodeBE bs), live := j :: c.live } X) := by
+  refine VP.pub (G := G) (fun σ s hs => ⟨hs.1.1.1.gi.r28, by rw [hs.1.1.1.gi.sp, ← hs.1.1.1.gi.hG]; rfl⟩)
+    [.r29, .r30, .r31, .r6, .r8] cert
+    (fun σ₁ σ₂ s₁ s₂ ⟨⟨_, a⟩, a6, a8⟩ ⟨⟨_, b⟩, b6, b8⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · rw [a.r29, b.r29]
+      · rw [a.r30, b.r30]
+      · rw [a.r31, b.r31]
+      · rw [a6, b6]
+      · rw [a8, b8]) fun σ s ⟨⟨⟨h, x⟩, kr⟩, p6, p8⟩ => ?_
+  obtain ⟨hR, sep, b⟩ := hsrc σ s ⟨h, x⟩
+  have hw := h.wsWith kr (s.rd ++ [⟨P, n⟩])
+  have z : val32 s.mem G.KB (arr G.w j) G.w = 0 := by
+    have := h.arrs.get hjl; rw [hj0] at this; exact this
+  have w96 : G.w ≤ 96 := by simp only [GP.w]; rcases h.lens with e | e | e <;> rw [e] <;> decide
+  have hc : ∀ i < n, (⟨P, n⟩ : Region).Contains (P + BitVec.ofNat 64 i) 1 := fun i hi =>
+    Offset.contains_base _ (by omega) (by omega)
+  refine h.ksWPr hR rfl (P := fun t => Ws t G.KB (kz G.pLen) G.w nArrs ∧ KKeep G.KB G.w [j] [] s.mem t.mem ∧
+      num t.mem G.KB G.w j = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P n) ∧
+      VG.Proof.Bignum.PPC64LE.Keep [.r0, .r5, .r6, .r8] (s.withRegions (s.rd ++ [⟨P, n⟩]) [G.rK]) t) ?_ ?_
+  · refine WP.mono (load_ok hw hj (by decide) p6 p8 hn0 hnw
+      (fun i hi => ⟨⟨P, n⟩, List.mem_append_left _ (List.mem_append_right _ (List.mem_singleton_self _)), hc i hi⟩)
+      (fun i hi x hx e => by subst e; exact absurd (past_of_disjoint' sep (hc i hi)) (Nat.not_le.mpr hx))
+      fun p hp => by rw [← VG.Proof.Bignum.PPC64LE.off_add]; exact VG.Proof.Bignum.byte_zero_of_val32 z hp)
+      fun t ⟨w, k, v, r, _⟩ => ⟨w, k, v, r⟩
+  · intro t ⟨_, k, v, R⟩ hr hw' fK
+    simp only [State.withRegions_mem] at v k
+    have vw : num t.mem G.KB G.w j = Spec.Dsa.decodeBE bs := by rw [v, b, VG.Proof.Dsa.decodeBE_os2ip]
+    have R' : Keep [.r0, .r5, .r6, .r8] s t := ⟨R.gpr, hr, hw'⟩
+    exact ⟨⟨h.of_op R' R.sp fK hj k vw, x⟩, kr.of_keep R'⟩
+
 /-- Array `j`, zero, := the bytes `bs` that a claim puts at byte `o` of `scratch`. -/
 theorem loadS_vp {j o n : Nat} {bs : List Byte} (cert : CertL j)
     (hj : j < nArrs) (hjl : j ∈ c.live) (hj0 : c.A j = 0) (hbs : (o, bs) ∈ c.cl) (hn : bs.length = n)
