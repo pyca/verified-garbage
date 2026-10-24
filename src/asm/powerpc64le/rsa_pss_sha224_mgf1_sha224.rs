@@ -494,3 +494,377 @@ blr",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
     )
 }
+
+/// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-224 and MGF1 with SHA-224, of a SHA-224 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 28-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 30`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
+///
+/// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha224` and `VG.Spec.Mgf1.sha224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
+///
+/// This implementation hashes `M'` with `vg_sha256_update_scratch`, masks `DB` with MGF1 calling `vg_sha256_update_scratch`, and calls `vg_rsa_private_checked` on `EM`. The digest and the salt are only copied and hashed; only the lengths, the modulus' first byte and the public key decide a branch or an address.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `digest` must be valid for reads of 28 bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the 3776 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sha224_mgf1_sha224_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"stdu %r1, -256(%r1)
+addi %r12, %r1, 0
+std %r14, 112(%r12)
+std %r15, 120(%r12)
+std %r16, 128(%r12)
+std %r17, 136(%r12)
+std %r18, 144(%r12)
+std %r19, 152(%r12)
+std %r20, 160(%r12)
+std %r21, 168(%r12)
+std %r22, 176(%r12)
+std %r23, 184(%r12)
+std %r24, 192(%r12)
+std %r25, 200(%r12)
+std %r26, 208(%r12)
+std %r27, 216(%r12)
+std %r28, 224(%r12)
+std %r29, 232(%r12)
+mflr %r0
+std %r0, 240(%r12)
+ld %r14, 440(%r12)
+or %r15, %r6, %r6
+or %r16, %r3, %r3
+or %r17, %r9, %r9
+or %r18, %r10, %r10
+ld %r19, 432(%r12)
+or %r20, %r5, %r5
+or %r21, %r7, %r7
+or %r22, %r8, %r8
+lbz %r9, 0(%r5)
+rldicl %r10, %r9, 63, 1
+rldicl %r11, %r10, 63, 1
+or %r10, %r10, %r11
+rldicl %r11, %r10, 62, 2
+or %r10, %r10, %r11
+rldicl %r11, %r10, 60, 4
+or %r10, %r10, %r11
+addi %r11, %r10, -1
+rldicl %r11, %r11, 1, 63
+or %r23, %r11, %r11
+cmpldi %cr0, %r9, 0
+beq %cr0, 20f
+subf %r3, %r23, %r15
+addi %r3, %r3, -30
+rldicl %r3, %r3, 1, 63
+cmpldi %cr0, %r3, 0
+bne %cr0, 22f
+subf %r3, %r23, %r15
+addi %r3, %r3, -30
+subf %r3, %r19, %r3
+rldicl %r3, %r3, 1, 63
+rldicl %r5, %r19, 1, 63
+or %r3, %r3, %r5
+cmpldi %cr0, %r3, 0
+bne %cr0, 24f
+addi %r4, %r14, 2560
+li %r5, 8
+li %r6, 0
+26:
+stb %r6, 0(%r4)
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 26b
+addi %r12, %r1, 0
+ld %r4, 416(%r12)
+addi %r5, %r14, 2568
+li %r6, 28
+27:
+lbz %r7, 0(%r4)
+stb %r7, 0(%r5)
+addi %r4, %r4, 1
+addi %r5, %r5, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 27b
+addi %r5, %r14, 2596
+addi %r12, %r1, 0
+ld %r4, 424(%r12)
+or %r6, %r19, %r19
+cmpldi %cr0, %r6, 0
+bne %cr0, 28f
+b 29f
+28:
+210:
+lbz %r7, 0(%r4)
+stb %r7, 0(%r5)
+addi %r4, %r4, 1
+addi %r5, %r5, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 210b
+29:
+addi %r3, %r14, 1024
+bl {vg_sha224_init}
+li %r4, 0
+addi %r5, %r14, 2560
+addi %r6, %r19, 36
+addi %r3, %r14, 1024
+addi %r7, %r14, 1352
+bl {vg_sha256_update_scratch}
+addi %r4, %r19, 36
+addi %r3, %r14, 1024
+addi %r5, %r14, 1280
+addi %r6, %r14, 1352
+bl {vg_sha256_finalize_scratch}
+addi %r4, %r14, 0
+or %r5, %r15, %r15
+li %r6, 0
+211:
+stb %r6, 0(%r4)
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 211b
+addi %r4, %r14, 0
+add %r4, %r4, %r15
+subf %r4, %r19, %r4
+addi %r4, %r4, -30
+li %r5, 1
+stb %r5, 0(%r4)
+addi %r5, %r4, 1
+addi %r12, %r1, 0
+ld %r4, 424(%r12)
+or %r6, %r19, %r19
+cmpldi %cr0, %r6, 0
+bne %cr0, 212f
+b 213f
+212:
+214:
+lbz %r7, 0(%r4)
+stb %r7, 0(%r5)
+addi %r4, %r4, 1
+addi %r5, %r5, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 214b
+213:
+addi %r4, %r14, 1280
+addi %r5, %r14, 0
+add %r5, %r5, %r15
+addi %r5, %r5, -29
+li %r6, 28
+215:
+lbz %r7, 0(%r4)
+stb %r7, 0(%r5)
+addi %r4, %r4, 1
+addi %r5, %r5, 1
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 215b
+addi %r4, %r14, 0
+add %r4, %r4, %r15
+addi %r4, %r4, -1
+li %r5, 188
+stb %r5, 0(%r4)
+addi %r24, %r14, 0
+add %r24, %r24, %r15
+addi %r24, %r24, -29
+li %r25, 28
+addi %r26, %r14, 0
+add %r26, %r26, %r23
+subf %r27, %r23, %r15
+addi %r27, %r27, -29
+li %r28, 0
+li %r29, 0
+216:
+addi %r3, %r14, 1024
+bl {vg_sha224_init}
+addi %r3, %r14, 1024
+li %r4, 0
+or %r5, %r24, %r24
+or %r6, %r25, %r25
+addi %r7, %r14, 1352
+bl {vg_sha256_update_scratch}
+addi %r5, %r14, 1344
+or %r8, %r28, %r28
+stb %r8, 3(%r5)
+rldicl %r8, %r8, 56, 8
+stb %r8, 2(%r5)
+rldicl %r8, %r8, 56, 8
+stb %r8, 1(%r5)
+rldicl %r8, %r8, 56, 8
+stb %r8, 0(%r5)
+addi %r3, %r14, 1024
+or %r4, %r25, %r25
+li %r6, 4
+addi %r7, %r14, 1352
+bl {vg_sha256_update_scratch}
+addi %r3, %r14, 1024
+addi %r4, %r25, 4
+addi %r5, %r14, 1280
+addi %r6, %r14, 1352
+bl {vg_sha256_finalize_scratch}
+addi %r11, %r14, 1280
+add %r12, %r26, %r29
+subf %r8, %r29, %r27
+li %r9, 28
+subf %r10, %r9, %r8
+rldicl %r6, %r10, 1, 63
+li %r7, 0
+subf %r6, %r6, %r7
+and %r10, %r10, %r6
+add %r9, %r9, %r10
+217:
+lbz %r10, 0(%r11)
+lbz %r8, 0(%r12)
+xor %r8, %r8, %r10
+stb %r8, 0(%r12)
+addi %r11, %r11, 1
+addi %r12, %r12, 1
+addi %r9, %r9, -1
+cmpldi %cr0, %r9, 0
+bne %cr0, 217b
+addi %r28, %r28, 1
+addi %r29, %r29, 28
+subf %r12, %r27, %r29
+rldicl %r12, %r12, 1, 63
+cmpldi %cr0, %r12, 0
+bne %cr0, 216b
+lbz %r9, 0(%r20)
+rldicl %r10, %r9, 63, 1
+rldicl %r11, %r10, 63, 1
+or %r10, %r10, %r11
+rldicl %r11, %r10, 62, 2
+or %r10, %r10, %r11
+rldicl %r11, %r10, 60, 4
+or %r10, %r10, %r11
+addi %r11, %r10, -1
+rldicl %r11, %r11, 1, 63
+li %r8, 0
+subf %r8, %r11, %r8
+li %r7, 255
+and %r8, %r8, %r7
+or %r10, %r10, %r8
+addi %r4, %r14, 0
+add %r4, %r4, %r23
+lbz %r5, 0(%r4)
+and %r5, %r5, %r10
+stb %r5, 0(%r4)
+stdu %r1, -192(%r1)
+addi %r12, %r1, 0
+std %r17, 96(%r12)
+std %r18, 104(%r12)
+ld %r0, 544(%r12)
+std %r0, 112(%r12)
+ld %r0, 552(%r12)
+std %r0, 120(%r12)
+ld %r0, 560(%r12)
+std %r0, 128(%r12)
+ld %r0, 568(%r12)
+std %r0, 136(%r12)
+ld %r0, 576(%r12)
+std %r0, 144(%r12)
+ld %r0, 584(%r12)
+std %r0, 152(%r12)
+ld %r0, 592(%r12)
+std %r0, 160(%r12)
+ld %r0, 600(%r12)
+std %r0, 168(%r12)
+li %r0, 8192
+add %r0, %r14, %r0
+std %r0, 176(%r12)
+ld %r11, 640(%r12)
+addi %r11, %r11, -1024
+std %r11, 184(%r12)
+or %r3, %r16, %r16
+or %r4, %r15, %r15
+or %r5, %r20, %r20
+or %r6, %r15, %r15
+or %r7, %r21, %r21
+or %r8, %r22, %r22
+addi %r9, %r14, 0
+or %r10, %r15, %r15
+bl {vg_rsa_private_checked}
+addi %r1, %r1, 192
+b 25f
+24:
+or %r4, %r16, %r16
+or %r5, %r15, %r15
+li %r6, 0
+218:
+stb %r6, 0(%r4)
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 218b
+li %r3, 0
+25:
+b 23f
+22:
+or %r4, %r16, %r16
+or %r5, %r15, %r15
+li %r6, 0
+219:
+stb %r6, 0(%r4)
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 219b
+li %r3, 0
+23:
+b 21f
+20:
+or %r4, %r16, %r16
+or %r5, %r15, %r15
+li %r6, 0
+220:
+stb %r6, 0(%r4)
+addi %r4, %r4, 1
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 220b
+li %r3, 0
+21:
+addi %r12, %r1, 0
+ld %r0, 240(%r12)
+mtlr %r0
+ld %r14, 112(%r12)
+ld %r15, 120(%r12)
+ld %r16, 128(%r12)
+ld %r17, 136(%r12)
+ld %r18, 144(%r12)
+ld %r19, 152(%r12)
+ld %r20, 160(%r12)
+ld %r21, 168(%r12)
+ld %r22, 176(%r12)
+ld %r23, 184(%r12)
+ld %r24, 192(%r12)
+ld %r25, 200(%r12)
+ld %r26, 208(%r12)
+ld %r27, 216(%r12)
+ld %r28, 224(%r12)
+ld %r29, 232(%r12)
+addi %r1, %r1, 256
+blr",
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+    )
+}

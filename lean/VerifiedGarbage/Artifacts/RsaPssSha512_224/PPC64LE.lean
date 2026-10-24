@@ -1,14 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Inst
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
-# RSASSA-PSS verification with SHA-512/224 on PPC64LE
+# RSASSA-PSS with SHA-512/224 on PPC64LE: verification and signing
 
-It uses 304 bytes of stack: its frame (256 bytes) and the 48 bytes below it
-that the hash functions' calls use; `vg_rsa_public_precomputed_checked` uses
-none.
+Verification uses 304 bytes of stack: its frame (256 bytes) and the 48 bytes
+below it that the hash functions' calls use; `vg_rsa_public_precomputed_checked`
+uses none.
+
+Signing uses 3776 bytes: the same frame, the 192 bytes of the frame from which
+it calls `vg_rsa_private_checked` (which hold that function's stack arguments
+and the 48 bytes the hash functions' calls use), and `vg_rsa_private_checked`'s
+3328 bytes.
 -/
 
 @[expose] public section
@@ -27,6 +33,15 @@ def artifacts : List Artifact := [
       or an address."]
     code := Impl.RsaPss.PPC64LE.verifyPrecomputed Proof.Hmac.Stream.PPC64LE.Sha512_224.hash
     stack := 304
-    verified := Proof.RsaPss.PPC64LE.link_verified Proof.RsaPss.PPC64LE.sha512_224L }]
+    verified := Proof.RsaPss.PPC64LE.link_verified Proof.RsaPss.PPC64LE.sha512_224L },
+  (Spec.RsaPss.signApi Spec.Mgf1.sha512_224 Spec.Mgf1.sha512_224).artifact PPC64LE.target {
+    notes := ["This implementation hashes `M'` with `" ++ Proof.Hmac.Stream.PPC64LE.Sha512_224.hash.updN ++
+      "`, masks `DB` with MGF1 calling `" ++ Proof.Hmac.Stream.PPC64LE.Sha512_224.hash.updN ++
+      "`, and calls `vg_rsa_private_checked` on `EM`. The digest and the salt are only copied and \
+      hashed; only the lengths, the modulus' first byte and the public key decide a branch or an \
+      address."]
+    code := Impl.RsaPss.PPC64LE.Sign.sign Proof.Hmac.Stream.PPC64LE.Sha512_224.hash
+    stack := 3776
+    verified := Proof.RsaPss.PPC64LE.Sg.sign_link_verified Proof.RsaPss.PPC64LE.sha512_224L }]
 
 end VG.Artifacts.RsaPssSha512_224.PPC64LE

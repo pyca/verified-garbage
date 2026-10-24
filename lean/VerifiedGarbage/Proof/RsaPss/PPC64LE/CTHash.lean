@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
+import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTFixed
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Select
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBase
 import VerifiedGarbage.Proof.Framework.Offset
@@ -89,24 +90,6 @@ end
 section
 variable {D : Nat} {H : Hash} (hH : HashOK H) (cH : HashCT hH) (hD : H.D = D)
 
-include hH in
-theorem upd_args {a t : State} (h : BL D a t) {o len : Nat} (ho : oW + 1024 ≤ o) (hl : o + len ≤ oRsa)
-    (h3 : t.gpr .r3 = off (Sp a) oSt) (h5 : t.gpr .r5 = off (Sp a) o) (h6 : (t.gpr .r6).toNat = len)
-    (h7 : t.gpr .r7 = off (Sp a) oW) : ∃ s, PreL D s ∧ Agree Sp (vP D) a s ∧ UpdArgs Sp (vP D) H s t (off (Sp s) o) len := by
-  have F := hfits hH
-  obtain ⟨_, _, _, _, hW, hR⟩ := offs
-  obtain ⟨s, P, g, b⟩ := h
-  have hS : Sp s = Sp a := g.S
-  refine ⟨s, P, g, P.F, b, by rw [h3, hS], by rw [h5, hS], h6, by rw [h7, hS],
-    Covers.right (by rw [b.wr]; exact sc_cov P.F hl), sdis (.inr (by omega)) hl (by omega),
-    sdis (.inr (by omega)) hl (by omega), cR_dis P.F hl⟩
-
-theorem fin_args {a t : State} (h : BL D a t) (h3 : t.gpr .r3 = off (Sp a) oSt) (h5 : t.gpr .r5 = off (Sp a) oDig)
-    (h6 : t.gpr .r6 = off (Sp a) oW) : ∃ s, PreL D s ∧ Agree Sp (vP D) a s ∧ FinArgs Sp (vP D) s t := by
-  obtain ⟨s, P, g, b⟩ := h
-  have hS : Sp s = Sp a := g.S
-  exact ⟨s, P, g, P.F, b, by rw [h3, hS], by rw [h5, hS], by rw [h6, hS]⟩
-
 include hH cH in
 /-- `update` from states agreeing on its arguments, in both runs. -/
 theorem upd_two {α : Type} {Φ : α → State → Prop} {an : α → State} {o : α → Nat} {len : α → Nat}
@@ -115,19 +98,7 @@ theorem upd_two {α : Type} {Φ : α → State → Prop} {an : α → State} {o 
       t.gpr .r7 = off (Sp (an x)) oW)
     (hr : ∀ x t₁ t₂, Φ x t₁ → Φ x t₂ → t₁.gpr .r4 = t₂.gpr .r4) :
     RelCT isa (Two Φ) H.callUpd fun _ _ => True :=
-  upd_ct (S := Sp) (vf := vP D) cH fun t₁ t₂ ⟨x, h₁, h₂⟩ => by
-    obtain ⟨b₁, ho, hl, x3, x5, x6, x7⟩ := h x t₁ h₁
-    obtain ⟨b₂, -, -, y3, y5, y6, y7⟩ := h x t₂ h₂
-    obtain ⟨s₁, -, g₁, A₁⟩ := upd_args hH b₁ ho hl x3 x5 x6 x7
-    obtain ⟨s₂, -, g₂, A₂⟩ := upd_args hH b₂ ho hl y3 y5 y6 y7
-    refine ⟨s₁, s₂, _, _, _, _, A₁, A₂, fun r hr' => ?_, (b₁.agree (lOk D)).1.trans (b₂.agree (lOk D)).1.symm⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl | rfl | rfl | rfl
-    · rw [x3, y3]
-    · exact hr x t₁ t₂ h₁ h₂
-    · rw [x5, y5]
-    · exact BitVec.eq_of_toNat_eq (x6.trans y6.symm)
-    · rw [x7, y7]
+  upd_twoG (lOk D) hH cH h hr
 
 include cH in
 /-- `finalize` from states agreeing on its arguments, in both runs. -/
@@ -136,18 +107,7 @@ theorem fin_two {α : Type} {Φ : α → State → Prop} {an : α → State}
       t.gpr .r6 = off (Sp (an x)) oW)
     (hr : ∀ x t₁ t₂, Φ x t₁ → Φ x t₂ → t₁.gpr .r4 = t₂.gpr .r4) :
     RelCT isa (Two Φ) H.callFin fun _ _ => True :=
-  fin_ct (S := Sp) (vf := vP D) cH fun t₁ t₂ ⟨x, h₁, h₂⟩ => by
-    obtain ⟨b₁, x3, x5, x6⟩ := h x t₁ h₁
-    obtain ⟨b₂, y3, y5, y6⟩ := h x t₂ h₂
-    obtain ⟨s₁, -, -, A₁⟩ := fin_args b₁ x3 x5 x6
-    obtain ⟨s₂, -, -, A₂⟩ := fin_args b₂ y3 y5 y6
-    refine ⟨s₁, s₂, A₁, A₂, fun r hr' => ?_, (b₁.agree (lOk D)).1.trans (b₂.agree (lOk D)).1.symm⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl | rfl | rfl
-    · rw [x3, y3]
-    · exact hr x t₁ t₂ h₁ h₂
-    · rw [x5, y5]
-    · rw [x6, y6]
+  fin_twoG (lOk D) hH cH h hr
 
 include hH in
 /-- `init` keeps `BL` and the callee-saved registers. -/
@@ -162,81 +122,23 @@ include hH in
 theorem upd_wp {a t : State} (h : BL D a t) {o len : Nat} (ho : oW + 1024 ≤ o) (hl : o + len ≤ oRsa)
     (h3 : t.gpr .r3 = off (Sp a) oSt) (h5 : t.gpr .r5 = off (Sp a) o) (h6 : (t.gpr .r6).toNat = len)
     (h7 : t.gpr .r7 = off (Sp a) oW) :
-    WP isa H.callUpd t fun t' => BL D a t' ∧ ∀ r ∈ preserved, t'.gpr r = t.gpr r := by
-  obtain ⟨s, P, g, A⟩ := upd_args hH h ho hl h3 h5 h6 h7
-  exact WP.mono (upd_ok A.P hH A.b A.h3 A.h5 A.h6 A.h7 A.hdc A.hd₁ A.hd₂ A.hd₃) fun t' ⟨b', g', _⟩ =>
-    ⟨⟨s, P, g, b'⟩, g'⟩
+    WP isa H.callUpd t fun t' => BL D a t' ∧ ∀ r ∈ preserved, t'.gpr r = t.gpr r :=
+  upd_wpG (lOk D) hH h ho hl h3 h5 h6 h7
 
 include hH in
 /-- `finalize` keeps `BL` and the callee-saved registers. -/
 theorem fin_wp {a t : State} (h : BL D a t) (h3 : t.gpr .r3 = off (Sp a) oSt) (h5 : t.gpr .r5 = off (Sp a) oDig)
     (h6 : t.gpr .r6 = off (Sp a) oW) :
     WP isa H.callFin t fun t' => BL D a t' ∧ ∀ r ∈ preserved, t'.gpr r = t.gpr r := by
-  obtain ⟨s, P, g, A⟩ := fin_args h h3 h5 h6
+  obtain ⟨s, P, g, A⟩ := fin_argsG (lOk D) h h3 h5 h6
   exact WP.mono (fin_ok A.P hH A.b A.h3 A.h5 A.h6) fun t' ⟨b', g', _⟩ => ⟨⟨s, P, g, b'⟩, g'⟩
-
-/-- `r3 := S + oSt`, `r7 := S + oW`. -/
-theorem updRegs_wp {a t : State} (h : BL D a t) :
-    WP isa (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) t fun t' => BL D a t' ∧
-      Only [.r3, .r7] t t' ∧ t'.gpr .r3 = off (Sp a) oSt ∧ t'.gpr .r7 = off (Sp a) oW :=
-  wp_addi fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ => wp_nil ⟨(h.only' o₁).only' o₂, (o₁.trans o₂).mono,
-    by rw [o₂.get .r3, e₁, h.r14], by rw [e₂, o₁.get .r14, h.r14]⟩
-
-/-- `r3 := S + oSt`, `r5 := S + oDig`, `r6 := S + oW`. -/
-theorem finRegs_wp {a t : State} (h : BL D a t) :
-    WP isa (.block [.addi .r3 .r14 oSt, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) t fun t' => BL D a t' ∧
-      Only [.r3, .r5, .r6] t t' ∧ t'.gpr .r3 = off (Sp a) oSt ∧ t'.gpr .r5 = off (Sp a) oDig ∧
-      t'.gpr .r6 = off (Sp a) oW :=
-  wp_addi fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ => wp_addi fun t₃ o₃ e₃ => wp_nil ⟨((h.only' o₁).only' o₂).only' o₃,
-    (o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .r3, o₂.get .r3, e₁, h.r14],
-    by rw [o₃.get .r5, e₂, o₁.get .r14, h.r14], by rw [e₃, o₂.get .r14, o₁.get .r14, h.r14]⟩
 
 include hH cH hD in
 /-- `H' = Hash(M')` for a given salt length, in both runs. -/
 theorem hashFixed_ct :
-    RelCT isa (Two fun a t => BL D a t ∧ (a.gpr .r10).toNat + 8 + D ≤ 2048) (hashFixed H) fun _ _ => True := by
-  have F := hfits hH
-  obtain ⟨hE, hSt, hDg, hCt, hW, hR⟩ := offs
-  have hD64 := hH.hD64
-  have hY : oY = 2560 := rfl
-  subst hD
-  -- `init`.
-  refine two_seq (Ψ := fun a t => BL H.D a t ∧ (a.gpr .r10).toNat + 8 + H.D ≤ 2048)
-    (two_seq (Ψ := fun a t => BL H.D a t ∧ t.gpr .r3 = off (Sp a) oSt) (st_taint (bl_pins (fun _ _ h => h.1) []))
-      (fun a t h => st_wp (lOk H.D) h.1) (init_two (lOk H.D) hH cH fun _ _ h => h))
-    (fun a t h => WP.seq (WP.mono (st_wp (lOk H.D) h.1) fun t₁ ⟨b₁, x3⟩ =>
-      WP.mono (init_wp (lOk H.D) hH b₁ x3) fun t₂ b₂ => ⟨b₂, h.2⟩)) ?_
-  -- `update` with `8 + hLen + salt_len` bytes of `M'`.
-  let U := fun (a t : State) => BL H.D a t ∧ (a.gpr .r10).toNat + 8 + H.D ≤ 2048 ∧ t.gpr .r4 = 0#64 ∧
-    t.gpr .r5 = off (Sp a) oY ∧ t.gpr .r6 = a.gpr .r10 + BitVec.ofNat 64 (8 + H.D)
-  refine two_seq (Ψ := U) (fixUpd_taint H (bl_pins (fun _ _ h => h.1) [])) (fun a t ⟨h, hb⟩ => ?_) ?_
-  · refine wp_li (by decide) fun t₁ o₁ e₁ => wp_addi (h := by decide) fun t₂ o₂ e₂ =>
-      wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_nil ?_
-    exact ⟨((h.only' o₁).only' o₂).only' o₃, hb, by rw [o₃.get .r4, o₂.get .r4, e₁],
-      by rw [o₃.get .r5, e₂, o₁.get .r14, h.r14], by rw [e₃, o₂.get .r19, o₁.get .r19, h.v]; rfl⟩
-  have h6 : ∀ {a t : State}, U a t → (t.gpr .r6).toNat = (a.gpr .r10).toNat + 8 + H.D := fun {a t} h => by
-    rw [h.2.2.2.2, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 + H.D) (by omega),
-      Nat.mod_eq_of_lt (by have := h.2.1; omega)]; omega
-  let U' := fun (a t : State) => U a t ∧ t.gpr .r3 = off (Sp a) oSt ∧ t.gpr .r7 = off (Sp a) oW
-  have hU' : ∀ a t, U a t → WP isa (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) t (U' a) := fun a t h =>
-    WP.mono (updRegs_wp h.1) fun t' ⟨b', o', x3, x7⟩ => ⟨⟨b', h.2.1, by rw [o'.get .r4, h.2.2.1],
-      by rw [o'.get .r5, h.2.2.2.1], by rw [o'.get .r6, h.2.2.2.2]⟩, x3, x7⟩
-  refine two_seq (Ψ := BL H.D) (two_seq (Ψ := U') (updRegs_taint (bl_pins (fun _ _ h => h.1) [])) hU'
-      (upd_two hH cH (an := id) (o := fun _ => oY) (len := fun a => (a.gpr .r10).toNat + 8 + H.D)
-        (fun a t h => ⟨h.1.1, by decide, by have := h.1.2.1; omega, h.2.1, h.1.2.2.2.1, h6 h.1, h.2.2⟩)
-        (fun a t₁ t₂ h₁ h₂ => by rw [h₁.1.2.2.1, h₂.1.2.2.1])))
-    (fun a t h => WP.seq (WP.mono (hU' a t h) fun t' h' => WP.mono (upd_wp hH h'.1.1 (o := oY) (by decide)
-      (by have := h'.1.2.1; omega) h'.2.1 h'.1.2.2.2.1 (h6 h'.1) h'.2.2) fun _ h'' => h''.1)) ?_
-  -- `finalize` after `8 + hLen + salt_len` bytes.
-  refine two_seq (Ψ := fun a t => BL H.D a t ∧ t.gpr .r4 = a.gpr .r10 + BitVec.ofNat 64 (8 + H.D))
-    (fixFin_taint H (bl_pins (fun _ _ h => h) [])) (fun a t h => wp_addi (h := by omega) fun t' o e =>
-      wp_nil ⟨h.only' o, by rw [e, h.v]; rfl⟩) ?_
-  exact two_seq (Ψ := fun a t => BL H.D a t ∧ t.gpr .r4 = a.gpr .r10 + BitVec.ofNat 64 (8 + H.D) ∧
-      t.gpr .r3 = off (Sp a) oSt ∧ t.gpr .r5 = off (Sp a) oDig ∧ t.gpr .r6 = off (Sp a) oW)
-    (finRegs_taint (bl_pins (fun _ _ h => h.1) [])) (fun a t h => WP.mono (finRegs_wp h.1)
-      fun t' ⟨b', o', x3, x5, x6⟩ => ⟨b', by rw [o'.get .r4, h.2], x3, x5, x6⟩)
-    (fin_two hH cH (an := id) (fun a t h => ⟨h.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩)
-      (fun a t₁ t₂ h₁ h₂ => by rw [h₁.2.1, h₂.2.1]))
+    RelCT isa (Two fun a t => BL D a t ∧ (a.gpr .r10).toNat + 8 + D ≤ 2048) (hashFixed H) fun _ _ => True :=
+  hashFixedG_ct (lOk D) hH cH hD (fun a => (a.gpr .r10).toNat) fun a => by
+    show a.gpr .r10 = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 /-- In the loop over the lengths, for the length `L`: `BL`, the counters and
 some salt length in `r25`. -/
@@ -304,7 +206,7 @@ theorem round_two (n : Nat) :
     u.gpr .r5 = off (Sp ac.1) oDig ∧ u.gpr .r6 = off (Sp ac.1) oW
   have w3 : ∀ ac u, A4 ac u →
       WP isa (.block [.addi .r3 .r14 oSt, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) u (A3 ac) := fun ac u h =>
-    WP.mono (finRegs_wp h.1.1.1) fun u' ⟨b', o', x3, x5, x6⟩ =>
+    WP.mono (finRegs_wpG (lOk _) h.1.1.1) fun u' ⟨b', o', x3, x5, x6⟩ =>
       ⟨⟨⟨h.1.1.keep b' (fun r hr => o'.gpr r (by revert r; decide)), h.1.2⟩, by rw [o'.get .r4, h.2]⟩, x3, x5, x6⟩
   refine two_seq (Ψ := LoopN H.D n) (two_seq (Ψ := A3) (finRegs_taint (pin0 fun _ _ h => h.1.1)) w3
       (fin_two hH cH (an := Prod.fst) (fun ac u h => ⟨h.1.1.1.1, h.2.1, h.2.2.1, h.2.2.2⟩)
@@ -335,7 +237,7 @@ theorem round_two (n : Nat) :
   let A7 := fun (ac : State × Nat) (u : State) => A6 ac u ∧ u.gpr .r3 = off (Sp ac.1) oSt ∧
     u.gpr .r7 = off (Sp ac.1) oW
   have w7 : ∀ ac u, A6 ac u → WP isa (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) u (A7 ac) := fun ac u h =>
-    WP.mono (updRegs_wp h.1.1.1) fun u' ⟨b', o', x3, x7⟩ =>
+    WP.mono (updRegs_wpG (lOk _) h.1.1.1) fun u' ⟨b', o', x3, x7⟩ =>
       ⟨⟨⟨h.1.1.keep b' (fun r hr => o'.gpr r (by revert r; decide)), h.1.2⟩, by rw [o'.get .r4, h.2.1],
         by rw [o'.get .r5, h.2.2.1], by rw [o'.get .r6, h.2.2.2]⟩, x3, x7⟩
   have h6 : ∀ {ac : State × Nat} {u : State}, A7 ac u → (u.gpr .r6).toNat = 1 := fun h => by rw [h.1.2.2.2]; rfl
@@ -405,7 +307,7 @@ theorem hashAny_ct : RelCT isa (Two fun a t => BL D a t ∧ S25 t) (hashAny H) f
       by rw [o₃.get .r5, e₂, o₁.get .r14, h.1.r14], e₃⟩
   let U' := fun (a t : State) => U a t ∧ t.gpr .r3 = off (Sp a) oSt ∧ t.gpr .r7 = off (Sp a) oW
   have wU : ∀ a t, U a t → WP isa (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) t (U' a) := fun a t h =>
-    WP.mono (updRegs_wp h.1.1) fun t' ⟨b', o', x3, x7⟩ => ⟨⟨⟨b', h.1.2.keep (o'.get .r25)⟩,
+    WP.mono (updRegs_wpG (lOk _) h.1.1) fun t' ⟨b', o', x3, x7⟩ => ⟨⟨⟨b', h.1.2.keep (o'.get .r25)⟩,
       by rw [o'.get .r4, h.2.1], by rw [o'.get .r5, h.2.2.1], by rw [o'.get .r6, h.2.2.2]⟩, x3, x7⟩
   have h6 : ∀ {a t : State}, U' a t → (t.gpr .r6).toNat = 8 + H.D := fun h => by
     rw [h.1.2.2.2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
