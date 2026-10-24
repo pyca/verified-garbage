@@ -219,9 +219,9 @@ structure HInv (s₀ : State) (B : Addr) (Z w eS eD : Nat) (mb : Bool) (i : Nat)
 theorem halfStep_ok {s₀ : State} {B : Addr} {Z w eS eD : Nat} {mb : Bool} (h9 : s₀.gpr .r9 = mask mb)
     (hS : eS + 8 * w ≤ Z) (hD : eD + 8 * w ≤ Z) (hsep : eD = eS ∨ eD + 8 * w ≤ eS ∨ eS + 8 * w ≤ eD)
     {i : Nat} (hi : i + 1 < w) {t : State} (hI : HInv s₀ B Z w eS eD mb i t) :
-    WP isa (.block ([.load .d .r3 .r15 0, .lsl .r4 .r3 63, .lsr .d .r6 .r5 1, .logic .or .r6 .r6 .r4,
+    WP isa (.block (([.load .d .r3 .r15 0, .lsl .r4 .r3 63, .lsr .d .r6 .r5 1, .logic .or .r6 .r6 .r4,
         .logic .xor .r6 .r6 .r5, .logic .and .r6 .r6 .r9, .logic .xor .r6 .r6 .r5, .store .d .r6 .r16 0,
-        .addi .r15 .r15 8, .addi .r16 .r16 8, .addi .r5 .r3 0] ++ ([.subi .r17 .r17 1] : List Instr))) t
+        .addi .r15 .r15 8, .addi .r16 .r16 8, .addi .r5 .r3 0] : List Instr) ++ ([.subi .r17 .r17 1] : List Instr))) t
       fun t' => HInv s₀ B Z w eS eD mb (i + 1) t' ∧ t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1 := by
   have hn := hI.scr.nowrap
   have t9 : t.gpr .r9 = mask mb := (hI.keep.gpr .r9 (by decide)).trans h9
