@@ -2,17 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.J0
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 public import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 
 /-!
 # SM4-GCM on PPC64LE: the pieces of `vg_sm4_gcm_seal` and `vg_sm4_gcm_open`

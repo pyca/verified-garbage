@@ -6,14 +6,13 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
-import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
 
 /-!
 # SM4-GCM on PPC64LE: counter mode over a piece (`crypt`)

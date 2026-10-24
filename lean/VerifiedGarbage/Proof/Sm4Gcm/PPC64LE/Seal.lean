@@ -3,12 +3,14 @@ module
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.OneShot
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.OneEntry
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_seal`

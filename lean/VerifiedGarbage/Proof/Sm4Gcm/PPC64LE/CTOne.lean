@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.OneShot
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
@@ -28,6 +27,10 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.J0
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+meta import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # SM4-GCM on PPC64LE: the pieces of `seal` and `open` are constant time

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
@@ -32,6 +31,7 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_seal` is constant time

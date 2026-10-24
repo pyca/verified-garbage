@@ -7,14 +7,11 @@ public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTSeal
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Seal
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOpen
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Open
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify

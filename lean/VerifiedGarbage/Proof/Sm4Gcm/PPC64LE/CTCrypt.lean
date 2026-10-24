@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
@@ -11,6 +10,8 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+meta import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
 
 /-!
 # SM4-GCM on PPC64LE: `crypt` is constant time

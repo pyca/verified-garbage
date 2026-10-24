@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
 public import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
 
 /-!
 # SM4-GCM on PPC64LE: the tag after the last piece (`finTag o`)

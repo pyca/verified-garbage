@@ -2,17 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.FinTag
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_stream_finish`

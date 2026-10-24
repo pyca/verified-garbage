@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Init
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Gcm.Compose
 
 /-!
 # SM4-GCM on PPC64LE: the tag (`tag o`)

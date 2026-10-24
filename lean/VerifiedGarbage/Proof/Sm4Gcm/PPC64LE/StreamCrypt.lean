@@ -2,14 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
+public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt`

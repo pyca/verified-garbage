@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.FinTag
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.FinTag
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamFinish
@@ -30,6 +30,10 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # SM4-GCM on PPC64LE: `tag`, `finTag` and `vg_sm4_gcm_stream_finish` are constant time

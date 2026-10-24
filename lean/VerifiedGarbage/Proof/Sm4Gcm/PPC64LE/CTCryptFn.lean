@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTText
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt` are constant time

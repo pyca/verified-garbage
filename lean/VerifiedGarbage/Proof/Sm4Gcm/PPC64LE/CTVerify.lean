@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.FinTag
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamVerify
@@ -27,6 +27,9 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_stream_verify` is constant time

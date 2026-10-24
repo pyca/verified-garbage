@@ -1,15 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Callee
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Callee
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Init
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Callee
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Init
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
+public import VerifiedGarbage.Proof.Sm4.SboxTable
 
 /-!
 # SM4-GCM on PPC64LE: `vg_sm4_gcm_init` is constant time

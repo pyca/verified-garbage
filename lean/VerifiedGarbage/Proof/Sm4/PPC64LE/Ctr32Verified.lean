@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
 import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Sm4.Ctr32Scratch
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr32
@@ -23,6 +23,11 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesConstantTime
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
+public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesConstantTime
+public import VerifiedGarbage.Proof.Sm4.SboxTable
 
 /-!
 # SM4's counter mode with GCM's `inc₃₂` on PPC64LE meets its contract

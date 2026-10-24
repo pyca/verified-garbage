@@ -1408,7 +1408,7 @@ yours to keep:
 
 <td>✅ PCLMULQDQ</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
