@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
+public import VerifiedGarbage.Impl.MdStream.PPC64LE
 
 /-!
 # DSA parameter generation on PPC64LE
@@ -184,17 +185,15 @@ def loadImm (r : Reg) (v : Nat) : List Instr :=
 def ivStore (iv : List (BitVec 32)) : List Instr :=
   iv.zipIdx.flatMap fun (v, i) => loadImm .r0 v.toNat ++ [.store .w .r0 .r28 (sState + 4 * i)]
 
-/-- The hash value's `k` words at `sState`, big-endian, to `S + dst`. -/
-def out32 (k dst : Nat) : List Instr :=
-  (List.range k).flatMap fun i => [.load .w .r0 .r28 (sState + 4 * i), .li .r4 (dst + 4 * i),
-    .storeRev .w .r0 .r28 .r4]
-
 /-- The block at `sMsg` hashed into `S + dst`: the initial hash value at
-`sState`, the block compressed into it with the working space at `wB`, and
-its words big-endian at `dst`. -/
-def hash (pLen : Nat) (G : Hash) (dst : Nat) : Prog isa :=
-  .seq (.block (ivStore G.iv ++ [scr .r3 sState, scr .r4 sMsg, .li .r5 1, scr .r6 (wB pLen)]))
-    (.seq (.call G.name G.code) (.block (out32 G.k dst)))
+`sState`, the block compressed into it (`MdStream.PPC64LE.compressAt`, with
+the hash value in `r26` and the working space of the compression function,
+at `wB`, in `r27`), and its words big-endian at `dst`
+(`MdStream.PPC64LE.out32`, to `r28`, which is moved to `dst` and back). -/
+def hash (pLen : Nat) (G : Hash) (dst : Nat) : Prog isa := seqs [
+  .block (ivStore G.iv ++ [scr .r26 sState, scr .r27 (wB pLen), scr .r4 sMsg]),
+  VG.Impl.MdStream.PPC64LE.compressAt G.name G.code,
+  .block ([.addi .r28 .r28 dst] ++ VG.Impl.MdStream.PPC64LE.out32 G.k true ++ [.subi .r28 .r28 dst])]
 
 /-- The block's padding after a message of `n < 56` bytes. -/
 def padInit (n : Nat) : List Instr :=
