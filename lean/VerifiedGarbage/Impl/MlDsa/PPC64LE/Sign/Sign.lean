@@ -299,12 +299,13 @@ def r0R (i : Nat) : Prog isa :=
   .seq (mulAt P t1P cP (s2P p i)) (.seq (invNttAt P t1P) (.seq (subAt P (wP p i) t1P)
     (.seq (lowBitsAt P (wP p i) p.γ₂ t2P) (normAt P t2P (p.γ₂ - p.β)))))
 
-/-- `ct₀[i] = NTT⁻¹(ĉ t̂₀[i])` and its norm, `w[i] - cs₂[i] + ct₀[i]` (in `w[i]`),
-`-ct₀[i]` (in `T4`), and `h[i] = MakeHint(-ct₀[i], w[i] - cs₂[i] + ct₀[i])`. -/
+/-- `ct₀[i] = NTT⁻¹(ĉ t̂₀[i])` and its norm, `-ct₀[i] = (ct₀[i] - ct₀[i]) - ct₀[i]`
+(in `T4`; the slots of `w` are too far into `scratch` for `copy`'s offsets),
+`w[i] - cs₂[i] + ct₀[i]` (in `w[i]`), and `h[i] = MakeHint(-ct₀[i], w[i] - cs₂[i] + ct₀[i])`. -/
 def hR (i : Nat) : Prog isa :=
   .seq (mulAt P t3P cP (t0P p i)) (.seq (invNttAt P t3P) (.seq (normAt P t3P p.γ₂)
-    (.seq (copy .r31 (oP (5 + p.k + 2 * p.ℓ + i)) .r31 (oP 4) 1024) (.seq (addAt P (wP p i) t3P)
-      (.seq (subAt P t4P (wP p i)) (makeHintAt P t4P (wP p i) p.γ₂ (hP i)))))))
+    (.seq (copy .r31 (oP 3) .r31 (oP 4) 1024) (.seq (subAt P t4P t3P) (.seq (subAt P t4P t3P)
+      (.seq (addAt P (wP p i) t3P) (makeHintAt P t4P (wP p i) p.γ₂ (hP i))))))))
 
 /-- `r24 ← r24 ∧ (r26 ≤ ω)`: `r26 - (ω + 1)` is negative exactly then. -/
 def onesOk : List Instr :=
