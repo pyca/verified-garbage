@@ -130,12 +130,13 @@ def montPrep : Prog isa :=
         (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r15 6 ++ base .r14 9)) (.seq copyWords
           VG.Impl.MillerRabin.PPC64LE.expSetup)))))))
 
-/-- An accepted witness (array 4) in Montgomery form into array 5, and the
-round called; its result (a `u32`) zero-extended in `r3`, and `r10`, `r11`,
-`r29` and `r12` from the header. -/
+/-- An accepted witness (array 4) in Montgomery form into array 5 (with
+`−N⁻¹`'s low half from the header in `r12`), and the round called; its
+result (a `u32`) zero-extended in `r3`, and `r10`, `r11`, `r29` and `r12`
+from the header. -/
 def roundCall (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen]) (.seq (.call name roundCode)
-    (.block ([.lsl .r3 .r3 32, .lsr .d .r3 .r3 32] ++ regsBack))))
+  .seq (.block minv32) (.seq (montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen])
+    (.seq (.call name roundCode) (.block ([.lsl .r3 .r3 32, .lsr .d .r3 .r3 32] ++ regsBack)))))
 
 /-- An accepted witness's round; then `hStat := 2` if it failed, else the
 passing witnesses counted and `hStat := 1` once there are `hChecks` of

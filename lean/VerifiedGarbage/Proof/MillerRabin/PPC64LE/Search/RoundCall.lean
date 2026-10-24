@@ -86,7 +86,6 @@ structure Prep (s : State) (B : Addr) (L w c : Nat) : Prop where
   c3 : 3 ≤ c
   odd : c % 2 = 1
   inv : ((word s.mem B (slot w 0)).toNat * (word s.mem B 56).toNat + 1) % 2 ^ 64 = 0
-  r12 : s.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32
   r1 : arr s.mem B w 1 = 2 ^ (64 * w) * 2 ^ (64 * w) % c
   r9 : arr s.mem B w 9 = 2 ^ (64 * w) % c
   r10 : arr s.mem B w 10 = c - 2 ^ (64 * w) % c
@@ -120,10 +119,9 @@ theorem Prep.prepared {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) 
     simpa only [Spec.MillerRabin.exponent, Spec.MillerRabin.shift, mrE, mrSig, sigOf, mrA, aE] using h.e
   · exact h.l
 
-/-- `Prep` survives a state that keeps `Env`, `r12`, and the words and
+/-- `Prep` survives a state that keeps `Env` and the words and
 numbers `Prep` reads. -/
 theorem Prep.keep {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (env : Env t B (8 * L) w)
-    (r12 : t.gpr .r12 = s.gpr .r12)
     (hw : ∀ d, (d = 0 ∨ d = 48 ∨ d = 56 ∨ d = 224 ∨ (∃ j < 8, d = 8 * (8 + j)) ∨ d = slot w 0 ∨
       d = slot w 27 + 8 * w) → word t.mem B d = word s.mem B d)
     (hv : ∀ j, (j = 0 ∨ j = 1 ∨ j = 9 ∨ j = 10 ∨ j = 27) →
@@ -132,7 +130,7 @@ theorem Prep.keep {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (e
   have h0 := hw (slot w 0) (by simp)
   refine ⟨env, (hw 0 (by simp)).trans h.len, (hw 48 (by simp)).trans h.wW, (hw 224 (by simp)).trans h.strideW,
     fun j hj => (hw _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨j, hj, rfl⟩)))))).trans (h.arrW j hj),
-    (hv 0 (by simp)).trans h.n, h.c3, h.odd, by rw [h0, h56]; exact h.inv, by rw [r12, h56]; exact h.r12,
+    (hv 0 (by simp)).trans h.n, h.c3, h.odd, by rw [h0, h56]; exact h.inv,
     (hv 1 (by simp)).trans h.r1, (hv 9 (by simp)).trans h.r9, (hv 10 (by simp)).trans h.r10, ?_, ?_⟩
   · have he := h.e
     have e27 : aE = 27 := rfl
@@ -146,16 +144,15 @@ theorem Prep.keep {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (e
     rw [this]; exact hl
 
 /-- `Prep` survives a change of memory that keeps the round's words and a
-state that keeps `Env` and `r12`. -/
+state that keeps `Env`. -/
 theorem Prep.transfer {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (env : Env t B (8 * L) w)
-    (r12 : t.gpr .r12 = s.gpr .r12)
     (hw : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word t.mem B d = word s.mem B d)
     (hv : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
       val32 t.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w)) : Prep t B L w c := by
   have hZ := env.hZ
   have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
-  refine h.keep env r12 (fun d hd => ?_) (fun j hj => ?_)
+  refine h.keep env (fun d hd => ?_) (fun j hj => ?_)
   · rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl
     · exact hw 0 (by omega) (by kept_tac)
     · exact hw 48 (by omega) (by kept_tac)
@@ -195,10 +192,13 @@ structure RcPost (s : State) (B : Addr) (L w c a : Nat) (t : State) : Prop where
   sp : t.sp = s.sp
   cs : ∀ r ∈ preserved, r ∉ Pub.montRegs → t.gpr r = s.gpr r
 
-theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
+theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
+    (h12 : s.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32)
     (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
     (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩) :
-    WP isa (roundCall R.name R.code) s (RcPost s B L w c a) := by
+    WP isa (.seq (PublicChecked.montOp 5 4 1) (.seq (.block [.addi .r3 .r31 0, ldh .r4 hWsLen])
+      (.seq (.call R.name R.code) (.block (([.lsl .r3 .r3 32, .lsr .d .r3 .r3 32] : List Instr) ++ regsBack))))) s
+      (RcPost s B L w c a) := by
   have e := h.env
   have hnw := e.hs.nowrap
   have hZ := e.hZ
@@ -208,11 +208,10 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
   have hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 h.odd _
   obtain ⟨i12, iinv⟩ := r12_inv h.inv
-  unfold roundCall
   -- The witness in Montgomery form.
   refine WP.seq (WP.mono (Pub.montOp_ok e.hs (o := 5) (a := 4) (b := 1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by omega) (by omega) (by simp only [es]; omega) e.h10 e.h29
-    e.h11 (by rw [h.r12]; exact i12) (by rw [h.r12, w32_eq_mod]; exact iinv)
+    e.h11 (by rw [h12]; exact i12) (by rw [h12, w32_eq_mod]; exact iinv)
     (by show arr s.mem B w 1 < arr s.mem B w 0; rw [h.r1, h.n]; exact Nat.mod_lt _ (by have := h.c3; omega)))
     fun s₁ ⟨⟨lt₁, eq₁, o₁⟩, k₁⟩ => ?_)
   have hn0 : val32 s.mem B (slot w 0) (2 * w) = c := h.n
@@ -243,7 +242,7 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
       val32 s₁.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
     fun j hd hk => Outs.val32 o₁ (by have := sep₁ _ _ (by omega) hk; simpa only [show 4 * (2 * w) = 8 * w by omega])
       (by omega)
-  have p₁ : Prep s₁ B L w c := h.transfer (e.keep k₁ (by decide)) (k₁.gpr .r12 (by decide)) w₁ v₁
+  have p₁ : Prep s₁ B L w c := h.transfer (e.keep k₁ (by decide)) w₁ v₁
   -- The arguments.
   have h31₁ : s₁.gpr .r31 = B := (k₁.gpr .r31 (by decide)).trans e.h31
   have l0 : InRegions (s₁.rd ++ s₁.wr) B 8 := by
@@ -255,7 +254,7 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
   refine WP.seq (WP.mono (WP.keep [.r3, .r4] (Q := fun u => u.gpr .r3 = B ∧ u.gpr .r4 = BitVec.ofNat 64 L ∧
       u.mem = s₁.mem) (by simp only [ldh, hWsLen]; prun [h31₁, BitVec.add_zero, l0, r0]) (by decide))
     fun s₂ ⟨⟨r3₂, r4₂, m₂⟩, k₂⟩ => ?_)
-  have p₂ : Prep s₂ B L w c := p₁.transfer (p₁.env.keep k₂ (by decide)) (k₂.gpr .r12 (by decide))
+  have p₂ : Prep s₂ B L w c := p₁.transfer (p₁.env.keep k₂ (by decide))
     (fun d _ _ => by rw [m₂]) (fun j _ _ => by rw [m₂])
   have k12 := k₁.trans k₂
   have hL64 : L < 2 ^ 64 := by omega
@@ -303,7 +302,7 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
   have ofs_add : ∀ i, i < 2 ^ 64 → ofs B (B + BitVec.ofNat 64 i) = i := fun i hi => ofs_off0 B hi
   have env_t : Env t B (8 * L) w := ⟨e.hs.congr (kt.wr.trans (hwr₃.trans k12.wr)), t10, t29, t11,
     (kt.gpr .r31 (by decide)).trans h31₃, hw4, hw128, hZ⟩
-  refine ⟨p₂.transfer env_t (by rw [t12, p₂.r12]) (fun d hd hk => by rw [tm]; exact kw d hd hk)
+  refine ⟨p₂.transfer env_t (fun d hd hk => by rw [tm]; exact kw d hd hk)
     (fun j hd hk => by rw [tm]; exact kv j hd hk), ?_, ?_, ?_, kt.rd.trans (hrd.trans k12.rd),
     kt.wr.trans (hwr₃.trans k12.wr), kt.sp.trans (hsp₃.trans k12.sp), fun r hr hm => ?_⟩
   · have hx : ((s₃.gpr .r3 <<< 32) >>> 32).toNat = (s₃.gpr .r3).toNat % 2 ^ 32 := by
@@ -339,5 +338,24 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
     have p1 : ∀ r ∈ preserved, r ≠ .r29 → r ∉ ([.r3, .r10, .r11, .r29, .r12] : List Reg) := by decide
     have p2 : ∀ r ∈ preserved, r ∉ Pub.montRegs → r ∉ Pub.montRegs ++ ([.r3, .r4] : List Reg) := by decide
     rw [kt.gpr r (p1 r hr h29), hcs r hr, k12.gpr r (p2 r hr hm)]
+
+theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
+    (ha : arr s.mem B w 4 = a) (hac : a < c) (hwr : (⟨B, 8 * L⟩ : Region) ∈ s.wr)
+    (hsp : 176 ≤ s.sp.toNat) (hstk : (below s.sp 176).Disjoint ⟨B, 8 * L⟩) :
+    WP isa (roundCall R.name R.code) s (RcPost s B L w c a) := by
+  have e := h.env
+  unfold roundCall
+  have l56 : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 56) 8 := e.hs.ld (d := 56) (by
+    have := e.hZ; simp only [slot, hdrBytes] at this; omega)
+  refine WP.seq (WP.mono (WP.keep [.r12] (Q := fun u => u.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32 ∧
+      u.mem = s.mem) (by simp only [minv32, ldh, hMinv]; prun [e.h31, l56]) (by decide))
+    fun u ⟨⟨u12, um⟩, ku⟩ => ?_)
+  have hu : Prep u B L w c := h.transfer (e.keep ku (by decide)) (fun d _ _ => by rw [um])
+    (fun j _ _ => by rw [um])
+  refine WP.mono (roundCallTail_ok R hu (by rw [um]; exact u12) (by rw [um]; exact ha) hac (by rw [ku.wr]; exact hwr)
+    (by rw [ku.sp]; exact hsp) (by rw [ku.sp]; exact hstk)) fun t ht => ?_
+  have p12 : ∀ r ∈ preserved, r ∉ ([.r12] : List Reg) := by decide
+  exact ⟨ht.prep, ht.r3, by have := ht.keeps; rwa [um] at this, by have := ht.frame; rwa [um, ku.sp] at this, ht.rd.trans ku.rd, ht.wr.trans ku.wr, ht.sp.trans ku.sp,
+    fun r hr hm => (ht.cs r hr hm).trans (ku.gpr r (p12 r hr))⟩
 
 end VG.Proof.MillerRabin.PPC64LE.Search
