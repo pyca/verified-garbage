@@ -199,4 +199,63 @@ theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) 
     exact frm_writeW (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by dsimp only; omega,
       by dsimp only; omega⟩ (by omega)
 
+theorem wv_lt_two {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) :
+    wv m B d w < 2 ↔ word m B d >>> 1 = 0#64 ∧ ∀ j, 1 ≤ j → j < w → word m B (d + 8 * j) = 0#64 := by
+  have e := wv_add m B d 1 (w - 1)
+  rw [show 1 + (w - 1) = w by omega] at e
+  simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.pow_zero, Nat.one_mul, Nat.mul_one] at e
+  have hz := wv_eq_zero_iff m B (d + 8) (w - 1)
+  have hsh : word m B d >>> 1 = 0#64 ↔ (word m B d).toNat < 2 := by
+    rw [← BitVec.toNat_inj, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    simp only [BitVec.toNat_ofNat, Nat.zero_mod]; omega
+  rw [e, hsh]
+  constructor
+  · intro hl
+    have h0 : wv m B (d + 8) (w - 1) = 0 := by
+      by_contra hc; have : 1 ≤ wv m B (d + 8) (w - 1) := Nat.one_le_iff_ne_zero.mpr hc; omega
+    refine ⟨by omega, fun j hj1 hj2 => ?_⟩
+    have := hz.mp h0 (j - 1) (by omega)
+    rwa [show d + 8 + 8 * (j - 1) = d + 8 * j by omega] at this
+  · rintro ⟨hl, hr⟩
+    have h0 : wv m B (d + 8) (w - 1) = 0 := hz.mpr fun q hq => by
+      rw [show d + 8 + 8 * q = d + 8 * (q + 1) by omega]; exact hr _ (by omega) (by omega)
+    omega
+
+/-- The scan: `r24 = 0` exactly when the number in array 4 is below 2. -/
+theorem dScan_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z) (h5 : s.gpr .r5 = off B (d + 8))
+    (h6 : s.gpr .r6 = BitVec.ofNat 64 (w - 1)) (h24 : s.gpr .r24 = word s.mem B d >>> 1) (hw : 2 ≤ w)
+    (hw' : w < 2 ^ 31) (hZ : d + 8 * w ≤ Z) :
+    WP isa (countLoop .r6 [.load .d .r3 .r5 0, .logic .or .r24 .r24 .r3, .addi .r5 .r5 8]) s fun t =>
+      ((t.gpr .r24 = 0#64 ↔ wv s.mem B d w < 2) ∧ t.mem = s.mem) ∧ Keep [.r3, .r5, .r6, .r24] s t := by
+  have hnw := hs.nowrap
+  let Inv : Nat → State → Prop := fun i t =>
+    (t.gpr .r5 = off B (d + 8 * (i + 1)) ∧
+      (t.gpr .r24 = 0#64 ↔ word s.mem B d >>> 1 = 0#64 ∧ ∀ j, 1 ≤ j → j ≤ i → word s.mem B (d + 8 * j) = 0#64) ∧
+      t.mem = s.mem) ∧ Keep [.r3, .r5, .r6, .r24] s t
+  refine WP.mono (wp_countdown (cnt := .r6) (N := w - 1) (by omega) (by omega) Inv
+    (fun i hi t ⟨⟨t5, t24, tm⟩, kt⟩ _ => ?_)
+    ⟨⟨by rw [h5], by rw [h24]; exact ⟨fun h => ⟨h, fun j h1 h2 => absurd h2 (by omega)⟩, fun h => h.1⟩, rfl⟩,
+      Keep.refl _ _⟩ h6) fun t ⟨⟨_, t24, tm⟩, kt⟩ => ⟨⟨?_, tm⟩, kt⟩
+  · have l : InRegions (t.rd ++ t.wr) (off B (d + 8 * (i + 1))) 8 := by
+      rw [kt.rd, kt.wr]; exact hs.ld (by omega)
+    have rv : t.mem.readW (off B (d + 8 * (i + 1))) 64 = word s.mem B (d + 8 * (i + 1)) := by rw [tm]
+    refine WP.mono (WP.keep [.r3, .r5, .r6, .r24] (Q := fun u =>
+        u.gpr .r5 = off B (d + 8 * (i + 1 + 1)) ∧
+        u.gpr .r24 = t.gpr .r24 ||| word s.mem B (d + 8 * (i + 1)) ∧ u.mem = t.mem ∧
+        u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1) ?_ (by decide))
+      fun u ⟨⟨u5, u24, um, u6⟩, ku⟩ => ⟨⟨⟨u5, ?_, um.trans tm⟩, (kt.trans ku).mono (by decide)⟩, u6⟩
+    · prun [t5, BitVec.add_zero, l, rv]
+      rw [show d + 8 * (i + 1) + 8 = d + 8 * (i + 1 + 1) by omega]
+    · rw [u24, BitVec.or_eq_zero_iff, t24]
+      constructor
+      · rintro ⟨⟨a, b⟩, c⟩
+        exact ⟨a, fun j h1 h2 => by
+          rcases Nat.lt_or_ge j (i + 1) with hj | hj
+          · exact b j h1 (by omega)
+          · rw [show j = i + 1 by omega]; exact c⟩
+      · rintro ⟨a, b⟩
+        exact ⟨⟨a, fun j h1 h2 => b j h1 (by omega)⟩, b _ (by omega) (Nat.le_refl _)⟩
+  · rw [t24, wv_lt_two (by omega)]
+    exact ⟨fun ⟨a, b⟩ => ⟨a, fun j h1 h2 => b j h1 (by omega)⟩, fun ⟨a, b⟩ => ⟨a, fun j h1 h2 => b j h1 (by omega)⟩⟩
+
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
