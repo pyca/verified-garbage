@@ -2593,6 +2593,103 @@ blr",
     )
 }
 
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices `src` lists to `dst`, one after the other, and then encrypts them there in place with `vg_aes_gcm_seal`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"stdu %r1, -160(%r1)
+addi %r12, %r1, 0
+std %r3, 104(%r12)
+std %r4, 112(%r12)
+std %r5, 120(%r12)
+std %r6, 128(%r12)
+std %r7, 136(%r12)
+std %r8, 144(%r12)
+mflr %r0
+std %r0, 152(%r12)
+ld %r0, 272(%r12)
+std %r0, 96(%r12)
+or %r7, %r9, %r9
+or %r8, %r10, %r10
+ld %r9, 256(%r12)
+cmpldi %cr0, %r8, 0
+beq %cr0, 20f
+22:
+ld %r3, 0(%r7)
+ld %r4, 8(%r7)
+addi %r7, %r7, 16
+rldicl %r5, %r4, 61, 3
+cmpldi %cr0, %r5, 0
+beq %cr0, 23f
+25:
+ld %r0, 0(%r3)
+std %r0, 0(%r9)
+addi %r3, %r3, 8
+addi %r9, %r9, 8
+addi %r5, %r5, -1
+cmpldi %cr0, %r5, 0
+bne %cr0, 25b
+b 24f
+23:
+24:
+li %r6, 7
+and %r4, %r4, %r6
+cmpldi %cr0, %r4, 0
+beq %cr0, 26f
+28:
+lbz %r0, 0(%r3)
+stb %r0, 0(%r9)
+addi %r3, %r3, 1
+addi %r9, %r9, 1
+addi %r4, %r4, -1
+cmpldi %cr0, %r4, 0
+bne %cr0, 28b
+b 27f
+26:
+27:
+addi %r8, %r8, -1
+cmpldi %cr0, %r8, 0
+bne %cr0, 22b
+b 21f
+20:
+21:
+ld %r3, 104(%r12)
+ld %r4, 112(%r12)
+ld %r5, 120(%r12)
+ld %r6, 128(%r12)
+ld %r7, 136(%r12)
+ld %r8, 144(%r12)
+ld %r9, 256(%r12)
+ld %r10, 264(%r12)
+bl {vg_aes_gcm_seal}
+addi %r12, %r1, 0
+ld %r0, 152(%r12)
+mtlr %r0
+addi %r1, %r1, 160
+blr",
+        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
+    )
+}
+
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
