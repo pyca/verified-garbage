@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # FFDH's domain operations on PPC64LE: loading p and the range of y
@@ -189,7 +190,7 @@ theorem range_ok {s : State} {B Y : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 :
         arr t.mem B w 7 = 1 ∧
         t.gpr .r26 = mask (decide (1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) ∧
           Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) < arr s.mem B w 0 - 1)) ∧
-        Body B w s.mem t.mem) ∧ Keep rangeRegs s t := by
+        Body B w s.mem t.mem ∧ t.gpr .r10 = off B (slot w 0)) ∧ Keep rangeRegs s t := by
   have hs := h.hs
   have hnw := hs.nowrap
   have hZ := h.hZ
@@ -284,7 +285,7 @@ theorem range_ok {s : State} {B Y : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 :
   have r5 : val32 s₇.mem B (slot w 5) (2 * w) = 0 := (q7 5 (by decide) (by decide)).trans v5
   have r6 : val32 s₇.mem B (slot w 6) (2 * w) = p - 1 := (q7 6 (by decide) (by decide)).trans v6
   have r7 : val32 s₇.mem B (slot w 7) (2 * w) = 1 := (q7 7 (by decide) (by decide)).trans v7
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [hmt, q7 4 (by decide) (by decide)]; exact y3
   · rw [hmt, q7 0 (by decide) (by decide), p3]
   · rw [hmt, q7 7 (by decide) (by decide), v7]
@@ -299,6 +300,8 @@ theorem range_ok {s : State} {B Y : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 :
     refine Outside.trans (m₂ := s₃.mem) ?_ (Outside.mono o6' (by omega) (by omega))
     refine Outside.trans (m₂ := s₂.mem) ?_ (Outside.mono o3 (by omega) (by omega))
     rw [← m1]; exact Outside.mono o2 (by omega) (by omega)
+  · exact (((((((((k35.trans k6).trans k7).trans k8).trans k9).trans k10).trans k11).trans k12').trans kt).gpr
+      .r10 (by decide)).trans a10₃
   · exact ((((((((((k13.trans k35).trans k6).trans k7).trans k8).trans k9).trans k10).trans k11).trans
       k12').trans kt).mono (by decide))
 
@@ -429,5 +432,93 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
     · simp only [Pub.powRs, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
   · exact (((k18.trans k9).trans k10).trans kt).mono (by decide)
+
+/-- Bytes apart from the working space keep their values. -/
+theorem Body.bytesAt {B Q : Addr} {Z w k : Nat} {m m' : Mem} (h : Body B w m m') (hZ : slot w 28 ≤ Z)
+    (hsep : ∀ i < k, ∀ x, ofs B x < Z → off Q i ≠ x) : Spec.Rsa.bytesAt m' Q k = Spec.Rsa.bytesAt m Q k := by
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => h _ (Or.inr ?_)
+  have := hsep i (List.mem_range.mp hi) (off Q i)
+  rw [slot28] at hZ
+  show slot w 0 + 28 * (8 * (w + 2)) ≤ ofs B (off Q i)
+  by_contra hc
+  exact this (by omega) rfl
+
+theorem mask_beq_zero (b : Bool) : (mask b == 0) = !b := by cases b <;> rfl
+
+theorem sub_3k_zero {L k : Nat} (hL : L < 2 ^ 63) (hk : k < 2 ^ 32) :
+    (BitVec.ofNat 64 L - (BitVec.ofNat 64 k <<< 1 + BitVec.ofNat 64 k) == 0) = decide (L = 3 * k) := by
+  rw [shl1_ofNat, ← BitVec.ofNat_add]
+  by_cases h : L = 3 * k
+  · rw [h, show 2 * k + k = 3 * k by omega, BitVec.sub_self]; simp
+  · rw [decide_eq_false h]
+    simp only [beq_eq_false_iff_ne, ne_eq]
+    intro e
+    have := congrArg BitVec.toNat e
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl] at this
+    omega
+
+/-- The registers `checkY` writes. -/
+def checkYRegs : List Reg := rangeRegs ++ subRegs ++ [.r0, .r3]
+
+/-- `checkY`: `r3 := 1` if `1 < y < p − 1` and, with q (`L = 3 k`),
+`y^q mod p = 1`, else 0. -/
+theorem checkY_ok {s : State} {B D Y : Addr} {Z w k L : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+    (h21 : s.gpr .r21 = D) (h26 : s.gpr .r26 = Y) (h27 : s.gpr .r27 = BitVec.ofNat 64 L)
+    (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hwk : w = (k + 7) / 8) (hk : 64 ≤ k) (hk' : k ≤ 1024)
+    (hL : L ≤ 3 * k) (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1)
+    (hrdY : ∀ i < k, InRegions (s.rd ++ s.wr) (off Y i) 1) (hsepY : ∀ i < k, ∀ x, ofs B x < Z → off Y i ≠ x)
+    (hrdQ : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1)
+    (hsepQ : ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x) :
+    WP isa checkY s fun t =>
+      (t.gpr .r3 = BitVec.ofNat 64 (if (1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) ∧
+          Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) < arr s.mem B w 0 - 1) ∧
+          (L = 3 * k → Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) ^
+            Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) % arr s.mem B w 0 = 1) then 1 else 0) ∧
+        Body B w s.mem t.mem) ∧ Keep checkYRegs s t := by
+  have hZ := h.hZ
+  generalize hy : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) = y
+  generalize hq : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) = q
+  generalize hP : arr s.mem B w 0 = p at hp2 hodd
+  unfold checkY
+  refine WP.seq (WP.mono (range_ok h h23 h26 h28 (by omega) (by omega) hrdY hsepY (by omega))
+    fun s₁ ⟨⟨y1, p1, _, a26, b1, a10⟩, k1⟩ => ?_)
+  rw [hy, hP] at a26
+  rw [hy] at y1
+  rw [hP] at p1
+  refine WP.ite (s₁.gpr .r26 == 0) (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
+  · rw [a26, mask_beq_zero, Bool.not_eq_true', decide_eq_false_iff_not] at hb
+    refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 0 ∧ t.mem = s₁.mem) (by prun)
+      (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨⟨?_, by rw [tm]; exact b1⟩, (k1.trans kt).mono (by decide)⟩
+    rw [t3, ite_eq_right fun hc => hb hc.1]
+  · rw [a26, mask_beq_zero, Bool.not_eq_false', decide_eq_true_eq] at hb
+    have e1 : Env s₁ B Z w := ⟨h.hs.congr k1.wr, a10, (k1.gpr .r29 (by decide)).trans h.h29,
+      (k1.gpr .r11 (by decide)).trans h.h11, (k1.gpr .r31 (by decide)).trans h.h31, h.hw, h.hw', hZ⟩
+    refine WP.seq (WP.mono (WP.keep [.r0] (Q := fun t => (t.gpr .r0 == 0) = decide (L = 3 * k) ∧
+      t.mem = s₁.mem) (by
+        unfold hasQ
+        prun [(k1.gpr .r27 (by decide)).trans h27, (k1.gpr .r28 (by decide)).trans h28]
+        exact sub_3k_zero (by omega) (by omega)) (by decide)) fun s₂ ⟨⟨a0, m2⟩, k2⟩ => ?_)
+    refine WP.ite (s₂.gpr .r0 == 0) (eval_zero _ _) (fun hb' => ?_) (fun hb' => ?_)
+    · rw [a0, decide_eq_true_eq] at hb'
+      have k12 := k1.trans k2
+      have e2 := e1.keep k2 (by decide)
+      have hqb : Spec.Rsa.bytesAt s₂.mem (off D (2 * k)) k = Spec.Rsa.bytesAt s.mem (off D (2 * k)) k := by
+        rw [m2]; exact b1.bytesAt hZ hsepQ
+      refine WP.mono (subgroup_ok e2 ((k12.gpr .r23 (by decide)).trans h23) ((k12.gpr .r21 (by decide)).trans h21)
+        ((k12.gpr .r28 (by decide)).trans h28) (by omega) hk' (by rw [m2, p1]; exact hp2)
+        (by rw [m2, p1]; exact hodd) (by rw [k12.rd, k12.wr]; exact hrdQ) hsepQ)
+        fun t ⟨⟨t3, bt⟩, kt⟩ => ⟨⟨?_, ?_⟩, (k12.trans kt).mono (by decide)⟩
+      · rw [t3, hqb, hq, m2, y1, p1]
+        congr 1
+        by_cases hpow : y ^ q % p = 1
+        · rw [ite_eq_left hpow, ite_eq_left ⟨hb, fun _ => hpow⟩]
+        · rw [ite_eq_right hpow, ite_eq_right fun hc => hpow (hc.2 hb')]
+      · rw [m2] at bt; exact Outside.trans b1 bt
+    · rw [a0, decide_eq_false_iff_not] at hb'
+      refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 1 ∧ t.mem = s₂.mem) (by prun)
+        (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ =>
+          ⟨⟨?_, by rw [tm, m2]; exact b1⟩, ((k1.trans k2).trans kt).mono (by decide)⟩
+      rw [t3, ite_eq_left ⟨hb, fun hc => absurd hc hb'⟩]
 
 end VG.Proof.Ffdh.PPC64LE.Domain
