@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeY
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's verification equation on PPC64LE: the whole function

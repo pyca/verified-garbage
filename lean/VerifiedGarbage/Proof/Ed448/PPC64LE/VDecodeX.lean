@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.PPC64LE.VRoot
 public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed448's verification on PPC64LE: the candidate x-coordinate

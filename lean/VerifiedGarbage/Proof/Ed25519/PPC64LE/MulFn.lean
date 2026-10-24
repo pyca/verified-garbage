@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Field
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Word
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
+import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 
 /-!
 # Ed25519 on PPC64LE: `vg_gf25519_r32_mul`'s code

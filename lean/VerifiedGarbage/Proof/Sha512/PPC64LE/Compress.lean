@@ -4,13 +4,16 @@ public import VerifiedGarbage.Proof.Sha512.PPC64LE.Rounds
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Rounds
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.IntervalCases
 meta import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # SHA-512 compression function on PPC64LE: the whole function

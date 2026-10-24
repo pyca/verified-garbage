@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
-public import VerifiedGarbage.Proof.Sha512.Digest
+import VerifiedGarbage.Proof.Sha512.Digest
 meta import VerifiedGarbage.Proof.Sha512.Digest
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -11,6 +11,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.IntervalCases
 meta import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Streaming SHA-512 on PPC64LE: `finalize`

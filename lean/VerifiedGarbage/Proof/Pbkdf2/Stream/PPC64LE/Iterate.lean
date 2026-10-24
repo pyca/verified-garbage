@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE: `iterate`
