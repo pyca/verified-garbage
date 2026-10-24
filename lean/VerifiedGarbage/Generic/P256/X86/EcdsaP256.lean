@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit

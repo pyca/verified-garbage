@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack

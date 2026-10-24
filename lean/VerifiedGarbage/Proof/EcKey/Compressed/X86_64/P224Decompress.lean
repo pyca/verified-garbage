@@ -46,14 +46,17 @@ abbrev code (adx : Bool) : Prog isa := Impl.EcKey.Compressed.X86_64.decompress (
 materialize_shared baseline := code false
 
 theorem inlineOk (adx : Bool) : (code adx).InlineOk = true := by
-  cases adx <;> lit_decide
+  rw [show code adx = code false from rfl]
+  lit_decide
 
 theorem hmx (adx : Bool) : (code adx).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx <;> lit_decide
+  rw [show code adx = code false from rfl]
+  lit_decide
 
 theorem ct (adx : Bool) : ConstantTime isa (decompressContract Spec.P224.curve root).pre
     (decompressContract Spec.P224.curve root).pub (code adx) := by
-  cases adx <;> apply VG.Taint.constantTime (A := X86_64.taint) (decompressT Spec.P224.curve.len)
+  rw [show code adx = code false from rfl]
+  apply VG.Taint.constantTime (A := X86_64.taint) (decompressT Spec.P224.curve.len)
   all_goals first
     | exact fun _ _ h₁ h₂ hp => decompress_agree h₁ h₂ hp
     | taint_decide

@@ -6,7 +6,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideTiming
@@ -14,7 +15,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 /-! Concrete timing certificates for the joint P-521 verifier. -/
@@ -32,7 +34,10 @@ theorem prep5_checks : PubNaf.PrepChecks P521Joint.K (p521.sl V) :=
 
 theorem before_ct : ConstantTime isa (fun _=>True)
     (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x1,.x2,.x3])) (jointPrefix p521) :=
-  LaneTaint.constantTime (Taint.ofRegs [.x0,.x1,.x2,.x3]) (fun _ _ _ _ h=>h) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint) (Taint.ofRegs [.x0, .x1, .x2, .x3], RegSet.empty)
+    (fun _ _ _ _ h => VectorTaint.agree_initial h)
+    (by taint_decide_sum [P521.mulPSum, P521.mulNSum, P521.sqrPSum, P521.validateSum, P521.scalarsSum,
+      P521.nPowSum, P521.uvSum])
 
 theorem tail_ct : FieldCT (VG.Impl.Ecdsa.Verify.AArch64.Cfg.tail p521) := by reg_ct [.x0]
 theorem mixed_checks : JacMixedChecks P521Joint.K P521Joint.K.R P521Joint.K.E P521Joint.K.D where

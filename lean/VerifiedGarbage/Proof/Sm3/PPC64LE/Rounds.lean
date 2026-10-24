@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Sm3.Spec
 public import VerifiedGarbage.Impl.Sm3.PPC64LE
 import VerifiedGarbage.Proof.Framework.Offset
@@ -77,9 +78,18 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Ad
     WP isa (.block (round t)) s fun s' =>
       Vars (t + 1) s' (roundW v t w w₄) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  have hd' := List.nodup_reverse.mpr (round_nodup t)
   have hs := (List.nodup_append.mp (round_nodup t)).1
   have hs' := List.nodup_reverse.mpr hs
+  have hdj := (List.nodup_append.mp (round_nodup t)).2.2
+  -- The registers the iteration writes are not in `pubRegs`.
+  have hpw : ∀ r ∈ pubRegs, r ≠ var t 1 ∧ r ≠ var t 3 ∧ r ≠ var t 5 ∧ r ≠ var t 7 ∧
+      r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 := fun r hr =>
+    ⟨fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
+      fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
+      fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
+      fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm⟩
+  clear hdj
+  have hr6w := hpw .r6 (by simp [pubRegs])
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := var_succ t
   simp only [Vars, e0, e1, e2, e3, e4, e5, e6, e7] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
@@ -95,17 +105,19 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Ad
     generalize var t 5 = f at *
     generalize var t 6 = g at *
     generalize var t 7 = h at *
-    simp only [T0, T1, T2, T3, pubRegs, List.nodup_cons, List.mem_cons, List.not_mem_nil,
+    simp only [T0, T1, T2, T3] at hpw hr6w ⊢
+    simp only [T0, T1, T2, T3, List.nodup_cons, List.mem_cons, List.not_mem_nil,
       List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
-      List.nodup_nil, and_true] at hs hs' hd' ⊢
+      List.nodup_nil, and_true] at hs hs'
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_rotr_w, exec_add, exec_lis,
-      exec_ori, exec_logic, exec_load_w, slot_ok, isa, State.write, hs, hs', hd', hr6, hin, hin₄,
+      exec_ori, exec_logic, exec_load_w, slot_ok, isa, RegUpd.gpr_write, RegUpd.mem_write,
+      RegUpd.rd_write, RegUpd.wr_write, hs, hs', hr6w, hr6, hin, hin₄,
       Option.some.injEq, exists_eq_left', Nat.reduceLT, ↓reduceIte, reduceCtorEq, ne_eq,
       not_false_eq_true, true_and]
     refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_⟩
     rotate_right
-    · rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl | rfl <;> simp [hd']
+    · obtain ⟨n1, n3, n5, n7, n16, n17, n18, n19⟩ := hpw r hr
+      simp only [n1, n3, n5, n7, n16, n17, n18, n19, ↓reduceIte]
     all_goals
       simp only [lo32_add, BitVec.setWidth_xor, BitVec.setWidth_and, BitVec.setWidth_or,
         BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, lis_ori', h0, h1, h2, h3, h4, h5, h6, h7,
@@ -134,7 +146,7 @@ theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : Addr)
     have hb := hblk hi
     simp only [Impl.Sm3.PPC64LE.expand, hi, ite_true, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_li (show 4 * i < 2 ^ 15 by omega),
-      exec_loadRev_w, exec_store_w, slot_ok, isa, State.write, hr4, hr6, hi', hout,
+      exec_loadRev_w, exec_store_w, slot_ok, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr4, hr6, hi', hout,
       BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb, Option.some.injEq,
       exists_eq_left', Nat.reduceLeDiff, reduceCtorEq, ↓reduceIte, ne_eq,
       not_false_eq_true, true_and]
@@ -153,7 +165,7 @@ theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (i - 6) = slot (i + 10) by simp only [slot]; omega] at e6
     simp only [Impl.Sm3.PPC64LE.expand, hi, ite_false, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_w, exec_store_w, slot_ok,
-      exec_logic, exec_rotr_w, isa, State.write, hr6, hin, hout, Option.some.injEq,
+      exec_logic, exec_rotr_w, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, Option.some.injEq,
       exists_eq_left', Nat.reduceLT, reduceCtorEq, ↓reduceIte, ne_eq, not_false_eq_true, true_and]
     simp only [BitVec.setWidth_xor, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
       e16, e9, e3, e13, e6, Nat.reduceLeDiff]

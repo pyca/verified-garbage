@@ -47,7 +47,7 @@ theorem keyGen1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : S
       Param.words, ArgWord.bits, Sig.arrays]
     intro i h1 h2
     exact keyGenSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v kg16Wf1024 hm
-      (by s16_ctl v c hS kpke1024) (SpSafe.of_all (by s16_sp v c hS kpke1024))
+      (keyGen16_1024_ctl v m hS) (SpSafe.of_all (keyGen16_1024_sp v m hS))
       (xdLe_spec (by s16_xd v c hS kpke1024)) (keyGenImp1024.pre s hs) he h1
       (by simp only [Elem.size] at h2; exact h2)
 
@@ -63,7 +63,7 @@ theorem encapsH1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : 
       Spec.MlKem.encapsHSigOf, Sig.words, Param.words, ArgWord.bits, Sig.arrays]
     intro i h1 h2
     exact encapsHSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v ec16Wf1024 hm
-      (by s16_ctl v c hS kpke1024) (SpSafe.of_all (by s16_sp v c hS kpke1024))
+      (encapsH16_1024_ctl v m hS) (SpSafe.of_all (encapsH16_1024_sp v m hS))
       (xdLe_spec (by s16_xd v c hS kpke1024)) (encapsHImp1024.pre s hs) he h1
       (by simp only [Elem.size] at h2; exact h2)
 
@@ -81,7 +81,7 @@ theorem encaps1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : S
       Param.words, ArgWord.bits, Sig.arrays]
     intro i h1 h2
     exact encapsSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v ek16HWf1024 ekt16Wf1024 hm hb
-      (by ek16_ctl v c b hS hB kpke1024) (SpSafe.of_all (by ek16_sp v c b hS hB kpke1024))
+      (encaps16_1024_ctl v m hS hB) (SpSafe.of_all (encaps16_1024_sp v m hS hB))
       (xdLe_spec (by ek16_xd v c b hS hB kpke1024)) (encapsImp1024.pre s hs) he h1
       (by simp only [Elem.size] at h2; exact h2)
 
@@ -99,7 +99,7 @@ theorem decaps1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : S
       Param.words, ArgWord.bits, Sig.arrays]
     intro i h1 h2
     exact decapsSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v djHWf1024 djtWf1024 hm hb
-      (by ek16_ctl v c b hS hB kpke1024) (SpSafe.of_all (by ek16_sp v c b hS hB kpke1024))
+      (decaps16_1024_ctl v m hS hB) (SpSafe.of_all (decaps16_1024_sp v m hS hB))
       (xdLe_spec (by ek16_xd v c b hS hB kpke1024)) (decapsImp1024.pre s hs) he h1
       (by simp only [Elem.size] at h2; exact h2)
 

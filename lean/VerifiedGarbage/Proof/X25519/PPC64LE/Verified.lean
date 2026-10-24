@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+import VerifiedGarbage.Proof.Framework.PPC64LE.Untouched
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 
@@ -27,12 +28,8 @@ open VG VG.PPC64LE
 theorem x25519_ok (s : State) (hs : x25519PPC64LE.pre s) :
     ∃ t s', Exec isa Impl.X25519.PPC64LE.x25519 s t s' ∧ abiPreserved s s' ∧ x25519PPC64LE.post s s' := by
   obtain ⟨t, s', he, h⟩ := x25519_correct (XPre.of hs)
-  have hd : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.X25519.PPC64LE.x25519, dstOf i ≠ some r := by
-    have h : ((instrs Impl.X25519.PPC64LE.x25519).all fun i => preserved.all fun r => dstOf i != some r) = true := by
-      rw [← Code.allInstrs_eq]; decide +kernel
-    intro r hr i hi
-    have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
-    simpa using this
+  have hd : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.X25519.PPC64LE.x25519, dstOf i ≠ some r :=
+    nv_of_avoids (by decide +kernel)
   exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (hd r hr) he (.inl (by decide +kernel)), Exec.sp he,
     Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
 

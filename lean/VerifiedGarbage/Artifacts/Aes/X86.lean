@@ -1,4 +1,6 @@
 module
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 
 public import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKey

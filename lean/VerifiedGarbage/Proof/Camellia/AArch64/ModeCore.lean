@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Camellia.CtrCipher
 import VerifiedGarbage.Proof.Camellia.AArch64.PreparedVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Camellia's core for the modes on AArch64
@@ -121,6 +122,15 @@ def kept (r : Reg) (s : State) : State :=
   ((((s.setV .v28 (ofVDwords (s.gpr .x30) (s.gpr .x30))).setV .v27 (ofVDwords (s.gpr sb) (s.gpr sb))).setV
     .v29 (ofVDwords (s.gpr .x23) (s.gpr .x23))).setV .v30 (ofVDwords (s.gpr .x24) (s.gpr .x24))).setV
     .v26 (ofVDwords (s.gpr r) (s.gpr r))
+
+theorem kept_mem (r : Reg) (s : State) : (kept r s).mem = s.mem := by
+  simp only [kept, RegUpd.mem_setV]
+
+theorem kept_rd (r : Reg) (s : State) : (kept r s).rd = s.rd := by
+  simp only [kept, RegUpd.rd_setV]
+
+theorem kept_wr (r : Reg) (s : State) : (kept r s).wr = s.wr := by
+  simp only [kept, RegUpd.wr_setV]
 
 theorem keepHead_ok (r : Reg) (s : State) : runBlock isa (keepHeadWith r) s = some (kept r s) := by
   rw [show keepHeadWith r = [.vop (.dup .d2 .v28 .x30)] ++ ([.vop (.dup .d2 .v27 sb)] ++
@@ -240,9 +250,9 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
   have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (dirFlagOf d) := by rw [o₄ _ (by decide), o₃ _ (by decide), r₂]
   have x3₄ : s₄.gpr .x3 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide)]; exact hB
   have x4₄ : s₄.gpr .x4 = BitVec.ofNat 64 slots := r₄
-  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂]; rfl
-  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂]; rfl
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂]; rfl
+  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, kept_mem]
+  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, kept_rd]
+  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, kept_wr]
   show WP isa (prepareCall d) s _
   refine WP.seq (WP.of_runBlock ⟨s₄, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
   have hsep : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * slots⟩ :=
@@ -356,9 +366,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
     rw [o₄ _ (by decide), o₃ _ (by decide), r₂]; exact hx4
   have x1₄ : s₄.gpr .x1 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide)]; exact hB
   have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 slots := r₄
-  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂]; rfl
-  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂]; rfl
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂]; rfl
+  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, kept_mem]
+  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, kept_rd]
+  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, kept_wr]
   show WP isa cryptCall s _
   refine WP.seq (WP.of_runBlock ⟨s₄, by
     rw [show keepHead = keepHeadWith .x4 from rfl, runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)

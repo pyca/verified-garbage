@@ -11,6 +11,8 @@ meta import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ChaCha20 block function on PPC64LE: the whole function
@@ -378,8 +380,6 @@ theorem block_verified :
     simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, rfl, rfl, ?_⟩
-    intro a h₁ h₂
-    simp only [Region.Contains, satState] at h₁ h₂
-    bv_omega
+    exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.ChaCha20.PPC64LE

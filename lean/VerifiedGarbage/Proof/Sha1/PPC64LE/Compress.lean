@@ -746,7 +746,8 @@ theorem compress_verified :
     Verified PPC64LE.target Impl.Sha1.PPC64LE.compress Proof.Sha1.compressPPC64LE := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
-    exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.lr he (by decide +kernel) (by decide +kernel)⟩, h₂⟩
+    exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.lr he (by decide +kernel)
+      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h₂⟩
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_ (by taint_decide)
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
     refine ⟨hsp, fun r hr => ?_⟩

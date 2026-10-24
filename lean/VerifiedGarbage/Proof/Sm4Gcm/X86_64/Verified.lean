@@ -61,11 +61,13 @@ theorem ctrFn_depth : ctrFn.code.x86_64Depth ≤ 3216 := ctr_depth
 theorem keyFn_depth : keyFn.code.x86_64Depth ≤ 3144 := key_depth
 
 theorem init_mx : init.allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [init, Code.allInstrs, ctrFn_mx, keyFn_mx, Bool.true_and, Bool.and_true]
+  simp only [init, Code.allInstrs]
+  rw [ctrFn_mx, keyFn_mx]
   decide +kernel
 
 theorem init_spSafe : init.all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [init, Code.all, ctrFn_spSafe, keyFn_spSafe, Bool.true_and, Bool.and_true]
+  simp only [init, Code.all]
+  rw [ctrFn_spSafe, keyFn_spSafe]
   decide +kernel
 
 theorem init_xdepth : init.x86_64Depth ≤ stkN := by
@@ -108,6 +110,7 @@ theorem streamEncrypt_mx : (streamEncrypt v.callees).allInstrs (fun i => !loadsM
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+  rw [ctrFn_mx]
   decide +kernel
 
 theorem streamEncrypt_spSafe : (streamEncrypt v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -115,6 +118,7 @@ theorem streamEncrypt_spSafe : (streamEncrypt v.callees).all (fun i => !X86_64.i
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+  rw [ctrFn_spSafe]
   decide +kernel
 
 theorem streamEncrypt_xdepth : (streamEncrypt v.callees).x86_64Depth ≤ stkN := by
@@ -135,6 +139,7 @@ theorem streamDecrypt_mx : (streamDecrypt v.callees).allInstrs (fun i => !loadsM
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+  rw [ctrFn_mx]
   decide +kernel
 
 theorem streamDecrypt_spSafe : (streamDecrypt v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -142,6 +147,7 @@ theorem streamDecrypt_spSafe : (streamDecrypt v.callees).all (fun i => !X86_64.i
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+  rw [ctrFn_spSafe]
   decide +kernel
 
 theorem streamDecrypt_xdepth : (streamDecrypt v.callees).x86_64Depth ≤ stkN := by
@@ -162,6 +168,7 @@ theorem streamFinish_mx : (streamFinish v.callees).allInstrs (fun i => !loadsMxc
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+  rw [ctrFn_mx]
   decide +kernel
 
 theorem streamFinish_spSafe : (streamFinish v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -169,6 +176,7 @@ theorem streamFinish_spSafe : (streamFinish v.callees).all (fun i => !X86_64.isa
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+  rw [ctrFn_spSafe]
   decide +kernel
 
 theorem streamFinish_xdepth : (streamFinish v.callees).x86_64Depth ≤ stkN := by
@@ -189,6 +197,7 @@ theorem streamVerify_mx : (streamVerify v.callees).allInstrs (fun i => !loadsMxc
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+  rw [ctrFn_mx]
   decide +kernel
 
 theorem streamVerify_spSafe : (streamVerify v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -196,6 +205,7 @@ theorem streamVerify_spSafe : (streamVerify v.callees).all (fun i => !X86_64.isa
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+  rw [ctrFn_spSafe]
   decide +kernel
 
 theorem streamVerify_xdepth : (streamVerify v.callees).x86_64Depth ≤ stkN := by
@@ -216,6 +226,7 @@ theorem seal_mx : («seal» v.callees).allInstrs (fun i => !loadsMxcsr i) = true
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+  rw [ctrFn_mx]
   decide +kernel
 
 theorem seal_spSafe : («seal» v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -223,6 +234,7 @@ theorem seal_spSafe : («seal» v.callees).all (fun i => !X86_64.isa.writesSp i)
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+  rw [ctrFn_spSafe]
   decide +kernel
 
 theorem seal_xdepth : («seal» v.callees).x86_64Depth ≤ stkN := by
@@ -243,6 +255,7 @@ theorem open_mx : («open» v.callees).allInstrs (fun i => !loadsMxcsr i) = true
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, ctrFn_mx, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+  rw [ctrFn_mx]
   decide +kernel
 
 theorem open_spSafe : («open» v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -250,6 +263,7 @@ theorem open_spSafe : («open» v.callees).all (fun i => !X86_64.isa.writesSp i)
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.all, ctrFn_spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+  rw [ctrFn_spSafe]
   decide +kernel
 
 theorem open_xdepth : («open» v.callees).x86_64Depth ≤ stkN := by

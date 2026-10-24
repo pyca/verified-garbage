@@ -66,14 +66,14 @@ theorem zeros_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {a
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.map_append, List.map_cons, List.map_nil]
-    refine wp_append (WP.mono (zeros_ok hs h3 (k := k) (by omega)) fun s₁ ⟨O₁, Z₁, K₁, r₁⟩ => ?_)
-    refine wp_step (stw0_ok (K₁.ws hs) (K₁.at h3) (by decide) (d := acc + 4 * k) (by omega)) (WP.block_nil ?_)
-    have W := writeW32_outside s₁.mem base (d := acc + 4 * k) (BitVec.ofNat 32 (s₁.gpr .r11).toNat) (by omega)
-    refine ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (W.mono (by omega) (by omega)), fun j hj => ?_,
+    refine wp_append (WP.mono (zeros_ok hs h3 (k := k) (by omega_arith)) fun s₁ ⟨O₁, Z₁, K₁, r₁⟩ => ?_)
+    refine wp_step (stw0_ok (K₁.ws hs) (K₁.at h3) (by decide) (d := acc + 4 * k) (by omega_arith)) (WP.block_nil ?_)
+    have W := writeW32_outside s₁.mem base (d := acc + 4 * k) (BitVec.ofNat 32 (s₁.gpr .r11).toNat) (by omega_arith)
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), fun j hj => ?_,
       K₁.trans (Kp.store _ _ _), r₁⟩
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · show w32 (s₁.mem.writeW _ _) base _ = 0
-      rw [w32_write_ne hn (by omega) (by omega) (by omega)]; exact Z₁ j hj
+      rw [w32_write_ne hn (by omega_arith) (by omega_arith) (by omega_arith)]; exact Z₁ j hj
     · show w32 (s₁.mem.writeW _ _) base _ = 0
       rw [w32_write_self, r₁]; rfl
 
@@ -82,12 +82,12 @@ theorem zeros_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {a
 theorem OpLay.csub {M : Mod} {size acc O A B : Nat} (h : OpLay M size acc O A B) :
     CsubLay M size acc O := by
   obtain ⟨n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to⟩ := h
-  exact ⟨by omega, tmp_le, mo_le, o_le, acc4, tmp4, by omega, tm.symm, by omega, to⟩
+  exact ⟨by omega_arith, tmp_le, mo_le, o_le, acc4, tmp4, by omega_arith, tm.symm, by omega_arith, to⟩
 
 theorem OpLay.csubHi {M : Mod} {size acc O A B : Nat} (h : OpLay M size acc O A B) :
     CsubLay M size (acc + 4 * (2 * M.n)) O := by
   obtain ⟨n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to⟩ := h
-  exact ⟨by omega, tmp_le, mo_le, o_le, by omega, tmp4, by omega, tm.symm, by omega, to⟩
+  exact ⟨by omega_arith, tmp_le, mo_le, o_le, by omega_arith, tmp4, by omega_arith, tm.symm, by omega_arith, to⟩
 
 /-- What the operations start from: the working space, the pointers, and the
 modulus `m` at `[r3 + M.mo]`. -/
@@ -126,26 +126,26 @@ theorem add_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
   rw [ec]
   refine wp_step (exec_li (by decide)) ?_
   refine wp_append (WP.mono (adds_ok (W := 2 * M.n) (hp.ws.write _ _) (hp.r3.write _) (hp.r5.write _)
-    (hp.r6.write _) (by simp only [write_gpr, ite_true]; decide) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (k := 2 * M.n) (Nat.le_refl _)) fun s₂ ⟨O₂, V₂, C₂, K₂⟩ => ?_)
+    (hp.r6.write _) (by simp only [write_gpr, ite_true]; decide) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (k := 2 * M.n) (Nat.le_refl _)) fun s₂ ⟨O₂, V₂, C₂, K₂⟩ => ?_)
   simp only [write_mem, write_gpr, ite_true] at O₂ V₂
   have K₀₂ : Kp [.r10, .r11, .r12] s s₂ := (Kp.write s _ (by decide)).trans K₂
-  refine wp_step (stw0_ok (K₀₂.ws hp.ws) (K₀₂.at hp.r3) (by decide) (d := acc + 4 * (2 * M.n)) (by omega)) ?_
-  have W := writeW32_outside s₂.mem base (d := acc + 4 * (2 * M.n)) (BitVec.ofNat 32 (s₂.gpr .r10).toNat) (by omega)
+  refine wp_step (stw0_ok (K₀₂.ws hp.ws) (K₀₂.at hp.r3) (by decide) (d := acc + 4 * (2 * M.n)) (by omega_arith)) ?_
+  have W := writeW32_outside s₂.mem base (d := acc + 4 * (2 * M.n)) (BitVec.ofNat 32 (s₂.gpr .r10).toNat) (by omega_arith)
   have hsum : val32 (s₂.mem.writeW (off base (acc + 4 * (2 * M.n))) (BitVec.ofNat 32 (s₂.gpr .r10).toNat))
       base acc (2 * M.n + 1) = wordsVal s.mem base A M.n + wordsVal s.mem base B M.n := by
-    rw [val32_succ, W.val32 (by omega) (by omega), w32_write_self, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega), wordsVal_eq_val32, wordsVal_eq_val32]
+    rw [val32_succ, W.val32 (by omega_arith) (by omega_arith), w32_write_self, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega_arith), wordsVal_eq_val32, wordsVal_eq_val32]
     rw [show (BitVec.ofNat 64 0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at V₂
     exact V₂
   have hmo : val32 (s₂.mem.writeW (off base (acc + 4 * (2 * M.n))) (BitVec.ofNat 32 (s₂.gpr .r10).toNat))
       base M.mo (2 * M.n) = m := by
-    rw [W.val32 (by omega) (by omega), O₂.val32 (by omega) (by omega), hp.mo]
+    rw [W.val32 (by omega_arith) (by omega_arith), O₂.val32 (by omega_arith) (by omega_arith), hp.mo]
   refine WP.mono (csub_ok (((K₀₂.ws hp.ws).store _)) ((K₀₂.at hp.r3).store _) ((K₀₂.at hp.r4).store _)
     hL.csub hmo (by rw [hsum]; exact hab)) fun u ⟨V₃, O₃, K₃⟩ => ⟨?_, ?_, ?_⟩
   · rw [V₃, hsum]
-  · exact ((Outs.of_outside (O₂.mono (Nat.le_refl _) (by omega)) (List.mem_cons_self ..)).trans
-      (Outs.of_outside (W.mono (by omega) (by omega)) (List.mem_cons_self ..))).trans (outs_tail O₃)
+  · exact ((Outs.of_outside (O₂.mono (Nat.le_refl _) (by omega_arith)) (List.mem_cons_self ..)).trans
+      (Outs.of_outside (W.mono (by omega_arith) (by omega_arith)) (List.mem_cons_self ..))).trans (outs_tail O₃)
   · exact ((K₀₂.mono (by decide)).trans ((Kp.store _ _ _).trans K₃)).mono (by decide)
 
 /-- `[r4] = ([r5] + m - [r6]) mod m`, for numbers below `m`. -/
@@ -166,7 +166,7 @@ theorem sub_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
   refine wp_append (WP.mono (subs_ok (W := 2 * M.n) (M := M) ((hp.ws.write _ _).write _ _)
     ((hp.r3.write _).write _) ((hp.r5.write _).write _) ((hp.r6.write _).write _)
     (by simp only [write_gpr, reduceCtorEq, ite_false, ite_true]) (by simp only [write_gpr, ite_true]; rfl)
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (k := 2 * M.n) (Nat.le_refl _)) fun s₂ ⟨O₂, V₂, C₂, K₂⟩ => ?_)
   simp only [write_mem] at O₂ V₂
   have K₀₂ : Kp [.r0, .r10, .r11, .r12] s s₂ :=
@@ -180,41 +180,41 @@ theorem sub_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
     have := val32_lt s.mem base B (2 * M.n)
     by_contra h
     rw [show (s₂.gpr .r10).toNat = 0 by omega, Nat.mul_zero, Nat.add_zero] at V₂
-    omega
+    omega_arith
   refine wp_step (exec_subi (by decide) (by decide)) ?_
   have hsub : ((s₂.gpr .r10 - BitVec.ofNat 64 1)).toNat = (s₂.gpr .r10).toNat - 1 := by
-    rw [BitVec.toNat_sub, toNat_ofNat_lt (by decide)]; omega
+    rw [BitVec.toNat_sub, toNat_ofNat_lt (by decide)]; omega_arith
   refine wp_step (stw0_ok ((K₀₂.ws hp.ws).write _ _) ((K₀₂.at hp.r3).write _) (by decide)
-    (d := acc + 4 * (2 * M.n)) (by omega)) ?_
+    (d := acc + 4 * (2 * M.n)) (by omega_arith)) ?_
   simp only [write_gpr, ite_true]
   rw [hsub]
   have W := writeW32_outside s₂.mem base (d := acc + 4 * (2 * M.n)) (BitVec.ofNat 32 ((s₂.gpr .r10).toNat - 1))
-    (by omega)
+    (by omega_arith)
   have hdiff : val32 (s₂.mem.writeW (off base (acc + 4 * (2 * M.n))) (BitVec.ofNat 32 ((s₂.gpr .r10).toNat - 1)))
       base acc (2 * M.n + 1) = wordsVal s.mem base A M.n + m - wordsVal s.mem base B M.n := by
-    rw [val32_succ, W.val32 (by omega) (by omega), w32_write_self, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
+    rw [val32_succ, W.val32 (by omega_arith) (by omega_arith), w32_write_self, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega_arith)]
     have : 2 ^ (32 * (2 * M.n)) * ((s₂.gpr .r10).toNat - 1) + 2 ^ (32 * (2 * M.n)) =
         2 ^ (32 * (2 * M.n)) * (s₂.gpr .r10).toNat := by
       rw [Nat.mul_sub_one]
       have : 2 ^ (32 * (2 * M.n)) ≤ 2 ^ (32 * (2 * M.n)) * (s₂.gpr .r10).toNat := Nat.le_mul_of_pos_right _ hc1
-      omega
-    omega
+      omega_arith
+    omega_arith
   have hmo : val32 (s₂.mem.writeW (off base (acc + 4 * (2 * M.n))) (BitVec.ofNat 32 ((s₂.gpr .r10).toNat - 1)))
       base M.mo (2 * M.n) = m := by
-    rw [W.val32 (by omega) (by omega), O₂.val32 (by omega) (by omega), hp.mo]
+    rw [W.val32 (by omega_arith) (by omega_arith), O₂.val32 (by omega_arith) (by omega_arith), hp.mo]
   refine WP.mono (csub_ok ((((K₀₂.ws hp.ws).write _ _).store _)) (((K₀₂.at hp.r3).write _).store _)
-    (((K₀₂.at hp.r4).write _).store _) hL.csub hmo (by dsimp only [write_mem]; rw [hdiff]; omega)) fun u ⟨V₃, O₃, K₃⟩ => ⟨?_, ?_, ?_⟩
+    (((K₀₂.at hp.r4).write _).store _) hL.csub hmo (by dsimp only [write_mem]; rw [hdiff]; omega_arith)) fun u ⟨V₃, O₃, K₃⟩ => ⟨?_, ?_, ?_⟩
   · rw [V₃]; dsimp only [write_mem]; rw [hdiff]
-  · exact ((Outs.of_outside (O₂.mono (Nat.le_refl _) (by omega)) (List.mem_cons_self ..)).trans
-      (Outs.of_outside (W.mono (by omega) (by omega)) (List.mem_cons_self ..))).trans (outs_tail O₃)
+  · exact ((Outs.of_outside (O₂.mono (Nat.le_refl _) (by omega_arith)) (List.mem_cons_self ..)).trans
+      (Outs.of_outside (W.mono (by omega_arith) (by omega_arith)) (List.mem_cons_self ..))).trans (outs_tail O₃)
   · exact (K₀₂.trans (((Kp.write _ _ (by decide)).trans (Kp.store _ _ _)).trans K₃)).mono (by decide)
 
 theorem val32_zeros {m : Mem} {base : Addr} {d : Nat} :
     ∀ {k : Nat}, (∀ j < k, w32 m base (d + 4 * j) = 0) → val32 m base d k = 0
   | 0, _ => rfl
   | k + 1, h => by
-    rw [val32_succ, val32_zeros fun j hj => h j (by omega), h k (by omega), Nat.mul_zero]
+    rw [val32_succ, val32_zeros fun j hj => h j (by omega_arith), h k (by omega_arith), Nat.mul_zero]
 
 /-- `[r4] = [r5] [r6] R⁻¹ mod m`, for `[r6]` below `m`. -/
 theorem mul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp : OpPre M base size O A B m s)
@@ -230,16 +230,16 @@ theorem mul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
   obtain ⟨n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to⟩ := hL'
   have hD : digits M = 2 * M.n := rfl
   have hML : MulLay (2 * M.n) size acc A B M.mo :=
-    ⟨by omega, by omega, by omega, by omega, by omega, by omega, by omega⟩
+    ⟨by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   have eB := wordsVal_eq_val32 s.mem base B M.n
   have eA := wordsVal_eq_val32 s.mem base A M.n
   refine WP.seq ?_
   simp only [zeros, hD, List.cons_append]
   refine wp_step (exec_li (by decide)) ?_
-  refine wp_append (WP.mono (zeros_ok hp.ws hp.r3 (acc := acc) (k := 2 * (2 * M.n) + 2) (by omega))
+  refine wp_append (WP.mono (zeros_ok hp.ws hp.r3 (acc := acc) (k := 2 * (2 * M.n) + 2) (by omega_arith))
     fun s₁ ⟨O₁, Z₁, K₁, _⟩ => ?_)
-  refine wp_step (exec_addi (by decide) (by omega)) ?_
-  refine wp_step (exec_li (by omega)) (WP.block_nil ?_)
+  refine wp_step (exec_addi (by decide) (by omega_arith)) ?_
+  refine wp_step (exec_li (by omega_arith)) (WP.block_nil ?_)
   -- The invariant at digit 0.
   have h0 : LoopInv base (2 * M.n) acc A B m 0 s
       ((s₁.write .r7 (s₁.gpr .r3 + BitVec.ofNat 64 acc)).write .r8 (BitVec.ofNat 64 (2 * M.n))) := by
@@ -248,16 +248,16 @@ theorem mul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
     · simp only [At, write_gpr, reduceCtorEq, ite_false, ite_true, Nat.mul_zero, Nat.add_zero]
       rw [K₁.g, hp.r3, off_add, Nat.zero_add]
     · simp only [write_gpr, ite_true, Nat.sub_zero]
-    · simp only [write_mem]; exact O₁.mono (Nat.le_refl _) (by omega)
+    · simp only [write_mem]; exact O₁.mono (Nat.le_refl _) (by omega_arith)
     · exact ((K₁.mono (by decide)).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))
-    · intro l _ hl; simp only [write_mem]; exact Z₁ l (by omega)
+    · intro l _ hl; simp only [write_mem]; exact Z₁ l (by omega_arith)
     · simp only [write_mem, Nat.mul_zero, Nat.add_zero]
-      rw [val32_zeros fun j hj => Z₁ j (by omega)]; have := hp.m0; omega
+      rw [val32_zeros fun j hj => Z₁ j (by omega_arith)]; have := hp.m0; omega_arith
     · refine ⟨0, ?_⟩
       simp only [write_mem, Nat.mul_zero, Nat.add_zero]
-      rw [val32_zeros fun j hj => Z₁ j (by omega)]; simp [val32]
+      rw [val32_zeros fun j hj => Z₁ j (by omega_arith)]; simp [val32]
   have hmo₀ : val32 s.mem base M.mo (2 * M.n) = m := hp.mo
-  refine WP.seq (WP.mono (loop_ok hp.ws hD hML (by omega) hmo₀ (minv32_inv hinv) (by omega) h0) fun t I => ?_)
+  refine WP.seq (WP.mono (loop_ok hp.ws hD hML (by omega_arith) hmo₀ (minv32_inv hinv) (by omega_arith) h0) fun t I => ?_)
   -- The reduction.
   obtain ⟨U, hU⟩ := I.cong
   have hT := I.lt
@@ -267,7 +267,7 @@ theorem mul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
     rw [hTv] at e
     have hm0 : m < 2 ^ (32 * (2 * M.n)) := by rw [← hp.mo]; exact val32_lt _ _ _ _
     have hP : 2 ^ (32 * (2 * M.n)) * 2 ≤ 2 ^ (32 * (2 * M.n + 1)) := by
-      rw [show 32 * (2 * M.n + 1) = 32 * (2 * M.n) + 32 by omega, Nat.pow_add]
+      rw [show 32 * (2 * M.n + 1) = 32 * (2 * M.n) + 32 by omega_arith, Nat.pow_add]
       exact Nat.mul_le_mul_left _ (by decide)
     by_contra hne
     have : 1 ≤ w32 t.mem base (acc + 4 * (2 * M.n) + 4 * (2 * M.n + 1)) := by
@@ -276,14 +276,14 @@ theorem mul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
       · exact h
     have : 2 ^ (32 * (2 * M.n + 1)) ≤ 2 ^ (32 * (2 * M.n + 1)) * w32 t.mem base (acc + 4 * (2 * M.n) +
       4 * (2 * M.n + 1)) := Nat.le_mul_of_pos_right _ this
-    omega
-  have hmo : val32 t.mem base M.mo (2 * M.n) = m := by rw [I.out.val32 (by omega) (by omega), hp.mo]
+    omega_arith
+  have hmo : val32 t.mem base M.mo (2 * M.n) = m := by rw [I.out.val32 (by omega_arith) (by omega_arith), hp.mo]
   refine WP.mono (csub_ok (I.kp.ws hp.ws) I.r3 (by rw [At, kp_clob I.kp]; exact hp.r4) hL.csubHi hmo
     (by rw [hlo]; exact hT)) fun u ⟨V₃, O₃, K₃⟩ => ⟨?_, ?_, ?_, ?_⟩
   · rw [V₃]; exact Nat.mod_lt _ hp.m0
-  · rw [V₃, hlo, Nat.mod_mul_mod, show 64 * M.n = 32 * (2 * M.n) by omega, Nat.mul_comm, hU, ← eA, ← eB,
+  · rw [V₃, hlo, Nat.mod_mul_mod, show 64 * M.n = 32 * (2 * M.n) by omega_arith, Nat.mul_comm, hU, ← eA, ← eB,
       Nat.add_mul_mod_self_right]
-  · exact (Outs.of_outside (I.out.mono (Nat.le_refl _) (by omega)) (List.mem_cons_self ..)).trans (outs_tail O₃)
+  · exact (Outs.of_outside (I.out.mono (Nat.le_refl _) (by omega_arith)) (List.mem_cons_self ..)).trans (outs_tail O₃)
   · exact (I.kp.trans (K₃.mono (by decide))).mono (by decide)
 
 end VG.Proof.Mont.PPC64LE

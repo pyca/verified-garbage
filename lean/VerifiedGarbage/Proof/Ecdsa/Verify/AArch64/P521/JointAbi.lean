@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
 
 @[expose] public section
 
