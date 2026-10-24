@@ -22,7 +22,8 @@ theorem primeSetup_depth (mul : Nat → Nat → Nat → Prog isa)
   unfold generationDepth at hm ⊢
   simp only [primeSetup, primeR2, Impl.Dsa.X86_64.Arithmetic.constants,
     Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants,
-    R2Words.choice, R2Words.fast, R2Words.old, seqs, Code.x86_64Depth, Nat.max_le]
+    R2Words.choice, R2Words.fast, R2Words.old, VG.Impl.Bignum.X86_64.Public.R2Squares.run,
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init, VG.Impl.Bignum.X86_64.Public.R2Squares.next, seqs, Code.x86_64Depth, Nat.max_le]
   and_intros
   all_goals first | exact hr | apply hm | exact (show 0 ≤ 128 by decide)
 

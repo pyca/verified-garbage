@@ -235,8 +235,10 @@ theorem setWord_eq (o : Nat) (i : Reg) : setWord o i =
     .seq (.block [.mov .r8 (.mem (hdr (sArr o)))]) (.seq zeroAccLoop (.block [.store (ix .r8 i) .rdx])) := rfl
 
 /-- `R² mod m` leaks the same in runs that agree on `m`. -/
-theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M)) fun _ _ => True := by
-  unfold r2Steps
+theorem r2_ct_with (squares : Prog isa)
+    (hsq : RelCT isa (Two SqPre) squares (fun _ _ => True)) :
+    RelCT isa (Two R2Pre) (seqs (r2StepsWith squares)) (fun _ _ => True) := by
+  unfold r2StepsWith
   -- The top word.
   refine RelCT.seq (two_piece (Ψ := R2a) _ pins_r2Pre (by taint_decide) ?_) ?_
   · intro p s h
@@ -346,6 +348,11 @@ theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M)) fun _ _ => T
     rw [hv', hf'.r2_wv hn' (by decide) (by decide) (by decide) (by decide), hN]
     exact Nat.mod_lt _ hN0
   -- The squarings.
-  exact two_map (·.L) (fun _ _ h => h) (sqs_ct M 5)
+  exact two_map (·.L) (fun _ _ h => h) hsq
+
+theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M)) fun _ _ => True := by
+  change RelCT isa (Two R2Pre)
+    (seqs (r2StepsWith (seqs (List.replicate 6 (M.mm aR2 aR2 aR2))))) _
+  exact r2_ct_with _ (sqs_ct M 5)
 
 end VG.Proof.Bignum.X86_64
