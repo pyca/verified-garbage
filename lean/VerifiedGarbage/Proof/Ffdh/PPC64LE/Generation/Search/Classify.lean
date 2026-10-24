@@ -239,4 +239,226 @@ theorem search_reject {p : SPub} {original s : State} {used k : Nat}
   simp only [controllerValue, rejectValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
     ite_true, ite_false]
 
+/-! ## A tape too short for the candidate -/
+
+def requestValues (p : SPub) (used : Nat) : List (Nat × BitVec 64) :=
+  [(3, BitVec.ofNat 64 (parameterRequest p.bits (p.randLen - used))), (14, 0)]
+
+theorem requestValues_bound (p : SPub) (used : Nat) : ∀ e ∈ requestValues p used, e.1 < 16 := by
+  simp only [requestValues, List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl) <;> dsimp only <;> decide
+
+/-- The sign of a difference of numbers below `2^63`. -/
+theorem sign_sub {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
+    (BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63 = BitVec.ofNat 64 (if x < y then 1 else 0) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow]
+  split <;> omega
+
+theorem sel_max {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
+    (BitVec.ofNat 64 x ^^^ BitVec.ofNat 64 y) &&& (0#64 - (BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63) ^^^
+      BitVec.ofNat 64 x = BitVec.ofNat 64 (max x y) := by
+  rw [sign_sub hx hy]
+  by_cases h : x < y
+  · simp only [h, ↓reduceIte]
+    rw [show (0#64 - BitVec.ofNat 64 1) = BitVec.allOnes 64 by decide, BitVec.and_allOnes,
+      BitVec.xor_comm (BitVec.ofNat 64 x), BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero,
+      Nat.max_eq_right (by omega)]
+  · simp only [h, ↓reduceIte]
+    rw [show (0#64 - BitVec.ofNat 64 0) = 0#64 by decide, BitVec.and_zero, BitVec.zero_xor,
+      Nat.max_eq_left (by omega)]
+
+theorem sel_min {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
+    (BitVec.ofNat 64 x ^^^ BitVec.ofNat 64 y) &&& (0#64 - (BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63) ^^^
+      BitVec.ofNat 64 y = BitVec.ofNat 64 (min x y) := by
+  rw [sign_sub hx hy]
+  by_cases h : x < y
+  · simp only [h, ↓reduceIte]
+    rw [show (0#64 - BitVec.ofNat 64 1) = BitVec.allOnes 64 by decide, BitVec.and_allOnes,
+      BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero, Nat.min_eq_left (by omega)]
+  · simp only [h, ↓reduceIte]
+    rw [show (0#64 - BitVec.ofNat 64 0) = 0#64 by decide, BitVec.and_zero, BitVec.zero_xor,
+      Nat.min_eq_right (by omega)]
+
+theorem shl8_ofNat (n : Nat) : (BitVec.ofNat 64 n) <<< 8 = BitVec.ofNat 64 (n * 2 ^ 8) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mul_mod, Nat.mod_mod]
+
+theorem request_value {p : SPub} {original s : State} {used k : Nat} (h : SLive p original used k s) :
+    WP isa (.block (request.take 19)) s fun t =>
+      (t.gpr .r7 = BitVec.ofNat 64 (parameterRequest p.bits (p.randLen - used)) ∧ t.mem = s.mem) ∧
+        Keep [.r0, .r3, .r4, .r5, .r6, .r7] s t := by
+  have a := h.access
+  have hv2 := h.header (j := 2) (v := BitVec.ofNat 64 (parameterEntropy p.bits)) (by simp [SPub.headers])
+  have hv6 := h.header (j := 6) (v := BitVec.ofNat 64 p.len) (by simp [SPub.headers])
+  have hv11 := h.header (j := 11) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [SPub.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at hv2 hv6 hv11
+  have hlen := h.input.len_bounds
+  have hl := h.input.len_eq
+  have hrl := h.input.randLen_le
+  have hb := h.input.bits_bounds
+  have hE : parameterEntropy p.bits ≤ 32769 * 1024 := by
+    unfold parameterEntropy; omega
+  have hA : p.randLen - used ≤ parameterEntropy p.bits := by omega
+  have m1 := sel_max (x := p.randLen - used) (y := p.len * 2 ^ 8) (by omega) (by omega)
+  have e2 : BitVec.ofNat 64 (max (p.randLen - used) (p.len * 2 ^ 8)) +
+      BitVec.ofNat 64 (max (p.randLen - used) (p.len * 2 ^ 8)) =
+      BitVec.ofNat 64 (2 * max (p.randLen - used) (p.len * 2 ^ 8)) := by
+    rw [← BitVec.ofNat_add, Nat.two_mul]
+  have m2 := sel_min (x := 2 * max (p.randLen - used) (p.len * 2 ^ 8)) (y := parameterEntropy p.bits)
+    (by omega) (by omega)
+  refine WP.keep [.r0, .r3, .r4, .r5, .r6, .r7] ?_ (by decide)
+  unfold request sel
+  simp only [Bool.false_eq_true, ite_true, ite_false, List.cons_append, List.nil_append, List.take_succ_cons,
+    List.take_zero]
+  prun [ldf, h.r31, hv2, hv6, hv11, a.ld 16 (by decide), a.ld 48 (by decide), a.ld 88 (by decide),
+    shl8_ofNat, m1, e2, m2]
+  unfold parameterRequest
+  rw [show p.len * 256 = 256 * ((p.bits + 7) / 8) by omega]
+
+theorem search_request {p : SPub} {original s : State} {used k : Nat}
+    (h : SLive p original used k s) (hk : k ≠ 0) (hc : p.cand used = none)
+    (hshort : ¬parameterEntropy p.bits ≤ p.randLen - used)
+    (hout : Spec.Rsa.bytesAt s.mem p.op p.len = List.replicate p.len 0) :
+    WP isa (.block request) s (SDone p original (p.tail used k)) := by
+  rw [show request = request.take 19 ++ request.drop 19 from (List.take_append_drop _ _).symm,
+    WP.block_append_iff]
+  refine WP.mono (request_value h) fun v ⟨⟨h7, hmv⟩, kv⟩ => ?_
+  have hv := h.keep kv hmv
+  have a := hv.access
+  refine WP.mono (WP.keep [.r8] (Q := fun t =>
+    t.mem = writeController v.mem p.control (requestValues p used)) ?_
+      (by decide)) fun t ⟨hm, kt⟩ => ?_
+  · unfold request sel writeController requestValues
+    simp only [Bool.false_eq_true, ite_true, ite_false, List.cons_append, List.nil_append, List.drop_succ_cons,
+      List.drop_zero, List.foldl_cons, List.foldl_nil]
+    prun [ldf, stf, hv.r31, h7, a.st 24 (by decide), a.st 112 (by decide)]
+    rfl
+  rw [SPub.tail_short hk h.rand_length hc, ite_eq_right hshort]
+  have hb := requestValues_bound p used
+  have hw (j : Nat) (hj : j < 16) : word t.mem p.control (8 * j) =
+      controllerValue (requestValues p used) j (word v.mem p.control (8 * j)) := by
+    rw [hm, writeController_word _ _ _ hb j hj]
+  refine hv.doneWrites _ hb (by
+      simp only [requestValues, List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl) <;> dsimp only <;> decide) (by
+      simp only [requestValues, List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl) <;> dsimp only <;> decide) hm (kt.mono) ?_ ?_ ?_ ?_
+  · rw [show (96 : Nat) = 8 * 12 from rfl, hw 12 (by decide)]
+    simp only [controllerValue, requestValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
+      ite_false]
+    exact hv.header (j := 12) (v := BitVec.ofNat 64 used) (by simp [SPub.headers])
+  · rw [show (112 : Nat) = 8 * 14 from rfl, hw 14 (by decide)]
+    simp only [controllerValue, requestValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
+      ite_true, ite_false]
+    rfl
+  · change [word t.mem p.control (8 * 0), word t.mem p.control (8 * 1), word t.mem p.control (8 * 2),
+      word t.mem p.control (8 * 3)] = _
+    rw [hw 0 (by decide), hw 1 (by decide), hw 2 (by decide), hw 3 (by decide)]
+    simp only [controllerValue, requestValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
+      ite_true, ite_false]
+    rw [hv.header (j := 0) (v := BitVec.ofNat 64 k) (by simp [SPub.headers]),
+      hv.header (j := 1) (v := BitVec.ofNat 64 p.len) (by simp [SPub.headers]),
+      hv.header (j := 2) (v := BitVec.ofNat 64 (parameterEntropy p.bits)) (by simp [SPub.headers])]
+    rfl
+  · unfold SOutput
+    rw [hmv]
+    exact hout
+
+/-- Whether the tape holds the entropy cap. -/
+theorem short_guard {p : SPub} {original s : State} {used k : Nat} (h : SLive p original used k s) :
+    WP isa (.block [ldf .r3 11, ldf .r4 2, .sub .r5 .r3 .r4, .lsr .d .r5 .r5 63]) s fun t =>
+      (SLive p original used k t ∧ t.mem = s.mem) ∧
+        isa.eval (.zero .d .r5) t = some (decide (parameterEntropy p.bits ≤ p.randLen - used)) := by
+  have a := h.access
+  have hv2 := h.header (j := 2) (v := BitVec.ofNat 64 (parameterEntropy p.bits)) (by simp [SPub.headers])
+  have hv11 := h.header (j := 11) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [SPub.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at hv2 hv11
+  have hrl := h.input.randLen_le
+  have hE : parameterEntropy p.bits < 2 ^ 63 := by
+    have := h.input.bits_bounds; unfold parameterEntropy; omega
+  have hs := sign_sub (x := p.randLen - used) (y := parameterEntropy p.bits) (by omega) hE
+  refine WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun t =>
+    isa.eval (.zero .d .r5) t = some (decide (parameterEntropy p.bits ≤ p.randLen - used)) ∧ t.mem = s.mem) ?_
+    (by decide)) fun _ ⟨⟨he, hm⟩, k⟩ => ⟨⟨h.keep k hm, hm⟩, he⟩
+  prun [ldf, h.r31, hv2, hv11, a.ld 16 (by decide), a.ld 88 (by decide), hs]
+  refine (eval_zero _ _).trans ?_
+  rw [RegUpd.gpr_write_self]
+  by_cases hb : p.randLen - used < parameterEntropy p.bits
+  · simp only [hb, ↓reduceIte, show ¬parameterEntropy p.bits ≤ p.randLen - used by omega, decide_false]
+    decide
+  · simp only [hb, ↓reduceIte, show parameterEntropy p.bits ≤ p.randLen - used by omega, decide_true]
+    decide
+
+theorem search_short {p : SPub} {original s : State} {used k : Nat}
+    (h : SLive p original used k s) (hk : k ≠ 0) (hc : p.cand used = none)
+    (hout : Spec.Rsa.bytesAt s.mem p.op p.len = List.replicate p.len 0) :
+    WP isa short s (SDone p original (p.tail used k)) := by
+  unfold short
+  refine WP.seq (WP.mono (short_guard h) fun u ⟨⟨hu, hm⟩, he⟩ => ?_)
+  refine WP.ite _ he ?_ ?_
+  · intro hs
+    have hs' := of_decide_eq_true hs
+    rw [SPub.tail_short hk h.rand_length hc, ite_eq_left hs']
+    exact search_exhausted hu
+  · intro hs
+    have hs' := of_decide_eq_false hs
+    exact search_request hu hk hc hs' (by rw [hm]; exact hout)
+
+/-! ## The classification -/
+
+/-- Where the candidate at `used` leads: on to the next one after a
+rejection, or the end of the search. -/
+def SClassified (p : SPub) (original : State) (used k : Nat) (t : State) : Prop :=
+  if candidateStatus (p.cand used) = 2 then
+    SLive p original (used + p.read used) (k - 1) t ∧ word t.mem p.control 112 = 4
+  else SDone p original (p.tail used k) t
+
+theorem test_two {s : State} {st : Nat} (h9 : s.gpr .r9 = BitVec.ofNat 64 st) (hst : st < 3) :
+    WP isa (.block [.subi .r12 .r9 2]) s fun t =>
+      (isa.eval (.zero .d .r12) t = some (decide (st = 2)) ∧ t.mem = s.mem) ∧ Keep [.r12] s t := by
+  refine WP.keep [.r12] ?_ (by decide)
+  prun [h9]
+  have hb : ∀ st < 3, ((BitVec.ofNat 64 st - BitVec.ofNat 64 2) == 0) = decide (st = 2) := by decide
+  refine (eval_zero _ _).trans ?_
+  rw [RegUpd.gpr_write_self, hb st hst]
+
+theorem search_classify {p : SPub} {original s : State} {used k : Nat}
+    (h : SLive p original used k s) (hk : k ≠ 0) (hp : CandPost p used s) :
+    WP isa classify s (SClassified p original used k) := by
+  unfold classify
+  refine WP.seq (WP.mono (search_head h hp) fun u ⟨hu, hpu, h9, h10, he⟩ => ?_)
+  have hst := status_lt (p.cand used)
+  cases hc : p.cand used with
+  | none =>
+    simp only [hc, candidateStatus] at he h9
+    refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
+    refine WP.seq (WP.mono (test_two h9 (by decide)) fun v ⟨⟨he2, hmv⟩, kv⟩ => ?_)
+    refine WP.ite false he2 (fun hf => by cases hf) fun _ => ?_
+    have hout := hpu.2.1
+    simp only [hc] at hout
+    have hs := search_short (hu.keep kv hmv) hk hc (by rw [hmv]; exact hout)
+    refine WP.mono hs fun t ht => ?_
+    simp only [SClassified, hc, candidateStatus, Nat.reduceEqDiff, ite_false]
+    exact ht
+  | some pair =>
+    obtain ⟨value, rest⟩ := pair
+    cases value with
+    | some q =>
+      simp only [hc, candidateStatus] at he h9
+      refine WP.ite true he (fun _ => ?_) (fun hf => by cases hf)
+      refine WP.mono (search_accept hu hpu hk hc h10) fun t ht => ?_
+      simp only [SClassified, hc, candidateStatus, Nat.reduceEqDiff, ite_false]
+      exact ht
+    | none =>
+      simp only [hc, candidateStatus] at he h9
+      refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
+      refine WP.seq (WP.mono (test_two h9 (by decide)) fun v ⟨⟨he2, hmv⟩, kv⟩ => ?_)
+      refine WP.ite true he2 (fun _ => ?_) (fun hf => by cases hf)
+      have hv := hu.keep kv hmv
+      refine WP.mono (search_reject hv hk ((kv.gpr .r10 (by decide)).trans h10)) fun t ht => ?_
+      simp only [SClassified, hc, candidateStatus, ite_true]
+      exact ht
+
 end VG.Proof.Ffdh.PPC64LE.Generation
