@@ -88,10 +88,10 @@ end
 theorem pp_block {s : State} {c : List Instr} {u : State} (hu : PP s u) {X : State → Prop} (rs : List Reg)
     (hw : ∀ R EM, Post s R EM u → WP isa (.block c) u fun v => (v.mem = u.mem ∧ X v) ∧ Keep rs u v)
     (hrs : ∀ r ∈ rs, r ∉ preserved := by decide) :
-    WP isa (.block c) u fun v => PP s v ∧ X v :=
+    WP isa (.block c) u fun v => PP s v ∧ v.mem = u.mem ∧ X v :=
   let ⟨R, EM, hc⟩ := hu
   WP.mono (hw R EM hc) fun _ ⟨⟨vm, vx⟩, kv⟩ => ⟨⟨R, EM, hc.regs kv.rd kv.wr kv.sp vm fun r hr =>
-    kv.gpr r fun h' => hrs r h' hr⟩, vx⟩
+    kv.gpr r fun h' => hrs r h' hr⟩, vm, vx⟩
 
 section
 variable {e : Env}
@@ -111,12 +111,13 @@ def PF (s u : State) : Prop := PP s u ∧ u.gpr .r3 = scA s sSt ∧ u.gpr .r4 = 
 theorem hashD_ct : RelCT isa (Rel e PP) hashD (Rel e PP) := by
   unfold hashD
   refine RelCT.seq (rel_step [] (by taint_decide) (fun a b ha hb => ⟨pp_sp ha hb, fun _ h => nomatch h⟩)
-    fun s u _ hu => (pp_block hu [.r12, .r3] fun _ _ hc => shaInitArgs_ok hc : WP isa _ u (PI s))) ?_
+    fun s u _ hu => (WP.mono (pp_block hu [.r12, .r3] fun _ _ hc => shaInitArgs_ok hc)
+      fun _ ⟨hv, _, x⟩ => ⟨hv, x⟩ : WP isa _ u (PI s))) ?_
   refine RelCT.seq (rel_post (init_rel fun a b ⟨⟨ha, a3⟩, hb, b3⟩ => ⟨pp_sp ha hb, fun r hr => by
     rw [List.mem_singleton.mp hr, a3, b3, e.scA_eq]⟩) fun s u h ⟨hu, u3⟩ => initCall_pp h hu u3) ?_
   refine RelCT.seq (rel_step [] (by taint_decide) (fun a b ha hb => ⟨pp_sp ha hb, fun _ h => nomatch h⟩)
     fun s u _ hu => (WP.mono (pp_block hu [.r12, .r3, .r4, .r5, .r6, .r7] fun _ _ hc => shaUpdArgs_ok hc)
-      fun v ⟨hv, x⟩ => ⟨hv, x⟩ : WP isa _ u (PU s))) ?_
+      fun _ ⟨hv, _, x⟩ => ⟨hv, x⟩ : WP isa _ u (PU s))) ?_
   refine RelCT.seq (rel_post (upd_rel fun a b ⟨⟨ha, a3, a4, a5, a6, a7⟩, hb, b3, b4, b5, b6, b7⟩ =>
     ⟨pp_sp ha hb, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -128,7 +129,7 @@ theorem hashD_ct : RelCT isa (Rel e PP) hashD (Rel e PP) := by
       · rw [a7, b7, e.scA_eq]⟩) fun s u h ⟨hu, _, _, u5, u6, u7⟩ => updCall_pp h hu ‹_› u5 u6 u7) ?_
   refine RelCT.seq (rel_step [] (by taint_decide) (fun a b ha hb => ⟨pp_sp ha hb, fun _ h => nomatch h⟩)
     fun s u _ hu => (WP.mono (pp_block hu [.r12, .r3, .r4, .r5, .r6] fun _ _ hc => shaFinArgs_ok hc)
-      fun v ⟨hv, x⟩ => ⟨hv, x⟩ : WP isa _ u (PF s))) ?_
+      fun _ ⟨hv, _, x⟩ => ⟨hv, x⟩ : WP isa _ u (PF s))) ?_
   exact rel_post (fin_rel fun a b ⟨⟨ha, a3, a4, a5, a6⟩, hb, b3, b4, b5, b6⟩ =>
     ⟨pp_sp ha hb, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -167,7 +168,7 @@ theorem macInitArgs_ct {key : Nat} (hk : key < 2 ^ 15) {hc : VG.Taint.Hint T}
     RelCT isa (Rel e P) (.block (macInitArgs key)) (Rel e (PMI key)) :=
   rel_step [] ht (fun a b ha hb => ⟨pp_sp (hP _ _ ha) (hP _ _ hb), fun _ h => nomatch h⟩)
     fun s u _ hu => WP.mono (pp_block (hP _ _ hu) [.r12, .r3, .r4, .r5, .r6, .r7] fun _ _ hc => macInitArgs_ok hc hk)
-      fun v ⟨hv, x⟩ => ⟨hv, x⟩
+      fun _ ⟨hv, _, x⟩ => ⟨hv, x⟩
 
 theorem kdkMac_ct : RelCT isa (Rel e PP) kdkMac (Rel e PP) := by
   unfold kdkMac
@@ -176,7 +177,7 @@ theorem kdkMac_ct : RelCT isa (Rel e PP) kdkMac (Rel e PP) := by
     fun s u h ⟨hu, u3, u4, u5, u6, u7⟩ => macInit_pp h hu (by decide) (by decide) u3 u4 u5 u6 u7) ?_
   refine RelCT.seq (rel_step [] (by taint_decide) (fun a b ha hb => ⟨pp_sp ha hb, fun _ h => nomatch h⟩)
     fun s u _ hu => (WP.mono (pp_block hu [.r12, .r3, .r4, .r5, .r6, .r7] fun _ _ hc => kdkUpdArgs_ok hc)
-      fun v ⟨hv, x⟩ => ⟨hv, x⟩ : WP isa _ u (PKU s))) ?_
+      fun _ ⟨hv, _, x⟩ => ⟨hv, x⟩ : WP isa _ u (PKU s))) ?_
   refine RelCT.seq (rel_post (upd_rel fun a b ⟨⟨ha, a3, a4, a5, a6, a7⟩, hb, b3, b4, b5, b6, b7⟩ =>
     ⟨pp_sp ha hb, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -190,7 +191,7 @@ theorem kdkMac_ct : RelCT isa (Rel e PP) kdkMac (Rel e PP) := by
       (c_cov h hu) fun _ hv _ _ => ⟨_, _, hv⟩ : WP isa updCall u (PP s))) ?_
   refine RelCT.seq (rel_step [] (by taint_decide) (fun a b ha hb => ⟨pp_sp ha hb, fun _ h => nomatch h⟩)
     fun s u _ hu => (WP.mono (pp_block hu [.r12, .r3, .r4, .r5, .r6, .r7] fun _ _ hc => kdkFinArgs_ok hc)
-      fun v ⟨hv, x⟩ => ⟨hv, x⟩ : WP isa _ u (PKF s))) ?_
+      fun _ ⟨hv, _, x⟩ => ⟨hv, x⟩ : WP isa _ u (PKF s))) ?_
   exact rel_post (macFin_rel fun a b ⟨⟨ha, a3, a4, a5, a6, a7⟩, hb, b3, b4, b5, b6, b7⟩ =>
     ⟨pp_sp ha hb, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
