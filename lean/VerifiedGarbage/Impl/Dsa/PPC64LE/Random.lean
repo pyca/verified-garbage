@@ -154,12 +154,12 @@ def sample : Prog isa :=
 
 /-! ## The exit -/
 
-/-- `out`'s `r5` octets := 0 (`r5 > 0`). -/
+/-- `out`'s `r17` octets := 0 (`r17 > 0`; `len` computes it). -/
 def zeroOut (len : List Instr) : Prog isa :=
-  .seq (.block ([.addi .r4 .r18 0] ++ len ++ [.li .r0 0]))
-    (Precompute.countLoop .r5 [.stb .r0 .r4 0, .addi .r4 .r4 1])
+  .seq (.block ([.addi .r16 .r18 0] ++ len ++ [.li .r0 0]))
+    (Precompute.countLoop .r17 [.stb .r0 .r16 0, .addi .r16 .r16 1])
 
-/-- Unless the status is 1, `out` (`len` computes its length into `r5`)
+/-- Unless the status is 1, `out` (`len` computes its length into `r17`)
 is zeroed; then the nonce, the octets consumed to `used`, the status, and
 the registers. -/
 def finish (len : List Instr) : Prog isa :=

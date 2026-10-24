@@ -61,7 +61,7 @@ def attempts : Prog isa := .loop (.seq attempt (.block [.subi .r3 .r31 4])) (.ze
 /-- The frame's body. -/
 def body : Prog isa :=
   .seq (.block entry) (.seq prepareQ (.seq (.ite (.zero .d .r0) (.block [.li .r31 0]) attempts)
-    (finish [.add .r5 .r21 .r21])))
+    (finish [.add .r17 .r21 .r21])))
 
 /-- `vg_dsa_sign_random`. -/
 def code : Prog isa := .frame (.alloc frameBytes) body (.free frameBytes)
