@@ -8,6 +8,7 @@ meta import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.VettedValidation
 meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! The fast acceptance and general fallback both depend only on the public domain. -/
 @[expose] public section

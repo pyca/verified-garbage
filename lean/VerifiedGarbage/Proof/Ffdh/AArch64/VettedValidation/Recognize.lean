@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Geometry
 public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Entry
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyLoop
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTableFrame
-public import VerifiedGarbage.Proof.Ffdh.VettedValidation.Facts
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
 
 /-! Exact public recognition is safe for every permitted input, including invalid domains. -/
 @[expose] public section

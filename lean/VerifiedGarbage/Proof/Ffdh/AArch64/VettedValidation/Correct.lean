@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Fallback
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Facts
 
 /-! Recognized domains satisfy the original contract; every miss uses its original validator. -/
 @[expose] public section
@@ -36,7 +37,7 @@ theorem correct (W : Window) (M : Mont) (S : Selector) {s : State} (hs : pre s) 
   by_cases hit : width s≠4095
   · refine WP.ite true (by rw [result_eval h,decide_eq_true hit]) (fun _ =>?_) (fun bad =>Bool.noConfusion bad)
     have valid : Spec.Ffdh.domainValid (s.gpr .x2).toNat (CheckDomain.cdDom s)=true :=
-      VG.Proof.Ffdh.VettedValidation.policyWidth_valid (fun _ hg =>hg)
+      VG.Proof.Ffdh.AArch64.VettedValidation.policyWidth_valid (fun _ hg =>hg)
         (by simpa only [CheckDomain.cdDom,Spec.Rsa.bytesAt,List.length_map,List.length_range] using g.shape) hit
     refine WP.mono (WP.keep [.x0] (Q:=fun u =>u.gpr .x0=1#64) ?_ rfl rfl rfl) ?_
     · brun []
