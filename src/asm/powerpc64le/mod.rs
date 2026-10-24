@@ -395,6 +395,9 @@ pub(crate) mod rsa;
 pub(crate) mod rsa_mont;
 
 #[rustfmt::skip]
+pub(crate) mod rsa_pkcs1_enc;
+
+#[rustfmt::skip]
 pub(crate) mod rsa_pkcs1_sig;
 
 #[rustfmt::skip]
