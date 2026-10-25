@@ -1807,3169 +1807,3169 @@ ldr x21, [x30, #168]
 ldr x22, [x30, #176]
 ldr x23, [x30, #184]
 ldr x24, [x30, #192]
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #1, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32898, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32906, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32768, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32907, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #1, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32897, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32777, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #138, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #136, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32777, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #10, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32907, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #139, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32905, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32771, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32770, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #128, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32778, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #10, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32897, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32896, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #1, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32776, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
@@ -17711,3180 +17711,3177 @@ eor x7, x7, x26
 ldr x26, [x27, #64]
 eor x8, x8, x26
 26:
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #1, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32898, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32906, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32768, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32907, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #1, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32897, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32777, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #138, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #136, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32777, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #10, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32907, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #139, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32905, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32771, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32770, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #128, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32778, lsl #0
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #10, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32897, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32896, lsl #0
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #1, lsl #0
 movk x26, #32768, lsl #16
 eor x0, x0, x26
-eor x26, x0, x5
-dup v24.2d, x4
-dup v25.2d, x9
-eor x27, x1, x6
 eor x28, x2, x7
-eor x30, x3, x8
-eor x4, x4, x9
-eor x26, x26, x10
-eor x27, x27, x11
+dup v24.2d, x4
+eor x26, x0, x5
 eor x28, x28, x12
-eor x30, x30, x13
-eor x4, x4, x14
-eor x26, x26, x15
-eor x27, x27, x16
+eor x26, x26, x10
+dup v25.2d, x9
 eor x28, x28, x17
-eor x30, x30, x25
-eor x4, x4, x19
-eor x26, x26, x20
-eor x27, x27, x21
+eor x26, x26, x15
+eor x4, x4, x9
 eor x28, x28, x22
-eor x30, x30, x23
-eor x4, x4, x24
+eor x26, x26, x20
+eor x4, x4, x14
+eor x27, x1, x6
 eor x9, x26, x28, ror #63
-eor x1, x1, x9
-eor x6, x6, x9
-eor x11, x11, x9
+eor x4, x4, x19
+eor x27, x27, x11
+eor x30, x3, x8
+eor x4, x4, x24
+eor x27, x27, x16
+eor x30, x30, x13
+eor x28, x28, x4, ror #63
+eor x27, x27, x21
+eor x30, x30, x25
 eor x16, x16, x9
 eor x21, x21, x9
-eor x9, x27, x30, ror #63
-eor x28, x28, x4, ror #63
-eor x30, x30, x26, ror #63
+eor x11, x11, x9
+eor x6, x6, x9
+eor x1, x1, x9
+eor x30, x30, x23
 eor x4, x4, x27, ror #63
-eor x27, x2, x9
-eor x7, x7, x9
-eor x12, x12, x9
-eor x17, x17, x9
-eor x22, x22, x9
-eor x0, x0, x4
-eor x5, x5, x4
-eor x10, x10, x4
-eor x15, x15, x4
+eor x9, x27, x30, ror #63
+eor x23, x23, x28
+eor x25, x25, x28
 eor x20, x20, x4
+eor x15, x15, x4
+eor x10, x10, x4
+eor x5, x5, x4
+eor x0, x0, x4
+eor x30, x30, x26, ror #63
 umov x4, v24.d[0]
-umov x9, v25.d[0]
+eor x22, x22, x9
+eor x17, x17, x9
+eor x12, x12, x9
+eor x7, x7, x9
+eor x27, x2, x9
+eor x13, x13, x28
+eor x8, x8, x28
 eor x26, x3, x28
-eor x8, x8, x28
-eor x13, x13, x28
-eor x25, x25, x28
-eor x23, x23, x28
+umov x9, v25.d[0]
+eor x24, x24, x30
 eor x28, x4, x30
-eor x9, x9, x30
-eor x14, x14, x30
-eor x19, x19, x30
-eor x24, x24, x30
-add x30, x1, #0
-ror x1, x6, #20
-ror x2, x12, #21
-ror x3, x25, #43
 ror x4, x24, #50
-ror x6, x9, #44
-ror x12, x13, #39
-ror x25, x17, #49
-ror x24, x21, #62
-ror x9, x22, #3
-ror x13, x19, #56
-ror x17, x11, #54
-ror x21, x8, #9
-ror x22, x14, #25
-ror x19, x23, #8
-ror x11, x7, #58
-ror x8, x16, #19
-ror x14, x20, #46
-ror x23, x15, #23
-ror x7, x10, #61
-ror x16, x5, #28
-ror x5, x26, #36
-ror x10, x30, #63
-ror x15, x28, #37
-ror x20, x27, #2
-bic x26, x2, x1, ror #0
-bic x27, x3, x2, ror #0
-bic x28, x0, x4, ror #0
-bic x30, x1, x0, ror #0
-eor x0, x0, x26
-bic x26, x4, x3, ror #0
-eor x1, x1, x27
-eor x3, x3, x28
-eor x4, x4, x30
-eor x2, x2, x26
-bic x26, x7, x6, ror #0
-bic x27, x8, x7, ror #0
-bic x28, x5, x9, ror #0
-bic x30, x6, x5, ror #0
-eor x5, x5, x26
-bic x26, x9, x8, ror #0
-eor x6, x6, x27
-eor x8, x8, x28
-eor x9, x9, x30
-eor x7, x7, x26
-bic x26, x12, x11, ror #0
-bic x27, x13, x12, ror #0
-bic x28, x10, x14, ror #0
-bic x30, x11, x10, ror #0
-eor x10, x10, x26
-bic x26, x14, x13, ror #0
-eor x11, x11, x27
-eor x13, x13, x28
-eor x14, x14, x30
-eor x12, x12, x26
-bic x26, x17, x16, ror #0
-bic x27, x25, x17, ror #0
-bic x28, x15, x19, ror #0
-bic x30, x16, x15, ror #0
-eor x15, x15, x26
-bic x26, x19, x25, ror #0
-eor x16, x16, x27
-eor x25, x25, x28
+ror x3, x25, #43
+ror x2, x12, #21
 eor x19, x19, x30
+eor x14, x14, x30
+eor x9, x9, x30
+ror x24, x21, #62
+ror x25, x17, #49
+ror x12, x13, #39
+add x30, x1, #0
+ror x21, x8, #9
+ror x17, x11, #54
+ror x13, x19, #56
+ror x1, x6, #20
+ror x8, x16, #19
+ror x11, x7, #58
+ror x19, x23, #8
+ror x6, x9, #44
+ror x16, x5, #28
+ror x7, x10, #61
+ror x23, x15, #23
+ror x9, x22, #3
+ror x15, x28, #37
+ror x10, x30, #63
+ror x5, x26, #36
+ror x22, x14, #25
+bic x30, x1, x0, ror #0
+bic x28, x0, x4, ror #0
+bic x26, x2, x1, ror #0
+ror x14, x20, #46
+eor x0, x0, x26
+ror x20, x27, #2
+bic x26, x4, x3, ror #0
+bic x27, x3, x2, ror #0
+eor x2, x2, x26
+eor x4, x4, x30
+eor x3, x3, x28
+bic x30, x6, x5, ror #0
+bic x28, x5, x9, ror #0
+bic x26, x7, x6, ror #0
+eor x5, x5, x26
+eor x1, x1, x27
+bic x26, x9, x8, ror #0
+bic x27, x8, x7, ror #0
+eor x7, x7, x26
+eor x9, x9, x30
+eor x8, x8, x28
+bic x30, x11, x10, ror #0
+bic x28, x10, x14, ror #0
+bic x26, x12, x11, ror #0
+eor x10, x10, x26
+eor x6, x6, x27
+bic x26, x14, x13, ror #0
+bic x27, x13, x12, ror #0
+eor x12, x12, x26
+eor x14, x14, x30
+eor x13, x13, x28
+bic x30, x16, x15, ror #0
+bic x28, x15, x19, ror #0
+bic x26, x17, x16, ror #0
+eor x15, x15, x26
+eor x11, x11, x27
+bic x26, x19, x25, ror #0
+bic x27, x25, x17, ror #0
 eor x17, x17, x26
-bic x26, x22, x21, ror #0
-bic x27, x23, x22, ror #0
-bic x28, x20, x24, ror #0
+eor x19, x19, x30
+eor x25, x25, x28
 bic x30, x21, x20, ror #0
+bic x28, x20, x24, ror #0
+bic x26, x22, x21, ror #0
 eor x20, x20, x26
+eor x16, x16, x27
 bic x26, x24, x23, ror #0
-eor x21, x21, x27
-eor x23, x23, x28
-eor x24, x24, x30
+bic x27, x23, x22, ror #0
 eor x22, x22, x26
+eor x24, x24, x30
+eor x23, x23, x28
+eor x21, x21, x27
 movz x26, #32776, lsl #0
 movk x26, #32768, lsl #16
 movk x26, #32768, lsl #48
 eor x0, x0, x26
-umov x26, v19.d[0]
+add v19.2d, v19.2d, v21.2d
+sub v20.2d, v20.2d, v21.2d
 umov x27, v20.d[0]
 umov x28, v21.d[0]
-add x26, x26, x28
-sub x27, x27, x28
-dup v19.2d, x26
-dup v20.2d, x27
 sub x26, x27, x28
 lsr x26, x26, #63
 cbz x26, 24b

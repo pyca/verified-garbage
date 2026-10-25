@@ -51,9 +51,8 @@ def xorBlock : Prog isa := .seq (.block [.umov .x .x27 .v19 0, .umov .x .x28 .v2
 /-- Advance the data pointer and the length by the rate, and set `x26 = 0`
 exactly when another whole block is left (the test of `Sha3.Vector.Resident`). -/
 def advance : List Instr :=
-  [.umov .x .x26 .v19 0, .umov .x .x27 .v20 0, .umov .x .x28 .v21 0,
-   .add .x .x26 .x26 .x28, .sub .x .x27 .x27 .x28,
-   .vop (.dup .d2 .v19 .x26), .vop (.dup .d2 .v20 .x27),
+  [.vop (.add .d2 .v19 .v19 .v21), .vop (.sub .d2 .v20 .v20 .v21),
+   .umov .x .x27 .v20 0, .umov .x .x28 .v21 0,
    .sub .x .x26 .x27 .x28, .lsr .x .x26 .x26 63]
 
 def body : Prog isa := .seq xorBlock (.seq (.block unrolledRounds) (.block advance))

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.VectorLower
 public import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Scheduled
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
@@ -12,6 +12,7 @@ public import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 public import Mathlib.Tactic.ToAdditive
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
 
 @[expose] public section
 
@@ -109,7 +110,7 @@ theorem vector_core_ok (A : Spec.Sha3.State) (s : VG.AArch64.State)
   let f : File := ⟨s.gpr, fun k => vdword (s.v (slotV k)) 0⟩
   have hr : VectorFileRel f s := ⟨fun _ => rfl, fun _ _ => rfl⟩
   have hmath := core_math A f hl
-  obtain ⟨s', hs, hr', hm, hrd, hwr, hsp, hv⟩ := vector_list_ok coreOps core_good f s hr
-  exact ⟨s', hs, fun i hi => (hr'.regs (laneReg i)).trans (hmath i hi), hm, hrd, hwr, hsp, hv⟩
+  obtain ⟨s', hs, hr', hm, hrd, hwr, hsp, hv⟩ := vector_list_ok scheduledOps scheduled_good f s hr
+  exact ⟨s', hs, fun i hi => (hr'.regs (laneReg i)).trans ((scheduled_matches f i hi).trans (hmath i hi)), hm, hrd, hwr, hsp, hv⟩
 
 end VG.Proof.Sha3.AArch64.Scalar
