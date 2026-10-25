@@ -28,6 +28,7 @@ def text (ls : List Line) : List String :=
     | .sym s .armPcRel n => s!"{s}<armpcrel {n}>"
     | .sym s .ppcHa n => s!"{s}<ppcha {n}>"
     | .sym s .ppcLo n => s!"{s}<ppclo {n}>"
+    | .sym s .bare n => s!"{s}<sym {n}>"
 
 open X86_64
 
@@ -544,7 +545,7 @@ def sampleRV : Prog RISCV64.isa :=
       .shift .sll .w .a7 .a7 31, .shift .srl .w .a7 .a7 7, .shift .sra .w .a7 .a7 0,
       .load .b .t0 .a0 0, .load .h .t0 .a0 2046, .load .w .t1 .a1 4, .load .d .t2 .a2 2040,
       .store .b .t0 .a0 2047, .store .h .t0 .a0 0, .store .w .t1 .a1 4, .store .d .t2 .a2 8,
-      .addSp .a0 2047]) (.nonzero .t6))))))
+      .addSp .a0 2047, .lla .s1 "VG_TABLE"]) (.nonzero .t6))))))
 
 #guard text (RISCV64.printer.function sampleRV) == [
   "beqz a5, 20f",
@@ -600,6 +601,7 @@ def sampleRV : Prog RISCV64.isa :=
   "sw t1, 4(a1)",
   "sd t2, 8(a2)",
   "addi a0, sp, 2047",
+  "lla s1, <sym VG_TABLE>",
   "bnez t6, 210b",
   "j 29f",
   "28:",
@@ -620,6 +622,20 @@ def sampleRV : Prog RISCV64.isa :=
   "addi sp, sp, -16", "sd ra, 8(sp)", "addi sp, sp, -2032", "<call vg_f>",
   "addi sp, sp, 2032", "ld ra, 8(sp)", "addi sp, sp, 16", "ret"]
 #guard Rust.line RISCV64.printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
+
+-- The address of a static (RISC-V): `lla` of its symbol, a `sym` operand,
+-- which the assembler expands to `auipc` and `addi`. `asm` gives the text
+-- `Rust.line` writes, for reading.
+#guard text (RISCV64.printer.function (.block [.lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) == [
+  "lla a5, <sym VG_TABLE>", "ret"]
+#guard Rust.line RISCV64.printer.call (.sym "lla a5, " .bare "VG_TABLE") ==
+  "        r\"lla a5, {VG_TABLE}\",\n"
+#guard RISCV64.Instr.asm (.lla .a5 "VG_TABLE") == ["lla a5, VG_TABLE"]
+-- A template with an `lla` between text lines: the `lla` is a line of the
+-- same string literal.
+#guard Rust.template RISCV64.printer.call
+    (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
+  "        r\"addi a0, zero, 1\nlla a5, {VG_TABLE}\nret\",\n"
 
 #guard Arm.encodable 0xff000000 && Arm.encodable 0x3fc && !Arm.encodable 0x101 && !Arm.encodable 0x1fe00
 

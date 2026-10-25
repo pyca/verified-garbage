@@ -10,8 +10,10 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 Untrusted: everything here is checked by Lean.
 
 The abstract state is the set of registers known to be public; the stack
-pointer is always public. Memory is always secret: a loaded value is secret,
-and an address must be computed from a public register. A call leaves
+pointer is always public. The address of a static (`lla`) is secret here;
+`taintSym` (`TaintSym.lean`) makes those the contract lists public. Memory
+is always secret: a loaded value is secret, and an address must be computed
+from a public register. A call leaves
 unknown values in `ra` and `t0`–`t6`, which become secret.
 -/
 
@@ -48,6 +50,9 @@ def step (τ : T) : Instr → Option T
   | .addSp d _ => some (set τ d true)
   | .load _ t n _ => if pub τ n then some (set τ t false) else none
   | .store _ _ n _ => if pub τ n then some τ else none
+  -- The address of a static is secret, unless the contract makes it public
+  -- (`taintSym`).
+  | .lla d _ => some (set τ d false)
   -- Frames are analysed by `push` and `pop`.
   | .push .. | .pop .. | .alloc .. | .free .. => none
 
@@ -79,6 +84,10 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
   | push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  | lla d name =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.write d fun h => by cases h⟩
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂

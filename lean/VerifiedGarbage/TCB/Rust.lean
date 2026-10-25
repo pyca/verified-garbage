@@ -88,7 +88,9 @@ the address it leaves in the link register, and `addis` and `addi` of the
 high and low halves of the static's distance from there
 (`SymPart.ppcHa`, `SymPart.ppcLo`: `(<sym> - 2b)@ha` and `@l`, the
 relocations `R_PPC64_REL16_HA` and `R_PPC64_REL16_LO`, position
-independent). The
+independent); on RISC-V, by `lla` of the symbol (`SymPart.bare`), which
+the assembler expands to `auipc` and `addi` with the relocations
+`R_RISCV_PCREL_HI20` and `R_RISCV_PCREL_LO12_I`, position independent. The
 linker resolves them to the static's address, which the model gives
 (`State.syms`, fixed for the run as a static's address is) and at which the
 contract (`Abi.withConsts`) says the memory holds the table, readable and
@@ -180,6 +182,7 @@ def lineText (call : String) : Line → Option String
   | .sym s .armPcRel n => some (escapeBraces s ++ "{" ++ n ++ "} - (2f + 2 * (3f - 2f)))")
   | .sym s .ppcHa n => some (escapeBraces s ++ "{" ++ n ++ "} - 2b)@ha")
   | .sym s .ppcLo n => some (escapeBraces s ++ "{" ++ n ++ "} - 2b)@l")
+  | .sym s .bare n => some (escapeBraces s ++ "{" ++ n ++ "}")
   | .sym _ .page _ | .sym _ .pageOff _ => none
 
 /-- One line of the `naked_asm!` template as an argument of its own. -/

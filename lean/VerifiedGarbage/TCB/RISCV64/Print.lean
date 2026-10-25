@@ -11,8 +11,10 @@ public import VerifiedGarbage.TCB.Print
 (`a0`, `sp`, `zero`). Every instruction is printed as the base instruction
 the model's semantics describes, not as a pseudoinstruction that the
 assembler may expand to several (`li` of a large immediate), except `call`
-and `ret` (see `Isa.lean`) and the branches on zero (`beqz`, `bnez`), which
-are one instruction each.
+and `ret` (see `Isa.lean`), the branches on zero (`beqz`, `bnez`), which
+are one instruction each, and `lla` (see `Isa.lean`), whose operand is the
+static's symbol (`SymPart.bare`), which the assembler expands to `auipc` and
+`addi` with their relocations.
 -/
 
 @[expose] public section
@@ -62,6 +64,7 @@ def Instr.asm : Instr → List String
   | .alloc bytes => [s!"addi sp, sp, -{bytes}"]
   | .free bytes => [s!"addi sp, sp, {bytes}"]
   | .addSp d imm => [s!"addi {d.name}, sp, {imm}"]
+  | .lla d name => [s!"lla {d.name}, {name}"]
 
 def Cond.asm (c : Cond) (l : String) : String :=
   match c with
@@ -78,5 +81,8 @@ def printer : Printer isa where
   jump l := s!"j {l}"
   ret := ["ret"]
   call := "call"
+  symLines
+    | .lla d name => some [.sym s!"lla {d.name}, " .bare name]
+    | _ => none
 
 end VG.RISCV64
