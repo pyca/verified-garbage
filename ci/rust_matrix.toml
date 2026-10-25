@@ -3,7 +3,7 @@
 # entries it keeps. Each entry's `arch` is the `target_arch` its tests run
 # (the SDE chips', which have none, are x86-64's).
 
-# `rust`: every test, with coverage, on each platform, and the lints.
+# `rust`: every test, with coverage, on each platform.
 [[rust]]
 name = "Linux, x86-64"
 os = "ubuntu-26.04"
@@ -100,6 +100,56 @@ rust = "nightly"
 [[thumb]]
 arch = "arm"
 rust = "stable"
+
+# `rust-lint`: rustfmt and Clippy, for each target the jobs above build, all
+# on one x86-64 Linux runner, in the lint image (ci/runner.Dockerfile, which
+# installs each one's standard library), rather than each on its own
+# platform's: Clippy only checks, which needs the target's standard library
+# and no linker or runner. `arch` is its `target_arch`, whose changes lint it.
+# A target with `bench` has the benchmarks linted for it too: the Linux
+# targets, whose C cross compiler and OpenSSL, which the build scripts of
+# AWS-LC and OpenSSL's bindings compile and read, the image also has.
+[[lint]]
+target = "x86_64-unknown-linux-gnu"
+arch = "x86_64"
+bench = true
+
+[[lint]]
+target = "i686-unknown-linux-gnu"
+arch = "x86"
+bench = true
+
+[[lint]]
+target = "aarch64-unknown-linux-gnu"
+arch = "aarch64"
+bench = true
+
+[[lint]]
+target = "armv7-unknown-linux-gnueabihf"
+arch = "arm"
+bench = true
+
+[[lint]]
+target = "thumbv7neon-unknown-linux-gnueabihf"
+arch = "arm"
+
+[[lint]]
+target = "powerpc64le-unknown-linux-gnu"
+arch = "powerpc64"
+bench = true
+
+[[lint]]
+target = "riscv64gc-unknown-linux-gnu"
+arch = "riscv64"
+bench = true
+
+[[lint]]
+target = "aarch64-apple-darwin"
+arch = "aarch64"
+
+[[lint]]
+target = "x86_64-pc-windows-msvc"
+arch = "x86_64"
 
 # `rust-cpu-features`: one CPU (and userspace) each; see ci.yml. `shards = n`
 # runs the CPU's lines as n jobs (ci/cpu_shards.py), with a `shard` of `i/n`.

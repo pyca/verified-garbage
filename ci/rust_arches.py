@@ -29,7 +29,10 @@ job's matrix (`rust=`, `thumb=`, `cpu=`): the JSON list of its entries,
 each with `tests`, and each CPU with shards as one entry per shard. Each
 `rust` entry also has `bench`: whether the Benchmarks workflow measures its
 architecture (ci/bench_arches.py's `PLATFORMS`), for which a push to main
-caches the benchmarks' dependencies.
+caches the benchmarks' dependencies. `lint=` is the JSON list of the targets
+`rust-lint` lints (ci/rust_lint.py): those of the architectures tested, or
+every one when the benchmarks changed, or on a push to main (for its
+caches).
 """
 
 import json
@@ -54,9 +57,9 @@ ARCHES = {
 }
 
 # Paths that no Rust test reads or runs: the Lean sources (whose output is
-# `src/asm/`), the benchmarks (a crate of their own, which the `rust` job
-# lints whatever the architectures), documentation, and the workflows and
-# actions of the Lean build and the benchmarks.
+# `src/asm/`), the benchmarks (a crate of their own, which only `rust-lint`
+# builds, for every target: see `output`), documentation, and the workflows
+# and actions of the Lean build and the benchmarks.
 NOT_RUST_PREFIXES = (
     "lean/",
     "bench/",
@@ -89,6 +92,7 @@ RUST_CI = {
     "ci/requirements-coverage.txt",
     "ci/runner.Dockerfile",
     "ci/rust_arches.py",
+    "ci/rust_lint.py",
     "ci/rust_matrix.toml",
     "ci/rust_test_timing.sh",
     "ci/rustdoc_timing.sh",
@@ -145,9 +149,10 @@ def cache_of(entry):
     return (runner.endswith("-arm"), json.dumps(entry.get("container"), sort_keys=True))
 
 
-def output(matrix, selected, tests=True):
+def output(matrix, selected, tests=True, bench=False):
     """The outputs of a run testing the architectures `selected` (or, without
-    `tests`, building one job per cache)."""
+    `tests`, building one job per cache), whose changes reach the benchmarks
+    if `bench`."""
     everything = sorted(set(ARCHES.values()))
     lines = [
         f"arches={json.dumps(selected if tests else [])}",
@@ -164,6 +169,8 @@ def output(matrix, selected, tests=True):
                 first.setdefault(cache_of(e), e)
             keep = list(first.values())
         lines.append(f"{job}={json.dumps(keep, separators=(',', ':'))}")
+    lint = [e for e in matrix["lint"] if bench or not tests or e["arch"] in selected]
+    lines.append(f"lint={json.dumps(lint, separators=(',', ':'))}")
     return "".join(line + "\n" for line in lines)
 
 
@@ -171,7 +178,8 @@ def main(argv):
     matrix = tomllib.loads(MATRIX.read_text())
     everything = sorted(set(ARCHES.values()))
     if argv == ["pull_request"]:
-        out = output(matrix, arches(line.strip() for line in sys.stdin if line.strip()))
+        paths = [line.strip() for line in sys.stdin if line.strip()]
+        out = output(matrix, arches(paths), bench=any(p.startswith("bench/") for p in paths))
     elif argv == ["merge_group"]:
         out = output(matrix, everything)
     elif argv == ["push"]:

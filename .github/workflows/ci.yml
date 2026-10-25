@@ -339,6 +339,7 @@ jobs:
       all: ${{ steps.arches.outputs.all }}
       rust: ${{ steps.arches.outputs.rust }}
       thumb: ${{ steps.arches.outputs.thumb }}
+      lint: ${{ steps.arches.outputs.lint }}
       cpu: ${{ steps.arches.outputs.cpu }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -357,7 +358,7 @@ jobs:
           fi | python3 ci/rust_arches.py "$EVENT" | tee -a "$GITHUB_OUTPUT"
 
   # Every test, with coverage, on each platform of ci/rust_matrix.toml's
-  # `rust`, and the lints.
+  # `rust` (the lints are `rust-lint`'s).
   rust:
     name: Rust (${{ matrix.name }}, ${{ matrix.rust }})
     needs: rust-arches
@@ -386,8 +387,7 @@ jobs:
         with:
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
-          # this target never compiles (or formats: rustfmt skips a missing
-          # module file that a `cfg` leaves out).
+          # this target never compiles.
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -403,39 +403,21 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy,rustfmt,llvm-tools
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component llvm-tools
       # The dependencies (built with opt-level 3) are most of the build.
       # Only main saves, so pull requests restore main's entries instead of
       # filling the cache quota with their own.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           # Not shared with `rust-cpu-features`: those jobs compute the same
-          # key but run no clippy, so when one of them saved the entry first,
-          # this job's clippy checked the dependencies again on every run.
+          # key but build other features, so whichever saved the entry first,
+          # the other's built theirs again on every run.
           shared-key: rust
           # The benchmark crate is outside the library's workspace.
           workspaces: |
             . -> target
             bench -> target
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - name: Lint
-        if: ${{ matrix.rust == 'stable' }}
-        run: |
-          cargo fmt --check
-          cargo clippy --all-targets --locked
-          cargo clippy --all-targets --locked --features std
-          cargo clippy --all-targets --locked --features cpu-features-env
-      # The benchmark crate, which is outside the library's workspace: on each
-      # architecture the Benchmarks workflow runs it on, since its files are
-      # gated by architecture. It links OpenSSL (rust-openssl).
-      - name: Lint the benchmarks
-        if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' }}
-        working-directory: bench
-        env:
-          RUSTFLAGS: -D warnings
-        run: |
-          cargo fmt --check
-          cargo clippy --all-targets --locked
       # The Benchmarks workflow's dependencies, for its `compare` jobs to
       # restore: pull requests can read only caches saved on their own branch
       # or on main, and that workflow does not run on main. A new stable Rust
@@ -553,15 +535,12 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust
-        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --target thumbv7neon-unknown-linux-gnueabihf
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rust-thumb
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: rustc -vV
-      - name: Lint
-        if: ${{ matrix.rust == 'stable' }}
-        run: cargo clippy --all-targets --locked
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
@@ -577,6 +556,54 @@ jobs:
           find "target/$CARGO_BUILD_TARGET/debug/deps" -maxdepth 1 -type f -executable -exec readelf -sW {} + |
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
                  END { print n " verified function symbols"; exit (n == 0 || bad > 0) }'
+
+  # rustfmt and Clippy, for each target the jobs above build
+  # (ci/rust_matrix.toml's `lint`, those of the architectures `rust-arches`
+  # selected, or all of them when the benchmarks changed), on one x86-64
+  # runner (ci/rust_lint.py): Clippy only checks, which needs the target's
+  # standard library and no linker or runner, so the slow platforms (RISC-V's
+  # and PPC64LE's runners, x86 and ARMv7 in their containers) only build and
+  # test. The library with each of its sets of features, and the benchmark
+  # crate, outside its workspace, for the Linux targets. In the lint image
+  # (ci/runner.Dockerfile), which has every target's standard library, and
+  # each Linux target's C cross compiler and OpenSSL, which the build scripts
+  # of AWS-LC and OpenSSL's bindings compile and read.
+  rust-lint:
+    name: "Rust: lints (${{ matrix.crate }})"
+    needs: rust-arches
+    if: ${{ needs.rust-arches.outputs.lint != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [library, benchmarks]
+    runs-on: ubuntu-26.04
+    container:
+      image: ghcr.io/pyca/verified-garbage-runner:lint
+    env:
+      RUSTUP_TOOLCHAIN: stable
+      RUSTFLAGS: -D warnings
+      LINT: ${{ needs.rust-arches.outputs.lint }}
+      CRATE: ${{ matrix.crate }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Every architecture's verified functions, but not the proofs.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt --target "$(python3 ci/rust_lint.py targets "$CRATE")"
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: rust-lint-${{ matrix.crate }}
+          workspaces: ${{ matrix.crate == 'library' && '. -> target' || 'bench -> target' }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: rustc -vV
+      - name: Lint
+        run: python3 ci/rust_lint.py run "$CRATE"
 
   # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
   # per class of host, which its shards deal out their lines by
@@ -954,7 +981,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-lint, rust-cpu-features, coverage]
     runs-on: ubuntu-26.04
     # To list the run's artifacts.
     permissions:
@@ -971,6 +998,7 @@ jobs:
           # Each skipped exactly when `rust-arches` left its matrix empty.
           RUST: ${{ needs.rust.result }} ${{ needs.rust-arches.outputs.rust == '[]' }}
           THUMB: ${{ needs.rust-thumb.result }} ${{ needs.rust-arches.outputs.thumb == '[]' }}
+          LINT: ${{ needs.rust-lint.result }} ${{ needs.rust-arches.outputs.lint == '[]' }}
           CPU: ${{ needs.rust-cpu-features.result }} ${{ needs.rust-arches.outputs.cpu == '[]' }}
           # Skipped exactly when no architecture ran its tests (`rust-arches`).
           COVERAGE: ${{ needs.coverage.result }} ${{ needs.rust-arches.outputs.arches == '[]' }}
@@ -979,11 +1007,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          echo "$RESULTS | $RUST | $THUMB | $CPU | $COVERAGE | $SHARDS"
+          echo "$RESULTS | $RUST | $THUMB | $LINT | $CPU | $COVERAGE | $SHARDS"
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
-          for r in "$RUST" "$THUMB" "$CPU"; do
+          for r in "$RUST" "$THUMB" "$LINT" "$CPU"; do
             [ "$r" = "success false" ] || [ "$r" = "skipped true" ] || exit 1
           done
           [ "$COVERAGE" = "success false" ] || [ "$COVERAGE" = "skipped true" ] || exit 1
