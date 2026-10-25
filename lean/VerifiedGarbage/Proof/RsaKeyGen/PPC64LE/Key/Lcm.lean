@@ -30,7 +30,7 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 theorem shl3_ofNat {L : Nat} (_h : 8 * L < 2 ^ 64) : BitVec.ofNat 64 L <<< 3 = BitVec.ofNat 64 (8 * L) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 section
 variable {s : State} {B : Addr} {Z w : Nat} {V F : Nat → Nat}
@@ -88,11 +88,11 @@ theorem halfStep_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) :
   obtain ⟨F1, k1, g1, p1⟩ := k1.fx
   refine bitOfE h1 k1 (d := X1) (j := aV) (k := fun t2 h2 k2 f2 r2 => ?_)
   obtain ⟨F2, k2, g2, p2⟩ := k2.fx
-  refine notSE h2 k2 (d := X1) (a := X1) (ba := by rw [g2]; omega) (k := fun t3 h3 k3 f3 r3 => ?_)
+  refine notSE h2 k2 (d := X1) (a := X1) (ba := by rw [g2]; omega_arith) (k := fun t3 h3 k3 f3 r3 => ?_)
   obtain ⟨F3, k3, g3, p3⟩ := k3.fx
   rw [← List.append_nil (andNotS X2 X0 X1)]
-  refine andNotSE h3 k3 (d := X2) (a := X0) (b := X1) (ba := by rw [p3 X0 (by decide), p2 X0 (by decide), g1]; omega)
-    (bb := by rw [g3]; omega) (k := fun t4 h4 k4 f4 r4 => WP.block_nil ?_)
+  refine andNotSE h3 k3 (d := X2) (a := X0) (b := X1) (ba := by rw [p3 X0 (by decide), p2 X0 (by decide), g1]; omega_arith)
+    (bb := by rw [g3]; omega_arith) (k := fun t4 h4 k4 f4 r4 => WP.block_nil ?_)
   obtain ⟨F4, k4, g4, p4⟩ := k4.fx
   have b4 : F4 X2 ≤ 1 := by rw [g4]; exact flag01 _
   -- `X2`: both even.
@@ -100,7 +100,7 @@ theorem halfStep_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) :
     rw [g4, p3 X0 (by decide), p2 X0 (by decide), g1, g3, g2]
     have := Nat.mod_two_eq_zero_or_one (V aU)
     have := Nat.mod_two_eq_zero_or_one (V aV)
-    by_cases a : V aU % 2 = 0 <;> by_cases b : V aV % 2 = 0 <;> simp [a, b] <;> omega
+    by_cases a : V aU % 2 = 0 <;> by_cases b : V aV % 2 = 0 <;> simp [a, b] <;> omega_arith
   rw [wp_seqs_append (by simp [halfSel]) (by simp [halfSel])]
   refine WP.mono (halfSelE h4 k4 (j := aU) (bit := b4)) fun t5 ⟨h5, ⟨V5, k5, o5, e5⟩, f5, r5⟩ => ?_
   rw [wp_seqs_append (by simp [halfSel]) (by simp [halfSel])]
@@ -159,7 +159,7 @@ theorem halving_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
           (V aPm, V aQm, V aPm * (V aQm % 2 ^ (8 * L)) % 2 ^ (32 * w))) ∧
       KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
   rw [halving_eq]
-  refine WP.seq (WP.mono (mulToE h ks (o := aF) (a := aPm) (b := aQm) (K := 8 * L) (hK := by omega) (hK' := hL')
+  refine WP.seq (WP.mono (mulToE h ks (o := aF) (a := aPm) (b := aQm) (K := 8 * L) (hK := by omega_arith) (hK' := hL')
     (hk := fun u hu => cnt8_ok hL' u (hu.trans h22)) (hZ := zero)) fun t1 ⟨h1, ⟨V1, k1, o1, e1⟩, f1, r1⟩ => ?_)
   refine WP.seq (WP.mono (copyE h1 k1 (o := aU) (a := aPm)) fun t2 ⟨h2, k2, f2, r2⟩ => ?_)
   obtain ⟨V2, k2, e2, o2⟩ := k2.vx
@@ -172,7 +172,7 @@ theorem halving_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
   have k4 : KS t4.mem B w V3 F := m4 ▸ k3
   have i0 : HalveI t4 B Z w V3 F (V3 aU, V3 aV, V3 aF) 0 t4 :=
     ⟨h4, ⟨V3, F, k4, fun _ _ => rfl, fun _ _ _ _ => rfl, rfl⟩, KK.refl _ _ _, Keep.refl _ _⟩
-  refine WP.mono (halveLoop_ok (by omega) hL' i0 c4) fun t ⟨ht, ⟨V', F', kt, fr, ff, v⟩, kk, kr⟩ => ⟨ht,
+  refine WP.mono (halveLoop_ok (by omega_arith) hL' i0 c4) fun t ⟨ht, ⟨V', F', kt, fr, ff, v⟩, kk, kr⟩ => ⟨ht,
     ⟨V', F', kt, fun j hjn hj => ?_, ff, ?_⟩, ((f1.trans f2).trans f3).trans ((show KK B w t3.mem t4.mem by rw [m4]; exact KK.refl _ _ _).trans kk),
     (((r1.trans' r2.mono).trans' r3.mono).trans' r4.mono).trans' kr⟩
   · simp only [halvingArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hj
@@ -208,9 +208,9 @@ theorem gcdUV_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1
   refine bitOfE h ks (d := X0) (j := aV) (k := fun t1 h1 k1 f1 r1 => ?_)
   obtain ⟨F1, k1, g1, p1⟩ := k1.fx
   rw [← List.append_nil (notS X0 X0)]
-  refine notSE h1 k1 (d := X0) (a := X0) (ba := by rw [g1]; omega) (k := fun t2 h2 k2 f2 r2 => WP.block_nil ?_)
+  refine notSE h1 k1 (d := X0) (a := X0) (ba := by rw [g1]; omega_arith) (k := fun t2 h2 k2 f2 r2 => WP.block_nil ?_)
   obtain ⟨F2, k2, g2, p2⟩ := k2.fx
-  have b2 : F2 X0 ≤ 1 := by rw [g2]; omega
+  have b2 : F2 X0 ≤ 1 := by rw [g2]; omega_arith
   refine WP.seq (WP.mono (selE h2 k2 (o := aU2) (a := aU) (b := aV) (sl := X0) (bit := b2))
     fun t3 ⟨h3, k3, f3, r3⟩ => ?_)
   obtain ⟨V3, k3, e3, o3⟩ := k3.vx
@@ -240,7 +240,7 @@ theorem gcdUV_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1
   have sO : V6 aS % 2 = 1 ∧ 1 < V6 aS := by
     by_cases hl : (if V aV % 2 = 0 then V aU else V aV) < 2
     · rw [vS]; simp only [hl, ↓reduceIte]; decide
-    · rw [vS]; simp only [hl, ↓reduceIte]; exact ⟨hodd (by omega), by omega⟩
+    · rw [vS]; simp only [hl, ↓reduceIte]; exact ⟨hodd (by omega_arith), by omega_arith⟩
   refine WP.seq (WP.mono (invOfE h6 k6 (a := aU2) (m := aS) (one := by vsimp [o6, o5, o4, o3, one])
     (zero := by vsimp [o6, o5, o4, o3, zero]) (odd := sO.1) (gt := sO.2)) fun t7 ⟨h7, ⟨V7, k7, fr7, g7, _, _⟩, f7,
       r7⟩ => ?_)
@@ -282,7 +282,7 @@ theorem lcmPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
   rw [lcmPart_eq]
   have hst : V aPm * (V aQm % 2 ^ (8 * L)) % 2 ^ (32 * w) = V aPm * V aQm := by
     rw [Nat.mod_eq_of_lt hqm, Nat.mod_eq_of_lt]
-    rw [hw, show 16 * L = 8 * L + 8 * L by omega, Nat.pow_add]
+    rw [hw, show 16 * L = 8 * L + 8 * L by omega_arith, Nat.pow_add]
     exact Nat.mul_lt_mul'' hpm hqm
   have LE := VG.Proof.RsaKeyGen.lcm_eq hpm hqm
   refine WP.seq (WP.mono (halving_ok h ks h22 hL hL' zero) fun t1 ⟨h1, ⟨V1, F1, k1, o1, p1, e1⟩, f1, r1⟩ => ?_)
@@ -309,8 +309,8 @@ theorem lcmPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
   have hG : 0 < V4 aDv := by
     rw [vG]
     by_cases hv : (if v % 2 = 0 then u else v) < 2
-    · simp only [hv, ↓reduceIte]; omega
-    · simp only [hv, ↓reduceIte]; exact Nat.gcd_pos_of_pos_right _ (by omega)
+    · simp only [hv, ↓reduceIte]; omega_arith
+    · simp only [hv, ↓reduceIte]; exact Nat.gcd_pos_of_pos_right _ (by omega_arith)
   refine ⟨ht, ⟨V5, F2, k5, fun j hj hn => ?_, fun d a b c => by rw [p2 d a b, p1 d a b c], ?_⟩,
     (((f1.trans f2).trans f3).trans f4).trans f5, (((r1.trans' r2).trans' r3.mono).trans' r4.mono).trans' r5.mono⟩
   · simp only [lcmArrs, halvingArrs, gcdArrs, invOfArrs, List.cons_append, List.nil_append, List.mem_cons,
@@ -330,8 +330,8 @@ theorem lcmPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
   · rw [(e5 hG).1, o4 aL (by decide), e3, o2 aF (by decide) (by decide), ef, vG, LE.2]
     congr 1
     by_cases hv : (if v % 2 = 0 then u else v) < 2
-    · simp only [hv, ↓reduceIte, show (if v % 2 = 0 then u else v) ≤ 1 by omega]
-    · simp only [hv, ↓reduceIte, show ¬ (if v % 2 = 0 then u else v) ≤ 1 by omega]
+    · simp only [hv, ↓reduceIte, show (if v % 2 = 0 then u else v) ≤ 1 by omega_arith]
+    · simp only [hv, ↓reduceIte, show ¬ (if v % 2 = 0 then u else v) ≤ 1 by omega_arith]
 
 end
 

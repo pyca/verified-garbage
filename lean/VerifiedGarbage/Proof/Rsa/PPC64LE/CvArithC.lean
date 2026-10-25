@@ -49,7 +49,7 @@ theorem divD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil (clrLow aDD)]
   refine clrLow_ok h2 (by decide) (by decide) fun t3 h3 k3 v3 x3 top3 => WP.block_nil ?_
   have topd : w32 t3.mem B (arr w aDD + 4 * w) = 0 := by
-    rw [top3, top2, KeyWorkspace.Keep.word k1 (i := w) (by omega) (by decide) (by simp)
+    rw [top3, top2, KeyWorkspace.Keep.word k1 (i := w) (by omega_arith) (by decide) (by simp)
       (fit _ (by decide)), top]
   refine WP.mono (div_ok h3 (by decide) r1 (by decide) (by decide) (by decide) (Ne.symm r2) (by decide)
     (by decide) r3 r4 (by decide) topd) fun t ⟨h4, k4, x4, v4⟩ => ?_
@@ -65,9 +65,9 @@ theorem divD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
       rw [vr]
       have h1 : num s.mem B w a < 2 ^ (32 * w) := val32_lt _ _ _ _
       have h2 := Nat.mod_lt (num s.mem B w aD) hP
-      omega
+      omega_arith
     rw [num_of_num1 hlt, vr]
-  · rw [KeyWorkspace.Keep.word k4 (i := w) (by omega) (by simp; exact ⟨by decide, r3, by decide⟩) (by simp)
+  · rw [KeyWorkspace.Keep.word k4 (i := w) (by omega_arith) (by simp; exact ⟨by decide, r3, by decide⟩) (by simp)
       (fit _ (by decide)), topd]
 
 end VG.Proof.Rsa.PPC64LE.CrtValues

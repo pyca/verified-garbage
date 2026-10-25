@@ -65,11 +65,11 @@ theorem halfBody_ok {B : Addr} {Z v : Nat} {s1 : State} {m i : Nat} (hi : i < 2 
   refine bitOf_ok w4 (j := wR) (sl := sBit) (by decide) (by decide) (by decide) fun t5 w5 k5 b5 r5 => ?_
   have eT5 : slot t5.mem B sTc = (halveStep^[i] (m, 0)).2 := by
     rw [KeyWorkspace.Keep.slot (e := sTc) k5 (by decide) (by simp [sBit, sTc])]; exact eT
-  have hb5 : slot t5.mem B sBit ≤ 1 := by rw [b5]; omega
-  refine WP.mono (halfRest_ok w5 hb5 (by rw [eT5]; omega)) fun t6 ⟨w6, k6, b6, T6, r6⟩ => ?_
+  have hb5 : slot t5.mem B sBit ≤ 1 := by rw [b5]; omega_arith
+  refine WP.mono (halfRest_ok w5 hb5 (by rw [eT5]; omega_arith)) fun t6 ⟨w6, k6, b6, T6, r6⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sel_ok w6 (o := wR) (a := wU) (b := wH) (sl := sBit) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by rw [b6]; omega)) fun t7 ⟨w7, k7, v7, r7⟩ => ?_
+    (by decide) (by decide) (by decide) (by decide) (by rw [b6]; omega_arith)) fun t7 ⟨w7, k7, v7, r7⟩ => ?_
   rw [show seqs [.block [.subi .r27 .r27 1]] = .block [.subi .r27 .r27 1] from rfl]
   refine WP.mono (WP.keep [.r27] (Q := fun x => x.gpr .r27 = t7.gpr .r27 - BitVec.ofNat 64 1 ∧ x.mem = t7.mem)
     (by prun []) (by decide)) fun t8 ⟨⟨a27, m8⟩, k8⟩ => ?_
@@ -143,13 +143,13 @@ theorem halving_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0) : WP isa
     have : dV s0 * eV s0 < 2 ^ cB s0 :=
       calc dV s0 * eV s0 < 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat) * 2 ^ (8 * (s0.gpr .r10).toNat) :=
             Nat.mul_lt_mul'' bD bE
-        _ = 2 ^ cB s0 := by rw [← Nat.pow_add]; congr 1; simp only [cB]; omega
-    simp only [mV]; omega
-  have hm0 : 0 < mV s0 := by simp only [mV]; omega
-  have hc : cB s0 < 2 ^ 31 := by simp only [cB]; omega
+        _ = 2 ^ cB s0 := by rw [← Nat.pow_add]; congr 1; simp only [cB]; omega_arith
+    simp only [mV]; omega_arith
+  have hm0 : 0 < mV s0 := by simp only [mV]; omega_arith
+  have hc : cB s0 < 2 ^ 31 := by simp only [cB]; omega_arith
   unfold halving
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil VG.Impl.Rsa.PPC64LE.Recover.ctxW]
-  refine ctxW_ok h.ws (by omega) (Nat.le_trans svW (Nat.le_trans (Nat.le_add_right _ _) svZ))
+  refine ctxW_ok h.ws (by omega_arith) (Nat.le_trans svW (Nat.le_trans (Nat.le_add_right _ _) svZ))
     fun t1 w1' m1 k1 => WP.block_nil ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _), halfInit, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok w1' (o := wR) (a := wM) (by decide) (by decide) (by decide) (by decide))
@@ -161,12 +161,12 @@ theorem halving_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0) : WP isa
     x.gpr .r27 = t2.gpr .r26)
     (by
       prun [w2'.r31, exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sTc < 2 ^ 15 by decide),
-        w2'.scr.st (show sTc + 4 ≤ rvZ s0 by simp only [sTc]; omega), BitVec.add_zero]
+        w2'.scr.st (show sTc + 4 ≤ rvZ s0 by simp only [sTc]; omega_arith), BitVec.add_zero]
       rfl) (by decide)) fun t3 ⟨⟨m3, a27⟩, k3⟩ => ?_
   have w3 := w2'.of_keep k3
   have fitW : ∀ j < 16, arr (wW (kK s0)) j + S (wW (kK s0)) ≤ 2 ^ 64 := fun j hj => w3.fit64 hj
   have kk3 : KeyWorkspace.Keep (rvB s0) (wW (kK s0)) [] [sTc] t2.mem t3.mem := by
-    rw [m3]; exact keep_slot _ _ (by simp) (by simp only [sTc]; omega)
+    rw [m3]; exact keep_slot _ _ (by simp) (by simp only [sTc]; omega_arith)
   have hW : 2 * ww (kK s0) + 2 = wW (kK s0) := rfl
   rw [hW] at w1' w2' w3 k2 v2
   have i0 : HInv (rvB s0) (rvZ s0) (wW (kK s0)) t3 (mV s0) 0 t3 :=
@@ -176,14 +176,14 @@ theorem halving_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0) : WP isa
   have a27' : t3.gpr .r27 = BitVec.ofNat 64 (cB s0) := by
     rw [a27, r2.gpr _ (by decide), k1.gpr _ (by decide)]; exact h.r26
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (wp_countdown (body := halfBody) (cnt := .r27) (N := cB s0) (by omega) (by simp only [cB]; omega)
-    (HInv (rvB s0) (rvZ s0) (wW (kK s0)) t3 (mV s0)) (fun i hi u inv _ => halfBody_ok (by omega) inv) i0 a27')
+  refine WP.mono (wp_countdown (body := halfBody) (cnt := .r27) (N := cB s0) (by omega_arith) (by simp only [cB]; omega_arith)
+    (HInv (rvB s0) (rvZ s0) (wW (kK s0)) t3 (mV s0)) (fun i hi u inv _ => halfBody_ok (by omega_arith) inv) i0 a27')
     fun t4 inv => ?_
   rw [show seqs [.block VG.Impl.Rsa.PPC64LE.Recover.ctxw] = .block VG.Impl.Rsa.PPC64LE.Recover.ctxw from rfl,
     ← List.append_nil VG.Impl.Rsa.PPC64LE.Recover.ctxw]
   have ws4 := inv.ws
   rw [← hW] at ws4
-  refine ctxw_ok ws4 (by omega) (by rw [← z.svw]; omega) fun t5 w5 m5 k5 => WP.block_nil ?_
+  refine ctxw_ok ws4 (by omega_arith) (by rw [← z.svw]; omega_arith) fun t5 w5 m5 k5 => WP.block_nil ?_
   have hd := halve_done hm0 hm
   -- What the steps kept.
   have K : Keep (.r29 :: .r30 :: .r27 :: .r0 :: opRegs) t t5 :=
@@ -207,14 +207,14 @@ theorem halving_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0) : WP isa
     rcases hd with rfl | rfl <;> decide
   · simp only [num]
     rw [far _ _ (VG.Proof.Rsa.KeyWorkspace.arr_mono (by decide))
-      (Nat.le_trans (Nat.add_le_add_left (by simp only [S]; omega) _) (w5.fit64 (j := aN) (by decide)))]
+      (Nat.le_trans (Nat.add_le_add_left (by simp only [S]; omega_arith) _) (w5.fit64 (j := aN) (by decide)))]
     exact h.vN
   · intro j hj i hi
     have hj' : j = 33 ∨ j = 34 := by simpa [aOne, aZ] using hj
-    have f64 := w5.fit64 (j := j) (by simp only [nArr]; omega)
+    have f64 := w5.fit64 (j := j) (by simp only [nArr]; omega_arith)
     have := far (arr (ww (kK s0)) j + 4 * i) 1
-      (Nat.le_trans (VG.Proof.Rsa.KeyWorkspace.arr_mono (by omega)) (Nat.le_add_right _ _))
-      (by simp only [S] at f64; omega)
+      (Nat.le_trans (VG.Proof.Rsa.KeyWorkspace.arr_mono (by omega_arith)) (Nat.le_add_right _ _))
+      (by simp only [S] at f64; omega_arith)
     simp only [val32, Nat.mul_zero, Nat.add_zero] at this
     rw [this]; exact h.zK j hj i hi
   · rw [m5, inv.vR, hd]

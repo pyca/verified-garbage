@@ -100,34 +100,34 @@ theorem round_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, 
     (by rw [o₇.get .r3, o₆.get .r3, o₅.get .r3, o₄.get .r3, e₃, b₂.r14])
     (by rw [o₇.get .r5, o₆.get .r5, e₅, o₄.get .r24, o₃.get .r24, m₂ _ (by decide), I.r24])
     (by rw [o₇.get .r6, e₆, o₅.get .r25, o₄.get .r25, o₃.get .r25, m₂ _ (by decide), I.r25, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)])
+      Nat.mod_eq_of_lt (by omega_arith)])
     (by rw [e₇, o₆.get .r14, o₅.get .r14, o₄.get .r14, o₃.get .r14, b₂.r14])
-    (Covers.right (by rw [b₇.wr]; exact sc_cov P (by omega))) (sdis (.inl (by omega)) (by omega) (by omega))
-    (sdis (.inl (by omega)) (by omega) (by omega)) (cR_dis P (by omega))) fun t₈ ⟨b₈, g₈, s₈, r₈⟩ => ?_)
+    (Covers.right (by rw [b₇.wr]; exact sc_cov P (by omega_arith))) (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+    (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (cR_dis P (by omega_arith))) fun t₈ ⟨b₈, g₈, s₈, r₈⟩ => ?_)
   have m₈ : ∀ r ∈ mg, t₈.gpr r = v.gpr r := fun r hr => by
     rw [g₈ r (pm r hr), k₇.gpr r (by revert r; decide), m₂ r hr]
   have hsrc : Spec.Rsa.bytesAt t₇.mem (off (S s) src) srcLen = srcB V src srcLen := by
     rw [bytesAt_view]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    rw [k₇.mem, s₂ _ (by omega) (by simp; omega), o₁.mem, I.em _ (by omega), mixV, ifn (by omega)]
+    rw [k₇.mem, s₂ _ (by omega_arith) (by simp; omega_arith), o₁.mem, I.em _ (by omega_arith), mixV, ifn (by omega_arith)]
   have hR8 : hG.SH.Repr t₈.mem (off (S s) oSt) (srcB V src srcLen) := by
     have := r₈ [] (by rw [k₇.mem]; exact r₂) (by rw [o₇.get .r4, o₆.get .r4, o₅.get .r4, e₄]; rfl)
     rw [List.nil_append] at this
     exact hsrc ▸ this
   -- The counter, and `update` with it.
-  refine WP.seq (WP.mono (ctr_ok P b₈ (c := c) (by rw [m₈ _ (by decide), I.r28]) (by omega))
+  refine WP.seq (WP.mono (ctr_ok P b₈ (c := c) (by rw [m₈ _ (by decide), I.r28]) (by omega_arith))
     fun t₉ ⟨b₉, g₉, v₉, x3, x4, x5, x6, x7⟩ => ?_)
   have m₉ : ∀ r ∈ mg, t₉.gpr r = v.gpr r := fun r hr => by rw [g₉ r (pm r hr), m₈ r hr]
   have hR9 : hG.SH.Repr t₉.mem (off (S s) oSt) (srcB V src srcLen) :=
     hG.congr t₈.mem t₉.mem (off (S s) oSt) _ (fun i hi => by
-      have e := v₉ (oSt + i) (by omega)
+      have e := v₉ (oSt + i) (by omega_arith)
       simp only [view, ctrV] at e
-      rw [ifn (by omega)] at e
+      rw [ifn (by omega_arith)] at e
       rw [off_add]; exact e) hR8
   refine WP.seq (WP.mono (upd_ok P hG b₉ (dat := off (S s) oCtr) (len := 4) x3 x5 (by rw [x6]; rfl) x7
-    (Covers.right (by rw [b₉.wr]; exact sc_cov P (by omega))) (sdis (.inr (by omega)) (by omega) (by omega))
-    (sdis (.inl (by omega)) (by omega) (by omega)) (cR_dis P (by omega))) fun t₁₀ ⟨b₁₀, g₁₀, s₁₀, r₁₀⟩ => ?_)
+    (Covers.right (by rw [b₉.wr]; exact sc_cov P (by omega_arith))) (sdis (.inr (by omega_arith)) (by omega_arith) (by omega_arith))
+    (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (cR_dis P (by omega_arith))) fun t₁₀ ⟨b₁₀, g₁₀, s₁₀, r₁₀⟩ => ?_)
   have m₁₀ : ∀ r ∈ mg, t₁₀.gpr r = v.gpr r := fun r hr => by rw [g₁₀ r (pm r hr), m₉ r hr]
   have hctr : Spec.Rsa.bytesAt t₉.mem (off (S s) oCtr) 4 = Spec.Rsa.i2osp c 4 := by
     rw [bytesAt_view]
@@ -135,7 +135,7 @@ theorem round_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, 
       (xs := Spec.Rsa.i2osp c 4) (by rw [Proof.Mgf1.i2osp_length])).trans
       (List.take_of_length_le (by rw [Proof.Mgf1.i2osp_length])))
     have := List.mem_range.mp hi
-    rw [v₉ _ (by omega), ctrV, ifp (by omega), Nat.add_sub_cancel_left]
+    rw [v₉ _ (by omega_arith), ctrV, ifp (by omega_arith), Nat.add_sub_cancel_left]
   have hml : (srcB V src srcLen).length = srcLen := by simp [srcB]
   have hR10 : hG.SH.Repr t₁₀.mem (off (S s) oSt) (srcB V src srcLen ++ Spec.Rsa.i2osp c 4) := by
     have := r₁₀ _ hR9 (by rw [x4, m₈ _ (by decide), I.r25, hml])
@@ -152,37 +152,37 @@ theorem round_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, 
     (by rw [e₁₄, o₁₃.get .r14, o₁₂.get .r14, o₁₁.get .r14, b₁₀.r14])) fun t₁₅ ⟨b₁₅, g₁₅, s₁₅, r₁₅⟩ => ?_)
   have m₁₅ : ∀ r ∈ mg, t₁₅.gpr r = v.gpr r := fun r hr => by
     rw [g₁₅ r (pm r hr), k₁₄.gpr r (by revert r; decide), m₁₀ r hr]
-  have hfh := r₁₅ _ (by rw [k₁₄.mem]; exact hR10) (by rw [hl4]; omega)
+  have hfh := r₁₅ _ (by rw [k₁₄.mem]; exact hR10) (by rw [hl4]; omega_arith)
     (by rw [o₁₄.get .r4, o₁₃.get .r4, e₁₂, o₁₁.get .r25, m₁₀ _ (by decide), I.r25, hl4, BitVec.ofNat_add])
   have hdig : ∀ j < G.D, view t₁₅.mem (S s) (oDig + j) =
       (Gs.hash (srcB V src srcLen ++ Spec.Rsa.i2osp c 4)).getD j 0 := fun j hj => by
     rw [hGh, hG.hashTake, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hj, ← List.getD_eq_getElem?_getD,
       ← hfh, view, ← off_add]
     simp only [Spec.Sha256.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
-      List.getElem?_range (show j < G.FD by omega)]
+      List.getElem?_range (show j < G.FD by omega_arith)]
     rfl
   -- Into `dst`.
   have hdc := Nat.min_le_left G.D (dstLen - c * G.D)
-  have hn0 : 0 < min G.D (dstLen - c * G.D) := by omega
+  have hn0 : 0 < min G.D (dstLen - c * G.D) := by omega_arith
   refine WP.seq (WP.seq (WP.mono (xorHead_ok (G := G) (S := S s) (dst := dst) (dstLen := dstLen) (done := c * G.D)
-    (by omega) b₁₅.r14 (by rw [m₁₅ _ (by decide), I.r26]) (by rw [m₁₅ _ (by decide), I.r27])
-    (by rw [m₁₅ _ (by decide), I.r29]) hc (by omega)) fun t₁₆ ⟨k₁₆, x11, x12, x9⟩ => ?_))
+    (by omega_arith) b₁₅.r14 (by rw [m₁₅ _ (by decide), I.r26]) (by rw [m₁₅ _ (by decide), I.r27])
+    (by rw [m₁₅ _ (by decide), I.r29]) hc (by omega_arith)) fun t₁₆ ⟨k₁₆, x11, x12, x9⟩ => ?_))
   have b₁₆ := b₁₅.only P k₁₆
-  refine WP.mono (xorLoop_ok (p := off (S s) (dst + c * G.D)) (q := off (S s) oDig) hn0 (by omega) x11 x12 x9
+  refine WP.mono (xorLoop_ok (p := off (S s) (dst + c * G.D)) (q := off (S s) oDig) hn0 (by omega_arith) x11 x12 x9
     (fun j hj => by
-      rw [off_add, k₁₆.rd, k₁₆.wr, b₁₅.wr, b₁₅.rd]; exact sc_inR P (by omega) _)
-    (sc_w P (by rw [k₁₆.wr, b₁₅.wr]) (by omega))
+      rw [off_add, k₁₆.rd, k₁₆.wr, b₁₅.wr, b₁₅.rd]; exact sc_inR P (by omega_arith) _)
+    (sc_w P (by rw [k₁₆.wr, b₁₅.wr]) (by omega_arith))
     (fun j hj i hi => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith))
     (fun i hi j hj hij => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)))
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)))
     fun t₁₇ ⟨k₁₇, x₁₇⟩ => ?_
-  have b₁₇ : Base S vf s t₁₇ := b₁₆.wb P k₁₇ (by rw [xorAt_length]; omega) x₁₇
+  have b₁₇ : Base S vf s t₁₇ := b₁₆.wb P k₁₇ (by rw [xorAt_length]; omega_arith) x₁₇
   have m₁₇ : ∀ r ∈ mg, t₁₇.gpr r = v.gpr r := fun r hr => by
     rw [k₁₇.gpr r (by revert r; decide), k₁₆.gpr r (by revert r; decide), m₁₅ r hr]
   -- The next counter.
   refine WP.mono (nextCtr_ok (G := G) (c := c) (done := c * G.D) (dstLen := dstLen) (by rw [m₁₇ _ (by decide), I.r28])
-    (by rw [m₁₇ _ (by decide), I.r29]) (by rw [m₁₇ _ (by decide), I.r27]) (by omega) (by omega) (by omega))
+    (by rw [m₁₇ _ (by decide), I.r29]) (by rw [m₁₇ _ (by decide), I.r27]) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₁₈ ⟨k₁₈, x28, x29, x12'⟩ => ?_
   have hs1 : (c + 1) * G.D = c * G.D + G.D := Nat.succ_mul _ _
   refine ⟨by rw [x12', hs1], b₁₇.only P k₁₈, by rw [k₁₈.get .r24, m₁₇ _ (by decide), I.r24],
@@ -190,40 +190,40 @@ theorem round_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, 
     by rw [k₁₈.get .r27, m₁₇ _ (by decide), I.r27], x28, by rw [x29, hs1], fun o ho => ?_⟩
   -- `EM`'s place.
   have hold : view t₁₅.mem (S s) o = view v.mem (S s) o := by
-    have e₁₅ := s₁₅ o (by omega) (by simp; omega)
-    have e₁₀ := s₁₀ o (by omega) (by simp; omega)
-    have e₉ := v₉ o (by omega)
-    have e₈ := s₈ o (by omega) (by simp; omega)
-    have e₂ := s₂ o (by omega) (by simp; omega)
+    have e₁₅ := s₁₅ o (by omega_arith) (by simp; omega_arith)
+    have e₁₀ := s₁₀ o (by omega_arith) (by simp; omega_arith)
+    have e₉ := v₉ o (by omega_arith)
+    have e₈ := s₈ o (by omega_arith) (by simp; omega_arith)
+    have e₂ := s₂ o (by omega_arith) (by simp; omega_arith)
     simp only [ctrV] at e₉
-    rw [ifn (by omega)] at e₉
+    rw [ifn (by omega_arith)] at e₉
     simp only [view] at *
     rw [e₁₅, k₁₄.mem, e₁₀, e₉, e₈, k₇.mem, e₂, o₁.mem]
   have hv : view t₁₈.mem (S s) o = if dst + c * G.D ≤ o ∧ o < dst + c * G.D + min G.D (dstLen - c * G.D) then
       view v.mem (S s) o ^^^ (Gs.hash (srcB V src srcLen ++ Spec.Rsa.i2osp c 4)).getD (o - (dst + c * G.D)) 0
       else view v.mem (S s) o := by
-    rw [k₁₈.mem, x₁₇, k₁₆.mem, view_wb _ _ (by rw [xorAt_length]; omega) (by omega), xorAt_length]
+    rw [k₁₈.mem, x₁₇, k₁₆.mem, view_wb _ _ (by rw [xorAt_length]; omega_arith) (by omega_arith), xorAt_length]
     split
     · rename_i hx
-      rw [xorAt_getD _ _ _ (by omega), off_add, off_add, show dst + c * G.D + (o - (dst + c * G.D)) = o by omega,
+      rw [xorAt_getD _ _ _ (by omega_arith), off_add, off_add, show dst + c * G.D + (o - (dst + c * G.D)) = o by omega_arith,
         ← hold]
       simp only [view]
-      rw [← hdig _ (by omega)]
+      rw [← hdig _ (by omega_arith)]
       simp only [view]
     · exact hold
   rw [hv]
   by_cases hx : dst + c * G.D ≤ o ∧ o < dst + c * G.D + min G.D (dstLen - c * G.D)
   · have hs2 : G.D * (c + 1) = c * G.D + G.D := by rw [Nat.mul_comm]; exact hs1
     have hs3 : G.D * c = c * G.D := Nat.mul_comm _ _
-    have hq : (o - dst) / G.D = c := Nat.div_eq_of_lt_le (by omega) (by omega)
+    have hq : (o - dst) / G.D = c := Nat.div_eq_of_lt_le (by omega_arith) (by omega_arith)
     have hr : (o - dst) % G.D = o - (dst + c * G.D) := by
-      rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega
-    rw [ifp hx, I.em o ho, mixV, mixV, ifn (by omega), ifp (by rw [hs1]; omega),
-      Proof.Mgf1.mgf1_getD hGv _ (show o - dst < dstLen by omega), hGl, hq, hr]
+      rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega_arith
+    rw [ifp hx, I.em o ho, mixV, mixV, ifn (by omega_arith), ifp (by rw [hs1]; omega_arith),
+      Proof.Mgf1.mgf1_getD hGv _ (show o - dst < dstLen by omega_arith), hGl, hq, hr]
   · rw [ifn hx, I.em o ho, mixV, mixV]
     by_cases hy : dst ≤ o ∧ o < dst + min (c * G.D) dstLen
-    · rw [ifp hy, ifp (by rw [hs1]; omega)]
-    · rw [ifn hy, ifn (by rw [hs1]; omega)]
+    · rw [ifp hy, ifp (by rw [hs1]; omega_arith)]
+    · rw [ifn hy, ifn (by rw [hs1]; omega_arith)]
 
 /-- `dst ⊕= MGF1(src, dstLen)` in `EM`'s place, from `src`, `srcLen`, `dst`
 and `dstLen` in `r24`–`r27`. -/
@@ -242,18 +242,18 @@ theorem mgfXor_ok {G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x,
       dst dstLen G.D 0 t₂ :=
     ⟨h.only P k₂, by rw [k₂.get .r24, h24], by rw [k₂.get .r25, h25], by rw [k₂.get .r26, h26],
       by rw [k₂.get .r27, h27], by rw [o₂.get .r28, e₁], by rw [e₂, Nat.zero_mul],
-      fun o _ => by rw [mixV, ifn (by omega), k₂.mem]⟩
+      fun o _ => by rw [mixV, ifn (by omega_arith), k₂.mem]⟩
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
       MgfI S vf s (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) src srcLen dst
         dstLen G.D c w)
-    ?_ (dstLen - 0 * G.D) t₂ ⟨0, rfl, by omega, I0⟩
+    ?_ (dstLen - 0 * G.D) t₂ ⟨0, rfl, by omega_arith, I0⟩
   rintro n w ⟨c, rfl, hc, I⟩
   refine WP.mono (round_ok P hG hGh hGl hGv hf I hc) fun w' ⟨hcf, I'⟩ => ?_
   have hs1 : (c + 1) * G.D = c * G.D + G.D := Nat.succ_mul _ _
   by_cases h' : (c + 1) * G.D < dstLen
-  · exact .inr ⟨by rw [eval_nonzero, hcf, decide_eq_true h'], _, by omega, c + 1, rfl, h', I'⟩
+  · exact .inr ⟨by rw [eval_nonzero, hcf, decide_eq_true h'], _, by omega_arith, c + 1, rfl, h', I'⟩
   · exact .inl ⟨by rw [eval_nonzero, hcf, decide_eq_false h'], I'.base,
-      fun o ho => by rw [I'.em o ho, Nat.min_eq_right (by omega)]⟩
+      fun o ho => by rw [I'.em o ho, Nat.min_eq_right (by omega_arith)]⟩
 
 end
 

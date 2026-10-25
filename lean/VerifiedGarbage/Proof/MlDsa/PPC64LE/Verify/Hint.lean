@@ -95,9 +95,9 @@ theorem hint_m {σ : State} :
     HbuOk (vlay p STK σ) vWb (.r28, oHint p) (p.ω + p.k) p.ω (pH 0) (256 * p.k) := by
   have hk := hF.k; have hom := hF.om; have hl := hF.l
   have ho : oHint p < 2 ^ 31 := by
-    rw [hF.hint]; rcases hF.ct with h | h | h <;> rcases hF.lz with h' | h' <;> rw [h, h'] <;> omega
+    rw [hF.hint]; rcases hF.ct with h | h | h <;> rcases hF.lz with h' | h' <;> rw [h, h'] <;> omega_arith
   exact ⟨⟨vptr_ok rfl ho, by vsep hF⟩, ⟨vptr_ok rfl (by decide), by vsep hF⟩, show ix Reg.r31 ∈ vWb by decide,
-    by vsep hF, by rw [Nat.add_sub_cancel_left]; exact hF.hp, by omega, by rw [Nat.add_sub_cancel_left], by omega⟩
+    by vsep hF, by rw [Nat.add_sub_cancel_left]; exact hF.hp, by omega_arith, by rw [Nat.add_sub_cancel_left], by omega_arith⟩
 
 omit hP hF hS in
 theorem zx_of {x : BitVec 64} {b : Bool} (h : x.setWidth 32 = if b then 1 else 0) : zx x = flag b := by

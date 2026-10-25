@@ -214,9 +214,9 @@ theorem ball_okX {s : State} (hs : Site L Wb STK s) (hS : S ≤ STK) {name : Str
     obtain ⟨g3, g4, g5, g6, -⟩ := KeyGen.ball_vg hs m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
     have := KeyGen.ball_post hp
     rw [State.withRegions_mem, State.withRegions_gpr, g3, g4, g5, g6, KeyGen.view_glue_mem,
-      KeyGen.imm32 (by omega), KeyGen.imm32_toNat (by omega), KeyGen.imm_toNat (by omega)] at this
-    rw [g3, g4, g5, KeyGen.view_glue_mem, State.withRegions_gpr, KeyGen.imm32 (by omega), KeyGen.imm32_toNat (by omega),
-      KeyGen.imm_toNat (by omega)] at hx
+      KeyGen.imm32 (by omega_arith), KeyGen.imm32_toNat (by omega_arith), KeyGen.imm_toNat (by omega_arith)] at this
+    rw [g3, g4, g5, KeyGen.view_glue_mem, State.withRegions_gpr, KeyGen.imm32 (by omega_arith), KeyGen.imm32_toNat (by omega_arith),
+      KeyGen.imm_toNat (by omega_arith)] at hx
   exacts [this.1, this.2, hx]
 
 theorem rn_trRet (hS : S ≤ STK) {name : String} {sd a w : Impl.MlDsa.PPC64LE.KeyGen.Ptr}
@@ -255,7 +255,7 @@ theorem ball_trRet (hS : S ≤ STK) {name : String} {ct c w : Impl.MlDsa.PPC64LE
     KeyGen.ball_pub (by rw [KeyGen.view_glue_sp, KeyGen.view_glue_sp, hsp]) (by rw [gx3, gy3]) (by rw [gx4, gy4])
       (by rw [gx5, gy5]) (by rw [gx6, gy6]) (by rw [gx7, gy7]) ?_, (KeyGen.ball_cov hx m).1, (KeyGen.ball_cov hx m).2,
     (KeyGen.ball_cov hy m).1, (KeyGen.ball_cov hy m).2⟩
-  rw [gx3, gy3, gx4, gy4, KeyGen.view_glue_mem, KeyGen.view_glue_mem, KeyGen.imm_toNat (by omega)]
+  rw [gx3, gy3, gx4, gy4, KeyGen.view_glue_mem, KeyGen.view_glue_mem, KeyGen.imm_toNat (by omega_arith)]
   exact hl
 
 end

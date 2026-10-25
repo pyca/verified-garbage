@@ -53,7 +53,7 @@ theorem checksA_ok {s : State} {BX Na : Addr} {Z w k : Nat} {nb : List Byte} {c 
     (hN : word s.mem BX oN = off Na 0) (hNL : word s.mem BX oNLen = BitVec.ofNat 64 k)
     (hk : 64 ≤ k) (hk' : k ≤ 1024) (hlen : nb.length = k)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off Na i) 1)
-    (hb : ∀ i (h : i < k), s.mem (off Na i) = nb[i]'(by omega))
+    (hb : ∀ i (h : i < k), s.mem (off Na i) = nb[i]'(by omega_arith))
     (hM : val32 s.mem BX (slot w 0) (2 * w) = 2 ^ (64 * w) - 1)
     (hM0 : word s.mem BX (slot w 0) = BitVec.allOnes 64)
     (hn1 : val32 s.mem BX (slot w 1) (2 * w) = Spec.Rsa.os2ip nb)
@@ -73,37 +73,37 @@ theorem checksA_ok {s : State} {BX Na : Addr} {Z w k : Nat} {nb : List Byte} {c 
   have e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e5 := e 5; have e6 := e 6
   have e7 := e 7; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
-  refine WP.seq (WP.mono (checkN_ok hs (by omega) h23 hN hNL hk hk' hlen hrd hb) fun s₁ ⟨⟨a26, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (checkN_ok hs (by omega_arith) h23 hN hNL hk hk' hlen hrd hb) fun s₁ ⟨⟨a26, m1⟩, k1⟩ => ?_)
   rw [bmask_decide] at a26
   refine WP.seq (WP.mono (checkLt_ok (a := 6) (m := 1) (hs.congr k1.wr) (by decide) (by decide) (by decide)
-    (by decide) (by omega) hw' hZ ((k1.gpr _ (by decide)).trans h10) ((k1.gpr _ (by decide)).trans h21)
+    (by decide) (by omega_arith) hw' hZ ((k1.gpr _ (by decide)).trans h10) ((k1.gpr _ (by decide)).trans h21)
     ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11) (by rw [m1]; exact h6top))
     fun s₂ ⟨⟨b26, o2, b10⟩, k2⟩ => ?_)
   rw [m1, a26, hn1, bmask_decide, bmask_and] at b26
   have k12 := k1.trans k2
   rw [m1] at o2
   have v : ∀ j, j ≠ 3 → j < 8 → val32 s₂.mem BX (slot w j) (2 * w) = val32 s.mem BX (slot w j) (2 * w) :=
-    fun j h3 hj => o2.val32 (by have := slot_sep (w := w) h3; omega) (by have := slot_le (w := w) hj; omega)
+    fun j h3 hj => o2.val32 (by have := slot_sep (w := w) h3; omega_arith) (by have := slot_le (w := w) hj; omega_arith)
   have O2 : VG.Proof.Bignum.Outside BX (slot w 3) (8 * w) s.mem s₂.mem := fun x hx => o2 x hx
   have wd : ∀ j, j ≠ 3 → j < 8 → word s₂.mem BX (slot w j + 8 * w) = word s.mem BX (slot w j + 8 * w) :=
     fun j h3 hj => O2.word
-      (by have := slot_sep (w := w) h3; omega) (by have := slot_le (w := w) hj; omega)
+      (by have := slot_sep (w := w) h3; omega_arith) (by have := slot_le (w := w) hj; omega_arith)
   refine WP.seq (WP.mono (checkLt_ok (a := 7) (m := 4) (hs.congr k12.wr) (by decide) (by decide) (by decide)
-    (by decide) (by omega) hw' hZ b10 ((k12.gpr _ (by decide)).trans h21)
+    (by decide) (by omega_arith) hw' hZ b10 ((k12.gpr _ (by decide)).trans h21)
     ((k12.gpr _ (by decide)).trans h29) ((k12.gpr _ (by decide)).trans h11)
     (by rw [wd 7 (by decide) (by decide)]; exact h7top)) fun s₃ ⟨⟨c26, o3, c10⟩, k3⟩ => ?_)
   rw [b26, v 7 (by decide) (by decide), v 4 (by decide) (by decide), bmask_decide, bmask_and] at c26
   have k13 := k12.trans k3
   have v' : ∀ j, j ≠ 3 → j < 8 → val32 s₃.mem BX (slot w j) (2 * w) = val32 s.mem BX (slot w j) (2 * w) :=
-    fun j h3 hj => (o3.val32 (by have := slot_sep (w := w) h3; omega)
-      (by have := slot_le (w := w) hj; omega)).trans (v j h3 hj)
+    fun j h3 hj => (o3.val32 (by have := slot_sep (w := w) h3; omega_arith)
+      (by have := slot_le (w := w) hj; omega_arith)).trans (v j h3 hj)
   have O3 : VG.Proof.Bignum.Outside BX (slot w 3) (8 * w) s₂.mem s₃.mem := fun x hx => o3 x hx
   have wd' : ∀ j, j ≠ 3 → j < 8 → word s₃.mem BX (slot w j + 8 * w) = word s.mem BX (slot w j + 8 * w) :=
     fun j h3 hj => (O3.word
-      (by have := slot_sep (w := w) h3; omega) (by have := slot_le (w := w) hj; omega)).trans (wd j h3 hj)
+      (by have := slot_sep (w := w) h3; omega_arith) (by have := slot_le (w := w) hj; omega_arith)).trans (wd j h3 hj)
   have w0 : word s₃.mem BX (slot w 0) = BitVec.allOnes 64 := by
-    rw [O3.word (Or.inl (by omega)) (by omega),
-      O2.word (Or.inl (by omega)) (by omega), hM0]
+    rw [O3.word (Or.inl (by omega_arith)) (by omega_arith),
+      O2.word (Or.inl (by omega_arith)) (by omega_arith), hM0]
   refine WP.seq (WP.mono (checkPQ_ok (hs.congr k13.wr) hw2 hw' hZ c10 ((k13.gpr _ (by decide)).trans h21)
     ((k13.gpr _ (by decide)).trans h29) ((k13.gpr _ (by decide)).trans h11)
     (by rw [v' 0 (by decide) (by decide), hM]) w0 (by rw [v' 5 (by decide) (by decide)]; exact hq)
@@ -114,7 +114,7 @@ theorem checksA_ok {s : State} {BX Na : Addr} {Z w k : Nat} {nb : List Byte} {c 
   refine hc t t26 (fun x hx => ?_) t10 (k13.trans kt).mono
   have h3 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   simp only at h3
-  rw [ot x hx, o3 x (by omega), o2 x (by omega)]
+  rw [ot x hx, o3 x (by omega_arith), o2 x (by omega_arith)]
 
 /-- `checks`' second part, the mask of `b` in `r26`: arrays 4 and 5 kept if
 `b`, else 3, and array 7 kept if `b`, else 0. -/
@@ -133,10 +133,10 @@ theorem checksB_ok {s : State} {BX : Addr} {Z w : Nat} {b : Bool} (hs : Scr s BX
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e4 := e 4; have e5 := e 5; have e6 := e 6; have e7 := e 7; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
-  refine WP.seq (WP.mono (orThree_ok (j := 4) hs (by decide) h10 h29 h11 (by omega) hw' hZ h26)
+  refine WP.seq (WP.mono (orThree_ok (j := 4) hs (by decide) h10 h29 h11 (by omega_arith) hw' hZ h26)
     fun s₁ ⟨⟨v4, o1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (orThree_ok (j := 5) (hs.congr k1.wr) (by decide) ((k1.gpr _ (by decide)).trans h10)
-    ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11) (by omega) hw' hZ
+    ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11) (by omega_arith) hw' hZ
     ((k1.gpr _ (by decide)).trans h26)) fun s₂ ⟨⟨v5, o2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
   have O1 : Mont.Outside BX (slot w 4) (8 * w) s.mem s₁.mem := fun x hx => o1 x hx
@@ -144,14 +144,14 @@ theorem checksB_ok {s : State} {BX : Addr} {Z w : Nat} {b : Bool} (hs : Scr s BX
   refine WP.seq (WP.mono (Pub.base_ok (rd := .r14) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h10)
     ((k12.gpr _ (by decide)).trans h29) 7) fun s₃ ⟨⟨a14, m3⟩, k3⟩ => ?_)
   have k13 := k12.trans k3
-  refine WP.mono (maskWords_ok (hs.congr k13.wr) a14 ((k13.gpr _ (by decide)).trans h11) (by omega) hw'
-    (by omega)) fun t ⟨⟨hm, ot⟩, kt⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, (k13.trans kt).mono⟩
+  refine WP.mono (maskWords_ok (hs.congr k13.wr) a14 ((k13.gpr _ (by decide)).trans h11) (by omega_arith) hw'
+    (by omega_arith)) fun t ⟨⟨hm, ot⟩, kt⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, (k13.trans kt).mono⟩
   · have OT : Mont.Outside BX (slot w 7) (8 * w) s₃.mem t.mem := fun x hx => ot x hx
-    rw [OT.val32 (Or.inl (by omega)) (by omega), m3, O2.val32 (Or.inl (by omega)) (by omega), v4]
+    rw [OT.val32 (Or.inl (by omega_arith)) (by omega_arith), m3, O2.val32 (Or.inl (by omega_arith)) (by omega_arith), v4]
   · have OT : Mont.Outside BX (slot w 7) (8 * w) s₃.mem t.mem := fun x hx => ot x hx
-    rw [OT.val32 (Or.inl (by omega)) (by omega), m3, v5, O1.val32 (Or.inr (by omega)) (by omega)]
+    rw [OT.val32 (Or.inl (by omega_arith)) (by omega_arith), m3, v5, O1.val32 (Or.inr (by omega_arith)) (by omega_arith)]
   · have h7 : val32 s₃.mem BX (slot w 7) (2 * w) = val32 s.mem BX (slot w 7) (2 * w) := by
-      rw [m3, O2.val32 (Or.inr (by omega)) (by omega), O1.val32 (Or.inr (by omega)) (by omega)]
+      rw [m3, O2.val32 (Or.inr (by omega_arith)) (by omega_arith), O1.val32 (Or.inr (by omega_arith)) (by omega_arith)]
     rw [← h7, Pre.val32_eq_wv, Pre.val32_eq_wv]
     have g26 : s₃.gpr .r26 = bmask b := (k13.gpr _ (by decide)).trans h26
     cases b
@@ -168,6 +168,6 @@ theorem checksB_ok {s : State} {BX : Addr} {Z w : Nat} {b : Bool} (hs : Scr s BX
     have h4' : ofs BX x < slot w 4 ∨ slot w 4 + 8 * (w + 2) ≤ ofs BX x := h4
     have h5' : ofs BX x < slot w 5 ∨ slot w 5 + 8 * (w + 2) ≤ ofs BX x := h5
     have h7' : ofs BX x < slot w 7 ∨ slot w 7 + 8 * (w + 2) ≤ ofs BX x := h7
-    rw [ot x (by omega), m3, o2 x (by omega), o1 x (by omega)]
+    rw [ot x (by omega_arith), m3, o2 x (by omega_arith), o1 x (by omega_arith)]
 
 end VG.Proof.Bignum.PPC64LE.Crt

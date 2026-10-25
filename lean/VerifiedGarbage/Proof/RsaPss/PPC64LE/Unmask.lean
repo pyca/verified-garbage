@@ -50,7 +50,7 @@ theorem dbArgs_ok {H : Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t)
   have hD64 := L.D64
   subst hD
   refine wp_add fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ => wp_add fun t₃ o₃ e₃ =>
-    wp_li (by omega) fun t₄ o₄ e₄ => wp_nil ?_
+    wp_li (by omega_arith) fun t₄ o₄ e₄ => wp_nil ?_
   have k₄ : Only [.r26, .r27, .r24, .r25] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have a26 : t₁.gpr .r26 = off (Sp s) lN := by rw [e₁, h.r14, h.plo, L.hlo]
   exact ⟨h.only F k₄, k₄,
@@ -68,9 +68,9 @@ theorem clearTop_ok {t : State} (h : Base Sp (vP D) s t) :
     fun o e => by rw [e, h.r14, h.plo, L.hlo]
   refine wp_add fun t₆ o₆ e₆ => ?_
   refine wp_lbz (a := off (Sp s) lN) (by rw [a6 o₆ e₆, BitVec.add_zero])
-    (by rw [o₆.rd, o₆.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega) _) fun t₇ o₇ e₇ => ?_
+    (by rw [o₆.rd, o₆.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega_arith) _) fun t₇ o₇ e₇ => ?_
   refine wp_and fun t₈ o₈ e₈ => wp_stb (a := off (Sp s) lN) (by rw [o₈.get .r4, o₇.get .r4, a6 o₆ e₆,
-    BitVec.add_zero]) (by rw [o₈.wr, o₇.wr, o₆.wr, h.wr]; exact sc_inW F (by unfold oRsa; omega)) fun w mw => ?_
+    BitVec.add_zero]) (by rw [o₈.wr, o₇.wr, o₆.wr, h.wr]; exact sc_inW F (by unfold oRsa; omega_arith)) fun w mw => ?_
   have k₈ : Only [.r4, .r5] t t₈ := (o₆.trans (o₇.trans o₈)).mono
   have hK : Keep [.r4, .r5] t w := (k₈.keep.trans mw.keep).mono
   have hb : (t₈.gpr .r5).setWidth 8 = view t.mem (Sp s) lN &&& c := by
@@ -81,8 +81,8 @@ theorem clearTop_ok {t : State} (h : Base Sp (vP D) s t) :
     rw [mw.mem, hb, k₈.mem]
   refine wp_nil ⟨h.keep F hK (R := [⟨off (Sp s) lN, 1⟩]) (by
       rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega))), hK, fun o ho => ?_⟩
-  rw [hm, view_w8 _ _ (by unfold oRsa; omega) (by unfold oSt oRsa at *; omega)]
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega_arith))), hK, fun o ho => ?_⟩
+  rw [hm, view_w8 _ _ (by unfold oRsa; omega_arith) (by unfold oSt oRsa at *; omega_arith)]
 
 theorem unmask_ok {H : Hash} (hH : HashOK H) (hD : H.D = D) {Gs : Spec.Mgf1.Hash}
     (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) (hGl : Gs.len = H.D) (hGv : Proof.Mgf1.Valid Gs) {t : State}
@@ -95,7 +95,7 @@ theorem unmask_ok {H : Hash} (hH : HashOK H) (hD : H.D = D) {Gs : Spec.Mgf1.Hash
   refine WP.seq (WP.mono (dbArgs_ok L hD h) fun t₄ ⟨b₄, k₄, x24, x25, x26, x27⟩ => ?_)
   subst hD
   refine WP.seq (WP.mono (mgfXor_ok F hH hGh hGl hGv (src := lN + dN) (srcLen := H.D) (dst := lN) (dstLen := dN)
-    ⟨by omega, by omega, .inr (by omega), by omega⟩ b₄ x24 x25 x26 x27) fun t₅ ⟨b₅, v₅⟩ => ?_)
+    ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩ b₄ x24 x25 x26 x27) fun t₅ ⟨b₅, v₅⟩ => ?_)
   have V4 : view t₄.mem (Sp s) = view t.mem (Sp s) := by rw [k₄.mem]
   rw [V4] at v₅
   refine WP.seq (WP.mono (clearTop_ok L b₅) fun w ⟨b, _, v⟩ => k w b fun o ho => ?_)

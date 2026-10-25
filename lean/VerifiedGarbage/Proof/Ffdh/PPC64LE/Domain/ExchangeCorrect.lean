@@ -56,19 +56,19 @@ theorem hdr_ok {s : State} {S : Addr} (h23 : s.gpr .r23 = S)
   have i1 : InRegions s.wr (S + BitVec.ofNat 64 72) 8 := hin 1 (by decide)
   have i2 : InRegions s.wr (S + BitVec.ofNat 64 80) 8 := hin 2 (by decide)
   prun [h23, i0, i1, i2, BitVec.add_zero]
-  have o0 := writeW_outside s.mem S (d := 64) (s.gpr .r8) (by omega)
-  have o1 := writeW_outside (s.mem.writeW (off S 64) (s.gpr .r8)) S (d := 72) (s.gpr .r9) (by omega)
+  have o0 := writeW_outside s.mem S (d := 64) (s.gpr .r8) (by omega_arith)
+  have o1 := writeW_outside (s.mem.writeW (off S 64) (s.gpr .r8)) S (d := 72) (s.gpr .r9) (by omega_arith)
   have o2 := writeW_outside ((s.mem.writeW (off S 64) (s.gpr .r8)).writeW (off S 72) (s.gpr .r9)) S (d := 80)
-    (s.gpr .r3) (by omega)
+    (s.gpr .r3) (by omega_arith)
   refine ⟨?_, ?_, word_writeW_self _ _ _ _, ?_⟩
   · show word _ S 64 = _
-    rw [o2.word (by omega) (by omega), o1.word (by omega) (by omega)]
+    rw [o2.word (by omega_arith) (by omega_arith), o1.word (by omega_arith) (by omega_arith)]
     exact word_writeW_self _ _ _ _
   · show word _ S 72 = _
-    rw [o2.word (by omega) (by omega)]
+    rw [o2.word (by omega_arith) (by omega_arith)]
     exact word_writeW_self _ _ _ _
-  · exact ((o0.mono (by omega) (by omega)).trans (o1.mono (by omega) (by omega))).trans
-      (o2.mono (by omega) (by omega))
+  · exact ((o0.mono (by omega_arith) (by omega_arith)).trans (o1.mono (by omega_arith) (by omega_arith))).trans
+      (o2.mono (by omega_arith) (by omega_arith))
 
 /-- Bytes apart from the working space are kept by a change in it. -/
 theorem outside_bytesAt {B Q : Addr} {o n Z k : Nat} {m m' : Mem} (h : Outside B o n m m') (hn : o + n ≤ Z)
@@ -78,7 +78,7 @@ theorem outside_bytesAt {B Q : Addr} {o n Z k : Nat} {m m' : Mem} (h : Outside B
   have := hsep i (List.mem_range.mp hi) (off Q i)
   show o + n ≤ ofs B (off Q i)
   by_contra hc
-  exact this (by omega) rfl
+  exact this (by omega_arith) rfl
 
 theorem saved_ne11' : ∀ i < 18, Impl.Ffdh.PPC64LE.Domain.saved i ∉ ([.r11] : List Reg) := by decide
 
@@ -103,7 +103,7 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
     refine ⟨exStack s, List.mem_append_left _ (by rw [hrd]; simp), ?_⟩
     show (⟨s.sp + BitVec.ofNat 64 96, 24⟩ : Region).Contains (s.sp + BitVec.ofNat 64 104) 8
     rw [show s.sp + BitVec.ofNat 64 104 = s.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by rw [Offset.add_add]]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   rw [hol] at hwr dOD dOX dOP dOS dOA nwO
   rw [hpl] at hrd dOP dPS nwP
   generalize hOd : s.gpr .r3 = O at hwr dOD dOX dOP dOS dOA nwO
@@ -116,24 +116,24 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
   generalize hSd : stackArg s 1 = S at hwr dOS dDS dXS dPS dSA nwS
   generalize hZd : (stackArg s 2).toNat * 8 = Z at hwr dOS dDS dXS dPS dSA nwS
   have hLk : 2 * k ≤ L ∧ L ≤ 3 * k := by
-    simp only [Spec.Ffdh.domainLenValid] at hL; omega
-  have hZ256 : 256 ≤ Z := by omega
+    simp only [Spec.Ffdh.domainLenValid] at hL; omega_arith
+  have hZ256 : 256 ≤ Z := by omega_arith
   generalize hwd : (k + 7) / 8 = w
-  have hw4 : 4 ≤ w := by omega
-  have hw' : w ≤ 128 := by omega
+  have hw4 : 4 ≤ w := by omega_arith
+  have hw' : w ≤ 128 := by omega_arith
   have hZw : slot w 28 ≤ Z := by rw [slot_eq]; omega_using [hsl, hZd, hwd, hk', hk]
-  have e0 : slot w 0 = 256 := by rw [slot_eq]; omega
+  have e0 : slot w 0 = 256 := by rw [slot_eq]; omega_arith
   have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS
   have hin : ∀ i < 18, InRegions s.wr (off (savW S) (8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp, by
-    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega) (by omega)⟩
+    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega_arith) (by omega_arith)⟩
   have hinH : ∀ i < 3, InRegions s.wr (off S (64 + 8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp,
-    Offset.contains_base S (by omega) (by omega)⟩
-  have sepD := sep_of_disjoint dDS (by omega)
-  have sepX := sep_of_disjoint dXS (by omega)
-  have sepP := sep_of_disjoint dPS (by omega)
-  have rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega)
-  have rdX := rd_of_mem (s := s) (D := X) (L := xl) (by rw [hrd]; simp) (by omega)
-  have rdP := rd_of_mem (s := s) (D := P) (L := k) (by rw [hrd]; simp) (by omega)
+    Offset.contains_base S (by omega_arith) (by omega_arith)⟩
+  have sepD := sep_of_disjoint dDS (by omega_arith)
+  have sepX := sep_of_disjoint dXS (by omega_arith)
+  have sepP := sep_of_disjoint dPS (by omega_arith)
+  have rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega_arith)
+  have rdX := rd_of_mem (s := s) (D := X) (L := xl) (by rw [hrd]; simp) (by omega_arith)
+  have rdP := rd_of_mem (s := s) (D := P) (L := k) (by rw [hrd]; simp) (by omega_arith)
   have sepO : ∀ x, ofs O x < k → Z ≤ ofs S x := Pub.sep_of_disjoint dOS
   have sepSO : ∀ x, ofs S x < Z → k ≤ ofs O x := Pub.sep_of_disjoint dOS.symm
   unfold exchange exFront
@@ -158,18 +158,18 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
   have e3 : Env s₃ S Z w := ⟨hs.congr k123.wr, a10, a29, a11, a31, hw4, hw', hZw⟩
   have hb3 : ∀ (Q : Addr) n, (∀ i < n, ∀ x, ofs S x < Z → off Q i ≠ x) →
       Spec.Rsa.bytesAt s₃.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hsep => by
-    rw [m3, outside_bytesAt o2 (by omega) hsep]
+    rw [m3, outside_bytesAt o2 (by omega_arith) hsep]
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => hfr₁ _ fun r hr hc => ?_
     rw [List.mem_singleton] at hr
     subst hr
-    have hc' := (Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega)) _ hc
+    have hc' := (Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega_arith)) _ hc
     exact hsep i (List.mem_range.mp hi) _ (by simp only [Region.Contains] at hc'; exact hc') rfl
   have g23 : s₃.gpr .r23 = S := (k3.gpr .r23 (by decide)).trans ((k2.gpr .r23 (by decide)).trans h23₁)
   refine WP.seq (WP.mono (loadP_ok e3 a21 a28 hwd.symm hk hk' (fun i hi => by
-      rw [k123.rd, k123.wr]; exact rdD i (by omega)) (fun i hi => sepD i (by omega)))
+      rw [k123.rd, k123.wr]; exact rdD i (by omega_arith)) (fun i hi => sepD i (by omega_arith)))
     fun s₄ ⟨⟨p4, c4, b4'⟩, k4⟩ => ?_)
-  rw [hb3 D k fun i hi => sepD i (by omega)] at p4 c4
+  rw [hb3 D k fun i hi => sepD i (by omega_arith)] at p4 c4
   generalize hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k) = p at p4 c4
   have e4 : Env s₄ S Z w := e3.keep k4 (by decide)
   have k1234 := k123.trans k4
@@ -178,7 +178,7 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
     rwa [bytesAt_length] at this
   -- The header's words.
   have hw4' : ∀ d, d + 8 ≤ 256 → word s₄.mem S d = word s₂.mem S d := fun d hd => by
-    rw [Outside.word b4' (by omega) (by omega), m3]
+    rw [Outside.word b4' (by omega_arith) (by omega_arith), m3]
   generalize hz : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P k) ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem X xl) % p = z
   have hite : WP isa (.ite (.zero .d .r0) (.seq exPower exOut) (.block [.li .r3 0])) s₄ fun t =>
       (Spec.Rsa.modulusValid p k = true →
@@ -191,37 +191,37 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
       have hf := modulus_facts hv
       have hX₄ : s₄.mem.readW (off S 64) 64 = off X 0 := by
         show word s₄.mem S 64 = _
-        rw [hw4' 64 (by omega), w8, k1.gpr .r8 (by decide), hXd]; simp [off]
+        rw [hw4' 64 (by omega_arith), w8, k1.gpr .r8 (by decide), hXd]; simp [off]
       have hXL₄ : s₄.mem.readW (off S 72) 64 = BitVec.ofNat 64 xl := by
         show word s₄.mem S 72 = _
-        rw [hw4' 72 (by omega), w9, k1.gpr .r9 (by decide), ← hxd, VG.Proof.Bignum.ofNat_toNat64]
+        rw [hw4' 72 (by omega_arith), w9, k1.gpr .r9 (by decide), ← hxd, VG.Proof.Bignum.ofNat_toNat64]
       refine WP.seq (WP.mono (exPower_ok (Y := P) (X := X) (k := k) (xl := xl) e4
         ((k4.gpr .r23 (by decide)).trans g23)
         ((k4.gpr .r9 (by decide)).trans ((k3.gpr .r9 (by decide)).trans (b9.trans
           ((k1.gpr .r10 (by decide)).trans hPd))))
-        ((k4.gpr .r28 (by decide)).trans a28) (by omega) (by omega) hx1 (by omega)
+        ((k4.gpr .r28 (by decide)).trans a28) (by omega_arith) (by omega_arith) hx1 (by omega_arith)
         (fun i hi => by rw [k1234.rd, k1234.wr]; exact rdP i hi) sepP
         (fun i hi => by rw [k1234.rd, k1234.wr]; exact rdX i hi) sepX hX₄ hXL₄
         (by rw [p4]; exact hf.1) (by rw [p4]; exact hf.2)) fun s₅ ⟨⟨z5, p5, b5', r10₅⟩, k5⟩ => ?_)
       rw [Body.bytesAt b4' hZw sepP, Body.bytesAt b4' hZw sepX, hb3 P k sepP, hb3 X xl sepX, p4, hz] at z5
       have hO5 : s₅.mem.readW (off S 80) 64 = off O 0 := by
         show word s₅.mem S 80 = _
-        rw [Outside.word b5' (by omega) (by omega), hw4' 80 (by omega), w10, k1.gpr .r3 (by decide), hOd]
+        rw [Outside.word b5' (by omega_arith) (by omega_arith), hw4' 80 (by omega_arith), w10, k1.gpr .r3 (by decide), hOd]
         simp [off]
       have k45 := k1234.trans k5
       refine WP.mono (exOut_ok (O := O) (k := k) (e4.hs.congr k5.wr)
         (Scr.of_mem (by rw [k45.wr, hwr]; simp) nwO) r10₅
         ((k5.gpr .r29 (by decide)).trans e4.h29) ((k5.gpr .r11 (by decide)).trans e4.h11)
         ((k5.gpr .r23 (by decide)).trans ((k4.gpr .r23 (by decide)).trans g23))
-        ((k5.gpr .r28 (by decide)).trans ((k4.gpr .r28 (by decide)).trans a28)) hw4 hw' hZw (by omega) (by omega)
-        hO5 sepO (by rw [p5, p4]; omega) (by rw [z5, p5, p4, ← hz]; exact Nat.mod_lt _ (by omega))
+        ((k5.gpr .r28 (by decide)).trans ((k4.gpr .r28 (by decide)).trans a28)) hw4 hw' hZw (by omega_arith) (by omega_arith)
+        hO5 sepO (by rw [p5, p4]; omega_arith) (by rw [z5, p5, p4, ← hz]; exact Nat.mod_lt _ (by omega_arith))
         (by rw [p5, p4]; exact hpk)) fun t ⟨⟨tb, t3, m, bm, om⟩, kt⟩ => ⟨fun _ => ?_, fun i hi => ?_,
           (k5.trans kt).mono (by decide)⟩
       · rw [z5, p5, p4] at tb t3
         exact ⟨tb, t3⟩
-      · refine (Pub.Outside.word_apart (d := 112 + 8 * i) om sepSO (by omega) (by omega) hs.nowrap).trans ?_
+      · refine (Pub.Outside.word_apart (d := 112 + 8 * i) om sepSO (by omega_arith) (by omega_arith) hs.nowrap).trans ?_
         show Mont.word m S (112 + 8 * i) = Mont.word s₄.mem S (112 + 8 * i)
-        rw [Outside.word bm (by omega) (by omega), Outside.word b5' (by omega) (by omega)]
+        rw [Outside.word bm (by omega_arith) (by omega_arith), Outside.word b5' (by omega_arith) (by omega_arith)]
     · refine WP.mono (li_ok s₄ 0 (by decide)) fun t ⟨⟨_, tm⟩, kt⟩ =>
         ⟨fun hv => absurd (c4.mpr hv) (by simpa using hb), fun i hi => by rw [tm], kt.mono (by decide)⟩
   refine WP.seq (WP.mono hite fun t₅ ⟨tpost, tw, k5⟩ => ?_)
@@ -231,7 +231,7 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
     have ea : off (savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
     rw [← k0.gpr _ (saved_ne11' i hi), ← hS.saved i hi, a11', ea]
     show word t₅.mem S (112 + 8 * i) = word s₁.mem S (112 + 8 * i)
-    rw [tw i hi, hw4' _ (by omega), o2.word (by omega) (by omega)]
+    rw [tw i hi, hw4' _ (by omega_arith), o2.word (by omega_arith) (by omega_arith)]
   refine WP.mono (restore_ok t₅ ((k5.gpr .r23 (by decide)).trans ((k4.gpr .r23 (by decide)).trans g23))
     (by rw [kall.wr]; exact hin) hsav) fun u ⟨urs, uot, um, _, _, usp, ulr⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [usp, kall.sp], by rw [ulr, kall.lr]⟩, ?_⟩
@@ -250,8 +250,8 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
       simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, decide_eq_true_eq] at hmod; exact hmod.2
     have hf := modulus_facts hmod
     rw [hDd, hLd, hkd, hpl, hkd, hPd, hXd, hxd, hOd, hol, hkd]
-    rw [Proof.Ffdh.exchangeOp_eq (k := k) hpv (by rw [Proof.Ffdh.domainOf_p _ _ hLk.1, hp]; omega)
-      (by rw [Proof.Ffdh.domainOf_p _ _ hLk.1, hp]; exact Proof.Ffdh.octets_bitLength (by omega) hlo hpk),
+    rw [Proof.Ffdh.exchangeOp_eq (k := k) hpv (by rw [Proof.Ffdh.domainOf_p _ _ hLk.1, hp]; omega_arith)
+      (by rw [Proof.Ffdh.domainOf_p _ _ hLk.1, hp]; exact Proof.Ffdh.octets_bitLength (by omega_arith) hlo hpk),
       Proof.Ffdh.domainOf_p _ _ hLk.1, hp, hz, um, uot .r3 (by decide)]
     obtain ⟨tb, t3⟩ := tpost hmod
     rw [t3, ret_bv]

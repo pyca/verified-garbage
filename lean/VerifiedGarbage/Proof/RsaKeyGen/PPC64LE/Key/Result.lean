@@ -57,10 +57,10 @@ theorem key_result {s0 : State} (h : keyP.pre s0) {D x : Nat} (hxl : x < mL (kP 
     rw [hi]
     dsimp only
     by_cases hs : D ≤ 2 ^ (8 * kL s0)
-    · have sm : kSmall s0 D := ⟨ok, by omega⟩
+    · have sm : kSmall s0 D := ⟨ok, by omega_arith⟩
       have nm : ¬ kMask s0 D := fun m => m.1 sm
       simp only [hs, nm, sm, ↓reduceIte]
-    · have sm : ¬ kSmall s0 D := fun a => hs (by have := a.2; omega)
+    · have sm : ¬ kSmall s0 D := fun a => hs (by have := a.2; omega_arith)
       simp only [hs, sm, ↓reduceIte]
       by_cases hm : kMask s0 D
       · simp only [hm, ↓reduceIte]
@@ -69,14 +69,14 @@ theorem key_result {s0 : State} (h : keyP.pre s0) {D x : Nat} (hxl : x < mL (kP 
         rw [← mL_eq]
         simp only [kP, kQ] at top g pp qq
         simp [Spec.Rsa.exponentValid, g, pp, qq, ee, e33]
-        omega
+        omega_arith
       · simp only [hm, ↓reduceIte]
         refine ite_eq_right fun c => ?_
         apply hm
         simp only [Bool.and_eq_true, decide_eq_true_eq, Spec.Rsa.exponentValid, beq_iff_eq] at c
         obtain ⟨⟨⟨⟨top, g⟩, pp⟩, qq⟩, ⟨ee, e3⟩, e33⟩ := c
         rw [← mL_eq] at g
-        exact ⟨sm, by simp only [kP, kQ]; omega, ok, g, pp, qq, ee, by omega, e33⟩
+        exact ⟨sm, by simp only [kP, kQ]; omega_arith, ok, g, pp, qq, ee, by omega_arith, e33⟩
   · have hi := okv_none ok
     simp only [kLc, kP, kQ] at hi
     rw [hi]

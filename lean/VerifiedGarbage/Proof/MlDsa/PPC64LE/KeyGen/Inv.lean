@@ -103,7 +103,7 @@ theorem KC.keep {p : Params} {STK : Nat} {σ s s' : State} (h : KC p STK σ s) {
       have hb : w.1 < 5 := by
         simp only [sepB, Bool.and_eq_true, decide_eq_true_eq, List.length_cons, List.length_nil] at hs
         exact hs.1.1.1.2
-      rcases (by omega : w.1 = 0 ∨ w.1 = 1 ∨ w.1 = 2 ∨ w.1 = 3 ∨ w.1 = 4) with e | e | e | e | e <;> rw [e]
+      rcases (by omega_arith : w.1 = 0 ∨ w.1 = 1 ∨ w.1 = 2 ∨ w.1 = 3 ∨ w.1 = 4) with e | e | e | e | e <;> rw [e]
       · exact .inl (by decide)
       · exact .inl (by decide)
       · exact .inr rfl
@@ -124,10 +124,10 @@ theorem pro_ok {p : Params} (hF : PFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ 
     rw [show (lay p STK σ).buf 0 = reg (pScr σ) (scrLen p) from rfl, hp.wr]
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
   have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions σ.wr (pScr σ + BitVec.ofNat 64 o) n := fun {o n} h =>
-    Lay.covers (L := lay p STK σ) (o := o) (l := n) w0 (by rw [lay_size0]; omega) _ _
+    Lay.covers (L := lay p STK σ) (o := o) (l := n) w0 (by rw [lay_size0]; omega_arith) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [pro, WP.block_append_iff]
-  refine WP.mono (topSave_ok (.inl rfl) rfl fun o _ h₂ => wS (by omega))
+  refine WP.mono (topSave_ok (.inl rfl) rfl fun o _ h₂ => wS (by omega_arith))
     fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
   have g3 : s₁.gpr .r3 = pSeed σ := g₁ _ (by decide)
   have g4 : s₁.gpr .r4 = pPk σ := g₁ _ (by decide)
@@ -147,7 +147,7 @@ theorem pro_ok {p : Params} (hF : PFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ 
          obtain ⟨a24, a25, a26, a27, a28, a29, a30, a31⟩ := hs
          simp only [RegUpd.gpr_write, a24, a28, a29, a30, a31, ite_false])
   refine WP.mono hmv fun s ⟨g30, g29, g28, g31, g24, cs, m, rd, wr, sp⟩ => ⟨⟨⟨hL, rfl, by decide, by decide,
-    by rw [lay_size0]; omega, rfl, by rw [sp, sp₁]; rfl, hSTK, by rw [sp, sp₁]; exact hp.stk, g31, g30, g29, g28,
+    by rw [lay_size0]; omega_arith, rfl, by rw [sp, sp₁]; rfl, hSTK, by rw [sp, sp₁]; exact hp.stk, g31, g30, g29, g28,
     fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩, rd.trans rd₁, wr.trans wr₁, sp.trans sp₁,
     fun r hr hs => (cs r hr hs).trans (g₁ r (by rintro rfl; simp [preserved] at hr)), by rw [m]; exact sav, ?_⟩, g24⟩
   · show _ ∈ s.wr
@@ -160,7 +160,7 @@ theorem pro_ok {p : Params} (hF : PFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ 
     · simp [Lay.buf, lay]
   · show _ ∈ s.rd ++ s.wr
     rw [rd, rd₁, wr, wr₁, hp.rd, hp.wr]
-    rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, lay]
+    rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, lay]
   · rw [m, ← xi_eq p STK σ]
     exact Proof.MlKem.bytesAt_frame fr (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr

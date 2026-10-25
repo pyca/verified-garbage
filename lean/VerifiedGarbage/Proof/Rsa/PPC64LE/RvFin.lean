@@ -46,7 +46,7 @@ theorem fin_ok {s0 u : State} (hn : NOk s0) (h : CP s0 (jL s0) u) :
           outB (okB s0) (max (Nat.gcd x (nV s0)) (nV s0 / Nat.gcd x (nV s0))) (kK s0) ∧
         Spec.Rsa.bytesAt t.mem (s0.gpr .r5) (kK s0) =
           outB (okB s0) (min (Nat.gcd x (nV s0)) (nV s0 / Nat.gcd x (nV s0))) (kK s0) := by
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
   unfold fin
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (finY_ok hn h) fun u1 ⟨f1, y1⟩ => ?_
@@ -57,7 +57,7 @@ theorem fin_ok {s0 u : State} (hn : NOk s0) (h : CP s0 (jL s0) u) :
   refine WP.mono (divOrder_ok f2 g2 p0) fun u3 ⟨f3, v5, v6⟩ => ?_
   rw [show seqs [stores] = stores from rfl]
   refine WP.mono (stores_ok (f3.base.fin f3.ws.r30) f3.ws f3.r21 f3.r23 f3.r25 f3.mask) fun t ⟨ft, r3, bp, bq⟩ => ?_
-  have hk : kK s0 ≤ 4 * ww (kK s0) := by simp only [ww]; omega
+  have hk : kK s0 ≤ 4 * ww (kK s0) := by simp only [ww]; omega_arith
   have pl : Nat.gcd x (nV s0) ≤ nV s0 := Nat.le_of_dvd hn0 (Nat.gcd_dvd_right _ _)
   have ql : nV s0 / Nat.gcd x (nV s0) ≤ nV s0 := Nat.div_le_self _ _
   have nl := nV_lt256 s0
@@ -66,13 +66,13 @@ theorem fin_ok {s0 u : State} (hn : NOk s0) (h : CP s0 (jL s0) u) :
     · rw [hb] at bp; exact CrtValues.bytes_zero fun c hc => by rw [bp c hc]; rfl
     · rw [hb] at bp
       have e : (2 : Nat) ^ (8 * kK s0) = 256 ^ kK s0 := by rw [Nat.pow_mul]
-      rw [CrtValues.bytes_of hk bp, v5, e, Nat.mod_eq_of_lt (by omega)]
+      rw [CrtValues.bytes_of hk bp, v5, e, Nat.mod_eq_of_lt (by omega_arith)]
       rfl
   · cases hb : okB s0
     · rw [hb] at bq; exact CrtValues.bytes_zero fun c hc => by rw [bq c hc]; rfl
     · rw [hb] at bq
       have e : (2 : Nat) ^ (8 * kK s0) = 256 ^ kK s0 := by rw [Nat.pow_mul]
-      rw [CrtValues.bytes_of hk bq, v6, e, Nat.mod_eq_of_lt (by omega)]
+      rw [CrtValues.bytes_of hk bq, v6, e, Nat.mod_eq_of_lt (by omega_arith)]
       rfl
 
 end VG.Proof.Rsa.PPC64LE.Recover

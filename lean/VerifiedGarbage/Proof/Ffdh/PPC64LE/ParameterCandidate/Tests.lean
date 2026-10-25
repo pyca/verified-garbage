@@ -27,12 +27,12 @@ open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses)
 theorem wv_low {m : Mem} {B : Addr} {o w k v : Nat} (h : wv m B o w = v) (hk : k ≤ w)
     (hv : v < 2 ^ (64 * k)) : wv m B o k = v := by
   have e := wv_add m B o k (w - k)
-  rw [show k + (w - k) = w by omega, h] at e
+  rw [show k + (w - k) = w by omega_arith, h] at e
   generalize 2 ^ (64 * k) = P at e hv
   generalize wv m B (o + 8 * k) (w - k) = hi at e
   rcases Nat.eq_zero_or_pos hi with h0 | hpos
   · rw [h0, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
-  · have := Nat.le_mul_of_pos_right P hpos; omega
+  · have := Nat.le_mul_of_pos_right P hpos; omega_arith
 
 /-- `Ph` survives a change of memory that keeps the header. -/
 theorem Ph.keepHdr {p : PP} {mb : Nat} {s t : State} (h : Ph p mb s)
@@ -40,7 +40,7 @@ theorem Ph.keepHdr {p : PP} {mb : Nat} {s t : State} (h : Ph p mb s)
     (hw : ∀ d, d + 8 ≤ 256 → word t.mem p.B d = word s.mem p.B d) : Ph p mb t :=
   ⟨r10.trans h.r10, r11.trans h.r11, r29.trans h.r29, (hw 248 (by decide)).trans h.mbW,
     (hw 216 (by decide)).trans h.kW, (hw 48 (by decide)).trans h.wW, (hw 224 (by decide)).trans h.strideW,
-    fun j hj => (hw _ (by omega)).trans (h.arrW j hj), (hw 168 (by decide)).trans h.checksW,
+    fun j hj => (hw _ (by omega_arith)).trans (h.arrW j hj), (hw 168 (by decide)).trans h.checksW,
     (hw 192 (by decide)).trans h.topW⟩
 
 theorem slot_zero (w : Nat) : slot w 0 = 256 := by simp [slot, hdrBytes]
@@ -65,26 +65,26 @@ theorem qPrep_ok {p : PP} {s : State} {c u : Nat} (h : St p s)
   have hb2 := h.dims.b2
   have hdn := h.dims.n
   have hn' := h.dims.n'
-  obtain ⟨hpo, hl, hu'⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+  obtain ⟨hpo, hl, hu'⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
   rw [← hc] at hpo hl hu'
-  obtain ⟨hql, hqu⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega) hpo hl hu'
-  have hbl := VG.Proof.Ffdh.ParameterCandidate.half_pred_bitLength (bits := p.bits) (by omega)
+  obtain ⟨hql, hqu⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_arith) hpo hl hu'
+  have hbl := VG.Proof.Ffdh.ParameterCandidate.half_pred_bitLength (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L)) (by rw [← hc]; exact hqo)
   rw [← hc] at hbl
   refine WP.seq (WP.mono (phase_ok h true) fun t ⟨⟨st, ph, hf⟩, _⟩ => ?_)
   simp only [mbOf, ↓reduceIte] at ph
   rw [WP.block_nil_iff]
   have hL : p.L = (p.bits + 7) / 8 := rfl
-  have hwq : wOf (p.bits - 1) ≤ wOf p.bits := by simp only [wOf]; omega
-  refine ⟨st, ph, by omega, by omega, ?_, hbl, hqo, ?_, ?_, hul⟩
+  have hwq : wOf (p.bits - 1) ≤ wOf p.bits := by simp only [wOf]; omega_arith
+  refine ⟨st, ph, by omega_arith, by omega_arith, ?_, hbl, hqo, ?_, ?_, hul⟩
   · rw [slot_zero] at hq ⊢
     refine wv_low (w := wOf p.bits) ?_ hwq (Nat.lt_of_lt_of_le hqu (Nat.pow_le_pow_right (by decide) (by
-      simp only [wOf]; omega)))
-    rw [hf.wv_eq (fun r hr => .inr (phR_low r hr)) (by simp only [wOf]; omega)]
+      simp only [wOf]; omega_arith)))
+    rw [hf.wv_eq (fun r hr => .inr (phR_low r hr)) (by simp only [wOf]; omega_arith)]
     exact hq
-  · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 2 ≤ p.bits - 2 by omega)
-    omega
+  · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 2 ≤ p.bits - 2 by omega_arith)
+    omega_arith
   · rw [hf.word_eq phR_used (by decide)]; exact hu
 
 /-- The test of q, halved in array 0 in p's width. -/
@@ -107,9 +107,9 @@ theorem pPrep_ok {p : PP} {s : State} {c u : Nat} (h : St p s)
   have hb1 := h.dims.b1
   have hb2 := h.dims.b2
   have hdn := h.dims.n
-  obtain ⟨hpo, hl, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+  obtain ⟨hpo, hl, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
-  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := p.bits) (by omega)
+  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))).2
   rw [← hc] at hpo hl hbl
   refine WP.seq (WP.mono (phase_ok h false) fun t ⟨⟨st, ph, hf⟩, _⟩ => ?_)
@@ -119,14 +119,14 @@ theorem pPrep_ok {p : PP} {s : State} {c u : Nat} (h : St p s)
   have hw : wOf p.bits = (p.bits + 63) / 64 := rfl
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
   have hlow : ∀ d, d + 8 ≤ 256 → word t₂.mem p.B d = word t.mem p.B d := fun d hd =>
-    f₂.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by rw [hsl]; exact hd)) (by omega)
+    f₂.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by rw [hsl]; exact hd)) (by omega_arith)
   have st₂ : St p t₂ := st.step (Frm.toMut f₂ fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact InMut.arrays (by rw [hsl]) (by rw [hsl]; simp only [saveBytes]; omega)) k₂ (by decide)
+    exact InMut.arrays (by rw [hsl]) (by rw [hsl]; simp only [saveBytes]; omega_arith)) k₂ (by decide)
   have ph₂ : Ph p p.bits t₂ := ph.keepHdr (k₂.gpr _ (by decide)) (k₂.gpr _ (by decide)) (k₂.gpr _ (by decide)) hlow
-  refine ⟨st₂, ph₂, by omega, Nat.le_refl _, by rw [hn₂, hc], hbl, hpo, ?_, ?_, hul⟩
-  · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 2 ≤ p.bits - 1 by omega)
-    omega
+  refine ⟨st₂, ph₂, by omega_arith, Nat.le_refl _, by rw [hn₂, hc], hbl, hpo, ?_, ?_, hul⟩
+  · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 2 ≤ p.bits - 1 by omega_arith)
+    omega_arith
   · rw [hlow 152 (by decide), hf.word_eq phR_used (by decide)]; exact hu
 
 /-- The test of p, loaded again from the tape. -/

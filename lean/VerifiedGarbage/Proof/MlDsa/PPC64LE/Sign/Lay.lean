@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.OmegaAll
 
 /-!
 # ML-DSA signing on PPC64LE: its parameters, precondition and buffers
@@ -207,7 +208,7 @@ macro_rules
                          ne_eq, Bool.and_true, Bool.true_and, true_and, and_true, true_or, or_true, Nat.zero_add,
                          sc, pS, cP, t1P, t2P, t3P, t4P, hP, yP, yhP, wP, s1P, s2P, t0P, aP, oP, oSIG, oRS, oMS, oCT,
                          oW1, oPS, skS1, skS2, skT0, sigZ, sigH, aBase, false_or, or_false, decide_eq_true_iff, $ls,*]
-                       and_intros <;> omega_arith))
+                       focus (and_intros; all_omega_arith)))
 
 /-- Proves that an offset into the buffers is below `2³¹`, for any parameter
 set with the facts `hF`. -/

@@ -32,11 +32,11 @@ theorem exitA_ok {p : PP} {t : State} (h : ESt p t) :
   have hn' := h.dims.n'
   have hZe : p.Z = 8 * p.n := rfl
   have hLe : p.L = (p.bits + 7) / 8 := rfl
-  have h8n : 160 ≤ 8 * p.n := by omega
+  have h8n : 160 ≤ 8 * p.n := by omega_arith
   have e1 : p.B + BitVec.ofNat 64 (8 * p.n) - BitVec.ofNat 64 160 = off p.B (8 * p.n - 160) :=
     VG.Offset.add_ofNat_sub p.B h8n
-  have l0 : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 0) 8 := h.scr.ld (d := 0) (by omega)
-  have l144 : InRegions (t.rd ++ t.wr) (off p.B (8 * p.n - 160 + 144)) 8 := h.scr.ld (by omega)
+  have l0 : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 0) 8 := h.scr.ld (d := 0) (by omega_arith)
+  have l144 : InRegions (t.rd ++ t.wr) (off p.B (8 * p.n - 160 + 144)) 8 := h.scr.ld (by omega_arith)
   have w0 : t.mem.readW (p.B + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 p.n := h.len
   have w144 : t.mem.readW (off p.B (8 * p.n - 160 + 144)) 64 = p.sv 18 := h.save 18 (by decide)
   simp only [ldh, hWsLen, saveBytes]
@@ -72,13 +72,13 @@ theorem restore_step (sB : State) {S : Addr} {v : Nat → BitVec 64}
   have hn11 := sv_ne11 k hk
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    exec_load_d (show Reg.r11 ≠ .r0 by decide) (show 8 * k < 2 ^ 15 ∧ (8 * k) % 4 = 0 by omega) hin',
+    exec_load_d (show Reg.r11 ≠ .r0 by decide) (show 8 * k < 2 ^ 15 ∧ (8 * k) % 4 = 0 by omega_arith) hin',
     Option.some.injEq, exists_eq_left', h.r11, hv']
   refine ⟨?_, fun i hi => ?_, fun r hr => ?_, h.mem, h.rd, h.wr, h.sp, h.lr⟩
   · rw [gpr_write, ite_eq_right_iff.mpr fun e => absurd e (Ne.symm hn11)]; exact h.r11
   · rw [gpr_write]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · have e : sv i ≠ sv k := fun e => absurd (sv_inj i (by omega) k hk e) (by omega)
+    · have e : sv i ≠ sv k := fun e => absurd (sv_inj i (by omega_arith) k hk e) (by omega_arith)
       rw [ite_eq_right_iff.mpr fun e' => absurd e' e]; exact h.restored i hi
     · rw [ite_eq_left_iff.mpr fun e => absurd rfl e]
   · rw [gpr_write, ite_eq_right_iff.mpr fun e => absurd e (hr k hk)]
@@ -100,14 +100,14 @@ theorem exit_ok {p : PP} {t : State} (h : ESt p t) :
   have hin : ∀ i < 18, InRegions (sB.rd ++ sB.wr) (off (off p.B (8 * p.n - 160)) (8 * i)) 8 := fun i hi => by
     rw [brd, bwr, show off (off p.B (8 * p.n - 160)) (8 * i) = off p.B (8 * p.n - 160 + 8 * i) by
       simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-    exact h.scr.ld (by omega)
+    exact h.scr.ld (by omega_arith)
   have hv : ∀ i < 18, sB.mem.readW (off (off p.B (8 * p.n - 160)) (8 * i)) 64 = p.sv i := fun i hi => by
     rw [bm, show off (off p.B (8 * p.n - 160)) (8 * i) = off p.B (8 * p.n - 160 + 8 * i) by
       simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-    exact h.save i (by omega)
+    exact h.save i (by omega_arith)
   refine WP.mono (wp_range_flatMap (M := isa) (XI sB (off p.B (8 * p.n - 160)) p.sv)
     (fun k s hk hs => restore_step sB hin hv hk hs) 18 (Nat.le_refl _) sB
-    ⟨b11, fun _ h => absurd h (by omega), fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩) fun u hu => ?_
+    ⟨b11, fun _ h => absurd h (by omega_arith), fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩) fun u hu => ?_
   exact ⟨hu.restored, by rw [hu.lr, blr], by rw [hu.mem, bm], by rw [hu.sp, bsp],
     fun r h0 h11 hs => by rw [hu.others r hs, bo r h0 h11]⟩
 

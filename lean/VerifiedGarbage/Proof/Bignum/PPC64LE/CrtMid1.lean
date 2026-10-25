@@ -56,17 +56,17 @@ abbrev oQa (s₀ : State) : Nat := slot (cwX s₀) 8 + slot (cwP s₀) 8
 theorem masked_facts {s₀ : State} (hP : PF s₀) :
     1 < mP s₀ ∧ mP s₀ % 2 = 1 ∧ 1 < mQ s₀ ∧ mQ s₀ % 2 = 1 ∧ mP s₀ < 2 ^ (64 * cwP s₀) ∧
       mQ s₀ < 2 ^ (64 * cwQ s₀) ∧ mQ s₀ ≤ 256 ^ cqL s₀ ∧ mQI s₀ < mP s₀ ∧ mQI s₀ < 2 ^ (64 * cwP s₀) := by
-  have hpw : cpL s₀ ≤ 8 * cwP s₀ := by unfold cwP wsWords; omega
-  have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by unfold cwQ wsWords; omega
+  have hpw : cpL s₀ ≤ 8 * cwP s₀ := by unfold cwP wsWords; omega_arith
+  have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by unfold cwQ wsWords; omega_arith
   have h3p : 3 < 2 ^ (64 * cwP s₀) := Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (n := 2) (by decide)
-    (show 2 ≤ 64 * cwP s₀ by unfold cwP wsWords; omega))
+    (show 2 ≤ 64 * cwP s₀ by unfold cwP wsWords; omega_arith))
   have h3q : 3 < 2 ^ (64 * cwQ s₀) := Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (n := 2) (by decide)
-    (show 2 ≤ 64 * cwQ s₀ by unfold cwQ wsWords; omega))
+    (show 2 ≤ 64 * cwQ s₀ by unfold cwQ wsWords; omega_arith))
   have h3 : 3 ≤ 256 ^ cqL s₀ := Nat.le_trans (by decide) (Nat.pow_le_pow_right (n := 256) (by decide) hP.q1)
   unfold mP mQ mQI
   cases hb : cb s₀
   · simp only [Bool.false_eq_true, ↓reduceIte]
-    exact ⟨by decide, by decide, by decide, by decide, h3p, h3q, h3, by decide, by omega⟩
+    exact ⟨by decide, by decide, by decide, by decide, h3p, h3q, h3, by decide, by omega_arith⟩
   · simp only [↓reduceIte]
     obtain ⟨_, _, hi, _, hp1, hpo, hq1, hqo⟩ := mask_true hP.k64
       (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.pk) (by rw [VG.Proof.Bignum.bytesAt_length]; exact hP.qk) hb
@@ -119,18 +119,18 @@ theorem mid1A_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s
   have dS : cS s₀ = stackArg s₀ 8 := rfl
   have fP8 := e (wsWords (cpL s₀)) 8; have fQ8 := e (wsWords (cqL s₀)) 8
   have fX8 := e (2 * ((ck s₀ + 7) / 8)) 8
-  have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega
+  have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega_arith
   have k0 := hF.keep
   have rd0 : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [k0.rd, k0.wr]
   have hb0 : ∀ {A : Addr} {L : Nat}, (∀ i < L, ∀ x, ofs (cS s₀) x < cZ s₀ → off A i ≠ x) →
-      Spec.Rsa.bytesAt s.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => bytesAt_out hF.mem (by omega) hs'
+      Spec.Rsa.bytesAt s.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => bytesAt_out hF.mem (by omega_arith) hs'
   obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, _, mQIP, mQIb⟩ := masked_facts hP
-  refine wp_reassoc2 (WP.seq (WP.mono (phaseA_ok hF.scr (by omega) k64 k1024 hF.r23 hF.r10 hF.r21 hF.r29 hF.r11
+  refine wp_reassoc2 (WP.seq (WP.mono (phaseA_ok hF.scr (by omega_arith) k64 k1024 hF.r23 hF.r10 hF.r21 hF.r29 hF.r11
     hF.hN hF.hNL hF.hP hF.hPL hF.hQ hF.hQL hF.hIn hF.hQI p1 pk q1 qk (by rw [rd0]; exact hP.rN) hP.sN
     (by rw [rd0]; exact hP.rP) hP.sP (by rw [rd0]; exact hP.rQ) hP.sQ (by rw [rd0]; exact hP.rI) hP.sI
     (by rw [rd0]; exact hP.rQI) hP.sQI) fun t₁ ⟨⟨t26, v0, w0, v4, v5, v7, O1, a10⟩, k1⟩ => ?_))
   rw [hb0 hP.sN, hb0 hP.sI, hb0 hP.sP, hb0 hP.sQ, hb0 hP.sQI] at t26 v4 v5 v7
-  exact hc t₁ ⟨t26, v0, w0, v4, v5, v7, O1.mono (by omega) (by omega)⟩ a10 k1
+  exact hc t₁ ⟨t26, v0, w0, v4, v5, v7, O1.mono (by omega_arith) (by omega_arith)⟩ a10 k1
 
 /-- What `p`'s working space holds after its power. -/
 structure XP (s₀ s t : State) extends XA s₀ s t where
@@ -165,36 +165,36 @@ theorem mid1B_ok {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP :
   have dS : cS s₀ = stackArg s₀ 8 := rfl
   have fP8 := e (wsWords (cpL s₀)) 8; have fQ8 := e (wsWords (cqL s₀)) 8
   have fX8 := e (2 * ((ck s₀ + 7) / 8)) 8
-  have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega
+  have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega_arith
   have k0 := hF.keep
   have rd0 : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [k0.rd, k0.wr]
   have hb0 : ∀ {A : Addr} {L : Nat}, (∀ i < L, ∀ x, ofs (cS s₀) x < cZ s₀ → off A i ≠ x) →
-      Spec.Rsa.bytesAt s.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => bytesAt_out hF.mem (by omega) hs'
+      Spec.Rsa.bytesAt s.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => bytesAt_out hF.mem (by omega_arith) hs'
   obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, _, mQIP, mQIb⟩ := masked_facts hP
   have eX4 := e (cwX s₀) 4
   have hd1 : ∀ d, d + 8 ≤ 256 → word t₁.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-    X.out.word (Or.inl hd) (by omega)
+    X.out.word (Or.inl hd) (by omega_arith)
   have hb1 : ∀ {A : Addr} {L : Nat}, (∀ i < L, ∀ x, ofs (cS s₀) x < cZ s₀ → off A i ≠ x) →
       Spec.Rsa.bytesAt t₁.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => by
-    rw [bytesAt_out X.out (by omega) hs']; exact hb0 hs'
+    rw [bytesAt_out X.out (by omega_arith) hs']; exact hb0 hs'
   have rd1 : t₁.rd ++ t₁.wr = s₀.rd ++ s₀.wr := by rw [k1.rd, k1.wr, rd0]
   refine wp_reassoc2 (WP.seq (WP.mono (phaseP_ok (xj := 4) (oA := oPa s₀) (L := cpL s₀) (k := ck s₀)
-    (I := s₀.gpr .r7) (D := stackArg s₀ 2) (Pv := mP s₀) (hF.scr.congr k1.wr) (by omega) (Nat.le_refl _)
-    (by omega) hwX (by decide) ((k1.gpr _ h23).trans hF.r23) ((k1.gpr _ h27).trans hF.r27)
+    (I := s₀.gpr .r7) (D := stackArg s₀ 2) (Pv := mP s₀) (hF.scr.congr k1.wr) (by omega_arith) (Nat.le_refl _)
+    (by omega_arith) hwX (by decide) ((k1.gpr _ h23).trans hF.r23) ((k1.gpr _ h27).trans hF.r27)
     ((k1.gpr _ h28).trans hF.r28) (by decide) (by decide) (by decide)
     (by rw [hd1 _ (by decide)]; exact hF.hBP) (by rw [hd1 _ (by decide)]; exact hF.hPL)
     (by rw [hd1 _ (by decide)]; exact hF.hIn) (by rw [hd1 _ (by decide)]; exact hF.hNL)
-    (by rw [hd1 _ (by decide)]; exact hF.hDP) p1 (by omega) (by omega) (by omega)
+    (by rw [hd1 _ (by decide)]; exact hF.hDP) p1 (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [rd1]; exact hP.rI) hP.sI (by rw [rd1]; exact hP.rDP) hP.sDP
-    X.v4 mPb (by omega) mPo) fun t₂ ⟨⟨p0, p4, O2, _, _, _, _⟩, k2⟩ => ?_))
+    X.v4 mPb (by omega_arith) mPo) fun t₂ ⟨⟨p0, p4, O2, _, _, _, _⟩, k2⟩ => ?_))
   rw [hb1 hP.sI, hb1 hP.sDP] at p4
   exact hc t₂ ⟨⟨(k2.gpr _ (by decide)).trans X.r26,
-    by rw [xval O2 (Or.inl (by omega)) (by omega)]; exact X.v0,
-    by rw [O2.word (Or.inl (by omega)) (by omega)]; exact X.w0,
-    by rw [xval O2 (Or.inl (by omega)) (by omega)]; exact X.v4,
-    by rw [xval O2 (Or.inl (by omega)) (by omega)]; exact X.v5,
-    by rw [xval O2 (Or.inl (by omega)) (by omega)]; exact X.v7,
-    X.out.trans (O2.mono (by omega) (by omega))⟩, p0, p4⟩ (k1.trans k2)
+    by rw [xval O2 (Or.inl (by omega_arith)) (by omega_arith)]; exact X.v0,
+    by rw [O2.word (Or.inl (by omega_arith)) (by omega_arith)]; exact X.w0,
+    by rw [xval O2 (Or.inl (by omega_arith)) (by omega_arith)]; exact X.v4,
+    by rw [xval O2 (Or.inl (by omega_arith)) (by omega_arith)]; exact X.v5,
+    by rw [xval O2 (Or.inl (by omega_arith)) (by omega_arith)]; exact X.v7,
+    X.out.trans (O2.mono (by omega_arith) (by omega_arith))⟩, p0, p4⟩ (k1.trans k2)
 
 theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
     (hc : ∀ t, t.gpr .r26 = bmask (cb s₀) →
@@ -232,39 +232,39 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
   have dS : cS s₀ = stackArg s₀ 8 := rfl
   have fP8 := e (wsWords (cpL s₀)) 8; have fQ8 := e (wsWords (cqL s₀)) 8
   have fX8 := e (2 * ((ck s₀ + 7) / 8)) 8
-  have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega
+  have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega_arith
   have k0 := hF.keep
   have rd0 : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [k0.rd, k0.wr]
   have hb0 : ∀ {A : Addr} {L : Nat}, (∀ i < L, ∀ x, ofs (cS s₀) x < cZ s₀ → off A i ≠ x) →
-      Spec.Rsa.bytesAt s.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => bytesAt_out hF.mem (by omega) hs'
+      Spec.Rsa.bytesAt s.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => bytesAt_out hF.mem (by omega_arith) hs'
   obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, _, mQIP, mQIb⟩ := masked_facts hP
   refine mid1A_ok hP hF fun t₁ X _ k1 => ?_
   refine mid1B_ok hP hF X k1 (by decide) (by decide) (by decide) fun t₂ Y k12 => ?_
   have hd2 : ∀ d, d + 8 ≤ 256 → word t₂.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-    Y.out.word (Or.inl hd) (by omega)
+    Y.out.word (Or.inl hd) (by omega_arith)
   have hb2 : ∀ {A : Addr} {L : Nat}, (∀ i < L, ∀ x, ofs (cS s₀) x < cZ s₀ → off A i ≠ x) →
       Spec.Rsa.bytesAt t₂.mem A L = Spec.Rsa.bytesAt s₀.mem A L := fun hs' => by
-    rw [bytesAt_out Y.out (by omega) hs']; exact hb0 hs'
+    rw [bytesAt_out Y.out (by omega_arith) hs']; exact hb0 hs'
   -- `m₂`.
   refine wp_reassoc2 (WP.seq (WP.mono (phaseP_ok (xj := 5) (oA := oQa s₀) (L := cqL s₀) (k := ck s₀)
-    (I := s₀.gpr .r7) (D := stackArg s₀ 4) (Pv := mQ s₀) (hF.scr.congr k12.wr) (by omega) (by omega)
-    (by omega) hwX (by decide) ((k12.gpr _ (by decide)).trans hF.r23) ((k12.gpr _ (by decide)).trans hF.r27)
+    (I := s₀.gpr .r7) (D := stackArg s₀ 4) (Pv := mQ s₀) (hF.scr.congr k12.wr) (by omega_arith) (by omega_arith)
+    (by omega_arith) hwX (by decide) ((k12.gpr _ (by decide)).trans hF.r23) ((k12.gpr _ (by decide)).trans hF.r27)
     ((k12.gpr _ (by decide)).trans hF.r28) (by decide) (by decide) (by decide)
     (by rw [hd2 _ (by decide)]; exact hF.hBQ) (by rw [hd2 _ (by decide)]; exact hF.hQL)
     (by rw [hd2 _ (by decide)]; exact hF.hIn) (by rw [hd2 _ (by decide)]; exact hF.hNL)
-    (by rw [hd2 _ (by decide)]; exact hF.hDQ) q1 (by omega) (by omega) (by omega)
+    (by rw [hd2 _ (by decide)]; exact hF.hDQ) q1 (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [k12.rd, k12.wr, rd0]; exact hP.rI) hP.sI (by rw [k12.rd, k12.wr, rd0]; exact hP.rDQ) hP.sDQ
-    Y.v5 mQb (by omega) mQo)
+    Y.v5 mQb (by omega_arith) mQo)
     fun t₃ ⟨⟨_, q4, O3, c10, _, c29, _⟩, k3⟩ => ?_))
   rw [hb2 hP.sI, hb2 hP.sDQ] at q4
   have k13 := k12.trans k3
   refine hc t₃ ((k3.gpr _ (by decide)).trans Y.r26)
-    (by rw [xval O3 (Or.inl (by omega)) (by omega)]; exact Y.v0)
-    (by rw [O3.word (Or.inl (by omega)) (by omega)]; exact Y.w0)
-    (by rw [xval O3 (Or.inl (by omega)) (by omega)]; exact Y.v5)
-    (by rw [xval O3 (Or.inl (by omega)) (by omega)]; exact Y.v7)
-    (by rw [val32_off_eq O3 (Or.inl (by omega)) (by omega)]; exact Y.p0)
-    (by rw [val32_off_eq O3 (Or.inl (by omega)) (by omega)]; exact Y.p4) q4 c10 c29
-    (Y.out.trans (O3.mono (by omega) (by omega))) k13.mono
+    (by rw [xval O3 (Or.inl (by omega_arith)) (by omega_arith)]; exact Y.v0)
+    (by rw [O3.word (Or.inl (by omega_arith)) (by omega_arith)]; exact Y.w0)
+    (by rw [xval O3 (Or.inl (by omega_arith)) (by omega_arith)]; exact Y.v5)
+    (by rw [xval O3 (Or.inl (by omega_arith)) (by omega_arith)]; exact Y.v7)
+    (by rw [val32_off_eq O3 (Or.inl (by omega_arith)) (by omega_arith)]; exact Y.p0)
+    (by rw [val32_off_eq O3 (Or.inl (by omega_arith)) (by omega_arith)]; exact Y.p4) q4 c10 c29
+    (Y.out.trans (O3.mono (by omega_arith) (by omega_arith))) k13.mono
 
 end VG.Proof.Bignum.PPC64LE.Crt

@@ -29,8 +29,8 @@ theorem montPrep_mst {p : PP} {mb N : Nat} {s : State} (h : St p s) (hp : Ph p m
       word t.mem p.B 152 = word s.mem p.B 152 := by
   have hdn := h.dims.n
   have hb2 := h.dims.b2
-  have hw8 : 8 ≤ wOf mb := by simp only [wOf]; omega
-  have hw128 : wOf mb ≤ 128 := by simp only [wOf]; omega
+  have hw8 : 8 ≤ wOf mb := by simp only [wOf]; omega_arith
+  have hw128 : wOf mb ≤ 128 := by simp only [wOf]; omega_arith
   have es : ∀ j, slot (wOf mb) j = 256 + j * (8 * (wOf mb + 2)) := fun _ => rfl
   have e1 := es 1; have e4 := es 4; have e6 := es 6; have e8 := es 8; have e9 := es 9; have e11 := es 11
   have e27 := es 27; have e28 := es 28
@@ -38,8 +38,8 @@ theorem montPrep_mst {p : PP} {mb N : Nat} {s : State} (h : St p s) (hp : Ph p m
   have hZ : slot (wOf mb) 28 + saveBytes ≤ p.Z := by
     have hwd : wOf mb = (mb + 63) / 64 := rfl
     have hL : p.L = (p.bits + 7) / 8 := rfl
-    simp only [saveBytes, PP.Z]; omega
-  have env : Env s p.B (8 * p.n) (wOf mb) := ⟨h.scr, hp.r10, hp.r29, hp.r11, h.r31, by omega, hw128, by simp only [PP.Z] at hZ; omega⟩
+    simp only [saveBytes, PP.Z]; omega_arith
+  have env : Env s p.B (8 * p.n) (wOf mb) := ⟨h.scr, hp.r10, hp.r29, hp.r11, h.r31, by omega_arith, hw128, by simp only [PP.Z] at hZ; omega_arith⟩
   have harr : arr s.mem p.B (wOf mb) 0 = N := by rw [arr, Pre.val32_eq_wv]; exact hn
   refine WP.mono (montPrep_ok env harr hodd hN3) fun t ⟨⟨envt, nt, inv, _, _, r1, r9, r10, e, l, outs⟩, k⟩ => ?_
   have fo : Frm p.B (mpRanges (wOf mb)) s.mem t.mem := outs
@@ -47,20 +47,20 @@ theorem montPrep_mst {p : PP} {mb N : Nat} {s : State} (h : St p s) (hp : Ph p m
     simp only [mpRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact InMut.hdr (i := 7) (by decide)
-    all_goals (try simp only [Impl.MillerRabin.PPC64LE.aE]); exact InMut.arrays (by omega) (by omega)
+    all_goals (try simp only [Impl.MillerRabin.PPC64LE.aE]); exact InMut.arrays (by omega_arith) (by omega_arith)
   have st := h.step hf k (by decide)
   have ew : ∀ d, d + 8 ≤ 56 ∨ (64 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d := fun d hd =>
     fo.word_eq (fun r hr => by
       simp only [mpRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Impl.MillerRabin.PPC64LE.aE] <;> omega) (by omega)
-  have ph : Ph p mb t := ⟨envt.h10, envt.h11, envt.h29, (ew _ (by simp only [hMb]; omega)).trans hp.mbW,
-    (ew _ (by simp only [Impl.MillerRabin.PPC64LE.Search.hK]; omega)).trans hp.kW,
-    (ew _ (by simp only [hW]; omega)).trans hp.wW, (ew _ (by simp only [hStride]; omega)).trans hp.strideW,
-    fun j hj => (ew _ (by omega)).trans (hp.arrW j hj),
-    (ew _ (by simp only [hChecks]; omega)).trans hp.checksW, (ew _ (by simp only [hTop]; omega)).trans hp.topW⟩
-  refine ⟨⟨st, ph, ⟨envt, (ew 0 (by omega)).trans h.args.wsLen, (ew 48 (by omega)).trans hp.wW,
-    (ew 224 (by omega)).trans hp.strideW, fun j hj => (ew _ (by omega)).trans (hp.arrW j hj), nt, hN3, hodd,
-    inv, r1, r9, r10, e, l⟩, hm1, hm2⟩, hf, ew 152 (by omega)⟩
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Impl.MillerRabin.PPC64LE.aE] <;> omega_arith) (by omega_arith)
+  have ph : Ph p mb t := ⟨envt.h10, envt.h11, envt.h29, (ew _ (by simp only [hMb]; omega_arith)).trans hp.mbW,
+    (ew _ (by simp only [Impl.MillerRabin.PPC64LE.Search.hK]; omega_arith)).trans hp.kW,
+    (ew _ (by simp only [hW]; omega_arith)).trans hp.wW, (ew _ (by simp only [hStride]; omega_arith)).trans hp.strideW,
+    fun j hj => (ew _ (by omega_arith)).trans (hp.arrW j hj),
+    (ew _ (by simp only [hChecks]; omega_arith)).trans hp.checksW, (ew _ (by simp only [hTop]; omega_arith)).trans hp.topW⟩
+  refine ⟨⟨st, ph, ⟨envt, (ew 0 (by omega_arith)).trans h.args.wsLen, (ew 48 (by omega_arith)).trans hp.wW,
+    (ew 224 (by omega_arith)).trans hp.strideW, fun j hj => (ew _ (by omega_arith)).trans (hp.arrW j hj), nt, hN3, hodd,
+    inv, r1, r9, r10, e, l⟩, hm1, hm2⟩, hf, ew 152 (by omega_arith)⟩
 
 /-- The test of the modulus `N` of `mb` bits in array 0, from octet `u` of
 the tape. -/

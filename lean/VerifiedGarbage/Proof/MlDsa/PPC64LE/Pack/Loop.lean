@@ -42,18 +42,18 @@ structure Shape (d c nb : Nat) : Prop where
   bN : nb * (256 / c) = 32 * d
 
 theorem Shape.nb20 {d c nb : Nat} (h : Shape d c nb) : nb ≤ 20 := by
-  have := Nat.mul_le_mul h.d20 h.c8; have := h.dc; omega
+  have := Nat.mul_le_mul h.d20 h.c8; have := h.dc; omega_arith
 
 theorem Shape.nb0 {d c nb : Nat} (h : Shape d c nb) : 0 < nb := by
-  have := Nat.mul_le_mul h.d1 h.c0; have := h.dc; omega
+  have := Nat.mul_le_mul h.d1 h.c0; have := h.dc; omega_arith
 
 theorem Shape.group {d c nb : Nat} (h : Shape d c nb) {i : Nat} (hi : i < 256 / c) :
     c * i + c ≤ 256 ∧ nb * i + nb ≤ 32 * d := by
-  have h1 := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega)
-  have h2 := Nat.mul_le_mul_left nb (show i + 1 ≤ 256 / c by omega)
+  have h1 := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega_arith)
+  have h2 := Nat.mul_le_mul_left nb (show i + 1 ≤ 256 / c by omega_arith)
   rw [Nat.mul_succ] at h1 h2
   have := h.cN; have := h.bN
-  omega
+  omega_arith
 
 theorem off_add (p : Addr) (a b : Nat) : p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, BitVec.ofNat_add]
@@ -80,7 +80,7 @@ theorem count_step {N i : Nat} (hi : i < N) (hN : N ≤ 256) {x : BitVec 64} (hx
     x - BitVec.ofNat 64 1 = BitVec.ofNat 64 (N - (i + 1)) ∧
       (x - BitVec.ofNat 64 1 != 0) = decide (i + 1 ≠ N) := by
   rw [hx, count_sub hi]
-  exact ⟨rfl, count_nz hi (by omega)⟩
+  exact ⟨rfl, count_nz hi (by omega_arith)⟩
 
 /-! ## Packing -/
 
@@ -132,15 +132,15 @@ theorem packStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : PInv V d c nb pf
     fun j hj => by
       rw [ha j]
       exact coeffAt_frame hI.frame (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
-        (by omega)
+        (by omega_arith)
   refine WP.mono (packBody_ok hld hRs hs.d20 hs.dc hs.c8 s (hRs sE s hRE hI.keep)
-    (fun j hj => by rw [ha j, hI.rd, hI.wr]; exact inRegions_of hin (coeff_contains _ (by omega)))
-    (fun t ht => by rw [hb, hI.wr]; exact inRegions_of hout (Offset.contains_base _ (by omega) (by omega)))
+    (fun j hj => by rw [ha j, hI.rd, hI.wr]; exact inRegions_of hin (coeff_contains _ (by omega_arith)))
+    (fun t ht => by rw [hb, hI.wr]; exact inRegions_of hout (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     (by
       rw [hI.r10, hI.r11]
-      exact (hsep.sub_left (Offset.sub_base _ (by rw [Nat.mul_assoc]; omega))).sub_right
-        (Offset.sub_base _ (by omega)))
-    (fun j hj => by rw [hw j hj]; exact hF _ (by omega)))
+      exact (hsep.sub_left (Offset.sub_base _ (by rw [Nat.mul_assoc]; omega_arith))).sub_right
+        (Offset.sub_base _ (by omega_arith)))
+    (fun j hj => by rw [hw j hj]; exact hF _ (by omega_arith)))
     fun s' ⟨hW, x', y', c', k'⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => ?_, (hI.keep.trans k').mono (by decide)⟩, ?_⟩
   · rw [x', hI.r10]; exact ptr_step _ i (4 * c)
   · rw [y', hI.r11]; exact ptr_step _ i nb
@@ -149,27 +149,27 @@ theorem packStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : PInv V d c nb pf
   · rw [k'.2.2, hI.wr]
   · refine hI.frame.trans (hW.1.sub fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, by rw [hI.r11]; exact Offset.sub_base _ (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, by rw [hI.r11]; exact Offset.sub_base _ (by omega_arith)⟩
   · by_cases hk' : k < nb * i
     · -- Written before.
       rw [← hI.done k hk']
       refine hW.1 _ fun r hr hc => ?_
       simp only [List.mem_singleton] at hr; subst hr
       rw [hI.r11] at hc
-      exact Offset.disjoint po (d := k) (n := 1) (e := nb * i) (k := nb) (by omega) (by omega)
-        (by omega) _ (Region.contains_self _ _) hc
+      exact Offset.disjoint po (d := k) (n := 1) (e := nb * i) (k := nb) (by omega_arith) (by omega_arith)
+        (by omega_arith) _ (Region.contains_self _ _) hc
     · -- Written by this group.
-      have ht : k - nb * i < nb := by rw [Nat.mul_succ] at hk; omega
+      have ht : k - nb * i < nb := by rw [Nat.mul_succ] at hk; omega_arith
       have := hW.2 (k - nb * i) ht
-      rw [hb, show nb * i + (k - nb * i) = k by omega] at this
-      have e : k = nb * i + (k - nb * i) := by omega
+      rw [hb, show nb * i + (k - nb * i) = k by omega_arith] at this
+      have e : k = nb * i + (k - nb * i) := by omega_arith
       rw [this]
       conv => rhs; rw [e]
-      rw [pack_group (c := c) (by have := hs.d1; omega) hs.dc (by simp) (vals_lt hF) ht (by omega),
-        take_drop_eq _ 0 (by simp; omega)]
+      rw [pack_group (c := c) (by have := hs.d1; omega_arith) hs.dc (by simp) (vals_lt hF) ht (by omega_arith),
+        take_drop_eq _ 0 (by simp; omega_arith)]
       refine congrArg (fun L => BitVec.ofNat 8 (digits d L / 2 ^ (8 * (k - nb * i)))) (List.map_congr_left fun j hj => ?_)
       have hj := List.mem_range.mp hj
-      rw [hw j hj, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega)]
+      rw [hw j hj, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega_arith)]
       rfl
   · rw [c']; exact (count_step hi hN hI.r12).2
 
@@ -180,15 +180,15 @@ theorem packLoop_ok {s : State} (h10 : s.gpr .r10 = pf) (h11 : s.gpr .r11 = po) 
         Frame [⟨po, 32 * d⟩] m₀ s'.mem ∧ Keep loopRegs sE s' := by
   have h0' := hs.c0
   have hc8 := hs.c8
-  have hN0 : 0 < 256 / c := Nat.div_pos (by omega) h0'
+  have hN0 : 0 < 256 / c := Nat.div_pos (by omega_arith) h0'
   have hN : 256 / c ≤ 256 := Nat.div_le_self _ _
   unfold packLoop
-  refine WP.seq (WP.mono (liN_ok _ (by omega) s) fun s₁ ⟨⟨r₁, m₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (liN_ok _ (by omega_arith) s) fun s₁ ⟨⟨r₁, m₁⟩, k₁⟩ => ?_)
   refine wp_loop_nz (PInv V d c nb pf po m₀ rd wr sE) hN0
     (fun i hi s' hI => packStep hld hRs hs hRE hin hout hsep hF hi hI)
     (fun s' hI => ⟨bytesAt_eq! (pack_length d _ (by simp)) fun k hk => hI.done k (by rw [hs.bN]; exact hk),
       hI.frame, hI.keep⟩)
-    ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega), (hE.trans k₁).mono (by decide)⟩
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega_arith), (hE.trans k₁).mono (by decide)⟩
   · rw [k₁.gpr (by decide), h10]; simp
   · rw [k₁.gpr (by decide), h11]; simp
   · rw [r₁]; simp
@@ -238,11 +238,11 @@ theorem unpackStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : UInv W d c nb 
   have hb : ∀ t, s.gpr .r10 + BitVec.ofNat 64 t = pv + BitVec.ofNat 64 (nb * i + t) :=
     fun t => by rw [hI.r10, off_add]
   have hsub : Region.Sub ⟨s.gpr .r11, 4 * c⟩ (polyRegion pp) := by
-    rw [hI.r11]; exact Offset.sub_base _ (by rw [Nat.mul_assoc]; omega)
+    rw [hI.r11]; exact Offset.sub_base _ (by rw [Nat.mul_assoc]; omega_arith)
   refine WP.mono (unpackBody_ok hfin hRs hs.d1 hs.d20 hs.dc hs.c8 s (hRs sE s hRE hI.keep)
-    (fun t ht => by rw [hb, hI.rd, hI.wr]; exact inRegions_of hin (Offset.contains_base _ (by omega) (by omega)))
-    (fun j hj => by rw [ha, hI.wr]; exact inRegions_of hout (coeff_contains _ (by omega)))
-    (by rw [hI.r10]; exact (hsep.sub_left (Offset.sub_base _ (by omega))).sub_right hsub))
+    (fun t ht => by rw [hb, hI.rd, hI.wr]; exact inRegions_of hin (Offset.contains_base _ (by omega_arith) (by omega_arith)))
+    (fun j hj => by rw [ha, hI.wr]; exact inRegions_of hout (coeff_contains _ (by omega_arith)))
+    (by rw [hI.r10]; exact (hsep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right hsub))
     fun s' ⟨hw, hf, x', p', c', k'⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, hI.frame.trans (hf.sub fun r hr => ?_),
       fun k hk => ?_, (hI.keep.trans k').mono (by decide)⟩, ?_⟩
   · rw [x', hI.r10]; exact ptr_step _ i nb
@@ -254,13 +254,13 @@ theorem unpackStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : UInv W d c nb 
   · -- The bytes of the group, on entry.
     have hB : (List.range nb).map (fun t => (s.mem (s.gpr .r10 + BitVec.ofNat 64 t)).toNat) =
         (((bytesAt m₀ pv (32 * d)).map (·.toNat)).drop (nb * i)).take nb := by
-      rw [take_drop_eq _ 0 (by rw [List.length_map, bytesAt_length]; omega)]
+      rw [take_drop_eq _ 0 (by rw [List.length_map, bytesAt_length]; omega_arith)]
       refine List.map_congr_left fun t ht => ?_
       have ht := List.mem_range.mp ht
-      rw [getD_map_toNat, bytesAt_getD _ _ (by omega), hb]
+      rw [getD_map_toNat, bytesAt_getD _ _ (by omega_arith), hb]
       refine congrArg BitVec.toNat (hI.frame _ fun r hr => ?_)
       simp only [List.mem_singleton] at hr; subst hr
-      exact hsep _ (Offset.contains_base _ (by omega) (by omega))
+      exact hsep _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
     have hlt : ∀ a ∈ (bytesAt m₀ pv (32 * d)).map (·.toNat), a < 2 ^ 8 := fun a ha => by
       obtain ⟨x, _, rfl⟩ := List.mem_map.mp ha; exact x.isLt
     by_cases hk' : k < c * i
@@ -269,12 +269,12 @@ theorem unpackStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : UInv W d c nb 
       refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
       rw [hI.r11]
-      exact Offset.disjoint _ (by rw [Nat.mul_assoc]; omega) (by omega) (by rw [Nat.mul_assoc]; omega)
+      exact Offset.disjoint _ (by rw [Nat.mul_assoc]; omega_arith) (by omega_arith) (by rw [Nat.mul_assoc]; omega_arith)
     · -- Written by this group.
-      have hj : k - c * i < c := by rw [Nat.mul_succ] at hk; omega
+      have hj : k - c * i < c := by rw [Nat.mul_succ] at hk; omega_arith
       have := hw (k - c * i) hj
-      rw [ha, show c * i + (k - c * i) = k by omega, hB, digits_group hs.dc hlt hj,
-        show c * i + (k - c * i) = k by omega] at this
+      rw [ha, show c * i + (k - c * i) = k by omega_arith, hB, digits_group hs.dc hlt hj,
+        show c * i + (k - c * i) = k by omega_arith] at this
       rw [coeffAt_eq, this]
   · rw [c']; exact (count_step hi hN hI.r12).2
 
@@ -285,14 +285,14 @@ theorem unpackLoop_ok {s : State} (h10 : s.gpr .r10 = pv) (h11 : s.gpr .r11 = pp
         Frame [polyRegion pp] m₀ s'.mem ∧ Keep loopRegs sE s' := by
   have h0' := hs.c0
   have hc8 := hs.c8
-  have hN0 : 0 < 256 / c := Nat.div_pos (by omega) h0'
+  have hN0 : 0 < 256 / c := Nat.div_pos (by omega_arith) h0'
   have hN : 256 / c ≤ 256 := Nat.div_le_self _ _
   unfold unpackLoop
-  refine WP.seq (WP.mono (liN_ok _ (by omega) s) fun s₁ ⟨⟨r₁, m₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (liN_ok _ (by omega_arith) s) fun s₁ ⟨⟨r₁, m₁⟩, k₁⟩ => ?_)
   refine wp_loop_nz (UInv W d c nb pv pp m₀ rd wr sE) hN0
     (fun i hi s' hI => unpackStep hfin hRs hs hRE hin hout hsep hi hI)
     (fun s' hI => ⟨fun k hk => hI.done k (by rw [hs.cN]; exact hk), hI.frame, hI.keep⟩)
-    ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega), (hE.trans k₁).mono (by decide)⟩
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega_arith), (hE.trans k₁).mono (by decide)⟩
   · rw [k₁.gpr (by decide), h10]; simp
   · rw [k₁.gpr (by decide), h11]; simp
   · rw [r₁]; simp

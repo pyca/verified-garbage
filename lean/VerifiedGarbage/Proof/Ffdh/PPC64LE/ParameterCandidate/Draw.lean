@@ -91,34 +91,34 @@ theorem dLoadN_ok {p : PP} {mb N u : Nat} {s t : State} (h : DPre p mb N u s) (h
   have hroom := h.room
   have h11 := h.ph.r11
   generalize hwd : wOf mb = w at *
-  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega
-  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega
-  have hKw : (mb + 7) / 8 ≤ 8 * w := by simp only [wOf] at hwd; omega
-  have hZ : slot w 4 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega
+  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega_arith
+  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega_arith
+  have hKw : (mb + 7) / 8 ≤ 8 * w := by simp only [wOf] at hwd; omega_arith
+  have hZ : slot w 4 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega_arith
   generalize hKd : (mb + 7) / 8 = K at *
-  have hK1 : 1 ≤ K := by omega
+  have hK1 : 1 ≤ K := by omega_arith
   rw [hKd, hwd] at *
-  have ho : Outside p.B 152 8 s.mem t.mem := by rw [am]; exact writeW_outside _ _ _ (by omega)
+  have ho : Outside p.B 152 8 s.mem t.mem := by rw [am]; exact writeW_outside _ _ _ (by omega_arith)
   have hbr : Spec.Rsa.bytesAt t.mem p.rp p.r.length = p.r := by
     rw [bytes_frm (Frm.of_outside (rs := [(152, 8)]) ho (List.mem_singleton_self _)) (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; simp only [PP.Z]; omega) h.st.bufs.sepR]
+      rw [List.mem_singleton] at hr; subst hr; simp only [PP.Z]; omega_arith) h.st.bufs.sepR]
     exact h.st.bufs.bR
   have e : ∀ i, VG.Proof.Mont.off (p.rp + BitVec.ofNat 64 u) i = off p.rp (u + i) := fun i => off_off p.rp u i
   refine WP.mono (loadN_ok (N := p.rp + BitVec.ofNat 64 u) (h.st.scr.congr k₁.wr) a10
     (by rw [a12]; simp only [BitVec.add_zero]) a6 ((k₁.gpr .r11 (by decide)).trans h11) hK1 hKw
-    (by omega) (by simp only [slot, hdrBytes]; omega) hZ
+    (by omega_arith) (by simp only [slot, hdrBytes]; omega_arith) hZ
     (fun i hi => by
       rw [k₁.rd, k₁.wr, e]
-      exact h.st.bufs.rdR _ (by omega))
+      exact h.st.bufs.rdR _ (by omega_arith))
     (fun i hi x hx => by
       rw [e]
-      exact h.st.bufs.sepR _ (by omega) x hx)) fun t₂ ⟨v₂, o₂, k₂⟩ => ?_
+      exact h.st.bufs.sepR _ (by omega_arith) x hx)) fun t₂ ⟨v₂, o₂, k₂⟩ => ?_
   refine ⟨⟨?_, (k₂.gpr .r10 (by decide)).trans a10, ?_, ?_⟩, k₁.trans k₂⟩
-  · rw [v₂, ← VG.Proof.Dsa.bytesAt_slice t.mem p.rp (total := p.r.length) (by omega), hbr]
+  · rw [v₂, ← VG.Proof.Dsa.bytesAt_slice t.mem p.rp (total := p.r.length) (by omega_arith), hbr]
   · exact (Frm.of_outside ho (List.mem_cons_self)).trans
       (Frm.of_outside o₂ (List.mem_cons_of_mem _ List.mem_cons_self))
   · rw [show t₂.mem.readW (p.B + BitVec.ofNat 64 152) 64 = word t₂.mem p.B 152 from rfl,
-      Outside.word o₂ (by simp only [slot, hdrBytes]; omega) (by omega), am]
+      Outside.word o₂ (by simp only [slot, hdrBytes]; omega_arith) (by omega_arith), am]
     exact Mem.readW_writeW_self64 _ _ _
 
 
@@ -151,14 +151,14 @@ theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) 
   have hn := h.dims.n
   have hnw := h.scr.nowrap
   generalize hwd : wOf mb = w at *
-  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega
-  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega
+  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega_arith
+  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega_arith
   have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have hZ : slot w 4 + 8 * w ≤ p.Z := by
-    simp only [es, PP.Z] at hn ⊢; simp only [PP.L] at hn; omega
-  have hk1 : 1 ≤ mb + 64 - 64 * w := by simp only [wOf] at hwd; omega
-  have hk2 : mb + 64 - 64 * w ≤ 64 := by simp only [wOf] at hwd; omega
-  have hb : 64 * (w - 1) + (mb + 64 - 64 * w) = mb := by simp only [wOf] at hwd; omega
+    simp only [es, PP.Z] at hn ⊢; simp only [PP.L] at hn; omega_arith
+  have hk1 : 1 ≤ mb + 64 - 64 * w := by simp only [wOf] at hwd; omega_arith
+  have hk2 : mb + 64 - 64 * w ≤ 64 := by simp only [wOf] at hwd; omega_arith
+  have hb : 64 * (w - 1) + (mb + 64 - 64 * w) = mb := by simp only [wOf] at hwd; omega_arith
   generalize hkd : mb + 64 - 64 * w = k at htop hk1 hk2 hb
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -171,11 +171,11 @@ theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) 
   have kuv := ku.trans kv
   rw [WP.block_append_iff]
   have e5 : off p.B (slot w 4 + 8 * w) - BitVec.ofNat 64 8 = off p.B (slot w 4 + 8 * (w - 1)) := by
-    simp only [off]; rw [Offset.add_ofNat_sub _ (by omega)]; congr 2; omega
+    simp only [off]; rw [Offset.add_ofNat_sub _ (by omega_arith)]; congr 2; omega_arith
   have sT : InRegions v.wr (off p.B (slot w 4 + 8 * (w - 1))) 8 := by
-    rw [kuv.wr]; exact h.scr.st (by omega)
+    rw [kuv.wr]; exact h.scr.st (by omega_arith)
   have lT : InRegions (v.rd ++ v.wr) (off p.B (slot w 4 + 8 * (w - 1))) 8 := by
-    rw [kuv.rd, kuv.wr]; exact h.scr.ld (by omega)
+    rw [kuv.rd, kuv.wr]; exact h.scr.ld (by omega_arith)
   have l192 : InRegions (v.rd ++ v.wr) (p.B + BitVec.ofNat 64 192) 8 := by
     rw [kuv.rd, kuv.wr]; exact h.ld (d := 192) (by decide)
   have tv : s.mem.readW (p.B + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (2 ^ k - 1) := htop
@@ -194,13 +194,13 @@ theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) 
   have hsh : BitVec.ofNat 64 (2 * w) >>> 1 = BitVec.ofNat 64 w := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   have hsub : BitVec.ofNat 64 w - 1#64 = BitVec.ofNat 64 (w - 1) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have l4 : InRegions (t₂.rd ++ t₂.wr) (off p.B (slot w 4)) 8 := by
-    rw [k₂'.rd, k₂'.wr]; exact h.scr.ld (by omega)
+    rw [k₂'.rd, k₂'.wr]; exact h.scr.ld (by omega_arith)
   refine WP.mono (WP.keep [.r24, .r5, .r6] (Q := fun t => t.gpr .r24 = t₂.mem.readW (off p.B (slot w 4)) 64 >>> 1 ∧
       t.gpr .r5 = off p.B (slot w 4 + 8) ∧ t.gpr .r6 = BitVec.ofNat 64 (w - 1) ∧ t.mem = t₂.mem) ?_ (by decide))
     fun t ⟨⟨t24, t5, t6, tm⟩, kt⟩ => ?_
@@ -210,34 +210,34 @@ theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) 
   refine ⟨⟨?_, by rw [t24, tm, m₂], t5, t6, (kt.gpr .r10 (by decide)).trans ((k₂.gpr .r10 (by decide)).trans
     ((k₁.gpr .r10 (by decide)).trans ((kv.gpr .r10 (by decide)).trans u10))), ?_⟩, (k₂'.trans kt).mono (by decide)⟩
   · rw [← hb]
-    refine Proof.Ffdh.ParameterCandidate.wv_cut (by omega) hk2 ?_ fun j hj => ?_
+    refine Proof.Ffdh.ParameterCandidate.wv_cut (by omega_arith) hk2 ?_ fun j hj => ?_
     · simp only [word, off] at e0 ⊢; rw [e0, rw_self]
-    · simp only [word, off] at e0 ⊢; rw [e0, rw_off _ _ _ (by omega) (by omega) (by omega)]
+    · simp only [word, off] at e0 ⊢; rw [e0, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
   · rw [e0]
-    exact frm_writeW (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by dsimp only; omega,
-      by dsimp only; omega⟩ (by omega)
+    exact frm_writeW (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by dsimp only; omega_arith,
+      by dsimp only; omega_arith⟩ (by omega_arith)
 
 theorem wv_lt_two {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) :
     wv m B d w < 2 ↔ word m B d >>> 1 = 0#64 ∧ ∀ j, 1 ≤ j → j < w → word m B (d + 8 * j) = 0#64 := by
   have e := wv_add m B d 1 (w - 1)
-  rw [show 1 + (w - 1) = w by omega] at e
+  rw [show 1 + (w - 1) = w by omega_arith] at e
   simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.pow_zero, Nat.one_mul, Nat.mul_one] at e
   have hz := wv_eq_zero_iff m B (d + 8) (w - 1)
   have hsh : word m B d >>> 1 = 0#64 ↔ (word m B d).toNat < 2 := by
     rw [← BitVec.toNat_inj, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    simp only [BitVec.toNat_ofNat, Nat.zero_mod]; omega
+    simp only [BitVec.toNat_ofNat, Nat.zero_mod]; omega_arith
   rw [e, hsh]
   constructor
   · intro hl
     have h0 : wv m B (d + 8) (w - 1) = 0 := by
-      by_contra hc; have : 1 ≤ wv m B (d + 8) (w - 1) := Nat.one_le_iff_ne_zero.mpr hc; omega
-    refine ⟨by omega, fun j hj1 hj2 => ?_⟩
-    have := hz.mp h0 (j - 1) (by omega)
-    rwa [show d + 8 + 8 * (j - 1) = d + 8 * j by omega] at this
+      by_contra hc; have : 1 ≤ wv m B (d + 8) (w - 1) := Nat.one_le_iff_ne_zero.mpr hc; omega_arith
+    refine ⟨by omega_arith, fun j hj1 hj2 => ?_⟩
+    have := hz.mp h0 (j - 1) (by omega_arith)
+    rwa [show d + 8 + 8 * (j - 1) = d + 8 * j by omega_arith] at this
   · rintro ⟨hl, hr⟩
     have h0 : wv m B (d + 8) (w - 1) = 0 := hz.mpr fun q hq => by
-      rw [show d + 8 + 8 * q = d + 8 * (q + 1) by omega]; exact hr _ (by omega) (by omega)
-    omega
+      rw [show d + 8 + 8 * q = d + 8 * (q + 1) by omega_arith]; exact hr _ (by omega_arith) (by omega_arith)
+    omega_arith
 
 /-- The scan: `r24 = 0` exactly when the number in array 4 is below 2. -/
 theorem dScan_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z) (h5 : s.gpr .r5 = off B (d + 8))
@@ -250,12 +250,12 @@ theorem dScan_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z) (h5 : s.g
     (t.gpr .r5 = off B (d + 8 * (i + 1)) ∧
       (t.gpr .r24 = 0#64 ↔ word s.mem B d >>> 1 = 0#64 ∧ ∀ j, 1 ≤ j → j ≤ i → word s.mem B (d + 8 * j) = 0#64) ∧
       t.mem = s.mem) ∧ Keep [.r3, .r5, .r6, .r24] s t
-  refine WP.mono (wp_countdown (cnt := .r6) (N := w - 1) (by omega) (by omega) Inv
+  refine WP.mono (wp_countdown (cnt := .r6) (N := w - 1) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨⟨t5, t24, tm⟩, kt⟩ _ => ?_)
-    ⟨⟨by rw [h5], by rw [h24]; exact ⟨fun h => ⟨h, fun j h1 h2 => absurd h2 (by omega)⟩, fun h => h.1⟩, rfl⟩,
+    ⟨⟨by rw [h5], by rw [h24]; exact ⟨fun h => ⟨h, fun j h1 h2 => absurd h2 (by omega_arith)⟩, fun h => h.1⟩, rfl⟩,
       Keep.refl _ _⟩ h6) fun t ⟨⟨_, t24, tm⟩, kt⟩ => ⟨⟨?_, tm⟩, kt⟩
   · have l : InRegions (t.rd ++ t.wr) (off B (d + 8 * (i + 1))) 8 := by
-      rw [kt.rd, kt.wr]; exact hs.ld (by omega)
+      rw [kt.rd, kt.wr]; exact hs.ld (by omega_arith)
     have rv : t.mem.readW (off B (d + 8 * (i + 1))) 64 = word s.mem B (d + 8 * (i + 1)) := by rw [tm]
     refine WP.mono (WP.keep [.r3, .r5, .r6, .r24] (Q := fun u =>
         u.gpr .r5 = off B (d + 8 * (i + 1 + 1)) ∧
@@ -263,17 +263,17 @@ theorem dScan_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z) (h5 : s.g
         u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1) ?_ (by decide))
       fun u ⟨⟨u5, u24, um, u6⟩, ku⟩ => ⟨⟨⟨u5, ?_, um.trans tm⟩, (kt.trans ku).mono (by decide)⟩, u6⟩
     · prun [t5, BitVec.add_zero, l, rv]
-      rw [show d + 8 * (i + 1) + 8 = d + 8 * (i + 1 + 1) by omega]
+      rw [show d + 8 * (i + 1) + 8 = d + 8 * (i + 1 + 1) by omega_arith]
     · rw [u24, BitVec.or_eq_zero_iff, t24]
       constructor
       · rintro ⟨⟨a, b⟩, c⟩
         exact ⟨a, fun j h1 h2 => by
           rcases Nat.lt_or_ge j (i + 1) with hj | hj
-          · exact b j h1 (by omega)
-          · rw [show j = i + 1 by omega]; exact c⟩
+          · exact b j h1 (by omega_arith)
+          · rw [show j = i + 1 by omega_arith]; exact c⟩
       · rintro ⟨a, b⟩
-        exact ⟨⟨a, fun j h1 h2 => b j h1 (by omega)⟩, b _ (by omega) (Nat.le_refl _)⟩
-  · rw [t24, wv_lt_two (by omega)]
-    exact ⟨fun ⟨a, b⟩ => ⟨a, fun j h1 h2 => b j h1 (by omega)⟩, fun ⟨a, b⟩ => ⟨a, fun j h1 h2 => b j h1 (by omega)⟩⟩
+        exact ⟨⟨a, fun j h1 h2 => b j h1 (by omega_arith)⟩, b _ (by omega_arith) (Nat.le_refl _)⟩
+  · rw [t24, wv_lt_two (by omega_arith)]
+    exact ⟨fun ⟨a, b⟩ => ⟨a, fun j h1 h2 => b j h1 (by omega_arith)⟩, fun ⟨a, b⟩ => ⟨a, fun j h1 h2 => b j h1 (by omega_arith)⟩⟩
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

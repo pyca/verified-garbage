@@ -89,7 +89,7 @@ theorem qinvPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne 
   obtain ⟨F2, k2, g2, p2⟩ := k2.fx
   rw [wp_seqs_cons (by simp)]
   refine andNotSE h2 k2 (d := X2) (a := X1) (b := X0) (ba := by rw [g2]; exact flag01 _)
-    (bb := by rw [p2 X0 (by decide), g1]; omega) (k := fun t3 h3 k3 f3 r3 => WP.block_nil ?_)
+    (bb := by rw [p2 X0 (by decide), g1]; omega_arith) (k := fun t3 h3 k3 f3 r3 => WP.block_nil ?_)
   obtain ⟨F3, k3, g3, p3⟩ := k3.fx
   have vG : F3 X2 = if good (V aP) then 1 else 0 := by
     rw [g3, g2, p2 X0 (by decide), g1, three]
@@ -156,7 +156,7 @@ theorem crtOf_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o j : Nat} (ho :
     rw [e2, g1, zero, sel_flag, one]
   have vDv : V4 aDv = if V j = 0 then 1 else V j := by
     rw [e4, o3 aS (by decide), vS]
-  have pos : 0 < V4 aDv := by rw [vDv]; split <;> omega
+  have pos : 0 < V4 aDv := by rw [vDv]; split <;> omega_arith
   refine ⟨ht, ⟨V5, F1, k5, fun k hk hn => ?_, p1, ?_⟩, (((f1.trans f2).trans f3).trans f4).trans f5,
     ((((r1.trans' r2).trans' r3).trans' r4).trans' r5).mono⟩
   · simp only [crtArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
@@ -195,11 +195,11 @@ theorem nPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
     WP isa nPart s fun t => Ws t B Z w nArr ∧
       (∃ V', KS t.mem B w V' F ∧ (∀ j < nArr, j ≠ aN → j ∉ mulArrs → V' j = V j) ∧ V' aN = V aP * V aQ) ∧
       KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
-  refine WP.mono (mulToE h ks (o := aN) (a := aP) (b := aQ) (K := 8 * L) (k := cnt8) (hK := by omega)
+  refine WP.mono (mulToE h ks (o := aN) (a := aP) (b := aQ) (K := 8 * L) (k := cnt8) (hK := by omega_arith)
     (hK' := hL') (hk := fun u hu => cnt8_ok hL' u (by rw [hu, h22])) (hZ := zero))
     fun t ⟨ht, ⟨V', kt, ot, et⟩, ft, rt⟩ => ⟨ht, ⟨V', kt, ot, ?_⟩, ft, rt⟩
   have hpq : V aP * V aQ < 2 ^ (32 * w) := by
-    rw [hw, show 16 * L = 8 * L + 8 * L by omega, Nat.pow_add]
+    rw [hw, show 16 * L = 8 * L + 8 * L by omega_arith, Nat.pow_add]
     exact Nat.mul_lt_mul'' hp hq
   rw [et, Nat.mod_eq_of_lt hq, Nat.mod_eq_of_lt hpq]
 
@@ -237,7 +237,7 @@ theorem maskPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (b0 : F X0 ≤
   refine bitOfE h4 k4 (d := X2) (j := aQ) (k := fun t5 h5 k5 f5 r5 => ?_)
   obtain ⟨F5, k5, g5, p5⟩ := k5.fx
   refine andSE h5 k5 (d := X8) (a := X8) (b := X2) (ba := by rw [p5 X8 (by decide), g4]; exact flag01 _)
-    (bb := by rw [g5]; omega) (k := fun t6 h6 k6 f6 r6 => ?_)
+    (bb := by rw [g5]; omega_arith) (k := fun t6 h6 k6 f6 r6 => ?_)
   obtain ⟨F6, k6, g6, p6⟩ := k6.fx
   refine andSE h6 k6 (d := X8) (a := X8) (b := X3) (ba := by rw [g6]; exact flag01 _)
     (bb := by rw [p6 X3 (by decide), p5 X3 (by decide), p4 X3 (by decide), p3 X3 (by decide), p2 X3 (by decide),

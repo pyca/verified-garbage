@@ -33,8 +33,8 @@ theorem sqBody_ok {s0 u : State} (hn : NOk s0) {j k : Nat} (h : SI s0 j k u) (hk
     WP isa sqBody u fun v => SI s0 j (k + 1) v ∧ v.gpr .r27 = u.gpr .r27 - BitVec.ofNat 64 1 := by
   have c := h.cf
   have hz : 160 ≤ rvZ s0 := c.ws.hdr_le
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
-  have hn1 : 1 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
+  have hn1 : 1 < nV s0 := by have := hn.big; omega_arith
   have fit : ∀ j < nArr, arr (ww (kK s0)) j + S (ww (kK s0)) ≤ 2 ^ 64 := fun _ hj => c.ws.fit64 hj
   have ex : y0 s0 j < nV s0 := by rw [y0, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hn0
   have hy : (sqst s0 j k).1 < nV s0 := sqIter_lt hn0 k _ ex
@@ -93,7 +93,7 @@ theorem sqBody_ok {s0 u : State} (hn : NOk s0) {j k : Nat} (h : SI s0 j k u) (hk
     (e1 := decide (y * y % nV s0 = 1)) (e2 := decide (y * y % nV s0 = nV s0 - 1))
     (by rw [sl3 sK (by simp)]; exact h.sk) hT (by rw [sl3 sDone (by simp)]; exact hdn)
     (by rw [sl3 sOk (by simp)]; exact hok)
-    (by rw [kk3.slot (e := sE1) (by decide) (by decide)]; exact e1) e2 (by omega) (by omega))
+    (by rw [kk3.slot (e := sE1) (by decide) (by decide)]; exact e1) e2 (by omega_arith) (by omega_arith))
     fun u4 ⟨m4, k4⟩ => ?_
   have kk4 : KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [] [sOk, sDone, sLive] u3.mem u4.mem := by
     rw [m4]
@@ -111,7 +111,7 @@ theorem sqBody_ok {s0 u : State} (hn : NOk s0) {j k : Nat} (h : SI s0 j k u) (hk
       !(decide (y * y % nV s0 = nV s0 - 1) || decide (k + 1 = tT s0))) := by
     rw [kk5.slot (e := sLive) (by decide) (by simp), m4, slot_write_self, BitVec.toNat_ofNat]
     have := b2n_le (!done && decide (k < tT s0) && !decide (y * y % nV s0 = 1) &&
-      !(decide (y * y % nV s0 = nV s0 - 1) || decide (k + 1 = tT s0))); omega
+      !(decide (y * y % nV s0 = nV s0 - 1) || decide (k + 1 = tT s0))); omega_arith
   refine WP.mono (sel_ok ws5 (o := mY) (a := aU) (b := mX) (sl := sLive) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by rw [live5]; exact b2n_le _)) fun u6 ⟨ws6, kk6, v6, k6⟩ => ?_
   have c6 := c5.of_keep kk6 (by decide) (by simp) k6 ws6
@@ -124,8 +124,8 @@ theorem sqBody_ok {s0 u : State} (hn : NOk s0) {j k : Nat} (h : SI s0 j k u) (hk
     x.mem = u6.mem.writeW (off (rvB s0) sK) ((BitVec.ofNat 64 k + 1#64).setWidth 32) ∧
       x.gpr .r27 = u6.gpr .r27 - 1#64) ?_ (by decide))
     fun t ⟨⟨mt, a27⟩, kt⟩ => ?_
-  · prun [sqNext, ws6.r31, ws6.scr.ld (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega),
-      ws6.scr.st (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega),
+  · prun [sqNext, ws6.r31, ws6.scr.ld (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega_arith),
+      ws6.scr.st (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega_arith),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sK < 2 ^ 15 by decide),
       exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sK < 2 ^ 15 by decide), ld_slot sK6]
   have kkt : KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [] [sK] u6.mem t.mem := by
@@ -160,22 +160,22 @@ theorem sqBody_ok {s0 u : State} (hn : NOk s0) {j k : Nat} (h : SI s0 j k u) (hk
     simp only [sqStep]
     have := b2n_le (done || (!done && decide (k < tT s0) && (decide (y * y % nV s0 = 1) ||
       (decide (y * y % nV s0 = nV s0 - 1) || decide (k + 1 = tT s0)))))
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
   · rw [mt, slot_wne _ _ _ (by decide) (by decide) (by decide), kk6.slot (e := sOk) (by decide) (by simp),
       kk5.slot (e := sOk) (by decide) (by simp), m4, slot_wne _ _ _ (by decide) (by decide) (by decide),
       slot_wne _ _ _ (by decide) (by decide) (by decide), slot_write_self, BitVec.toNat_ofNat, e]
     simp only [sqStep]
     have := b2n_le (ok || (!done && decide (k < tT s0) && decide (y * y % nV s0 = 1)))
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
   · rw [mt, slot_write_self, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- The `c` squarings. -/
 theorem sqLoop_ok {s0 u : State} (hn : NOk s0) {j : Nat} (h : SI s0 j 0 u)
     (h27 : u.gpr .r27 = BitVec.ofNat 64 (cB s0)) (hc0 : 0 < cB s0) (hc : cB s0 < 2 ^ 31) (ht : tT s0 < 2 ^ 31) :
     WP isa sqLoop u (SI s0 j (cB s0)) :=
-  wp_countdown (body := sqBody) (cnt := .r27) (N := cB s0) (by omega) hc0 (SI s0 j)
-    (fun _ hk _ e _ => sqBody_ok hn e (by omega) ht) h h27
+  wp_countdown (body := sqBody) (cnt := .r27) (N := cB s0) (by omega_arith) hc0 (SI s0 j)
+    (fun _ hk _ e _ => sqBody_ok hn e (by omega_arith) ht) h h27
 
 end VG.Proof.Rsa.PPC64LE.Recover

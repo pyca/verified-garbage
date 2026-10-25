@@ -120,15 +120,15 @@ include hP hF hS
 omit hP hS in
 theorem ball_m {σ : State} : KeyGen.BallOk (slay2 p STK σ) sWb2 (sc oCT) (cLen p) p.τ cP (sc oPS) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hc : 0 < cLen p ∧ cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hc : 0 < cLen p ∧ cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
   exact ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
     ⟨sptr_ok rfl (by decide), by csep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide,
-    by csep hF, by csep hF, by csep hF, hF.bp, ⟨hc.1, by omega, hF.tau⟩⟩
+    by csep hF, by csep hF, by csep hF, hF.bp, ⟨hc.1, by omega_arith, hF.tau⟩⟩
 
 theorem ball_ok {t : Nat} {σ s : State} (h : ICd p STK t σ s) :
     WP isa (ballAt P (cLen p) p.τ cP) s (IB p STK σ t) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
   have hb := h.1.w1b
   unfold ballAt
   refine ball_okX hP h.1.l.k.sc.site hS (ball_m hF) fun s' k' hred hout hmax => ?_
@@ -136,7 +136,7 @@ theorem ball_ok {t : Nat} {σ s : State} (h : ICd p STK t σ s) :
   rw [hct] at hout hmax
   refine ⟨⟨h.1.keep k' (by csep hF) (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide)), ?_⟩, ?_,
     fun h1 => ⟨⟨hred h1, ball_val hout h1 (hmax h1)⟩, hmax h1⟩, fun h0 => ?_⟩
-  · rw [bytes_keepW h.1.l.k.sc.site.ok k'.frame (by csep hF) (by decide) (by omega)]; exact h.2
+  · rw [bytes_keepW h.1.l.k.sc.site.ok k'.frame (by csep hF) (by decide) (by omega_arith)]; exact h.2
   · rcases hout with ⟨e, _⟩ | ⟨e, _⟩
     exacts [.inr e, .inl e]
   · rcases hout with ⟨e, _⟩ | ⟨_, hn⟩
@@ -199,7 +199,7 @@ theorem ofNat_sub_one {k : Nat} (h : 1 ≤ k) (hk : k < 2 ^ 64) :
     BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- Iteration `t` passed: `c̃`, `z` and `h`, and `r25 = 1`. -/
 structure EP (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
@@ -303,13 +303,13 @@ theorem dec_end {p : Params} {STK : Nat} (hp : ParamsOk p) {σ : State} {t : Nat
     have ht := h.t_lt
     have hr : RejT p σ (t + 1) := Rej.succ _ _ _ _ _ _ _ h.rej (by rw [Nat.zero_add]; exact iter_rej hp h.some h.fail)
     have e25 : s'.gpr .r25 = BitVec.ofNat 64 (814 - (t + 1)) := by
-      rw [w.1, h.r25, ofNat_sub_one (by omega) (by omega)]; congr 1
+      rw [w.1, h.r25, ofNat_sub_one (by omega_arith) (by omega_arith)]; congr 1
     by_cases ht' : t = 813
     · subst ht'
       refine .inr ⟨by rw [e25]; decide, K, .inl (e24.trans h.r24),
         fun h1 => absurd (h1.symm.trans (e24.trans h.r24)) (by decide), fun _ => loop_none_exh hr⟩
-    · refine .inl ⟨by rw [e25]; intro e; have := congrArg BitVec.toNat e; simp at this; omega,
-        ⟨K, by rw [w.2.1 .r27 (by decide)]; exact h.r27, e25, by omega, hr⟩⟩
+    · refine .inl ⟨by rw [e25]; intro e; have := congrArg BitVec.toNat e; simp at this; omega_arith,
+        ⟨K, by rw [w.2.1 .r27 (by decide)]; exact h.r27, e25, by omega_arith, hr⟩⟩
   · -- `SampleInBall` failed
     have z : s'.gpr .r25 = 0 := by rw [w.1, h.r25]; decide
     exact .inr ⟨z, K, .inl (e24.trans h.r24), fun h1 => absurd (h1.symm.trans (e24.trans h.r24)) (by decide),
@@ -329,7 +329,7 @@ theorem checks_ok {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h :
   refine WP.seq (WP.mono ((zs_piece hP hF hS).ok σ s2 hpre h2) fun s3 h3 => ?_)
   refine WP.seq (WP.mono ((r0s_piece hP hF hS).ok σ s3 hpre h3) fun s4 h4 => ?_)
   refine WP.seq (WP.mono ((hs_piece hP hF hS).ok σ s4 hpre h4) fun s5 h5 => ?_)
-  exact WP.seq (WP.mono ((onesOk_piece hF).ok σ s5 hpre h5) fun s6 h6 => kbranch_ok (by have := hF.l; omega) h6)
+  exact WP.seq (WP.mono ((onesOk_piece hF).ok σ s5 hpre h5) fun s6 h6 => kbranch_ok (by have := hF.l; omega_arith) h6)
 
 theorem iter_ok (hp : ParamsOk p) {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h : IL p STK σ t s) :
     WP isa (iter P p) s (LP p STK σ t) := by
@@ -362,7 +362,7 @@ theorem signLoop_ok (hp : ParamsOk p) {σ : State} (hpre : SPre p STK σ) {s : S
     ⟨0, rfl, I0⟩
   refine WP.mono (iter_ok hP hF hS hp hpre hs) fun s' h' => ?_
   rcases h' with ⟨hz, hI⟩ | ⟨hz, hX⟩
-  · exact .inr ⟨by rw [eval_nonzero]; exact congrArg some (bne_iff_ne.mpr hz), 814 - (t + 1), by have := hs.t_lt; omega, t + 1, rfl, hI⟩
+  · exact .inr ⟨by rw [eval_nonzero]; exact congrArg some (bne_iff_ne.mpr hz), 814 - (t + 1), by have := hs.t_lt; omega_arith, t + 1, rfl, hI⟩
   · exact .inl ⟨by rw [eval_nonzero, hz]; rfl, hX⟩
 
 end

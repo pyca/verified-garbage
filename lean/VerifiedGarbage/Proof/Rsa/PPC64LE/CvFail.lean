@@ -33,7 +33,7 @@ theorem failStage_ok {s0 s : State} {m : Mem} (h : Fr s0 m s) {rP rL : Reg} (hrP
     fun v ⟨⟨v5, v8, um⟩, kv⟩ => ?_
   have fv : Fr s0 m v := h.of_mem kv um
   refine WP.mono (zeroBytes_ok (v5.trans hO) (v8.trans hL) hL1 hL2
-    (fun c hc => ⟨_, by rw [kv.wr, h.wr]; exact hrw, Offset.contains_base _ (by omega) (by omega)⟩) hOw)
+    (fun c hc => ⟨_, by rw [kv.wr, h.wr]; exact hrw, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) hOw)
     fun t ⟨tz, tout, kt⟩ =>
       have tout' : Outside O 0 L s.mem t.mem := fun x hx => (tout x hx).trans (congrFun um x)
       ⟨fv.step (fun x hx => tout x hx) hds kt, tz, tout', (kv.trans kt).mono⟩
@@ -55,17 +55,17 @@ theorem fail_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   have f0 := Fr.of_base h
   rw [fail, wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (failStage_ok f0 (rP := .r14) (rL := .r20) (by decide) (by decide) (by decide) ha.r14
-    (by rw [ha.r20]; exact ofNat_toNat64 _) (by rw [hwr, ← e4]; simp) d1s w1 p1 (by omega))
+    (by rw [ha.r20]; exact ofNat_toNat64 _) (by rw [hwr, ← e4]; simp) d1s w1 p1 (by omega_arith))
     fun t1 ⟨f1, v1, o1, k1⟩ => ?_
   have a1 := ha.of_keep k1
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (failStage_ok f1 (rP := .r15) (rL := .r22) (by decide) (by decide) (by decide) a1.r15
-    (by rw [a1.r22]; exact ofNat_toNat64 _) (by rw [hwr, ← e6]; simp) d2s w2 q1 (by omega))
+    (by rw [a1.r22]; exact ofNat_toNat64 _) (by rw [hwr, ← e6]; simp) d2s w2 q1 (by omega_arith))
     fun t2 ⟨f2, v2, o2, k2⟩ => ?_
   have a2 := a1.of_keep k2
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (failStage_ok f2 (rP := .r16) (rL := .r20) (by decide) (by decide) (by decide) a2.r16
-    (by rw [a2.r20]; exact ofNat_toNat64 _) (by rw [hwr, ← e8]; simp) d3s w3 p1 (by omega))
+    (by rw [a2.r20]; exact ofNat_toNat64 _) (by rw [hwr, ← e8]; simp) d3s w3 p1 (by omega_arith))
     fun t3 ⟨f3, v3, o3, k3⟩ => ?_
   rw [show seqs [.block [.li .r3 0]] = .block [.li .r3 0] from rfl]
   have hb4 : WP isa (.block [.li .r3 0]) t3 fun t => (t.gpr .r3 = 0 ∧ t.mem = t3.mem) ∧ Keep [.r3] t3 t := by
@@ -75,11 +75,11 @@ theorem fail_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   refine WP.mono hb4 fun t ⟨⟨t3', tm⟩, kt⟩ => ⟨f3.of_mem kt tm, t3', fun c hc => ?_, fun c hc => ?_,
     fun c hc => ?_, (((k1.trans k2).trans k3).trans kt).mono⟩
   · have cc : (⟨s0.gpr .r3, (PPC64LE.stackArg s0 1).toNat⟩ : Region).Contains (off (s0.gpr .r3) c) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [tm, out_of_disjoint o3 d13.symm cc, out_of_disjoint o2 d12.symm cc]
     exact v1 c hc
   · have cc : (⟨s0.gpr .r5, (PPC64LE.stackArg s0 3).toNat⟩ : Region).Contains (off (s0.gpr .r5) c) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [tm, out_of_disjoint o3 d23.symm cc]
     exact v2 c hc
   · rw [tm]; exact v3 c hc

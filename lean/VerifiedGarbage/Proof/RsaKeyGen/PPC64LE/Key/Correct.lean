@@ -30,17 +30,17 @@ open VG.Proof.Rsa.PPC64LE.CrtValues (savedReg bytes_zero)
 theorem Outs.bytes {s0 : State} {m t : Mem} {os : List (Addr × Nat × Nat)} (h : Outs s0 m true t os)
     {O : Addr} {L j : Nat} (ho : (O, L, j) ∈ os) (hL : L ≤ 4 * kW s0) (h64 : L < 2 ^ 64) :
     Spec.Rsa.bytesAt t O L = Spec.Rsa.i2osp (num m (kB s0) (kW s0) j % 256 ^ L) L :=
-  bytes_of_store hL fun c hc => by rw [h _ ho c hc (by omega)]; rfl
+  bytes_of_store hL fun c hc => by rw [h _ ho c hc (by omega_arith)]; rfl
 
 /-- An output's bytes, zero without the mask. -/
 theorem Outs.zero {s0 : State} {m t : Mem} {os : List (Addr × Nat × Nat)} (h : Outs s0 m false t os)
     {O : Addr} {L j : Nat} (ho : (O, L, j) ∈ os) (h64 : L < 2 ^ 64) :
     Spec.Rsa.bytesAt t O L = List.replicate L 0 :=
-  bytes_zero fun c hc => by rw [h _ ho c hc (by omega)]; rfl
+  bytes_zero fun c hc => by rw [h _ ho c hc (by omega_arith)]; rfl
 
 theorem status_toNat (a b : Nat) (ha : a ≤ 1) (hb : b ≤ 1) :
     ((BitVec.ofNat 64 (2 * a + b)).setWidth 32).toNat = 2 * a + b := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_arith
 
 theorem post_of {s0 t : State} (h : keyP.pre s0) (bp : BodyPost s0 t) : keyP.post s0 t := by
   obtain ⟨m, D, x, -, hD, xl, xd, inv, r3, outs, vN, vD, vP, vQ, vDP, vDQ, vQi⟩ := bp
@@ -72,47 +72,47 @@ theorem post_of {s0 t : State} (h : keyP.pre s0) (bp : BodyPost s0 t) : keyP.pos
     -- `p` and `q` are at least 3: an odd 1 makes `n` too small.
     have p3 : 3 ≤ kP s0 := by
       by_contra c
-      have : kP s0 = 1 := by omega
+      have : kP s0 = 1 := by omega_arith
       rw [this, Nat.one_mul] at top
-      exact top (Nat.lt_of_lt_of_le hQ (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * kL s0 ≤ 16 * kL s0 - 1 by omega)))
+      exact top (Nat.lt_of_lt_of_le hQ (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * kL s0 ≤ 16 * kL s0 - 1 by omega_arith)))
     have q3 : 3 ≤ kQ s0 := by
       by_contra c
-      have : kQ s0 = 1 := by omega
+      have : kQ s0 = 1 := by omega_arith
       rw [this, Nat.mul_one] at top
-      exact top (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * kL s0 ≤ 16 * kL s0 - 1 by omega)))
-    have hM : mL (kP s0) = kP s0 := mL_of ⟨by omega, pp⟩
+      exact top (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * kL s0 ≤ 16 * kL s0 - 1 by omega_arith)))
+    have hM : mL (kP s0) = kP s0 := mL_of ⟨by omega_arith, pp⟩
     rw [hM] at xl
-    have h16 : 2 ^ (16 * kL s0) = 2 ^ (8 * kL s0) * 2 ^ (8 * kL s0) := by rw [← Nat.pow_add]; congr 1; omega
+    have h16 : 2 ^ (16 * kL s0) = 2 ^ (8 * kL s0) * 2 ^ (8 * kL s0) := by rw [← Nat.pow_add]; congr 1; omega_arith
     have b8 : (256 : Nat) ^ kL s0 = 2 ^ (8 * kL s0) := by rw [Nat.pow_mul]
     have b16 : (256 : Nat) ^ (2 * kL s0) = 2 ^ (16 * kL s0) := by
-      rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]; congr 1; omega
-    have hW : 32 * kW s0 = 16 * kL s0 := by omega
+      rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]; congr 1; omega_arith
+    have hW : 32 * kW s0 = 16 * kL s0 := by omega_arith
     simp only [outBytes, nl]
-    have bN := outs.bytes (O := s0.gpr .r3) (L := 2 * kL s0) (j := aN) (by simp) (by omega) (by omega)
-    have bD := outs.bytes (O := s0.gpr .r5) (L := 2 * kL s0) (j := aD) (by simp) (by omega) (by omega)
-    have bP := outs.bytes (O := s0.gpr .r7) (L := kL s0) (j := aP) (by simp) (by omega) (by omega)
-    have bQ := outs.bytes (O := s0.gpr .r9) (L := kL s0) (j := aQ) (by simp) (by omega) (by omega)
-    have bDP := outs.bytes (O := PPC64LE.stackArg s0 0) (L := kL s0) (j := aDP) (by simp) (by omega) (by omega)
-    have bDQ := outs.bytes (O := PPC64LE.stackArg s0 2) (L := kL s0) (j := aDQ) (by simp) (by omega) (by omega)
-    have bQi := outs.bytes (O := PPC64LE.stackArg s0 4) (L := kL s0) (j := aQi) (by simp) (by omega) (by omega)
+    have bN := outs.bytes (O := s0.gpr .r3) (L := 2 * kL s0) (j := aN) (by simp) (by omega_arith) (by omega_arith)
+    have bD := outs.bytes (O := s0.gpr .r5) (L := 2 * kL s0) (j := aD) (by simp) (by omega_arith) (by omega_arith)
+    have bP := outs.bytes (O := s0.gpr .r7) (L := kL s0) (j := aP) (by simp) (by omega_arith) (by omega_arith)
+    have bQ := outs.bytes (O := s0.gpr .r9) (L := kL s0) (j := aQ) (by simp) (by omega_arith) (by omega_arith)
+    have bDP := outs.bytes (O := PPC64LE.stackArg s0 0) (L := kL s0) (j := aDP) (by simp) (by omega_arith) (by omega_arith)
+    have bDQ := outs.bytes (O := PPC64LE.stackArg s0 2) (L := kL s0) (j := aDQ) (by simp) (by omega_arith) (by omega_arith)
+    have bQi := outs.bytes (O := PPC64LE.stackArg s0 4) (L := kL s0) (j := aQi) (by simp) (by omega_arith) (by omega_arith)
     rw [bN, bD, bP, bQ, bDP, bDQ, bQi, vN, vD, vP, vQ, vDP, vDQ, vQi, b8, b16]
-    simp only [show ¬ kP s0 - 1 = 0 by omega, show ¬ kQ s0 - 1 = 0 by omega, ↓reduceIte]
+    simp only [show ¬ kP s0 - 1 = 0 by omega_arith, show ¬ kQ s0 - 1 = 0 by omega_arith, ↓reduceIte]
     rw [hW] at hD
     have e1 : kP s0 * kQ s0 % 2 ^ (16 * kL s0) = kP s0 * kQ s0 :=
       Nat.mod_eq_of_lt (by rw [h16]; exact Nat.mul_lt_mul'' hP hQ)
     have e5 : D % (kP s0 - 1) % 2 ^ (8 * kL s0) = D % (kP s0 - 1) :=
-      Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega)) (by omega))
+      Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (by omega_arith))
     have e6 : D % (kQ s0 - 1) % 2 ^ (8 * kL s0) = D % (kQ s0 - 1) :=
-      Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega)) (by omega))
+      Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (by omega_arith))
     rw [e1, e5, e6, Nat.mod_eq_of_lt hD, Nat.mod_eq_of_lt hP, Nat.mod_eq_of_lt hQ,
-      Nat.mod_eq_of_lt (show x < 2 ^ (8 * kL s0) by omega)]
+      Nat.mod_eq_of_lt (show x < 2 ^ (8 * kL s0) by omega_arith)]
   · simp only [hm, decide_false] at outs
     have z : outZero s0 t.mem := by
       simp only [outZero, nl]
-      exact ⟨outs.zero (j := aN) (by simp) (by omega), outs.zero (j := aD) (by simp) (by omega),
-        outs.zero (j := aP) (by simp) (by omega), outs.zero (j := aQ) (by simp) (by omega),
-        outs.zero (j := aDP) (by simp) (by omega), outs.zero (j := aDQ) (by simp) (by omega),
-        outs.zero (j := aQi) (by simp) (by omega)⟩
+      exact ⟨outs.zero (j := aN) (by simp) (by omega_arith), outs.zero (j := aD) (by simp) (by omega_arith),
+        outs.zero (j := aP) (by simp) (by omega_arith), outs.zero (j := aQ) (by simp) (by omega_arith),
+        outs.zero (j := aDP) (by simp) (by omega_arith), outs.zero (j := aDQ) (by simp) (by omega_arith),
+        outs.zero (j := aQi) (by simp) (by omega_arith)⟩
     by_cases hs : kSmall s0 D
     · simp only [hm, hs, ↓reduceIte]
       exact ⟨rfl, z⟩
@@ -133,7 +133,7 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
   have hm : (⟨kB s0, kZ s0⟩ : Region) ∈ t.wr := by rw [h.wr, p.wr]; simp
   have hs : Scr t (kB s0) (kZ s0) := Scr.of_mem hm nw
   have e : ∀ i < 14, t.mem.readW (off (kB s0) (8 * i)) 64 = s0.gpr (savedReg i) := fun i hi => by
-    rw [h.readW (by omega)]; exact h.hdr i hi
+    rw [h.readW (by omega_arith)]; exact h.hdr i hi
   have e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
   have e3 := e 3 (by decide); have e4 := e 4 (by decide); have e5 := e 5 (by decide)
   have e6 := e 6 (by decide); have e7 := e 7 (by decide); have e8 := e 8 (by decide)
@@ -141,13 +141,13 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
   have e12 := e 12 (by decide); have e13 := e 13 (by decide)
   simp only [savedReg, Nat.reduceMul] at e0 e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 e11 e12 e13
   refine WP.keep _ ?_ (by decide)
-  prun [restore, h.r31, hs.ld (d := 0) (n := 8) (by omega), hs.ld (d := 8) (n := 8) (by omega),
-    hs.ld (d := 16) (n := 8) (by omega), hs.ld (d := 24) (n := 8) (by omega),
-    hs.ld (d := 32) (n := 8) (by omega), hs.ld (d := 40) (n := 8) (by omega),
-    hs.ld (d := 48) (n := 8) (by omega), hs.ld (d := 56) (n := 8) (by omega),
-    hs.ld (d := 64) (n := 8) (by omega), hs.ld (d := 72) (n := 8) (by omega),
-    hs.ld (d := 80) (n := 8) (by omega), hs.ld (d := 88) (n := 8) (by omega),
-    hs.ld (d := 96) (n := 8) (by omega), hs.ld (d := 104) (n := 8) (by omega),
+  prun [restore, h.r31, hs.ld (d := 0) (n := 8) (by omega_arith), hs.ld (d := 8) (n := 8) (by omega_arith),
+    hs.ld (d := 16) (n := 8) (by omega_arith), hs.ld (d := 24) (n := 8) (by omega_arith),
+    hs.ld (d := 32) (n := 8) (by omega_arith), hs.ld (d := 40) (n := 8) (by omega_arith),
+    hs.ld (d := 48) (n := 8) (by omega_arith), hs.ld (d := 56) (n := 8) (by omega_arith),
+    hs.ld (d := 64) (n := 8) (by omega_arith), hs.ld (d := 72) (n := 8) (by omega_arith),
+    hs.ld (d := 80) (n := 8) (by omega_arith), hs.ld (d := 88) (n := 8) (by omega_arith),
+    hs.ld (d := 96) (n := 8) (by omega_arith), hs.ld (d := 104) (n := 8) (by omega_arith),
     e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13]
   exact e0
 

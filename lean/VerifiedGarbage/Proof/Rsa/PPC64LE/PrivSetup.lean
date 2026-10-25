@@ -77,7 +77,7 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
   have uwr : u.wr = fr s :: s.wr := by rw [← hu]; rfl
   refine Spill.save_ok (b := .r12) (l := saved) (by decide) saved_ho (fun p hp => ?_) ?_
   · have := saved_offs p hp
-    rw [uwr, u12]; exact in_fr s _ (by unfold oSave at this; omega) (by unfold oSave frameBytes at *; omega)
+    rw [uwr, u12]; exact in_fr s _ (by unfold oSave at this; omega_arith) (by unfold oSave frameBytes at *; omega_arith)
   generalize hu₂ : ({ u with mem := Spill.saveMem u.mem (u.gpr .r12) u.gpr saved } : State) = u₂
   have g₂ : u₂.gpr = u.gpr := by rw [← hu₂]
   have m₂ : u₂.mem = Spill.saveMem u.mem (fb s) u.gpr saved := by rw [← hu₂, u12]
@@ -93,7 +93,7 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
     have f1 : Frame [kR s] s.mem u.mem := by
       rw [hum]; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ (fb_contains s)
     exact f1.trans (Spill.saveMem_frame_base (fun p hp => by
-      have := saved_offs p hp; unfold oSave frameBytes at *; omega) (by decide) _ _ _)
+      have := saved_offs p hp; unfold oSave frameBytes at *; omega_arith) (by decide) _ _ _)
   have sv₂ : Spill.Saved (fb s) s.gpr saved u₂.mem := by
     rw [m₂]
     refine fun p hp => (Spill.saveMem_saved (by decide) _ _ _ p hp).trans ?_
@@ -103,7 +103,7 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 p.2, 8⟩ r := fun p hp r hr => by
     have := saved_offs p hp
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl (by unfold oSave oLr at *; omega)) (by unfold oSave at *; omega) (by decide)
+    exact Offset.disjoint _ (.inl (by unfold oSave oLr at *; omega_arith)) (by unfold oSave at *; omega_arith) (by decide)
   have e12 : (u₂.write .r0 u₂.lr).gpr .r12 = fb s := by rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide), g₂, u12]
   rw [e12]
   refine k _ ⟨?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩ ?_ fun r h12 h0 => ?_
@@ -182,24 +182,24 @@ theorem copy_step {s w : State} (h : PreP s) (hw12 : w.gpr .r12 = fb s) (hrd : w
   have hmt : Frame [kR s] s.mem t.mem := hm.trans (hc.mem.sub fun r hr => by
     rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, psa_sub⟩)
   have hin : InRegions (t.rd ++ t.wr) (t.gpr .r12 + BitVec.ofNat 64 (arg (2 + n))) 8 := by
-    rw [t12]; exact arg_in h (hc.keep.rd.trans hrd) (by omega)
+    rw [t12]; exact arg_in h (hc.keep.rd.trans hrd) (by omega_arith)
   have hv : t.mem.readW (t.gpr .r12 + BitVec.ofNat 64 (arg (2 + n))) 64 = stackArg s (2 + n) := by
-    rw [t12]; exact arg_read h hmt (by omega)
+    rw [t12]; exact arg_read h hmt (by omega_arith)
   have ho : InRegions t.wr (t.gpr .r12 + BitVec.ofNat 64 (96 + 8 * n)) 8 := by
-    rw [t12, hc.keep.wr, hwr]; exact in_fr s _ (by omega) (by unfold frameBytes; omega)
-  have harg : arg (2 + n) < 2 ^ 15 ∧ arg (2 + n) % 4 = 0 := by unfold arg frameBytes; omega
+    rw [t12, hc.keep.wr, hwr]; exact in_fr s _ (by omega_arith) (by unfold frameBytes; omega_arith)
+  have harg : arg (2 + n) < 2 ^ 15 ∧ arg (2 + n) % 4 = 0 := by unfold arg frameBytes; omega_arith
   apply WP.of_runBlock
   simp only [argCopy, runBlock_cons, runStep_some, exec_load_d (show Reg.r12 ≠ .r0 by decide) harg hin]
-  rw [exec_store_d (show Reg.r12 ≠ .r0 by decide) ⟨by omega, by omega⟩
+  rw [exec_store_d (show Reg.r12 ≠ .r0 by decide) ⟨by omega_arith, by omega_arith⟩
     (by rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide)]; exact ho)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
   rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide), gpr_write_self, mem_write, hv, t12]
   refine ⟨⟨fun r hr => ?_, hc.keep.rd, hc.keep.wr, hc.keep.sp, hc.keep.lr⟩, ?_, fun i hi => ?_⟩
   · show (t.write .r0 _).gpr r = w.gpr r
     rw [gpr_write_of_ne _ _ (by simpa using hr)]; exact hc.keep.gpr r hr
-  · exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by decide))
+  · exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_arith) (by omega_arith) (by decide))
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide)]
       exact hc.psa i hi
     · rw [Mem.readW_writeW_self64]
 
@@ -232,7 +232,7 @@ theorem setup_ok {s : State} (h : PreP s) :
       ∀ r ∈ [psaR s], Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, n⟩ r :=
     fun hdn hdn' r hr => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (.inr hdn) (by unfold frameBytes at hdn'; omega) (by decide)
+      exact Offset.disjoint _ (.inr hdn) (by unfold frameBytes at hdn'; omega_arith) (by decide)
   refine ⟨⟨k.sp.trans (kw.sp.trans F.sp), k.rd.trans (kw.rd.trans F.rd), k.wr.trans (kw.wr.trans F.wr),
     k.lr.trans (kw.lr.trans F.lr), fun r hr => ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, hc.psa⟩
@@ -243,7 +243,7 @@ theorem setup_ok {s : State} (h : PreP s) :
     exact F.mem.trans hm
   · have hm : Frame [psaR s] v.mem t.mem := by rw [← wm]; exact hc.mem
     exact F.sv.frame hm fun p hp => by
-      have := saved_offs p hp; exact hd (by unfold oSave at this; omega) (by unfold oSave frameBytes at *; omega)
+      have := saved_offs p hp; exact hd (by unfold oSave at this; omega_arith) (by unfold oSave frameBytes at *; omega_arith)
   · rw [hc.mem.readW (Region.contains_self _ _) (hd (by decide) (by decide)) (by decide), wm]; exact F.ls
   · rw [k.gpr _ (by decide)]; exact w3
   · rw [k.gpr _ (by decide)]; exact w4

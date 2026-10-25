@@ -31,8 +31,8 @@ theorem Late.store {s t : State} (M : Late s t) {d : Nat} (hd : oLr + 8 ≤ d �
     Late s u := by
   have hd1 : ∀ {e : Nat}, oSave ≤ e → e + 8 ≤ oLr + 8 →
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 e, 8⟩ ⟨fb s + BitVec.ofNat 64 d, 8⟩ := fun he he' =>
-    Offset.disjoint _ (by unfold oSave oLr at *; omega) (by unfold oLr at he'; omega)
-      (by unfold frameBytes at hd'; omega)
+    Offset.disjoint _ (by unfold oSave oLr at *; omega_arith) (by unfold oLr at he'; omega_arith)
+      (by unfold frameBytes at hd'; omega_arith)
   have fw : Frame [⟨fb s + BitVec.ofNat 64 d, 8⟩] t.mem u.mem := by
     rw [hm]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hsp.trans M.sp, hrd.trans M.rd, hwr.trans M.wr, (hg _ (by decide)).trans M.r24,
@@ -42,7 +42,7 @@ theorem Late.store {s t : State} (M : Late s t) {d : Nat} (hd : oLr + 8 ≤ d �
     M.sv.frame fw fun p hp r hr => by
       rw [List.mem_singleton.mp hr]
       have := saved_offs p hp
-      exact hd1 this.1 (by unfold oSave oLr at *; omega), ?_⟩
+      exact hd1 this.1 (by unfold oSave oLr at *; omega_arith), ?_⟩
   · rw [hm]; exact M.mem.writeW (List.mem_cons_self ..) _ (frame_contains s hd')
   · rw [fw.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hd1 (by decide) (by decide)) (by decide)]
@@ -89,12 +89,12 @@ theorem cmpArgs_ok {s t : State} (h : PreP s) (A : AtCmp s t) :
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ hd hn (by decide)
     have hm : Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .r6).toNat =
         Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .r6).toNat :=
-      bytes_of_frame (s := t) fw (ap (.inr (by decide)) (by unfold oM; omega)) (by omega)
+      bytes_of_frame (s := t) fw (ap (.inr (by decide)) (by unfold oM; omega_arith)) (by omega_arith)
     have ho' : Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r6).toNat =
         Spec.Rsa.bytesAt t.mem (s.gpr .r3) (s.gpr .r6).toNat :=
       bytes_of_frame (s := t) fw (fun r hr => by
         rw [List.mem_singleton.mp hr, show (⟨s.gpr .r3, (s.gpr .r6).toNat⟩ : Region) = oR s from outR_eq h]
-        exact (h.ko.sub_left (frame_sub s (by decide))).symm) (by have := h.wo; rw [h.h4] at this; omega)
+        exact (h.ko.sub_left (frame_sub s (by decide))).symm) (by have := h.wo; rw [h.h4] at this; omega_arith)
     refine ⟨A.store (.inl (by decide)) (by decide) _ (fun r hr => k.gpr r (by revert r; decide)) k.sp k.rd
       k.wr um, ?_, ?_, u3, u4, u5, u6⟩
     · show Spec.Rsa.written _ _ _ _ _
@@ -146,7 +146,7 @@ theorem cmpAcc_eq_zero (m : Mem) (a b : Addr) (j : Nat) :
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       · exact h i hi
       · exact h'
-    · intro h; exact ⟨fun i hi => h i (by omega), h j (by omega)⟩
+    · intro h; exact ⟨fun i hi => h i (by omega_arith), h j (by omega_arith)⟩
 
 theorem add_ofNat_one (p : Addr) (j : Nat) :
     p + BitVec.ofNat 64 j + BitVec.ofNat 64 1 = p + BitVec.ofNat 64 (j + 1) := by
@@ -161,16 +161,16 @@ theorem compare_ok {s t : State} (h : PreP s) (A : AtLoop s t) :
   let Inv : Nat → State → Prop := fun j u =>
     u.gpr .r3 = s.gpr .r3 + BitVec.ofNat 64 j ∧ u.gpr .r4 = s.gpr .r9 + BitVec.ofNat 64 j ∧
       u.gpr .r5 = cmpAcc t.mem (s.gpr .r3) (s.gpr .r9) j ∧ u.mem = t.mem ∧ Keep [.r3, .r4, .r5, .r6, .r7, .r8] t u
-  refine WP.mono (Proof.Bignum.PPC64LE.wp_countdown (N := (s.gpr .r6).toNat) (by omega) (by omega) Inv
+  refine WP.mono (Proof.Bignum.PPC64LE.wp_countdown (N := (s.gpr .r6).toNat) (by omega_arith) (by omega_arith) Inv
     (fun j hj u ⟨u3, u4, u5, um, uk⟩ hc => ?_)
     ⟨by rw [A.r3]; simp, by rw [A.r4]; simp, A.r5, rfl, Keep.refl _ _⟩ (by rw [A.r6]; simp))
     fun u ⟨_, _, u5, um, uk⟩ => ⟨u5, um, uk⟩
   have io : InRegions (u.rd ++ u.wr) (s.gpr .r3 + BitVec.ofNat 64 j) 1 := by
     rw [uk.rd, uk.wr, A.wr, h.hwr]
-    exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h4]; omega) (by omega)⟩
+    exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h4]; omega_arith) (by omega_arith)⟩
   have ii : InRegions (u.rd ++ u.wr) (s.gpr .r9 + BitVec.ofNat 64 j) 1 := by
     rw [uk.rd, A.rd, h.hrd]
-    exact ⟨iR s, by simp, Offset.contains_base _ (by rw [h.h10]; omega) (by omega)⟩
+    exact ⟨iR s, by simp, Offset.contains_base _ (by rw [h.h10]; omega_arith) (by omega_arith)⟩
   refine WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r3, .r4, .r5, .r6, .r7, .r8] (Q := fun u' =>
     u'.gpr .r3 = s.gpr .r3 + BitVec.ofNat 64 (j + 1) ∧ u'.gpr .r4 = s.gpr .r9 + BitVec.ofNat 64 (j + 1) ∧
       u'.gpr .r5 = cmpAcc t.mem (s.gpr .r3) (s.gpr .r9) (j + 1) ∧ u'.mem = u.mem ∧

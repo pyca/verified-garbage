@@ -70,7 +70,7 @@ theorem verify_spec {pl ql : Nat} {key sg dg : List Byte} {p q g y : Nat}
         (Spec.Dsa.decodeBE (sg.drop ql)) = Spec.Dsa.decodeBE (sg.take ql)) := by
   by_cases hs : VG.Proof.Dsa.shapeValid p q
   · have h8 : Spec.Dsa.bitLength q = 8 * (Spec.Dsa.bitLength q / 8) := by
-      have := hs.1; unfold Spec.Dsa.supportedSizes at this; omega
+      have := hs.1; unfold Spec.Dsa.supportedSizes at this; omega_arith
     rw [VG.Proof.Dsa.verifyBytes_compute widths hs hkl hsl hkey rfl rfl h8]
     simp only [hs, true_and, vComp, Nat.mod_mul_mod, and_assoc]
   · rw [VG.Proof.Dsa.verifyBytes_invalid_shape (by rw [hkey]; exact hs)]
@@ -99,12 +99,12 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
       (⟨A, n⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ → A.toNat + n ≤ 2 ^ 64 → n < 2 ^ 64 →
       k ≤ n → ∀ t : State, t.rd = s.rd → t.wr = s.wr → Src t (layOf s) A k :=
     fun hm hd hnw hn hk t hr hw => ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm,
-      Offset.contains_base _ (by omega) (by omega)⟩, fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
-  have hplq : 3 * (layOf s).pl + (layOf s).ql = (s.gpr .r4).toNat := by simp only [layOf]; omega
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩, fun i hi => Pub.ne_of_disjoint hd (by omega_arith) i (by omega_arith)⟩
+  have hplq : 3 * (layOf s).pl + (layOf s).ql = (s.gpr .r4).toNat := by simp only [layOf]; omega_arith
   have srcK := mkSrc (A := s.gpr .r3) (k := 3 * (layOf s).pl + (layOf s).ql) (by rw [hrd]; simp) dKS nwK
-    (s.gpr .r4).isLt (by omega)
+    (s.gpr .r4).isLt (by omega_arith)
   have srcG := mkSrc (A := s.gpr .r7) (k := 2 * (layOf s).ql) (by rw [hrd]; simp) dGS nwG
-    (s.gpr .r8).isLt (by simp only [layOf]; omega)
+    (s.gpr .r8).isLt (by simp only [layOf]; omega_arith)
   have srcD := mkSrc (A := s.gpr .r9) (k := (s.gpr .r10).toNat) (by rw [hrd]; simp) dDS nwD
     (s.gpr .r10).isLt (Nat.le_refl _)
   -- The specification's values.
@@ -113,22 +113,22 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
   have hsg0 : (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat).take (s.gpr .r6).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r7) (layOf s).ql := by
     have := VG.Proof.Dsa.bytesAt_slice s.mem (s.gpr .r7) (offset := 0) (len := (layOf s).ql)
-      (total := (s.gpr .r8).toNat) (by simp only [layOf]; omega)
+      (total := (s.gpr .r8).toNat) (by simp only [layOf]; omega_arith)
     simp only [List.drop_zero, BitVec.add_zero] at this
     exact this
   have hsg1 : (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat).drop (s.gpr .r6).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r7 + BitVec.ofNat 64 (layOf s).ql) (layOf s).ql := by
     rw [← VG.Proof.Dsa.bytesAt_slice s.mem (s.gpr .r7) (offset := (layOf s).ql) (len := (layOf s).ql)
-      (total := (s.gpr .r8).toNat) (by simp only [layOf]; omega)]
+      (total := (s.gpr .r8).toNat) (by simp only [layOf]; omega_arith)]
     refine (List.take_of_length_le ?_).symm
-    simp only [List.length_drop, VG.Proof.Bignum.bytesAt_length, layOf]; omega
+    simp only [List.length_drop, VG.Proof.Bignum.bytesAt_length, layOf]; omega_arith
   refine WP.seq (WP.mono (front_ok hpre) fun s₁ ⟨⟨hr₁, scr₁, r2₁, sav₁, out₁⟩, k₁⟩ => ?_)
   have hwr' : ∀ u : State, ScrL u (layOf s) → ∀ i < 19, InRegions u.wr (off (savW (stackArg s 0)) (8 * i)) 8 :=
-    fun u hu i hi => by rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [layOf] at hZ ⊢; omega)
+    fun u hu i hi => by rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [layOf] at hZ ⊢; omega_arith)
   have hsav' : ∀ u : State, Kept (layOf s) s₁.mem u.mem → ∀ i < 19,
       word u.mem (stackArg s 0) (saveOff i) = s.gpr (saved i) := fun u hu i hi => (hu.sav i hi).trans (sav₁ i hi)
   have Out₁ : Outside (layOf s).S 0 (layOf s).Z s.mem s₁.mem :=
-    out₁.mono (Nat.le_refl _) (by simp only [layOf] at hZ ⊢; omega)
+    out₁.mono (Nat.le_refl _) (by simp only [layOf] at hZ ⊢; omega_arith)
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := key_kept (srcK s rfl rfl) Out₁
   have hKs : KeyOk s₁.mem (layOf s) (s.gpr .r3) ↔ KeyOk s.mem (layOf s) (s.gpr .r3) := by
     simp only [KeyOk, ep₁, eq₁, eg₁, ey₁]
@@ -143,8 +143,8 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     have kt := k₁.trans kc
     have hKt := hKs.mp hK
     have hn32 : Spec.Dsa.bitLength (qOf s.mem (layOf s) (s.gpr .r3)) / 8 ≤ 32 := by
-      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega
-    refine WP.mono (body_ok hL hK hc hkp (srcK t kt.rd kt.wr) (srcG t kt.rd kt.wr) (by omega)
+      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega_arith
+    refine WP.mono (body_ok hL hK hc hkp (srcK t kt.rd kt.wr) (srcG t kt.rd kt.wr) (by omega_arith)
       ((srcD t kt.rd kt.wr).take (Nat.min_le_left _ _))) fun u ⟨⟨r3, Ku, h21u, scru⟩, ku⟩ => ?_
     refine WP.mono (finish_ok h21u (hwr' u scru) (hsav' u (hkp.trans Ku)) (kt.trans ku))
       fun w ⟨hab, w3⟩ => ⟨hab, ?_⟩
@@ -155,10 +155,10 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     have Ot : Outside (layOf s).S 0 (layOf s).Z s.mem t.mem := Out₁.trans hkp.out
     obtain ⟨er, es, ed⟩ := sig_kept (srcG s rfl rfl) (srcD s rfl rfl) Ot
       (k := min (min (s.gpr .r10).toNat 64) (Spec.Dsa.bitLength (qOf s₁.mem (layOf s) (s.gpr .r3)) / 8))
-      (by omega)
+      (by omega_arith)
     rw [er, es, ed, ep₁, eq₁, eg₁, ey₁]
     rw [show min (min (s.gpr .r10).toNat 64) (Spec.Dsa.bitLength (qOf s.mem (layOf s) (s.gpr .r3)) / 8) =
-      min (s.gpr .r10).toNat (Spec.Dsa.bitLength (qOf s.mem (layOf s) (s.gpr .r3)) / 8) by omega]
+      min (s.gpr .r10).toNat (Spec.Dsa.bitLength (qOf s.mem (layOf s) (s.gpr .r3)) / 8) by omega_arith]
     exact ⟨fun h => ⟨hKt, h⟩, fun h => h.2⟩
   · have hkp := Kept.ofBody hL hkp
     refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = 0#64 ∧ u.mem = t.mem) (by prun) (by decide))

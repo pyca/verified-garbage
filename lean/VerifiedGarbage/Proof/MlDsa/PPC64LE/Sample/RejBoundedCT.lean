@@ -105,10 +105,10 @@ theorem len_eq (t : Nat) : (Lf η X₁ t).length = (Lf η X₂ t).length :=
 include hX₁ hX₂ oks in
 theorem ok_eq {t : Nat} (ht : t < 544) : hbOks η (zAt X₁ t) = hbOks η (zAt X₂ t) := by
   have h := congrArg (fun L => L[t]?) oks
-  simp only [List.getElem?_map, List.getElem?_eq_getElem (show t < X₁.length by omega),
-    List.getElem?_eq_getElem (show t < X₂.length by omega), Option.map_some, Option.some.injEq] at h
+  simp only [List.getElem?_map, List.getElem?_eq_getElem (show t < X₁.length by omega_arith),
+    List.getElem?_eq_getElem (show t < X₂.length by omega_arith), Option.map_some, Option.some.injEq] at h
   rw [zAt, zAt, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show t < X₁.length by omega), List.getElem?_eq_getElem (show t < X₂.length by omega)]
+    List.getElem?_eq_getElem (show t < X₁.length by omega_arith), List.getElem?_eq_getElem (show t < X₂.length by omega_arith)]
   exact h
 
 theorem tryJ_length_congr {L₁ L₂ : List Zq} (hl : L₁.length = L₂.length) {b₁ b₂ : Nat}
@@ -127,8 +127,8 @@ theorem body_ct {t : Nat} (ht : t < 544) :
   simp only [hbOks, Prod.mk.injEq] at hok
   have hlo₁ : (zAt X₁ t).toNat % 16 < 16 := Nat.mod_lt _ (by decide)
   have hlo₂ : (zAt X₂ t).toNat % 16 < 16 := Nat.mod_lt _ (by decide)
-  have hhi₁ : (zAt X₁ t).toNat / 16 < 16 := by have := (zAt X₁ t).isLt; omega
-  have hhi₂ : (zAt X₂ t).toNat / 16 < 16 := by have := (zAt X₂ t).isLt; omega
+  have hhi₁ : (zAt X₁ t).toNat / 16 < 16 := by have := (zAt X₁ t).isLt; omega_arith
+  have hhi₂ : (zAt X₂ t).toNat / 16 < 16 := by have := (zAt X₂ t).isLt; omega_arith
   -- the byte and its low half-byte
   refine RelCT.seq (R := fun a b =>
       H1 η σ₁ X₁ t (Lf η X₁ t) ((zAt X₁ t).toNat % 16) ((zAt X₁ t).setWidth 64) a ∧
@@ -170,7 +170,7 @@ theorem loop_ct :
       · have : t + 1 ≠ 544 := by
           have e' : (a.gpr .r6 != 0) = true := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨544 - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨544 - (t + 1), by omega_arith, t + 1, by omega_arith, rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 

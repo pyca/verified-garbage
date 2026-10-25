@@ -33,7 +33,7 @@ theorem Ph.keepBad {p : PP} {mb : Nat} {s t : State} (h : Ph p mb s)
     (hw : ∀ d, d + 8 ≤ 200 ∨ (208 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d) : Ph p mb t :=
   ⟨r10.trans h.r10, r11.trans h.r11, r29.trans h.r29, (hw 248 (by decide)).trans h.mbW,
     (hw 216 (by decide)).trans h.kW, (hw 48 (by decide)).trans h.wW, (hw 224 (by decide)).trans h.strideW,
-    fun j hj => (hw _ (by omega)).trans (h.arrW j hj), (hw 168 (by decide)).trans h.checksW,
+    fun j hj => (hw _ (by omega_arith)).trans (h.arrW j hj), (hw 168 (by decide)).trans h.checksW,
     (hw 192 (by decide)).trans h.topW⟩
 
 /-- A piece of the shape checks, which changes `hBad` and array 0 at most. -/
@@ -51,9 +51,9 @@ theorem shapeStep {p : PP} {s t : State} (h : St p s) (hp : Ph p p.bits s)
   have st := h.step (Frm.toMut hf fun r hr' => by
     rcases hr r hr' with rfl | rfl
     · exact InMut.hdr (i := 25) (by decide)
-    · exact InMut.arrays (by omega) (by simp only [saveBytes]; omega)) k h31 h2
+    · exact InMut.arrays (by omega_arith) (by simp only [saveBytes]; omega_arith)) k h31 h2
   have wd : ∀ d, d + 8 ≤ 200 ∨ (208 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d := fun d hd =>
-    hf.word_eq (fun r hr' => by rcases hr r hr' with rfl | rfl <;> dsimp only <;> omega) (by omega)
+    hf.word_eq (fun r hr' => by rcases hr r hr' with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
   exact ⟨st, hp.keepBad (k.gpr _ h10) (k.gpr _ h11) (k.gpr _ h29) wd, (wd 152 (by decide)).trans hu⟩
 
 /-- `hBad` into `r5`. -/
@@ -103,7 +103,7 @@ theorem residue_mb {p : PP} {s : State} {x : Nat} (h : St p s) (hp : Ph p p.bits
   obtain ⟨st, ph, hU'⟩ := shapeStep h hp hU f (fun r hr => .inl (List.mem_singleton.mp hr)) k
     (by decide) (by decide) (by decide) (by decide)
   refine ⟨st, ph, hU', ?_, hb⟩
-  rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega)]; exact hn
+  rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega_arith)]; exact hn
 
 /-- `hBad` into `r5`. -/
 theorem MB.badLoad {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
@@ -123,13 +123,13 @@ theorem MB.sieve {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
   have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
   have hZe : p.Z = 8 * p.n := rfl
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
-  have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega
-  refine WP.mono (sieve_ok oddPrimes256 (by decide) h.st.scr h.st.r31 h.ph.r10 h.ph.r11 h.n (by omega)
-    (by omega) hZw (by omega)) fun t ⟨⟨hb, f⟩, k⟩ => ?_
+  have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega_arith
+  refine WP.mono (sieve_ok oddPrimes256 (by decide) h.st.scr h.st.r31 h.ph.r10 h.ph.r11 h.n (by omega_arith)
+    (by omega_arith) hZw (by omega_arith)) fun t ⟨⟨hb, f⟩, k⟩ => ?_
   obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => .inl (List.mem_singleton.mp hr)) k
     (by decide) (by decide) (by decide) (by decide)
   refine ⟨st, ph, hU, ?_, hb.trans (and_congr h.bad Iff.rfl)⟩
-  rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega)]; exact h.n
+  rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega_arith)]; exact h.n
 
 /-- q from p. -/
 theorem MB.halve {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
@@ -141,8 +141,8 @@ theorem MB.halve {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
   have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
   have hZe : p.Z = 8 * p.n := rfl
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
-  have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega
-  refine WP.mono (halveQ_ok h.st h.ph.r10 h.ph.r11 h.n (by omega) (by omega) hZw) fun t ⟨⟨hn, hb, f⟩, k⟩ => ?_
+  have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega_arith
+  refine WP.mono (halveQ_ok h.st h.ph.r10 h.ph.r11 h.n (by omega_arith) (by omega_arith) hZw) fun t ⟨⟨hn, hb, f⟩, k⟩ => ?_
   obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -160,7 +160,7 @@ theorem main_ok (R : RoundImpl) {p : PP} {s : State} (h : St p s)
   generalize hc : Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take ((p.bits + 7) / 8))) = c
   have hc' : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) := hc.symm
   have hsh := shape_iff (x := Spec.Rsa.os2ip (p.r.take p.L)) hb1 hb2 h.dims.g
-  obtain ⟨ho, hl, hcu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+  obtain ⟨ho, hl, hcu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
   rw [← hc'] at hsh ho hl hcu
   -- A rejected shape.
@@ -174,7 +174,7 @@ theorem main_ok (R : RoundImpl) {p : PP} {s : State} (h : St p s)
     simp only [Bool.not_false, ↓reduceIte]
     refine finEnd st (r := 2) (v := p.L) (Or.inr rfl) rfl rfl ?_ hu
     simp only [usedOf, List.length_drop, Nat.reduceEqDiff, ↓reduceIte]
-    omega
+    omega_arith
   unfold main
   refine WP.assoc (WP.seq (WP.mono (mainA_ok h hU hL) fun t₂ ⟨st₂, ph₂, hU₂, hn₂⟩ => ?_))
   rw [← hc'] at hn₂
@@ -198,7 +198,7 @@ theorem main_ok (R : RoundImpl) {p : PP} {s : State} (h : St p s)
     have hshape := hsh.mp (hall.mp (beq_iff_eq.mp hz'))
     rw [hshape]
     simp only [Bool.not_true, Bool.false_eq_true, ↓reduceIte]
-    have hq : (c - 1) / 2 = c / 2 := by omega
+    have hq : (c - 1) / 2 = c / 2 := by omega_arith
     obtain ⟨_, _, hqo, _⟩ := hall.mp (beq_iff_eq.mp hz')
     rw [hc'] at hq hqo ⊢
     refine tests_ok R M₈.st rfl ?_ (by rw [hq]; exact hqo) M₈.u hL

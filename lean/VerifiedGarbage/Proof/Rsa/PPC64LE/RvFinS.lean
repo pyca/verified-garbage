@@ -58,18 +58,18 @@ theorem outR_ok {s0 s : State} (h : RFin s0 s) (hw : Ws s (rvB s0) (rvZ s0) (ww 
     prun [mask, hwu.r31, exec_load_w (show Reg.r31 ≠ .r0 by decide)
         (show VG.Impl.Rsa.PPC64LE.CrtValues.sMask < 2 ^ 15 by decide),
       hwu.scr.ld (d := VG.Impl.Rsa.PPC64LE.CrtValues.sMask) (n := 4)
-        (by simp only [VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega),
+        (by simp only [VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega_arith),
       ld_slot hb', u5, u8, hO, hL]
     exact um
   refine WP.mono b2 fun v ⟨⟨v9, v5, v8, vm⟩, kv⟩ => ?_
   have kv' : Keep [.r0, .r5, .r8, .r9] s v := (k'.trans kv).mono
   have hwv : Ws v (rvB s0) (rvZ s0) (ww (kK s0)) nArr := hw.of_keep kv'
   have hc : ∀ c < L, (⟨O, L⟩ : Region).Contains (off O c) 1 := fun c hc =>
-    Offset.contains_base _ (by omega) (by have := ho.nowrap; omega)
+    Offset.contains_base _ (by omega_arith) (by have := ho.nowrap; omega_arith)
   refine WP.mono (Keys.storeBytes_ok hwv hj (by decide) v5 v8 v9 ho.l1 hLw
     (fun c hc' => ⟨_, by rw [kv'.wr, h.wr]; exact ho.wr, hc c hc'⟩)
     (fun c hc' x hx ex => by
-      have := CrtValues.past_of_disjoint ho.disj (hc c hc'); rw [ex] at this; omega) ho.nowrap)
+      have := CrtValues.past_of_disjoint ho.disj (hc c hc'); rw [ex] at this; omega_arith) ho.nowrap)
     fun t ⟨ht, tb, tout, kt⟩ => ?_
   have tout' : Outside O 0 L s.mem t.mem := by rw [← vm]; exact tout
   have ins := ho.inside tout'
@@ -82,8 +82,8 @@ theorem slot_ins {s0 : State} {m m' : Mem} (ins : ∀ x, ofs (rvB s0) x < rvZ s0
     (nw : (rvB s0).toNat + rvZ s0 ≤ 2 ^ 64) {d : Nat} (hd : d + 4 ≤ rvZ s0) : slot m' (rvB s0) d = slot m (rvB s0) d := by
   simp only [slot, w32]
   refine congrArg BitVec.toNat (Mem.readW_congr fun b hb => ins _ ?_)
-  rw [off, VG.Offset.add_add, ofs, Mem.sub_ofNat_toNat _ (by omega)]
-  omega
+  rw [off, VG.Offset.add_add, ofs, Mem.sub_ofNat_toNat _ (by omega_arith)]
+  omega_arith
 
 /-- `stores`: both factors, masked by `b`, and the mask into `r3`. -/
 theorem stores_ok {s0 s : State} (h : RFin s0 s) (hw : Ws s (rvB s0) (rvZ s0) (ww (kK s0)) nArr)
@@ -98,7 +98,7 @@ theorem stores_ok {s0 s : State} (h : RFin s0 s) (hw : Ws s (rvB s0) (rvZ s0) (w
   have op := out_p h.pre
   have oq := out_q h.pre
   have dpq := pq_disj h.pre
-  have hk : kK s0 ≤ 4 * ww (kK s0) := by simp only [ww]; omega
+  have hk : kK s0 ≤ 4 * ww (kK s0) := by simp only [ww]; omega_arith
   have nw := hw.nowrap
   have hz : 160 ≤ rvZ s0 := hw.hdr_le
   have fit5 := hw.arr_fit (j := 5) (by decide)
@@ -110,20 +110,20 @@ theorem stores_ok {s0 s : State} (h : RFin s0 s) (hw : Ws s (rvB s0) (rvZ s0) (w
     (j := 5) (by decide)) fun t1 ⟨f1, w1, ins1, v1, _, k1⟩ => ?_
   rw [CrtValues.wp_seqs_pair (List.cons_ne_nil _ _)]
   have hb1 : slot t1.mem (rvB s0) sMask = b2n b := by
-    rw [slot_ins ins1 nw (by simp only [sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega)]; exact hb
+    rw [slot_ins ins1 nw (by simp only [sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega_arith)]; exact hb
   refine WP.mono (outR_ok f1 w1 (rP := .r23) (rL := .r25) (by decide) (by decide) (by decide)
     (by rw [k1.gpr _ (by decide), h23]) (by rw [k1.gpr _ (by decide)]; exact hL) hb1 oq hk
     (j := 6) (by decide)) fun t2 ⟨f2, w2, ins2, v2, o2, k2⟩ => ?_
   rw [show seqs [Code.block [Instr.load .w .r3 .r31 sMask]] = .block [.load .w .r3 .r31 sMask] from rfl]
   have hb2 : slot t2.mem (rvB s0) sMask = b2n b := by
-    rw [slot_ins ins2 nw (by simp only [sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega)]; exact hb1
+    rw [slot_ins ins2 nw (by simp only [sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega_arith)]; exact hb1
   refine WP.mono (WP.keep [.r3] (Q := fun x => x.gpr .r3 = BitVec.ofNat 64 (b2n b) ∧ x.mem = t2.mem)
     (by prun [w2.r31, exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sMask < 2 ^ 15 by decide),
-      w2.scr.ld (d := sMask) (n := 4) (by simp only [sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega),
+      w2.scr.ld (d := sMask) (n := 4) (by simp only [sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega_arith),
       ld_slot hb2]) (by decide)) fun t ⟨⟨a3, mt⟩, kt⟩ => ?_
   refine ⟨f2.of_out (fun x _ => by rw [mt]) kt, a3, fun c hc => ?_, fun c hc => ?_⟩
   · have cc : (⟨s0.gpr .r3, kK s0⟩ : Region).Contains (off (s0.gpr .r3) c) 1 :=
-      Offset.contains_base _ (by omega) (by have := op.nowrap; omega)
+      Offset.contains_base _ (by omega_arith) (by have := op.nowrap; omega_arith)
     rw [mt, CrtValues.out_of_disjoint o2 dpq.symm cc]
     exact v1 c hc
   · rw [mt, v2 c hc]
@@ -131,7 +131,7 @@ theorem stores_ok {s0 s : State} (h : RFin s0 s) (hw : Ws s (rvB s0) (rvZ s0) (w
     · rfl
     · simp only [ite_true]
       refine ins1 _ ?_
-      rw [Mont.ofs_off0 _ (by omega)]
-      omega
+      rw [Mont.ofs_off0 _ (by omega_arith)]
+      omega_arith
 
 end VG.Proof.Rsa.PPC64LE.Recover

@@ -48,14 +48,14 @@ theorem out_of_disjoint {O : Addr} {L : Nat} {m m' : Mem} (o : Outside O 0 L m m
     (hd : (⟨O, L⟩ : Region).Disjoint r) {x : Addr} (hx : r.Contains x 1) : m' x = m x := by
   refine o x (Or.inr ?_)
   by_contra hc
-  exact hd x (by simp only [Region.Contains, ofs] at hc ⊢; omega) hx
+  exact hd x (by simp only [Region.Contains, ofs] at hc ⊢; omega_arith) hx
 
 theorem Fr.step {s0 s t : State} {m : Mem} (h : Fr s0 m s) {O : Addr} {L : Nat} (o : Outside O 0 L s.mem t.mem)
     (hs : (⟨O, L⟩ : Region).Disjoint ⟨cvB s0, cvZ s0⟩) {rs : List Reg} (k : Keep rs s t)
     (hr : .r31 ∉ rs := by decide) : Fr s0 m t := by
   refine ⟨h.pre, k.sp.trans h.sp, k.lr.trans h.lr, k.rd.trans h.rd, k.wr.trans h.wr, (k.gpr _ hr).trans h.r31,
     fun x hx => ?_, h.hdr⟩
-  rw [out_of_disjoint o hs (x := x) (by simp only [Region.Contains, ofs] at hx ⊢; omega)]; exact h.scr x hx
+  rw [out_of_disjoint o hs (x := x) (by simp only [Region.Contains, ofs] at hx ⊢; omega_arith)]; exact h.scr x hx
 
 theorem Fr.of_mem {s0 s t : State} {m : Mem} (h : Fr s0 m s) {rs : List Reg} (k : Keep rs s t)
     (hm : t.mem = s.mem) (hr : .r31 ∉ rs := by decide) : Fr s0 m t :=
@@ -67,8 +67,8 @@ theorem Fr.readW {s0 s : State} {m : Mem} (h : Fr s0 m s) {d n : Nat} (hd : d + 
     s.mem.readW (off (cvB s0) d) n = m.readW (off (cvB s0) d) n := by
   obtain ⟨-, nw, -, -, -⟩ := pre_scr h.pre
   refine Mem.readW_congr fun b hb => h.scr _ ?_
-  rw [off, Offset.add_add, ofs, Mem.sub_ofNat_toNat _ (by omega)]
-  omega
+  rw [off, Offset.add_add, ofs, Mem.sub_ofNat_toNat _ (by omega_arith)]
+  omega_arith
 
 theorem ofNat_slot (x : BitVec 32) {b : Bool} (h : x.toNat = if b then 1 else 0) :
     x.setWidth 64 = BitVec.ofNat 64 (if b then 1 else 0) := by
@@ -95,23 +95,23 @@ theorem outStage_ok {s0 s : State} {m : Mem} (h : Fr s0 m s) (hw : Ws s (cvB s0)
     fun u' ⟨⟨u5, u8, um⟩, k'⟩ => ?_
   have hsu : Scr u' (cvB s0) (cvZ s0) := hs.congr k'.wr
   have hm : u'.mem.readW (off (cvB s0) sMask) 32 = m.readW (off (cvB s0) sMask) 32 :=
-    (h.of_mem k' um).readW (by unfold sMask; omega)
+    (h.of_mem k' um).readW (by unfold sMask; omega_arith)
   have b2 : WP isa (.block mask) u' fun v =>
       (v.gpr .r9 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) ∧ v.gpr .r5 = O ∧
         v.gpr .r8 = BitVec.ofNat 64 L ∧ v.mem = s.mem) ∧ Keep [.r0, .r9] u' v := by
     refine WP.keep _ ?_ (by decide)
     have h31 : u'.gpr .r31 = cvB s0 := (k'.gpr _ (by decide)).trans h.r31
     prun [mask, h31, exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sMask < 2 ^ 15 by decide),
-      hsu.ld (d := sMask) (n := 4) (by unfold sMask; omega), hm, ofNat_slot _ hb, u5, u8, hO, hL]
+      hsu.ld (d := sMask) (n := 4) (by unfold sMask; omega_arith), hm, ofNat_slot _ hb, u5, u8, hO, hL]
     exact um
   refine WP.mono b2 fun v ⟨⟨v9, v5, v8, vm⟩, kv⟩ => ?_
   have kv' : Keep [.r0, .r5, .r8, .r9] s v := (k'.trans kv).mono
   have hwv : Ws v (cvB s0) (cvZ s0) (cvW s0) nArr := hw.of_keep kv'
   have hc : ∀ c < L, (⟨O, L⟩ : Region).Contains (off O c) 1 := fun c hc =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   refine WP.mono (storeBytes_ok hwv hj (by decide) v5 v8 v9 hL1 hLw
     (fun c hc' => ⟨_, by rw [kv'.wr, h.wr]; exact hrw, hc c hc'⟩)
-    (fun c hc' x hx ex => by have := past_of_disjoint hds (hc c hc'); rw [ex] at this; omega) hOw)
+    (fun c hc' x hx ex => by have := past_of_disjoint hds (hc c hc'); rw [ex] at this; omega_arith) hOw)
     fun t ⟨ht, tb, tout, kt⟩ => ⟨?_, ht, fun c hc' => ?_, by rw [← vm]; exact tout, (kv'.trans kt).mono⟩
   · have fv : Fr s0 m v := h.of_mem kv' vm
     exact fv.step tout hds kt
@@ -120,8 +120,8 @@ theorem outStage_ok {s0 s : State} {m : Mem} (h : Fr s0 m s) (hw : Ws s (cvB s0)
     · rfl
     · simp only [ite_true]
       refine h.scr _ ?_
-      rw [Mont.ofs_off0 _ (by omega)]
-      omega
+      rw [Mont.ofs_off0 _ (by omega_arith)]
+      omega_arith
 
 theorem wp_seqs_pair {a b : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : State} {Q : State → Prop} :
     WP isa (seqs (a :: b :: l)) s Q ↔ WP isa (.seq a b) s (fun t => WP isa (seqs l) t Q) := by
@@ -152,35 +152,35 @@ theorem stores_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cv
   have f0 := Fr.of_base h
   rw [stores, wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (outStage_ok f0 hw (rP := .r14) (rL := .r20) (by decide) (by decide) (by decide) ha.r14
-    (by rw [ha.r20]; exact ofNat_toNat64 _) hb (by rw [hwr, ← e4]; simp) d1s w1 p1 (by omega) (j := aDR2)
+    (by rw [ha.r20]; exact ofNat_toNat64 _) hb (by rw [hwr, ← e4]; simp) d1s w1 p1 (by omega_arith) (j := aDR2)
     (by decide)) fun t1 ⟨f1, w1', v1, o1, k1⟩ => ?_
   have a1 := ha.of_keep k1
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (outStage_ok f1 w1' (rP := .r15) (rL := .r22) (by decide) (by decide) (by decide) a1.r15
-    (by rw [a1.r22]; exact ofNat_toNat64 _) hb (by rw [hwr, ← e6]; simp) d2s w2 q1 (by omega) (j := aDR3)
+    (by rw [a1.r22]; exact ofNat_toNat64 _) hb (by rw [hwr, ← e6]; simp) d2s w2 q1 (by omega_arith) (j := aDR3)
     (by decide)) fun t2 ⟨f2, w2', v2, o2, k2⟩ => ?_
   have a2 := a1.of_keep k2
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (outStage_ok f2 w2' (rP := .r16) (rL := .r20) (by decide) (by decide) (by decide) a2.r16
-    (by rw [a2.r20]; exact ofNat_toNat64 _) hb (by rw [hwr, ← e8]; simp) d3s w3 p1 (by omega) (j := 3)
+    (by rw [a2.r20]; exact ofNat_toNat64 _) hb (by rw [hwr, ← e8]; simp) d3s w3 p1 (by omega_arith) (j := 3)
     (by decide)) fun t3 ⟨f3, w3', v3, o3, k3⟩ => ?_
   rw [show seqs [.block [.load .w .r3 .r31 sMask]] = .block [.load .w .r3 .r31 sMask] from rfl]
   obtain ⟨-, nw, hzs, -, -⟩ := pre_scr h.pre
   have hm : t3.mem.readW (off (cvB s0) sMask) 32 = s.mem.readW (off (cvB s0) sMask) 32 :=
-    f3.readW (by unfold sMask; omega)
+    f3.readW (by unfold sMask; omega_arith)
   have hb4 : WP isa (.block [.load .w .r3 .r31 sMask]) t3 fun t =>
       (t.gpr .r3 = BitVec.ofNat 64 (if b then 1 else 0) ∧ t.mem = t3.mem) ∧ Keep [.r3] t3 t := by
     refine WP.keep _ ?_ (by decide)
     prun [f3.r31, exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sMask < 2 ^ 15 by decide),
-      w3'.scr.ld (d := sMask) (n := 4) (by unfold sMask; omega), hm, ofNat_slot _ hb]
+      w3'.scr.ld (d := sMask) (n := 4) (by unfold sMask; omega_arith), hm, ofNat_slot _ hb]
   refine WP.mono hb4 fun t ⟨⟨t3', tm⟩, kt⟩ => ⟨f3.of_mem kt tm, t3', fun c hc => ?_, fun c hc => ?_,
     fun c hc => ?_, (((k1.trans k2).trans k3).trans kt).mono⟩
   · have cc : (⟨s0.gpr .r3, (PPC64LE.stackArg s0 1).toNat⟩ : Region).Contains (off (s0.gpr .r3) c) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [tm, out_of_disjoint o3 d13.symm cc, out_of_disjoint o2 d12.symm cc]
     exact v1 c hc
   · have cc : (⟨s0.gpr .r5, (PPC64LE.stackArg s0 3).toNat⟩ : Region).Contains (off (s0.gpr .r5) c) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [tm, out_of_disjoint o3 d23.symm cc]
     exact v2 c hc
   · rw [tm]; exact v3 c hc

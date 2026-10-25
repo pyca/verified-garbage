@@ -47,9 +47,9 @@ theorem init_ct {P : State → State → Prop}
     have c3 : t.callEntry.gpr .r3 = t.gpr .r3 := State.callEntry_gpr _ (by decide)
     simp only [initK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
       State.callEntry_sp, c3, h]
-    exact ⟨trivial, trivial, sp48 P b, by rw [b.sp]; exact cR_dis P (by omega)⟩
+    exact ⟨trivial, trivial, sp48 P b, by rw [b.sp]; exact cR_dis P (by omega_arith)⟩
   have cov : ∀ {s t : State}, Fits S s → Base S vf s t → t.gpr .r3 = off (S s) oSt →
-      Covers [⟨t.gpr .r3, H.S⟩] t.wr := fun {s t} P b h => by rw [h, b.wr]; exact sc_cov P (by omega)
+      Covers [⟨t.gpr .r3, H.S⟩] t.wr := fun {s t} P b h => by rw [h, b.wr]; exact sc_cov P (by omega_arith)
   refine ⟨[], _, [], _, pre P₁ b₁ h₁, pre P₂ b₂ h₂, ?_, by rw [List.nil_append]; exact Covers.right (cov P₁ b₁ h₁),
     cov P₁ b₁ h₁, by rw [List.nil_append]; exact Covers.right (cov P₂ b₂ h₂), cov P₂ b₂ h₂⟩
   simp only [initK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp]
@@ -87,12 +87,12 @@ theorem upd_ct {P : State → State → Prop}
     have c7 : t.callEntry.gpr .r7 = t.gpr .r7 := State.callEntry_gpr _ (by decide)
     simp only [updK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
       State.callEntry_sp, c3, c5, c6, c7, A.h3, A.h5, A.h6, A.h7]
-    exact ⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega), A.hd₁, A.hd₂, sp48 A.P A.b,
-      by rw [A.b.sp]; exact cR_dis A.P (by omega), by rw [A.b.sp]; exact A.hd₃,
-      by rw [A.b.sp]; exact cR_dis A.P (by omega)⟩
+    exact ⟨trivial, trivial, sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith), A.hd₁, A.hd₂, sp48 A.P A.b,
+      by rw [A.b.sp]; exact cR_dis A.P (by omega_arith), by rw [A.b.sp]; exact A.hd₃,
+      by rw [A.b.sp]; exact cR_dis A.P (by omega_arith)⟩
   have cov : ∀ {s t : State} {d : Addr} {l : Nat}, UpdArgs S vf H s t d l →
       Covers [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oW, H.W⟩] t.wr := fun {s t d l} A => by
-    rw [A.b.wr]; exact Covers.pair (sc_cov A.P (by omega)) (sc_cov A.P (by omega))
+    rw [A.b.wr]; exact Covers.pair (sc_cov A.P (by omega_arith)) (sc_cov A.P (by omega_arith))
   refine ⟨_, _, _, _, pre A₁, pre A₂, ?_, Covers.append_left A₁.hdc (Covers.right (cov A₁)), cov A₁,
     Covers.append_left A₂.hdc (Covers.right (cov A₂)), cov A₂⟩
   simp only [updK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp]
@@ -127,13 +127,13 @@ theorem fin_ct {P : State → State → Prop}
     have c6 : t.callEntry.gpr .r6 = t.gpr .r6 := State.callEntry_gpr _ (by decide)
     simp only [finK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
       State.callEntry_sp, c3, c5, c6, A.h3, A.h5, A.h6]
-    exact ⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega),
-      sdis (.inl (by omega)) (by omega) (by omega), sdis (.inl (by omega)) (by omega) (by omega), sp48 A.P A.b,
-      by rw [A.b.sp]; exact cR_dis A.P (by omega), by rw [A.b.sp]; exact cR_dis A.P (by omega),
-      by rw [A.b.sp]; exact cR_dis A.P (by omega)⟩
+    exact ⟨trivial, trivial, sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith),
+      sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith), sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith), sp48 A.P A.b,
+      by rw [A.b.sp]; exact cR_dis A.P (by omega_arith), by rw [A.b.sp]; exact cR_dis A.P (by omega_arith),
+      by rw [A.b.sp]; exact cR_dis A.P (by omega_arith)⟩
   have cov : ∀ {s t : State}, FinArgs S vf s t →
       Covers [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oDig, H.FD⟩, ⟨off (S s) oW, H.W⟩] t.wr := fun {s t} A => by
-    rw [A.b.wr]; exact (sc_cov A.P (by omega)).cons (Covers.pair (sc_cov A.P (by omega)) (sc_cov A.P (by omega)))
+    rw [A.b.wr]; exact (sc_cov A.P (by omega_arith)).cons (Covers.pair (sc_cov A.P (by omega_arith)) (sc_cov A.P (by omega_arith)))
   refine ⟨[], _, [], _, pre A₁, pre A₂, ?_, by rw [List.nil_append]; exact Covers.right (cov A₁), cov A₁,
     by rw [List.nil_append]; exact Covers.right (cov A₂), cov A₂⟩
   simp only [finK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp]

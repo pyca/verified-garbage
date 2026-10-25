@@ -83,7 +83,7 @@ theorem pre_scr {s0 : State} (h : cvP.pre s0) :
   obtain ⟨-, -, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     -, -, -, -, nwS, ⟨hk, hk'⟩, -, -, -, -, -, -, -, -, -, hsl⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsl
-  exact ⟨by rw [hwr]; simp, nwS, by simp only [cvZ, cvK]; omega, hk, hk'⟩
+  exact ⟨by rw [hwr]; simp, nwS, by simp only [cvZ, cvK]; omega_arith, hk, hk'⟩
 
 theorem pre_args {s0 : State} (h : cvP.pre s0) :
     (⟨stackArgAddr s0 0, 64⟩ : Region) ∈ s0.rd ∧ s0.sp.toNat + 32 + 8 * 16 ≤ 2 ^ 64 := by
@@ -94,7 +94,7 @@ theorem pre_args {s0 : State} (h : cvP.pre s0) :
 theorem stackArg_addr (s : State) (i : Nat) : s.sp + BitVec.ofNat 64 (stackOff i) = stackArgAddr s i := by
   simp only [stackOff, stackArgAddr]
   congr 2
-  omega
+  omega_arith
 
 /-- `addSp`. -/
 theorem exec_addSp {s : State} {d : Reg} {imm : Nat} (h : imm < 2 ^ 15) :
@@ -108,8 +108,8 @@ theorem arg_rd {s0 s : State} (h : cvP.pre s0) (hrd : s.rd = s0.rd) (hsp : s.sp 
   refine ⟨_, List.mem_append_left _ (hrd ▸ hm), ?_⟩
   simp only [stackArgAddr, hsp]
   rw [show s0.sp + BitVec.ofNat 64 (32 + 8 * (8 + i)) = stackArgAddr s0 0 + BitVec.ofNat 64 (8 * i) by
-    rw [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+    rw [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith]
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- `stackArg r i`: the stack argument `i` into `r`. -/
 theorem stackArg_ok {s0 s : State} (h : cvP.pre s0) (hrd : s.rd = s0.rd) (hsp : s.sp = s0.sp)
@@ -117,7 +117,7 @@ theorem stackArg_ok {s0 s : State} (h : cvP.pre s0) (hrd : s.rd = s0.rd) (hsp : 
     (k : WP isa (.block rest) (s.write r (PPC64LE.stackArg s i)) Q) :
     WP isa (.block (stackArg r i ++ rest)) s Q := by
   have rd := arg_rd h hrd hsp hi
-  have ho : stackOff i < 2 ^ 15 := by simp only [stackOff]; omega
+  have ho : stackOff i < 2 ^ 15 := by simp only [stackOff]; omega_arith
   rw [WP.block_append_iff]
   have ea : (s.write r (s.sp + BitVec.ofNat 64 (stackOff i))).gpr r + BitVec.ofNat 64 0 = stackArgAddr s i := by
     simp only [State.write, ite_true, BitVec.add_zero, stackArg_addr]
@@ -136,7 +136,7 @@ theorem past_of_disjoint {B : Addr} {Z : Nat} {r : Region} (hd : r.Disjoint ⟨B
     (ha : r.Contains a 1) : Z ≤ ofs B a := by
   have := hd a ha
   simp only [Region.Contains] at this
-  simp only [ofs]; omega
+  simp only [ofs]; omega_arith
 
 /-- The stack arguments are `s0`'s. -/
 theorem Base.stackArg {s0 s : State} (h : Base s0 s) {i : Nat} (hi : i < 8) :
@@ -148,8 +148,8 @@ theorem Base.stackArg {s0 s : State} (h : Base s0 s) {i : Nat} (hi : i < 8) :
   rw [show s0.sp + BitVec.ofNat 64 (32 + 8 * (8 + i)) + BitVec.ofNat 64 b =
     stackArgAddr s0 0 + BitVec.ofNat 64 (8 * i + b) by
       rw [stackArgAddr, BitVec.add_assoc, BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat]
-      congr 2; omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+      congr 2; omega_arith]
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- A step that keeps memory and `r31` keeps `Base`. -/
 theorem Base.of_regs {s0 s t : State} (h : Base s0 s) {rs : List Reg} (k : Keep rs s t) (hm : t.mem = s.mem)
@@ -182,7 +182,7 @@ theorem entryMem_frame {s0 : State} (h : cvP.pre s0) :
   obtain ⟨-, nw, hz, -, -⟩ := pre_scr h
   intro x hx
   have o : ∀ (m : Mem) (d : Nat) (v : BitVec 64), d + 8 ≤ 112 → (m.writeW (off (cvB s0) d) v) x = m x :=
-    fun m d v hd => writeW_outside m (cvB s0) (d := d) v (by omega) x (Or.inr (by omega))
+    fun m d v hd => writeW_outside m (cvB s0) (d := d) v (by omega_arith) x (Or.inr (by omega_arith))
   simp only [entryMem]
   rw [o _ 104 _ (by decide), o _ 96 _ (by decide), o _ 88 _ (by decide), o _ 80 _ (by decide),
     o _ 72 _ (by decide), o _ 64 _ (by decide), o _ 56 _ (by decide), o _ 48 _ (by decide),
@@ -200,7 +200,7 @@ theorem entryMem_hdr (s0 : State) :
   intro i hi
   simp only [entryMem]
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
-      i = 11 ∨ i = 12 ∨ i = 13 by omega) with
+      i = 11 ∨ i = 12 ∨ i = 13 by omega_arith) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [hdrVal, savedReg, Nat.mul_zero, Nat.reduceMul, readW_sep, Mem.readW_writeW_self64]
 
@@ -227,13 +227,13 @@ theorem entry_ok {s0 : State} (h : cvP.pre s0) :
       s.gpr .r31 = cvB s0 ∧ s.gpr .r14 = s0.gpr .r3 ∧ s.gpr .r15 = s0.gpr .r5 ∧ s.gpr .r16 = s0.gpr .r7 ∧
       s.gpr .r17 = s0.gpr .r9 ∧ s.gpr .r18 = s0.gpr .r10) ?_ (by decide))
     fun s ⟨⟨m, r31, a14, a15, a16, a17, a18⟩, k⟩ => ?_
-  · prun [hs.st (d := 0) (n := 8) (by omega), hs.st (d := 8) (n := 8) (by omega),
-      hs.st (d := 16) (n := 8) (by omega), hs.st (d := 24) (n := 8) (by omega),
-      hs.st (d := 32) (n := 8) (by omega), hs.st (d := 40) (n := 8) (by omega),
-      hs.st (d := 48) (n := 8) (by omega), hs.st (d := 56) (n := 8) (by omega),
-      hs.st (d := 64) (n := 8) (by omega), hs.st (d := 72) (n := 8) (by omega),
-      hs.st (d := 80) (n := 8) (by omega), hs.st (d := 88) (n := 8) (by omega),
-      hs.st (d := 96) (n := 8) (by omega), hs.st (d := 104) (n := 8) (by omega)]
+  · prun [hs.st (d := 0) (n := 8) (by omega_arith), hs.st (d := 8) (n := 8) (by omega_arith),
+      hs.st (d := 16) (n := 8) (by omega_arith), hs.st (d := 24) (n := 8) (by omega_arith),
+      hs.st (d := 32) (n := 8) (by omega_arith), hs.st (d := 40) (n := 8) (by omega_arith),
+      hs.st (d := 48) (n := 8) (by omega_arith), hs.st (d := 56) (n := 8) (by omega_arith),
+      hs.st (d := 64) (n := 8) (by omega_arith), hs.st (d := 72) (n := 8) (by omega_arith),
+      hs.st (d := 80) (n := 8) (by omega_arith), hs.st (d := 88) (n := 8) (by omega_arith),
+      hs.st (d := 96) (n := 8) (by omega_arith), hs.st (d := 104) (n := 8) (by omega_arith)]
     exact ⟨rfl, BitVec.add_zero _, BitVec.add_zero _, BitVec.add_zero _, BitVec.add_zero _, BitVec.add_zero _,
       BitVec.add_zero _⟩
   · have kk : Keep [.r11, .r14, .r15, .r16, .r17, .r18, .r31] s0 s := (k1.trans k).mono

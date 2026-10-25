@@ -107,7 +107,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact Or.inl ⟨by simp, rfl⟩
-    · exact Or.inr ⟨4, by decide, by decide, rfl, by dsimp only; omega⟩
+    · exact Or.inr ⟨4, by decide, by decide, rfl, by dsimp only; omega_arith⟩
     · exact Or.inr ⟨3, by decide, by decide, rfl, Nat.le_refl _⟩
     · exact Or.inr ⟨6, by decide, by decide, rfl, Nat.le_refl _⟩
   have s28 := es 28
@@ -115,7 +115,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
       (∀ r ∈ rs, r ∈ [(152, 8), (slot (wOf mb) 4, 8 * wOf mb), (slot (wOf mb) 3, 8 * (wOf mb + 2)),
         (slot (wOf mb) 6, 8 * (wOf mb + 2))]) →
       ∀ d, Read (wOf mb) d → word m' p.B d = word m p.B d := fun hf hs d hd =>
-    hf.word_eq (fun r hr => (fr r (hs r hr)).word hd) (by have := hd.le; omega)
+    hf.word_eq (fun r hr => (fr r (hs r hr)).word hd) (by have := hd.le; omega_arith)
   have st₁ : St p t₁ := h.st.step (Frm.toMut f₁ fun r hr => Free.mut h (fr r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp))) k₁
   have sub1 : ∀ r ∈ [(152, 8), (slot (wOf mb) 4, 8 * wOf mb)], r ∈ [(152, 8), (slot (wOf mb) 4, 8 * wOf mb),
@@ -130,7 +130,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
     rw [wv₂, ← Pre.val32_eq_wv, v₁]; rfl
   -- The scan.
   have k12 := k₁.trans k₂
-  refine WP.seq (WP.mono (dScan_ok (h.st.scr.congr k12.wr) r5₂ r6₂ r24₂ hw2 (by omega) (by have := es 4; omega))
+  refine WP.seq (WP.mono (dScan_ok (h.st.scr.congr k12.wr) r5₂ r6₂ r24₂ hw2 (by omega_arith) (by have := es 4; omega_arith))
     fun t₃ ⟨⟨z₃, m₃⟩, k₃⟩ => ?_)
   rw [ha₂] at z₃
   have k13 := k12.trans k₃
@@ -140,7 +140,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
       wv m' p.B (slot (wOf mb) j) (wOf mb) = wv m p.B (slot (wOf mb) j) (wOf mb) := fun hf hs j hj =>
     hf.wv_eq (fun r hr => (fr r (hs r hr)).arr hj) (by
       have := es 0; have := es 1; have := es 9; have := es 10; have := es 27
-      rcases hj with rfl | rfl | rfl | rfl | rfl <;> omega)
+      rcases hj with rfl | rfl | rfl | rfl | rfl <;> omega_arith)
   have sub2 : ∀ r ∈ [(slot (wOf mb) 4, 8 * wOf mb)], r ∈ [(152, 8), (slot (wOf mb) 4, 8 * wOf mb),
       (slot (wOf mb) 3, 8 * (wOf mb + 2)), (slot (wOf mb) 6, 8 * (wOf mb + 2))] := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl <;> simp
@@ -150,7 +150,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
   have r10₃ : t₃.gpr .r10 = off p.B (slot (wOf mb) 0) := (k₃.gpr .r10 (by decide)).trans r10₂
   -- The range, and the round of a witness in it.
   refine wp_then3 (dRange_ok (h.st.scr.congr k13.wr) r10₃ ((k13.gpr .r29 (by decide)).trans h.ph.r29)
-    ((k13.gpr .r11 (by decide)).trans h.ph.r11) hw2 hw128 (by have := es 7; omega) hN₃ h.prep.odd hx₃)
+    ((k13.gpr .r11 (by decide)).trans h.ph.r11) hw2 hw128 (by have := es 7; omega_arith) hN₃ h.prep.odd hx₃)
     fun t₄ ⟨⟨z₄, f₄⟩, k₄⟩ => ?_
   rw [m₃] at f₄
   have sub4 : ∀ r ∈ [(slot (wOf mb) 3, 8 * (wOf mb + 2)), (slot (wOf mb) 6, 8 * (wOf mb + 2))],
@@ -169,7 +169,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
     F.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       have := es 3; have := es 4; have := es 6
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
   have u₄ : word t₄.mem p.B 152 = BitVec.ofNat 64 (u + (mb + 7) / 8) := by
     rw [← u₁]
     have G : Frm p.B [(slot (wOf mb) 4, 8 * wOf mb), (slot (wOf mb) 3, 8 * (wOf mb + 2)),
@@ -180,7 +180,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
     exact G.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       have := es 3; have := es 4; have := es 6
-      rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega) (by omega)
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
   have r24₄ : t₄.gpr .r24 = t₃.gpr .r24 := k₄.gpr .r24 (by decide)
   rw [Prog.chain, WP.block_nil_iff]
   refine ⟨M₄, u₄, (hdr (Or.inl rfl)).trans hS, (hdr (Or.inr rfl)).trans hI, ?_, ?_, ?_⟩
@@ -191,7 +191,7 @@ theorem drawRest_ok {p : PP} {mb N u i : Nat} {s t : State} (h : MSt p mb N s)
     exact f₄.wv_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       have := es 3; have := es 4; have := es 6
-      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by have := es 4; omega)
+      rcases hr with rfl | rfl <;> dsimp only <;> omega_arith) (by have := es 4; omega_arith)
 
 theorem drawTail_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {t₄ : State} (h : DMid p mb N u i t₄)
     (hi : i < 2 ^ 62) :
@@ -215,20 +215,20 @@ theorem drawTail_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {t₄ : State} (h 
   refine WP.ite (t₄.gpr .r24 == 0) (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
   · rw [WP.block_nil_iff]
     have h0 : t₄.gpr .r24 = 0#64 := beq_iff_eq.mp hb
-    exact out fun ⟨a, _⟩ => by have := z₃.mp h0; omega
+    exact out fun ⟨a, _⟩ => by have := z₃.mp h0; omega_arith
   refine WP.ite (t₄.gpr .r20 == 0) (eval_zero _ _) (fun hb' => ?_) (fun hb' => ?_)
   · rw [WP.block_nil_iff]
     exact out fun ⟨_, b⟩ => z₄.mp (beq_iff_eq.mp hb') b
   -- A witness in range: its round.
   have ha2 : 2 ≤ wA mb p.r u := by
     by_contra hc
-    have : (t₄.gpr .r24 == 0) = true := beq_iff_eq.mpr (z₃.mpr (by omega))
+    have : (t₄.gpr .r24 == 0) = true := beq_iff_eq.mpr (z₃.mpr (by omega_arith))
     rw [hb] at this; exact absurd this (by decide)
   have haN : wA mb p.r u < N - 1 := by
     by_contra hc
     have : (t₄.gpr .r20 == 0) = true := beq_iff_eq.mpr (z₄.mpr hc)
     rw [hb'] at this; exact absurd this (by decide)
-  have hK : Spec.Ffdh.primeChecks mb < 2 ^ 62 := by unfold Spec.Ffdh.primeChecks; split <;> omega
+  have hK : Spec.Ffdh.primeChecks mb < 2 ^ 62 := by unfold Spec.Ffdh.primeChecks; split <;> omega_arith
   have hsp₄ := M₄.st.sp
   refine WP.mono (roundCount_ok R M₄.prep ha₄ (show wA mb p.r u < N by omega) (by rw [hsp₄]; exact M₄.st.stk)
     (by rw [hsp₄]; exact M₄.st.stkB) hI M₄.ph.checksW hi hK)
@@ -236,18 +236,18 @@ theorem drawTail_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {t₄ : State} (h 
   obtain ⟨v, hv, tm, -⟩ := ht
   have hn₄ : 8 * p.n = p.Z := rfl
   have u₅ : word v.mem p.B 152 = BitVec.ofNat 64 (u + (mb + 7) / 8) :=
-    (keeps_hdr (i := 19) hv.keeps (by decide) (by decide) (by omega)).trans u₄
+    (keeps_hdr (i := 19) hv.keeps (by decide) (by decide) (by omega_arith)).trans u₄
   simp only [word, off] at u₅ ⊢
   have ht2 : 2 ≤ wA mb p.r u ∧ wA mb p.r u < N - 1 := ⟨ha2, haN⟩
   cases hr : Spec.MillerRabin.round N (wA mb p.r u) <;> simp only [hr, Bool.false_eq_true, ↓reduceIte] at tm <;>
     rw [tm] <;> refine ⟨?_, ?_, ?_⟩
-  · rw [rw_off _ _ _ (by omega) (by omega) (by omega)]; exact u₅
+  · rw [rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact u₅
   · rw [rw_self, dStat, ite_eq_left ht2, hr]; rfl
-  · rw [rw_off _ _ _ (by omega) (by omega) (by omega), dIdx, ite_eq_right (by simp [hr])]
-    exact (keeps_hdr (i := 22) hv.keeps (by decide) (by decide) (by omega)).trans hI
-  · rw [rw_off _ _ _ (by omega) (by omega) (by omega), rw_off _ _ _ (by omega) (by omega) (by omega)]; exact u₅
+  · rw [rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), dIdx, ite_eq_right (by simp [hr])]
+    exact (keeps_hdr (i := 22) hv.keeps (by decide) (by decide) (by omega_arith)).trans hI
+  · rw [rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact u₅
   · rw [rw_self, dStat, ite_eq_left ht2, hr]; rfl
-  · rw [rw_off _ _ _ (by omega) (by omega) (by omega), rw_self, dIdx, ite_eq_left ⟨ha2, haN, hr⟩]
+  · rw [rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_self, dIdx, ite_eq_left ⟨ha2, haN, hr⟩]
 
 
 theorem draw_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {s : State} (h : MSt p mb N s)

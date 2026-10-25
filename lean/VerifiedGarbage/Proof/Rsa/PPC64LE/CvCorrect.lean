@@ -99,7 +99,7 @@ theorem valid_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
     rw [show decide (maskOf (pIn s0) (qIn s0) X₁ X₂ V) = true from decide_eq_true hb] at vp vq vi t3'
     refine ⟨by rw [t3']; rfl, ?_⟩
     simp only [List.map_cons, List.map_nil]
-    rw [bytes_of (by omega) vp, bytes_of (by omega) vq, bytes_of (by omega) vi]
+    rw [bytes_of (by omega_arith) vp, bytes_of (by omega_arith) vq, bytes_of (by omega_arith) vi]
 
 /-- For a modulus that is not valid, `crtKey` is `none` and the results zeros. -/
 theorem fail_post {s0 t : State} (hv : ¬ Spec.Rsa.modulusValid (nIn s0) (cvK s0) = true)
@@ -136,7 +136,7 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
   obtain ⟨hm, nw, hzs, -, -⟩ := pre_scr h.pre
   have hs : Scr t (cvB s0) (cvZ s0) := Scr.of_mem (by rw [h.wr]; exact hm) nw
   have e : ∀ i < 14, t.mem.readW (off (cvB s0) (8 * i)) 64 = s0.gpr (savedReg i) := fun i hi => by
-    rw [h.readW (by omega)]; exact h.hdr i hi
+    rw [h.readW (by omega_arith)]; exact h.hdr i hi
   have e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
   have e3 := e 3 (by decide); have e4 := e 4 (by decide); have e5 := e 5 (by decide)
   have e6 := e 6 (by decide); have e7 := e 7 (by decide); have e8 := e 8 (by decide)
@@ -144,13 +144,13 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
   have e12 := e 12 (by decide); have e13 := e 13 (by decide)
   simp only [savedReg, Nat.reduceMul] at e0 e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 e11 e12 e13
   refine WP.keep _ ?_ (by decide)
-  prun [restore, h.r31, hs.ld (d := 0) (n := 8) (by omega), hs.ld (d := 8) (n := 8) (by omega),
-    hs.ld (d := 16) (n := 8) (by omega), hs.ld (d := 24) (n := 8) (by omega),
-    hs.ld (d := 32) (n := 8) (by omega), hs.ld (d := 40) (n := 8) (by omega),
-    hs.ld (d := 48) (n := 8) (by omega), hs.ld (d := 56) (n := 8) (by omega),
-    hs.ld (d := 64) (n := 8) (by omega), hs.ld (d := 72) (n := 8) (by omega),
-    hs.ld (d := 80) (n := 8) (by omega), hs.ld (d := 88) (n := 8) (by omega),
-    hs.ld (d := 96) (n := 8) (by omega), hs.ld (d := 104) (n := 8) (by omega),
+  prun [restore, h.r31, hs.ld (d := 0) (n := 8) (by omega_arith), hs.ld (d := 8) (n := 8) (by omega_arith),
+    hs.ld (d := 16) (n := 8) (by omega_arith), hs.ld (d := 24) (n := 8) (by omega_arith),
+    hs.ld (d := 32) (n := 8) (by omega_arith), hs.ld (d := 40) (n := 8) (by omega_arith),
+    hs.ld (d := 48) (n := 8) (by omega_arith), hs.ld (d := 56) (n := 8) (by omega_arith),
+    hs.ld (d := 64) (n := 8) (by omega_arith), hs.ld (d := 72) (n := 8) (by omega_arith),
+    hs.ld (d := 80) (n := 8) (by omega_arith), hs.ld (d := 88) (n := 8) (by omega_arith),
+    hs.ld (d := 96) (n := 8) (by omega_arith), hs.ld (d := 104) (n := 8) (by omega_arith),
     e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13]
   exact e0
 
@@ -163,7 +163,7 @@ theorem cv_correct (s : State) (h : cvP.pre s) :
   unfold code
   refine WP.seq (WP.mono (entry_ok h) fun s1 ⟨b1, a1, k1⟩ => ?_)
   have hc : ∀ i < cvK s, (⟨s.gpr .r9, cvK s⟩ : Region).Contains (off (s.gpr .r9) i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (check_ok (N := s.gpr .r9) (k := cvK s)
     (nb := Spec.Rsa.bytesAt s.mem (s.gpr .r9) (cvK s))
     (by rw [k1.gpr _ (by decide)]; simp [off]) (by rw [k1.gpr _ (by decide)]; exact ofNat_toNat64 _) hk hk'

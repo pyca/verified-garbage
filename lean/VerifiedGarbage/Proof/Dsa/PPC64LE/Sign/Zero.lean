@@ -43,16 +43,16 @@ theorem zeroLoop_ok {s : State} {out : Addr} {N : Nat} (hN : 0 < N) (hN' : N < 2
         t' = (({ t with mem := t.mem.write (off out i) 1 ((0 : BitVec 64).setWidth 8) } :
           State).write .r16 (off out (i + 1))).write .r17 (t.gpr .r17 - BitVec.ofNat 64 1) := by
       prun [t0, t16, exec_stb (show Reg.r16 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
-        (ho.congr tk.wr).st (d := i) (n := 1) (by omega)]
+        (ho.congr tk.wr).st (d := i) (n := 1) (by omega_arith)]
     refine WP.mono hst fun t' e => ?_
     subst e
-    have hw1 := write1_outside t.mem out (d := i) ((0 : BitVec 64).setWidth 8) (by omega)
+    have hw1 := write1_outside t.mem out (d := i) ((0 : BitVec 64).setWidth 8) (by omega_arith)
     refine ⟨⟨by gsimp; exact t0, by gsimp, ?_, ?_, ?_⟩, by gsimp⟩
-    · gsimp; exact (tout.mono (Nat.le_refl _) (by omega)).trans (hw1.mono (by omega) (by omega))
+    · gsimp; exact (tout.mono (Nat.le_refl _) (by omega_arith)).trans (hw1.mono (by omega_arith) (by omega_arith))
     · intro i' hi'
       gsimp
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi' with hi' | rfl
-      · rw [hw1 _ (by rw [Bignum.PPC64LE.ofs_off0 out (by omega)]; omega)]; exact tz i' hi'
+      · rw [hw1 _ (by rw [Bignum.PPC64LE.ofs_off0 out (by omega_arith)]; omega_arith)]; exact tz i' hi'
       · rw [write1_self]; rfl
     · exact tk.trans' (((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono
   · refine List.eq_replicate_iff.mpr ⟨by simp [Spec.Rsa.bytesAt], fun b hb => ?_⟩
@@ -71,7 +71,7 @@ theorem zeroOut_ok {s : State} {L : Lay} {key sig dig out : Addr} (hL : L.Ok) (h
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
   have hld : InRegions (s.rd ++ s.wr) (s.gpr .r21 + BitVec.ofNat 64 hOut) 8 := by
-    rw [hr.r21]; exact hs.ld (show hOut + 8 ≤ L.Z by simp only [hOut]; omega)
+    rw [hr.r21]; exact hs.ld (show hOut + 8 ≤ L.Z by simp only [hOut]; omega_arith)
   refine WP.mono (WP.keep [.r16] (Q := fun u => u.gpr .r16 = out ∧ u.mem = s.mem)
     (by prun [exec_ld (by decide) hld]; rw [hr.r21]; exact hw) (by decide)) fun s₁ ⟨⟨a16, m1⟩, k1⟩ => ?_
   refine WP.mono (getQ_ok (hr.keep k1) .r17) fun s₂ ⟨⟨a17, m2⟩, k2⟩ => ?_

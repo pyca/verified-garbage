@@ -81,15 +81,15 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
           V' aDo = V aL / mE (V aE) * (mE (V aE) - x) + (V aL % mE (V aE) * (mE (V aE) - x) + 1) / mE (V aE) ∧
           F' X6 = if ¬ V aL < 2 ∧ Nat.gcd (V aL % mE (V aE)) (mE (V aE)) = 1 then 1 else 0)) ∧
       KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
-  have hM : 2 ^ 128 ≤ 2 ^ (32 * w) := Nat.pow_le_pow_right (by decide) (by omega)
+  have hM : 2 ^ 128 ≤ 2 ^ (32 * w) := Nat.pow_le_pow_right (by decide) (by omega_arith)
   have mo := mE_odd (V aE)
-  have mlt : mE (V aE) < 2 ^ 64 := by unfold mE; split <;> omega
+  have mlt : mE (V aE) < 2 ^ 64 := by unfold mE; split <;> omega_arith
   rw [dOdd_eq, wp_seqs_append (by simp) (by simp [ltS])]
   -- `X0` := `e` odd and at least 3; `[aME] := mE`.
   change WP isa (.seq (.block (andNotS X0 X5 X3 ++ [])) _) s _
   rw [WP.seq_iff]
   refine andNotSE h ks (d := X0) (a := X5) (b := X3) (ba := by rw [b5]; exact flag01 _)
-    (bb := by rw [b3]; omega) (k := fun t1 h1 k1 f1 r1 => WP.block_nil ?_)
+    (bb := by rw [b3]; omega_arith) (k := fun t1 h1 k1 f1 r1 => WP.block_nil ?_)
   obtain ⟨F1, k1, g1, p1⟩ := k1.fx
   refine WP.seq (WP.mono (selE h1 k1 (o := aME) (a := aThree) (b := aE) (sl := X0)
     (bit := by rw [g1]; exact flag01 _)) fun t2 ⟨h2, k2, f2, r2⟩ => ?_)
@@ -97,7 +97,7 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
   have vME : V2 aME = mE (V aE) := by
     rw [e2, g1, b5, b3, three, mE]
     have := Nat.mod_two_eq_zero_or_one (V aE)
-    by_cases a : V aE < 3 <;> by_cases b : V aE % 2 = 1 <;> simp [a, b] <;> omega
+    by_cases a : V aE < 3 <;> by_cases b : V aE % 2 = 1 <;> simp [a, b] <;> omega_arith
   -- `L = mE Q + R`.
   refine WP.seq (WP.mono (copyE h2 k2 (o := aQd) (a := aL)) fun t3 ⟨h3, k3, f3, r3⟩ => ?_)
   obtain ⟨V3, k3, e3, o3⟩ := k3.vx
@@ -106,8 +106,8 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
   have vDv : V4 aDv = mE (V aE) := by rw [e4, o3 aME (by decide), vME]
   refine WP.seq (WP.mono (divE h4 k4 (q := aQd) (r := aR) (t := aDt)) fun t5 ⟨h5, ⟨V5, k5, o5, e5⟩, f5, r5⟩ => ?_)
   have vL : V4 aQd = V aL := by rw [o4 aQd (by decide), e3, o2 aL (by decide)]
-  have vQ : V5 aQd = V aL / mE (V aE) := by rw [(e5 (by rw [vDv]; omega)).1, vL, vDv]
-  have vR : V5 aR = V aL % mE (V aE) := by rw [(e5 (by rw [vDv]; omega)).2, vL, vDv]
+  have vQ : V5 aQd = V aL / mE (V aE) := by rw [(e5 (by rw [vDv]; omega_arith)).1, vL, vDv]
+  have vR : V5 aR = V aL % mE (V aE) := by rw [(e5 (by rw [vDv]; omega_arith)).2, vL, vDv]
   -- `x = R⁻¹ mod mE`.
   have c5 : ∀ j < nArr, j ≠ aME → j ≠ aQd → j ≠ aDv → j ≠ aR → j ≠ aDt → V5 j = V j := fun j hj a b c d f => by
     rw [o5 j hj b d f, o4 j c, o3 j b, o2 j a]
@@ -130,8 +130,8 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
   have vT : V8 aTt = mE (V aE) - V6 3 := by
     rw [e8, vM6]
     unfold subW
-    rw [show mE (V aE) + 2 ^ (32 * w) - V6 3 = (mE (V aE) - V6 3) + 2 ^ (32 * w) by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
+    rw [show mE (V aE) + 2 ^ (32 * w) - V6 3 = (mE (V aE) - V6 3) + 2 ^ (32 * w) by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith)]
   -- `Q t` and `R t`.
   have o68 : ∀ j < nArr, j ∉ invOfArrs → j ≠ aTt → V8 j = V5 j := fun j hj hi ht => by rw [o8 j ht, o6 j hj hi]
   refine WP.seq (WP.mono (mulToE h8 k8 (o := aQt) (a := aQd) (b := aTt) (K := 64) (hK := by decide)
@@ -142,18 +142,18 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
     (hK' := by decide) (hk := fun u _ => li64_ok u) (hZ := by rw [o9 aZero (by decide) (by decide) (by decide),
       o68 aZero (by decide) (by decide) (by decide), c5 aZero (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide), zero])) fun t10 ⟨h10, ⟨V10, k10, o10, e10⟩, f10, r10⟩ => ?_)
-  have tlt : V8 aTt < 2 ^ 64 := by rw [vT]; omega
+  have tlt : V8 aTt < 2 ^ 64 := by rw [vT]; omega_arith
   have vQt : V10 aQt = V aL / mE (V aE) * (mE (V aE) - V6 3) := by
-    have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega)
+    have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
     rw [o10 aQt (by decide) (by decide) (by decide), e9, o68 aQd (by decide) (by decide) (by decide), vQ, Nat.mod_eq_of_lt tlt,
       vT, Nat.mod_eq_of_lt]
     have := ks.lt (j := aL) (by decide)
-    omega
+    omega_arith
   have vRt : V10 aRt = V aL % mE (V aE) * (mE (V aE) - V6 3) := by
-    have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega)
+    have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
     have t9 : V9 aTt = V8 aTt := o9 aTt (by decide) (by decide) (by decide)
     rw [e10, o9 aR (by decide) (by decide) (by decide), o68 aR (by decide) (by decide) (by decide), vR, t9,
-      Nat.mod_eq_of_lt tlt, vT, Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt tlt, vT, Nat.mod_eq_of_lt (by omega_arith)]
   -- `R t + 1`, `c = (R t + 1) / mE`, `d = Q t + c`.
   have z10 : V10 aZero = 0 := by
     rw [o10 aZero (by decide) (by decide) (by decide), o9 aZero (by decide) (by decide) (by decide), o68 aZero (by decide) (by decide)
@@ -164,9 +164,9 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
   refine WP.seq (WP.mono (addToE h10 k10 (o := aRt) (a := aOne) (n := aNc) (z := aZero) (z0 := z10))
     fun t11 ⟨h11, k11, f11, r11⟩ => ?_)
   obtain ⟨V11, k11, e11, o11⟩ := k11.vx
-  have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega)
+  have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
   have vRt1 : V11 aRt = V aL % mE (V aE) * (mE (V aE) - V6 3) + 1 := by
-    rw [e11, vRt, one10, Nat.mod_eq_of_lt (by omega)]
+    rw [e11, vRt, one10, Nat.mod_eq_of_lt (by omega_arith)]
   have vDv10 : V10 aDv = mE (V aE) := by
     rw [o10 aDv (by decide) (by decide) (by decide), o9 aDv (by decide) (by decide) (by decide),
       o68 aDv (by decide) (by decide) (by decide), o5 aDv (by decide) (by decide) (by decide) (by decide), vDv]
@@ -174,7 +174,7 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
   refine WP.seq (WP.mono (divE h11 k11 (q := aRt) (r := aDr) (t := aDt)) fun t12 ⟨h12, ⟨V12, k12, o12, e12⟩, f12,
     r12⟩ => ?_)
   have vC : V12 aRt = (V aL % mE (V aE) * (mE (V aE) - V6 3) + 1) / mE (V aE) := by
-    rw [(e12 (by rw [vDv11]; omega)).1, vRt1, vDv11]
+    rw [(e12 (by rw [vDv11]; omega_arith)).1, vRt1, vDv11]
   refine WP.seq (WP.mono (copyE h12 k12 (o := aDo) (a := aQt)) fun t13 ⟨h13, k13, f13, r13⟩ => ?_)
   obtain ⟨V13, k13, e13, o13⟩ := k13.vx
   have z13 : V13 aZero = 0 := by
@@ -189,7 +189,7 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
       (V aL % mE (V aE) * (mE (V aE) - V6 3) + 1) / mE (V aE) := by
     rw [e14, e13, o13 aRt (by decide), vQt12, vC]
     have := ks.lt (j := aL) (by decide)
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
   -- `X2` := `L < 2`, `X6` := `L ≥ 2` and `gcd(R, mE) = 1`.
   have vL14 : V14 aL = V aL := by
     rw [o14 aL (by decide), upd_ne (by decide), o13 aL (by decide), o12 aL (by decide) (by decide) (by decide)

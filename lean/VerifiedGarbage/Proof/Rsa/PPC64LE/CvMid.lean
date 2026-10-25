@@ -29,7 +29,7 @@ theorem pre_ws {s0 : State} (h : cvP.pre s0) :
     arr (cvW s0) nArr ≤ cvZ s0 ∧ 16 ≤ cvW s0 ∧ cvW s0 ≤ 256 ∧ cvK s0 ≤ 4 * cvW s0 := by
   obtain ⟨-, -, hz, hk, hk'⟩ := pre_scr h
   simp only [arr, S, nArr, VG.Proof.Rsa.KeyWorkspace.hdr, cvW] at hz ⊢
-  omega
+  omega_arith
 
 /-- A step that writes only arrays and slots at 112 or after keeps `Base`. -/
 theorem Base.of_keep {s0 s t : State} (h : Base s0 s) {js ds : List Nat}
@@ -42,17 +42,17 @@ theorem Base.of_keep {s0 s t : State} (h : Base s0 s) {js ds : List Nat}
     fun i hi => ?_, r31.trans h.r31⟩
   · rw [← h.frame x hx]
     exact k.out (Z := cvZ s0) (fun j hj => Nat.le_trans (VG.Proof.Rsa.KeyWorkspace.arr_end (hjs j hj)) fits)
-      (fun d hd => by have := hds d hd; have : 160 ≤ cvZ s0 := Nat.le_trans (Nat.le_add_right _ _) fits; omega) hx
+      (fun d hd => by have := hds d hd; have : 160 ≤ cvZ s0 := Nat.le_trans (Nat.le_add_right _ _) fits; omega_arith) hx
   · rw [← h.hdr i hi]
     refine Mem.readW_congr fun b hb => ?_
     rw [off, Offset.add_add]
     refine k _ fun r hr => ?_
     have h160 : 160 ≤ cvZ s0 := Nat.le_trans (Nat.le_add_right _ _) fits
-    rw [ofs, Mem.sub_ofNat_toNat _ (by omega)]
+    rw [ofs, Mem.sub_ofNat_toNat _ (by omega_arith)]
     simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨j, -, rfl⟩ | ⟨d, hd, rfl⟩
-    · left; simp only [arr, VG.Proof.Rsa.KeyWorkspace.hdr]; omega
-    · left; have := hds d hd; dsimp only; omega
+    · left; simp only [arr, VG.Proof.Rsa.KeyWorkspace.hdr]; omega_arith
+    · left; have := hds d hd; dsimp only; omega_arith
 
 /-- A step that writes only bytes from 160 on, within the working space, keeps `Base`. -/
 theorem Base.of_outside {s0 s t : State} (h : Base s0 s) {n : Nat}
@@ -61,20 +61,20 @@ theorem Base.of_outside {s0 s t : State} (h : Base s0 s) {n : Nat}
   obtain ⟨-, nw, -, -, -⟩ := pre_scr h.pre
   refine ⟨h.pre, sp.trans h.sp, lr.trans h.lr, rd.trans h.rd, wr.trans h.wr, fun x hx => ?_,
     fun i hi => ?_, r31.trans h.r31⟩
-  · rw [← h.frame x hx]; exact o x (Or.inr (by omega))
+  · rw [← h.frame x hx]; exact o x (Or.inr (by omega_arith))
   · rw [← h.hdr i hi]
     refine Mem.readW_congr fun b hb => ?_
     rw [off, Offset.add_add]
     refine o _ (Or.inl ?_)
-    rw [ofs, Mem.sub_ofNat_toNat _ (by omega)]
-    omega
+    rw [ofs, Mem.sub_ofNat_toNat _ (by omega_arith)]
+    omega_arith
 
 theorem ofNat_add3_shr2 (x : BitVec 64) (hx : x.toNat ≤ 1024) :
     (x + BitVec.ofNat 64 3) >>> 2 = BitVec.ofNat 64 ((x.toNat + 3) / 4) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem ofNat_stride (w : Nat) :
     (BitVec.ofNat 64 w + BitVec.ofNat 64 2) <<< 2 = BitVec.ofNat 64 (S w) := by
@@ -82,7 +82,7 @@ theorem ofNat_stride (w : Nat) :
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq]
   simp only [S]
-  omega
+  omega_arith
 
 theorem ofNat_digits (w : Nat) (hw : w ≤ 256) :
     (BitVec.ofNat 64 25 * BitVec.ofNat 64 (S w)) >>> 2 = BitVec.ofNat 64 (25 * (w + 2)) := by
@@ -90,9 +90,9 @@ theorem ofNat_digits (w : Nat) (hw : w ≤ 256) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   simp only [S]
-  rw [Nat.mod_eq_of_lt (show 25 * (4 * (w + 2)) < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 25 * (w + 2) < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show 25 * (4 * (w + 2)) < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show 25 * (w + 2) < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 /-- `setup`: `w` and the stride, and every digit of the arrays 0. -/
 theorem setup_ok {s0 s : State} (h : Base s0 s) (h18 : s.gpr .r18 = s0.gpr .r10) :
@@ -112,16 +112,16 @@ theorem setup_ok {s0 s : State} (h : Base s0 s) (h18 : s.gpr .r18 = s0.gpr .r10)
     prun [VG.Impl.Rsa.PPC64LE.Keys.stride, h18, ofNat_add3_shr2 _ hkv, ofNat_stride, ofNat_digits _ hw, nArr]
   refine WP.mono hb fun u ⟨⟨u29, u30, u8, um⟩, ku⟩ => ?_
   have hu : Ws u (cvB s0) (cvZ s0) (cvW s0) nArr :=
-    ⟨hs.congr ku.wr, fits, by omega, by omega, u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩
+    ⟨hs.congr ku.wr, fits, by omega_arith, by omega_arith, u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩
   have hn : 160 + 4 * (nArr * (cvW s0 + 2)) ≤ cvZ s0 := by
-    simp only [arr, S, nArr, VG.Proof.Rsa.KeyWorkspace.hdr] at fits ⊢; omega
-  refine WP.mono (zeroArrays_ok hu u8 (by simp only [nArr]; omega) (by simp only [nArr]; omega) hn)
+    simp only [arr, S, nArr, VG.Proof.Rsa.KeyWorkspace.hdr] at fits ⊢; omega_arith
+  refine WP.mono (zeroArrays_ok hu u8 (by simp only [nArr]; omega_arith) (by simp only [nArr]; omega_arith) hn)
     fun t ⟨ht, z, out, kt⟩ => ⟨?_, ht, fun j hj i hi => ?_, (ku.trans kt).mono⟩
   · have kk := ku.trans kt
     exact Base.of_outside h (by rw [← um]; exact out) hn kk.sp kk.lr kk.rd kk.wr (kk.gpr _ (by decide))
   · have hb : j * (cvW s0 + 2) + i < nArr * (cvW s0 + 2) := by
-      have := Nat.mul_le_mul_right (cvW s0 + 2) (show j + 1 ≤ nArr by omega)
-      rw [Nat.add_mul, Nat.one_mul] at this; omega
+      have := Nat.mul_le_mul_right (cvW s0 + 2) (show j + 1 ≤ nArr by omega_arith)
+      rw [Nat.add_mul, Nat.one_mul] at this; omega_arith
     have := z (j * (cvW s0 + 2) + i) hb
     rw [show 160 + 4 * (j * (cvW s0 + 2) + i) = arr (cvW s0) j + 4 * i by
       simp only [arr, S, VG.Proof.Rsa.KeyWorkspace.hdr]; grind] at this

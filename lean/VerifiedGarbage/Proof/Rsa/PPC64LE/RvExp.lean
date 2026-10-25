@@ -33,13 +33,13 @@ theorem expBody_ok {s0 u : State} (hn : NOk s0) {j i : Nat} (h : EI s0 j i u) :
   have w1 := z.w1; have w2 := z.w2; have svW := z.svW; have svZ := z.svZ; have svw := z.svw
   have fit : ∀ j < nArr, arr (ww (kK s0)) j + S (ww (kK s0)) ≤ 2 ^ 64 := fun _ hj => c.ws.fit64 hj
   have f32 : arr (ww (kK s0)) 32 ≤ 2 ^ 64 := Nat.le_trans (Nat.le_add_right _ _) (fit 32 (by decide))
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
   have hW : wW (kK s0) = 2 * ww (kK s0) + 2 := rfl
   unfold expBody
   simp only [List.cons_append, List.nil_append, List.append_assoc]
   -- The bit, and `r`'s copy halved.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine ctxW_ok c.ws (by omega) (Nat.le_trans svW (Nat.le_trans (Nat.le_add_right _ _) svZ))
+  refine ctxW_ok c.ws (by omega_arith) (Nat.le_trans svW (Nat.le_trans (Nat.le_add_right _ _) svZ))
     fun u1 ws1 m1 k1 => ?_
   rw [← hW] at ws1
   refine bitOf_ok ws1 (j := wRc) (sl := sBit) (by decide) (by decide) (by decide) fun u2 ws2 kk2 b2 k2 => ?_
@@ -51,7 +51,7 @@ theorem expBody_ok {s0 u : State} (hn : NOk s0) {j i : Nat} (h : EI s0 j i u) :
     fun u4 ⟨ws4, kk4, v4, k4⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil VG.Impl.Rsa.PPC64LE.Recover.ctxw]
   rw [hW] at ws4
-  refine ctxw_ok ws4 (by omega) (by rw [← svw]; omega) fun u5 ws5 m5 k5 => WP.block_nil ?_
+  refine ctxw_ok ws4 (by omega_arith) (by rw [← svw]; omega_arith) fun u5 ws5 m5 k5 => WP.block_nil ?_
   have kk5 : KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [30, 31] [sBit] u.mem u5.mem := by
     have a := keepW_key (w := ww (kK s0)) kk2; have b := keepW_key (w := ww (kK s0)) kk4
     rw [m1] at a; rw [m3] at b; rw [m5]
@@ -72,7 +72,7 @@ theorem expBody_ok {s0 u : State} (hn : NOk s0) {j i : Nat} (h : EI s0 j i u) :
   -- The multiplicand.
   rw [wp_seqs_cons (by simp [mmul])]
   refine WP.mono (sel_ok c5.ws (o := mXm) (a := aO) (b := mG) (sl := sBit) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by rw [bit]; omega)) fun u6 ⟨ws6, kk6, v6, k6⟩ => ?_
+    (by decide) (by decide) (by decide) (by decide) (by rw [bit]; omega_arith)) fun u6 ⟨ws6, kk6, v6, k6⟩ => ?_
   have c6 := c5.of_keep kk6 (by decide) (by simp) k6 ws6
   have X6 : num u6.mem (rvB s0) (ww (kK s0)) mXm =
       if rR s0 / 2 ^ i % 2 = 0 then RR s0 % nV s0 else (j + 2) ^ (2 ^ i) * RR s0 % nV s0 := by
@@ -131,7 +131,7 @@ theorem expBody_ok {s0 u : State} (hn : NOk s0) {j i : Nat} (h : EI s0 j i u) :
 theorem expLoop_ok {s0 u : State} (hn : NOk s0) {j : Nat} (h : EI s0 j 0 u)
     (h27 : u.gpr .r27 = BitVec.ofNat 64 (cB s0)) (hc0 : 0 < cB s0) (hc : cB s0 < 2 ^ 31) :
     WP isa expLoop u (EI s0 j (cB s0)) :=
-  wp_countdown (body := expBody) (cnt := .r27) (N := cB s0) (by omega) hc0 (EI s0 j)
+  wp_countdown (body := expBody) (cnt := .r27) (N := cB s0) (by omega_arith) hc0 (EI s0 j)
     (fun _ _ _ e _ => expBody_ok hn e) h h27
 
 end VG.Proof.Rsa.PPC64LE.Recover

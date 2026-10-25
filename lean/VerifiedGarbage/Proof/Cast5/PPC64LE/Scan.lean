@@ -29,8 +29,8 @@ theorem accReg_ne {k : Nat} : ∀ r ∈ [Reg.r0, .r14, .r15, .r16, .r17, .r22, .
   unfold accReg; split <;> decide
 
 theorem accReg_inj {k e : Nat} (hk : k < 4) (he : e < 4) (h : accReg k = accReg e) : k = e := by
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
   first | rfl | exact absurd h (by decide)
 
 /-- One lookup at entry `j` (in `num`), the entry's words at `ep`. -/
@@ -41,7 +41,7 @@ theorem look_ok (s : State) (k : Nat) (hk : k < 4) {j : Nat} (hj : j < 256)
       t.gpr (accReg k) = (s.gpr (accReg k) ||| (if s.gpr (idxReg k) = BitVec.ofNat 64 j then
         (s.mem.readW (s.gpr ep + BitVec.ofNat 64 (4 * k)) 32).setWidth 64 else 0)) ∧
       Keep [tmp, wd, accReg k] s t ∧ t.mem = s.mem := by
-  have ho : 4 * k < 2 ^ 15 := by omega
+  have ho : 4 * k < 2 ^ 15 := by omega_arith
   unfold look
   have i24 : idxReg k ≠ .r24 := idxReg_ne _ (by decide)
   have i25 : idxReg k ≠ .r25 := idxReg_ne _ (by decide)
@@ -67,15 +67,15 @@ theorem acc_succ (tab : Nat → Nat → BitVec 64) (idx : Nat → BitVec 64) {j 
     (acc tab idx j k ||| if idx k = BitVec.ofNat 64 j then tab j k else 0) = acc tab idx (j + 1) k := by
   unfold acc
   by_cases h : idx k = BitVec.ofNat 64 j
-  · have hn : (idx k).toNat = j := by rw [h, BitVec.toNat_ofNat]; omega
-    rw [ite_eq_left h, ite_eq_right (by omega), ite_eq_left (by omega), hn]
+  · have hn : (idx k).toNat = j := by rw [h, BitVec.toNat_ofNat]; omega_arith
+    rw [ite_eq_left h, ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), hn]
     exact BitVec.eq_of_getLsbD_eq (by simp)
   · have hn : (idx k).toNat ≠ j := fun h' => h (BitVec.eq_of_toNat_eq (by
-      rw [h', BitVec.toNat_ofNat]; omega))
+      rw [h', BitVec.toNat_ofNat]; omega_arith))
     rw [ite_eq_right h, show ∀ y : BitVec 64, y ||| 0 = y from fun y => BitVec.eq_of_getLsbD_eq (by simp)]
     by_cases h2 : (idx k).toNat < j
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
+    · rw [ite_eq_left h2, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right h2, ite_eq_right (by omega_arith)]
 
 /-- The registers the loop of a scan writes. -/
 def loopRegs : List Reg := [tmp, wd, num, ep, .r18, .r19, .r20, .r21]
@@ -109,17 +109,17 @@ theorem entry_ok {s₀ s : State} {m : Mem} {T : Addr} {idx : Nat → BitVec 64}
         Keep loopRegs s₀ t ∧ t.mem = m := by
     intro e he
     induction e with
-    | zero => exact wp_nil ⟨h.hidx, fun k hk => by rw [ite_eq_right (by omega)]; exact h.hacc k hk,
+    | zero => exact wp_nil ⟨h.hidx, fun k hk => by rw [ite_eq_right (by omega_arith)]; exact h.hacc k hk,
         h.num, h.ep, h.zero, h.keep, h.mem⟩
     | succ e ih =>
       rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
         WP.block_append_iff]
-      refine WP.mono (ih (by omega)) fun t ⟨ti, ta, t2, t3, t0, tk, tm⟩ => ?_
+      refine WP.mono (ih (by omega_arith)) fun t ⟨ti, ta, t2, t3, t0, tk, tm⟩ => ?_
       have ea : t.gpr ep + BitVec.ofNat 64 (4 * e) = T + BitVec.ofNat 64 (16 * j + 4 * e) := by
         rw [t3, Offset.add_add]
       have hin : InRegions (t.rd ++ t.wr) (t.gpr ep + BitVec.ofNat 64 (4 * e)) 4 := by
-        rw [tk.2.1, tk.2.2, ea]; exact ⟨_, hrT, Offset.contains_base _ (by omega) (by omega)⟩
-      refine WP.mono (look_ok t e (by omega) hj t0 t2 (by rw [ti e (by omega)]; exact hidx e (by omega)) hin)
+        rw [tk.2.1, tk.2.2, ea]; exact ⟨_, hrT, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+      refine WP.mono (look_ok t e (by omega_arith) hj t0 t2 (by rw [ti e (by omega_arith)]; exact hidx e (by omega_arith)) hin)
         fun u ⟨ua, uk, um⟩ => ?_
       have ug (r : Reg) (hr : r ∉ [tmp, wd, accReg e]) : u.gpr r = t.gpr r := uk.gpr hr
       refine ⟨fun k hk => ?_, fun k hk => ?_, ?_, ?_, ?_,
@@ -132,14 +132,14 @@ theorem entry_ok {s₀ s : State} {m : Mem} {T : Addr} {idx : Nat → BitVec 64}
         · subst hke
           have ev : (t.mem.readW (t.gpr ep + BitVec.ofNat 64 (4 * k)) 32).setWidth 64 = tw m T j k := by
             rw [tm, t3, Offset.add_add]; rfl
-          rw [ite_eq_left (by omega), ua, ta k hk, ite_eq_right (by omega), ti k hk, ev, acc_succ _ idx hj]
-        · have hne : accReg k ≠ accReg e := fun h' => hke (accReg_inj hk (by omega) h')
+          rw [ite_eq_left (by omega_arith), ua, ta k hk, ite_eq_right (by omega_arith), ti k hk, ev, acc_succ _ idx hj]
+        · have hne : accReg k ≠ accReg e := fun h' => hke (accReg_inj hk (by omega_arith) h')
           rw [ug _ (by
             simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
             exact ⟨accReg_ne _ (by decide), accReg_ne _ (by decide), hne⟩), ta k hk]
           by_cases hk' : k < e
-          · rw [ite_eq_left hk', ite_eq_left (by omega)]
-          · rw [ite_eq_right hk', ite_eq_right (by omega)]
+          · rw [ite_eq_left hk', ite_eq_left (by omega_arith)]
+          · rw [ite_eq_right hk', ite_eq_right (by omega_arith)]
       · rw [ug _ (by
           simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
           exact ⟨by decide, by decide, (accReg_ne _ (by decide)).symm⟩), t2]
@@ -179,7 +179,7 @@ theorem body_ok {s₀ s : State} {m : Mem} {T : Addr} {idx : Nat → BitVec 64} 
       accReg_ne _ (show Reg.r23 ∈ _ by decide), ite_false]
   · simp only [reduceCtorEq, ↓reduceIte]; rw [BitVec.ofNat_add]
   · simp only [reduceCtorEq, ↓reduceIte]
-    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add_eq _ (show 16 * j + 16 = 16 * (j + 1) by omega)]
+    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add_eq _ (show 16 * j + 16 = 16 * (j + 1) by omega_arith)]
   · simp only [reduceCtorEq, ↓reduceIte]; exact t0
   · simp only [loopRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h4, h2, h3, h5⟩ := hr
@@ -203,7 +203,7 @@ theorem tmp_ne {j : Nat} (hj : j < 256) :
     have : BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 256 ≠ 0 := fun e => by
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this
-      simp at this; omega
+      simp at this; omega_arith
     simpa using this
 
 /-- The scan: `r18 + k` is word `k` of the entry of the table whose number
@@ -218,8 +218,8 @@ theorem scan_ok (s : State) (h : ScanPre s) :
   refine WP.seq (WP.mono (Q := fun s₁ => ScanAt s s.mem T (fun k => s.gpr (idxReg k)) 0 s₁) ?_ fun s₁ h₁ => ?_)
   · c5run [hT]
     refine ⟨fun k hk => ?_, fun k hk => ?_, rfl, ?_, ?_, ⟨?_, rfl, rfl⟩, rfl⟩
-    · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
-    · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> rfl
+    · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
         simp only [acc, Nat.not_lt_zero, ite_false] <;> rfl
     · simp only [reduceCtorEq, ↓reduceIte]; rw [Nat.mul_zero, BitVec.add_zero]
     · simp only [reduceCtorEq, ↓reduceIte]; exact h.zero
@@ -238,6 +238,6 @@ theorem scan_ok (s : State) (h : ScanPre s) :
   · subst he
     refine .inl ⟨by rw [ev]; rfl, fun k hk => ?_, hw.keep, hw.mem⟩
     rw [hw.hacc k hk, acc, ite_eq_left (h.idx k hk), hT]
-  · exact .inr ⟨by rw [ev, decide_eq_false he]; rfl, 256 - (j + 1), by omega, j + 1, rfl, by omega, hw⟩
+  · exact .inr ⟨by rw [ev, decide_eq_false he]; rfl, 256 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hw⟩
 
 end VG.Proof.Cast5.PPC64LE

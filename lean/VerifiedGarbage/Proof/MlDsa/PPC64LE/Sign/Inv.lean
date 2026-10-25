@@ -128,13 +128,13 @@ theorem bytes_keepR {L : Lay} {Wb : List Nat} (hL : OkW L Wb) {W : List (Nat × 
 
 theorem sfit1 {p : Params} {STK : Nat} {σ : State} (hL : OkW (slay1 p STK σ) sWb1) (i : Nat) (hi : i < 5) :
     (slay1 p STK σ).size i ≤ 2 ^ 64 := by
-  have := hL.fit i (by simp only [slay1, List.length_cons, List.length_nil]; omega)
-  omega
+  have := hL.fit i (by simp only [slay1, List.length_cons, List.length_nil]; omega_arith)
+  omega_arith
 
 theorem sfit2 {p : Params} {STK : Nat} {σ : State} (hL : OkW (slay2 p STK σ) sWb2) (i : Nat) (hi : i < 5) :
     (slay2 p STK σ).size i ≤ 2 ^ 64 := by
-  have := hL.fit i (by simp only [slay2, List.length_cons, List.length_nil]; omega)
-  omega
+  have := hL.fit i (by simp only [slay2, List.length_cons, List.length_nil]; omega_arith)
+  omega_arith
 
 theorem SC1.keep {p : Params} {STK : Nat} {σ s s' : State} (h : SC1 p STK σ s) {W : List (Nat × Nat × Nat)}
     (hk : Kept ((slay1 p STK σ).RL W) s s') (hc : sc1Chk p STK W = true) : SC1 p STK σ s' := by
@@ -170,7 +170,7 @@ theorem SC2.keep {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s)
   have hw' : ∀ w ∈ W, w.1 ∈ sWb2 := fun w hw'' => by
     have := List.all_eq_true.mp hw w hw''
     simp only [Bool.or_eq_true, beq_iff_eq] at this
-    simp only [sWb2, List.mem_cons, List.not_mem_nil, or_false]; omega
+    simp only [sWb2, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
   have hd : ∀ r ∈ (slay2 p STK σ).RL W, ((slay2 p STK σ).R 0 840 72).Disjoint r :=
     fun r hr => by
       obtain ⟨w, hw'', rfl⟩ := List.mem_map.mp hr
@@ -197,10 +197,10 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     rw [show (slay1 p STK σ).buf 0 = reg (sScr σ) (scrLen p) from rfl, hp.wr]
     exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
   have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions σ.wr (sScr σ + BitVec.ofNat 64 o) n := fun {o n} h =>
-    Lay.covers (L := slay1 p STK σ) (o := o) (l := n) w0 (by rw [slay1_size0]; omega) _ _
+    Lay.covers (L := slay1 p STK σ) (o := o) (l := n) w0 (by rw [slay1_size0]; omega_arith) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [pro, WP.block_append_iff]
-  refine WP.mono (topSave_ok (.inr rfl) rfl fun o _ h₂ => wS (by omega))
+  refine WP.mono (topSave_ok (.inr rfl) rfl fun o _ h₂ => wS (by omega_arith))
     fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
   have g3 : s₁.gpr .r3 = sSk σ := g₁ _ (by decide)
   have g4 : s₁.gpr .r4 = sMu σ := g₁ _ (by decide)
@@ -231,7 +231,7 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
       (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hin : ∀ {i l : Nat}, i = 2 ∨ i = 3 ∨ i = 4 → l = (slay1 p STK σ).size i →
       bytesAt s.mem ((slay1 p STK σ).A i 0) l = bytesAt σ.mem ((slay1 p STK σ).A i 0) l := fun {i l} hi hl => by
-    have hl' : l ≤ 2 ^ 64 := by rw [hl]; exact sfit1 hL i (by omega)
+    have hl' : l ≤ 2 ^ 64 := by rw [hl]; exact sfit1 hL i (by omega_arith)
     rw [Proof.MlKem.bytesAt_frame fr8 (fun r hr => ?_) hl', Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) hl']
     · rw [List.mem_singleton] at hr; subst hr
       rw [saveR_slay1 p STK σ]
@@ -243,7 +243,7 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
       subst hl
       rcases hi with rfl | rfl | rfl <;> ssep hF [slay1, Lay.size]
   obtain ⟨ek, em, er⟩ := inputs_eq p STK σ
-  refine ⟨⟨⟨hL, rfl, by decide, by decide, by rw [slay1_size0]; omega, rfl, by rw [sp, sp₁]; rfl, hSTK,
+  refine ⟨⟨⟨hL, rfl, by decide, by decide, by rw [slay1_size0]; omega_arith, rfl, by rw [sp, sp₁]; rfl, hSTK,
     by rw [sp, sp₁]; exact hp.stk, g31, g30, g29, g28, fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩,
     rd.trans rd₁, wr.trans wr₁, sp.trans sp₁,
     fun r hr hs => (cs r hr hs).trans (g₁ r (by rintro rfl; simp [preserved] at hr)),
@@ -259,7 +259,7 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     · exact absurd rfl hi1
   · show _ ∈ s.rd ++ s.wr
     rw [rd, rd₁, wr, wr₁, hp.rd, hp.wr]
-    rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, slay1]
+    rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, slay1]
   · rw [m]; exact Mem.readW_writeW_self64 _ _ _
   · rw [hin (i := 2) (l := p.skLen) (.inl rfl) rfl]; exact ek
   · rw [hin (i := 3) (l := 64) (.inr (.inl rfl)) rfl]; exact em

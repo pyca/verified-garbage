@@ -45,7 +45,7 @@ theorem encrypt_eq {s : State} (hp : PreE s) :
   unfold Spec.RsaPkcs1Enc.encrypt pubOut
   simp only [bytesAt_length, zbit_eq_zero]
   by_cases h : (psB s).all (· != 0) = true
-  · rw [ite_eq_left ⟨by omega, by omega, h⟩, ite_eq_left h]
+  · rw [ite_eq_left ⟨by omega_arith, by omega_arith, h⟩, ite_eq_left h]
   · rw [ite_eq_right (fun h' => h h'.2.2), ite_eq_right h]
 
 /-- Writes of the frame above the slots keep `Saves`. -/
@@ -55,7 +55,7 @@ theorem saves_frameW1 {s t w : State} {rs : List Reg} (h : Saves s t) (o : Keep 
   have hd : ∀ {d' k : Nat}, d' + k ≤ oLr + 8 → ∀ r ∈ [(⟨fb s + BitVec.ofNat 64 e, n⟩ : Region)],
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 d', k⟩ r := fun hk r hr => by
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl (by omega)) (by unfold oLr at hk; omega) (by unfold frameBytes at hen; omega)
+    exact Offset.disjoint _ (.inl (by omega_arith)) (by unfold oLr at hk; omega_arith) (by unfold frameBytes at hen; omega_arith)
   exact ⟨o.sp.trans h.sp, o.wr.trans h.wr,
     fun r hr => (o.gpr _ (not_kept hrs (List.mem_append_right _ hr))).trans (h.hi r hr),
     h.sv.frame_in saved_offs hm (hd (by decide)),
@@ -81,9 +81,9 @@ theorem tail_ok {s t : State} (hp : PreE s) (ha : AfterCall s t) :
       o₄.get .r9]
   have hout : ∀ i < (s.gpr .r6).toNat, InRegions (fr s :: s.wr) (s.gpr .r3 + BitVec.ofNat 64 i) 1 :=
     fun i hi => ⟨oR s, List.mem_cons_of_mem _ (by rw [hp.hwr]; simp),
-      Offset.contains_base _ (by rw [hp.ok]; omega) (by have := hp.wo; omega)⟩
+      Offset.contains_base _ (by rw [hp.ok]; omega_arith) (by have := hp.wo; omega_arith)⟩
   have hdo : (kR s).Disjoint ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by rw [← oR_eq hp]; exact hp.ko
-  refine WP.seq (WP.mono (Rec.maskLoop_ok (p := s.gpr .r3) (n := (s.gpr .r6).toNat) (by omega) (by omega)
+  refine WP.seq (WP.mono (Rec.maskLoop_ok (p := s.gpr .r3) (n := (s.gpr .r6).toNat) (by omega_arith) (by omega_arith)
     (by rw [o₆.get .r11, e₅, o₄.get .r28, o₃.get .r28, o₂.get .r28, o₁.get .r28, ha.r28])
     (by rw [e₆, o₅.get .r29, o₄.get .r29, o₃.get .r29, o₂.get .r29, o₁.get .r29, ha.r29]; simp)
     (fun i hi => by rw [sv₆.wr]; exact hout i hi)) fun u ⟨ku, mu⟩ => ?_)
@@ -105,8 +105,8 @@ theorem tail_ok {s t : State} (hp : PreE s) (ha : AfterCall s t) :
     (fun r h => nomatch h)
   have hem : ∀ {i : Nat}, i < (s.gpr .r6).toNat → InRegions (fr s :: s.wr) (emA s + BitVec.ofNat 64 i) 1 :=
     fun hi => by
-      rw [add_ofNat_ofNat]; exact in_fr s _ (by unfold oEM oEM1; omega) (by unfold oEM oEM1 frameBytes; omega)
-  refine WP.seq (WP.mono (fill_ok (p := emA s) (n := (s.gpr .r6).toNat) (b := 0) (by omega) (by omega)
+      rw [add_ofNat_ofNat]; exact in_fr s _ (by unfold oEM oEM1; omega_arith) (by unfold oEM oEM1 frameBytes; omega_arith)
+  refine WP.seq (WP.mono (fill_ok (p := emA s) (n := (s.gpr .r6).toNat) (b := 0) (by omega_arith) (by omega_arith)
     (by rw [p₄.get .r4, p₃.get .r4, f₂, f₁])
     (by rw [p₄.get .r11, f₃, p₂.get .r29, p₁.get .r29, ku.get .r29, o₆.get .r29, o₅.get .r29, o₄.get .r29,
       o₃.get .r29, o₂.get .r29, o₁.get .r29, ha.r29]; simp)
@@ -115,11 +115,11 @@ theorem tail_ok {s t : State} (hp : PreE s) (ha : AfterCall s t) :
   have fr₅ : Frame [⟨fb s + BitVec.ofNat 64 oEM, (s.gpr .r6).toNat⟩] w₄.mem w₅.mem := by
     have h := frame_writeBytes w₄.mem (emA s) (List.replicate (s.gpr .r6).toNat (0 : Byte))
     rw [List.length_replicate] at h; rw [m₅]; exact h
-  have sv₅ : Saves s w₅ := saves_frameW1 svw k₅ (by decide) (by unfold oEM oEM1 frameBytes; omega) fr₅
+  have sv₅ : Saves s w₅ := saves_frameW1 svw k₅ (by decide) (by unfold oEM oEM1 frameBytes; omega_arith) fr₅
   refine WP.mono (restore_ok sv₅) fun w' ⟨habi, h3, hm⟩ => ⟨habi, fun hc => ?_⟩
   have hbytes : Spec.Rsa.bytesAt w'.mem (s.gpr .r3) (s.gpr .r6).toNat = X := by
     rw [hm, Proof.RsaPkcs1Sig.bytes_apart (R := ⟨s.gpr .r3, (s.gpr .r6).toNat⟩) fr₅
-      (hdo.sub_left (em_sub hp)).symm (by dsimp only; omega), P₄.mem, mu, bytes_written hXl (by omega)]
+      (hdo.sub_left (em_sub hp)).symm (by dsimp only; omega_arith), P₄.mem, mu, bytes_written hXl (by omega_arith)]
   have hr : w'.gpr .r3 = t.gpr .r3 &&& maskOf (zbit (psB s) = 0) := by
     rw [h3, k₅.get .r3, P₄.get .r3, ku.get .r3, r3₆]
   rw [freed_mem, freed_gpr, hr, encrypt_eq hp]

@@ -39,16 +39,16 @@ theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K
   apply Vector.ext
   intro i hi
   simp only [Spec.Cast5.scheduleAt, Vector.getElem_ofFn]
-  rw [hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 3 < 128 by omega),
-    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 2 < 128 by omega),
-    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 1 < 128 by omega),
-    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i < 128 by omega)]
+  rw [hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 3 < 128 by omega_arith),
+    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 2 < 128 by omega_arith),
+    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 1 < 128 by omega_arith),
+    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i < 128 by omega_arith)]
 
 /-- Memory holding a table, later: its words are kept by writes apart from it. -/
 theorem held_frame {rs : List Region} {m m' : Mem} {T : Addr} {W : List (BitVec 64)} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨T, 8 * W.length⟩ r) (hl : 8 * W.length < 2 ^ 64) (h : Held m T W) :
     Held m' T W := fun i hi => by
-  rw [hf.readW (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+  rw [hf.readW (Offset.contains_base _ (by omega_arith) (by omega_arith)) hd (by decide)]
   exact h i hi
 
 theorem s1234_len : 8 * Impl.Cast5.s1234.length = 4096 := by rw [Impl.Cast5.s1234, table_length]
@@ -123,7 +123,7 @@ theorem ecb_step {S D T : Addr} {n N : Nat} {up : Bool} {s₀ : State} (L : Loop
         rw [g tbl, L.tbl]
         exact held_frame I.frame dTD (by rw [s1234_len]; decide) L.held
       inP := ⟨_, by rw [I.keep.2.2]; exact L.data, fun off hw => by
-        rw [Offset.add_add]; exact Offset.contains_base D (by omega) (by omega)⟩
+        rw [Offset.add_add]; exact Offset.contains_base D (by omega_arith) (by omega_arith)⟩
       inK := by rw [I.keep.2.1, I.keep.2.2]; exact L.key
       kfit := L.kfit }
   refine WP.seq (WP.mono (crypt_ok bp up) fun u₁ B => ?_)
@@ -131,25 +131,25 @@ theorem ecb_step {S D T : Addr} {n N : Nat} {up : Bool} {s₀ : State} (L : Loop
   have m₃ : u₃.mem = u₁.mem := by rw [h₃.mem, h₂.mem]
   have c₃ : u₃.gpr cnt = BitVec.ofNat 64 (N - (k + 1)) := by
     rw [h₃.gpr, h₂.other _ (by decide), B.keep.gpr (by decide), I.cnt]
-    apply BitVec.eq_of_toNat_eq; simp; omega
+    apply BitVec.eq_of_toNat_eq; simp; omega_arith
   have other : ∀ b, b < N → b ≠ k →
       Spec.Cast5.blockAt u₃.mem (wAt D b) = Spec.Cast5.blockAt u.mem (wAt D b) := fun b hb hne => by
     rw [m₃, blockAt_frame B.frame fun r hr => ?_]
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint D (by omega) (by omega) (by omega)
-  refine ⟨⟨by omega, ?_, c₃, ?_, fun b hb => ?_, fun b h1 h2 => ?_, ?_⟩, c₃⟩
+    exact Offset.disjoint D (by omega_arith) (by omega_arith) (by omega_arith)
+  refine ⟨⟨by omega_arith, ?_, c₃, ?_, fun b hb => ?_, fun b h1 h2 => ?_, ?_⟩, c₃⟩
   · rw [h₃.other _ (by decide), h₂.gpr, B.keep.gpr (by decide), I.ptr, Offset.add_add]
     congr 2
   · exact (((I.keep.trans B.keep).trans h₂.keep).trans h₃.keep).mono (by decide)
   · by_cases hbk : b = k
     · subst hbk
-      rw [m₃, B.blk, hK, I.rest b (by omega) hk]
-    · rw [other b (by omega) hbk]; exact I.done b (by omega)
-  · rw [other b h2 (by omega)]; exact I.rest b (by omega) h2
+      rw [m₃, B.blk, hK, I.rest b (by omega_arith) hk]
+    · rw [other b (by omega_arith) hbk]; exact I.done b (by omega_arith)
+  · rw [other b h2 (by omega_arith)]; exact I.rest b (by omega_arith) h2
   · rw [m₃]
     refine I.frame.trans (B.frame.sub fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_cons_self, Offset.sub_base D (by omega)⟩
+    exact ⟨_, List.mem_cons_self, Offset.sub_base D (by omega_arith)⟩
 
 theorem loop_run {S D T : Addr} {n N : Nat} {up : Bool} {s₀ : State} (L : LoopEnv S D T n N s₀) (hn : 0 < N)
     {u : State} (I : EInv S D n N up s₀ 0 u) :
@@ -159,13 +159,13 @@ theorem loop_run {S D T : Addr} {n N : Nat} {up : Bool} {s₀ : State} (L : Loop
     (fun m v => ∃ k, k < N ∧ m = N - k ∧ EInv S D n N up s₀ k v) ?_ N u ⟨0, hn, rfl, I⟩
   intro m v ⟨k, hk, hm, J⟩
   refine WP.mono (ecb_step L hk J) fun v' ⟨J', hz⟩ => ?_
-  have hn64 : N < 2 ^ 64 := by have := L.fit; omega
-  rw [eval_nonzero, hz, ofNat_bne_zero (by omega)]
+  have hn64 : N < 2 ^ 64 := by have := L.fit; omega_arith
+  rw [eval_nonzero, hz, ofNat_bne_zero (by omega_arith)]
   by_cases e : k + 1 = N
   · left
     exact ⟨by simp [e], e ▸ J'⟩
   · right
-    exact ⟨by simp; omega, N - (k + 1), by omega, k + 1, by omega, rfl, J'⟩
+    exact ⟨by simp; omega_arith, N - (k + 1), by omega_arith, k + 1, by omega_arith, rfl, J'⟩
 
 /-! ## Saving and restoring -/
 
@@ -245,14 +245,14 @@ structure EcbPost (up : Bool) (s s' : State) : Prop where
   lr : s'.lr = s.lr
 
 theorem slot_sub (B : Addr) {d : Nat} (hd : 64 ≤ d ∧ d + 8 ≤ 64 + 144) :
-    Region.Sub ⟨B + BitVec.ofNat 64 d, 8⟩ ⟨B, 256⟩ := Offset.sub_base _ (by omega)
+    Region.Sub ⟨B + BitVec.ofNat 64 d, 8⟩ ⟨B, 256⟩ := Offset.sub_base _ (by omega_arith)
 
 theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
     WP isa (Impl.Cast5.PPC64LE.ecb up) s (EcbPost up s) := by
   have fit := h.fit
   have sfit := h.sfit
   have hw : ∀ p ∈ allSlots, InRegions s.wr (s.gpr .r7 + BitVec.ofNat 64 p.2) 8 := fun p hp =>
-    ⟨_, h.scr, Offset.contains_base _ (by have := allSlots_lt p hp; omega) (by have := allSlots_lt p hp; omega)⟩
+    ⟨_, h.scr, Offset.contains_base _ (by have := allSlots_lt p hp; omega_arith) (by have := allSlots_lt p hp; omega_arith)⟩
   have sub144 : Region.Sub ⟨s.gpr .r7 + BitVec.ofNat 64 64, 144⟩ ⟨s.gpr .r7, 256⟩ := Offset.sub_base _ (by decide)
   unfold Impl.Cast5.PPC64LE.ecb
   apply WP.seq
@@ -264,7 +264,7 @@ theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
   have dB (b : Nat) (hb : b < (s.gpr .r6).toNat) :
       ∀ r ∈ [(⟨s.gpr .r7 + BitVec.ofNat 64 64, 144⟩ : Region)], Region.Disjoint ⟨wAt (s.gpr .r5) b, 8⟩ r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact (h.dataScr.sub_left (Offset.sub_base _ (by omega))).sub_right sub144
+    exact (h.dataScr.sub_left (Offset.sub_base _ (by omega_arith))).sub_right sub144
   have hn := h.nv
   have L : LoopEnv (s.gpr .r3) (s.gpr .r5) (s.syms Impl.Cast5.s1234Sym) (s.gpr .r4).toNat (s.gpr .r6).toNat s₀ :=
     { r3 := g₀ _
@@ -284,7 +284,7 @@ theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
         (by rw [s1234_len]; decide) h.held
       tblData := h.tblData }
   have I0 : EInv (s.gpr .r3) (s.gpr .r5) (s.gpr .r4).toNat (s.gpr .r6).toNat up s₀ 0 s₀ :=
-    ⟨by omega, by rw [g₀ dat]; simp [wAt], by rw [g₀ cnt]; simp, Keep.refl _ _, fun b hb => absurd hb (by omega),
+    ⟨by omega_arith, by rw [g₀ dat]; simp [wAt], by rw [g₀ cnt]; simp, Keep.refl _ _, fun b hb => absurd hb (by omega_arith),
       fun _ _ _ => rfl, Frame.refl _ _⟩
   apply WP.seq
   refine WP.mono (Q := EInv (s.gpr .r3) (s.gpr .r5) (s.gpr .r4).toNat (s.gpr .r6).toNat up s₀
@@ -295,7 +295,7 @@ theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
     · have hn : 0 < (s.gpr .r6).toNat := by
         have : s.gpr .r6 ≠ 0 := by simpa using hz
         have : (s.gpr .r6).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
-        omega
+        omega_arith
       exact loop_run L hn I0
   · rw [epilogue_eq]
     have r7 : u.gpr wkE = s.gpr .r7 := by rw [U.keep.gpr (by decide), g₀ wkE]
@@ -307,7 +307,7 @@ theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
     refine Spill.restore_ok (by decide) r7 restoreSlots_ok (by decide) (fun p hp => ?_) hsv fun s' R => ?_
     · rw [U.keep.2.1, U.keep.2.2, k₀.2.1, k₀.2.2]
       exact ⟨_, List.mem_append_right _ h.scr, Offset.contains_base _
-        (by have := restoreSlots_lt p hp; omega) (by have := restoreSlots_lt p hp; omega)⟩
+        (by have := restoreSlots_lt p hp; omega_arith) (by have := restoreSlots_lt p hp; omega_arith)⟩
     refine WP.cons exec_mtlr (wp_nil ⟨fun b hb => ?_, ?_, fun r hr => ?_, ?_⟩)
     · show Spec.Cast5.blockAt s'.mem _ = _
       rw [R.mem, U.done b hb, scheduleAt_frame fr₀ dS, blockAt_frame fr₀ (dB b hb)]

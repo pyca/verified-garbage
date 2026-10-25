@@ -49,7 +49,7 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
   have hql := hL.ql
   have hpl := hL.pl
   have hbe := hL.buf_end
-  have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega
+  have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_arith
   have e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
   have e8 := Lay.slot_eq L.wp 8; have e9 := Lay.slot_eq L.wp 9; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
@@ -65,7 +65,7 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
   -- `g^k mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := nonce) (p := p) hL
       (hr.keep k12) (hin.keep k12 (by decide))
-      ((hk.keep k12.rd k12.wr).sub (o := L.pl + L.ql) (k := L.pl) (by omega)) b12 (hn.keep k12.rd k12.wr)
+      ((hk.keep k12.rd k12.wr).sub (o := L.pl + L.ql) (k := L.pl) (by omega_arith)) b12 (hn.keep k12.rd k12.wr)
       ((k2.gpr .r24 (by decide)).trans a24) (by rw [hm2]; exact hp0) hp hpo (by rw [hm2]; exact hrr))
     fun s₃ ⟨⟨v4, in3, o3⟩, k3⟩ => ?_)
   rw [hm2] at v4 o3
@@ -78,11 +78,11 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
   have k35 := k4.trans k5
   have hm5 : s₅.mem = s₃.mem := by rw [m5, m4]
   refine WP.mono (storeBE_ok (j := 4) (O := L.Buf) (k := L.pl) (in3.env.keep k35 (by decide)) (by decide)
-    (ScrL.bufN (hs.congr (k13.trans k35).wr) hL (by omega)) ((k5.gpr .r12 (by decide)).trans c12) c6
-    (by omega) (by omega) (combBufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
+    (ScrL.bufN (hs.congr (k13.trans k35).wr) hL (by omega_arith)) ((k5.gpr .r12 (by decide)).trans c12) c6
+    (by omega_arith) (by omega_arith) (combBufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   rw [hm5] at vt ot
   have hplt : p < 2 ^ (8 * L.pl) := by
-    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 32 * (2 * L.wp) by omega]; exact val32_lt _ _ _ _
+    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 32 * (2 * L.wp) by omega_arith]; exact val32_lt _ _ _ _
   have v4' : val32 s₃.mem L.S (slot L.wp 4) (2 * L.wp) = gOf s.mem L key ^ kOf s.mem L nonce % p := v4
   have oP : Outside L.S L.qOff (2 ^ 64 - L.qOff) s₃.mem t.mem := by
     intro x hx
@@ -90,19 +90,19 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
     rcases hx with hx | hx
     · refine ot x ?_
       by_contra hc
-      have := combBufPastP hL x (by simp only [ofs] at hc ⊢; omega)
-      simp only [ofs] at hx this; omega
-    · simp only [ofs] at hx; omega
+      have := combBufPastP hL x (by simp only [ofs] at hc ⊢; omega_arith)
+      simp only [ofs] at hx this; omega_arith
+    · simp only [ofs] at hx; omega_arith
   have kall := (k13.trans k35).trans kt
   refine ⟨⟨?_, ⟨in3.env.keep (k35.trans kt) (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
-      (kall.gpr .r23 (by decide)).trans hin.h23⟩, (Body.ofP hL o3 (by omega) (by omega)).trans (Body.ofBuf hL ot (by omega)),
-    (comb_pbody_keepQ hL (o3.mono (by omega) (by omega))).trans (combBufKeepQ ot (by omega)), ?_, ?_, ?_⟩,
+      (kall.gpr .r23 (by decide)).trans hin.h23⟩, (Body.ofP hL o3 (by omega_arith) (by omega_arith)).trans (Body.ofBuf hL ot (by omega_arith)),
+    (comb_pbody_keepQ hL (o3.mono (by omega_arith) (by omega_arith))).trans (combBufKeepQ ot (by omega_arith)), ?_, ?_, ?_⟩,
     kall.mono (by decide)⟩
-  · rw [vt, read_low (w := L.wp) _ _ (by omega) (by rw [v4']; exact Nat.lt_trans (Nat.mod_lt _ (by omega)) hplt), v4']
+  · rw [vt, read_low (w := L.wp) _ _ (by omega_arith) (by rw [v4']; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hplt), v4']
   · show val32 t.mem L.S (slot L.wp 0) (2 * L.wp) = val32 s.mem L.S (slot L.wp 0) (2 * L.wp)
-    rw [Outside.val32 oP (by omega) (by omega), Outside.val32 o3 (by omega) (by omega)]
+    rw [Outside.val32 oP (by omega_arith) (by omega_arith), Outside.val32 o3 (by omega_arith) (by omega_arith)]
   · show val32 t.mem L.S (slot L.wp 8) (2 * L.wp) = val32 s.mem L.S (slot L.wp 8) (2 * L.wp)
-    rw [Outside.val32 oP (by omega) (by omega), Outside.val32 o3 (by omega) (by omega)]
-  · rw [Outside.word oP (by omega) (by omega), Outside.word o3 (by omega) (by omega)]
+    rw [Outside.val32 oP (by omega_arith) (by omega_arith), Outside.val32 o3 (by omega_arith) (by omega_arith)]
+  · rw [Outside.word oP (by omega_arith) (by omega_arith), Outside.word o3 (by omega_arith) (by omega_arith)]
 
 end VG.Proof.Dsa.PPC64LE

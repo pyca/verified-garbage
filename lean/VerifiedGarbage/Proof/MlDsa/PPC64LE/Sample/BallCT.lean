@@ -99,8 +99,8 @@ theorem body_ct {t : Nat} (ht : t < 264) :
       (BAt σ₂ (t + 1) b ∧ (b.gpr .r6 != 0) = decide (t + 1 ≠ 264)) := by
   have hp₁ := two.p₁.ok
   have hp₂ := two.p₂.ok
-  have hτ₁ : tau σ₁ ≤ 256 := by have := two.p₁.tau_le; omega
-  have hτ₂ : tau σ₂ ≤ 256 := by have := two.p₂.tau_le; omega
+  have hτ₁ : tau σ₁ ≤ 256 := by have := two.p₁.tau_le; omega_arith
+  have hτ₂ : tau σ₂ ≤ 256 := by have := two.p₂.tau_le; omega_arith
   have eP := two.P_eq
   refine relct_wp ?_ fun a b hab => ⟨body_ok hp₁ hτ₁ ht hab.1, body_ok hp₂ hτ₂ ht hab.2⟩
   refine RelCT.seq (R := fun a b => M1 σ₁ t a ∧ M1 σ₂ t b) (relct_wp (relct_noMem rfl) fun a b hab =>
@@ -146,7 +146,7 @@ theorem loop_ct :
       · have : t + 1 ≠ 264 := by
           have e' : (a.gpr .r6 != 0) = true := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨264 - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨264 - (t + 1), by omega_arith, t + 1, by omega_arith, rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 
@@ -157,8 +157,8 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) Impl.MlDsa.PPC64
   have hp₂ := two.p₂.ok
   have eP := two.P_eq
   have hp₂' : SpOk (spOf σ₁) σ₂ := eP ▸ hp₂
-  have hτ₁ : tau σ₁ ≤ 256 := by have := two.p₁.tau_le; omega
-  have hτ₂ : tau σ₂ ≤ 256 := by have := two.p₂.tau_le; omega
+  have hτ₁ : tau σ₁ ≤ 256 := by have := two.p₁.tau_le; omega_arith
+  have hτ₂ : tau σ₂ ≤ 256 := by have := two.p₂.tau_le; omega_arith
   have ez := zx_congr two.r5
   -- the prologue
   refine RelCT.seq (R := fun (a b : State) => (J0 (spOf σ₁) σ₁ a ∧ a.gpr .r27 = zx (σ₁.gpr .r5)) ∧
@@ -205,7 +205,7 @@ theorem pre_of {s : State} (h : (Spec.MlDsa.sampleInBallContract PPC64LE.abi 48)
   obtain ⟨h0, h1, h2, d1, d2, d3, b1, b2, b3, f1, f2, f3, hb⟩ := h
   simp only [Spec.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb
   exact ⟨⟨by rw [h1]; exact List.mem_singleton_self _, h2, d1, d2, d3, b1, b2, b3, (s.gpr .r4).isLt, f2, f3, h0⟩,
-    by simp only [tau]; omega⟩
+    by simp only [tau]; omega_arith⟩
 
 theorem post_of {s₀ s : State}
     (h3 : s.gpr .r3 = (if (ballFold (tau s₀) (X s₀)).2 = 256 then 1 else 0))

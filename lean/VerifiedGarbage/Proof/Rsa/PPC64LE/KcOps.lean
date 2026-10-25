@@ -105,10 +105,10 @@ theorem Stg.ltA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
   rw [h.arrs.get ha, h.arrs.get hb] at hb'
   by_cases hlt : A a < A b
   · have : (t1.gpr .r9).toNat = 1 := by
-      have : ¬ (t1.gpr .r9).toNat = 0 := fun e => by have := hb'.mp e; omega
-      omega
+      have : ¬ (t1.gpr .r9).toNat = 0 := fun e => by have := hb'.mp e; omega_arith
+      omega_arith
     simp [hlt, this]
-  · have : (t1.gpr .r9).toNat = 0 := hb'.mpr (by omega)
+  · have : (t1.gpr .r9).toNat = 0 := hb'.mpr (by omega_arith)
     simp [hlt, this]
 
 /-- `eqA a b`: the mask and'ed with `[a] = [b]`. -/
@@ -142,7 +142,7 @@ theorem cntW_ok {u : State} {B : Addr} {Z w N : Nat} (h : Ws u B Z w N) :
   have e : BitVec.ofNat 64 w <<< 5 = BitVec.ofNat 64 (32 * w) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_arith
   prun [cntW, h.r29, e]
 
 /-- `mulA y x m cnt`: `[aA] := ([y] mod 2^k) [x] mod [m]`, `k` the count `cnt` sets. -/
@@ -202,7 +202,7 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       upd_ne (j := aY) _ _ (Ne.symm hym)]
   refine ⟨num t.mem g.B g.w aA, fun hlt hM => ?_, ?_⟩
   · rw [gZ, gA, gX, gM, gY] at v5
-    rw [v5 rfl (by omega) hlt hM, Nat.zero_add]
+    rw [v5 rfl (by omega_arith) hlt hM, Nat.zero_add]
   · refine h4.next ht k5 (by decide) (by decide) r5 r4opRegs_body ?_
       (fun j hj => (List.mem_cons.mp hj).elim (fun e => by rw [e]; decide) (h.live_lt j))
       (h4.vd_keep k5 (by decide) (by decide)) (h4.mask_keep k5 (by decide))
@@ -254,7 +254,7 @@ theorem Stg.divA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       · rw [upd_ne _ _ (by decide), upd_self]
       have hn := hfree j hj
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-      rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega) (by simp)
+      rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega_arith) (by simp)
         (h.ws.fit64 (h.live_lt j hj)), h2.arrs.get (by simp [hj]), upd_ne _ _ hn.2.2.1, upd_ne _ _ hn.1]
     · intro j hj
       rcases List.mem_cons.mp hj with rfl | hj

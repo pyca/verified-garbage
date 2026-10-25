@@ -67,15 +67,15 @@ theorem phaseE_ok {s : State} {BX O : Addr} {Z oP oQ pL qL wX k Qv H M2 : Nat} {
     change ofs BX x < r.1 ∨ r.1 + r.2 ≤ ofs BX x
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     change ofs BX x < slot wX 2 ∨ slot wX 2 + 6 * (8 * (wX + 2)) ≤ ofs BX x at hx
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only <;> simp only [e] at hx ⊢ <;> omega
-  have hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd => O1.word (Or.inl (by omega)) (by omega)
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only <;> simp only [e] at hx ⊢ <;> omega_arith
+  have hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd => O1.word (Or.inl (by omega_arith)) (by omega_arith)
   have e0 : off BX 0 = BX := BitVec.add_zero BX
   have hO' : s₁.mem.readW BX 64 = off O 0 := by
     have h0 : word s₁.mem BX 0 = off O 0 := (hd 0 (by decide)).trans hO
     rw [← e0]; exact h0
   have ld0 : InRegions (s₁.rd ++ s₁.wr) BX 8 := by
     have e0' : Mont.off BX 0 = BX := BitVec.add_zero BX
-    have := (hs.congr k1.wr).ld (show 0 + 8 ≤ Z by omega); rwa [e0'] at this
+    have := (hs.congr k1.wr).ld (show 0 + 8 ≤ Z by omega_arith); rwa [e0'] at this
   have hK' : s₁.mem.readW (off BX 16) 64 = BitVec.ofNat 64 k := by
     show word s₁.mem BX 16 = _; rw [hd 16 (by decide)]; exact hK
   refine WP.seq (WP.mono (WP.keep [.r10, .r29, .r27, .r28] (Q := fun t =>
@@ -83,11 +83,11 @@ theorem phaseE_ok {s : State} {BX O : Addr} {Z oP oQ pL qL wX k Qv H M2 : Nat} {
       t.gpr .r28 = BitVec.ofNat 64 k ∧ t.mem = s₁.mem) (by
     prun [(k1.gpr .r27 (by decide)).trans h27, (k1.gpr .r28 (by decide)).trans h28,
       (k1.gpr .r23 (by decide)).trans h23, oOut, oNLen, ld0,
-      (hs.congr k1.wr).ld (show 16 + 8 ≤ Z by omega), hO', hK', BitVec.add_zero]) (by decide))
+      (hs.congr k1.wr).ld (show 16 + 8 ≤ Z by omega_arith), hO', hK', BitVec.add_zero]) (by decide))
     fun s₂ ⟨⟨a10, a29, a27, a28, m2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
   refine WP.mono (Pub.output_ok (b := b) (hs.congr k12.wr) (ho.congr k12.wr) a10 a29 a28 a27
-    (by rw [k12.gpr _ (by decide), h26]) hk hkw (by omega) hsepO)
+    (by rw [k12.gpr _ (by decide), h26]) hk hkw (by omega_arith) hsepO)
     fun t ⟨⟨hb, oo, t3⟩, k3⟩ => ⟨⟨?_, t3, ?_⟩, (k12.trans k3).mono⟩
   · cases b
     · simp only [Bool.false_eq_true, ↓reduceIte] at hb ⊢
@@ -95,8 +95,8 @@ theorem phaseE_ok {s : State} {BX O : Addr} {Z oP oQ pL qL wX k Qv H M2 : Nat} {
     · simp only [↓reduceIte] at hb ⊢
       rw [m2] at hb
       exact Pub.out_bytes hkw v4 (hv rfl) hb
-  · refine Pub.frame_two (m₁ := s₂.mem) ?_ oo (by omega)
+  · refine Pub.frame_two (m₁ := s₂.mem) ?_ oo (by omega_arith)
     rw [m2]
-    exact O1.mono (by omega) (by have := slot_le (w := wX) (j := 7) (by decide); simp only [e] at this ⊢; omega)
+    exact O1.mono (by omega_arith) (by have := slot_le (w := wX) (j := 7) (by decide); simp only [e] at this ⊢; omega_arith)
 
 end VG.Proof.Bignum.PPC64LE.Crt

@@ -28,13 +28,13 @@ theorem gcd_ok {s0 u : State} (hn : NOk s0) (h : FF s0 u) (hy : num u.mem (rvB s
       ∃ x, num t.mem (rvB s0) (ww (kK s0)) 1 = Nat.gcd x (nV s0) ∧ (1 ≤ yV s0 → x = yV s0 - 1) := by
   have z := h.base.sz
   have w1 := z.w1
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
-  have hn1 : 1 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
+  have hn1 : 1 < nV s0 := by have := hn.big; omega_arith
   have fit : ∀ j < nArr, arr (ww (kK s0)) j + S (ww (kK s0)) ≤ 2 ^ 64 := fun _ hj => h.ws.fit64 hj
   have nb : nV s0 < 2 ^ (32 * ww (kK s0)) :=
-    Nat.lt_of_lt_of_le nV_lt (Nat.pow_le_pow_right (by decide) (by simp only [ww, wm]; omega))
+    Nat.lt_of_lt_of_le nV_lt (Nat.pow_le_pow_right (by decide) (by simp only [ww, wm]; omega_arith))
   have zA : ∀ {t : State}, FF s0 t → num t.mem (rvB s0) (ww (kK s0)) aZ = 0 := fun f =>
-    val32_zeros fun i hi => f.zZ i (by omega)
+    val32_zeros fun i hi => f.zZ i (by omega_arith)
   rw [WP.seq_iff]
   unfold gcdSet
   -- 1: `y - 1`.
@@ -86,7 +86,7 @@ theorem gcd_ok {s0 u : State} (hn : NOk s0) (h : FF s0 u) (hy : num u.mem (rvB s
   change num u8.mem (rvB s0) (ww (kK s0)) aNM < _ at lt8
   have nm8 : num u8.mem (rvB s0) (ww (kK s0)) aNM + num u8.mem (rvB s0) (ww (kK s0)) aM = 2 ^ (32 * ww (kK s0)) := by
     rw [N kk8 aM (by decide) (by decide), aM7]
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b8 with e | e <;> rw [e] at v8 <;> omega
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b8 with e | e <;> rw [e] at v8 <;> omega_arith
   have bank8 : bank u8.mem (rvB s0) (ww (kK s0)) 0 =
       (num u8.mem (rvB s0) (ww (kK s0)) 0, num u8.mem (rvB s0) (ww (kK s0)) aM, 1, 0) := by
     have e1 : num u8.mem (rvB s0) (ww (kK s0)) 1 = nV s0 := by
@@ -112,6 +112,6 @@ theorem gcd_ok {s0 u : State} (hn : NOk s0) (h : FF s0 u) (hy : num u.mem (rvB s
   have lt1 := val32_lt u1.mem (rvB s0) (arr (ww (kK s0)) 0) (ww (kK s0))
   change num u1.mem (rvB s0) (ww (kK s0)) 0 < _ at lt1
   have yl := yV_lt hn
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b1 with e | e <;> rw [e] at v1 <;> omega
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b1 with e | e <;> rw [e] at v1 <;> omega_arith
 
 end VG.Proof.Rsa.PPC64LE.Recover

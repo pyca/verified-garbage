@@ -33,7 +33,7 @@ theorem stat_one {n : Nat} (hn : n < 2 ^ 60) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this
     have h0 : (0 : BitVec 64).toNat = 0 := rfl
     rw [h0] at this
-    omega
+    omega_arith
 
 /-- `hStat` against 1. -/
 theorem stat1_ok {p : PP} {mb N v : Nat} {s : State} (M : MSt p mb N s) (hv : v < 2 ^ 60)
@@ -57,10 +57,10 @@ theorem tests_ok (R : RoundImpl) {p : PP} {s : State} {c : Nat} (h : St p s)
   have hb1 := h.dims.b1
   have hb2 := h.dims.b2
   have hbq : Spec.RsaKeyGen.bitLength ((c - 1) / 2) = p.bits - 1 := by
-    rw [hc]; exact VG.Proof.Ffdh.ParameterCandidate.half_bitLength (by omega) _
+    rw [hc]; exact VG.Proof.Ffdh.ParameterCandidate.half_bitLength (by omega_arith) _
   have hbp : Spec.RsaKeyGen.bitLength c = p.bits := by
-    rw [hc]; exact (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (by omega) _).1
-  obtain ⟨_, _, hcu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+    rw [hc]; exact (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (by omega_arith) _).1
+  obtain ⟨_, _, hcu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
   rw [← hc] at hcu
   unfold testsSpec tests

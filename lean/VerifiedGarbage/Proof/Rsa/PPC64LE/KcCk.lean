@@ -106,7 +106,7 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
     simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hev; exact hev.2
   have hsat : sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat)) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat) := by
-    unfold sat; omega
+    unfold sat; omega_arith
   rw [hsat] at h24
   simp only [List.cons_append, List.nil_append, List.append_assoc]
   refine prep_ok hp hb (by rw [hr.r15]; exact CrtValues.ofNat_toNat64 _) h24 he'
@@ -119,37 +119,37 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
   -- `n`.
   refine hl _ _ _ _ (by simp) (WP.mono (ldStep_ok l0 (j := aN) (by decide) rfl (rP := .r14) (rL := .r15)
     (by decide) (by decide) (by decide) R0.r14 (by rw [R0.r15]; exact CrtValues.ofNat_toNat64 _)
-    (by omega) (by omega) (by rw [hrd]; simp) dn wn) fun t1 ⟨l1, k1⟩ => ?_)
+    (by omega_arith) (by omega_arith) (by rw [hrd]; simp) dn wn) fun t1 ⟨l1, k1⟩ => ?_)
   have R1 := R0.of_keep k1
   -- `d`.
   refine hl _ _ _ _ (by simp) (WP.mono (ldStep_ok l1 (j := aD) (by decide) rfl (rP := .r16) (rL := .r17)
     (by decide) (by decide) (by decide) R1.r16 (by rw [R1.r17]; exact CrtValues.ofNat_toNat64 _)
-    d1 (by omega) (by rw [hrd]; simp) dd wd) fun t2 ⟨l2, k2⟩ => ?_)
+    d1 (by omega_arith) (by rw [hrd]; simp) dd wd) fun t2 ⟨l2, k2⟩ => ?_)
   have R2 := R1.of_keep k2
   -- `p`.
   refine hl _ _ _ _ (by simp) (WP.mono (ldStep_ok l2 (j := aP) (by decide) rfl (rP := .r18) (rL := .r19)
     (by decide) (by decide) (by decide) R2.r18 (by rw [R2.r19]; exact CrtValues.ofNat_toNat64 _)
-    p1 (by omega) (by rw [hrd]; simp) dpp wp) fun t3 ⟨l3, k3⟩ => ?_)
+    p1 (by omega_arith) (by rw [hrd]; simp) dpp wp) fun t3 ⟨l3, k3⟩ => ?_)
   have R3 := R2.of_keep k3
   -- `q`.
   refine hl _ _ _ _ (by simp) (WP.mono (ldStep_ok l3 (j := aQ) (by decide) rfl (rP := .r20) (rL := .r21)
     (by decide) (by decide) (by decide) R3.r20 (by rw [R3.r21]; exact CrtValues.ofNat_toNat64 _)
-    q1 (by omega) (by rw [hrd]; simp) dq wq) fun t4 ⟨l4, k4⟩ => ?_)
+    q1 (by omega_arith) (by rw [hrd]; simp) dq wq) fun t4 ⟨l4, k4⟩ => ?_)
   have R4 := R3.of_keep k4
   -- `dP`.
   refine hl _ _ _ _ (by simp) (WP.mono (ldStep_ok l4 (j := aDP) (by decide) rfl (rP := .r22) (rL := .r19)
     (by decide) (by decide) (by decide) R4.r22 (by rw [R4.r19]; exact CrtValues.ofNat_toNat64 _)
-    p1 (by omega) (by rw [hrd, edp]; simp) ddp wdp) fun t5 ⟨l5, k5⟩ => ?_)
+    p1 (by omega_arith) (by rw [hrd, edp]; simp) ddp wdp) fun t5 ⟨l5, k5⟩ => ?_)
   have R5 := R4.of_keep k5
   -- `dQ`.
   refine hl _ _ _ _ (by simp) (WP.mono (ldStep_ok l5 (j := aDQ) (by decide) rfl (rP := .r23) (rL := .r21)
     (by decide) (by decide) (by decide) R5.r23 (by rw [R5.r21]; exact CrtValues.ofNat_toNat64 _)
-    q1 (by omega) (by rw [hrd, edq]; simp) ddq wdq) fun t6 ⟨l6, k6⟩ => ?_)
+    q1 (by omega_arith) (by rw [hrd, edq]; simp) ddq wdq) fun t6 ⟨l6, k6⟩ => ?_)
   have R6 := R5.of_keep k6
   -- `qInv`.
   refine hl _ _ _ _ (by simp [start]) (WP.mono (ldStep_ok l6 (j := aQI) (by decide) rfl (rP := .r26)
     (rL := .r19) (by decide) (by decide) (by decide) R6.r26 (by rw [R6.r19]; exact CrtValues.ofNat_toNat64 _)
-    p1 (by omega) (by rw [hrd, eqi]; simp) dqi wqi) fun t7 ⟨l7, k7⟩ => ?_)
+    p1 (by omega_arith) (by rw [hrd, eqi]; simp) dqi wqi) fun t7 ⟨l7, k7⟩ => ?_)
   -- The checks.
   let g : Geo := ⟨ckB s0, ckZ s0, kK s0⟩
   let v : Vals := ⟨Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (s0.gpr .r4).toNat),
@@ -174,7 +174,7 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
     congr 2
     have e := ck_bits (k := kK s0) (w := g.w) hmv hev
       (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2))
-      (by omega) (pow_kw _) hX hR₁ hR₂ hR₃ hY₁ hY₂
+      (by omega_arith) (pow_kw _) hX hR₁ hR₂ hR₃ hY₁ hY₂
     rw [show ckOk s0 = Spec.Rsa.keyValid (kK s0) _ _ _ _ _ _ _ _ by
       simp only [ckOk, Spec.Rsa.checkKey, len_bytes]; rfl, e]
     rfl

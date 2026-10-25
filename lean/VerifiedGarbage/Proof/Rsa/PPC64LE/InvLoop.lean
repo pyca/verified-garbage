@@ -78,7 +78,7 @@ theorem inverseBody_ok {s0 t : State} {B : Addr} {Z w N i : Nat} (hN15 : 15 ≤ 
     have s2 := e2 (by rw [n1, m1, n0, m0]; exact hNM) (by rw [z1, z0]; exact hZ)
       (by rw [m1, m0]; exact I1.x₁_lt) (by rw [m1, m0]; exact I1.x₂_lt)
     rw [m1, m0, s1, prev] at s2
-    rw [m2, s2, show 2 * (i + 1) = 2 * i + 1 + 1 by omega]
+    rw [m2, s2, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith]
     rfl
 
 theorem inverse_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N)
@@ -100,14 +100,14 @@ theorem inverse_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (hN15
     have e : BitVec.ofNat 64 w <<< 5 = BitVec.ofNat 64 (32 * w) := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-      omega
+      omega_arith
     prun [h.r29, e]
   refine WP.mono hl fun s1 ⟨⟨u4, m1⟩, k1⟩ => ?_
   have h1 := h.of_keep k1
   have start : InvLoopI s B Z w N 0 s1 :=
     ⟨h1, by rw [m1]; exact KeyWorkspace.Keep.refl _ _ _ _ _, k1.mono, fun _ _ _ _ _ => by rw [m1]; rfl⟩
   refine WP.mono (wp_countdown (body := .seq (VG.Impl.Rsa.PPC64LE.Keys.invStep 0 4) (.seq (VG.Impl.Rsa.PPC64LE.Keys.invStep 4 0) (.block [.subi .r4 .r4 1])))
-    (cnt := .r4) (N := 32 * w) (by omega) (by omega) (InvLoopI s B Z w N)
+    (cnt := .r4) (N := 32 * w) (by omega_arith) (by omega_arith) (InvLoopI s B Z w N)
     (fun i _ t inv _ => inverseBody_ok hN15 hN inv) start u4) fun t inv => ?_
   refine ⟨inv.ws, inv.keep, inv.regs, fun hNM hZ hodd h1M hst => ?_⟩
   have v := inv.value hNM hZ hodd h1M hst
@@ -116,7 +116,7 @@ theorem inverse_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (hN15
   have hlt : num s.mem B w 0 * num s.mem B w aM < 2 ^ (2 * (32 * w)) := by
     have a0 := val32_lt s.mem B (arr w 0) w
     have aM' := val32_lt s.mem B (arr w aM) w
-    rw [show 2 * (32 * w) = 32 * w + 32 * w by omega, Nat.pow_add]
+    rw [show 2 * (32 * w) = 32 * w + 32 * w by omega_arith, Nat.pow_add]
     exact Nat.mul_lt_mul'' a0 aM'
   have D := VG.Proof.Rsa.invIter_done (a := num s.mem B w 0) (K := 2 * (32 * w)) hodd hlt
   rw [hm] at D

@@ -38,7 +38,7 @@ section
 variable {s : State}
 
 theorem in_a6R {j : Nat} (hj : j < 6) : (a6R s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 theorem arg_rd (hp : PreE s) (rs : List Region) {j : Nat} (hj : j < 6) :
     InRegions (s.rd ++ rs) (stackArgAddr s j) 8 :=
@@ -110,7 +110,7 @@ theorem setup_ok {s u : State} (hp : PreE s) (hsp : u.sp = fb s) (hwr : u.wr = f
       exact ⟨_, List.mem_singleton_self _, Proof.RsaPkcs1Sig.PPC64LE.frame_sub s (d := oEM) (n := 2) (by decide)⟩)
   have hdS : ∀ {d k : Nat}, d + k ≤ oLr + 8 →
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, k⟩ ⟨emA s, 2⟩ := fun hk =>
-    Offset.disjoint _ (.inl (by unfold oLr oEM oEM1 at *; omega)) (by unfold oLr at hk; omega) (by decide)
+    Offset.disjoint _ (.inl (by unfold oLr oEM oEM1 at *; omega_arith)) (by unfold oLr at hk; omega_arith) (by decide)
   refine wp_ld (a := stackArgAddr s 0) (by rw [r12₈, stackArgAddr_fb]) (by rw [rd₈]; exact arg_rd hp _ (by decide))
     fun v₉ o₉ e₉ => wp_addi fun v₁₀ o₁₀ e₁₀ => wp_li (by decide) fun v₁₁ o₁₁ e₁₁ => ?_
   refine wp_ld (a := stackArgAddr s 1) (by rw [o₁₁.get .r12, o₁₀.get .r12, o₉.get .r12, r12₈, stackArgAddr_fb])
@@ -146,7 +146,7 @@ theorem setup_ok {s u : State} (hp : PreE s) (hsp : u.sp = fb s) (hwr : u.wr = f
     sv := by
       rw [mem₁₂]
       exact sv.frame (frame_writeBytes v.mem (emA s) [0x00, 0x02]) fun p hp r hr => by
-        rw [List.mem_singleton.mp hr]; exact hdS (by have := saved_offs p hp; unfold oSave oLr at *; omega)
+        rw [List.mem_singleton.mp hr]; exact hdS (by have := saved_offs p hp; unfold oSave oLr at *; omega_arith)
     ls := by
       rw [mem₁₂, (frame_writeBytes v.mem (emA s) [0x00, 0x02]).readW (Region.contains_self _ _)
         (fun r hr => by rw [List.mem_singleton.mp hr]; exact hdS (by decide)) (by decide)]
@@ -174,58 +174,58 @@ theorem em_ok {s w : State} (hp : PreE s) (hs : Setup s w) {rest : Prog isa} {Q 
     WP isa (.seq psLoop (.seq (.block sep) (.seq msgCopy rest))) w Q := by
   have hk1 := hp.k1; have hk2 := hp.k2; have hml := hp.ml; have hpl := hp.pl
   obtain ⟨M₀, hM₀⟩ := hs.em
-  have hn : 0 < (stackArg s 1).toNat := by omega
+  have hn : 0 < (stackArg s 1).toNat := by omega_arith
   have hdP : (psR s).Disjoint ⟨emA s + BitVec.ofNat 64 2, (stackArg s 1).toNat⟩ := by
     rw [add_ofNat_ofNat]
     exact (hp.kps.sub_left (Proof.RsaPkcs1Sig.PPC64LE.frame_sub s (d := oEM + 2) (n := (stackArg s 1).toNat)
-      (by unfold oEM oEM1 frameBytes; omega))).symm
+      (by unfold oEM oEM1 frameBytes; omega_arith))).symm
   refine WP.seq (WP.mono (psLoop_ok (p := emA s + BitVec.ofNat 64 2) (q := stackArg s 0)
-    (n := (stackArg s 1).toNat) hn (by omega) hs.g4 (by rw [hs.g11, add_ofNat_ofNat]) (by rw [hs.g12]; simp)
+    (n := (stackArg s 1).toNat) hn (by omega_arith) hs.g4 (by rw [hs.g11, add_ofNat_ofNat]) (by rw [hs.g12]; simp)
     (fun j hj => ⟨psR s, List.mem_append_left _ (by rw [hs.rd, hp.hrd]; simp),
-      Offset.contains_base _ (by omega) (by have := hp.wps; omega)⟩)
+      Offset.contains_base _ (by omega_arith) (by have := hp.wps; omega_arith)⟩)
     (fun i hi => by
       rw [hs.wr, add_ofNat_ofNat, add_ofNat_ofNat]
-      exact in_fr s _ (by unfold oEM oEM1; omega) (by unfold oEM oEM1 frameBytes; omega))
-    (fun j hj i hi => Proof.RsaPkcs1Sig.ne_of_disjoint hdP (by omega) (by omega) hj hi))
+      exact in_fr s _ (by unfold oEM oEM1; omega_arith) (by unfold oEM oEM1 frameBytes; omega_arith))
+    (fun j hj i hi => Proof.RsaPkcs1Sig.ne_of_disjoint hdP (by omega_arith) (by omega_arith) hj hi))
     fun y₁ ⟨k₁, m₁, r5₁, r11₁⟩ => ?_)
   have hPS : Spec.Rsa.bytesAt w.mem (stackArg s 0) (stackArg s 1).toNat = psB s :=
-    bytes_of_frame hs.mem hp.kps hp.pss.symm (by have := hp.wps; omega)
+    bytes_of_frame hs.mem hp.kps hp.pss.symm (by have := hp.wps; omega_arith)
   have hl2 : ([(0x00 : Byte), 0x02] ++ psB s).length = 2 + (stackArg s 1).toNat := by
-    simp [bytesAt_length]; omega
+    simp [bytesAt_length]; omega_arith
   have mem₁ : y₁.mem = writeBytes M₀ (emA s) ([0x00, 0x02] ++ psB s) := by
-    rw [m₁, hPS, hM₀, ← writeBytes_append _ _ _ _ (by rw [← List.length_append, hl2]; omega)]
+    rw [m₁, hPS, hM₀, ← writeBytes_append _ _ _ _ (by rw [← List.length_append, hl2]; omega_arith)]
     rfl
   have fr₁ : Frame [⟨fb s + BitVec.ofNat 64 (oEM + 2), (stackArg s 1).toNat⟩] w.mem y₁.mem := by
     have h := frame_writeBytes w.mem (emA s + BitVec.ofNat 64 2)
       (Spec.Rsa.bytesAt w.mem (stackArg s 0) (stackArg s 1).toNat)
     rw [bytesAt_length, add_ofNat_ofNat] at h
     rw [m₁, add_ofNat_ofNat]; exact h
-  have mid₁ : EMid s y₁ := hs.toMid.frameW1 k₁ hp.ksc (by decide) (by unfold oEM oEM1 frameBytes; omega) fr₁
+  have mid₁ : EMid s y₁ := hs.toMid.frameW1 k₁ hp.ksc (by decide) (by unfold oEM oEM1 frameBytes; omega_arith) fr₁
   have b0 : (BitVec.ofNat 64 0).setWidth 8 = (0x00 : Byte) := by decide
   have inEM : ∀ {d n : Nat}, d + n ≤ 1024 → InRegions (fr s :: s.wr) (emA s + BitVec.ofNat 64 d) n :=
-    fun h => by rw [add_ofNat_ofNat]; exact in_fr s _ (by unfold oEM oEM1; omega) (by unfold oEM oEM1 frameBytes; omega)
+    fun h => by rw [add_ofNat_ofNat]; exact in_fr s _ (by unfold oEM oEM1; omega_arith) (by unfold oEM oEM1 frameBytes; omega_arith)
   refine WP.seq (wp_li (by decide) fun y₂ o₂ e₂ =>
     wp_stb (a := emA s + BitVec.ofNat 64 (2 + (stackArg s 1).toNat))
       (by rw [o₂.get .r11, r11₁, BitVec.add_zero, add_ofNat_ofNat])
-      (by rw [o₂.wr, mid₁.wr]; exact inEM (by omega)) fun y₃ m₃ =>
+      (by rw [o₂.wr, mid₁.wr]; exact inEM (by omega_arith)) fun y₃ m₃ =>
     wp_addi fun y₄ o₄ e₄ => wp_addSp fun y₅ o₅ e₅ => wp_nil ?_)
   have hl3 : ([(0x00 : Byte), 0x02] ++ psB s ++ [0x00]).length = 3 + (stackArg s 1).toNat := by
-    simp [bytesAt_length]; omega
+    simp [bytesAt_length]; omega_arith
   have mem₃ : y₃.mem = writeBytes M₀ (emA s) ([0x00, 0x02] ++ psB s ++ [0x00]) := by
-    rw [writeBytes_snoc _ _ _ _ (by omega), hl2, m₃.mem, o₂.mem, mem₁, e₂, b0]
+    rw [writeBytes_snoc _ _ _ _ (by omega_arith), hl2, m₃.mem, o₂.mem, mem₁, e₂, b0]
   have fr₃ : Frame [⟨fb s + BitVec.ofNat 64 (oEM + 2 + (stackArg s 1).toNat), 1⟩] y₁.mem y₃.mem := by
     rw [m₃.mem, o₂.mem]
     exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (by
-      rw [add_ofNat_ofNat, show oEM + (2 + (stackArg s 1).toNat) = oEM + 2 + (stackArg s 1).toNat by omega]
+      rw [add_ofNat_ofNat, show oEM + (2 + (stackArg s 1).toNat) = oEM + 2 + (stackArg s 1).toNat by omega_arith]
       exact Region.contains_self _ _)
-  have mid₃ : EMid s y₃ := mid₁.frameW1 (o₂.keep.trans m₃.keep) hp.ksc (by unfold oLr oEM oEM1; omega)
-    (by unfold oEM oEM1 frameBytes; omega) fr₃
+  have mid₃ : EMid s y₃ := mid₁.frameW1 (o₂.keep.trans m₃.keep) hp.ksc (by unfold oLr oEM oEM1; omega_arith)
+    (by unfold oEM oEM1 frameBytes; omega_arith) fr₃
   have O₅ : Only [.r11, .r12] y₃ y₅ := o₄.trans o₅
   have mid₅ : EMid s y₅ := mid₃.only O₅
   have r12₅ : y₅.gpr .r12 = fb s := by rw [e₅, o₄.sp, m₃.sp, o₂.sp, mid₁.sp, BitVec.add_zero]
   have r11₅ : y₅.gpr .r11 = emA s + BitVec.ofNat 64 (3 + (stackArg s 1).toNat) := by
     rw [o₅.get .r11, e₄, m₃.gpr, o₂.get .r11, r11₁, ofNat_succ', add_ofNat_ofNat,
-      show 2 + ((stackArg s 1).toNat + 1) = 3 + (stackArg s 1).toNat by omega]
+      show 2 + ((stackArg s 1).toNat + 1) = 3 + (stackArg s 1).toNat by omega_arith]
   have r5₅ : y₅.gpr .r5 = zbit (psB s) := by
     rw [O₅.get .r5, m₃.gpr, o₂.get .r5, r5₁, hs.g5, hPS]; simp
   have r10₅ : y₅.gpr .r10 = s.gpr .r10 := by
@@ -249,24 +249,24 @@ theorem em_ok {s w : State} (hp : PreE s) (hs : Setup s w) {rest : Prog isa} {Q 
     have hdM : (mR s).Disjoint ⟨emA s + BitVec.ofNat 64 (3 + (stackArg s 1).toNat), (s.gpr .r10).toNat⟩ := by
       rw [add_ofNat_ofNat]
       exact (hp.km.sub_left (Proof.RsaPkcs1Sig.PPC64LE.frame_sub s (d := oEM + (3 + (stackArg s 1).toNat)) (n := (s.gpr .r10).toNat)
-        (by unfold oEM oEM1 frameBytes; omega))).symm
+        (by unfold oEM oEM1 frameBytes; omega_arith))).symm
     have hM : Spec.Rsa.bytesAt c₃.mem (s.gpr .r9) (s.gpr .r10).toNat = msgB s :=
-      bytes_of_frame midc.mem hp.km hp.ms.symm (by have := hp.wm; omega)
+      bytes_of_frame midc.mem hp.km hp.ms.symm (by have := hp.wm; omega_arith)
     refine WP.mono (copy_ok (p := emA s + BitVec.ofNat 64 (3 + (stackArg s 1).toNat)) (q := s.gpr .r9)
-      (n := (s.gpr .r10).toNat) (by omega) (by omega) (by rw [p₃.get .r4, f₂, p₁.get .r11, r11₅])
+      (n := (s.gpr .r10).toNat) (by omega_arith) (by omega_arith) (by rw [p₃.get .r4, f₂, p₁.get .r11, r11₅])
       (by rw [p₃.get .r7, p₂.get .r7, f₁, r9₅]) (by rw [f₃, p₂.get .r10, p₁.get .r10, r10₅]; simp)
       (fun j hj => ⟨mR s, List.mem_append_left _ (by rw [midc.rd, hp.hrd]; simp),
-        Offset.contains_base _ (by omega) (by have := hp.wm; omega)⟩)
-      (fun i hi => by rw [midc.wr, add_ofNat_ofNat]; exact inEM (by omega))
-      (fun j hj i hi => Proof.RsaPkcs1Sig.ne_of_disjoint hdM (by omega) (by omega) hj hi))
+        Offset.contains_base _ (by omega_arith) (by have := hp.wm; omega_arith)⟩)
+      (fun i hi => by rw [midc.wr, add_ofNat_ofNat]; exact inEM (by omega_arith))
+      (fun j hj i hi => Proof.RsaPkcs1Sig.ne_of_disjoint hdM (by omega_arith) (by omega_arith) hj hi))
       fun c₄ ⟨kc, mc⟩ => k c₄ ⟨?_, ⟨M₀, ?_⟩, ?_, ?_⟩
     · have h := frame_writeBytes c₃.mem (emA s + BitVec.ofNat 64 (3 + (stackArg s 1).toNat))
         (Spec.Rsa.bytesAt c₃.mem (s.gpr .r9) (s.gpr .r10).toNat)
       rw [bytesAt_length, add_ofNat_ofNat] at h
       have h' : Frame [⟨fb s + BitVec.ofNat 64 (oEM + (3 + (stackArg s 1).toNat)), (s.gpr .r10).toNat⟩]
           c₃.mem c₄.mem := by rw [mc, add_ofNat_ofNat]; exact h
-      exact midc.frameW1 kc hp.ksc (by unfold oLr oEM oEM1; omega) (by unfold oEM oEM1 frameBytes; omega) h'
-    · rw [mc, hM, P₃.mem, mem₅, ← hl3, writeBytes_append _ _ _ _ (by simp [bytesAt_length]; omega)]
+      exact midc.frameW1 kc hp.ksc (by unfold oLr oEM oEM1; omega_arith) (by unfold oEM oEM1 frameBytes; omega_arith) h'
+    · rw [mc, hM, P₃.mem, mem₅, ← hl3, writeBytes_append _ _ _ _ (by simp [bytesAt_length]; omega_arith)]
       rfl
     · rw [kc.get .r5, P₃.get .r5, r5₅]
     · rw [kc.get .r12, P₃.get .r12, r12₅]
@@ -294,14 +294,14 @@ structure AtCall (s t : State) : Prop extends EMid s t where
 theorem encode_length {s : State} (hp : PreE s) :
     (Spec.RsaPkcs1Enc.encode (msgB s) (psB s)).length = (s.gpr .r6).toNat := by
   have := hp.ml; have := hp.pl
-  simp [Spec.RsaPkcs1Enc.encode, bytesAt_length]; omega
+  simp [Spec.RsaPkcs1Enc.encode, bytesAt_length]; omega_arith
 
 theorem callArgs_ok {s y : State} (hp : PreE s) (hy : EmDone s y) :
     WP isa (.block callArgs) y (AtCall s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   obtain ⟨M₀, hM₀⟩ := hy.em
   have emb₀ : Spec.Rsa.bytesAt y.mem (emA s) (s.gpr .r6).toNat = Spec.RsaPkcs1Enc.encode (msgB s) (psB s) := by
-    rw [hM₀, bytes_written (encode_length hp) (by omega)]
+    rw [hM₀, bytes_written (encode_length hp) (by omega_arith)]
   unfold callArgs
   have hz : InRegions y.wr (fb s + BitVec.ofNat 64 oZ) 8 := by rw [hy.wr]; exact in_fr s _ (by decide) (by decide)
   refine wp_std (a := fb s + BitVec.ofNat 64 oZ) (by rw [hy.g12]) hz fun y₁ m₁ => ?_
@@ -350,11 +350,11 @@ theorem callArgs_ok {s y : State} (hp : PreE s) (hy : EmDone s y) :
     rw [m₁₁.gpr, o₁₀.gpr r hr, m₉.gpr, o₈.gpr r hr]
   have hd96 : ∀ {d k : Nat}, 112 ≤ d → d + k ≤ frameBytes →
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, k⟩ ⟨fb s + BitVec.ofNat 64 96, 16⟩ := fun h₁ h₂ =>
-    Offset.disjoint _ (.inr (by omega)) (by unfold frameBytes at h₂; omega) (by decide)
+    Offset.disjoint _ (.inr (by omega_arith)) (by unfold frameBytes at h₂; omega_arith) (by decide)
   have hEM : (⟨emA s, (s.gpr .r6).toNat⟩ : Region) = ⟨fb s + BitVec.ofNat 64 oEM, (s.gpr .r6).toNat⟩ := rfl
   have emb₁ : Spec.Rsa.bytesAt y₁.mem (emA s) (s.gpr .r6).toNat = Spec.RsaPkcs1Enc.encode (msgB s) (psB s) := by
     rw [Proof.RsaPkcs1Sig.bytes_apart (R := ⟨emA s, (s.gpr .r6).toNat⟩) fr₁
-      (Offset.disjoint _ (.inr (by decide)) (by unfold oEM oEM1; omega) (by decide)) (by dsimp only; omega), emb₀]
+      (Offset.disjoint _ (.inr (by decide)) (by unfold oEM oEM1; omega_arith) (by decide)) (by dsimp only; omega_arith), emb₀]
   have hdS : ∀ r ∈ [(⟨fb s + BitVec.ofNat 64 96, 16⟩ : Region)],
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 oSave, 32⟩ r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hd96 (by decide) (by decide)
@@ -371,7 +371,7 @@ theorem callArgs_ok {s y : State} (hp : PreE s) (hy : EmDone s y) :
     (by rw [O₁₃.wr, m₁₁.wr, o₁₀.wr, m₉.wr, o₈.wr]) hK hsv hls
   refine ⟨hm, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [O₁₃.mem, Proof.RsaPkcs1Sig.bytes_apart (R := ⟨emA s, (s.gpr .r6).toNat⟩) fr₁₁
-      (hd96 (by decide) (by unfold oEM oEM1 frameBytes; omega)) (by dsimp only; omega), O₇.mem, emb₁]
+      (hd96 (by decide) (by unfold oEM oEM1 frameBytes; omega_arith)) (by dsimp only; omega_arith), O₇.mem, emb₁]
   · have hdZ : ∀ r ∈ [(⟨fb s + BitVec.ofNat 64 96, 16⟩ : Region)],
         Region.Disjoint ⟨fb s + BitVec.ofNat 64 oZ, 64 / 8⟩ r := fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hd96 (by decide) (by decide)
@@ -404,7 +404,7 @@ theorem callArgs_ok {s y : State} (hp : PreE s) (hy : EmDone s y) :
 abbrev emR (s : State) : Region := ⟨emA s, (s.gpr .r6).toNat⟩
 
 theorem em_sub {s : State} (hp : PreE s) : Region.Sub (emR s) (kR s) :=
-  Proof.RsaPkcs1Sig.PPC64LE.frame_sub s (d := oEM) (n := (s.gpr .r6).toNat) (by have := hp.k2; unfold oEM oEM1 frameBytes; omega)
+  Proof.RsaPkcs1Sig.PPC64LE.frame_sub s (d := oEM) (n := (s.gpr .r6).toNat) (by have := hp.k2; unfold oEM oEM1 frameBytes; omega_arith)
 
 theorem oR_eq {s : State} (hp : PreE s) : oR s = ⟨s.gpr .r3, (s.gpr .r6).toNat⟩ := by
   rw [oR, hp.ok]
@@ -432,16 +432,16 @@ theorem pdOk_of {s t : State} (hp : PreE s) (ha : AtCall s t) : PdOk t := by
       we := hp.we
       wi := by
         show (fb s + BitVec.ofNat 64 oEM).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
-        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEM oEM1 frameBytes at *; omega
+        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEM oEM1 frameBytes at *; omega_arith
       ws := hp.wsc }
-  case sp => rw [ha.sp]; unfold frameBytes at hfb; omega
+  case sp => rw [ha.sp]; unfold frameBytes at hfb; omega_arith
   case hrd =>
     simp only [pdRd]
     rw [ha.g5, ha.g6, ha.g7, ha.g8, ha.g9, ha.g10, hsa, ha.rd, ha.wr]
     have hm : ∀ r ∈ s.rd, Covers [r] (s.rd ++ (fr s :: s.wr)) := fun r hr =>
       Covers.left (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; exact hr)
     refine Covers.cons (hm _ (by rw [hp.hrd]; simp)) (Covers.cons (hm _ (by rw [hp.hrd]; simp))
-      (Covers.cons (Covers.one (in_fr' s _ _ (by decide) (by unfold oEM oEM1 frameBytes; omega)))
+      (Covers.cons (Covers.one (in_fr' s _ _ (by decide) (by unfold oEM oEM1 frameBytes; omega_arith)))
         (Covers.one (in_fr' s _ _ (by decide) (by decide)) |>.cons Covers.nil)))
   case hwr =>
     simp only [pdWr]
@@ -493,7 +493,7 @@ theorem call_ok {s t : State} (hp : PreE s) (ha : AtCall s t) : WP isa pubCall t
     · exact hko.sub_left (Proof.RsaPkcs1Sig.PPC64LE.frame_sub s h)
     · exact hp.ksc.sub_left (Proof.RsaPkcs1Sig.PPC64LE.frame_sub s h)
   refine ⟨⟨hsp'.trans ha.sp, hwr'.trans ha.wr, fun r hr => (hpres r (by revert r; decide)).trans (ha.hi r hr),
-    ha.sv.frame hf fun p hp' => hdF (by have := saved_offs p hp'; unfold oSave frameBytes at *; omega),
+    ha.sv.frame hf fun p hp' => hdF (by have := saved_offs p hp'; unfold oSave frameBytes at *; omega_arith),
     by rw [hf.readW (Region.contains_self _ _) (hdF (by decide)) (by decide)]; exact ha.ls⟩,
     hrd'.trans ha.rd, (hpres .r28 (by decide)).trans ha.r28, (hpres .r29 (by decide)).trans ha.r29,
     by rw [hf.readW (Region.contains_self _ _) (hdF (by decide)) (by decide)]; exact ha.slot, fun hc => ?_⟩
@@ -503,7 +503,7 @@ theorem call_ok {s t : State} (hp : PreE s) (ha : AtCall s t) : WP isa pubCall t
   have := hpost (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
     (by rw [ha.g4, bytesAt_length]) (by rw [hw]; exact hc)
   rw [ha.g3, ha.g4, ha.g7, ha.g8, ha.g9, ha.emb,
-    bytes_of_frame ha.mem hp.ke hp.es.symm (by have := hp.we; omega)] at this
+    bytes_of_frame ha.mem hp.ke hp.es.symm (by have := hp.we; omega_arith)] at this
   exact this
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Enc
