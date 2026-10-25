@@ -250,7 +250,8 @@ impl<P, T> TestFile<P, T> {
         target_arch = "aarch64",
         target_arch = "arm",
         target_arch = "x86",
-        all(target_arch = "powerpc64", target_endian = "little")
+        all(target_arch = "powerpc64", target_endian = "little"),
+        target_arch = "riscv64"
     ))]
     pub fn par_tests(&self, f: impl Fn(&TestGroup<P, T>, &Test<T>) + Sync)
     where
@@ -318,7 +319,8 @@ pub fn par_each<I: Sync>(items: &[I], f: impl Fn(&I) + Sync) {
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 #[derive(Default)]
 pub struct Count(AtomicUsize);
@@ -328,7 +330,8 @@ pub struct Count(AtomicUsize);
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 impl Count {
     /// Counts one more.
