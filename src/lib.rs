@@ -132,6 +132,7 @@ pub mod idea_cbc;
 pub mod idea_cfb;
 pub mod idea_ecb;
 pub mod idea_ofb;
+mod invalid_mac;
 pub mod mldsa44;
 pub mod mldsa65;
 pub mod mldsa87;

@@ -50,20 +50,7 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
     fn hmac_mac(key: &[u8], data: &[u8]) -> Self::Output;
 }
 
-/// The MAC did not match: the message or the key is not what was
-/// authenticated. [`crate::cmac`], [`crate::poly1305`] and keyed BLAKE2
-/// ([`crate::hashes::blake2b`], [`crate::hashes::blake2s`]) return this
-/// type too.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct InvalidMac;
-
-impl core::fmt::Display for InvalidMac {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str("MAC does not match")
-    }
-}
-
-impl core::error::Error for InvalidMac {}
+pub use crate::invalid_mac::InvalidMac;
 
 /// An incremental HMAC computation with the hash function `H`.
 #[derive(Clone)]
@@ -352,14 +339,5 @@ mod tests {
         let mut longer = [0u8; 33];
         longer[..32].copy_from_slice(&mac);
         assert_eq!(check(&longer), Err(InvalidMac));
-    }
-
-    /// The error's message (which `crate::error`'s test checks too, on the
-    /// architectures it is built for).
-    #[test]
-    fn invalid_mac_display() {
-        extern crate std;
-        use std::string::ToString;
-        assert_eq!(InvalidMac.to_string(), "MAC does not match");
     }
 }
