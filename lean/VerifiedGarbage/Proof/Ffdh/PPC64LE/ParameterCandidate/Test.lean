@@ -25,7 +25,7 @@ open VG.Proof.MillerRabin.PPC64LE (Env arr RoundImpl)
 theorem top_lt {mb N : Nat} (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (hN3 : 3 ≤ N) :
     2 ^ (64 * (wOf mb - 1)) < N := by
   have hv : N - 1 ≠ 0 := by omega
-  rw [Spec.RsaKeyGen.bitLength, if_neg hv] at hbl
+  rw [Spec.RsaKeyGen.bitLength, ite_eq_right hv] at hbl
   have h1 : 2 ^ (mb - 1) ≤ N - 1 := (Nat.le_log2 hv).mp (by omega)
   have h2 : 2 ^ (64 * (wOf mb - 1)) ≤ 2 ^ (mb - 1) := Nat.pow_le_pow_right (by decide) (by simp only [wOf]; omega)
   omega

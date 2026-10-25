@@ -145,8 +145,8 @@ theorem body_ct (Ri : RoundImpl) (bits : Nat) :
   refine two_ite (fun d u₁ u₂ ⟨σ₁, s₁, p₁, _, ⟨a22, _⟩, _⟩ ⟨σ₂, s₂, p₂, _, ⟨b22, _⟩, _⟩ => ?_) ?_ ?_
   · rw [VG.PPC64LE.eval_zero, VG.PPC64LE.eval_zero, a22, b22, p₁.2.2.2.2.2.2.2.2.2.2.1,
       p₂.2.2.2.2.2.2.2.2.2.2.1]
-  · refine RelCT.seq (two_post (Ψ := E2m bits) (two_taint _ (Pins.of_imp pT fun _ _ h => h.1)
-      (by unfold prep; split <;> taint_decide))
+  · refine RelCT.seq (two_post (Ψ := E2m bits)
+      (by unfold prep; split <;> exact two_taint _ (Pins.of_imp pT fun _ _ h => h.1) (by taint_decide))
       fun d u ⟨h, _⟩ => ?_) ?_
     · obtain ⟨σ, p, b⟩ := h.bin
       exact WP.mono (montPrep_ctx b) fun v ⟨bc, hu, ht, vsp, _⟩ => ⟨σ, p, bc, hu, ht, vsp⟩
