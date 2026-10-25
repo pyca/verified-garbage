@@ -11,7 +11,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::sm3::{vg_sm3_finalize, vg_sm3_init, vg_sm3_update};

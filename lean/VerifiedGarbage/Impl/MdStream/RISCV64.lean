@@ -52,6 +52,15 @@ open VG.Impl.Words.RISCV64
 def initWords (iv : List (BitVec 32)) : Prog isa :=
   .block ((List.range iv.length).flatMap fun k => li32 .t0 iv[k]! ++ storeLE32 .t0 .t1 .a0 (4 * k))
 
+/-- A big-endian length field: the message length in bits (`8 * count`,
+from `s4`), at `s1 + N + 56`; writes only `t1` and `t3`. -/
+def lenBE (N : Nat) : List Instr := .shift .sll .d .t1 .s4 3 :: storeBE 8 .t1 .t3 .s1 (N + 56)
+
+/-- A big-endian digest: the first `n` words of the hash value at `s1`, to
+`s3`; writes only `t1` and `t2`. -/
+def outBE (n : Nat) : List Instr :=
+  (List.range n).flatMap fun k => loadLE32 .t1 .t2 .s1 (4 * k) ++ storeBE 4 .t1 .t2 .s3 (4 * k)
+
 /-- `mv d, n` (`addi d, n, 0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
 
