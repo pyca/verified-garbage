@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 
 /-!
 # ML-KEM on x86-64: several outputs of `PRF₂`

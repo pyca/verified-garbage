@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.MlKem.KPke
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, sampling

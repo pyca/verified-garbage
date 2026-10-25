@@ -7,7 +7,6 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub

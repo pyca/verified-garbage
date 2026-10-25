@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
 # ML-KEM on x86-64: `Sample4.sampleP`, two outputs of `PRF₂` in the fourth state

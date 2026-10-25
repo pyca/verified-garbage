@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Correct
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the signing functions on `μ` it calls

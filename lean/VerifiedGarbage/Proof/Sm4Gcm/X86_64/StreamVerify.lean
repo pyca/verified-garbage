@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
 
 /-!
 # SM4-GCM on x86-64: `vg_sm4_gcm_stream_verify`

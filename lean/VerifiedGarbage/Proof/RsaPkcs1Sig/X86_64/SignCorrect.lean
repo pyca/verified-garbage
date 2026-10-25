@@ -6,9 +6,6 @@ import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!

@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4`, sampling

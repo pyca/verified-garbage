@@ -14,26 +14,13 @@ meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
-import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes

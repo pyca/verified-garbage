@@ -27,20 +27,10 @@ meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
 import VerifiedGarbage.Proof.Argon2.SegmentStart
 meta import VerifiedGarbage.Proof.Argon2.SegmentStart
 import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
-import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Argon2.Reference
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
-import VerifiedGarbage.Proof.Argon2.X86_64.Mix
-import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
 meta import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Argon2.Reference

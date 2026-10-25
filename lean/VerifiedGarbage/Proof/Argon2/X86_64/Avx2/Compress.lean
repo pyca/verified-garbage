@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Argon2.Permutation
 meta import VerifiedGarbage.Proof.Argon2.Permutation
-import VerifiedGarbage.Impl.Poly1305.X86_64
 meta import VerifiedGarbage.Impl.Poly1305.X86_64
 
 /-!

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 
 /-!
 # AES-GCM `seal_split` on x86-64: the whole groups in one pass

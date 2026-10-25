@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: constant time, and `Verified`

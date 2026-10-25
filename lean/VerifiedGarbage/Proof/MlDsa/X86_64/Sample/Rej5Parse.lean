@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.MlKem.KPke
 
 @[expose] public section
 

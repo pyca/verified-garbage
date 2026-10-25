@@ -12,7 +12,6 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Impl.AesGcm.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.TCB.X86_64.Isa

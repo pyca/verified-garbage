@@ -1,12 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Impl.MlKem.X86_64.Common
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.MlKem.Mem16
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the layout

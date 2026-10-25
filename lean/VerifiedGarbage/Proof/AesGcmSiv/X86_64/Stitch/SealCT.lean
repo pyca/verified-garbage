@@ -11,7 +11,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

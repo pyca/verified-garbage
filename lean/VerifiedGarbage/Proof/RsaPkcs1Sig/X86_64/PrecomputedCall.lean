@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 @[expose] public section
 

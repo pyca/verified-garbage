@@ -14,7 +14,6 @@ import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sha3.Arith
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key with 16-bit polynomials, the fragments

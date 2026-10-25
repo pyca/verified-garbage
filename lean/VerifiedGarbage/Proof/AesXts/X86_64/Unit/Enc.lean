@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
 import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
 import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.AesXts.X86_64.Steps
 
 /-!
 # XTS-AES of data units on x86-64: encryption

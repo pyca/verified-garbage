@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64: correctness

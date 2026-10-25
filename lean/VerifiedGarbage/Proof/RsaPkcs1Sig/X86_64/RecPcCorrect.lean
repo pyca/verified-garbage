@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcTail
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: correctness

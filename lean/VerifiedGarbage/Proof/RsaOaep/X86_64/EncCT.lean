@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 meta import VerifiedGarbage.Spec.RsaPkcs1Sig
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub

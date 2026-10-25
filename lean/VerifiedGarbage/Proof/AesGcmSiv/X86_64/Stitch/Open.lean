@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Siv.Spec
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_open` with the interleaved loop

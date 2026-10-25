@@ -16,8 +16,6 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Impl.AesGcm.X86_64

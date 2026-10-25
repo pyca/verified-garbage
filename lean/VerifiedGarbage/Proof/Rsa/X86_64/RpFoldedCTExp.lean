@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTLoop
 import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPrepare
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCT7
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTLoop
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPrepare

@@ -14,11 +14,8 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 
 /-!
 # RSAES-OAEP decryption on x86-64: the decoding

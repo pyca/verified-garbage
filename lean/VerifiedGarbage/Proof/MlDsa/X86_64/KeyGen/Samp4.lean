@@ -6,6 +6,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 
 /-!
 # ML-DSA key generation on x86-64: four entries of `Â` at a time

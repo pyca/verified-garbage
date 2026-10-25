@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
-import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract

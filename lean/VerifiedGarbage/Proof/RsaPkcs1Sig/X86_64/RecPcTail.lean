@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: after the call
