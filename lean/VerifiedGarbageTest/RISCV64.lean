@@ -37,6 +37,13 @@ def reg (i : Instr) : Option (BitVec 64) := (exec i s0).map (·.gpr .a4)
 #guard reg (.logic .and .a4 .a1 .a3) == some 0x8000000100000001
 #guard reg (.logic .or .a4 .a1 .a2) == some 0x80000001f0000005
 #guard reg (.logic .xor .a4 .a1 .a3) == some 0x7ffffffef1234566
+-- Multiplies: the low 64 bits of the product, and the high 64 bits of the
+-- unsigned product (`a1` and `a3` have their top bits set, so a signed
+-- `mulh` would differ).
+#guard reg (.mul .a4 .a1 .a3) == some 0x9234567691234567
+#guard reg (.mulhu .a4 .a1 .a3) == some 0x800000017091a2b2
+#guard reg (.mulhu .a4 .a3 .a2) == some 0x3
+#guard reg (.mul .a4 .a3 .a2) == some 0xfffffffc048d159c
 -- 32-bit arithmetic: the low words, the result sign-extended.
 #guard reg (.addw .a4 .a1 .a3) == some 0xfffffffff1234568
 #guard reg (.subw .a4 .a2 .a1) == some 0x10000003

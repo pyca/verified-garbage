@@ -89,6 +89,13 @@ theorem exec_subw {s : State} {d n m : Reg} :
 theorem exec_sltu {s : State} {d n m : Reg} :
     exec (.sltu d n m) s = some (s.write d (if s.gpr n < s.gpr m then 1 else 0)) := rfl
 
+theorem exec_mul {s : State} {d n m : Reg} :
+    exec (.mul d n m) s = some (s.write d (s.gpr n * s.gpr m)) := rfl
+
+theorem exec_mulhu {s : State} {d n m : Reg} :
+    exec (.mulhu d n m) s =
+      some (s.write d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64))) := rfl
+
 theorem exec_logic {op : LogicOp} {s : State} {d n m : Reg} :
     exec (.logic op d n m) s = some (s.write d (match op with
       | .and => s.gpr n &&& s.gpr m | .or => s.gpr n ||| s.gpr m

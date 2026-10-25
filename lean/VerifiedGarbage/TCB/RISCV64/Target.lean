@@ -7,7 +7,8 @@ public import VerifiedGarbage.TCB.Artifact
 # The 64-bit RISC-V target (LP64 integer calling convention)
 
 **Trusted.** Functions are emitted as Rust `extern "C"` naked functions,
-compiled for little-endian `riscv64`, whose C calling convention is the
+compiled for little-endian `riscv64` with the M extension (the model's
+multiplies, see `Isa.lean`), whose C calling convention is the
 RISC-V ELF psABI's (RISC-V ABIs Specification, Version 1.0, "RISC-V Calling
 Conventions"): its integer
 calling convention, which every RV64 ABI (LP64, LP64F, LP64D, LP64Q; the
@@ -102,7 +103,7 @@ abbrev target : Target where
   isa := isa
   printer := printer
   abiPreserved := abiPreserved
-  rustCfg := "all(target_arch = \"riscv64\", target_endian = \"little\")"
+  rustCfg := "all(target_arch = \"riscv64\", target_endian = \"little\", target_feature = \"m\")"
   rustAbi := "C"
   abi := abi
 
