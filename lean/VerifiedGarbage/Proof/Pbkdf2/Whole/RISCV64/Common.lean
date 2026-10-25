@@ -60,6 +60,7 @@ structure FnsOK (F : Fns) where
     ∃ t s', Exec isa F.itC s t s' ∧ abiPreserved s s' ∧ (iterK hH.SH F.itW).post s s'
   itCt : ConstantTime isa (iterK hH.SH F.itW).pre (iterK hH.SH F.itW).pub F.itC
   itNf : F.itC.noFrames = true
+  itW0 : 0 < F.itW
   /-- The frames are within what `alloc` reaches. -/
   itB : F.itB < 2048
   frB : F.frB < 2048
