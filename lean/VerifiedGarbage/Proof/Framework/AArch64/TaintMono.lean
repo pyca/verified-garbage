@@ -156,6 +156,18 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : taint.le τ σ = true) (hs : 
     case dup a d n =>
       simp only [step, Option.some.injEq] at hs; subst hs
       exact ⟨_, rfl, le_iff.mpr ⟨h.1, setV_mono h.2 d (Taint.pub_mono h.1)⟩⟩
+    case add a d n m =>
+      simp only [step, Option.some.injEq] at hs; subst hs
+      refine ⟨_, rfl, le_iff.mpr ⟨h.1, setV_mono h.2 d ?_⟩⟩
+      intro hp
+      simp only [Bool.and_eq_true] at hp ⊢
+      exact ⟨RegSet.mem_mono h.2 hp.1, RegSet.mem_mono h.2 hp.2⟩
+    case sub a d n m =>
+      simp only [step, Option.some.injEq] at hs; subst hs
+      refine ⟨_, rfl, le_iff.mpr ⟨h.1, setV_mono h.2 d ?_⟩⟩
+      intro hp
+      simp only [Bool.and_eq_true] at hp ⊢
+      exact ⟨RegSet.mem_mono h.2 hp.1, RegSet.mem_mono h.2 hp.2⟩
   | umov sz d n k =>
     simp only [step, Option.some.injEq] at hs; subst hs
     exact ⟨_, rfl, le_iff.mpr ⟨Taint.set_mono h.1 d (RegSet.mem_mono h.2), h.2⟩⟩
@@ -166,11 +178,11 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : taint.le τ σ = true) (hs : 
 
 theorem le_refl (τ : T) : taint.le τ τ = true := le_iff.mpr ⟨RegSet.subset_refl _, RegSet.subset_refl _⟩
 
-/-- What of the vector registers `F` an instruction keeps public: a `dup` and
-an `ldrqTbl` all but its destination, a `umov` and a scalar instruction all of them, any other
+/-- What of the vector registers `F` an instruction keeps public: `dup`, `add`,
+`sub` and `ldrqTbl` all but their destination, a `umov` and a scalar instruction all of them, any other
 instruction none. -/
 def vkeeps (F : RegSet VReg) : Instr → Bool
-  | .vop (.dup _ d _) | .ldrqTbl d .. => !F.mem d
+  | .vop (.dup _ d _) | .vop (.add _ d ..) | .vop (.sub _ d ..) | .ldrqTbl d .. => !F.mem d
   | .umov .. => true
   | i => scalar i
 
@@ -216,6 +228,24 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keeps F i = true) (hΦF :
   | vop op =>
     cases op
     case dup a d n =>
+      simp only [step, Option.some.injEq] at hs; subst hs
+      refine le_iff.mpr ⟨hΦ', ?_⟩
+      rcases hk' with h0 | hv
+      · exact vec_sub hΦF h0 _
+      · simp only [vkeeps, Bool.not_eq_true'] at hv
+        unfold setV; split
+        · exact RegSet.subset_insert_of hΦv d
+        · exact RegSet.subset_erase_of (le_iff.mp hΦF).2 hΦv hv
+    case add a d n m =>
+      simp only [step, Option.some.injEq] at hs; subst hs
+      refine le_iff.mpr ⟨hΦ', ?_⟩
+      rcases hk' with h0 | hv
+      · exact vec_sub hΦF h0 _
+      · simp only [vkeeps, Bool.not_eq_true'] at hv
+        unfold setV; split
+        · exact RegSet.subset_insert_of hΦv d
+        · exact RegSet.subset_erase_of (le_iff.mp hΦF).2 hΦv hv
+    case sub a d n m =>
       simp only [step, Option.some.injEq] at hs; subst hs
       refine le_iff.mpr ⟨hΦ', ?_⟩
       rcases hk' with h0 | hv

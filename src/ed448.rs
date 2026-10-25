@@ -20,7 +20,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-#[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+#[cfg(target_arch = "aarch64")]
 use crate::arch::ed448::{
     VG_ED448_PUBLIC_KEY_SHA3_FEATURES, VG_ED448_SIGN_CACHED_SHA3_FEATURES,
     VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_sha3, vg_ed448_sign_cached_sha3,
@@ -73,7 +73,7 @@ fn backend() -> Backend {
 /// functions use, if the CPU has the features of every instance calling it.
 #[cfg(not(target_arch = "x86_64"))]
 fn backend() -> Backend {
-    #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+    #[cfg(target_arch = "aarch64")]
     if !crate::cpu::detected().contains(
         const {
             crate::cpu::Features::all(&[
@@ -152,7 +152,7 @@ impl VerifyingKey {
             Backend::Scalar => vg_ed448_verify,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ed448_verify_adx,
-            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+            #[cfg(target_arch = "aarch64")]
             Backend::Sha3 => vg_ed448_verify_sha3,
         };
         // SAFETY: the input references are valid for their declared lengths,
@@ -215,7 +215,7 @@ impl SigningKey {
                 Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
                 #[cfg(target_arch = "x86_64")]
                 Backend::Adx => vg_ed448_public_key_adx(&mut public, seed, &mut scratch),
-                #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_ed448_public_key_sha3(&mut public, seed, &mut scratch),
             }
         };
@@ -264,7 +264,7 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
         Backend::Scalar => vg_ed448_sign_cached,
         #[cfg(target_arch = "x86_64")]
         Backend::Adx => vg_ed448_sign_cached_adx,
-        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+        #[cfg(target_arch = "aarch64")]
         Backend::Sha3 => vg_ed448_sign_cached_sha3,
     };
     // SAFETY: the input references are valid for their declared lengths.

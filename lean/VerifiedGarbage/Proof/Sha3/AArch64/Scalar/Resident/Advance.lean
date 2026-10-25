@@ -41,21 +41,22 @@ theorem advance_ok (s : State) (p : Addr) (n r : Nat) (hr : r ≤ n)
       vdword (s'.v .v20) 0 = BitVec.ofNat 64 (n - r) ∧
       isa.eval (.zero .x .x26) s' = some (decide (r ≤ n - r)) := by
   unfold advance
-  refine WP.cons (Sha3.Vector.exec_umov_low s .x26 .v19) (WP.cons (Sha3.Vector.exec_umov_low _ .x27 .v20)
-    (WP.cons (Sha3.Vector.exec_umov_low _ .x28 .v21) (WP.cons rfl (WP.cons rfl (WP.cons rfl
-      (WP.cons rfl (WP.cons rfl (WP.cons (exec_lsr_x (by decide)) (wp_nil ?_)))))))))
+  refine WP.cons rfl (WP.cons rfl
+    (WP.cons (Sha3.Vector.exec_umov_low _ .x27 .v20)
+      (WP.cons (Sha3.Vector.exec_umov_low _ .x28 .v21)
+        (WP.cons rfl (WP.cons (exec_lsr_x (by decide)) (wp_nil ?_))))))
   have hsub : BitVec.ofNat 64 n - BitVec.ofNat 64 r = BitVec.ofNat 64 (n - r) :=
     VG.Proof.Sha3.sub_ofNat hr
   refine ⟨⟨fun q h26 h27 h28 => ?_, fun q h19 h20 => ?_, rfl, rfl, rfl, rfl⟩, ?_, ?_, ?_⟩
   · simp only [RegUpd.gpr_write, RegUpd.gpr_setV, h26, h27, h28, ite_false]
   · simp only [RegUpd.v_write, RegUpd.v_setV, h19, h20, ite_false]
-  · simp only [RegUpd.v_write, RegUpd.v_setV, reduceCtorEq, ite_true, ite_false, vdword_ofVDwords_0,
+  · simp only [RegUpd.v_write, RegUpd.v_setV, reduceCtorEq, ite_true, ite_false, VArr.map2, vdword_ofVDwords_0,
       RegUpd.gpr_write, RegUpd.gpr_setV, State.read, Size.bits, BitVec.setWidth_eq, h19, h21]
-  · simp only [RegUpd.v_write, RegUpd.v_setV, reduceCtorEq, ite_true, ite_false, vdword_ofVDwords_0,
+  · simp only [RegUpd.v_write, RegUpd.v_setV, reduceCtorEq, ite_true, ite_false, VArr.map2, vdword_ofVDwords_0,
       RegUpd.gpr_write, RegUpd.gpr_setV, State.read, Size.bits, BitVec.setWidth_eq, h20, h21, hsub]
-  · simp only [eval_zero, RegUpd.gpr_write_self, RegUpd.gpr_write, RegUpd.gpr_setV, RegUpd.v_write,
-      reduceCtorEq, ite_false, State.read, Size.bits, BitVec.setWidth_eq,
-      h20, h21, hsub]
+  · simp only [eval_zero, RegUpd.gpr_write_self, RegUpd.gpr_write, RegUpd.v_write, RegUpd.v_setV,
+      reduceCtorEq, ite_true, ite_false, State.read, Size.bits, BitVec.setWidth_eq,
+      VArr.map2, vdword_ofVDwords_0, h20, h21, hsub]
     congr 1
     apply Bool.eq_iff_iff.mpr
     rw [beq_iff_eq, decide_eq_true_eq, Sha3.Vector.enough_iff (n - r) r (by omega) hrb]

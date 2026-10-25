@@ -23,8 +23,8 @@
 //! can never choose code the CPU cannot run, and it names only features
 //! this library knows and the CPU has: anything else panics, rather than
 //! quietly testing another configuration. On AArch64, standalone hashing
-//! chooses FEAT_SHA3's Keccak only when this variable names `sha3`, since
-//! it is not faster there. ML-DSA and ML-KEM independently select their paired
+//! chooses FEAT_SHA3's Keccak on non-Apple targets only when this variable
+//! names `sha3`, since it is not faster there. ML-DSA and ML-KEM independently select their paired
 //! SHA3 implementations whenever the detected features support them.
 
 // No RISC-V module chooses among implementations yet, so detection is only

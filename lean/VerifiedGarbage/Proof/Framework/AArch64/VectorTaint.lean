@@ -7,7 +7,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 # Public scalar values held in vector registers
 
 Memory remains secret. DUP can preserve a public GPR in a whole vector,
-and UMOV recovers a public scalar from a public vector. Other SIMD
+and UMOV recovers a public scalar from a public vector. ADD and SUB preserve
+publicity when both input vectors are public. Other SIMD
 operations and vector loads conservatively erase all vector publicity.
 -/
 
@@ -38,6 +39,8 @@ def afterV (τ : RegSet VReg) (i : Instr) : RegSet VReg :=
 
 def step (τ : T) : Instr → Option T
   | .vop (.dup _ d n) => some (τ.1, setV τ.2 d (Taint.pub τ.1 n))
+  | .vop (.add _ d n m) | .vop (.sub _ d n m) =>
+    some (τ.1, setV τ.2 d (τ.2.mem n && τ.2.mem m))
   | .umov _ d n _ => some (Taint.set τ.1 d (τ.2.mem n), τ.2)
   -- Words of a table of constants, the same in every run: public. Its
   -- offset in the table, an immediate, is observed.
@@ -105,6 +108,22 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
         subst e₁; subst e₂
         refine ⟨rfl, ⟨ha.1.1, ha.1.2⟩, vectors_set ha.2 d ?_⟩
         intro hp; rw [ha.1.reg hp]
+    case add a d n m =>
+      simp only [step, Option.some.injEq] at hs; subst hs
+      simp only [exec, VOp.eval, Option.map_some, Option.some.injEq] at e₁ e₂
+      subst e₁; subst e₂
+      refine ⟨rfl, ⟨ha.1.1, ha.1.2⟩, vectors_set ha.2 d ?_⟩
+      intro hp
+      simp only [Bool.and_eq_true] at hp
+      rw [ha.2 n hp.1, ha.2 m hp.2]
+    case sub a d n m =>
+      simp only [step, Option.some.injEq] at hs; subst hs
+      simp only [exec, VOp.eval, Option.map_some, Option.some.injEq] at e₁ e₂
+      subst e₁; subst e₂
+      refine ⟨rfl, ⟨ha.1.1, ha.1.2⟩, vectors_set ha.2 d ?_⟩
+      intro hp
+      simp only [Bool.and_eq_true] at hp
+      rw [ha.2 n hp.1, ha.2 m hp.2]
   | umov sz d n k =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂

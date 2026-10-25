@@ -29,7 +29,7 @@ use crate::arch::sha3::vg_keccak_absorb_scratch;
 #[cfg(target_arch = "aarch64")]
 use core::mem::MaybeUninit;
 
-#[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+#[cfg(target_arch = "aarch64")]
 use crate::arch::sha3::{
     VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES, VG_KECCAK_PAD_SHA3_FEATURES,
     VG_KECCAK_SQUEEZE_SHA3_FEATURES, vg_keccak_absorb_scratch_sha3, vg_keccak_pad_sha3,
@@ -40,42 +40,59 @@ use crate::arch::sha3::{
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     Scalar,
-    #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+    #[cfg(target_arch = "aarch64")]
     Sha3,
 }
 
 impl Backend {
     pub(crate) fn detected() -> Self {
-        // FEAT_SHA3's Keccak is not faster than the scalar code, so it is
-        // chosen only to test it: with `cpu-features-env`, when
-        // `VG_CPU_FEATURES` names `sha3` and the CPU has it.
+        // Apple's SHA-3 instructions beat the scalar permutation. Neoverse
+        // N2 is faster with scalar code; explicit feature requests retain
+        // access to the hardware implementation for testing.
         #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
         {
             static BACKEND: std::sync::OnceLock<Backend> = std::sync::OnceLock::new();
             *BACKEND.get_or_init(|| {
-                let features = crate::cpu::detected();
                 let requested = std::env::var("VG_CPU_FEATURES")
                     .unwrap_or_default()
                     .split(',')
                     .any(|name| name == "sha3");
-                if requested
-                    && features.contains(
-                        const {
-                            crate::cpu::Features::all(&[
-                                VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES,
-                                VG_KECCAK_PAD_SHA3_FEATURES,
-                                VG_KECCAK_SQUEEZE_SHA3_FEATURES,
-                            ])
-                        },
-                    )
-                {
-                    return Self::Sha3;
-                }
-                Self::Scalar
+                Self::select(
+                    crate::cpu::detected(),
+                    cfg!(target_vendor = "apple"),
+                    requested,
+                )
             })
         }
-        #[cfg(not(all(target_arch = "aarch64", feature = "cpu-features-env")))]
+        #[cfg(all(target_arch = "aarch64", not(feature = "cpu-features-env")))]
+        {
+            if cfg!(target_vendor = "apple") {
+                Self::select(crate::cpu::detected(), true, false)
+            } else {
+                Self::Scalar
+            }
+        }
+        #[cfg(not(target_arch = "aarch64"))]
         Self::Scalar
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    fn select(features: crate::cpu::Features, apple: bool, requested: bool) -> Self {
+        if (apple || requested)
+            && features.contains(
+                const {
+                    crate::cpu::Features::all(&[
+                        VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES,
+                        VG_KECCAK_PAD_SHA3_FEATURES,
+                        VG_KECCAK_SQUEEZE_SHA3_FEATURES,
+                    ])
+                },
+            )
+        {
+            Self::Sha3
+        } else {
+            Self::Scalar
+        }
     }
 }
 
@@ -145,7 +162,7 @@ impl<const RATE: usize> Sponge<RATE> {
                     data.len(),
                     scratch.as_mut_ptr(),
                 ),
-                #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_absorb_scratch_sha3(
                     &mut self.state,
                     RATE,
@@ -170,7 +187,7 @@ impl<const RATE: usize> Sponge<RATE> {
         unsafe {
             match backend {
                 Backend::Scalar => vg_keccak_pad(&mut self.state, RATE, self.pos, suffix),
-                #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_pad_sha3(&mut self.state, RATE, self.pos, suffix),
             }
         };
@@ -222,7 +239,7 @@ impl<const RATE: usize> Squeezer<RATE> {
                 Backend::Scalar => {
                     vg_keccak_squeeze(&mut self.state, RATE, self.pos, out.as_mut_ptr(), out.len())
                 }
-                #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_squeeze_sha3(
                     &mut self.state,
                     RATE,
@@ -395,6 +412,29 @@ shake!(
 mod tests {
     use super::{Sha3_224, Sha3_256, Sha3_384, Sha3_512, Shake128, Shake256};
     use crate::hashes::HashFunction;
+
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn backend_selection() {
+        use super::Backend;
+        use crate::cpu::Features;
+        for apple in [false, true] {
+            for requested in [false, true] {
+                assert_eq!(
+                    Backend::select(Features::of(&[]), apple, requested),
+                    Backend::Scalar
+                );
+                assert_eq!(
+                    Backend::select(Features::of(&["sha3"]), apple, requested),
+                    if apple || requested {
+                        Backend::Sha3
+                    } else {
+                        Backend::Scalar
+                    }
+                );
+            }
+        }
+    }
 
     /// Every way of splitting a message into two updates, or into single
     /// bytes after the split, gives the same digest as one update, for
