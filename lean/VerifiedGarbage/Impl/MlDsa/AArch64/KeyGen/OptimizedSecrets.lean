@@ -20,7 +20,7 @@ def secretSeedSlot (r k : Nat) : List Instr :=
  setB (sc (1408+66*k+64)) (r+k) ++ setB (sc (1408+66*k+65)) 0
 
 def boundedFourSymbol (c : Impl.Sha3.AArch64.Callee) (η : Nat) : String :=
- "vg_mldsa_rej_bounded_poly4_eta"++toString η++(if c.pairedSha3 then "_sha3" else "")
+ "vg_mldsa_rej_bounded_poly4_eta"++toString η++c.suffix
 
 def secretGroup (c : Impl.Sha3.AArch64.Callee) (p : Params) (g : Nat) : Prog isa :=
  .seq (.block ((List.range 4).flatMap (secretSeedSlot (4*g)))) <|

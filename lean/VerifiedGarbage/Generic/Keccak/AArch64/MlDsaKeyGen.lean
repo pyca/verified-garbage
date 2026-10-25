@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.MlDsaModes
-
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -473,22 +471,22 @@ def notes : List String :=
 
 def legacyArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     code := Impl.MlDsa.AArch64.KeyGen.keyGen44With v.callee
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.keyGen44_verifiedWith (keccak := v) },
   Spec.MlDsa.keyGen65Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     code := Impl.MlDsa.AArch64.KeyGen.keyGen65With v.callee
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.keyGen65_verifiedWith (keccak := v) },
   Spec.MlDsa.keyGen87Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     code := Impl.MlDsa.AArch64.KeyGen.keyGen87With v.callee
     stack := 16
@@ -500,34 +498,31 @@ sampling (`Optimized.secretsWith`), with the four-way samplers of its own
 permutation. -/
 def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) },
   Spec.MlDsa.keyGen65Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa65
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) },
   Spec.MlDsa.keyGen87Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]
 
-def artifactsOne (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  if v.callee.pairedSha3 then optimizedArtifacts v else legacyArtifacts v
-
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  (Proof.Sha3.AArch64.mldsaModes v).flatMap artifactsOne
+  if v.callee.pairedSha3 then optimizedArtifacts v else legacyArtifacts v
 
 end VG.Generic.Keccak.AArch64.MlDsaKeyGen

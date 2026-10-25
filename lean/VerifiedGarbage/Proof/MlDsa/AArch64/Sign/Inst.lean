@@ -64,7 +64,7 @@ open VG.Spec.Sha3 (bytesAt)
 
 /-- The AArch64 implementations of the primitives. -/
 def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
-  suffix := c.mldsaSuffix
+  suffix := c.suffix
   ntt := Impl.MlDsa.AArch64.Arith.Neon.ntt
   invNtt := Impl.MlDsa.AArch64.Arith.Neon.nttInv
   mul := Impl.MlDsa.AArch64.Arith.mul

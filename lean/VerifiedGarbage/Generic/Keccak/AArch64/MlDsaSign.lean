@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.MlDsaModes
-
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedSelected
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
@@ -548,10 +546,10 @@ def notes : List String :=
     every validity check and combines them without branching: the one branch on their result \
     is the only place an iteration's outcome affects timing."]
 
-def artifactsOne (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.sign44Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Impl.MlDsa.AArch64.Sign.Optimized.signWith v.callee (primsWith v.callee) Spec.MlDsa.mlDsa44
@@ -559,23 +557,20 @@ def artifactsOne (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     stack := 16
     verified := Proof.MlDsa.AArch64.Sign.pairedSign_verified v (.inl rfl) },
   Spec.MlDsa.sign65Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa65
     stack := 16
     verified := Proof.MlDsa.AArch64.Sign.CachedSelected.verified v (.inl rfl) },
   Spec.MlDsa.sign87Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa87
     stack := 16
     verified := Proof.MlDsa.AArch64.Sign.CachedSelected.verified v (.inr rfl) }]
-
-def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  (Proof.Sha3.AArch64.mldsaModes v).flatMap artifactsOne
 
 end VG.Generic.Keccak.AArch64.MlDsaSign

@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.MlDsaModes
-
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -19,33 +17,30 @@ def notes : List String :=
    "It calls the `vg_mldsa_*` primitives and the SHAKE256 sponge. The samplers' results are combined \
     without a branch, so the only branches depend on the public key and the signature."]
 
-def artifactsOne (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.verify44Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     consts := selectedConsts v
     notes := notes
     code := selectedCode v Spec.MlDsa.mlDsa44
     stack := 16
     verified := selected_verify_verified v (.inl rfl) },
   Spec.MlDsa.verify65Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     consts := selectedConsts v
     notes := notes
     code := selectedCode v Spec.MlDsa.mlDsa65
     stack := 16
     verified := selected_verify_verified v (.inr (.inl rfl)) },
   Spec.MlDsa.verify87Api.artifact AArch64.target {
-    suffix := v.callee.mldsaSuffix
-    features := Proof.Sha3.AArch64.mldsaFeatures v
+    suffix := v.callee.suffix
+    features := v.features
     consts := selectedConsts v
     notes := notes
     code := selectedCode v Spec.MlDsa.mlDsa87
     stack := 16
     verified := selected_verify_verified v (.inr (.inr rfl)) }]
-
-def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  (Proof.Sha3.AArch64.mldsaModes v).flatMap artifactsOne
 
 end VG.Generic.Keccak.AArch64.MlDsaVerify

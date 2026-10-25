@@ -34,9 +34,9 @@ namespace VG.Proof.Sha3.AArch64.Scalar.Lazy.VectorSlots
 open VG VG.AArch64
 
 def callee : Impl.Sha3.AArch64.Callee where
-  name := "vg_keccak_f1600_lazy"
+  name := "vg_keccak_f1600"
   code := Impl.Sha3.AArch64.Scalar.Lazy.permute
-  suffix := "_lazy"
+  suffix := ""
   absorbOverride := none
 
 /- The rounds of the permutation, from nothing public. They write every

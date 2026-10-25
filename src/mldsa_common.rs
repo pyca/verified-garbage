@@ -18,10 +18,6 @@ pub(crate) enum Backend {
     /// The target's baseline ISA (on x86-64, SSE2 polynomial arithmetic),
     /// with scalar Keccak.
     Scalar,
-    #[cfg(target_arch = "aarch64")]
-    Lazy,
-    #[cfg(target_arch = "aarch64")]
-    LazySha3,
     /// AArch64 with the SHA-3 extension, for Keccak.
     #[cfg(target_arch = "aarch64")]
     Sha3,
@@ -40,21 +36,11 @@ impl Backend {
     pub(crate) fn select(f: crate::cpu::Features, required: crate::cpu::Features) -> Backend {
         #[cfg(target_arch = "aarch64")]
         if f.contains(required) {
-            return if !cfg!(target_vendor = "apple")
-                && f.contains(crate::cpu::Features::of(&["neon"]))
-            {
-                Backend::LazySha3
-            } else {
-                Backend::Sha3
-            };
+            return Backend::Sha3;
         }
         #[cfg(target_arch = "x86_64")]
         if f.contains(required) {
             return Backend::Avx2;
-        }
-        #[cfg(target_arch = "aarch64")]
-        if !cfg!(target_vendor = "apple") && f.contains(crate::cpu::Features::of(&["neon"])) {
-            return Backend::Lazy;
         }
         Backend::Scalar
     }
@@ -77,20 +63,10 @@ macro_rules! ml_dsa {
         sign_message: $sign_message:path,
         verify_message: $verify_message:path,
         verify_message_cached: $verify_message_cached:path,
-        keygen_lazy: $keygen_lazy:path,
-        keygen_lazy_sha3: ($keygen_lazy_sha3:path, $keygen_lazy_sha3_features:path),
         keygen_sha3: ($keygen_sha3:path, $keygen_sha3_features:path),
-        sign_lazy: $sign_lazy:path,
-        sign_lazy_sha3: ($sign_lazy_sha3:path, $sign_lazy_sha3_features:path),
         sign_sha3: ($sign_sha3:path, $sign_sha3_features:path),
-        verify_lazy: $verify_lazy:path,
-        verify_lazy_sha3: ($verify_lazy_sha3:path, $verify_lazy_sha3_features:path),
         verify_sha3: ($verify_sha3:path, $verify_sha3_features:path),
-        sign_message_lazy: $sign_message_lazy:path,
-        sign_message_lazy_sha3: ($sign_message_lazy_sha3:path, $sign_message_lazy_sha3_features:path),
         sign_message_sha3: ($sign_message_sha3:path, $sign_message_sha3_features:path),
-        verify_message_cached_lazy: $verify_message_cached_lazy:path,
-        verify_message_cached_lazy_sha3: ($verify_message_cached_lazy_sha3:path, $verify_message_cached_lazy_sha3_features:path),
         verify_message_cached_sha3: ($verify_message_cached_sha3:path, $verify_message_cached_sha3_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
         sign_avx2: ($sign_avx2:path, $sign_avx2_features:path),
@@ -110,15 +86,10 @@ macro_rules! ml_dsa {
         fn backend() -> Backend {
             #[cfg(target_arch = "aarch64")]
             const REQUIRED: &[$crate::cpu::Features] = &[
-                $keygen_lazy_sha3_features,
                 $keygen_sha3_features,
-                $sign_lazy_sha3_features,
                 $sign_sha3_features,
-                $verify_lazy_sha3_features,
                 $verify_sha3_features,
-                $sign_message_lazy_sha3_features,
                 $sign_message_sha3_features,
-                $verify_message_cached_lazy_sha3_features,
                 $verify_message_cached_sha3_features,
             ];
             #[cfg(target_arch = "x86_64")]
@@ -231,13 +202,6 @@ macro_rules! ml_dsa {
                         #[cfg(target_arch = "aarch64")]
                         Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Lazy => $verify_message_cached_lazy(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
-
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::LazySha3 => $verify_message_cached_lazy_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
-
-
-                        #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $verify_message_avx2(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
@@ -268,13 +232,6 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => $verify(&self.bytes, mu, sig, &mut scratch),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Lazy => $verify_lazy(&self.bytes, mu, sig, &mut scratch),
-
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::LazySha3 => $verify_lazy_sha3(&self.bytes, mu, sig, &mut scratch),
-
-
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
@@ -338,13 +295,6 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Lazy => $keygen_lazy(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
-
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::LazySha3 => $keygen_lazy_sha3(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
-
-
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
@@ -414,14 +364,6 @@ macro_rules! ml_dsa {
                             $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
                         }
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Lazy => {
-                            $sign_message_lazy(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
-                        }
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::LazySha3 => {
-                            $sign_message_lazy_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
-                        }
-                        #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
                             $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
                         }
@@ -472,13 +414,6 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, &mut scratch),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Lazy => $sign_lazy(&self.sk, mu, rnd, &mut sig, &mut scratch),
-
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::LazySha3 => $sign_lazy_sha3(&self.sk, mu, rnd, &mut sig, &mut scratch),
-
-
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
