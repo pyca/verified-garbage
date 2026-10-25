@@ -19,7 +19,9 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
         the check against `p` under masks; `gcd(c − 1, e)` by `(c − 1) mod e` bit by bit, then \
         a binary gcd on words under masks; trial division by the shared table of 32-bit primes \
         and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits), \
-        which returns at the first divisor; then RSA's witnesses from `rand`, each in \
+        which returns at the first divisor; `R² mod c` by `64 + w` modular doublings from \
+        `2^(64 (w − 1))` and six Montgomery squares (`c` has its top bit set); then RSA's \
+        witnesses from `rand`, each in \
         Montgomery form for a call of the shared `vg_miller_rabin_round`, whose 176 bytes of \
         frames lie below this function's 224. Branches release only the checks and witness \
         results allowed by the RSA candidate contract."]
