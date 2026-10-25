@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
-public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.PPC64LE.Carry
+import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
+import VerifiedGarbage.Proof.Mont.PPC64LE.AddSub
 public import VerifiedGarbage.Impl.Mont.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
@@ -13,11 +15,12 @@ public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 /-!
 # Montgomery arithmetic on PPC64LE: the conditional subtraction
 
-`csub M src` reduces the number below `2m` at `[r3 + src]` (`D` digits and
-a top digit) modulo `m` into `[r4]`: the digits of its difference with `m`
-go to `[M.tmp]` (`diffs_ok`), the carry out plus the top digit is 1 exactly
+`csub M src` reduces the number below `2m` at `[r3 + src]` (`n` words and
+a top word) modulo `m` (at `r7`) into `[r4]`: the words of its difference
+with `m` go to `[M.tmp]` (`chain_ok`), CA plus the top word is 1 exactly
 when the number is at least `m`, and its negation selects the difference or
-the number, a 64-bit word at a time (`sels_ok`, `csub_ok`).
+the number, a word at a time (`sels_ok`, `csub_ok`). `mask32_ok` is the
+mask of a 32-bit digit, for code that works on them.
 -/
 
 @[expose] public section
@@ -38,97 +41,6 @@ theorem mask32_ok {s : State} {is : List Instr} {Q : State → Prop}
   rw [show (0#64 ||| BitVec.setWidth 64 (65535 : BitVec 16) |||
     BitVec.setWidth 64 (65535 : BitVec 16) <<< 16) = M32 by decide]
   exact k
-
-/-- Digit `j` of `[r3 + src] - m`, from the carry `r10`, stored at
-`[r3 + M.tmp + 4j]`, its carry to `r10`. -/
-theorem diffDigit_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M : Mod} {src j : Nat}
-    (h3 : At s base .r3 0) (h0 : s.gpr .r0 = M32) (hc : (s.gpr .r10).toNat < 2 ^ 32)
-    (hsrc : src + 4 * j + 4 ≤ size) (hmo : M.mo + 4 * j + 4 ≤ size) (htmp : M.tmp + 4 * j + 4 ≤ size) :
-    WP isa (.block (diffDigit M src j)) s fun u =>
-      u.mem = s.mem.writeW (off base (M.tmp + 4 * j)) (BitVec.ofNat 32
-        (w32 s.mem base (src + 4 * j) + (2 ^ 32 - 1 - w32 s.mem base (M.mo + 4 * j)) + (s.gpr .r10).toNat)) ∧
-      (u.gpr .r10).toNat = (w32 s.mem base (src + 4 * j) + (2 ^ 32 - 1 - w32 s.mem base (M.mo + 4 * j)) +
-        (s.gpr .r10).toNat) / 2 ^ 32 ∧
-      Kp [.r10, .r11, .r12] s u := by
-  have t0 := w32_lt s.mem base (src + 4 * j)
-  have t1 := w32_lt s.mem base (M.mo + 4 * j)
-  simp only [diffDigit]
-  refine wp_step (lwz0_ok hs h3 (by decide) hsrc) ?_
-  refine wp_step (lwz0_ok (hs.write _ _) (h3.write _) (by decide) hmo) ?_
-  refine wp_step exec_add ?_
-  refine wp_step exec_sub ?_
-  refine wp_step exec_add ?_
-  refine wp_step (stw0_ok ((((hs.write _ _).write _ _).write _ _).write _ _ |>.write _ _)
-    (((((h3.write _).write _).write _).write _).write _) (by decide) htmp) ?_
-  refine wp_step (exec_lsr_d (by decide)) (WP.block_nil ?_)
-  simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true, h0]
-  have e : (BitVec.ofNat 64 (w32 s.mem base (src + 4 * j)) + M32 - BitVec.ofNat 64 (w32 s.mem base (M.mo + 4 * j)) +
-      s.gpr .r10).toNat = w32 s.mem base (src + 4 * j) + (2 ^ 32 - 1 - w32 s.mem base (M.mo + 4 * j)) +
-        (s.gpr .r10).toNat := by
-    rw [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_add, toNat_ofNat_lt (by omega_arith),
-      toNat_ofNat_lt (by omega_arith), show M32.toNat = 2 ^ 32 - 1 from rfl]
-    omega_arith
-  refine ⟨by rw [e], by rw [BitVec.toNat_ushiftRight, e, Nat.shiftRight_eq_div_pow], ?_⟩
-  exact ⟨fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [write_gpr, hr.1, hr.2.1, hr.2.2, ite_false], rfl, rfl, rfl, rfl⟩
-
-/-- The first `k` digits of the difference. -/
-def diffs (M : Mod) (src k : Nat) : List Instr := (List.range k).flatMap (diffDigit M src)
-
-theorem diffs_succ (M : Mod) (src k : Nat) : diffs M src (k + 1) = diffs M src k ++ diffDigit M src k := by
-  simp only [diffs, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
-
-/-- The low `k` digits of `[src] + 2^(32 k) - m`, from the carry `r10 = 1`, to
-`[M.tmp]`, the carry to `r10`. -/
-theorem diffs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M : Mod} {src W : Nat}
-    (h3 : At s base .r3 0) (h0 : s.gpr .r0 = M32) (hc : (s.gpr .r10).toNat = 1)
-    (hsrc : src + 4 * W ≤ size) (hmo : M.mo + 4 * W ≤ size) (htmp : M.tmp + 4 * W ≤ size)
-    (hs1 : src + 4 * W ≤ M.tmp ∨ M.tmp + 4 * W ≤ src) (hs2 : M.mo + 4 * W ≤ M.tmp ∨ M.tmp + 4 * W ≤ M.mo) :
-    ∀ {k : Nat}, k ≤ W →
-    WP isa (.block (diffs M src k)) s fun u =>
-      Outside base M.tmp (4 * k) s.mem u.mem ∧
-      val32 u.mem base M.tmp k + 2 ^ (32 * k) * (u.gpr .r10).toNat + val32 s.mem base M.mo k =
-        val32 s.mem base src k + 2 ^ (32 * k) ∧
-      (u.gpr .r10).toNat ≤ 1 ∧ Kp [.r10, .r11, .r12] s u
-  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, by simp [val32, hc], by omega_arith, Kp.refl _ _⟩
-  | k + 1, hk => by
-    have hn := hs.nowrap
-    rw [diffs_succ]
-    refine wp_append (WP.mono (diffs_ok hs h3 h0 hc hsrc hmo htmp hs1 hs2 (k := k) (by omega_arith))
-      fun s₁ ⟨O₁, V₁, C₁, K₁⟩ => ?_)
-    refine WP.mono (diffDigit_ok (K₁.ws hs) (K₁.at h3) (by rw [K₁.g]; exact h0) (by omega_arith) (j := k)
-      (by omega_arith) (by omega_arith) (by omega_arith)) fun u ⟨m₂, c₂, K₂⟩ => ?_
-    have tk : w32 s₁.mem base (src + 4 * k) = w32 s.mem base (src + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
-    have mk : w32 s₁.mem base (M.mo + 4 * k) = w32 s.mem base (M.mo + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
-    rw [tk, mk] at m₂ c₂
-    have W := writeW32_outside s₁.mem base (d := M.tmp + 4 * k)
-      (BitVec.ofNat 32 (w32 s.mem base (src + 4 * k) + (2 ^ 32 - 1 - w32 s.mem base (M.mo + 4 * k)) +
-        (s₁.gpr .r10).toNat)) (by omega_arith)
-    rw [← m₂] at W
-    have hlow : val32 u.mem base M.tmp k = val32 s₁.mem base M.tmp k := W.val32 (by omega_arith) (by omega_arith)
-    have htop : w32 u.mem base (M.tmp + 4 * k) = (w32 s.mem base (src + 4 * k) +
-        (2 ^ 32 - 1 - w32 s.mem base (M.mo + 4 * k)) + (s₁.gpr .r10).toNat) % 2 ^ 32 := by
-      rw [m₂, w32_write_self, BitVec.toNat_ofNat]
-    have t0 := w32_lt s.mem base (src + 4 * k)
-    have t1 := w32_lt s.mem base (M.mo + 4 * k)
-    have hv : val32 u.mem base M.tmp (k + 1) + 2 ^ (32 * (k + 1)) * (u.gpr .r10).toNat +
-        val32 s.mem base M.mo (k + 1) = val32 s.mem base src (k + 1) + 2 ^ (32 * (k + 1)) := by
-      rw [val32_succ, val32_succ, val32_succ, hlow, htop, c₂, pow32_succ]
-      generalize hxd : w32 s.mem base (src + 4 * k) + (2 ^ 32 - 1 - w32 s.mem base (M.mo + 4 * k)) +
-        (s₁.gpr .r10).toNat = x at *
-      have hx' := Nat.div_add_mod x (2 ^ 32)
-      generalize 2 ^ (32 * k) = P at *
-      have : x + w32 s.mem base (M.mo + 4 * k) = w32 s.mem base (src + 4 * k) + 2 ^ 32 - 1 + (s₁.gpr .r10).toNat := by
-        omega_arith
-      grind
-    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), hv, ?_, K₁.trans K₂⟩
-    have := val32_lt u.mem base M.tmp (k + 1)
-    have := val32_lt s.mem base src (k + 1)
-    have hP : 0 < 2 ^ (32 * (k + 1)) := Nat.two_pow_pos _
-    by_contra hc2
-    have : 2 ^ (32 * (k + 1)) * 2 ≤ 2 ^ (32 * (k + 1)) * (u.gpr .r10).toNat := Nat.mul_le_mul_left _ (by omega)
-    omega_arith
 
 /-! ## The selection -/
 
@@ -162,9 +74,6 @@ theorem selWord_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [write_gpr, hr.1, hr.2, ite_false]
-
-/-- The selections of the low `k` words. -/
-def sels (M : Mod) (src k : Nat) : List Instr := (List.range k).flatMap (selWord M src)
 
 theorem sels_succ (M : Mod) (src k : Nat) : sels M src (k + 1) = sels M src k ++ selWord M src k := by
   simp only [sels, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
@@ -236,84 +145,79 @@ theorem neg_mask_zero {x : Nat} (hx : x ≤ 1) : (BitVec.ofNat 64 0 - BitVec.ofN
   · decide
   · decide
 
-/-- What `csub` needs of the layout: the number (`D + 1` digits at `src`),
-the difference (`D` at `M.tmp`), the modulus (`D` at `M.mo`) and the result
-(`n` words at `O`, `D = 2n`). -/
+/-- What `csub` needs of the layout: the number (`n + 1` words at `src`),
+the difference (`n` at `M.tmp`), the modulus (`n` at `M.mo`) and the result
+(`n` at `O`). -/
 structure CsubLay (M : Mod) (size src O : Nat) : Prop where
-  src_le : src + 4 * (2 * M.n + 1) ≤ size
+  src_le : src + 8 * (M.n + 1) ≤ size
   tmp_le : M.tmp + 8 * M.n ≤ size
   mo_le : M.mo + 8 * M.n ≤ size
   o_le : O + 8 * M.n ≤ size
   src4 : src % 4 = 0
   tmp4 : M.tmp % 4 = 0
-  s1 : src + 4 * (2 * M.n + 1) ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ src
+  s1 : src + 8 * (M.n + 1) ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ src
   s2 : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo
   s3 : src + 8 * M.n ≤ O ∨ O + 8 * M.n ≤ src
   s4 : M.tmp + 8 * M.n ≤ O ∨ O + 8 * M.n ≤ M.tmp
 
-/-- `[r4] = [r3 + src] mod m`, for a number below `2m` (`D` digits and a top
-digit). -/
+/-- `[r4] = [r3 + src] mod m`, for a number below `2m` (`n` words and a top
+word) and the modulus at `r7`. -/
 theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M : Mod} {src O m : Nat}
-    (h3 : At s base .r3 0) (h4 : At s base .r4 O) (hL : CsubLay M size src O)
-    (hm : val32 s.mem base M.mo (2 * M.n) = m) (hN : val32 s.mem base src (2 * M.n + 1) < 2 * m) :
+    (h3 : At s base .r3 0) (h4 : At s base .r4 O) (h7 : At s base .r7 M.mo) (hL : CsubLay M size src O)
+    (hn0 : 0 < M.n) (hm : wordsVal s.mem base M.mo M.n = m) (hN : wordsVal s.mem base src (M.n + 1) < 2 * m) :
     WP isa (.block (csub M src)) s fun u =>
-      wordsVal u.mem base O M.n = val32 s.mem base src (2 * M.n + 1) % m ∧
+      wordsVal u.mem base O M.n = wordsVal s.mem base src (M.n + 1) % m ∧
       Outs base [(M.tmp, 8 * M.n), (O, 8 * M.n)] s.mem u.mem ∧
-      Kp [.r0, .r10, .r11, .r12] s u := by
+      Kp [.r10, .r11, .r12] s u := by
   obtain ⟨src_le, tmp_le, mo_le, o_le, src4, tmp4, s1, s2, s3, s4⟩ := hL
   have hn := hs.nowrap
   have hs15 := hs.small
-  have ec : csub M src = mask32 ++ (.li .r10 1 :: (diffs M src (2 * M.n) ++
-      ([.load .w .r11 wb (src + 4 * (2 * M.n)), .add .r10 .r10 .r11, .li .r11 0, .sub .r10 .r11 .r10] ++
-        sels M src M.n))) := by
-    simp only [csub, digits, diffs, sels, List.append_assoc, List.cons_append, List.nil_append]
+  have ec : csub M src = chain true wb src .r7 0 M.tmp M.n ++
+      ([.load .d .r11 wb (src + 8 * M.n), .addze .r10 .r11, .li .r11 0, .sub .r10 .r11 .r10] ++
+        sels M src M.n) := by
+    simp only [csub, List.append_assoc]
   rw [ec]
-  refine mask32_ok ?_
-  refine wp_step (exec_li (by decide)) ?_
-  refine wp_append (WP.mono (diffs_ok (W := 2 * M.n) ((hs.write _ _).write _ _) ((h3.write _).write _)
-    (by simp only [write_gpr, reduceCtorEq, ite_false, ite_true]) (by simp only [write_gpr, ite_true]; rfl)
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (k := 2 * M.n) (Nat.le_refl _))
-    fun s₂ ⟨O₂, V₂, C₂, K₂⟩ => ?_)
-  simp only [write_mem] at O₂ V₂
-  have K₀₂ : Kp [.r0, .r10, .r11, .r12] s s₂ :=
-    ((Kp.write s _ (by decide)).trans (Kp.write _ _ (by decide))).trans (K₂.mono (by decide))
-  have hs₂ := K₀₂.ws hs
-  have h3₂ := K₀₂.at h3
-  have h4₂ := K₀₂.at h4
-  refine wp_step (lwz0_ok hs₂ h3₂ (by decide) (d := src + 4 * (2 * M.n)) (by omega_arith)) ?_
-  refine wp_step exec_add ?_
+  refine wp_append (WP.mono (chain_ok (sub := true) (W := M.n) hs h3 h7 h3 (by decide) (by decide) src4
+    (by decide) tmp4 (by omega) (by omega) (by omega) (by omega) (by omega) (k := M.n) (Nat.le_refl _))
+    fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
+  simp only [ite_true, Bool.toNat_true, Nat.zero_add, Nat.add_zero] at V₂
+  rw [hm, show cOf true M.n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega] at V₂
+  have hs₂ := K₂.ws hs
+  have h3₂ := K₂.at h3
+  have h4₂ := K₂.at h4
+  refine wp_step (ld0_ok hs₂ h3₂ (by decide) (by omega) (d := src + 8 * M.n) (by omega)) ?_
+  refine wp_step exec_addze ?_
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_sub ?_
-  simp only [write_gpr, ite_true, reduceCtorEq, ite_false]
+  simp only [write_gpr, writeCarry_gpr, ite_true, reduceCtorEq, ite_false, RegUpd.ca_write]
   -- The mask.
-  have htop : w32 s₂.mem base (src + 4 * (2 * M.n)) = w32 s.mem base (src + 4 * (2 * M.n)) :=
-    O₂.w32 (by omega_arith) (by omega_arith)
+  have htop : word s₂.mem base (src + 8 * M.n) = word s.mem base (src + 8 * M.n) :=
+    O₂.word (by omega) (by omega)
   rw [htop]
-  generalize hc : (s₂.gpr .r10).toNat = c at C₂ V₂
-  generalize hT : w32 s.mem base (src + 4 * (2 * M.n)) = top
-  have hL : val32 s₂.mem base src (2 * M.n) = val32 s.mem base src (2 * M.n) := O₂.val32 (by omega_arith) (by omega_arith)
-  have hN' : val32 s.mem base src (2 * M.n) + 2 ^ (32 * (2 * M.n)) * top < 2 * m := by
-    rw [← hT, ← val32_succ]; exact hN
-  have hm0 : m < 2 ^ (32 * (2 * M.n)) := by rw [← hm]; exact val32_lt _ _ _ _
-  obtain ⟨hct, hsel⟩ := csub_math hm0 hN' (val32_lt s₂.mem base M.tmp (2 * M.n))
-    (by have := V₂; rw [hm] at this; omega_arith) C₂
-  have hadd : s₂.gpr .r10 + BitVec.ofNat 64 top = BitVec.ofNat 64 (c + top) := by
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_add, hc, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  generalize hc : s₂.ca.toNat = c at V₂
+  generalize hT : (word s.mem base (src + 8 * M.n)).toNat = top
+  have hL : wordsVal s₂.mem base src M.n = wordsVal s.mem base src M.n := O₂.wordsVal (by omega) (by omega)
+  have hN' : wordsVal s.mem base src M.n + 2 ^ (64 * M.n) * top < 2 * m := by
+    rw [← hT, ← wordsVal_succ_top]; exact hN
+  have hm0 : m < 2 ^ (64 * M.n) := by rw [← hm]; exact wordsVal_lt _ _ _ _
+  have hc1 : c ≤ 1 := hc ▸ Bool.toNat_le _
+  obtain ⟨hct, hsel⟩ := csub_math hm0 hN' (wordsVal_lt s₂.mem base M.tmp M.n)
+    (by have := V₂; omega) hc1
+  have hadd : BitVec.ofNat 64 (top + c) = BitVec.ofNat 64 (c + top) := by rw [Nat.add_comm]
   rw [hadd]
-  refine WP.mono (sels_ok (W := M.n) ((((hs₂.write _ _).write _ _).write _ _).write _ _)
-    ((((h3₂.write _).write _).write _).write _) ((((h4₂.write _).write _).write _).write _) src4 tmp4
-    (by simp only [write_gpr, ite_true]; exact neg_mask hct) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-    (k := M.n) (Nat.le_refl _)) fun u ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
-  · simp only [write_gpr, ite_true, write_mem] at V₃
-    rw [V₃, wordsVal_eq_val32, wordsVal_eq_val32, hL, val32_succ, hT, ← hsel]
+  refine WP.mono (sels_ok (W := M.n) ((((hs₂.write _ _).writeCarry _ _).write _ _).write _ _)
+    ((((h3₂.write _).writeCarry _).write _).write _) ((((h4₂.write _).writeCarry _).write _).write _) src4 tmp4
+    (by simp only [write_gpr, ite_true]; exact neg_mask hct) (by omega) (by omega) (by omega) (by omega)
+    (by omega) (k := M.n) (Nat.le_refl _)) fun u ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
+  · simp only [write_gpr, ite_true, write_mem, RegUpd.mem_writeCarry] at V₃
+    rw [V₃, hL, wordsVal_succ_top, hT, ← hsel]
     simp only [neg_mask_zero hct]
-  · simp only [write_mem] at O₃
+  · simp only [write_mem, RegUpd.mem_writeCarry] at O₃
     intro x hx
     rw [O₃ x (hx (O, 8 * M.n) (by simp)), O₂ x (by
       have := hx (M.tmp, 8 * M.n) (by simp)
-      simp only at this; omega_arith)]
-  · exact K₀₂.trans ((((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans
+      simp only at this; omega)]
+  · exact (K₂.mono (by decide)).trans ((((Kp.write _ _ (by decide)).trans (Kp.writeCarry _ _ (by decide))).trans
       ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide)))).trans (K₃.mono (by decide)))
 
 end VG.Proof.Mont.PPC64LE

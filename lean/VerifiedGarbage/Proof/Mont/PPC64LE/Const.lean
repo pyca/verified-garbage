@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Mont.PPC64LE.Loop
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Mont.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
@@ -23,6 +22,19 @@ public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 namespace VG.Proof.Mont.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Mont VG.Impl.Mont.PPC64LE VG.Proof.Mont
+
+/-- `lis`, `ori` of a 32-bit constant: its low 32 bits. -/
+theorem wp_movImm {s : State} {d : Reg} {x : BitVec 32} {is : List Instr} {Q : State → Prop}
+    (k : ∀ v : BitVec 64, v.toNat % 2 ^ 32 = x.toNat → WP isa (.block is) (s.write d v) Q) :
+    WP isa (.block (movImm d x ++ is)) s Q := by
+  simp only [movImm, List.cons_append, List.nil_append]
+  refine wp_step exec_lis (wp_step exec_ori ?_)
+  rw [write_write]
+  refine k _ ?_
+  have := congrArg BitVec.toNat (lis_ori x)
+  rw [BitVec.toNat_setWidth] at this
+  rw [← this]
+  simp only [write_gpr, ite_true]
 
 /-- `x mod 2^(32 k)` by its digits. -/
 theorem val32_digits {m : Mem} {base : Addr} {o x : Nat} :
