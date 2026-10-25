@@ -12,6 +12,10 @@ meta import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedArgs
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 @[expose] public section
 

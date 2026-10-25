@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTSquare
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPieces
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPieces
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTSquare
@@ -17,6 +16,12 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedReset
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedSquare
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowPowers
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTPieces
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTPieces
 
 /-! # Constant time of a folded two-bit window -/
 

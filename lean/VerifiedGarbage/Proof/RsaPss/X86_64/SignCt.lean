@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 /-!
 # RSASSA-PSS signing on x86-64: constant time, and `Verified`

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedContract
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCt
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCorrect
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section
 

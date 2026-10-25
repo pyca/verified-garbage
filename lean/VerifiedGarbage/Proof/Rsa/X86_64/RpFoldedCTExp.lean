@@ -17,6 +17,12 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedLoop
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedSquare
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTSquare
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTSquare
 
 /-! # Constant time of the padded folded exponentiation and its fixed suffix -/
 

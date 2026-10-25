@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Ed448 public-key derivation on x86-64: where everything is

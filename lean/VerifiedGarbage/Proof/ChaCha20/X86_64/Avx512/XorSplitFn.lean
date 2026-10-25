@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract

@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SelectBase
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.BaseWords
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.BaseWords
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Table
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 
 /-! The directly indexed affine base operand has canonical radix-2^56 limbs. -/
 

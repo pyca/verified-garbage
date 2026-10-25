@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 /-!
 # RSASSA-PSS signing on x86-64: correctness

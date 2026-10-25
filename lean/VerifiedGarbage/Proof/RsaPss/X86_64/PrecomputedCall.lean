@@ -6,12 +6,10 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 @[expose] public section
 

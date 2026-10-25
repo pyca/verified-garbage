@@ -7,7 +7,6 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 
 /-!
 # RSASSA-PSS on x86-64: MGF1 is constant time

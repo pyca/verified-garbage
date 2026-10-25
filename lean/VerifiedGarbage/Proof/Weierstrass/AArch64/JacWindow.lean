@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The full public Jacobian variable-point multiplication. -/
 

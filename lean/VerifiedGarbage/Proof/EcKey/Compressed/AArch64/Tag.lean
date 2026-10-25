@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
-public import VerifiedGarbage.Proof.EcKey.Compressed.Parity
+import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.EcKey.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.TCB.Code
 
 /-! # Encode the compressed point's parity tag -/
 

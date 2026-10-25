@@ -1,14 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNegTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNegTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntry
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 @[expose] public section
 

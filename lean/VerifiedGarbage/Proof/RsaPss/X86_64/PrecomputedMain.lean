@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyPadding
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedFront
 import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 @[expose] public section
 

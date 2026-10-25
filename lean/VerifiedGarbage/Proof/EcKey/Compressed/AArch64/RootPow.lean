@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Chain
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 
 /-! # Root exponentiation reuses the existing field multiplication backend -/

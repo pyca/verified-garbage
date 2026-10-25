@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 meta import VerifiedGarbage.Proof.AesSiv.Ctr32
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Impl.AesSiv.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint

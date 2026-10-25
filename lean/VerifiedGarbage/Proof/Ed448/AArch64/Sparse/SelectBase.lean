@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Table
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SelectCopy
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SelectCopy
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
 
 /-! Direct public indexing of the immutable odd affine base-point table. -/
 

@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.KeyOperand
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Sign
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.DigitLoads
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Magnitude
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.DigitLoads
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Magnitude
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Joint
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
 /-! One signed odd key addition, skipping the zero digit. -/
 

@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-!

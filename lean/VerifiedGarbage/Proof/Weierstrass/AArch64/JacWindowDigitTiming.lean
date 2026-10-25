@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.Window5
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
 
 @[expose] public section
 

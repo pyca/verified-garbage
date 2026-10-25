@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedBody
 import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 @[expose] public section
 

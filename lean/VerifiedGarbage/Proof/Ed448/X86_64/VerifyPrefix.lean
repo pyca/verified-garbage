@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-import VerifiedGarbage.Proof.X448.X86_64.Main
 
 /-! The fixed-address prefix initializes all public verification digits. -/
 

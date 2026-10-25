@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-import VerifiedGarbage.Proof.AesSiv.X86_64.Env
 
 /-!
 # AES-SIV on x86-64: a step of S2V over the associated data

@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.OddLoop
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.RestoreEntry
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.RestoreEntry
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Cross
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed448
 
 /-! Retain 2P as the addend and restore P as the odd table accumulator. -/
 

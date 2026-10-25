@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 /-!
 # RSASSA-PSS signing on x86-64: the calling convention

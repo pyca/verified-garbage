@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.AffineSpec
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SelectBase
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
 

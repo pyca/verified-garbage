@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.P384.Comb7Shape
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 
 /-!
 # ECDSA over P-384 on AArch64: the comb's tables in a static

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Impl.Ecdh.AArch64
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Taint
@@ -10,6 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 
 /-! Shared literals for code used by signing, verification, public-key
 derivation and ECDH over P-384 on AArch64. Each generator is checked once

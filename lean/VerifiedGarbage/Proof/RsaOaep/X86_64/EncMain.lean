@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 

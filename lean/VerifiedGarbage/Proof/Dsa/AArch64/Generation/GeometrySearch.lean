@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchPlan
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! # Concrete bounded p-search controller and its unchanged seed and q -/
 

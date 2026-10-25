@@ -28,6 +28,8 @@ meta import Mathlib.Tactic.NormNum.Pow
 meta import Mathlib.Tactic.NormNum.Inv
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.Limbs64
+meta import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-!
 # Poly1305 on x86-64 with AVX2: `vg_poly1305_blocks_avx2`

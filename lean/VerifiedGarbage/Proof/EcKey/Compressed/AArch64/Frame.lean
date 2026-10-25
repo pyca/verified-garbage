@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # Frames for the converter's scratch slots -/
 

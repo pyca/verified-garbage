@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! ## `JointMain` -/
 

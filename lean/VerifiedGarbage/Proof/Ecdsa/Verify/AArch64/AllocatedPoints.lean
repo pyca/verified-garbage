@@ -17,6 +17,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Allocated P-256 verification points
 
