@@ -13,11 +13,15 @@ The same structure as the AArch64 implementation (`Impl/Sha1/AArch64.lean`):
   rename them: in round `t`, variable `k` is in `var t k`.
 * The message schedule is a 16-word window in `scratch[0..64)`; the block's
   words are loaded big-endian (`lwbrx`).
-* Only volatile registers are used (`r0`, `r3`–`r12`), so nothing is saved.
-  With `r3`–`r6` holding the arguments, that leaves two temporaries
-  (`r12`, `r0`) besides the working variables, so a round adds its terms
-  into `e`'s register one at a time: `Wₜ` first, which frees `T0` for
-  `Maj`, then `f(b, c, d)`, `Kₜ` and `ROTL⁵(a)`.
+* Besides the volatile registers (`r0`, `r3`–`r12`), `r14`–`r17` are used:
+  they are saved in `scratch[64..96)` first and restored last. `r14` holds
+  `Kₜ`, set when it changes (every 20 rounds), and `r15`–`r17` hold the last
+  three words of the message schedule, in rotation: `Wₜ` is in `wreg t`,
+  which held `Wₜ₋₃`, the first term of `Wₜ`, so `Wₜ` is computed in place.
+  With `r3`–`r6` holding the arguments, that leaves two temporaries (`r12`,
+  `r0`) besides the working variables, so a round adds its terms into `e`'s
+  register one at a time: `Wₜ` first, then `f(b, c, d)` (`Maj` also using
+  `T0`), `Kₜ` and `ROTL⁵(a)`.
 * The arithmetic is on whole registers: only their low 32 bits are the
   words, as the rotations (`rotrwi`, which reads the low word) and the
   stores (`stw`) use only those.
@@ -38,31 +42,45 @@ def work : List Reg := [.r7, .r8, .r9, .r10, .r11]
 /-- The register holding working variable `k` (`a = 0, …, e = 4`) at the start of round `t`. -/
 def var (t k : Nat) : Reg := work.getD ((k + 5 - t % 5) % 5) .r7
 
-/-- Temporaries; `T0` holds `Wₜ` at the start of each round. -/
+/-- Temporaries. -/
 def T0 : Reg := .r12
 def T1 : Reg := .r0
 
 /-- The offset of `W[i mod 16]` in the scratch buffer. -/
 def slot (i : Nat) : Nat := 4 * (i % 16)
 
-/-- Leave `Wₜ` in `T0` and in its slot. The operations are in the order of
-the specification; `ROTL¹` is a rotation right by 31. -/
+/-- The nonvolatile registers used, in the order they are saved. -/
+def saved (i : Nat) : Reg := [.r14, .r15, .r16, .r17].getD i .r14
+
+/-- The register holding `Kₜ`. -/
+def Kr : Reg := saved 0
+
+/-- The register holding `Wₜ` (and `Wₜ₋₃` before it). -/
+def wreg (t : Nat) : Reg := saved (1 + t % 3)
+
+/-- Leave `Wₜ` in `wreg t` and in its slot. The operations are in the order
+of the specification, starting from `Wₜ₋₃` in `wreg t`; `ROTL¹` is a
+rotation right by 31. -/
 def schedule (t : Nat) : List Instr :=
   if t < 16 then [
     .li T1 (4 * t),
-    .loadRev .w T0 .r4 T1,
-    .store .w T0 .r6 (slot t)]
+    .loadRev .w (wreg t) .r4 T1,
+    .store .w (wreg t) .r6 (slot t)]
   else [
     -- Wₜ₋₃ ⊕ Wₜ₋₈ ⊕ Wₜ₋₁₄ ⊕ Wₜ₋₁₆
-    .load .w T0 .r6 (slot (t + 13)),
-    .load .w T1 .r6 (slot (t + 8)),
-    .logic .xor T0 T0 T1,
-    .load .w T1 .r6 (slot (t + 2)),
-    .logic .xor T0 T0 T1,
-    .load .w T1 .r6 (slot t),
-    .logic .xor T0 T0 T1,
-    .rotr .w T0 T0 31,
-    .store .w T0 .r6 (slot t)]
+    .load .w T0 .r6 (slot (t + 8)),
+    .logic .xor (wreg t) (wreg t) T0,
+    .load .w T0 .r6 (slot (t + 2)),
+    .logic .xor (wreg t) (wreg t) T0,
+    .load .w T0 .r6 (slot t),
+    .logic .xor (wreg t) (wreg t) T0,
+    .rotr .w (wreg t) (wreg t) 31,
+    .store .w (wreg t) .r6 (slot t)]
+
+/-- Set `Kr` to `Kₜ` where it changes, at rounds 0, 20, 40 and 60. -/
+def kset (t : Nat) : List Instr :=
+  if t % 20 = 0 then [.lis Kr ((K t).extractLsb' 16 16), .ori Kr Kr ((K t).extractLsb' 0 16)]
+  else []
 
 /-- The logical functions of §4.1.1. -/
 inductive Fn | ch | parity | maj
@@ -81,16 +99,14 @@ def fcode (f : Fn) (b c d : Reg) : List Instr :=
   | .maj => -- `Maj(b, c, d)`, as `((b ∨ c) ∧ d) ∨ (b ∧ c)`
     [.logic .or T1 b c, .logic .and T1 T1 d, .logic .and T0 b c, .logic .or T1 T1 T0]
 
-/-- Round `t`, with `Wₜ` in `T0`: `T = ROTL⁵(a) + f + e + Kₜ + Wₜ` is added
-up in `e`'s register (the new `a`), as `e + Wₜ + f + Kₜ + ROTL⁵(a)`, and `b`
-becomes `ROTL³⁰(b)`. `ROTLⁿ` is a rotation right by `32 - n`. -/
+/-- Round `t`, with `Wₜ` in `wreg t` and `Kₜ` in `Kr`: `T = ROTL⁵(a) + f + e + Kₜ + Wₜ`
+is added up in `e`'s register (the new `a`), as `e + Wₜ + f + Kₜ + ROTL⁵(a)`,
+and `b` becomes `ROTL³⁰(b)`. `ROTLⁿ` is a rotation right by `32 - n`. -/
 def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3; let e := var t 4
-  ([.add e e T0] : List Instr) ++ fcode (fn t) b c d ++
+  ([.add e e (wreg t)] : List Instr) ++ fcode (fn t) b c d ++
   ([.add e e T1,
-    .lis T1 ((K t).extractLsb' 16 16),
-    .ori T1 T1 ((K t).extractLsb' 0 16),
-    .add e e T1,
+    .add e e Kr,
     .rotr .w T1 a 27,
     .add e e T1,
     .rotr .w b b 2] : List Instr)
@@ -98,7 +114,7 @@ def round (t : Nat) : List Instr :=
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (rounds n) (.block (schedule n ++ round n))
+  | n + 1 => .seq (rounds n) (.block (kset n ++ schedule n ++ round n))
 
 /-- Load the hash value (`80 % 5 = 0`, so the variables are in the same
 registers after the 80 rounds). -/
@@ -117,7 +133,15 @@ def advance : List Instr := [.addi .r4 .r4 64, .subi .r5 .r5 1]
 /-- One block. -/
 def body : Prog isa := .seq (.block load) (.seq (rounds 80) (.block (update ++ advance)))
 
-def compress : Prog isa :=
-  .ite (.zero .d .r5) (.block []) (.loop body (.nonzero .d .r5))
+/-- Save `r14`–`r17` in `scratch[64..96)`. -/
+def save : List Instr := (List.range 4).flatMap fun i => [.store .d (saved i) .r6 (64 + 8 * i)]
+
+/-- Restore `r14`–`r17`. -/
+def restore : List Instr := (List.range 4).flatMap fun i => [.load .d (saved i) .r6 (64 + 8 * i)]
+
+/-- The blocks. -/
+def blocks : Prog isa := .ite (.zero .d .r5) (.block []) (.loop body (.nonzero .d .r5))
+
+def compress : Prog isa := .seq (.block save) (.seq blocks (.block restore))
 
 end VG.Impl.Sha1.PPC64LE
