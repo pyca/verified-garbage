@@ -681,4 +681,15 @@ def main():
 
 
 if __name__ == "__main__":
+    # Unproved, isolated experiment branch only; never part of a production PR.
+    trial = Path(__file__).resolve().parent.parent / "experiments" / "sha3"
+    if trial.is_dir():
+        import tempfile
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = str(Path(tmp) / "sha3-trials")
+            subprocess.run(["cc", "-O3", "-march=armv8.2-a+sha3", "-I" + str(trial),
+                str(trial / "driver.c"), str(trial / "generated.S"), "-o", binary], check=True)
+            subprocess.run([binary], check=True)
+        sys.exit(0)
     sys.exit(main())
