@@ -1,7 +1,7 @@
 name: Runner images
 
-# Builds the images CI's x86, ARMv7, PPC64LE and RISC-V jobs run in
-# (ci/runner.Dockerfile), each natively on a 64-bit runner of its
+# Builds the images CI's x86, ARMv7, PPC64LE and RISC-V jobs and its lints run
+# in (ci/runner.Dockerfile), each natively on a 64-bit runner of its
 # architecture, and checks them; pushes to main, and the weekly rebuild that
 # picks up new packages and Rust releases, publish them to GHCR.
 on:
@@ -42,6 +42,8 @@ jobs:
           # For RISC-V's tests, on the riscv64 runner they run on (RISE's, as
           # pyca/infra's riscv64 images use).
           - {tag: "verified-garbage-runner:riscv64", platform: "linux/riscv64", os: ubuntu-24.04-riscv}
+          # For the lints of every target (`rust-lint`).
+          - {tag: "verified-garbage-runner:lint", platform: "linux/amd64", os: ubuntu-26.04}
     name: ${{ matrix.image.tag }}
     runs-on: ${{ matrix.image.os }}
     timeout-minutes: 20
@@ -91,9 +93,11 @@ jobs:
         uses: ./.github/actions/runner-node
       # What CI's jobs need: the runner's Node (which GitHub Actions injects
       # into the container for JS actions), a toolchain that builds and runs
-      # for the host and each installed target, and one that rustup can update
-      # in place (exercising the uninstall path even if stable has not changed
-      # since the image was built; this container is disposable).
+      # for the host and each installed target it can run (with a runner,
+      # such as ci/arm32-run) and checks for the others (the lint image's),
+      # each cross C compiler with its target's OpenSSL, and one that rustup
+      # can update in place (exercising the uninstall path even if stable has
+      # not changed since the image was built; this container is disposable).
       - name: Check the image
         env:
           PULL: ${{ env.PUBLISH == 'true' && 'always' || 'never' }}
@@ -114,9 +118,20 @@ jobs:
               cargo clippy -V
               cargo fmt --version
               command -v "$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n "s/^host: //p")/bin/llvm-cov"
+              for gcc in /usr/bin/*-linux-gnu*-gcc; do
+                if [ -e "$gcc" ]; then
+                  echo "#include <openssl/ssl.h>" | "$gcc" -xc -fsyntax-only -
+                fi
+              done
               cd /tmp && cargo new -q hello && cd hello
+              host=$(rustc -vV | sed -n "s/^host: //p")
               for target in $(rustup target list --installed); do
-                cargo run -q --target "$target"
+                runner=CARGO_TARGET_$(echo "$target" | tr a-z- A-Z_)_RUNNER
+                if [ "$target" = "$host" ] || printenv "$runner" >/dev/null; then
+                  cargo run -q --target "$target"
+                else
+                  cargo clippy -q --target "$target"
+                fi
               done
               # The 32-bit Arm targets under QEMU too, which ci/arm32-run
               # chooses only on a host without AArch32.
