@@ -51,11 +51,11 @@ structure Outer (t : State) (B : Addr) (Z w : Nat) : Prop where
 
 theorem Outer.ld {t : State} {B : Addr} {Z w : Nat} (h : Outer t B Z w) {i : Nat} (hi : i < 32) :
     InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 :=
-  h.scr.ld (by have := hdr_lt_slot w 8 hi; have := h.room; omega)
+  h.scr.ld (by have := hdr_lt_slot w 8 hi; have := h.room; omega_arith)
 
 theorem Outer.st {t : State} {B : Addr} {Z w : Nat} (h : Outer t B Z w) {i : Nat} (hi : i < 32) :
     InRegions t.wr (off B (8 * i)) 8 :=
-  h.scr.st (by have := hdr_lt_slot w 8 hi; have := h.room; omega)
+  h.scr.st (by have := hdr_lt_slot w 8 hi; have := h.room; omega_arith)
 
 /-- What changes only the outer header's slots from `sFn 0` on, outside the
 inner workspace keeps `Outer`. -/
@@ -64,9 +64,9 @@ theorem Outer.of_frm {s t : State} {B : Addr} {Z w : Nat} {rs : List (Nat × Nat
     (h0 : t.gpr .rdi = s.gpr .rdi) : Outer t B Z w := by
   have hn := h.scr.nowrap
   have hh : ∀ i < 16, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega)) (by have := h.room; unfold inner slot hdrBytes at this; omega)
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_arith)) (by have := h.room; unfold inner slot hdrBytes at this; omega_arith)
   exact ⟨h.scr.congr hwr, h0.trans h.rdi, (hh _ (by decide)).trans h.hw,
-    fun j hj => (hh _ (by unfold sArr; omega)).trans (h.harr j hj), h.room, h.w2, h.w28⟩
+    fun j hj => (hh _ (by unfold sArr; omega_arith)).trans (h.harr j hj), h.room, h.w2, h.w28⟩
 
 /-- `SubCtx` after a change of `-m⁻¹` and of the inner workspace's own
 slots and arrays. -/
@@ -78,25 +78,25 @@ theorem _root_.VG.Proof.Bignum.X86_64.SubCtx.of_minv {s t : State} {B : Addr} {Z
   have hn := h.scr.nowrap
   have hi := h.hi
   have hlo := h.lo
-  have hL : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64 := by omega
+  have hL : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64 := by omega_arith
   have hr' : ∀ r ∈ rs, r.1 + r.2 ≤ slot wx 8 + tabBytes wx := fun r hr' => by
     rcases hr r hr' with rfl | h
-    · have := hdr_lt_slot wx 8 (show sMinv < 32 by decide); simp only; omega
+    · have := hdr_lt_slot wx 8 (show sMinv < 32 by decide); simp only; omega_arith
     · exact h.2
   have hh : ∀ i < 17, i ≠ sMinv → word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' hne =>
     hf.word_eq (fun r hr'' => by
       rcases hr r hr'' with rfl | h
-      · simp only; unfold sMinv at hne ⊢; omega
-      · exact Or.inl (by omega))
-      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-          omega)
+      · simp only; unfold sMinv at hne ⊢; omega_arith
+      · exact Or.inl (by omega_arith))
+      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+          omega_arith)
   have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega) (by have := hdr_lt_slot w 8 hi'; omega)
+    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega_arith) (by have := hdr_lt_slot w 8 hi'; omega_arith)
   exact ⟨h.scr.congr hwr, h0.trans h.rdi,
     ⟨(hh _ (by decide) (by decide)).trans h.hdr.hw, rfl,
-      fun j hj => (hh _ (by unfold sArr; omega) (by unfold sArr sMinv; omega)).trans (h.hdr.harr j hj)⟩,
+      fun j hj => (hh _ (by unfold sArr; omega_arith) (by unfold sArr sMinv; omega_arith)).trans (h.hdr.harr j hj)⟩,
     (hh _ (by decide) (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
-    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
+    fun j hj => (hb _ (by unfold sArr; omega_arith)).trans (h.narr j hj), h.lo, h.hi⟩
 
 
 /-- Lay out the inner workspace and enter it, with room for all 32 powers. -/

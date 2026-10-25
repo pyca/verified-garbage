@@ -43,7 +43,7 @@ theorem low_rel {m : Mem} {base : Addr} {o : Nat} {f : Int} (h : sv (fe m base o
   have := (word m base (o + 24)).isLt
   unfold sv
   simp only [fe, val4]
-  split <;> omega
+  split <;> omega_arith
 
 theorem lds3_ok {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa (.block [ld .x1 DSAVE, ld .x2 F, ld .x3 G]) s fun t =>
@@ -53,12 +53,12 @@ theorem lds3_ok {s : State} {base : Addr} (hs : Scr s base large) :
   change WP isa (.block (([ld .x1 DSAVE] : List Instr) ++ (([ld .x2 F] : List Instr) ++
     ([ld .x3 G] : List Instr)))) s _
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok hs (by decide) (by simp only [DSAVE]; omega) .x1) fun a ⟨a1, ka⟩ => ?_
+  refine WP.mono (ld_ok hs (by decide) (by simp only [DSAVE]; omega_arith) .x1) fun a ⟨a1, ka⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok hsa (by decide) (by simp only [F]; omega) .x2) fun b ⟨b2, kb⟩ => ?_
+  refine WP.mono (ld_ok hsa (by decide) (by simp only [F]; omega_arith) .x2) fun b ⟨b2, kb⟩ => ?_
   have hsb := hsa.of_keeps kb (by decide)
-  refine WP.mono (ld_ok hsb (by decide) (by simp only [G]; omega) .x3) fun t ⟨t3, kt⟩ => ?_
+  refine WP.mono (ld_ok hsb (by decide) (by simp only [G]; omega_arith) .x3) fun t ⟨t3, kt⟩ => ?_
   refine ⟨by rw [kt.gpr _ (by decide), kb.gpr _ (by decide), a1],
     by rw [kt.gpr _ (by decide), b2, ka.mem], by rw [t3, kb.mem, ka.mem], ?_⟩
   exact (ka.mono (by decide)).trans ((kb.mono (by decide)).trans (kt.mono (by decide)))
@@ -92,13 +92,13 @@ theorem absW_le {u : Int} (h : |u| ≤ 2 ^ 59) : (absW (BitVec.ofInt 64 u)).toNa
   unfold absN
   rw [VG.Proof.Divstep.toInt_small h]
   rw [Int.abs_eq_natAbs] at h
-  omega
+  omega_arith
 
 theorem absN_le {u : Int} (h : |u| ≤ 2 ^ 59) : absN (BitVec.ofInt 64 u) ≤ 2 ^ 59 := by
   unfold absN
   rw [VG.Proof.Divstep.toInt_small h]
   rw [Int.abs_eq_natAbs] at h
-  omega
+  omega_arith
 
 /-- A row of `f` and `g` as the code leaves it, as integers. -/
 theorem rowF_rel {m m' : Mem} {base : Addr} {t xo yo : Nat} {a b : Int}
@@ -113,7 +113,7 @@ theorem rowF_rel {m m' : Mem} {base : Addr} {t xo yo : Nat} {a b : Int}
           flip4 m base xo (maskN (BitVec.ofInt 64 a)) * (absW (BitVec.ofInt 64 a)).toNat +
           flip4 m base yo (maskN (BitVec.ofInt 64 b)) * (absW (BitVec.ofInt 64 b)).toNat) % (2 ^ 256 * 2 ^ 64)) :
     (val5 m' base t : Int) % 2 ^ 320 = (a * sv (fe m base xo) + b * sv (fe m base yo)) % 2 ^ 320 := by
-  rw [corrV_true_eq, corrV_true_eq, car_eq _ _ (by have := absN_le ha; have := absN_le hb; omega),
+  rw [corrV_true_eq, corrV_true_eq, car_eq _ _ (by have := absN_le ha; have := absN_le hb; omega_arith),
     flip4_eq, flip4_eq, absN_word, absN_word] at h
   have e := rowF_int (val4_lt _ _ _ _) (val4_lt _ _ _ _) h
   rwa [VG.Proof.Divstep.toInt_small ha, VG.Proof.Divstep.toInt_small hb] at e
@@ -131,7 +131,7 @@ theorem rowU_rel {m m' : Mem} {base : Addr} {t xo yo : Nat} {a b : Int}
           flip4 m base xo (maskN (BitVec.ofInt 64 a)) * (absW (BitVec.ofInt 64 a)).toNat +
           flip4 m base yo (maskN (BitVec.ofInt 64 b)) * (absW (BitVec.ofInt 64 b)).toNat) % (2 ^ 256 * 2 ^ 64)) :
     (val5 m' base t : Int) % 2 ^ 320 = (a * fe m base xo + b * fe m base yo) % 2 ^ 320 := by
-  rw [corrV_false_eq, corrV_false_eq, car_eq _ _ (by have := absN_le ha; have := absN_le hb; omega),
+  rw [corrV_false_eq, corrV_false_eq, car_eq _ _ (by have := absN_le ha; have := absN_le hb; omega_arith),
     flip4_eq, flip4_eq, absN_word, absN_word] at h
   have e := rowU_int (val4_lt _ _ _ _) (val4_lt _ _ _ _) h
   rwa [VG.Proof.Divstep.toInt_small ha, VG.Proof.Divstep.toInt_small hb] at e
@@ -159,13 +159,13 @@ theorem sum_bnd {a b : Int} {U V : Nat} (ha : |a| ≤ 2 ^ 59) (hb : |b| ≤ 2 ^ 
 theorem val5_out {base : Addr} {o n t : Nat} {m m' : Mem} (h : Outside base o n m m')
     (ht : t + 40 ≤ o ∨ o + n ≤ t) (hl : t + 40 < 2 ^ 64) : val5 m' base t = val5 m base t := by
   simp only [val5]
-  rw [h.fe (by omega) (by omega), h.word (by omega) (by omega)]
+  rw [h.fe (by omega_arith) (by omega_arith), h.word (by omega_arith) (by omega_arith)]
 
 theorem cnt_val {i : Nat} (hi : i < 10) :
     BitVec.ofNat 64 (10 - i) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (10 - (i + 1)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem scr_of {rs : List Reg} {s s' : State} {base : Addr} (hs : Scr s base large)
     (h : KeepRegs rs s s') (hr : .x0 ∉ rs) : Scr s' base large :=
@@ -190,8 +190,8 @@ theorem redV_out {base : Addr} {o n t : Nat} {m m' : Mem} (h : Outside base o n 
         (word m' base (t + 32)) =
       redV (word m base t) (word m base (t + 8)) (word m base (t + 16)) (word m base (t + 24))
         (word m base (t + 32)) := by
-  rw [h.word (by omega) (by omega), h.word (by omega) (by omega), h.word (by omega) (by omega),
-    h.word (by omega) (by omega), h.word (by omega) (by omega)]
+  rw [h.word (by omega_arith) (by omega_arith), h.word (by omega_arith) (by omega_arith), h.word (by omega_arith) (by omega_arith),
+    h.word (by omega_arith) (by omega_arith), h.word (by omega_arith) (by omega_arith)]
 
 /-- Five words at `t` reduced. -/
 abbrev red5 (m : Mem) (base : Addr) (t : Nat) : Nat :=
@@ -213,12 +213,12 @@ theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   have _hmin := workSize_ge large
   have _hcap := workSize_le large
   rw [WP.block_append_iff]
-  refine WP.mono (shift_ok hs (o := F) (t := TF) ⟨by decide, by simp only [F]; omega⟩
-    ⟨by decide, by simp only [TF]; omega⟩) fun a ⟨a1, oa, ka⟩ => ?_
+  refine WP.mono (shift_ok hs (o := F) (t := TF) ⟨by decide, by simp only [F]; omega_arith⟩
+    ⟨by decide, by simp only [TF]; omega_arith⟩) fun a ⟨a1, oa, ka⟩ => ?_
   have hsa := scr_of hs ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (shift_ok hsa (o := G) (t := TG) ⟨by decide, by simp only [G]; omega⟩
-    ⟨by decide, by simp only [TG]; omega⟩) fun b ⟨b1, ob, kb⟩ => ?_
+  refine WP.mono (shift_ok hsa (o := G) (t := TG) ⟨by decide, by simp only [G]; omega_arith⟩
+    ⟨by decide, by simp only [TG]; omega_arith⟩) fun b ⟨b1, ob, kb⟩ => ?_
   have hsb := scr_of hsa kb (by decide)
   rw [WP.block_append_iff]
   have hm : WP isa (.block [.movz .x .x13 19 0]) b fun c => c.gpr .x13 = 19 ∧ Keeps [.x13] b c :=
@@ -230,13 +230,13 @@ theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   have zc : c.gpr .x12 = 0 := by
     rw [kc.gpr _ (by decide), kb.gpr _ (by decide), ka.gpr _ (by decide), hz]
   rw [WP.block_append_iff]
-  refine WP.mono (reduce_ok hsc (o := U) (t := TU) zc c13 ⟨by decide, by simp only [U]; omega⟩
-    ⟨by decide, by simp only [TU]; omega⟩) fun d ⟨d1, od, kd⟩ => ?_
+  refine WP.mono (reduce_ok hsc (o := U) (t := TU) zc c13 ⟨by decide, by simp only [U]; omega_arith⟩
+    ⟨by decide, by simp only [TU]; omega_arith⟩) fun d ⟨d1, od, kd⟩ => ?_
   have hsd := scr_of hsc kd (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (reduce_ok hsd (o := V) (t := TV) ((kd.gpr _ (by decide)).trans zc)
-    ((kd.gpr _ (by decide)).trans c13) ⟨by decide, by simp only [V]; omega⟩
-    ⟨by decide, by simp only [TV]; omega⟩) fun e ⟨e1, oe, ke⟩ => ?_
+    ((kd.gpr _ (by decide)).trans c13) ⟨by decide, by simp only [V]; omega_arith⟩
+    ⟨by decide, by simp only [TV]; omega_arith⟩) fun e ⟨e1, oe, ke⟩ => ?_
   have hse := scr_of hsd ke (by decide)
   have mc : c.mem = b.mem := kc.mem
   have cnt : e.gpr .x20 = BitVec.ofNat 64 (10 - i) := by

@@ -97,19 +97,19 @@ theorem stp_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) {
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (hd.ok.st.sub_right (Lay.stSub (by omega))).symm
-  · exact Lay.st_st (.inl h1) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+  · exact (hd.ok.st.sub_right (Lay.stSub (by omega_arith))).symm
+  · exact Lay.st_st (.inl h1) (by omega_arith) (by decide)
+  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 theorem stp_taFrame {d k : Nat} (hd : d + k ≤ 16 ∨ 48 ≤ d ∧ d + k ≤ 80) :
     ∀ r ∈ taFrame st w, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+  · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
+  · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
+  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 theorem stp_saved {d k : Nat} (h1 : d + k ≤ 80) :
     ∀ r ∈ [savedR w], (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
@@ -248,7 +248,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
     rw [hc, h1.r30]
     exact hc₀.congr (blockAt_frame f₂ (stp_saved L₀ (by decide))) (blockAt_frame f₂ (stp_saved L₀ (by decide)))
   have dat₂ : bytesAt s₂.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
-    bytesAt_frame f₂ (data_saved hd₂₀.ok) (by have := hd₂₀.ok.lt; omega)
+    bytesAt_frame f₂ (data_saved hd₂₀.ok) (by have := hd₂₀.ok.lt; omega_arith)
   have out₃ : Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
       (ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀)) icb ct.length →
       bytesAt s₃.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat =
@@ -264,16 +264,16 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
     rw [hc, h1.r30, h1.r19] at this
     exact this.congr (blockAt_frame tf (stp_taFrame L₀ (.inr ⟨by decide, by decide⟩)))
       (blockAt_frame tf (stp_taFrame L₀ (.inr ⟨by decide, by decide⟩)))
-  · rw [hm, bytesAt_frame tf (data_taFrame hd₃₀) (by have := hd₃₀.lt; omega)]
+  · rw [hm, bytesAt_frame tf (data_taFrame hd₃₀) (by have := hd₃₀.lt; omega_arith)]
     exact out₃ hc₀
   · rw [hm]
     have hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
     have hab₃ : Absorbed s₃.mem (s₀.gpr .r5 + BitVec.ofNat 64 16) (s₀.gpr .r5 + BitVec.ofNat 64 32)
         (ctxH s₀.mem (s₀.gpr .r3)) (ghashInput a ct) :=
       (hab.congr (blockAt_frame f₂ (stp_saved L₀ (by decide)))
-        (bytesAt_frame f₂ (stp_saved L₀ (by omega)) (by omega))).congr
+        (bytesAt_frame f₂ (stp_saved L₀ (by omega_arith)) (by omega_arith))).congr
         (blockAt_frame cf (stp_crFrame L₀ hd₂₀ (by decide)))
-        (bytesAt_frame cf (stp_crFrame L₀ hd₂₀ (by omega)) (by omega))
+        (bytesAt_frame cf (stp_crFrame L₀ hd₂₀ (by omega_arith)) (by omega_arith))
     have := ta.abs (by rw [h1.r30]; exact hab₃)
     rw [h1.r30, h1.r20, h1.r19, out₃ hc₀] at this
     exact this
@@ -326,7 +326,7 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   have blk₅ : ∀ {d : Nat}, (d + 16 ≤ 16 ∨ 48 ≤ d ∧ d + 16 ≤ 80) →
       blockAt s₅.mem (s₀.gpr .r5 + BitVec.ofNat 64 d) = blockAt s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 d) :=
     fun hd => by
-      rw [hk₅.mem, blockAt_frame tf (stp_taFrame L₀ hd), blockAt_frame f₁ (stp_saved L₀ (by omega))]
+      rw [hk₅.mem, blockAt_frame tf (stp_taFrame L₀ hd), blockAt_frame f₁ (stp_saved L₀ (by omega_arith))]
   have ctr₅ : ∀ {P : Nat}, Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
       (ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀)) icb P →
       Ctr s₅.mem (s₁.gpr .r30 + BitVec.ofNat 64 48) (s₁.gpr .r30 + BitVec.ofNat 64 64)
@@ -335,9 +335,9 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
     exact hc₀.congr (blk₅ (d := 48) (.inr ⟨by decide, by decide⟩)) (blk₅ (d := 64) (.inr ⟨by decide, by decide⟩))
   have dat₅ : bytesAt s₅.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat := by
     have hlt := hd₁₀.ok.lt
-    rw [hk₅.mem, bytesAt_frame tf (data_taFrame hd₁₀.ok) (by omega), bytesAt_frame f₁ (data_saved hd₁₀.ok) (by omega)]
+    rw [hk₅.mem, bytesAt_frame tf (data_taFrame hd₁₀.ok) (by omega_arith), bytesAt_frame f₁ (data_saved hd₁₀.ok) (by omega_arith)]
   have dat₁ : bytesAt s₁.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
-    bytesAt_frame f₁ (data_saved hd₁₀.ok) (by have := hd₁₀.ok.lt; omega)
+    bytesAt_frame f₁ (data_saved hd₁₀.ok) (by have := hd₁₀.ok.lt; omega_arith)
   refine ⟨fun hc₀ => ?_, fun hc₀ => ?_, fun hc₀ hab => ?_, ?_⟩
   · rw [hm]
     have := co.ctr (ctr₅ hc₀)
@@ -351,12 +351,12 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
     have hab₁ : Absorbed s₁.mem (s₀.gpr .r5 + BitVec.ofNat 64 16) (s₀.gpr .r5 + BitVec.ofNat 64 32)
         (ctxH s₀.mem (s₀.gpr .r3)) (ghashInput a ct) :=
       hab.congr (blockAt_frame f₁ (stp_saved L₀ (by decide)))
-        (bytesAt_frame f₁ (stp_saved L₀ (by omega)) (by omega))
+        (bytesAt_frame f₁ (stp_saved L₀ (by omega_arith)) (by omega_arith))
     have := ta.abs (by rw [h1.r30]; exact hab₁)
     rw [h1.r30, h1.r20, h1.r19, dat₁] at this
     rw [← hk₅.mem] at this
     exact this.congr (blockAt_frame cf (stp_crFrame L₀ hd₅₀ (by decide)))
-      (bytesAt_frame cf (stp_crFrame L₀ hd₅₀ (by omega)) (by omega))
+      (bytesAt_frame cf (stp_crFrame L₀ hd₅₀ (by omega_arith)) (by omega_arith))
   · rw [hm, blockAt_frame cf (by simpa using stp_crFrame L₀ hd₅₀ (d := 0) (k := 16) (by decide))]
     simpa using blk₅ (d := 0) (.inl (by decide))
 

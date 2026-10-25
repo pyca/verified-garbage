@@ -553,7 +553,7 @@ theorem At.entry_frame {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) {rs :
 callee-saved registers. -/
 theorem At.ret {s₀ s s' : State} (h : At s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) : At s₀ s' :=
-  ⟨by rw [cs .esp (by simp [calleeSaved]), h.esp], by rw [hrd, h.rd], by rw [hwr, h.wr]⟩
+  ⟨by rw [cs .esp (by decide), h.esp], by rw [hrd, h.rd], by rw [hwr, h.wr]⟩
 
 theorem block_call {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) (hecx : s.gpr .ecx = C32 s₀ 64)
     (hedx : s.gpr .edx = C32 s₀ 128) {Q : State → Prop}
@@ -1068,7 +1068,7 @@ theorem oneB_ok {s₀ : State} (hp : APre e s₀) {k : Nat} (hk : k + 16 ≤ 448
         Repr s'.mem (cx s₀ + BitVec.ofNat 64 448) key (msg ++ bytesAt s.mem (cx s₀ + BitVec.ofNat 64 k) 16) := by
   have := hp.fit_c
   refine blocks_call hp h.inv.at (n := 1) (by decide) (bsrc_ctx hp hk) h.edx h.ecx h.eax
-    fun s' at' cs' f' repr' => ⟨h.inv.part hp at' (cs' .edi (by simp [calleeSaved])) (k := 448) (n := 128)
+    fun s' at' cs' f' repr' => ⟨h.inv.part hp at' (cs' .edi (by decide)) (k := 448) (n := 128)
       (by lit_omega) (by lit_omega) (by lit_omega) f', f', fun key msg hr => ?_⟩
   have := repr' key msg hr
   rwa [hp.c64 (by lit_omega)] at this
@@ -1164,9 +1164,9 @@ theorem maB_ok {s₀ : State} (hp : APre e s₀) {i : Nat} (hs : Src s₀ (arg s
           (msg ++ bytesAt s.mem ((arg s₀ i).setWidth 64) (16 * ((arg s₀ (i + 1)).toNat / 16))) :=
   blocks_call hp h.inv.at (by decide) (hs.bsrc (Nat.mul_div_le _ _)) h.ecx h.ebx h.eax
     fun s' at' cs' f' repr' =>
-      ⟨⟨h.inv.part hp at' (cs' .edi (by simp [calleeSaved])) (k := 448) (n := 128) (by lit_omega) (by lit_omega)
-        (by lit_omega) f', by rw [cs' .ebx (by simp [calleeSaved]), h.ebx],
-        by rw [cs' .ebp (by simp [calleeSaved]), h.ebp]⟩, f', repr'⟩
+      ⟨⟨h.inv.part hp at' (cs' .edi (by decide)) (k := 448) (n := 128) (by lit_omega) (by lit_omega)
+        (by lit_omega) f', by rw [cs' .ebx (by decide), h.ebx],
+        by rw [cs' .ebp (by decide), h.ebp]⟩, f', repr'⟩
 
 /-- The length of the tail tested. -/
 structure MC (s₀ : State) (i : Nat) (s : State) : Prop extends MB s₀ i s where
@@ -1846,7 +1846,7 @@ theorem pro3_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Pro2 s₀ s) 
     · exact (hp.stk_sub h₁).symm
   have st' : stateAt s'.mem (cx s₀ + BitVec.ofNat 64 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [VG.Proof.ChaCha20.X86.Xor.stateAt_frame f' (hd (k := 64) (n := 64) (by lit_omega) (by lit_omega)), h.st]
-  refine ⟨at', by rw [cs' _ (by simp [calleeSaved]), h.edi],
+  refine ⟨at', by rw [cs' _ (by decide), h.edi],
     h.saved.frame f' (hd (by lit_omega) (by lit_omega)), ?_, st', ?_⟩
   · refine (h.frame.sub fun r hr => ?_).trans (f'.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1886,7 +1886,7 @@ theorem post_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Pro4 s₀ s) 
       rcases hr with rfl | rfl
       · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
-  refine ⟨⟨by rw [cs' _ (by simp [calleeSaved]), h.edi], at'.esp, at'.rd, at'.wr,
+  refine ⟨⟨by rw [cs' _ (by decide), h.edi], at'.esp, at'.rd, at'.wr,
     h.saved.frame f' (hd (by lit_omega) (by lit_omega)), fine.sub fun r hr => ?_⟩, fine, ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -2084,7 +2084,7 @@ theorem crB_ok (v : XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : 
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem (dp s₀) (L s₀))
           (keystream (stateAt s.mem (cx s₀ + BitVec.ofNat 64 64)) (L s₀)) :=
   xor_call v hp h.inv.at h.eax h.ecx h.edx h.esi fun s' at' cs' f' x' =>
-    ⟨h.inv.step (cs' .edi (by simp [calleeSaved])) (by rw [at'.esp, h.inv.esp]) (by rw [at'.rd, h.inv.rd])
+    ⟨h.inv.step (cs' .edi (by decide)) (by rw [at'.esp, h.inv.esp]) (by rw [at'.rd, h.inv.rd])
       (by rw [at'.wr, h.inv.wr]) f'
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -2180,7 +2180,7 @@ theorem fiB_ok {s₀ : State} (hp : APre e s₀) {O : BitVec 32} (ho : OutOk s�
       ∀ key msg, Repr s.mem (cx s₀ + BitVec.ofNat 64 448) key msg →
         bytesAt s'.mem (O.setWidth 64) 16 = mac key msg := by
   refine finalize_call hp h.inv.at ho h.ebx h.ecx h.eax h.esi fun s' at' cs' f' t' =>
-    ⟨⟨at', by rw [cs' .edi (by simp [calleeSaved]), h.inv.edi], h.inv.saved.frame f' fun r hr => ?_⟩, f', t'⟩
+    ⟨⟨at', by rw [cs' .edi (by decide), h.inv.edi], h.inv.saved.frame f' fun r hr => ?_⟩, f', t'⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)

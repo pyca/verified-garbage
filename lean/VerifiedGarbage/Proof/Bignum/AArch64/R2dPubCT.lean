@@ -90,7 +90,7 @@ theorem r2pABPre_sign {p : R2pAB} {s : State} (h : R2pABPre p s) :
 theorem r2pSign_ok {p : R2pAB} {s : State} (h : R2pABPre p s) : WP isa (.block signTest) s (R2pABSgn p) := by
   obtain ⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, r, hN, hT⟩ := h
   have lA := Nat.le_trans (slot_le (w := p.L.w) (show aAcc < 8 by decide)) hZ
-  refine WP.mono (signTest_ok hg.scr r.x8 r.x12 hw' (by omega)) fun t ⟨⟨h3, hm⟩, k⟩ => ?_
+  refine WP.mono (signTest_ok hg.scr r.x8 r.x12 hw' (by omega_arith)) fun t ⟨⟨h3, hm⟩, k⟩ => ?_
   refine ⟨⟨⟨mi, ⟨hg.keep hm k (by decide), hZ⟩, hw, hw'⟩, r.keep k, by rw [hm]; exact hN, by rw [hm]; exact hT⟩, ?_⟩
   rw [h3, r2pABPre_sign ⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, r, hN, hT⟩]
 
@@ -131,12 +131,12 @@ theorem r2pAddBack_ct : RelCT isa (Two R2pABPre) addBackPub (Two fun (p : R2pAB)
     have lA := sl aAcc (by decide)
     have lM := sl aN (by decide)
     have sAM := slot_sep (w := p.L.w) (show aAcc ≠ aN by decide)
-    refine WP.mono (addBack_spec hg.scr r.x8 r.x9 r.x12 r.x7 (by omega) hw' (by omega) (by omega) (by omega))
+    refine WP.mono (addBack_spec hg.scr r.x8 r.x9 r.x12 r.x7 (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
       fun t ⟨c, hv, o, k⟩ => ?_
     have ha : Arrays p.L.B p.L.w [aAcc] s.mem t.mem :=
-      Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega)
+      Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega_arith)
     refine ⟨⟨mi, ⟨⟨hg.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, hZ⟩, hw, hw'⟩,
-      r.keep k, by show wv t.mem p.L.B (slot p.L.w aN) p.L.w = p.M; rw [o.wv (by omega) (by omega)]; exact hN, ?_⟩
+      r.keep k, by show wv t.mem p.L.B (slot p.L.w aN) p.L.w = p.M; rw [o.wv (by omega_arith) (by omega_arith)]; exact hN, ?_⟩
     rw [hT, hN] at hv
     exact r2p_lt_carry_mod hv (wv_lt _ _ _ _)
 
@@ -170,9 +170,9 @@ theorem r2pSPre_q {p : R2pS} {s : State} (h : R2pSPre p s) :
     r2dQ s.mem p.L.B p.L.w (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat = p.q := by
   obtain ⟨⟨_, _, hw, _⟩, hN, -, -, hX, -⟩ := h
   unfold r2dQ R2pS.q
-  rw [word_of_wv s.mem p.L.B (slot p.L.w aR2) p.L.w (show p.L.w - 1 < p.L.w by omega),
-    word_of_wv s.mem p.L.B (slot p.L.w aR2) p.L.w (show p.L.w - 2 < p.L.w by omega),
-    word_of_wv s.mem p.L.B (slot p.L.w aN) p.L.w (show p.L.w - 1 < p.L.w by omega), hX, hN]
+  rw [word_of_wv s.mem p.L.B (slot p.L.w aR2) p.L.w (show p.L.w - 1 < p.L.w by omega_arith),
+    word_of_wv s.mem p.L.B (slot p.L.w aR2) p.L.w (show p.L.w - 2 < p.L.w by omega_arith),
+    word_of_wv s.mem p.L.B (slot p.L.w aN) p.L.w (show p.L.w - 1 < p.L.w by omega_arith), hX, hN]
 
 /-- After a step's first pieces: `t = 2^64 x - q̂ m` with a borrow. -/
 def R2pSMid (p : R2pS) (s : State) : Prop :=
@@ -201,7 +201,7 @@ theorem r2pSMid_bind (p : R2pS) (s₁ s₂ : State) (h₁ : R2pSMid p s₁) (h�
   generalize p.q * p.M = Q at *
   generalize 2 ^ 64 * p.X = X at *
   cases b₁ <;> cases b₂ <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one] at e₁ e₂ <;>
-    omega
+    omega_arith
 
 theorem pins_r2pSPre : Pins R2pSPre [.x0] := pins_r2dGood (fun (p : R2pS) => p.L) fun _ _ h => h.1
 
@@ -263,7 +263,7 @@ theorem r2pSteps_ct : RelCT isa (Two R2pSsPre) stepsPub fun _ _ => True := by
     (pins_r2dGood (fun (p : R2pSs) => p.L) fun _ _ h => h.1.1) (by taint_decide) ?_) ?_
   · rintro p s ⟨⟨⟨mi, hg, hw, hw'⟩, h13, hd, hv, hX⟩, hN, hX0⟩
     refine WP.mono (r2dStepsStart_ok hg.1 hg.2 h13 hN rfl hv (by rw [hN] at hX; exact hX)) fun t hI =>
-      ⟨by omega, s, mi, _, ?_, hg.2, hw, hw', hd, ?_⟩
+      ⟨by omega_arith, s, mi, _, ?_, hg.2, hw, hw', hd, ?_⟩
     · rw [hX0] at hI; exact hI
     · rw [← hN]; exact Nat.lt_of_le_of_lt (Nat.zero_le _) hX
   refine (two_loop (Φ := R2pSsAt) (Ψ := fun _ _ => True) (fun p => p.L.w) ?_ ?_).mono (fun _ _ h => h)

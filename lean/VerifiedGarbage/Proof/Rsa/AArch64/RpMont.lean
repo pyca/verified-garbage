@@ -52,20 +52,20 @@ theorem minvBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
     WP.block_append_iff.mpr ?_
   have hs₂ := h.scr.congr (k₁.trans k₂).wr
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = word s.mem B (slot w aN) ∧ t.mem = s.mem) (by
-    brun [h16, hs₂.ld (d := slot w aN) (by omega), m₂, m₁]) (by decide) (by decide) (by decide +kernel))
+    brun [h16, hs₂.ld (d := slot w aN) (by omega_arith), m₂, m₁]) (by decide) (by decide) (by decide +kernel))
     fun t₃ ⟨⟨h3, m₃⟩, k₃⟩ => WP.block_append_iff.mpr ?_
   refine WP.mono (minv_ok t₃ (by rw [h3]; exact hodd)) fun t₄ ⟨hi, k₄, m₄⟩ => ?_
   have k14 := ((k₁.trans k₂).trans k₃).trans k₄
   have h0₄ : t₄.gpr .x0 = B := (k14.gpr .x0 (by decide)).trans h.x0
   have hs₄ := h.scr.congr k14.wr
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = t₄.mem.writeW (off B (8 * sMinv)) (t₄.gpr .x15)) (by
-    brun [h0₄, hdr_enc (show sMinv < 32 by decide), hs₄.st (d := 8 * sMinv) (by simp only [sMinv]; omega)])
+    brun [h0₄, hdr_enc (show sMinv < 32 by decide), hs₄.st (d := 8 * sMinv) (by simp only [sMinv]; omega_arith)])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨mt, k₅⟩ => ?_
-  have o := writeW_outside t₄.mem B (t₄.gpr .x15) (d := 8 * sMinv) (by simp only [sMinv]; omega)
+  have o := writeW_outside t₄.mem B (t₄.gpr .x15) (d := 8 * sMinv) (by simp only [sMinv]; omega_arith)
   rw [← mt] at o
   have m4 : t₄.mem = s.mem := m₄.trans m₃
   refine ⟨?_, by rw [← m4]; exact Frm.rg_of_hdr o _ _ (List.mem_singleton_self _), (k14.trans k₅).mono (by decide)⟩
-  rw [o.word (Or.inr (by omega)) (by omega), mt, word_writeW_self, m4, ← h3]
+  rw [o.word (Or.inr (by omega_arith)) (by omega_arith), mt, word_writeW_self, m4, ← h3]
   exact hi
 
 /-- The bases of a subtraction `[c] := [a] - [b]` over `w` words, from the
@@ -101,7 +101,7 @@ theorem subLoop_ok {s : State} {B : Addr} {Z N eA eN eT : Nat} (hs : Scr s B Z)
       wv t.mem B eT N + wv s.mem B eN N = wv s.mem B eA N + 2 ^ (64 * N) * (!t.c).toNat ∧
       Outside B eT (8 * N) s.mem t.mem ∧ Keep [.x3, .x4, .x13, .x14, .x16, .x17] s t := by
   unfold countLoop subBody
-  refine WP.mono (wp_countdown (N := N) (by omega) (by omega) (SubInv s B Z eA eN eT)
+  refine WP.mono (wp_countdown (N := N) (by omega_arith) (by omega_arith) (SubInv s B Z eA eN eT)
     (fun j hj t hI _ => subStep_ok hA hNz hT sA sN hj hI)
     ⟨hs, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, by rw [h13]; rfl, Outside.refl _ _ _ _,
       by rw [hc]; rfl⟩ h14) fun t hI => ⟨hI.val, hI.out, hI.keep⟩

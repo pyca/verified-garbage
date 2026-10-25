@@ -38,12 +38,12 @@ theorem Rep.apart {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitV
     rw [hf _ fun r' hr' hc => ?_]
     · exact R.scr o ho
     rw [List.mem_singleton.mp hr'] at hc
-    exact ha.dS _ hc ((cS S (o := o) (n := 1) (by omega)).byte (by rw [BitVec.sub_self]; decide))
+    exact ha.dS _ hc ((cS S (o := o) (n := 1) (by omega_arith)).byte (by rw [BitVec.sub_self]; decide))
   fr k hk := by
     rw [word, hf.readW (r := ⟨off F (8 * k), 8⟩) (Region.contains_self _ _) (fun r' hr' => ?_) (by decide)]
     · exact R.fr k hk
     rw [List.mem_singleton.mp hr']
-    exact (ha.dF.sub_right (Offset.sub_base F (by unfold nW frameBytes at *; omega))).symm
+    exact (ha.dF.sub_right (Offset.sub_base F (by unfold nW frameBytes at *; omega_arith))).symm
 
 /-! ## `ok` -/
 
@@ -88,9 +88,9 @@ theorem outBody_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       u'.gpr .x15 = u.gpr .x15 := by
   have cb : oBuf = 1024 := rfl
   have co : oRsa = 8192 := rfl
-  have r1 : InRegions (u.rd ++ u.wr) (off S (oBuf + j)) 1 := L.sld (by omega)
-  have v1 : u.mem (off S (oBuf + j)) = V (oBuf + j) := R.scr _ (by omega)
-  have cj : Region.Contains ⟨o, k⟩ (off o j) 1 := Offset.contains_base o (by omega) (by omega)
+  have r1 : InRegions (u.rd ++ u.wr) (off S (oBuf + j)) 1 := L.sld (by omega_arith)
+  have v1 : u.mem (off S (oBuf + j)) = V (oBuf + j) := R.scr _ (by omega_arith)
+  have cj : Region.Contains ⟨o, k⟩ (off o j) 1 := Offset.contains_base o (by omega_arith) (by omega_arith)
   have w1 : InRegions u.wr (off o j) 1 := hw _ _ ⟨_, List.mem_singleton_self _, cj⟩
   refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off o j) 1 (andB (V (oBuf + j)) (u.gpr .x15)) ∧
       u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧
@@ -143,9 +143,9 @@ theorem outLoop_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   · rw [hm', write1_apply]
     by_cases hij : i = j
     · subst hij; rw [ifp rfl, w15]
-    · rw [ifn (Offset.add_ofNat_ne o (by omega) (by omega) hij), Ow i (by omega)]
-  · rw [x13', w13, counter_step hj (by omega)]
-  · rw [x13', w13, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+    · rw [ifn (Offset.add_ofNat_ne o (by omega_arith) (by omega_arith) hij), Ow i (by omega_arith)]
+  · rw [x13', w13, counter_step hj (by omega_arith)]
+  · rw [x13', w13, counter_step hj (by omega_arith)]; exact counter_ne hj (by omega_arith)
 
 /-! ## The length and the result -/
 
@@ -218,7 +218,7 @@ theorem zeroOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     (fun j hj w ⟨Lw, Sw, Rw, Ow, w11, w12, w13⟩ => ?_)
     ⟨Lv, Sv, hm ▸ R, fun _ h => absurd h (Nat.not_lt_zero _), by rw [x11]; exact (BitVec.add_zero o).symm,
       x12, x13⟩) fun w ⟨Lw, Sw, Rw, Ow, _, _, w13⟩ => ⟨Lw, Sw, Rw, w13, Ow⟩
-  have cj : Region.Contains ⟨o, k⟩ (off o j) 1 := Offset.contains_base o (by omega) (by omega)
+  have cj : Region.Contains ⟨o, k⟩ (off o j) 1 := Offset.contains_base o (by omega_arith) (by omega_arith)
   have w1 : InRegions w.wr (off o j) 1 := by rw [Sw.wr]; exact hw _ _ ⟨_, List.mem_singleton_self _, cj⟩
   refine WP.mono (Q := fun (w' : State) => w'.mem = w.mem.write (off o j) 1 0 ∧ w'.rd = w.rd ∧ w'.wr = w.wr ∧
       w'.sp = w.sp ∧ w'.v = w.v ∧ (∀ r ∈ preserved, r ≠ .x30 → w'.gpr r = w.gpr r) ∧
@@ -230,13 +230,13 @@ theorem zeroOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     rw [hm']; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ cj
   have R' : Rep w'.mem F S V W := Rw.apart Lw.geo ha hf
   refine ⟨⟨Lw.congr hsp' hwr' ?_, Sw.trans ⟨hrd', hwr', hsp', hcs', fun r _ => by rw [hv'], hf.mono (by simp)⟩, R',
-    fun i hi => ?_, x11'.trans (off_off o j 1), by rw [x12', w12, counter_step hj (by omega)], x13'⟩, ?_⟩
+    fun i hi => ?_, x11'.trans (off_off o j 1), by rw [x12', w12, counter_step hj (by omega_arith)], x13'⟩, ?_⟩
   · rw [show sScr = 8 * 12 from rfl, R'.fr 12 (by decide), Rw.fr 12 (by decide)]
   · rw [hm', write1_apply]
     by_cases hij : i = j
     · subst hij; rw [ifp rfl]
-    · rw [ifn (Offset.add_ofNat_ne o (by omega) (by omega) hij), Ow i (by omega)]
-  · rw [x12', w12, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+    · rw [ifn (Offset.add_ofNat_ne o (by omega_arith) (by omega_arith) hij), Ow i (by omega_arith)]
+  · rw [x12', w12, counter_step hj (by omega_arith)]; exact counter_ne hj (by omega_arith)
 
 /-! ## Failure before decoding -/
 
@@ -276,7 +276,7 @@ theorem decFail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   · rw [hf _ fun r hr hc => ?_]
     · exact hz i hi
     rw [List.mem_singleton.mp hr] at hc
-    exact hom _ ((Offset.contains_base o (d := i) (n := 1) (k := k) (by omega) (by omega)).byte
+    exact hom _ ((Offset.contains_base o (d := i) (n := 1) (k := k) (by omega_arith) (by omega_arith)).byte
       (by rw [BitVec.sub_self]; decide)) hc
   · rw [hm, BitVec.add_zero]
     simpa only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq] using

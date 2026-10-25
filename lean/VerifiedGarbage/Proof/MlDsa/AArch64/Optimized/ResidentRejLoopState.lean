@@ -53,8 +53,8 @@ theorem ParseInv.candidate {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Z
   rw [h.x2,Offset.add_add,←Nat.mul_add]
   unfold ResidentRej.candidate
   rw [h.byte hl (by omega)]
-  have h1 : b+BitVec.ofNat 64 (3*(d+j))+1=b+BitVec.ofNat 64 (3*(d+j)+1) := by bv_omega
-  have h2 : b+BitVec.ofNat 64 (3*(d+j))+2=b+BitVec.ofNat 64 (3*(d+j)+2) := by bv_omega
+  have h1 : b+BitVec.ofNat 64 (3*(d+j))+1=b+BitVec.ofNat 64 (3*(d+j)+1) := by bv_omega_arith
+  have h2 : b+BitVec.ofNat 64 (3*(d+j))+2=b+BitVec.ofNat 64 (3*(d+j)+2) := by bv_omega_arith
   rw [h1,h2,h.byte hl (by omega),h.byte hl (by omega)]
 
 theorem ParseInv.batch {s₀ s : State} {b p : Addr} {n d k : Nat} {L : List Zq}

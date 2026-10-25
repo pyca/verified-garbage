@@ -113,13 +113,13 @@ theorem copyA_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S m
   have K3 : Keeps [.eax, .ebx, .esi, .edi] s t3 := ((K1.keep.mono (by decide)).widen u2.keeps).widen u3.keeps
   have mem3 : t3.mem = s.mem := by rw [u3.mem, u2.mem, K1.mem]
   have I0 : CopyI s W N S a 0 t3 := by
-    refine ⟨K3, by rw [m3, m2, K1.mcdt], by rw [mem3]; exact Outs.refl _ _ _, ?_, ?_, ?_, fun i hi => absurd hi (by omega)⟩
+    refine ⟨K3, by rw [m3, m2, K1.mcdt], by rw [mem3]; exact Outs.refl _ _ _, ?_, ?_, ?_, fun i hi => absurd hi (by omega_arith)⟩
     · rw [PtrAt, u3.other _ (by decide), u2.other _ (by decide), e1, BitVec.toNat_ofNat]
       congr 1; omega_using []
     · rw [PtrAt, u3.other _ (by decide), u2.gpr, PV.a, Nat.mul_zero, Nat.add_zero]
     · rw [u3.gpr, PV.n4, Nat.sub_zero]
   refine WP.mono (WP.loop (M := isa) (Q := CopyI s W N S a N) (fun m t => ∃ j, m = N - j ∧ j < N ∧ CopyI s W N S a j t)
-    ?_ N t3 ⟨0, by omega, hN, I0⟩) fun u I => ⟨I.keep, I.mcdt, I.out, fun i hi => ?_⟩
+    ?_ N t3 ⟨0, by omega_arith, hN, I0⟩) fun u I => ⟨I.keep, I.mcdt, I.out, fun i hi => ?_⟩
   · rintro m t ⟨j, rfl, hj, I⟩
     refine WP.mono (copyStep_ok (hw.of_keeps I.keep) I hj ha (by omega_using [hs]) hsa) fun u ⟨I', zu⟩ => ?_
     have hv : isa.eval .ne u = some (!decide (j + 1 = N)) := by show u.zf.map _ = _; rw [zu]; rfl
@@ -179,17 +179,17 @@ theorem window_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S 
   have cf6 : t6.cf = some (decide (N < 3)) := by
     rw [c6, u5.gpr, PV.n4]
     show some (decide (4 * N < 12)) = _
-    congr 1; exact decide_eq_decide.mpr (by omega)
+    congr 1; exact decide_eq_decide.mpr (by omega_arith)
   have eax6 : PtrAt t6 W .eax mo := by
     rw [PtrAt, F6.gpr, u5.other _ (by decide), g4, u3.other _ (by decide)]; exact a2
   refine WP.ite (decide (N < 3)) cf6 ?_ ?_
   · intro h3
-    have h3' : ¬ 3 ≤ N := by have := of_decide_eq_true h3; omega
+    have h3' : ¬ 3 ≤ N := by have := of_decide_eq_true h3; omega_arith
     refine WP.block_nil ⟨by rw [x6_6]; exact dword_zero' 0, by rw [x6_6]; exact dword_zero' 2, ?_, ?_, mem6, mc6, K6⟩
     · rw [x7_6, dword_movd_0, eM1]
     · rw [x7_6, dword_movd_2, ite_eq_right h3']; rfl
   · intro h3
-    have h3' : 3 ≤ N := by have := of_decide_eq_false h3; omega
+    have h3' : 3 ≤ N := by have := of_decide_eq_false h3; omega_arith
     have hw6 := hw.of_keeps K6
     refine wp_movX (readSrc_ptr hw6 eax6 (d := 8) (by omega_using [hmo, h3'])) fun t7 u7 m7 y7 =>
       wp_xopX _ fun t8 g8 m8 rd8 wr8 mc8 x8 => wp_xopX _ fun t9 g9 m9 rd9 wr9 mc9 x9 => WP.block_nil ?_
@@ -302,7 +302,7 @@ theorem columns_ok {s0 : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N 
     refine ⟨hw.of_keeps (K7'.trans (K10.mono (by decide))), P7.keep (by rw [mem10]; exact Outs.refl _ _ _)
       (K10.1 _ (by decide)) K10.2.1 K10.2.2, by rw [mem10]; exact O7, ?_,
       by rw [m10, m9, m8, mc7, m6, m5, m4, m3, m2, mc1], ?_, Nat.zero_le _, ?_, fun _ => Nat.zero_le _,
-      fun i _ h => absurd h (by omega), fun _ => ⟨?_, ?_, ?_, ?_⟩, ?_, K7'.trans (K10.mono (by decide))⟩
+      fun i _ h => absurd h (by omega_arith), fun _ => ⟨?_, ?_, ?_, ?_⟩, ?_, K7'.trans (K10.mono (by decide))⟩
     · rw [K10.1 _ (by decide), K7.1 _ (by decide), u6.gpr]; rfl
     · rw [mem10, mem7, mem6, w32_write_ne (size := L) hn (by omega_using [hs]) (by omega_using [hs])
         (by omega_using []), w32_write_self, w32_write_self]; rfl

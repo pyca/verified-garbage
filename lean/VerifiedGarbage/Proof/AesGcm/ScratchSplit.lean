@@ -162,13 +162,13 @@ private theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}
   have := Nat.mod_le al.toNat (2 ^ pb)
   have := Nat.mod_le sl.toNat (2 ^ pb)
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [ctxCiph_congr (le15 hr) fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
-    bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by rw [BitVec.toNat_setWidth] at hi; omega),
-    bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by rw [BitVec.toNat_setWidth] at hi; omega),
+  rw [ctxCiph_congr (le15 hr) fun i hi => hc i (by omega_arith), ctxH_congr fun i hi => hc i (by omega_arith),
+    bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by rw [BitVec.toNat_setWidth] at hi; omega_arith),
+    bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := src) (n := (sl.setWidth pb).toNat) fun i hi => hs i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := dst) (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hr hle
 
 theorem sealSplitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSplitSig.words pb).length →

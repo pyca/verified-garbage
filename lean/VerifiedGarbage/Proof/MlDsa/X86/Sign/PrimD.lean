@@ -77,7 +77,7 @@ theorem sbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (simp
     sig_pre [simpleBitPackContract, simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp, bl, ll]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hF hO' dFO, rF₁, rO₁, rF₂, rO₂, rA₂, rF₃, rO₃, rA₃,
       Buf.fit hp hF, Buf.fit hp hO', hb, hl, fun i hi => ?_⟩
     rw [coeffAt_congr₂ (ent_bytes hp h (n := 4) (by decide) hF) hi, m]; exact (hA s₀ s hp ha).2 i hi
@@ -112,7 +112,7 @@ theorem sbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (simp
     subst he
     simp only [arg_withRegions, a0, a1, a2, a3, m₂, bl, ll] at post
     rw [natPolyAt_congr₂ (ent_bytes hp h (n := 4) (by decide) hF), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `out ← BitPack(f mod± q, a, b)`, `len` bytes. -/
 theorem bp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitPackContract X86.abi 16))
@@ -128,9 +128,9 @@ theorem bp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitPa
     SP p A B (callP nm c [.buf ⟨fa, fo, 1024⟩, .imm a, .imm b, .buf ⟨oa, oo, len⟩, .imm len]) := by
   set F : Buf := ⟨fa, fo, 1024⟩
   set O : Buf := ⟨oa, oo, len⟩
-  have al : (BitVec.ofNat 32 a).toNat = a := by rw [BitVec.toNat_ofNat]; omega
-  have bl : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; omega
-  have ll : (BitVec.ofNat 32 len).toNat = len := by rw [BitVec.toNat_ofNat]; omega
+  have al : (BitVec.ofNat 32 a).toNat = a := by rw [BitVec.toNat_ofNat]; omega_arith
+  have bl : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; omega_arith
+  have ll : (BitVec.ofNat 32 len).toNat = len := by rw [BitVec.toNat_ofNat]; omega_arith
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hF, hO⟩, dFO⟩ := hc
   have hO' := (Lay.okW_iff.mp hO).1
@@ -162,7 +162,7 @@ theorem bp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitPa
     sig_pre [bitPackContract, bitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp, al, bl, ll]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hF hO' dFO, rF₁, rO₁, rF₂, rO₂, rA₂, rF₃, rO₃, rA₃,
       Buf.fit hp hF, Buf.fit hp hO', hab, hl, ?_, fun i hi => ?_⟩
     · exact reduced_congr (ent_bytes hp h (n := 5) (by decide) hF) (m ▸ (hA s₀ s hp ha).2.1)
@@ -201,7 +201,7 @@ theorem bp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitPa
     subst he
     simp only [arg_withRegions, a0, a1, a2, a3, a4, m₂, al, bl, ll] at post
     rw [polyAt_congr (ent_bytes hp h (n := 5) (by decide) hF), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `f ← BitUnpack(v, a, b)`, of the `len` bytes `v`. -/
 theorem bu_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitUnpackContract X86.abi 16))
@@ -215,9 +215,9 @@ theorem bu_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitUn
     SP p A B (callP nm c [.buf ⟨va, vo, len⟩, .imm len, .imm a, .imm b, .buf ⟨fa, fo, 1024⟩]) := by
   set V : Buf := ⟨va, vo, len⟩
   set F : Buf := ⟨fa, fo, 1024⟩
-  have al : (BitVec.ofNat 32 a).toNat = a := by rw [BitVec.toNat_ofNat]; omega
-  have bl : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; omega
-  have ll : (BitVec.ofNat 32 len).toNat = len := by rw [BitVec.toNat_ofNat]; omega
+  have al : (BitVec.ofNat 32 a).toNat = a := by rw [BitVec.toNat_ofNat]; omega_arith
+  have bl : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; omega_arith
+  have ll : (BitVec.ofNat 32 len).toNat = len := by rw [BitVec.toNat_ofNat]; omega_arith
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hV, hF⟩, dVF⟩ := hc
   have hF' := (Lay.okW_iff.mp hF).1
@@ -249,7 +249,7 @@ theorem bu_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitUn
     sig_pre [bitUnpackContract, bitUnpackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp, al, bl, ll]
-    exact ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    exact ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hV hF' dVF, rV₁, rF₁, rV₂, rF₂, rA₂, rV₃, rF₃, rA₃,
       Buf.fit hp hV, Buf.fit hp hF', hab, hl⟩
   · have e₁ : V.ptr s₀ = V.ptr s₀' := hq.t.ptr hV
@@ -288,7 +288,7 @@ theorem bu_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitUn
     subst he
     simp only [arg_withRegions, a0, a1, a2, a3, a4, m₂, al, bl, ll] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `y ← HintBitPack(h)`, of the hint of `k` polynomials `h`. -/
 theorem hbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (hintBitPackContract X86.abi 16))
@@ -307,10 +307,10 @@ theorem hbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (hint
   have hb : w < 100 ∧ k ≤ 8 := by
     simp only [hintParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hwk
     rcases hwk with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
-  have wl : (BitVec.ofNat 32 w).toNat = w := by rw [BitVec.toNat_ofNat]; omega
-  have kl : (BitVec.ofNat 32 (256 * k)).toNat = 256 * k := by rw [BitVec.toNat_ofNat]; omega
-  have ll : (BitVec.ofNat 32 (w + k)).toNat = w + k := by rw [BitVec.toNat_ofNat]; omega
-  have ek : w + k - w = k := by omega
+  have wl : (BitVec.ofNat 32 w).toNat = w := by rw [BitVec.toNat_ofNat]; omega_arith
+  have kl : (BitVec.ofNat 32 (256 * k)).toNat = 256 * k := by rw [BitVec.toNat_ofNat]; omega_arith
+  have ll : (BitVec.ofNat 32 (w + k)).toNat = w + k := by rw [BitVec.toNat_ofNat]; omega_arith
+  have ek : w + k - w = k := by omega_arith
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hH, hO⟩, dHO⟩ := hc
   have hO' := (Lay.okW_iff.mp hO).1
@@ -342,10 +342,10 @@ theorem hbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (hint
     sig_pre [hintBitPackContract, hintBitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp, wl, kl, ll, ek]
-    rw [show 256 * k * 4 = 1024 * k by omega]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    rw [show 256 * k * 4 = 1024 * k by omega_arith]
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hH hO' dHO, rH₁, rO₁, rH₂, rO₂, rA₂, rH₃, rO₃, rA₃,
-      Buf.fit hp hH, Buf.fit hp hO', hwk, by omega, trivial, ?_⟩
+      Buf.fit hp hH, Buf.fit hp hO', hwk, by omega_arith, trivial, ?_⟩
     rw [hintAt_congr (ent_bytes hp h (n := 5) (by decide) hH), m]; exact (hA s₀ s hp ha).2
   · have e₁ : H.ptr s₀ = H.ptr s₀' := hq.t.ptr hH
     have e₂ : O.ptr s₀ = O.ptr s₀' := hq.t.ptr hO'
@@ -362,8 +362,8 @@ theorem hbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (hint
     have a4' : arg (pushed (argPush 5) s₁').callEntry 4 = BitVec.ofNat 32 (w + k) := ent_arg hp' h' (as := [.buf H, .imm (256 * k), .imm w, .buf O, .imm (w + k)]) (by simp) hg' (i := 4) (by simp)
     have eSp : (pushed (argPush 5) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 5) (by decide)
     have eSp' : (pushed (argPush 5) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 5) (by decide)
-    have c₁ := coeffs_congr (len := 256 * k) (fun x hx => ent_bytes hp h (n := 5) (by decide) hH x (by show x < 1024 * k; omega))
-    have c₂ := coeffs_congr (len := 256 * k) (fun x hx => ent_bytes hp' h' (n := 5) (by decide) hH x (by show x < 1024 * k; omega))
+    have c₁ := coeffs_congr (len := 256 * k) (fun x hx => ent_bytes hp h (n := 5) (by decide) hH x (by show x < 1024 * k; omega_arith))
+    have c₂ := coeffs_congr (len := 256 * k) (fun x hx => ent_bytes hp' h' (n := 5) (by decide) hH x (by show x < 1024 * k; omega_arith))
     have key : (List.range (256 * k)).map (fun i => (coeffAt (pushed (argPush 5) s₁).callEntry.mem (H.addr s₀) i).toNat) =
         (List.range (256 * k)).map (fun i => (coeffAt (pushed (argPush 5) s₁').callEntry.mem (H.addr s₀') i).toNat) := by
       rw [c₁, c₂, m, m']; exact hleak s₀ s₀' s s' hp hp' hq ha ha'
@@ -388,6 +388,6 @@ theorem hbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (hint
     subst he
     simp only [arg_withRegions, a0, a2, a3, a4, m₂, wl, ll, ek] at post
     rw [hintAt_congr (ent_bytes hp h (n := 5) (by decide) hH), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 end VG.Proof.MlDsa.X86.Sign

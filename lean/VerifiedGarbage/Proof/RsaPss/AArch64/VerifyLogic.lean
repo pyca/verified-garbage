@@ -37,7 +37,7 @@ theorem zext_inj (a b : Byte) : BitVec.setWidth 64 a = BitVec.setWidth 64 b ↔ 
     apply BitVec.eq_of_toNat_eq
     have := congrArg BitVec.toNat h
     simp only [BitVec.toNat_setWidth] at this
-    rwa [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+    rwa [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)] at this
   · rintro rfl; rfl
 
 theorem zext_eq_zero (a : Byte) : BitVec.setWidth 64 a = 0 ↔ a = 0 := zext_inj a 0
@@ -48,7 +48,7 @@ theorem ff_bit (i : Nat) (hi : i < 64) : (255#64)[i] = decide (i < 8) := by
   · revert h; revert i; decide
   · rw [decide_eq_false h]
     exact Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (by decide : (255#64).toNat < 2 ^ 8)
-      (Nat.pow_le_pow_right (by decide) (by omega)))
+      (Nat.pow_le_pow_right (by decide) (by omega_arith)))
 
 theorem zext_and_not (top c : Byte) :
     BitVec.setWidth 64 top &&& (BitVec.setWidth 64 c ^^^ 255#64) = BitVec.setWidth 64 (top &&& ~~~c) := by
@@ -56,7 +56,7 @@ theorem zext_and_not (top c : Byte) :
   simp only [BitVec.getElem_and, BitVec.getElem_xor, BitVec.getElem_setWidth, ff_bit i hi]
   by_cases h : i < 8
   · simp [h]
-  · simp [h, BitVec.getLsbD_of_ge _ _ (by omega : 8 ≤ i)]
+  · simp [h, BitVec.getLsbD_of_ge _ _ (by omega_arith : 8 ≤ i)]
 
 theorem acc0V_eq_zero (V : Nat → Byte) (k : Nat) {lo : Nat} (c : Byte) (hlo : lo ≤ 1) :
     acc0V V k lo c = 0 ↔ V (oEm + k - 1) = 0xbc ∧ (lo = 1 → V oEm = 0) ∧ V (oEm + lo) &&& ~~~c = 0 := by
@@ -64,7 +64,7 @@ theorem acc0V_eq_zero (V : Nat → Byte) (k : Nat) {lo : Nat} (c : Byte) (hlo : 
   rw [or_eq_zero64, or_eq_zero64, xor_eq_zero64,
     show (BitVec.ofNat 64 0xbc : BitVec 64) = BitVec.setWidth 64 (0xbc : Byte) from rfl, zext_inj,
     show (BitVec.ofNat 64 0xFF : BitVec 64) = 255#64 from rfl, zext_and_not, zext_eq_zero]
-  rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
+  rcases (show lo = 0 ∨ lo = 1 by omega_arith) with rfl | rfl
   · simp only [show 0#64 - BitVec.ofNat 64 0 = 0 from rfl]
     simp
   · simp only [show 0#64 - BitVec.ofNat 64 1 = BitVec.allOnes 64 from rfl, BitVec.and_allOnes, zext_eq_zero]
@@ -87,9 +87,9 @@ theorem orF_eq_zero (g : Nat → BitVec 64) : ∀ j, orF g j = 0 ↔ ∀ i < j, 
     rw [orF, or_eq_zero64, orF_eq_zero g j]
     constructor
     · rintro ⟨hi, hj⟩ i hi'
-      exact if e : i = j then e ▸ hj else hi i (by omega)
+      exact if e : i = j then e ▸ hj else hi i (by omega_arith)
     · intro hi
-      exact ⟨fun i hi' => hi i (by omega), hi j (by omega)⟩
+      exact ⟨fun i hi' => hi i (by omega_arith), hi j (by omega_arith)⟩
 
 theorem lt_or {x y : BitVec 64} {n : Nat} (hx : x.toNat < 2 ^ n) (hy : y.toNat < 2 ^ n) : (x ||| y).toNat < 2 ^ n := by
   rw [BitVec.toNat_or]; exact Nat.or_lt_two_pow hx hy
@@ -104,7 +104,7 @@ theorem lt_byte (b : Byte) {n : Nat} (hn : 8 ≤ n) : (b.setWidth 64).toNat < 2 
   rw [BitVec.toNat_setWidth]
   have := b.isLt
   have : 2 ^ 8 ≤ 2 ^ n := Nat.pow_le_pow_right (by decide) hn
-  omega
+  omega_arith
 
 theorem lt_ofNat {a n : Nat} (ha : a < 2 ^ n) : (BitVec.ofNat 64 a).toNat < 2 ^ n := by
   rw [BitVec.toNat_ofNat]
@@ -123,21 +123,21 @@ theorem top_sub (y : BitVec 64) (hy : y.toNat < 2 ^ 63) : (y - 1#64) >>> 63 = if
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
     simp only [BitVec.toNat_ofNat]
-    rw [show (2 ^ 64 - 1 % 2 ^ 64 + y.toNat) % 2 ^ 64 = y.toNat - 1 by omega]
-    exact Nat.div_eq_of_lt (by omega)
+    rw [show (2 ^ 64 - 1 % 2 ^ 64 + y.toNat) % 2 ^ 64 = y.toNat - 1 by omega_arith]
+    exact Nat.div_eq_of_lt (by omega_arith)
 
 theorem nz_lz (l : List Byte) : ∀ j ≤ l.length, nz (fun i => l.getD i 0) j = if lz l < j then some (lz l) else none
   | 0, _ => by simp [nz]
   | j + 1, hj => by
-    have ih := nz_lz l j (by omega)
+    have ih := nz_lz l j (by omega_arith)
     simp only [nz, ih]
     by_cases h : lz l < j
-    · rw [ifp h]; exact (ifp (show lz l < j + 1 by omega) _ _).symm
+    · rw [ifp h]; exact (ifp (show lz l < j + 1 by omega_arith) _ _).symm
     · rw [ifn h]
       by_cases h' : lz l = j
       · subst h'
-        rw [ifn (getD_lz_ne (by omega)), ifp (by omega)]
-      · rw [ifp (getD_lt_lz (by omega)), ifn (by omega)]
+        rw [ifn (getD_lz_ne (by omega_arith)), ifp (by omega_arith)]
+      · rw [ifp (getD_lt_lz (by omega_arith)), ifn (by omega_arith)]
 
 section
 variable {G : Hash} (hG : Proof.Mgf1.Valid G) {D : Nat} (hGl : G.len = D) {x : List Byte} {V : Nat → Byte}
@@ -147,12 +147,12 @@ include hGl hx hV hdb in
 /-- `H` in `EM`. -/
 theorem vH_view : vH G (x.drop lo) db = (List.range D).map fun i => V (oEm + lo + db + i) := by
   unfold vH
-  refine eq_range_map (by simp only [List.length_take, List.length_drop, hx]; omega) fun i hi => ?_
-  rw [show oEm + lo + db + i = oEm + (lo + db + i) by omega, hV _ (by omega)]
+  refine eq_range_map (by simp only [List.length_take, List.length_drop, hx]; omega_arith) fun i hi => ?_
+  rw [show oEm + lo + db + i = oEm + (lo + db + i) by omega_arith, hV _ (by omega_arith)]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop]
-  rw [ifp (by omega)]
+  rw [ifp (by omega_arith)]
   congr 2
-  omega
+  omega_arith
 
 include hG hGl hx hV hdb in
 /-- `DB` in `EM`, unmasked and its top bits cleared. -/
@@ -163,9 +163,9 @@ theorem vDb_view {c : Byte} {z : Nat} (hc : c = (0xFF : Byte) >>> z) :
   have hmk : mkB G D V (oEm + lo) db = mgf1 G (vH G (x.drop lo) db) db := by
     rw [vH_view hGl hx hV hdb]; rfl
   have hml := Proof.Mgf1.mgf1_length hG (vH G (x.drop lo) db) db
-  have ht : ((x.drop lo).take db).length = db := by simp only [List.length_take, List.length_drop, hx]; omega
+  have ht : ((x.drop lo).take db).length = db := by simp only [List.length_take, List.length_drop, hx]; omega_arith
   have hxi : ∀ j < db, ((x.drop lo).take db).getD j 0 = V (oEm + lo + j) := fun j hj => by
-    rw [Nat.add_assoc, hV _ (by omega)]
+    rw [Nat.add_assoc, hV _ (by omega_arith)]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop]
     rw [ifp hj]
   unfold vDb
@@ -173,19 +173,19 @@ theorem vDb_view {c : Byte} {z : Nat} (hc : c = (0xFF : Byte) >>> z) :
   unfold wct upd mixV
   by_cases h0 : i = 0
   · subst h0
-    rw [ifp rfl, ifp (by omega), ifp (by omega), xorBytes_getD (by omega) (by omega), hxi 0 hi]
+    rw [ifp rfl, ifp (by omega_arith), ifp (by omega_arith), xorBytes_getD (by omega_arith) (by omega_arith), hxi 0 hi]
     simp only [Nat.add_zero, Nat.sub_self]
-  · rw [ifn h0, ifn (by omega), ifp (by omega), xorBytes_getD (by omega) (by omega), hxi i hi]
+  · rw [ifn h0, ifn (by omega_arith), ifp (by omega_arith), xorBytes_getD (by omega_arith) (by omega_arith), hxi i hi]
     congr 2
-    omega
+    omega_arith
 
 end
 
 theorem lt_shr63 (x : BitVec 64) : (x >>> 63).toNat < 2 ^ 11 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  have : x.toNat / 2 ^ 63 < 2 := Nat.div_lt_of_lt_mul (by omega)
-  omega
+  have : x.toNat / 2 ^ 63 < 2 := Nat.div_lt_of_lt_mul (by omega_arith)
+  omega_arith
 
 /-- What `cmpH` ORs is below `2¹¹`. -/
 theorem acc_lt (V : Nat → Byte) (k lo : Nat) (c : Byte) (f : Nat → Byte) (db : Nat) (any sv : BitVec 64)
@@ -202,7 +202,7 @@ theorem acc_lt (V : Nat → Byte) (k lo : Nat) (c : Byte) (f : Nat → Byte) (db
     refine lt_or (lt_or h0 (lt_or (lt_xor (hb _) (by decide)) (lt_shr63 _))) ?_
     split
     · rename_i ha
-      exact lt_xor (hs ha) (lt_ofNat (by omega))
+      exact lt_xor (hs ha) (lt_ofNat (by omega_arith))
     · exact Nat.two_pow_pos 11
   exact Nat.lt_trans (lt_or h1 (orF_lt g hg D)) h11
 
@@ -211,9 +211,9 @@ theorem list_eq_iff_getD {a b : List Byte} {n : Nat} (ha : a.length = n) (hb : b
   constructor
   · rintro rfl _ _; rfl
   · intro h
-    apply List.ext_getElem (by omega)
+    apply List.ext_getElem (by omega_arith)
     intro i h₁ h₂
-    have := h i (by omega)
+    have := h i (by omega_arith)
     rwa [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁,
       List.getElem?_eq_getElem h₂] at this
 
@@ -227,8 +227,8 @@ theorem msgV_eq {f : Nat → Byte} {dbL : List Byte} {db : Nat} (hl : dbL.length
     (hf : ∀ i < db, f i = dbL.getD i 0) (mH : List Byte) {p : Nat} (hp : p < db) :
     msgV mH f db p = Spec.RsaPss.zeros 8 ++ mH ++ dbL.drop (p + 1) := by
   unfold msgV
-  refine congrArg (_ ++ ·) (eq_range_map (by rw [List.length_drop, hl]; omega) fun i hi => ?_).symm
-  rw [hf _ (by omega)]
+  refine congrArg (_ ++ ·) (eq_range_map (by rw [List.length_drop, hl]; omega_arith) fun i hi => ?_).symm
+  rw [hf _ (by omega_arith)]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]
 
 /-- `x0` after `cmpH` is 1 exactly when the encoding in `x` is valid. -/

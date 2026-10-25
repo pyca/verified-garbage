@@ -39,20 +39,20 @@ theorem VW_of_HW {s : State} {a : Nat} {v : BitVec 64 × BitVec 64} (h1 : HW s a
     VW s a v := fun c hc j hj => by
   by_cases h8 : c < 8
   · rw [itePos h8, Nat.mod_eq_of_lt h8]; exact h1 c h8 j hj
-  · rw [iteNeg h8, show a + c / 4 = a + 2 + (c - 8) / 4 by omega, show c % 4 = (c - 8) % 4 by omega,
-      show c % 8 = c - 8 by omega]
-    exact h2 (c - 8) (by omega) j hj
+  · rw [iteNeg h8, show a + c / 4 = a + 2 + (c - 8) / 4 by omega_arith, show c % 4 = (c - 8) % 4 by omega_arith,
+      show c % 8 = c - 8 by omega_arith]
+    exact h2 (c - 8) (by omega_arith) j hj
 
 /-- Two words loaded from `A` and `A + 4`. -/
 theorem HW_words {s : State} {a : Nat} {m : Mem} {A : Addr} (h0 : slotW s a = m.readW A 32)
     (h1 : slotW s (a + 1) = m.readW (A + BitVec.ofNat 64 4) 32) : HW s a (wordAt m A) := by
   intro c hc j hj
   have hw : slotW s (a + c / 4) = m.readW (A + BitVec.ofNat 64 (4 * (c / 4))) 32 := by
-    rcases (show c / 4 = 0 ∨ c / 4 = 1 by omega) with h | h <;> rw [h]
+    rcases (show c / 4 = 0 ∨ c / 4 = 1 by omega_arith) with h | h <;> rw [h]
     · rw [Nat.add_zero, h0]; simp
     · exact h1
-  rw [hw, W32.readW32_bit _ _ (by omega) hj, byteOf_wordAt _ _ hc, VG.Offset.add_add,
-    show 4 * (c / 4) + c % 4 = c by omega]
+  rw [hw, W32.readW32_bit _ _ (by omega_arith) hj, byteOf_wordAt _ _ hc, VG.Offset.add_add,
+    show 4 * (c / 4) + c % 4 = c by omega_arith]
 
 /-- The complements of two words loaded from `A` and `A + 4`. -/
 theorem HW_not {s : State} {a : Nat} {m : Mem} {A : Addr} (h0 : slotW s a = m.readW A 32 ^^^ BitVec.allOnes 32)
@@ -60,18 +60,18 @@ theorem HW_not {s : State} {a : Nat} {m : Mem} {A : Addr} (h0 : slotW s a = m.re
     HW s a (~~~ wordAt m A) := by
   intro c hc j hj
   have hw : slotW s (a + c / 4) = m.readW (A + BitVec.ofNat 64 (4 * (c / 4))) 32 ^^^ BitVec.allOnes 32 := by
-    rcases (show c / 4 = 0 ∨ c / 4 = 1 by omega) with h | h <;> rw [h]
+    rcases (show c / 4 = 0 ∨ c / 4 = 1 by omega_arith) with h | h <;> rw [h]
     · rw [Nat.add_zero, h0]; simp
     · exact h1
   rw [hw, BitVec.getLsbD_xor, BitVec.getLsbD_allOnes, getLsbD_byteOf _ hc hj, BitVec.getLsbD_not,
-    W32.readW32_bit _ _ (by omega) hj, ← getLsbD_byteOf _ hc hj, byteOf_wordAt _ _ hc, VG.Offset.add_add,
-    show 4 * (c / 4) + c % 4 = c by omega]
-  simp [show 8 * (c % 4) + j < 32 by omega, show 56 - 8 * c + j < 64 by omega]
+    W32.readW32_bit _ _ (by omega_arith) hj, ← getLsbD_byteOf _ hc hj, byteOf_wordAt _ _ hc, VG.Offset.add_add,
+    show 4 * (c / 4) + c % 4 = c by omega_arith]
+  simp [show 8 * (c % 4) + j < 32 by omega_arith, show 56 - 8 * c + j < 64 by omega_arith]
 
 theorem HW_zero {s : State} {a : Nat} (h0 : slotW s a = 0) (h1 : slotW s (a + 1) = 0) : HW s a 0 := by
   intro c hc j hj
   have hw : slotW s (a + c / 4) = 0 := by
-    rcases (show c / 4 = 0 ∨ c / 4 = 1 by omega) with h | h <;> rw [h]
+    rcases (show c / 4 = 0 ∨ c / 4 = 1 by omega_arith) with h | h <;> rw [h]
     · rw [Nat.add_zero, h0]
     · exact h1
   rw [hw, getLsbD_byteOf _ hc hj]; simp
@@ -109,16 +109,16 @@ theorem KeyIn.word {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} (h : Key
     s.ea (at_ .ecx o) = K.setWidth 64 + BitVec.ofNat 64 o ∧
       InRegions (s.rd ++ s.wr) (s.ea (at_ .ecx o)) 4 := by
   have e : s.ea (at_ .ecx o) = K.setWidth 64 + BitVec.ofNat 64 o := by
-    rw [at_, ea_mk, h.ecx, addr_eq (by have := h.fit; omega)]
+    rw [at_, ea_mk, h.ecx, addr_eq (by have := h.fit; omega_arith)]
   refine ⟨e, ⟨_, List.mem_append_left _ h.rd, ?_⟩⟩
   have := setWidth_toNat K
-  rw [e]; exact VG.Offset.contains_base _ (by omega) (by have := h.fit; omega)
+  rw [e]; exact VG.Offset.contains_base _ (by omega_arith) (by have := h.fit; omega_arith)
 
 /-- A word of the key, kept by a frame of the scratch buffer. -/
 theorem KeyIn.keep {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} (h : KeyIn s b K A len) {m m' : Mem}
     (hf : Frame [⟨b.setWidth 64, 4 * slots⟩] m m') {o : Nat} (ho : o + 4 ≤ len) :
     m'.readW (K.setWidth 64 + BitVec.ofNat 64 o) 32 = m.readW (K.setWidth 64 + BitVec.ofNat 64 o) 32 :=
-  hf.readW (VG.Offset.contains_base _ (by omega) (by have := h.fit; have := setWidth_toNat K; omega))
+  hf.readW (VG.Offset.contains_base _ (by omega_arith) (by have := h.fit; have := setWidth_toNat K; omega_arith))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.sep) (by decide)
 
 /-- `mov eax, [ecx + o]`. -/
@@ -195,7 +195,7 @@ theorem cmpLen_ok {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} (h : KeyI
       [.mov .eax (.mem (argOp 1))] ++ [.alu .cmp .eax (.imm (BitVec.ofNat 32 v))] from rfl, runBlock_app, e₁,
       Option.bind_some]
     rfl
-  · rw [RegUpd.zf_arithFlags, show a = _ from v₁, h.argEa, h.argV, ofNat32_sub_beq (by have := h.le; omega) hv]
+  · rw [RegUpd.zf_arithFlags, show a = _ from v₁, h.argEa, h.argV, ofNat32_sub_beq (by have := h.le; omega_arith) hv]
 
 /-- `mov [edi + 4 k], eax` for each `k` of `ks`. -/
 theorem storeAll_ok {b : BitVec 32} : ∀ (ks : List Nat) {s : State}, s.gpr sb = b →
@@ -268,7 +268,7 @@ theorem kr16_ok {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} {m₀ : Mem
   obtain ⟨s₄, e₄, v₄, k₄, g₄, rd₄, wr₄, f₄⟩ := storeAll_ok (b := b) ((List.range 4).map fun k => krSlot + k)
     (s := s₃) (by rw [o₃ _ (by decide)]; exact hk.base) (by rw [wr₃]; exact hk.scr)
     (fun k hk' => by simp only [List.mem_map, List.mem_range] at hk'; obtain ⟨k, hk', rfl⟩ := hk'
-                     rw [krSlot_eq, slots_eq]; omega)
+                     rw [krSlot_eq, slots_eq]; omega_arith)
   have hb₄ : s₄.gpr sb = b := by rw [g₄, o₃ _ (by decide)]; exact hk.base
   have hz : ∀ k < 4, slotW s₄ (krSlot + k) = 0 := fun k hk' => by
     rw [slotW_of hb₄, v₄ (krSlot + k) (by simp only [List.mem_map, List.mem_range]; exact ⟨k, hk', rfl⟩), v₃]
@@ -279,7 +279,7 @@ theorem kr16_ok {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} {m₀ : Mem
     simpa only [List.map_map, Function.comp_def] using e₄
   · rw [e]
     exact VW_of_HW (HW_zero (hz 0 (by decide)) (hz 1 (by decide))) (HW_zero (hz 2 (by decide)) (hz 3 (by decide)))
-  · rw [k₄ k hk' (by simp only [List.mem_map, List.mem_range, not_exists, not_and]; intro j hj h'; omega), m₃]
+  · rw [k₄ k hk' (by simp only [List.mem_map, List.mem_range, not_exists, not_and]; intro j hj h'; omega_arith), m₃]
 
 /-- `mov eax, [ecx + o]; not eax; mov [edi + 4 k], eax`. -/
 theorem ldNotSt_ok {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} (hk : KeyIn s b K A len) {o k : Nat}
@@ -319,11 +319,11 @@ theorem krNot16_wp {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} {m₀ : 
             st (krSlot + 3) .eax]))) s
       (KrPost s b m₀ (K.setWidth 64) len) := by
   have hfit := hk.scr.fit
-  have h16 : len ≠ 16 := by omega
+  have h16 : len ≠ 16 := by omega_arith
   obtain ⟨s₃, e₃, v₃, k₃, g₃, rd₃, wr₃, f₃⟩ := loads_ok [(16, krSlot), (20, krSlot + 1)] hk (by decide)
     (fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl <;> exact ⟨by omega, by decide⟩)
+      rcases hx with rfl | rfl <;> exact ⟨by omega_arith, by decide⟩)
   have hk₃ : KeyIn s₃ b K A len := hk.congr (g₃ _ (by decide)) (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ f₃
   obtain ⟨s₄, e₄, z₄, g₄, m₄, rd₄, wr₄⟩ := cmpLen_ok hk₃ 24 (by decide)
   have hk₄ : KeyIn s₄ b K A len := hk₃.congr (g₄ _ (by decide)) (g₄ _ (by decide)) (g₄ _ (by decide)) rd₄ wr₄
@@ -337,9 +337,9 @@ theorem krNot16_wp {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} {m₀ : 
           [.mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm (BitVec.ofNat 32 24))] from rfl, runBlock_app, e₃,
       Option.bind_some, e₄], ?_⟩)
   have hl0 : s₄.mem.readW (wordAddr b krSlot) 32 = m₀.readW (K.setWidth 64 + BitVec.ofNat 64 16) 32 := by
-    rw [m₄, v₃ (16, krSlot) (by simp), hm 16 (by omega)]
+    rw [m₄, v₃ (16, krSlot) (by simp), hm 16 (by omega_arith)]
   have hl1 : s₄.mem.readW (wordAddr b (krSlot + 1)) 32 = m₀.readW (K.setWidth 64 + BitVec.ofNat 64 20) 32 := by
-    rw [m₄, v₃ (20, krSlot + 1) (by simp), hm 20 (by omega)]
+    rw [m₄, v₃ (20, krSlot + 1) (by simp), hm 20 (by omega_arith)]
   have ho₄ : ∀ j < slots, j ≠ krSlot → j ≠ krSlot + 1 →
       s₄.mem.readW (wordAddr b j) 32 = s.mem.readW (wordAddr b j) 32 := fun j hj h1 h2 => by
     rw [m₄]; exact k₃ j hj (by simp [h1, h2])
@@ -358,12 +358,12 @@ theorem krNot16_wp {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} {m₀ : 
       by rw [hrd, rd₄, rd₃], by rw [hwr, wr₄, wr₃], f₃₄.trans hf⟩
     · rw [slotW_of hb, ho _ (by decide) (by decide) (by decide), hl0]
     · rw [slotW_of hb, ho _ (by decide) (by decide) (by decide), hl1, VG.Offset.add_add]
-    · rw [ho k hk' (by omega) (by omega), ho₄ k hk' (by omega) (by omega)]
+    · rw [ho k hk' (by omega_arith) (by omega_arith), ho₄ k hk' (by omega_arith) (by omega_arith)]
   refine WP.ite (decide (len = 24)) ((eval_e s₄).trans z₄) (fun h24 => ?_) (fun h24 => ?_)
   · have h24 : len = 24 := by simpa using h24
-    obtain ⟨s₅, e₅, m₅, o₅, rd₅, wr₅, f₅⟩ := ldNotSt_ok hk₄ (o := 16) (k := krSlot + 2) (by omega) (by decide)
+    obtain ⟨s₅, e₅, m₅, o₅, rd₅, wr₅, f₅⟩ := ldNotSt_ok hk₄ (o := 16) (k := krSlot + 2) (by omega_arith) (by decide)
     have hk₅ : KeyIn s₅ b K A len := hk₄.congr (o₅ _ (by decide)) (o₅ _ (by decide)) (o₅ _ (by decide)) rd₅ wr₅ f₅
-    obtain ⟨s₆, e₆, m₆, o₆, rd₆, wr₆, f₆⟩ := ldNotSt_ok hk₅ (o := 20) (k := krSlot + 3) (by omega) (by decide)
+    obtain ⟨s₆, e₆, m₆, o₆, rd₆, wr₆, f₆⟩ := ldNotSt_ok hk₅ (o := 20) (k := krSlot + 3) (by omega_arith) (by decide)
     have hb₆ : s₆.gpr sb = b := by rw [o₆ _ (by decide), o₅ _ (by decide)]; exact hk₄.base
     refine WP.of_runBlock ⟨s₆, by
       rw [show ([.mov .eax (.mem (at_ .ecx 16)), notR .eax, st (krSlot + 2) .eax,
@@ -380,14 +380,14 @@ theorem krNot16_wp {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} {m₀ : 
     rw [e]
     refine HW_not ?_ ?_
     · rw [slotW_of hb₆, m₆, readW_slot_write hfit _ (by decide) (by decide), ite_eq_right (by decide), m₅,
-        Mem.readW_writeW_self32, hm₄ 16 (by omega)]
+        Mem.readW_writeW_self32, hm₄ 16 (by omega_arith)]
     · rw [slotW_of hb₆, m₆, show krSlot + 2 + 1 = krSlot + 3 from rfl, Mem.readW_writeW_self32,
-        hk₄.keep f₅ (by omega), hm₄ 20 (by omega), VG.Offset.add_add]
+        hk₄.keep f₅ (by omega_arith), hm₄ 20 (by omega_arith), VG.Offset.add_add]
   · have h24 : len ≠ 24 := by simpa using h24
     obtain ⟨s₅, e₅, v₅, k₅, g₅, rd₅, wr₅, f₅⟩ := loads_ok [(24, krSlot + 2), (28, krSlot + 3)] hk₄
       (by decide) (fun x hx => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl <;> exact ⟨by omega, by decide⟩)
+        rcases hx with rfl | rfl <;> exact ⟨by omega_arith, by decide⟩)
     have hb₅ : s₅.gpr sb = b := by rw [g₅ _ (by decide)]; exact hk₄.base
     refine WP.of_runBlock ⟨s₅, by
       rw [show ([.mov .eax (.mem (at_ .ecx 24)), st (krSlot + 2) .eax, .mov .eax (.mem (at_ .ecx 28)),
@@ -400,8 +400,8 @@ theorem krNot16_wp {s : State} {b K : BitVec 32} {A : Addr} {len : Nat} {m₀ : 
       simp [krOf, h16, h24]
     rw [e]
     refine HW_words ?_ ?_
-    · rw [slotW_of hb₅, v₅ (24, krSlot + 2) (by simp), hm₄ 24 (by omega)]
-    · rw [slotW_of hb₅, v₅ (28, krSlot + 3) (by simp), hm₄ 28 (by omega), VG.Offset.add_add]
+    · rw [slotW_of hb₅, v₅ (24, krSlot + 2) (by simp), hm₄ 24 (by omega_arith)]
+    · rw [slotW_of hb₅, v₅ (28, krSlot + 3) (by simp), hm₄ 28 (by omega_arith), VG.Offset.add_add]
 
 /-- What `loadKey` leaves. -/
 structure LoadPost (s₀ : State) (b K : BitVec 32) (len : Nat) (s : State) : Prop where
@@ -437,14 +437,14 @@ theorem loadKey_wp {s₀ : State} {b K : BitVec 32} {len : Nat} (hp : LoadPre s�
   obtain ⟨s₀', e₀, c₀, o₀, m₀, rd₀, wr₀⟩ := ldArg_ok s₀ .ecx 0 hp.arg0
   have hk : KeyIn s₀' b K (s₀.ea (argOp 1)) len :=
     ⟨by rw [o₀ _ (by decide)]; exact hp.base, by rw [wr₀]; exact hp.scr, by rw [c₀, hp.arg0V],
-      by rw [rd₀]; exact hp.rd, hp.fit, hp.sep, by omega,
+      by rw [rd₀]; exact hp.rd, hp.fit, hp.sep, by omega_arith,
       by show (s₀'.gpr .esp + _).setWidth 64 = (s₀.gpr .esp + _).setWidth 64; rw [o₀ _ (by decide)],
       by rw [rd₀, wr₀]; exact hp.arg1, by rw [m₀]; exact hp.arg1V, hp.arg1Sep⟩
   -- `KL`.
   obtain ⟨s₁, e₁, v₁, k₁, g₁, rd₁, wr₁, f₁⟩ := loads_ok ((List.range 4).map fun k => (4 * k, klSlot + k)) hk
     (by decide) (fun x hx => by
       simp only [List.mem_map, List.mem_range] at hx; obtain ⟨k, hk', rfl⟩ := hx
-      exact ⟨by rcases hlen with rfl | rfl | rfl <;> omega, by rw [klSlot_eq, slots_eq]; omega⟩)
+      exact ⟨by rcases hlen with rfl | rfl | rfl <;> omega_arith, by rw [klSlot_eq, slots_eq]; omega_arith⟩)
   have hk₁ : KeyIn s₁ b K (s₀.ea (argOp 1)) len :=
     hk.congr (g₁ _ (by decide)) (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ f₁
   obtain ⟨s₂, e₂, z₂, g₂, m₂, rd₂, wr₂⟩ := cmpLen_ok hk₁ 16 (by decide)
@@ -460,7 +460,7 @@ theorem loadKey_wp {s₀ : State} {b K : BitVec 32} {len : Nat} (hp : LoadPre s�
       s₂.mem.readW (wordAddr b j) 32 = s₀.mem.readW (wordAddr b j) 32 := fun j hj h => by
     rw [m₂, k₁ j hj (by
       simp only [List.map_map, Function.comp_def, List.mem_map, List.mem_range, not_exists, not_and]
-      intro k hk' h'; omega), m₀]
+      intro k hk' h'; omega_arith), m₀]
   have hcode : (List.range 4).flatMap (fun k => [Instr.mov .eax (.mem (at_ .ecx (4 * k))), st (klSlot + k) .eax]) =
       ((List.range 4).map fun k => (4 * k, klSlot + k)).flatMap fun x =>
         [.mov .eax (.mem (at_ .ecx x.1)), st x.2 .eax] := by
@@ -472,7 +472,7 @@ theorem loadKey_wp {s₀ : State} {b K : BitVec 32} {len : Nat} (hp : LoadPre s�
     have hb : s.gpr sb = b := by rw [h.regs _ (by decide)]; exact hk₂.base
     have ho : ∀ k < 4, s.mem.readW (wordAddr b (klSlot + k)) 32 =
         s₀.mem.readW (K.setWidth 64 + BitVec.ofNat 64 (4 * k)) 32 := fun k hk' => by
-      rw [h.keep _ (by rw [klSlot_eq, slots_eq]; omega) (.inl (by rw [klSlot_eq, krSlot_eq]; omega)), hkl k hk']
+      rw [h.keep _ (by rw [klSlot_eq, slots_eq]; omega_arith) (.inl (by rw [klSlot_eq, krSlot_eq]; omega_arith)), hkl k hk']
     refine ⟨VW_of_HW (HW_words ?_ ?_) (HW_words ?_ ?_), h.kr, fun k hk' hk2 => ?_,
       fun r h1 h2 => by rw [h.regs r h1, g₂ r h1, g₁ r h1, o₀ r h2], by rw [h.rd, rd₂, rd₁, rd₀],
       by rw [h.wr, wr₂, wr₁, wr₀], ?_⟩
@@ -480,13 +480,13 @@ theorem loadKey_wp {s₀ : State} {b K : BitVec 32} {len : Nat} (hp : LoadPre s�
     · rw [slotW_of hb, ho 1 (by decide)]
     · rw [slotW_of hb, ho 2 (by decide)]
     · rw [slotW_of hb, show klSlot + 2 + 1 = klSlot + 3 from rfl, ho 3 (by decide), VG.Offset.add_add]
-    · rw [h.keep k hk' (by rw [klSlot_eq] at hk2; rw [krSlot_eq]; omega), hklo k hk' (by omega)]
+    · rw [h.keep k hk' (by rw [klSlot_eq] at hk2; rw [krSlot_eq]; omega_arith), hklo k hk' (by omega_arith)]
     · rw [← m₀]; exact f₀₂.trans h.frame
   refine WP.ite (decide (len = 16)) ((eval_e s₂).trans z₂) (fun h16 => ?_) (fun h16 => ?_)
   · have h16 : len = 16 := by simpa using h16
     obtain ⟨s', e', h'⟩ := kr16_ok (m₀ := s₀.mem) hk₂ h16
     exact WP.of_runBlock ⟨s', e', post s' h'⟩
   · have h16 : len ≠ 16 := by simpa using h16
-    exact WP.mono (krNot16_wp hk₂ hm₂ (by omega)) post
+    exact WP.mono (krNot16_wp hk₂ hm₂ (by omega_arith)) post
 
 end VG.Proof.Camellia.X86

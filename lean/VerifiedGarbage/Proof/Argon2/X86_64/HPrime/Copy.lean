@@ -66,18 +66,18 @@ theorem copyLoop_ok (s₀ : State) (src dst : Addr) (k : Nat)
     (hsep : Region.Disjoint ⟨src, k⟩ ⟨dst, k⟩) :
     WP isa (.loop (.block copyByte) .ne) s₀ (CopyI s₀ src dst k k) := by
   refine WP.loop (M := isa) (fun n s => ∃ j, n = k - j ∧ j < k ∧ CopyI s₀ src dst k j s)
-    ?_ k s₀ ⟨0, by omega, hk, by omega, by simpa using hs, by simpa using hd,
+    ?_ k s₀ ⟨0, by omega_arith, hk, by omega_arith, by simpa using hs, by simpa using hd,
       by simpa using hn, fun _ _ _ _ _ => rfl, rfl, rfl, by rw [List.take_zero, writeBytes_nil]⟩
   rintro n s ⟨j, rfl, hj, h⟩
   have hlen : (bytesAt s₀.mem src k).length = k := by simp [bytesAt]
   have htake : ((bytesAt s₀.mem src k).take j).length = j := by
-    rw [List.length_take, hlen, Nat.min_eq_left (by omega)]
+    rw [List.length_take, hlen, Nat.min_eq_left (by omega_arith)]
   have hb : s.mem (src + BitVec.ofNat 64 j) = s₀.mem (src + BitVec.ofNat 64 j) := by
     rw [h.mem]
     apply (writeBytes_frame s₀.mem dst _ (R := ⟨dst, k⟩)
       (by simpa only [BitVec.add_zero, htake] using
-        (Offset.contains_base dst (k := k) (d := 0) (n := j) (by omega) (by decide)))).bytes
-        (R := ⟨src, k⟩) _ (show k ≤ 2 ^ 64 by omega) hj
+        (Offset.contains_base dst (k := k) (d := 0) (n := j) (by omega_arith) (by decide)))).bytes
+        (R := ⟨src, k⟩) _ (show k ≤ 2 ^ 64 by omega_arith) hj
     simpa using hsep
   have hr' : InRegions (s.rd ++ s.wr) (s.gpr .rdx) 1 := by
     rw [h.rd, h.wr, h.source]; exact hr j hj
@@ -87,18 +87,18 @@ theorem copyLoop_ok (s₀ : State) (src dst : Addr) (k : Nat)
   rintro t ⟨hm, hs', hd', hn', hz, ho, hrd, hwr⟩
   have hc : BitVec.ofNat 64 (k - j) - 1 = BitVec.ofNat 64 (k - (j + 1)) := by
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega : 1 ≤ k - j)]
+      Offset.ofNat_sub_ofNat (by omega_arith : 1 ≤ k - j)]
     congr 1
   have hi : CopyI s₀ src dst k (j + 1) t := by
-    refine ⟨by omega, ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_, hrd.trans h.rd, hwr.trans h.wr, ?_⟩
+    refine ⟨by omega_arith, ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_, hrd.trans h.rd, hwr.trans h.wr, ?_⟩
     · rw [hs', h.source, BitVec.ofNat_add, BitVec.add_assoc]; rfl
     · rw [hd', h.destination, BitVec.ofNat_add, BitVec.add_assoc]; rfl
     · rw [hn', h.count, hc]
     · exact (ho r h1 h2 h3 h4).trans (h.other r h1 h2 h3 h4)
-    · have hj' : j < (bytesAt s₀.mem src k).length := by omega
+    · have hj' : j < (bytesAt s₀.mem src k).length := by omega_arith
       rw [hm, h.source, h.destination, hb, h.mem, List.take_add_one,
         List.getElem?_eq_getElem hj', Option.toList_some,
-        writeBytes_snoc _ _ _ _ (by rw [htake]; omega), htake]
+        writeBytes_snoc _ _ _ _ (by rw [htake]; omega_arith), htake]
       refine congrArg (fun b => (writeBytes s₀.mem dst ((bytesAt s₀.mem src k).take j)).writeW
         (dst + BitVec.ofNat 64 j) b) ?_
       simp only [bytesAt, List.getElem_map, List.getElem_range]
@@ -109,12 +109,12 @@ theorem copyLoop_ok (s₀ : State) (src dst : Addr) (k : Nat)
     constructor
     · intro he
       have ht := congrArg BitVec.toNat he
-      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : k - (j + 1) < 2 ^ 64), show (0 : BitVec 64).toNat = 0 from rfl] using ht
+      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : k - (j + 1) < 2 ^ 64), show (0 : BitVec 64).toNat = 0 from rfl] using ht
     · intro he; rw [he]; rfl
   by_cases he : j + 1 = k
   · refine .inl ⟨?_, he ▸ hi⟩
-    simp only [eval, hz', show k - (j + 1) = 0 by omega, decide_true, Option.map_some, Bool.not_true]
-  · refine .inr ⟨?_, k - (j + 1), by omega, j + 1, rfl, by omega, hi⟩
-    simp only [eval, hz', show k - (j + 1) ≠ 0 by omega, decide_false, Option.map_some, Bool.not_false]
+    simp only [eval, hz', show k - (j + 1) = 0 by omega_arith, decide_true, Option.map_some, Bool.not_true]
+  · refine .inr ⟨?_, k - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hi⟩
+    simp only [eval, hz', show k - (j + 1) ≠ 0 by omega_arith, decide_false, Option.map_some, Bool.not_false]
 
 end VG.Proof.Argon2.X86_64.HPrime

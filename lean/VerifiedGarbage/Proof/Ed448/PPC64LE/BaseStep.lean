@@ -101,7 +101,7 @@ theorem or_one {x : Nat} (hx : x ≤ 1) : x ||| 1 = 1 := by
   rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hx with rfl | rfl <;> rfl
 
 theorem bit_le (k t : Nat) : (k >>> t) &&& 1 ≤ 1 := by
-  rw [Nat.and_one_is_mod]; omega
+  rw [Nat.and_one_is_mod]; omega_arith
 
 /-- An iteration: `R + P`, `P = R` if `h` is odd and the base point if it is
 even, kept if `h` is odd or bit `h / 2` set. -/
@@ -111,16 +111,16 @@ theorem rv_step (k : Nat) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c ≤ 912) :
   have hb := bit_le k ((c - 1) / 2)
   rcases Nat.mod_two_eq_zero_or_one (c - 1) with h0 | h1
   · -- `h` even: the bit.
-    have hc : c % 2 = 1 := by omega
-    have ht : (c - 1) / 2 < 456 := by omega
-    have e1 : (c + 1) / 2 = (c - 1) / 2 + 1 := by omega
-    rw [h0, Nat.or_zero, Rv, Rv, ite_eq_right (by omega), ite_eq_left h0, e1, ladder2_bit k ht]
+    have hc : c % 2 = 1 := by omega_arith
+    have ht : (c - 1) / 2 < 456 := by omega_arith
+    have e1 : (c + 1) / 2 = (c - 1) / 2 + 1 := by omega_arith
+    rw [h0, Nat.or_zero, Rv, Rv, ite_eq_right (by omega_arith), ite_eq_left h0, e1, ladder2_bit k ht]
     simp only [pick, X25519.PPC64LE.sel, ladderStep2, bitAt, Nat.reduceEqDiff, ↓reduceIte]
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hb with h | h <;> simp [h]
   · -- `h` odd: the doubling.
-    have hc : c % 2 = 0 := by omega
-    have e1 : (c - 1 + 1) / 2 = c / 2 := by omega
-    rw [h1, or_one hb, Rv, Rv, ite_eq_left hc, ite_eq_right (by omega), e1]
+    have hc : c % 2 = 0 := by omega_arith
+    have e1 : (c - 1 + 1) / 2 = c / 2 := by omega_arith
+    rw [h1, or_one hb, Rv, Rv, ite_eq_left hc, ite_eq_right (by omega_arith), e1]
     rfl
 
 /-! ## The selection -/
@@ -133,7 +133,7 @@ theorem par_shift (x : Nat) (hx : x < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   have := bit_shift (BitVec.ofNat 64 x) (j := 0) (by decide)
   rw [Nat.sub_zero, Nat.shiftRight_zero, toNat_imm hx, Nat.and_one_is_mod] at this
-  rw [this, toNat_imm (by omega)]
+  rw [this, toNat_imm (by omega_arith)]
 
 theorem head_ok (hQ : QOk b sL.mem) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c ≤ 912) {r : Point} {a : BitVec 64}
     {s : State} (h : Cur b sL a (BitVec.ofNat 64 c) RQ (ptV r r) s) :
@@ -142,14 +142,14 @@ theorem head_ok (hQ : QOk b sL.mem) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c ≤ 912) 
         (ptV r (pick ((c - 1) % 2) basePoint r))) := by
   have hc := h.ctx
   have hA := ACC_eq
-  have hsw : (c - 1) % 2 ≤ 1 := by omega
+  have hsw : (c - 1) % 2 ≤ 1 := by omega_arith
   simp only [baseSelect, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_subi (by decide) (by decide) fun s1 u1 => ?_
   have e12 : s1.gpr .r12 = BitVec.ofNat 64 (c - 1) := by
-    rw [u1.gpr, h.r12, ofNat_sub_one hc1 (by omega)]
+    rw [u1.gpr, h.r12, ofNat_sub_one hc1 (by omega_arith)]
   refine wp_lsl (by decide) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
   have e4 : s3.gpr .r4 = BitVec.ofNat 64 ((c - 1) % 2) := by
-    rw [u3.gpr, u2.gpr, e12, par_shift _ (by omega)]
+    rw [u3.gpr, u2.gpr, e12, par_shift _ (by omega_arith)]
   refine wp_addi (by decide) (by decide) fun s4 u4 => wp_li (by decide) fun s5 u5 => wp_sub fun s6 u6 => ?_
   have e0 : s6.gpr .r0 = BitVec.ofNat 64 ((c - 1) % 2) := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.gpr, e4, BitVec.add_zero]
@@ -200,7 +200,7 @@ theorem ofNat_or {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
 
 theorem half_shift (x : Nat) (hx : x < 2 ^ 64) : BitVec.ofNat 64 x >>> 1 = BitVec.ofNat 64 (x / 2) := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_shr, toNat_imm hx, toNat_imm (by omega), Nat.pow_one]
+  rw [toNat_shr, toNat_imm hx, toNat_imm (by omega_arith), Nat.pow_one]
 
 theorem wp_or {is : List Instr} {s : State} {Q : State → Prop} {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :
@@ -224,17 +224,17 @@ theorem swap_ok {k : Nat} (hbits : Bits b k sL.mem) {h : Nat} (hh : h < 912) {r 
   simp only [baseSwap, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_lsr (by decide) fun s1 u1 => wp_add fun s2 u2 => ?_
   have e2 : s2.gpr .r4 = b + BitVec.ofNat 64 (h / 2) := by
-    rw [u2.gpr, u1.gpr, u1.other _ (by decide), hc.r6, hcur.r12, half_shift _ (by omega)]
+    rw [u2.gpr, u1.gpr, u1.other _ (by decide), hc.r6, hcur.r12, half_shift _ (by omega_arith)]
   refine wp_lbz (a := b + BitVec.ofNat 64 (BITS + h / 2)) (by decide) (by decide)
     (by rw [e2, Offset.add_add, Nat.add_comm])
-    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hc.inR (by omega)) fun s3 u3 => ?_
+    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hc.inR (by omega_arith)) fun s3 u3 => ?_
   have e3 : s3.gpr .r4 = BitVec.ofNat 64 ((k >>> (h / 2)) &&& 1) := by
     rw [u3.gpr, u2.mem, u1.mem, byte_above hcur.stp.frame (by omega_using [hA, hB]) (by omega_using [hh, hB]),
-      hbits _ (by omega), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      hbits _ (by omega_arith), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   refine wp_or fun s4 u4 => wp_li (by decide) fun s5 u5 => wp_sub fun s6 u6 => ?_
   have e11 : s6.gpr .r11 = 0 - BitVec.ofNat 64 (swb k h) := by
     rw [u6.gpr, u5.gpr, u5.other _ (by decide), u4.gpr, e3, u3.other _ (by decide), u2.other _ (by decide),
-      u1.other _ (by decide), hcur.r0, ofNat_or (by omega) (by omega)]; rfl
+      u1.other _ (by decide), hcur.r0, ofNat_or (by omega_arith) (by omega_arith)]; rfl
   have hr6 : Rest [.r4, .r11] s s6 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
@@ -274,7 +274,7 @@ theorem step_ok {k : Nat} (hbits : Bits b k sL.mem) (hQ : QOk b sL.mem) {c : Nat
   refine WP.seq (WP.mono (head_ok hQ hc1 hc2 h.cur) fun s1 h1 => WP.seq
     (ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (op_ok (.mul TZ TF TG) o1 o2 o3 o4 h2)
       fun s3 h3 => WP.mono (swap_ok (r := Rv k c) (p := pick ((c - 1) % 2) basePoint (Rv k c)) hbits
-        (by omega) h3) fun s4 h4 => ?_))
+        (by omega_arith) h3) fun s4 h4 => ?_))
   refine ⟨⟨⟨h4.ctx, h4.stp, rfl, ?_, ?_⟩⟩, ?_⟩
   · exact h4.r12
   · refine (h4.slots.mono (by decide)).congr fun q hq => ?_
@@ -285,7 +285,7 @@ theorem step_ok {k : Nat} (hbits : Bits b k sL.mem) (hQ : QOk b sL.mem) {c : Nat
       simp only [swapV, ptV, pick_X, pick_Y, pick_Z, RX, RY, RZ, PX, PY, PZ, DK, TX, TY, TZ, X2, Z2,
         Nat.reduceEqDiff, ↓reduceIte] at v1 v2 v3 v4 v5 v6 v7 ⊢ <;>
       simp only [v1, v2, v3, v4, v5, v6, v7]
-  · rw [h4.r12, ofNat_ne_zero (by omega)]
+  · rw [h4.r12, ofNat_ne_zero (by omega_arith)]
 
 
 theorem rv_912 (k : Nat) : Rv k 912 = Spec.Ed448.identity := by
@@ -315,7 +315,7 @@ theorem baseLoop_ok {k : Nat} {s : State} (hc : Ctx b s) (hbits : Bits b k s.mem
   refine WP.mono (step_ok hb1 hq1 h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
-  · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega, by omega, by omega, hl'⟩
+  · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega_arith, by omega_arith, by omega_arith, hl'⟩
 
 end
 

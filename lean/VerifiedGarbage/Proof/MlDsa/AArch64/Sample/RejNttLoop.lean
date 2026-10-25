@@ -71,26 +71,26 @@ theorem LAt.byte {X : List Byte} {bP aP : Addr} {s₀ : State} (hp : LPre X bP a
   rw [← hp.buf p hp']
   exact h.frame _ fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact hp.disj _ (Offset.contains_base _ (by omega) (by omega))
+    exact hp.disj _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
 
 theorem take_add_three (L : List Byte) {i : Nat} (h : i + 3 ≤ L.length) :
     L.take (i + 3) = L.take i ++ [L.getD i 0, L.getD (i + 1) 0, L.getD (i + 2) 0] := by
-  rw [List.take_add, List.drop_eq_getElem_cons (by omega), List.drop_eq_getElem_cons (by omega),
-    List.drop_eq_getElem_cons (by omega)]
+  rw [List.take_add, List.drop_eq_getElem_cons (by omega_arith), List.drop_eq_getElem_cons (by omega_arith),
+    List.drop_eq_getElem_cons (by omega_arith)]
   simp only [List.take_succ_cons, List.take_zero, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show i < L.length by omega), List.getElem?_eq_getElem (show i + 1 < L.length by omega),
-    List.getElem?_eq_getElem (show i + 2 < L.length by omega), Option.getD_some]
+    List.getElem?_eq_getElem (show i < L.length by omega_arith), List.getElem?_eq_getElem (show i + 1 < L.length by omega_arith),
+    List.getElem?_eq_getElem (show i + 2 < L.length by omega_arith), Option.getD_some]
 
 /-- `v - b` of numbers below `2⁶³`, negative exactly when `v < b`. -/
 theorem lt_bit {a b : BitVec 64} {v w : Nat} (ha : a.toNat = v) (hb : b.toNat = w) (hv : v < 2 ^ 63)
     (hw : w < 2 ^ 63) : ((a - b) >>> 63).toNat = if v < w then 1 else 0 := by
   rw [toNat_lsr, BitVec.toNat_sub, ha, hb]
-  split <;> omega
+  split <;> omega_arith
 
 /-- A coefficient stored past the ones sampled keeps them. -/
 theorem stored_past {m : Mem} {p : Addr} {L : List Zq} (h : Stored m p L) {k : Nat} (hk : L.length ≤ k)
     (hk' : k < 256) (v : BitVec 32) : Stored (m.writeW (coeffAddr p k) v) p L := fun i hi => by
-  rw [coeffAt_writeW _ _ (by omega) hk', ite_eq_right (by omega)]
+  rw [coeffAt_writeW _ _ (by omega_arith) hk', ite_eq_right (by omega_arith)]
   exact h i hi
 
 /-- The value of the 3 bytes `b₀, b₁, b₂` at `x2` into `x11`. -/
@@ -119,25 +119,25 @@ theorem chunk_ok {s : State} {b₀ b₁ b₂ : Byte}
   have c7 : (s₇.gpr .x7).toNat = b₁.toNat := by
     rw [o₇.get .x7, o₆.get .x7, o₅.get .x7, o₄.get .x7, o₃.get .x7, e₂, toNat_byte, o₁.mem, h₁]
   have v7 : (s₈.gpr .x7).toNat = 256 * b₁.toNat := by
-    have hl : (s₇.gpr .x7).toNat * 2 ^ 8 < 2 ^ 64 := by rw [c7]; simp only [Nat.reducePow]; omega
+    have hl : (s₇.gpr .x7).toNat * 2 ^ 8 < 2 ^ 64 := by rw [c7]; simp only [Nat.reducePow]; omega_arith
     rw [e₈, toNat_lsl_n hl, c7]
-    omega
+    omega_arith
   have v8a : (s₆.gpr .x8).toNat = b₂.toNat % 128 := by
     have m : (s₅.gpr .x10).toNat = 2 ^ 7 - 1 := by
       rw [o₅.get .x10, o₄.get .x10, o₃.get .x10, o₂.get .x10, o₁.get .x10, h10]
     rw [e₆, toNat_and_mask _ _ m, o₅.get .x8, o₄.get .x8, e₃, toNat_byte, o₂.mem, o₁.mem, h₂]
   have v8 : (s₇.gpr .x8).toNat = 65536 * (b₂.toNat % 128) := by
-    have hl : (s₆.gpr .x8).toNat * 2 ^ 16 < 2 ^ 64 := by rw [v8a]; simp only [Nat.reducePow]; omega
+    have hl : (s₆.gpr .x8).toNat * 2 ^ 16 < 2 ^ 64 := by rw [v8a]; simp only [Nat.reducePow]; omega_arith
     rw [e₇, toNat_lsl_n hl, v8a]
-    omega
+    omega_arith
   refine ⟨k, by rw [o₁₀.get .x2, o₉.get .x2, o₈.get .x2, o₇.get .x2, o₆.get .x2, o₅.get .x2, e₄,
     o₃.get .x2, o₂.get .x2, o₁.get .x2]; rfl,
     by rw [o₁₀.get .x5, o₉.get .x5, o₈.get .x5, o₇.get .x5, o₆.get .x5, e₅, o₄.get .x5, o₃.get .x5,
       o₂.get .x5, o₁.get .x5]; rfl, ?_⟩
   have v11 : (s₉.gpr .x11).toNat = b₀.toNat + 256 * b₁.toNat := by
-    rw [e₉, toNat_add_n (by rw [v6, v7]; omega), v6, v7]
-  rw [e₁₀, toNat_add_n (by rw [v11, o₉.get .x8, o₈.get .x8, v8]; omega), v11, o₉.get .x8, o₈.get .x8, v8]
-  unfold rnZ; omega
+    rw [e₉, toNat_add_n (by rw [v6, v7]; omega_arith), v6, v7]
+  rw [e₁₀, toNat_add_n (by rw [v11, o₉.get .x8, o₈.get .x8, v8]; omega_arith), v11, o₉.get .x8, o₈.get .x8, v8]
+  unfold rnZ; omega_arith
 
 
 /-- The coefficients after trying the value `z`. -/
@@ -157,7 +157,7 @@ theorem accept_ok {aP : Addr} {L : List Zq} {z : Nat} {u : State} (hz : (u.gpr .
       (u'.gpr .x4).toNat = 256 - (acc L z).length ∧ Stored u'.mem aP (acc L z) := by
   refine wp_sub fun u₁ h₁ e₁ => wp_lsr (by decide) fun u₂ h₂ e₂ => ?_
   have v14 : (u₂.gpr .x14).toNat = if z < q then 1 else 0 := by
-    rw [e₂, e₁]; exact lt_bit hz h9 (by omega) (by rw [q_eq]; omega)
+    rw [e₂, e₁]; exact lt_bit hz h9 (by omega_arith) (by rw [q_eq]; omega_arith)
   refine wp_strw (a := coeffAddr aP L.length) (by decide)
     (by rw [h₂.get .x3, h₁.get .x3, h3, ptr_zero]) (by rw [h₂.wr, h₁.wr]; exact hw) fun u₃ h₃ =>
     wp_lsl (by decide) fun u₄ h₄ e₄ => wp_add fun u₅ h₅ e₅ => wp_sub fun u₆ h₆ e₆ => wp_nil ?_
@@ -177,16 +177,16 @@ theorem accept_ok {aP : Addr} {L : List Zq} {z : Nat} {u : State} (hz : (u.gpr .
   · rw [m₆]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hl)
   · rw [h₆.get .x3, e₅, h₄.get .x3, h₃.gpr, h₂.get .x3, h₁.get .x3, h3, x15, coeffAddr, coeffAddr,
       ptr_add, acc_length, Nat.mul_add]
-  · have hx : (u₅.gpr .x14).toNat ≤ (u₅.gpr .x4).toNat := by rw [x14, v14, c4]; split <;> omega
+  · have hx : (u₅.gpr .x14).toNat ≤ (u₅.gpr .x4).toNat := by rw [x14, v14, c4]; split <;> omega_arith
     rw [e₆, toNat_sub_n hx, c4, x14, v14, acc_length]
-    omega
+    omega_arith
   · rw [m₆]
     unfold acc
     split
     · rename_i hq
       have hw : (u.gpr .x11).setWidth 32 = zw (Fin.ofNat q z) := by
         apply BitVec.eq_of_toNat_eq
-        rw [zw_toNat, BitVec.toNat_setWidth, hz, Fin.val_ofNat, Nat.mod_eq_of_lt (by omega),
+        rw [zw_toNat, BitVec.toNat_setWidth, hz, Fin.val_ofNat, Nat.mod_eq_of_lt (by omega_arith),
           Nat.mod_eq_of_lt hq]
       rw [hw]; exact stored_snoc hst hl _
     · exact stored_past hst (Nat.le_refl _) hl _
@@ -196,24 +196,24 @@ theorem step_ok {X : List Byte} (hX : X.length = 1008) {bP aP : Addr} {s₀ : St
     {t : Nat} (ht : t < 336) {s : State} (h : LAt X bP aP s₀ t s) :
     WP isa rnBody s fun s' => LAt X bP aP s₀ (t + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ t + 1 ≠ 336) := by
   have hin : ∀ k < 3, InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 k) 1 := fun k hk => by
-    rw [h.keep.rd, h.keep.wr, h.x2, ptr_add]; exact hp.inb _ (by omega)
+    rw [h.keep.rd, h.keep.wr, h.x2, ptr_add]; exact hp.inb _ (by omega_arith)
   have hb : ∀ k < 3, s.mem (s.gpr .x2 + BitVec.ofNat 64 k) = X.getD (3 * t + k) 0 := fun k hk => by
-    rw [h.x2, ptr_add]; exact h.byte hp (by omega)
+    rw [h.x2, ptr_add]; exact h.byte hp (by omega_arith)
   have e0 : s.gpr .x2 = s.gpr .x2 + BitVec.ofNat 64 0 := (ptr_zero _).symm
   have hL : Lt X (t + 1) = rnStep (Lt X t) (X.getD (3 * t) 0) (X.getD (3 * t + 1) 0) (X.getD (3 * t + 2) 0) := by
     simp only [Lt]
-    rw [show 3 * (t + 1) = 3 * t + 3 by omega, take_add_three _ (by rw [hX]; omega),
-      rnFold_snoc _ (by rw [List.length_take, hX]; omega)]
+    rw [show 3 * (t + 1) = 3 * t + 3 by omega_arith, take_add_three _ (by rw [hX]; omega_arith),
+      rnFold_snoc _ (by rw [List.length_take, hX]; omega_arith)]
   refine WP.seq (WP.mono (chunk_ok (b₀ := X.getD (3 * t) 0) (b₁ := X.getD (3 * t + 1) 0)
-    (b₂ := X.getD (3 * t + 2) 0) (by rw [e0, hb 0 (by omega)]; rfl) (hb 1 (by omega)) (hb 2 (by omega))
-    (by rw [e0]; exact hin 0 (by omega)) (hin 1 (by omega)) (hin 2 (by omega)) h.x10)
+    (b₂ := X.getD (3 * t + 2) 0) (by rw [e0, hb 0 (by omega_arith)]; rfl) (hb 1 (by omega_arith)) (hb 2 (by omega_arith))
+    (by rw [e0]; exact hin 0 (by omega_arith)) (hin 1 (by omega_arith)) (hin 2 (by omega_arith)) h.x10)
     fun s₁ ⟨o₁, x2, x5, x11⟩ => ?_)
   have hz : rnZ (X.getD (3 * t) 0) (X.getD (3 * t + 1) 0) (X.getD (3 * t + 2) 0) < 2 ^ 23 := by
     unfold rnZ
     have := (X.getD (3 * t) 0).isLt
     have := (X.getD (3 * t + 1) 0).isLt
     simp only [Nat.reducePow] at *
-    omega
+    omega_arith
   have g3 : s₁.gpr .x3 = s.gpr .x3 := o₁.get .x3
   have g4 : s₁.gpr .x4 = s.gpr .x4 := o₁.get .x4
   have g9 : s₁.gpr .x9 = s.gpr .x9 := o₁.get .x9
@@ -221,24 +221,24 @@ theorem step_ok {X : List Byte} (hX : X.length = 1008) {bP aP : Addr} {s₀ : St
   have n2 : s₁.gpr .x2 = bP + BitVec.ofNat 64 (3 * (t + 1)) := by
     rw [x2, h.x2, show (3 : BitVec 64) = BitVec.ofNat 64 3 from rfl, ptr_add, Nat.mul_succ]
   have n5 : (s₁.gpr .x5).toNat = 336 - (t + 1) := by
-    rw [x5, toNat_sub_n (by rw [h.x5]; simp; omega), h.x5]; simp; omega
-  have c : (s₁.gpr .x5).toNat ≠ 0 ↔ t + 1 ≠ 336 := by rw [n5]; omega
+    rw [x5, toNat_sub_n (by rw [h.x5]; simp; omega_arith), h.x5]; simp; omega_arith
+  have c : (s₁.gpr .x5).toNat ≠ 0 ↔ t + 1 ≠ 336 := by rw [n5]; omega_arith
   have hl := Lt_length_le X t
   by_cases hf : (Lt X t).length = 256
   · refine WP.ite true (by rw [eval_zero, eq_zero_iff, g4, h.x4, hf]; rfl) (fun _ => wp_nil ?_)
       (fun h => nomatch h)
     have e : Lt X (t + 1) = Lt X t := by
-      rw [hL, rnStep, ite_eq_right (by simp only [VG.Spec.MlDsa.n]; omega)]
+      rw [hL, rnStep, ite_eq_right (by simp only [VG.Spec.MlDsa.n]; omega_arith)]
     exact ⟨⟨(h.keep.trans o₁.keep).mono, by rw [o₁.mem]; exact h.frame, n2, by rw [e, g3, h.x3],
       by rw [e, g4, h.x4], n5, by rw [g9, h.x9], by rw [g10, h.x10],
       by rw [e, o₁.mem]; exact h.st⟩, c⟩
-  · refine WP.ite false (by rw [eval_zero, eq_zero_iff, g4, h.x4]; simp; omega)
+  · refine WP.ite false (by rw [eval_zero, eq_zero_iff, g4, h.x4]; simp; omega_arith)
       (fun h => nomatch h) (fun _ => WP.mono (accept_ok (L := Lt X t) (aP := aP) x11 hz (by rw [g9, h.x9])
-        (by rw [g3, h.x3]) (by rw [g4, h.x4]) (by omega) (by rw [o₁.mem]; exact h.st)
-        (by rw [o₁.wr, h.keep.wr]; exact hp.ina _ (by omega))) fun s₂ ⟨k₂, f₂, x3, x4, st⟩ => ?_)
+        (by rw [g3, h.x3]) (by rw [g4, h.x4]) (by omega_arith) (by rw [o₁.mem]; exact h.st)
+        (by rw [o₁.wr, h.keep.wr]; exact hp.ina _ (by omega_arith))) fun s₂ ⟨k₂, f₂, x3, x4, st⟩ => ?_)
     have e : acc (Lt X t) (rnZ (X.getD (3 * t) 0) (X.getD (3 * t + 1) 0) (X.getD (3 * t + 2) 0)) =
         Lt X (t + 1) := by
-      rw [hL, rnStep, ite_eq_left (by simp only [VG.Spec.MlDsa.n]; omega)]
+      rw [hL, rnStep, ite_eq_left (by simp only [VG.Spec.MlDsa.n]; omega_arith)]
     rw [e] at x3 x4 st
     exact ⟨⟨((h.keep.trans o₁.keep).trans k₂).mono, h.frame.trans (by rw [← o₁.mem]; exact f₂),
       by rw [k₂.get .x2, n2], x3, x4, by rw [k₂.get .x5, n5], by rw [k₂.get .x9, g9, h.x9],

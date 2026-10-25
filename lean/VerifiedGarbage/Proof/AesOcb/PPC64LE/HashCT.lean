@@ -88,28 +88,28 @@ theorem chunk_rel {τ₁ τ₂ : State} {j : Nat} (H₁ : HInv V₁ sp ciph₁ l
   have hl₂ := H₂.hl
   rw [hlen] at hl₂
   unfold hashChunk
-  refine RelCT.assoc (rel_seq ?_ (chunkHead_ok (L := a₁.length / 16 - j) H₁.env.r31 H₁.env.perm.w (by omega) H₁.hl)
-    (chunkHead_ok (L := a₁.length / 16 - j) H₂.env.r31 H₂.env.perm.w (by omega) hl₂)
+  refine RelCT.assoc (rel_seq ?_ (chunkHead_ok (L := a₁.length / 16 - j) H₁.env.r31 H₁.env.perm.w (by omega_arith) H₁.hl)
+    (chunkHead_ok (L := a₁.length / 16 - j) H₂.env.r31 H₂.env.perm.w (by omega_arith) hl₂)
     fun t₁ t₂ ⟨h25₁, g₁, k₁⟩ ⟨h25₂, g₂, k₂⟩ => ?_)
   · -- the number of blocks of the chunk, from those left
     refine rel_seq (rel_env H₁.env H₂.env hV [] (by agree_ppc []) ⟨_, by taint_decide⟩)
-      (chunkLd_ok (L := a₁.length / 16 - j) H₁.env.r31 H₁.env.perm.w (by omega) H₁.hl)
-      (chunkLd_ok (L := a₁.length / 16 - j) H₂.env.r31 H₂.env.perm.w (by omega) hl₂)
+      (chunkLd_ok (L := a₁.length / 16 - j) H₁.env.r31 H₁.env.perm.w (by omega_arith) H₁.hl)
+      (chunkLd_ok (L := a₁.length / 16 - j) H₂.env.r31 H₂.env.perm.w (by omega_arith) hl₂)
       fun u₁ u₂ ⟨r3₁, r4₁, _, k₁⟩ ⟨r3₂, r4₂, _, k₂⟩ => ?_
     have hsp : u₁.sp = u₂.sp := by rw [k₁.sp, k₂.sp, H₁.env.sp, H₂.env.sp]
-    refine rel_ite (eval_zero r4₁ (by omega)) (eval_zero r4₂ (by omega)) (fun _ => ?_) (fun _ => ?_)
+    refine rel_ite (eval_zero r4₁ (by omega_arith)) (eval_zero r4₂ (by omega_arith)) (fun _ => ?_) (fun _ => ?_)
     · exact rel_taint [.r3] hsp (by agree_ppc [r3₁, r3₂]) ⟨_, by taint_decide⟩
     · exact rel_taint [] hsp (by agree_ppc []) ⟨_, by taint_decide⟩
   have E₁ := H₁.env.keep3 g₁ k₁
   have E₂ := H₂.env.keep3 g₂ k₂
   -- the counts stored
   refine rel_seq (rel_env E₁ E₂ hV [.r25] (by agree_ppc [h25₁, h25₂]) ⟨_, by taint_decide⟩)
-    (chunkMid_ok C₁ H₁ (c := min 8 (a₁.length / 16 - j)) (by omega) g₁ k₁ h25₁)
-    (chunkMid_ok C₂ H₂ (c := min 8 (a₁.length / 16 - j)) (by omega) g₂ k₂ h25₂) fun w₁ w₂ F₁ F₂ => ?_
+    (chunkMid_ok C₁ H₁ (c := min 8 (a₁.length / 16 - j)) (by omega_arith) g₁ k₁ h25₁)
+    (chunkMid_ok C₂ H₂ (c := min 8 (a₁.length / 16 - j)) (by omega_arith) g₂ k₂ h25₂) fun w₁ w₂ F₁ F₂ => ?_
   -- the buffer filled
   refine rel_seq (rel_env F₁.env F₂.env hV [.r11, .r24, .r25, .r26]
       (by agree_ppc [F₁.r11, F₂.r11, F₁.r24, F₂.r24, F₁.r25, F₂.r25, F₁.r26, F₂.r26, e31]) ⟨_, by taint_decide⟩)
-    (fill_ok C₁ (by omega) (by omega) (by omega) F₁) (fill_ok C₂ (by omega) (by omega) (by omega) F₂)
+    (fill_ok C₁ (by omega_arith) (by omega_arith) (by omega_arith) F₁) (fill_ok C₂ (by omega_arith) (by omega_arith) (by omega_arith) F₂)
     fun y₁ y₂ G₁ G₂ => ?_
   -- enciphered
   let c := min 8 (a₁.length / 16 - j)
@@ -122,20 +122,20 @@ theorem chunk_rel {τ₁ τ₂ : State} {j : Nat} (H₁ : HInv V₁ sp ciph₁ l
         (by rw [k.wr]; exact G₁.env.perm.w) (by rw [k.mem, G₁.cn]))
       (fun s g k => bufArgs_ok (by rw [g _ (by decide) (by decide) (by decide), G₂.env.r31, e31])
         (by rw [k.wr, e31]; exact G₂.env.perm.w) (by rw [k.mem, e31, G₂.cn]))
-      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega))
-      (dstW L (hV.perm G₂.env.perm) (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega)))
+      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith))
+      (dstW L (hV.perm G₂.env.perm) (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith)))
     (WP.mono (callBlocks_ok (f := Spec.Aes.cipher) L Proof.Aes.PPC64LE.encryptBlocks_correct encryptBlocks_noFrames
       C₁.rounds h28 G₁.env
       (fun s g k => bufArgs_ok (by rw [g _ (by decide) (by decide) (by decide), G₁.env.r31])
         (by rw [k.wr]; exact G₁.env.perm.w) (by rw [k.mem, G₁.cn]))
-      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega)))
-      fun z P => ⟨P.env G₁.env, (bufCall_readW L P (by omega) (d := cnO) (by decide)).trans G₁.cn⟩)
+      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith)))
+      fun z P => ⟨P.env G₁.env, (bufCall_readW L P (by omega_arith) (d := cnO) (by decide)).trans G₁.cn⟩)
     (WP.mono (callBlocks_ok (f := Spec.Aes.cipher) (hV.lay L) Proof.Aes.PPC64LE.encryptBlocks_correct
       encryptBlocks_noFrames C₁.rounds h28₂ G₂.env
       (fun s g k => bufArgs_ok (by rw [g _ (by decide) (by decide) (by decide), G₂.env.r31])
         (by rw [k.wr]; exact G₂.env.perm.w) (by rw [k.mem, G₂.cn]))
-      (dstW (hV.lay L) G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega)))
-      fun z P => ⟨P.env G₂.env, (bufCall_readW (hV.lay L) P (by omega) (d := cnO) (by decide)).trans G₂.cn⟩)
+      (dstW (hV.lay L) G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith)))
+      fun z P => ⟨P.env G₂.env, (bufCall_readW (hV.lay L) P (by omega_arith) (d := cnO) (by decide)).trans G₂.cn⟩)
     fun z₁ z₂ ⟨Z₁, cn₁⟩ ⟨Z₂, cn₂⟩ => ?_)
   -- the buffer added to the sum
   refine rel_seq (rel_env Z₁ Z₂ hV [] (by agree_ppc []) ⟨_, by taint_decide⟩)
@@ -166,15 +166,15 @@ theorem hashLoop_rel {τ₁ τ₂ : State} (H₁ : HInv V₁ sp ciph₁ l₁ A a
       exact ⟨hashChunk_ok C₁ h28 G₁ hj, hashChunk_ok C₂ h28₂ G₂ (by rw [hlen]; exact hj)⟩).mono (fun _ _ h => h)
     fun u₁ u₂ ⟨_, F₁, F₂⟩ => ?_
   rw [hlen] at F₂
-  have ev₁ := eval_nonzero F₁.r3 (by omega)
+  have ev₁ := eval_nonzero F₁.r3 (by omega_arith)
   have r3₂ := F₂.r3
   rw [hlen] at r3₂
-  have ev₂ := eval_nonzero r3₂ (by omega)
+  have ev₂ := eval_nonzero r3₂ (by omega_arith)
   refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun h => ?_⟩
   rw [ev₁] at h
   have he : ¬ a₁.length / 16 - (j + min 8 (a₁.length / 16 - j)) = 0 := by simpa using h
-  exact ⟨a₁.length / 16 - (j + min 8 (a₁.length / 16 - j)), by omega, j + min 8 (a₁.length / 16 - j), rfl,
-    by omega, F₁, F₂⟩
+  exact ⟨a₁.length / 16 - (j + min 8 (a₁.length / 16 - j)), by omega_arith, j + min 8 (a₁.length / 16 - j), rfl,
+    by omega_arith, F₁, F₂⟩
 
 /-- `HASH`, in two runs. -/
 theorem hash_rel (E₁ : Env V₁ sp s₁) (E₂ : Env V₂ sp s₂) (h21 : V₁ .r21 = A)
@@ -191,13 +191,13 @@ theorem hash_rel (E₁ : Env V₁ sp s₁) (E₂ : Env V₂ sp s₂) (h21 : V₁
     (hashHead_ok C₂ E₂ h21₂ h22₂ hl0₂) fun t₁ t₂ H₁ H₂ => ?_
   have r3₂ := H₂.r3
   rw [hlen] at r3₂
-  refine rel_seq (rel_ite (eval_zero H₁.r3 (by omega)) (eval_zero r3₂ (by omega)) (fun _ => rel_skip)
+  refine rel_seq (rel_ite (eval_zero H₁.r3 (by omega_arith)) (eval_zero r3₂ (by omega_arith)) (fun _ => rel_skip)
       (fun hb => hashLoop_rel hV C₁ C₂ h28 hlen H₁ H₂ (Nat.pos_of_ne_zero (of_decide_eq_false hb))))
     (hashBody_ok C₁ h28 H₁) (hashBody_ok C₂ h28₂ H₂) fun u₁ u₂ G₁ G₂ => ?_
   refine rel_seq (rel_env G₁.env G₂.env hV [] (by agree_ppc []) ⟨_, by taint_decide⟩) (tailHead_ok C₁ h22 G₁)
     (tailHead_ok C₂ h22₂ G₂) fun w₁ w₂ ⟨T₁, h25₁⟩ ⟨T₂, h25₂⟩ => ?_
   rw [hlen] at h25₂
-  exact rel_ite (eval_zero h25₁ (by omega)) (eval_zero h25₂ (by omega)) (fun _ => rel_skip)
+  exact rel_ite (eval_zero h25₁ (by omega_arith)) (eval_zero h25₂ (by omega_arith)) (fun _ => rel_skip)
     fun _ => hashRest_rel hV C₁.lay C₁.rounds h28 T₁.env T₂.env (by rw [T₁.r24, T₂.r24, hlen]) (by rw [h25₁, h25₂])
 
 end

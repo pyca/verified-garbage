@@ -34,13 +34,7 @@ theorem keyBound_ok (s : State) {p : Inputs} {slots : List Nat}
       (Context p (68 :: 20 :: slots) t ∧
       Frame [⟨off (State.addr s.sp) 20, 4⟩, ⟨off (State.addr s.sp) 68, 4⟩] s.mem t.mem) ∧
       Rest [.r3, .r4, .r6, .r11, .r12] s t := by
-  refine withRest [.r3, .r4, .r6, .r11, .r12] ?_ (by
-    intro r hr i hi
-    have checked : (instrs VG.Impl.Ffdh.Arm.Domain.GenerateKey.bound).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try decide +kernel
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4, .r6, .r11, .r12] ?_ (by rfl) (by rfl)
   rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.bound, WP.seq_iff]
   refine WP.mono (keyBoundArgs_ok s h h24 h28 h32 h60) ?_
   rintro u ⟨⟨ptr, count, memU⟩, restU⟩

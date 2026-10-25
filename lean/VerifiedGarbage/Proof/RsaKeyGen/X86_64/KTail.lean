@@ -40,9 +40,9 @@ theorem mrResult_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat
       word s.mem B (8 * kUsed) = BitVec.ofNat 64 (r.length - rest.length)) :
     WP isa mrResult s fun t => TestEnd s t B Z op up (8 * w) r c res := by
   have hn' := hg.scr.nowrap
-  have h8 : 8 * 32 ≤ Z := by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega
+  have h8 : 8 * 32 ≤ Z := by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega_arith
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * kStat)) 8 :=
-    hg.scr.ld (by have := hdr_lt_slot w 8 (show kStat < 32 by decide); omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 (show kStat < 32 by decide); omega_arith)
   unfold mrResult
   rcases hres : res with _ | ⟨b, rest⟩
   · have hS := h0 hres
@@ -119,11 +119,11 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
     rw [hfE.word_eq (d := slot w aN) (by rng_disj) (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]
     exact hinv₀
   have hr2₁ : wv s₁.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c := by
-    rw [hEw (Or.inl (by simp only [slot, hdrBytes, aR2, aE]; omega)) (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_arith)]; exact hr2₀
+    rw [hEw (Or.inl (by simp only [slot, hdrBytes, aR2, aE]; omega_arith)) (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_arith)]; exact hr2₀
   have hr1₁ : wv s₁.mem B (slot w aR1) w = 2 ^ (64 * w) % c := by
-    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aR1, aE]; omega)) (by unfold slot aR1 aRm1 at *; omega_arith)]; exact hr1₀
+    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aR1, aE]; omega_arith)) (by unfold slot aR1 aRm1 at *; omega_arith)]; exact hr1₀
   have hrm₁ : wv s₁.mem B (slot w aRm1) w = c - 2 ^ (64 * w) % c := by
-    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aRm1, aE]; omega)) (by omega_arith)]; exact hrm₀
+    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aRm1, aE]; omega_arith)) (by omega_arith)]; exact hrm₀
   have hch₁ : word s₁.mem B (8 * kChecks) = BitVec.ofNat 64 (checksW w) := by
     rw [hfE.word_eq (d := 8 * kChecks) (by rng_disj) (by unfold kChecks kE sFn; omega_arith)]; exact hch₀
   have hw₁ : ∀ {k}, k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kUsed ∨ k = kOut ∨ k = kUsedP →

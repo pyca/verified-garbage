@@ -42,7 +42,7 @@ theorem phi_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W =
 
 /-! ## Halving -/
 
-theorem halve_shr {X x0 y : Nat} (h : 2 * y + x0 % 2 = X) (hx : X % 2 = x0 % 2) : y = X / 2 := by omega
+theorem halve_shr {X x0 y : Nat} (h : 2 * y + x0 % 2 = X) (hx : X % 2 = x0 % 2) : y = X / 2 := by omega_arith
 
 /-- `halfIf j`: `[j] := x15 ? [j] / 2 : [j]` (`shr_ok` into `aT`, then
 `selLoop_ok`); word `W` of `[j]` must be 0 (`shrBody` reads it). -/
@@ -55,7 +55,7 @@ theorem halfIf_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj : j 
   have sj := h.ws.sl hj
   have sT := h.ws.sl (j := aT) (by decide)
   have sp := slot_sep (w := I.W) hjT
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_arith
   have hw2 := h.ws.w2
   have hZ := h.hZ
   simp only [halfIf, seqs]
@@ -66,9 +66,9 @@ theorem halfIf_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj : j 
       fun s₂ ⟨⟨h16, h17, m₂, _⟩, k₂⟩ => ?_))
   have k12 := k₁.trans k₂
   refine WP.seq (WP.mono (shr_ok (h.ws.scr.congr k12.wr) h16 h17 ((k₂.gpr .x14 (by decide)).trans h14) hw1
-    (by omega) (by omega) (by omega) (by omega)) fun s₃ ⟨hv₃, _, o₃, k₃⟩ => ?_)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₃ ⟨hv₃, _, o₃, k₃⟩ => ?_)
   rw [m₂, m₁] at hv₃ o₃
-  have f₃ := KF.arr1 (B := I.B) (W := I.W) (j := aT) o₃ (Nat.le_refl _) (by omega)
+  have f₃ := KF.arr1 (B := I.B) (W := I.W) (j := aT) o₃ (Nat.le_refl _) (by omega_arith)
   have k13 := k12.trans k₃
   have h₃ := h.step f₃ (all_mut_arr (by decide)) k13
   have htop' : word s.mem I.B (slot I.W j + 8 * I.W) = 0 := htop
@@ -86,10 +86,10 @@ theorem halfIf_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj : j 
       fun s₅ ⟨⟨h16₅, h17₅, m₅, _⟩, k₅⟩ => ?_))
   have k45 := k₄.trans k₅
   refine WP.mono (selLoop_ok (h₃.ws.scr.congr k45.wr) h16₅ h17₅ ((k₅.gpr .x14 (by decide)).trans h14₄)
-    ((k13.trans k45).gpr .x15 (by decide) |>.trans h15) hw1 (by omega) (by omega) (by omega) (by omega))
+    ((k13.trans k45).gpr .x15 (by decide) |>.trans h15) hw1 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨hv, o, k₆⟩ => ?_
   rw [m₅, m₄] at hv o
-  have f := KF.arr1 (B := I.B) (W := I.W) (j := j) o (Nat.le_refl _) (by omega)
+  have f := KF.arr1 (B := I.B) (W := I.W) (j := j) o (Nat.le_refl _) (by omega_arith)
   refine ⟨h₃.step f (all_mut_arr hj) (k45.trans k₆), (f₃.trans f).mono (by simp), ?_, ?_,
     ((k13.trans k45).trans k₆).mono (by decide)⟩
   · dsimp only [av] at hv hT₃ hj₃ ⊢
@@ -97,7 +97,7 @@ theorem halfIf_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj : j 
     cases c
     · exact hj₃
     · exact hT₃
-  · dsimp only [atop] at tj₃ ⊢; rw [o.word (Or.inr (Nat.le_refl _)) (by omega)]; exact tj₃
+  · dsimp only [atop] at tj₃ ⊢; rw [o.word (Or.inr (Nat.le_refl _)) (by omega_arith)]; exact tj₃
 
 /-- The mask of `x` and `y` both even. -/
 theorem halve_twoMask (x y : BitVec 64) :
@@ -106,7 +106,7 @@ theorem halve_twoMask (x y : BitVec 64) :
   have e : ∀ z : BitVec 64, z &&& BitVec.setWidth 64 1#16 = BitVec.ofNat 64 (z.toNat % 2) := fun z => by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (BitVec.setWidth 64 1#16).toNat = 1 from rfl, Nat.and_one_is_mod, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   rw [BitVec.and_or_distrib_right, e, e]
   rcases Nat.mod_two_eq_zero_or_one x.toNat with hx | hx <;>
     rcases Nat.mod_two_eq_zero_or_one y.toNat with hy | hy <;> rw [hx, hy] <;> decide
@@ -128,7 +128,7 @@ theorem twoMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
   have hn := h.ws.scr.nowrap
   have sU := h.ws.sl (j := aU) (by decide)
   have sV := h.ws.sl (j := aV) (by decide)
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_arith
   rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (wsBase16_ok h aU) fun s₁ ⟨⟨h16, _, h11, m₁⟩, k₁⟩ => WP.block_append_iff.mpr ?_
   refine WP.mono (base_ok aV .x17 ((k₁.gpr .x0 (by decide)).trans h.ws.x0) h11) fun s₂ ⟨⟨h17, m₂, _⟩, k₂⟩ => ?_
@@ -137,7 +137,7 @@ theorem twoMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
   have hm₂ : s₂.mem = s.mem := m₂.trans m₁
   refine WP.mono (WP.keep [.x3, .x4, .x15] (Q := fun t => t.mem = s.mem ∧
       t.gpr .x15 = mask (decide (av I s.mem aU % 2 = 0 ∧ av I s.mem aV % 2 = 0))) (by
-    brun [h16₂, h17, hs₂.ld (d := slot I.W aU) (by omega), hs₂.ld (d := slot I.W aV) (by omega), hm₂,
+    brun [h16₂, h17, hs₂.ld (d := slot I.W aU) (by omega_arith), hs₂.ld (d := slot I.W aV) (by omega_arith), hm₂,
       halve_twoMask, word_mod2 (j := aU) hw1, word_mod2 (j := aV) hw1])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨q, k₃⟩ => ⟨q, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 

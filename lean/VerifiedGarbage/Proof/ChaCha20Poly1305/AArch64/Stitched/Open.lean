@@ -49,7 +49,7 @@ theorem rest_orig {s₀ s w u : State} {key msg : List Byte} {o T : Nat}
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]; rfl
   have hle := hc.le
   have hi' : i < L s₀ - (o + 512 * T) := hi
-  rw [e, hc.data _ (by omega), ite_eq_right (by omega)]
+  rw [e, hc.data _ (by omega_arith), ite_eq_right (by omega_arith)]
 
 theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
     WP isa (openStitchedMain v.callee) s₀ (MainO s₀) := by
@@ -79,7 +79,7 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   -- The rest: stitched from 65 to 256 bytes (`TailO.rest`), otherwise absorbed and then
   -- decrypted (`openRest`).
   have hr512 := hc.lt
-  refine WP.seq ((TailO.test_ok s₄ (r := L s₀ - 512 * T) (by omega)
+  refine WP.seq ((TailO.test_ok s₄ (r := L s₀ - 512 * T) (by omega_arith)
     (by rw [hc.x23, hpre])).mono fun s₄' ⟨e₄, k₄', g₄', v₄'⟩ => ?_)
   have hc' := TailO.Crypted.keep hc k₄' g₄' v₄'
   have hm₄ : s₄'.mem = s₄.mem := by funext x; exact k₄'.frame x fun r hr => by simp at hr
@@ -94,8 +94,8 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
       Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s₃'.mem (dp s₀) (L s₀))) ?_ ?_)
   · refine WP.iteCold_iff.mpr (WP.ite (decide (65 ≤ L s₀ - 512 * T ∧ L s₀ - 512 * T ≤ 256)) e₄ (fun h => ?_) (fun h => ?_))
     · have h' := of_decide_eq_true h
-      refine (TailO.rest_ok v.callee.sve hp hc' (by decide) (by simp only [Nat.zero_add]; omega)
-        (by simp only [Nat.zero_add]; omega)).mono fun s₆ ⟨v₆, i₆, f₆, r₆, pt₆⟩ => ?_
+      refine (TailO.rest_ok v.callee.sve hp hc' (by decide) (by simp only [Nat.zero_add]; omega_arith)
+        (by simp only [Nat.zero_add]; omega_arith)).mono fun s₆ ⟨v₆, i₆, f₆, r₆, pt₆⟩ => ?_
       simp only [Nat.zero_add] at f₆ r₆ pt₆ v₆
       refine ⟨fun r hr => (v₆ r hr).trans (v₄' r hr), i₆, ?_, r₆, pt₆⟩
       rw [← hm₄]
@@ -103,18 +103,18 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
     · refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
-        (srcAt hp (p := pre 0 false T) (by rw [hpre]; omega)) hc'.inv.x21 hc'.inv.rd hc'.inv.wr hc'.x22
+        (srcAt hp (p := pre 0 false T) (by rw [hpre]; omega_arith)) hc'.inv.x21 hc'.inv.rd hc'.inv.wr hc'.x22
         hc'.x23) (by lit_decide))
         fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
       have i₅ := mac_inv0 hc'.inv k₅
       have hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
         intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-      refine (openRest_ok v hp (s := s₃') (P := 512 * T) (by omega) (by omega) (fun _ => by omega)
+      refine (openRest_ok v hp (s := s₃') (P := 512 * T) (by omega_arith) (by omega_arith) (fun _ => by omega_arith)
         i₅.x21 (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc'.x22, hpre])
         (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc'.x23, hpre]) i₅.rd i₅.wr
         (fun _ => by rw [stateAt_frame k₅.frame (by rdisj_all), hc'.cnt,
-          show 512 * T / 64 = 0 / 64 + 8 * T by omega])
+          show 512 * T / 64 = 0 / 64 + 8 * T by omega_arith])
         (fun k hk => by rw [data_frame k₅.frame hd₅ hk, hc'.data k hk, Nat.zero_add])).mono
         fun s₆ ⟨v₆, k₅₆, _, pt₆⟩ => ?_
       have i₆ : Inv0 s₀ s₆ := i₅.step k₅₆ (fun r hr => by
@@ -149,11 +149,11 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   rintro s₆ ⟨v₆, i₆, f₆, R₆, pt₆⟩
   rw [D₃'] at pt₆
   refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_)
-  refine WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 48) (by omega)) (by lit_decide))
+  refine WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 48) (by omega_arith)) (by lit_decide))
     fun s₈ ⟨⟨k₈, tag₈⟩, v₈⟩ => ?_
   -- The tag computed.
   have R₅ := R₆
-  rw [← hpre, List.append_assoc, split_pad (pre_mod (by decide) false T) (by rw [hpre]; omega), D₃'] at R₅
+  rw [← hpre, List.append_assoc, split_pad (pre_mod (by decide) false T) (by rw [hpre]; omega_arith), D₃'] at R₅
   have T₈ := tag₈ _ _ (r₇ _ _ R₅)
   have L₆ : bytesAt s₆.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame f₆ (by rdisj_all) (by lit_omega),
@@ -177,7 +177,7 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     (hL : 512 ≤ L s₀) :
     WP isa (openWideMain v.callee) s₀ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  have hL256 : 256 ≤ L s₀ := by omega
+  have hL256 : 256 ≤ L s₀ := by omega_arith
   unfold openWideMain
   refine WP.seq (WP.mono (WP.preservedV (Short.prologue_ok hp) (Short.prologue_keepsV v.callee.sve))
     fun s₁ ⟨h₁, v₁⟩ => ?_)
@@ -217,7 +217,7 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     · rw [m₇, data_frame k₆.frame (by rdisj_all) hk]
       by_cases h : k < 256
       · rw [x₅ k h, K₄ k h, Short.ks5_eq s₀ hk, data_frame k₄.frame (by rdisj_all) hk, ite_eq_left h]
-      · rw [f₅ _ (ShortRest.rest_out hp (by omega) hk), data_frame k₄.frame (by rdisj_all) hk,
+      · rw [f₅ _ (ShortRest.rest_out hp (by omega_arith) hk), data_frame k₄.frame (by rdisj_all) hk,
           ite_eq_right h]
     · simp only [Bool.false_eq_true, ite_false]
       rw [m₇]
@@ -227,17 +227,17 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   have hle := hc.le
   have hpre : pre 256 false T = 256 + 512 * T := rfl
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
-    (srcAt hp (p := pre 256 false T) (by rw [hpre]; omega)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x22 hc.x23)
+    (srcAt hp (p := pre 256 false T) (by rw [hpre]; omega_arith)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x22 hc.x23)
     (by lit_decide)) fun s₉ ⟨⟨k₉, r₉⟩, v₉⟩ => ?_)
   have i₉ := mac_inv0 hc.inv k₉
   have hd₉ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
     intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-  refine WP.seq ((openRest_ok v hp (s := s₃) (P := 256 + 512 * T) hle hc.lt (fun _ => by omega) i₉.x21
+  refine WP.seq ((openRest_ok v hp (s := s₃) (P := 256 + 512 * T) hle hc.lt (fun _ => by omega_arith) i₉.x21
     (by rw [k₉.cs _ (pres .x22) (pres30 .x22), hc.x22, hpre])
     (by rw [k₉.cs _ (pres .x23) (pres30 .x23), hc.x23, hpre]) i₉.rd i₉.wr
     (fun _ => by rw [stateAt_frame k₉.frame (by rdisj_all), hc.cnt,
-      show (256 + 512 * T) / 64 = 256 / 64 + 8 * T by omega])
+      show (256 + 512 * T) / 64 = 256 / 64 + 8 * T by omega_arith])
     (fun k hk => by rw [data_frame k₉.frame hd₉ hk, hc.data k hk])).mono
     fun s₁₀ ⟨v₁₀, k₉₁₀, _, pt₁₀⟩ => ?_)
   rw [D₃] at pt₁₀
@@ -255,13 +255,13 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
   refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₁₀) (by lit_decide))
     fun s₁₁ ⟨⟨i₁₁, k₁₁, r₁₁⟩, v₁₁⟩ => ?_)
-  refine WP.mono (WP.preservedV (finalizeTo_ok0 hp i₁₁ (out := 48) (by omega)) (by lit_decide))
+  refine WP.mono (WP.preservedV (finalizeTo_ok0 hp i₁₁ (out := 48) (by omega_arith)) (by lit_decide))
     fun s₁₂ ⟨⟨k₁₂, tag₁₂⟩, v₁₂⟩ => ?_
   -- The tag computed.
   have R₈ := hc.mac
   simp only [Bool.false_eq_true, ↓reduceIte] at R₈
   have R₉ := r₉ _ _ R₈
-  rw [rest_orig hc, List.append_assoc, split_pad (pre_mod (by decide) false T) (by omega), D₃] at R₉
+  rw [rest_orig hc, List.append_assoc, split_pad (pre_mod (by decide) false T) (by omega_arith), D₃] at R₉
   have T₁₂ := tag₁₂ _ _ (r₁₁ _ _ (Repr.frame k₉₁₀.frame (by rdisj_all) R₉))
   have L₁₀ : bytesAt s₁₀.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame k₉₁₀.frame (by rdisj_all) (by lit_omega),

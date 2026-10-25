@@ -52,57 +52,57 @@ theorem toInt16 (x : BitVec 16) :
     x.toInt = if x.toNat < 32768 then (x.toNat : Int) else (x.toNat : Int) - 65536 := by
   rw [BitVec.toInt_eq_toNat_cond]
   have := x.isLt
-  split <;> split <;> first | rfl | omega
+  split <;> split <;> first | rfl | omega_arith
 
 theorem toInt32 (x : BitVec 32) :
     x.toInt = if x.toNat < 2147483648 then (x.toNat : Int) else (x.toNat : Int) - 4294967296 := by
   rw [BitVec.toInt_eq_toNat_cond]
   have := x.isLt
-  split <;> split <;> first | rfl | omega
+  split <;> split <;> first | rfl | omega_arith
 
 theorem toInt16_bounds (x : BitVec 16) : -32768 ≤ x.toInt ∧ x.toInt < 32768 := by
-  rw [toInt16]; have := x.isLt; split <;> omega
+  rw [toInt16]; have := x.isLt; split <;> omega_arith
 
 /-- A word is determined by its value modulo `2¹⁶` and its range. -/
 theorem toInt16_eq {x : BitVec 16} {v : Int} (h1 : -32768 ≤ v) (h2 : v < 32768)
     (h : ((x.toNat : Int) - v) % 65536 = 0) : x.toInt = v := by
-  rw [toInt16]; have := x.isLt; split <;> omega
+  rw [toInt16]; have := x.isLt; split <;> omega_arith
 
 theorem toNat16_eq {x : BitVec 16} : (x.toNat : Int) % 65536 = x.toInt % 65536 := by
-  rw [toInt16]; have := x.isLt; split <;> omega
+  rw [toInt16]; have := x.isLt; split <;> omega_arith
 
 /-- The product of two words is at most `2³⁰` in magnitude. -/
 theorem mul_bounds (a b : BitVec 16) : -(2 ^ 30 : Int) ≤ a.toInt * b.toInt ∧ a.toInt * b.toInt ≤ 2 ^ 30 := by
   have ha := toInt16_bounds a
   have hb := toInt16_bounds b
   have hn : (a.toInt * b.toInt).natAbs ≤ 32768 * 32768 := by
-    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega) (by omega)
+    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have h1 := Int.le_natAbs (a := a.toInt * b.toInt)
   have h2 := Int.le_natAbs (a := -(a.toInt * b.toInt))
   rw [Int.natAbs_neg] at h2
-  omega
+  omega_arith
 
 theorem toInt_mulWordsSigned (a b : BitVec 16) : (mulWordsSigned a b).toInt = a.toInt * b.toInt := by
   rw [mulWordsSigned, BitVec.toInt_mul, BitVec.toInt_signExtend_of_le (by decide),
     BitVec.toInt_signExtend_of_le (by decide)]
   have := mul_bounds a b
   apply Int.bmod_eq_of_le
-  · rw [show (((2 ^ 32 : Nat) : Int) / 2) = 2147483648 from rfl]; omega
-  · rw [show ((((2 ^ 32 : Nat) : Int) + 1) / 2) = 2147483648 from rfl]; omega
+  · rw [show (((2 ^ 32 : Nat) : Int) / 2) = 2147483648 from rfl]; omega_arith
+  · rw [show ((((2 ^ 32 : Nat) : Int) + 1) / 2) = 2147483648 from rfl]; omega_arith
 
 /-- The high word of a doubleword: its value divided by `2¹⁶`, rounded down. -/
 theorem toInt_hi (x : BitVec 32) : (x.extractLsb' 16 16).toInt = x.toInt / 65536 := by
   rw [toInt16, toInt32, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
   have := x.isLt
   simp only [Nat.reducePow]
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-- The low word of a doubleword: its value modulo `2¹⁶`. -/
 theorem toInt_lo (x : BitVec 32) : ((x.extractLsb' 0 16).toInt - x.toInt) % 65536 = 0 := by
   rw [toInt16, toInt32, BitVec.extractLsb'_toNat, Nat.shiftRight_zero]
   have := x.isLt
   simp only [Nat.reducePow]
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 theorem toInt_sub16 {a b : BitVec 16} (h1 : -32768 ≤ a.toInt - b.toInt) (h2 : a.toInt - b.toInt < 32768) :
     (a - b).toInt = a.toInt - b.toInt := by
@@ -138,10 +138,10 @@ theorem montW_spec {d z : BitVec 16} (h1 : -(3329 * 32768) < d.toInt * z.toInt)
   rw [toInt_mulWordsSigned, qW_toInt] at hM
   have e : montW d z = (mulWordsSigned d z).extractLsb' 16 16 - (mulWordsSigned T qW).extractLsb' 16 16 := by
     rw [montW, hL, hT]
-  have hc : (P - T.toInt * 3329) % 65536 = 0 := by omega
-  have hd : P / 65536 - T.toInt * 3329 / 65536 = (P - T.toInt * 3329) / 65536 := by omega
-  rw [e, toInt_sub16 (by omega) (by omega), hH, hM, hd]
-  omega
+  have hc : (P - T.toInt * 3329) % 65536 = 0 := by omega_arith
+  have hd : P / 65536 - T.toInt * 3329 / 65536 = (P - T.toInt * 3329) / 65536 := by omega_arith
+  rw [e, toInt_sub16 (by omega_arith) (by omega_arith), hH, hM, hd]
+  omega_arith
 
 /-! ## Conditional additions of `q` -/
 
@@ -152,53 +152,53 @@ theorem sshiftRight15 (d : BitVec 16) :
   rw [BitVec.toInt_sshiftRight]
   have := toInt16_bounds d
   split
-  · rw [show (-1 : BitVec 16).toInt = -1 by decide, Int.shiftRight_eq_div_pow]; omega
-  · rw [show (0 : BitVec 16).toInt = 0 by decide, Int.shiftRight_eq_div_pow]; omega
+  · rw [show (-1 : BitVec 16).toInt = -1 by decide, Int.shiftRight_eq_div_pow]; omega_arith
+  · rw [show (0 : BitVec 16).toInt = 0 by decide, Int.shiftRight_eq_div_pow]; omega_arith
 
 /-- `caddW d` is the value of `d ∈ [-q, q)` modulo `q`. -/
 theorem caddW_spec {d : BitVec 16} (h1 : -3329 ≤ d.toInt) (h2 : d.toInt < 3329) :
     (caddW d).toInt = d.toInt % 3329 := by
   rw [caddW, sshiftRight15]
   split
-  · rw [show (-1 : BitVec 16) &&& qW = qW by decide, toInt_add16 (by rw [qW_toInt]; omega)
-      (by rw [qW_toInt]; omega), qW_toInt]
-    omega
+  · rw [show (-1 : BitVec 16) &&& qW = qW by decide, toInt_add16 (by rw [qW_toInt]; omega_arith)
+      (by rw [qW_toInt]; omega_arith), qW_toInt]
+    omega_arith
   · rw [show d + ((0 : BitVec 16) &&& qW) = d by rw [show (0 : BitVec 16) &&& qW = 0 by decide]; simp]
-    omega
+    omega_arith
 
 /-- `csubW d` is the value of `d ∈ [0, 2q)` modulo `q`. -/
 theorem csubW_spec {d : BitVec 16} (h1 : 0 ≤ d.toInt) (h2 : d.toInt < 2 * 3329) :
     (csubW d).toInt = d.toInt % 3329 := by
-  have e := toInt_sub16 (a := d) (b := qW) (by rw [qW_toInt]; omega) (by rw [qW_toInt]; omega)
+  have e := toInt_sub16 (a := d) (b := qW) (by rw [qW_toInt]; omega_arith) (by rw [qW_toInt]; omega_arith)
   rw [qW_toInt] at e
-  rw [csubW, caddW_spec (d := d - qW) (by rw [e]; omega) (by rw [e]; omega), e]
-  omega
+  rw [csubW, caddW_spec (d := d - qW) (by rw [e]; omega_arith) (by rw [e]; omega_arith), e]
+  omega_arith
 
 /-! ## Coefficients -/
 
 open VG.Spec.MlKem (Zq)
 
 theorem toInt_of_lt {a : BitVec 16} (h : a.toNat < 3329) : a.toInt = a.toNat := by
-  rw [toInt16, ite_eq_left_of_eq_true _ _ (by simp; omega)]
+  rw [toInt16, ite_eq_left_of_eq_true _ _ (by simp; omega_arith)]
 
 theorem toNat_of_toInt {a : BitVec 16} (h : 0 ≤ a.toInt) : (a.toNat : Int) = a.toInt := by
-  rw [toInt16] at h ⊢; have := a.isLt; split at h <;> [rw [ite_eq_left_of_eq_true _ _ (by simp; omega)]; omega]
+  rw [toInt16] at h ⊢; have := a.isLt; split at h <;> [rw [ite_eq_left_of_eq_true _ _ (by simp; omega_arith)]; omega_arith]
 
 /-- Cancelling `2¹⁶` modulo `q`: `2¹⁶ · 169 ≡ 1 (mod q)`. -/
 theorem cancel_R {r P Y : Int} (h1 : (r * 65536 - P) % 3329 = 0) (h2 : (P - Y * 65536) % 3329 = 0) :
     r % 3329 = Y % 3329 := by
-  omega
+  omega_arith
 
 /-- `b · (ζ · 2¹⁶ mod q) ≡ y · ζ · 2¹⁶ (mod q)` for `b ≡ y (mod q)`. -/
 theorem mul_zm {b y ζ z : Int} (hby : (b - y) % 3329 = 0) (hz : z = ζ * 65536 % 3329) :
     (b * z - y * ζ * 65536) % 3329 = 0 := by
   have e : b * z - y * ζ * 65536 = (b - y) * z + y * (z - ζ * 65536) := by
-    rw [Int.sub_mul, Int.mul_sub, Int.mul_assoc y ζ]; omega
+    rw [Int.sub_mul, Int.mul_sub, Int.mul_assoc y ζ]; omega_arith
   rw [e]
   apply Int.emod_eq_zero_of_dvd
   refine Int.dvd_add (Int.dvd_mul_of_dvd_left (Int.dvd_of_emod_eq_zero hby))
     (Int.dvd_mul_of_dvd_right (Int.dvd_of_emod_eq_zero ?_))
-  rw [hz]; omega
+  rw [hz]; omega_arith
 
 /-- `ζ · y mod q`, from a word `b ≡ y (mod q)` in `(-q, q)` and the word
 `ζ · 2¹⁶ mod q`. -/
@@ -208,12 +208,12 @@ theorem mulZ_spec {b z : BitVec 16} {y ζ : Zq} (hb1 : -3329 < b.toInt) (hb2 : b
   have hzl : z.toNat < 3329 := by rw [hz]; exact Nat.mod_lt _ (by decide)
   have hzi := toInt_of_lt hzl
   have hn : (b.toInt * z.toInt).natAbs ≤ 3328 * 3328 := by
-    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega) (by omega)
+    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have h1 := Int.le_natAbs (a := b.toInt * z.toInt)
   have h2 := Int.le_natAbs (a := -(b.toInt * z.toInt))
   rw [Int.natAbs_neg] at h2
-  obtain ⟨m1, m2, m3⟩ := montW_spec (d := b) (z := z) (by omega) (by omega)
-  have hzI : z.toInt = (ζ.val : Int) * 65536 % 3329 := by rw [hzi]; omega
+  obtain ⟨m1, m2, m3⟩ := montW_spec (d := b) (z := z) (by omega_arith) (by omega_arith)
+  have hzI : z.toInt = (ζ.val : Int) * 65536 % 3329 := by rw [hzi]; omega_arith
   have hm := mul_zm (ζ := (ζ.val : Int)) hby hzI
   rw [caddW_spec (Int.le_of_lt m1) m2, val_mul, cancel_R m3 hm, Int.natCast_emod, Int.natCast_mul,
     Int.mul_comm (ζ.val : Int)]
@@ -223,7 +223,7 @@ theorem mulZ_spec {b z : BitVec 16} {y ζ : Zq} (hb1 : -3329 < b.toInt) (hb2 : b
 theorem addsub_int {A T : Int} (hA : 0 ≤ A ∧ A < 3329) (hT : 0 ≤ T ∧ T < 3329) :
     (-32768 ≤ A + T ∧ A + T < 32768 ∧ 0 ≤ A + T ∧ A + T < 2 * 3329) ∧
       (-32768 ≤ A - T ∧ A - T < 32768 ∧ -3329 ≤ A - T ∧ A - T < 3329) := by
-  omega
+  omega_arith
 
 /-- The two words of a butterfly of Algorithm 9 (`vbfly`): `x + ζ y` and
 `x - ζ y`, from the words `x`, `y` and `ζ · 2¹⁶ mod q`. -/
@@ -237,12 +237,12 @@ theorem bflyW {a b z : BitVec 16} {x y ζ : Zq} (ha : a.toNat = x.val) (hb : b.t
   have bi := toInt_of_lt (a := b) (by rw [hb]; exact hy)
   rw [ha] at ai
   rw [hb] at bi
-  have ht := mulZ_spec (b := b) (y := y) (ζ := ζ) (by rw [bi]; omega) (by rw [bi]; omega)
+  have ht := mulZ_spec (b := b) (y := y) (ζ := ζ) (by rw [bi]; omega_arith) (by rw [bi]; omega_arith)
     (by rw [bi, Int.sub_self]; rfl) hz
   have hzy := val_lt (ζ * y)
   generalize caddW (montW b z) = t at ht
   obtain ⟨⟨p1, p2, p3, p4⟩, ⟨m1, m2, m3, m4⟩⟩ :=
-    addsub_int (A := a.toInt) (T := t.toInt) (by rw [ai]; omega)
+    addsub_int (A := a.toInt) (T := t.toInt) (by rw [ai]; omega_arith)
       (by rw [ht]; exact ⟨Int.natCast_nonneg _, Int.ofNat_lt.mpr hzy⟩)
   rw [← toInt_add16 p1 p2] at p3 p4
   rw [← toInt_sub16 m1 m2] at m3 m4
@@ -272,20 +272,20 @@ theorem ibflyW {a b z : BitVec 16} {x y ζ : Zq} (ha : a.toNat = x.val) (hb : b.
   have bi := toInt_of_lt (a := b) (by rw [hb]; exact hy)
   rw [ha] at ai
   rw [hb] at bi
-  have p1 : -32768 ≤ a.toInt + b.toInt := by rw [ai, bi]; omega
-  have p2 : a.toInt + b.toInt < 32768 := by rw [ai, bi]; omega
-  have m1 : -32768 ≤ b.toInt - a.toInt := by rw [ai, bi]; omega
-  have m2 : b.toInt - a.toInt < 32768 := by rw [ai, bi]; omega
-  have c1 := csubW_spec (d := a + b) (by rw [toInt_add16 p1 p2, ai, bi]; omega)
-    (by rw [toInt_add16 p1 p2, ai, bi]; omega)
+  have p1 : -32768 ≤ a.toInt + b.toInt := by rw [ai, bi]; omega_arith
+  have p2 : a.toInt + b.toInt < 32768 := by rw [ai, bi]; omega_arith
+  have m1 : -32768 ≤ b.toInt - a.toInt := by rw [ai, bi]; omega_arith
+  have m2 : b.toInt - a.toInt < 32768 := by rw [ai, bi]; omega_arith
+  have c1 := csubW_spec (d := a + b) (by rw [toInt_add16 p1 p2, ai, bi]; omega_arith)
+    (by rw [toInt_add16 p1 p2, ai, bi]; omega_arith)
   rw [toInt_add16 p1 p2, ai, bi] at c1
   have n1 := toNat_of_toInt (a := csubW (a + b)) (by rw [c1]; exact Int.emod_nonneg _ (by decide))
   rw [c1] at n1
-  have hm := mulZ_spec (b := b - a) (y := y - x) (ζ := ζ) (by rw [toInt_sub16 m1 m2, ai, bi]; omega)
-    (by rw [toInt_sub16 m1 m2, ai, bi]; omega)
+  have hm := mulZ_spec (b := b - a) (y := y - x) (ζ := ζ) (by rw [toInt_sub16 m1 m2, ai, bi]; omega_arith)
+    (by rw [toInt_sub16 m1 m2, ai, bi]; omega_arith)
     (by
       have v : (y - x).val = (y.val + (3329 - x.val)) % 3329 := val_sub' _ _
-      rw [toInt_sub16 m1 m2, ai, bi, v]; omega) hz
+      rw [toInt_sub16 m1 m2, ai, bi, v]; omega_arith) hz
   have hzy := val_lt (ζ * (y - x))
   have n2 := toNat_of_toInt (a := caddW (montW (b - a) z)) (by rw [hm]; exact Int.natCast_nonneg _)
   rw [hm] at n2

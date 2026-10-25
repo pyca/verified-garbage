@@ -55,7 +55,7 @@ theorem signK_base_pre (hp : p ∈ params) (h : SPre p s) (h8 : (s.gpr .x4).toNa
   · exact mu_nowrap hL
   · exact h.nRnd
   · exact h.nSig
-  · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega
+  · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega_arith
 
 theorem signK_pre (hp : p∈params) (h : SPre p s) (h8 : (s.gpr .x4).toNat<256)
     {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t t1 : State}
@@ -87,7 +87,7 @@ theorem signK_pre (hp : p∈params) (h : SPre p s) (h8 : (s.gpr .x4).toNat<256)
     rcases hr with rfl|rfl
     · exact ⟨_,by simp [slay,h.wr],within_self _⟩
     · exact ⟨⟨s.gpr .x7,mScrLen p⟩,by simp [slay,h.wr],
-        within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega)⟩
+        within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega_arith)⟩
   let rd := signRd p s++rootRegions t1
   have hroot := roots_reborrow hr1 (rd := rd) (List.subset_append_right _ _) hcw
   have hpair := paired_reborrow rp1 (rd:=rd) (List.subset_append_right _ _) hcw
@@ -130,7 +130,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     rcases hr with rfl|rfl
     · exact ⟨_,by simp [slay,h.wr],within_self _⟩
     · exact ⟨⟨s.gpr .x7,mScrLen p⟩,by simp [slay,h.wr],
-        within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega)⟩
+        within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega_arith)⟩
   let rd := signRd p s++rootRegions t1
   have hroot := roots_reborrow hr1 (rd := rd) (List.subset_append_right _ _) hcw
   have hpair := paired_reborrow rp1 (rd:=rd) (List.subset_append_right _ _) hcw
@@ -142,7 +142,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     · simp only [State.withRegions_rd,gpr_ce t1 (r := .x0),
         gpr_ce t1 (r := .x1),gpr_ce t1 (r := .x2),e0,e1,e2]
       rfl
-  refine WP.callFV hS.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega)
+  refine WP.callFV hS.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
   · change Covers ((signRd p s++rootRegions t1)++signWr p s) (t1.rd++t1.wr)
     rw [List.append_assoc]
     apply Covers.append_left
@@ -161,7 +161,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, by simp [slay, h.wr], within_self _⟩
-    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega)⟩
+    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)⟩
   -- After the call.
   have hsv : ∀ d, d + 8 ≤ 88 → s'.mem.readW ((slay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 =
       t1.mem.readW ((slay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 := fun d hd' =>
@@ -170,14 +170,14 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
       rcases hr with rfl | rfl | rfl
       · rw [add_add]
         exact (h.sigScr.symm.sub_left ((within_off (slay p s).X (d := 904 + d) (n := 8) (k := 1024)
-          (by omega)).trans (slay_X p s)).sub)
+          (by omega_arith)).trans (slay_X p s)).sub)
       · exact sv_sScr hp s hd'
       · rw [hsp1]
-        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega) (by decide))) hd'))
+        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega_arith) (by decide))) hd'))
       (by decide)
   refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .x28 (by decide) (by decide)).trans hc1.x28,
     fun r hr h28 h30 => (hcs r hr h30).trans (hc1.cs r hr h28 h30), fun r hr => (hvs r hr).trans (hc1.vs r hr),
-    (hsv 0 (by omega)).trans hc1.s28, (hsv 8 (by omega)).trans hc1.s30⟩, ?_⟩
+    (hsv 0 (by omega_arith)).trans hc1.s28, (hsv 8 (by omega_arith)).trans hc1.s30⟩, ?_⟩
   sig_reduce [signContract, signSig, AArch64.abi, AArch64.argRegs, Abi.withConsts, Sign.pairedSignRootConsts_eq, List.range, List.range.loop] at hpost
   simp only [e0, e1, e2, e3, o.mem] at hpost
   exact hpost

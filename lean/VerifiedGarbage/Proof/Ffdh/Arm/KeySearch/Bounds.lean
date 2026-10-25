@@ -52,6 +52,6 @@ theorem KeyInput.bounds {p : KeyPublic sampling} {s : State} (h : KeyInput p s) 
     constructor <;> simp only [keyOfState, argsBytes, GenerationPolicy.cachedContext,
       State.addr, VG.Proof.Mont.off, Bool.false_eq_true, ite_false, ite_true]
     sig_close
-    all_goals first | exact VG.Proof.Bignum.bytesAt_length _ _ _ | omega)
+    all_goals first | exact VG.Proof.Bignum.bytesAt_length _ _ _ | omega_arith)
 
 end VG.Proof.Ffdh.Arm.KeySearch

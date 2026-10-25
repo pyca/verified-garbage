@@ -78,10 +78,10 @@ theorem mulSteps_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr}
   | t :: ts, s, base, d, hs, hd, hf => by
     obtain ⟨htn, hta, htc, htd, htb, hti⟩ := hf.head
     rw [mulSteps, mulStep_eq, WP.block_append_iff]
-    refine WP.mono (mulStep_ok s (readSrc_sc hs (d := d) (by simp at hd; omega)) hta htd
+    refine WP.mono (mulStep_ok s (readSrc_sc hs (d := d) (by simp at hd; omega_arith)) hta htd
       (by decide) (by decide) (by decide) htb) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by simp [Ne.symm hti])
-    refine WP.mono (mulSteps_ok ts hs₁ (d := d + 8) (by simp at hd; omega) hf.tail)
+    refine WP.mono (mulSteps_ok ts hs₁ (d := d + 8) (by simp at hd; omega_arith) hf.tail)
       fun s₂ ⟨e₂, k₂⟩ => ?_
     have g₂ : ∀ r, r ∉ Reg.rbp :: Reg.rax :: Reg.rdx :: ts → s₂.gpr r = s₁.gpr r := k₂.1
     have g₁ : ∀ r, r ∉ [t, Reg.rbp, Reg.rax, Reg.rdx] → s₁.gpr r = s.gpr r := k₁.1
@@ -102,8 +102,8 @@ theorem mulSteps_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr}
       have h2 : 2 ^ 64 * 2 ^ (64 * ts.length) * (s₂.gpr .rbp).toNat =
           2 ^ 64 * (2 ^ (64 * ts.length) * (s₂.gpr .rbp).toNat) := Nat.mul_assoc _ _ _
       rw [h1, h2]
-      have := readSrc_sc hs (d := d) (by simp at hd; omega)
-      omega
+      have := readSrc_sc hs (d := d) (by simp at hd; omega_arith)
+      omega_arith
     · exact (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))
 
 /-- The arithmetic of `mulStepL`: the product's halves, the low half added to
@@ -119,19 +119,19 @@ theorem stepL_arith (a v c t : BitVec 64) :
       t.toNat + c.toNat + a.toNat * v.toNat := by
   intro p lo hi r d
   have ha := a.isLt; have hv := v.isLt; have hc := c.isLt; have ht := t.isLt
-  have hp : p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+  have hp : p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have hlo : lo.toNat = p % 2 ^ 64 := BitVec.toNat_ofNat _ _
   have hhi : hi.toNat = p / 2 ^ 64 := by
     simp only [hi, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
-  have hdiv : p / 2 ^ 64 ≤ 2 ^ 64 - 2 := by omega
+    exact Nat.mod_eq_of_lt (by omega_arith)
+  have hdiv : p / 2 ^ 64 ≤ 2 ^ 64 - 2 := by omega_arith
   have hz : (0 : BitVec 64).toNat = 0 := rfl
   simp only [r, d, BitVec.toNat_add, toNat_ofBool, hz, Nat.add_zero, hlo, hhi] at *
   by_cases h1 : 2 ^ 64 ≤ t.toNat + p % 2 ^ 64 <;>
   simp only [h1, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
   [by_cases h2 : 2 ^ 64 ≤ (t.toNat + p % 2 ^ 64) % 2 ^ 64 + c.toNat;
     by_cases h2 : 2 ^ 64 ≤ (t.toNat + p % 2 ^ 64) % 2 ^ 64 + c.toNat] <;>
-  simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+  simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- `mulStepL`: `t:c = t + c + ai · src`, as `mulStep_ok`. -/
 theorem mulStepL_ok (s : State) {t c ai : Reg} {src : Src} {v : BitVec 64}
@@ -168,10 +168,10 @@ theorem mulStepsL_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr
   | t :: ts, s, base, d, hs, hd, hf => by
     obtain ⟨htn, hta, htc, htd, htb, hti⟩ := hf.head
     rw [mulStepsL, WP.block_append_iff]
-    refine WP.mono (mulStepL_ok s (readSrc_sc hs (d := d) (by simp at hd; omega)) hta htd
+    refine WP.mono (mulStepL_ok s (readSrc_sc hs (d := d) (by simp at hd; omega_arith)) hta htd
       (by decide) (by decide) (by decide) htb) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by simp [Ne.symm hti])
-    refine WP.mono (mulStepsL_ok ts hs₁ (d := d + 8) (by simp at hd; omega) hf.tail)
+    refine WP.mono (mulStepsL_ok ts hs₁ (d := d + 8) (by simp at hd; omega_arith) hf.tail)
       fun s₂ ⟨e₂, k₂⟩ => ?_
     have g₂ : ∀ r, r ∉ Reg.rbp :: Reg.rax :: Reg.rdx :: ts → s₂.gpr r = s₁.gpr r := k₂.1
     have g₁ : ∀ r, r ∉ [t, Reg.rbp, Reg.rax, Reg.rdx] → s₁.gpr r = s.gpr r := k₁.1
@@ -192,8 +192,8 @@ theorem mulStepsL_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr
       have h2 : 2 ^ 64 * 2 ^ (64 * ts.length) * (s₂.gpr .rbp).toNat =
           2 ^ 64 * (2 ^ (64 * ts.length) * (s₂.gpr .rbp).toNat) := Nat.mul_assoc _ _ _
       rw [h1, h2]
-      have := readSrc_sc hs (d := d) (by simp at hd; omega)
-      omega
+      have := readSrc_sc hs (d := d) (by simp at hd; omega_arith)
+      omega_arith
     · exact (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))
 
 end VG.Proof.Mont.X86_64

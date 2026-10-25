@@ -62,17 +62,17 @@ theorem ok_at {s₀ s : State} (hp : BlockPre s₀) (h : Same s₀ s) {n : Nat} 
   refine ⟨fun k hk' => ?_, fun k hk' => ?_, ?_, fun k hk' j hj => ?_⟩
   · simp only [rCfg] at hk'
     rw [h.wr, show rCfg.base = .r10 from rfl, h.r10]
-    exact in_off hX hXw (by omega) (by omega)
+    exact in_off hX hXw (by omega_arith) (by omega_arith)
   · simp only [rCfg] at hk'
     rw [h.rd, h.wr, show rCfg.ext = .r9 from rfl, hk, wordAddr, add_ofNat_ofNat]
-    exact in_off hR hRw (by omega) (by omega)
+    exact in_off hR hRw (by omega_arith) (by omega_arith)
   · show (s.gpr .r10).toNat + 4 * 13 ≤ 2 ^ 32
-    rw [h.r10]; omega
+    rw [h.r10]; omega_arith
   · simp only [rCfg] at hk' hj
     rw [show rCfg.base = .r10 from rfl, show rCfg.ext = .r9 from rfl, h.r10, hk, wordAddr, wordAddr,
       add_ofNat_ofNat]
-    exact hp.disj.sep (contains_off (len := 52) (by omega) (by omega) (by omega))
-      (contains_off (len := 384) (by omega) (by omega) (by omega))
+    exact hp.disj.sep (contains_off (len := 52) (by omega_arith) (by omega_arith) (by omega_arith))
+      (contains_off (len := 384) (by omega_arith) (by omega_arith) (by omega_arith))
 
 theorem key_at {s₀ s : State} (hp : BlockPre s₀) (h : Same s₀ s) {n : Nat} (hn : n < 48)
     (hk : s.gpr .r9 = s₀.gpr .r9 + BitVec.ofNat 32 (8 * n)) : key48 s = ((sch s₀).getD n 0).setWidth 48 := by
@@ -85,13 +85,13 @@ theorem key_at {s₀ s : State} (hp : BlockPre s₀) (h : Same s₀ s) {n : Nat}
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         refine (hp.disj.symm.sub_left ?_)
-        rw [addr_add (by omega)]
-        exact Offset.sub_base _ (by omega)) (by decide)
+        rw [addr_add (by omega_arith)]
+        exact Offset.sub_base _ (by omega_arith)) (by decide)
   have e0 : wordAddr (s.gpr .r9) 0 = State.addr (s₀.gpr .r9 + BitVec.ofNat 32 (8 * n)) := by
-    rw [wordAddr, hk, add_ofNat_ofNat, show 8 * n + 4 * 0 = 8 * n by omega]
+    rw [wordAddr, hk, add_ofNat_ofNat, show 8 * n + 4 * 0 = 8 * n by omega_arith]
   have e1 : wordAddr (s.gpr .r9) 1 = State.addr (s₀.gpr .r9 + BitVec.ofNat 32 (8 * n + 4)) := by
     rw [wordAddr, hk, add_ofNat_ofNat]
-  rw [key48, keyLo, keyHi, e0, e1, rd _ (by omega), rd _ (by omega), addr_add (by omega), addr_add (by omega),
+  rw [key48, keyLo, keyHi, e0, e1, rd _ (by omega_arith), rd _ (by omega_arith), addr_add (by omega_arith), addr_add (by omega_arith),
     BitVec.add_assoc, ← BitVec.ofNat_add]
 
 /-! ## The rounds of a pass -/
@@ -116,7 +116,7 @@ theorem ofNat_sub_one {k : Nat} (hk : 1 ≤ k) (hk' : k < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem ofNat_beq_zero {k : Nat} (hk : k < 2 ^ 32) : (BitVec.ofNat 32 k == 0) = decide (k = 0) := by
   rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← BitVec.toNat_inj, BitVec.toNat_ofNat,
@@ -136,7 +136,7 @@ theorem kpos_succ_addr (a : BitVec 32) {p j : Nat} (hp : p < 3) (hj : j < 16) :
   · rw [← BitVec.ofNat_add]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · rw [← BitVec.ofNat_add]
     congr 1
 
@@ -150,13 +150,13 @@ structure PInv (s₀ : State) (p : Nat) (lr : BitVec 32 × BitVec 32) (j : Nat) 
   halves : (s.gpr .r7, s.gpr .r8) = rounds (passKeys (sch s₀) p) j lr
 
 theorem kpos_lt {p j : Nat} (hp : p < 3) (hj : j < 16) : kpos p j < 48 := by
-  simp only [kpos]; split <;> omega
+  simp only [kpos]; split <;> omega_arith
 
 theorem passKeys_at (s₀ : State) {p j : Nat} (hj : j < 16) :
     passKeys (sch s₀) p j = ((sch s₀).getD (kpos p j) 0).setWidth 48 := by
   rw [passKeys_eq _ hj, kpos]
   by_cases h : p % 2 = 1
-  · rw [ite_eq_left h, ite_eq_left h, show 16 * p + (15 - j) = 16 * p + 15 - j by omega]
+  · rw [ite_eq_left h, ite_eq_left h, show 16 * p + (15 - j) = 16 * p + 15 - j by omega_arith]
   · rw [ite_eq_right h, ite_eq_right h]
 
 /-- One round of pass `p`. -/
@@ -169,8 +169,8 @@ theorem roundStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3)
   obtain ⟨s₂, h₂, t9, t11, tz, tk, tsp, tm, trd, twr⟩ := roundTail_ok s₁
   have kk : ∀ r ∈ kept, s₁.gpr r = s.gpr r := k₁
   refine ⟨s₂, h₂, ?_, ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩⟩
-  · rw [tz, kk .r11 (by simp [kept]), h.r11, ofNat_sub_one (by omega) (by omega), ofNat_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+  · rw [tz, kk .r11 (by simp [kept]), h.r11, ofNat_sub_one (by omega_arith) (by omega_arith), ofNat_beq_zero (by omega_arith)]
+    exact decide_eq_decide.mpr (by omega_arith)
   · rw [tk .r10 (by decide) (by decide), kk .r10 (by simp [kept]), h.same.r10]
   · rw [tsp, sp₁, h.same.sp]
   · rw [trd, rd₁, h.same.rd]
@@ -183,7 +183,7 @@ theorem roundStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3)
   · rw [t9, kk .r9 (by simp [kept]), kk .lr (by simp [kept]), h.r9, h.str, kpos_succ_addr _ hp3 hj]
   · rw [tk .lr (by decide) (by decide), kk .lr (by simp [kept]), h.str]
   · rw [tk .r12 (by decide) (by decide), kk .r12 (by simp [kept]), h.r12]
-  · rw [t11, kk .r11 (by simp [kept]), h.r11, ofNat_sub_one (by omega) (by omega)]
+  · rw [t11, kk .r11 (by simp [kept]), h.r11, ofNat_sub_one (by omega_arith) (by omega_arith)]
     congr 1
   · rw [rounds_succ, ← h.halves, tk .r7 (by decide) (by decide), tk .r8 (by decide) (by decide), e7, e8,
       key_at hp h.same (kpos_lt hp3 hj) h.r9, passKeys_at s₀ hj]
@@ -214,7 +214,7 @@ theorem pass_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr 
     refine ⟨by rw [eval_ne, z']; simp [hz], ?_⟩
     rwa [hz] at h'
   · right
-    exact ⟨by rw [eval_ne, z']; simp [hz], 16 - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+    exact ⟨by rw [eval_ne, z']; simp [hz], 16 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, h'⟩
 
 /-! ## The passes -/
 
@@ -251,10 +251,10 @@ theorem kpos_tail_addr (a : BitVec 32) {p : Nat} (hp : p < 3) :
     a + BitVec.ofNat 32 (8 * kpos p 16) + (128 - stride p) = a + BitVec.ofNat 32 (8 * kpos (p + 1) 0) := by
   rw [BitVec.add_assoc]
   congr 1
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2) with rfl | rfl | rfl <;> decide
+  rcases (by omega_arith : p = 0 ∨ p = 1 ∨ p = 2) with rfl | rfl | rfl <;> decide
 
 theorem stride_succ {p : Nat} (hp : p < 3) : 0 - stride p = stride (p + 1) := by
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2) with rfl | rfl | rfl <;> decide
+  rcases (by omega_arith : p = 0 ∨ p = 1 ∨ p = 2) with rfl | rfl | rfl <;> decide
 
 /-- One pass and the exchange after it. -/
 theorem passBody_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat} (hp3 : p < 3) {s : State}
@@ -263,8 +263,8 @@ theorem passBody_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat
   refine WP.seq (WP.mono (pass_ok hp hp3 h.same h.r9 h.str h.r12 h.halves) fun s₁ h₁ => ?_)
   obtain ⟨s₂, h₂, t9, tlr, t7, t8, t12, tz, tk, tsp, tm, trd, twr⟩ := passTail_ok s₁
   refine WP.of_runBlock ⟨s₂, h₂, ?_, ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩⟩
-  · rw [tz, h₁.r12, ofNat_sub_one (by omega) (by omega), ofNat_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+  · rw [tz, h₁.r12, ofNat_sub_one (by omega_arith) (by omega_arith), ofNat_beq_zero (by omega_arith)]
+    exact decide_eq_decide.mpr (by omega_arith)
   · rw [tk .r10 (by decide), h₁.same.r10]
   · rw [tsp, h₁.same.sp]
   · rw [trd, h₁.same.rd]
@@ -272,7 +272,7 @@ theorem passBody_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat
   · rw [tm]; exact h₁.same.frame
   · rw [t9, h₁.r9, h₁.str, kpos_tail_addr _ hp3]
   · rw [tlr, h₁.str, stride_succ hp3]
-  · rw [t12, h₁.r12, ofNat_sub_one (by omega) (by omega)]
+  · rw [t12, h₁.r12, ofNat_sub_one (by omega_arith) (by omega_arith)]
     congr 1
   · rw [t7, t8, passes, ← h₁.halves]
     rfl
@@ -289,7 +289,7 @@ theorem passes_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {s : State
     refine ⟨by rw [eval_ne, z']; simp [hz], ?_⟩
     rwa [hz] at h'
   · right
-    exact ⟨by rw [eval_ne, z']; simp [hz], 3 - (p + 1), by omega, p + 1, rfl, by omega, h'⟩
+    exact ⟨by rw [eval_ne, z']; simp [hz], 3 - (p + 1), by omega_arith, p + 1, rfl, by omega_arith, h'⟩
 
 /-! ## `IP` and `IP⁻¹` -/
 
@@ -306,7 +306,7 @@ def zCfg : Cfg := { base := .r10, slots := 0, ext := .r9, exts := 0 }
 
 theorem zCfg_ok (s : State) : Ok zCfg s :=
   ⟨fun k hk => absurd hk (by simp [zCfg]), fun k hk => absurd hk (by simp [zCfg]),
-    by have := (s.gpr zCfg.base).isLt; simp only [zCfg] at this ⊢; omega, fun k hk => absurd hk (by simp [zCfg])⟩
+    by have := (s.gpr zCfg.base).isLt; simp only [zCfg] at this ⊢; omega_arith, fun k hk => absurd hk (by simp [zCfg])⟩
 
 theorem frame_zCfg {s : State} {m m' : Mem} (h : Frame [slotRegion zCfg s] m m') : m' = m := by
   funext a
@@ -341,9 +341,9 @@ theorem bit_xAtom (W : Nat → BitVec 32) {b : Nat} (hb : b < 64) :
     bitOf W (xAtom b) = (W 0 ++ W 1).getLsbD b := by
   rw [BitVec.getLsbD_append, xAtom]
   by_cases h : 32 ≤ b
-  · rw [ite_eq_left h, ite_eq_right (by omega), bitOf, Nat.div_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  · rw [ite_eq_right h, ite_eq_left (by omega), bitOf, show (32 + b) / 32 = 1 by omega,
-      show (32 + b) % 32 = b by omega]
+  · rw [ite_eq_left h, ite_eq_right (by omega_arith), bitOf, Nat.div_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  · rw [ite_eq_right h, ite_eq_left (by omega_arith), bitOf, show (32 + b) / 32 = 1 by omega_arith,
+      show (32 + b) % 32 = b by omega_arith]
 
 theorem ip_ok (s : State) :
     ∃ s', runBlock isa ipCode s = some s' ∧
@@ -362,12 +362,12 @@ theorem ip_ok (s : State) :
   simp only [split, Prod.mk.injEq]
   constructor <;> apply BitVec.eq_of_getLsbD_eq <;> intro t ht
   · rw [hout .r7 ipG7 (by simp) t ht, ipG7, ite_eq_left ht, xorBits_cons, xorBits_nil, Bool.xor_false,
-      bit_xAtom W (ipSrc_lt _ (by omega)), hx, BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and,
-      BitVec.getLsbD_ushiftRight, getLsbD_permute _ _ (by decide) (show 32 + t < 64 by omega)]
+      bit_xAtom W (ipSrc_lt _ (by omega_arith)), hx, BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and,
+      BitVec.getLsbD_ushiftRight, getLsbD_permute _ _ (by decide) (show 32 + t < 64 by omega_arith)]
     rfl
   · rw [hout .r8 ipG8 (by simp) t ht, ipG8, ite_eq_left ht, xorBits_cons, xorBits_nil, Bool.xor_false,
-      bit_xAtom W (ipSrc_lt _ (by omega)), hx, BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and,
-      getLsbD_permute _ _ (by decide) (show t < 64 by omega)]
+      bit_xAtom W (ipSrc_lt _ (by omega_arith)), hx, BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and,
+      getLsbD_permute _ _ (by decide) (show t < 64 by omega_arith)]
     rfl
 
 theorem fp_ok (s : State) :
@@ -391,8 +391,8 @@ theorem fp_ok (s : State) :
   by_cases h32 : j < 32
   · rw [ite_eq_left h32, hout .r1 fpG1 (by simp) j h32, fpG1, ite_eq_left h32, xorBits_cons, xorBits_nil,
       Bool.xor_false, bit_xAtom W (fpSrc_lt _ hj), hx]
-  · rw [ite_eq_right h32, hout .r0 fpG0 (by simp) (j - 32) (by omega), fpG0, ite_eq_left (by omega),
-      xorBits_cons, xorBits_nil, Bool.xor_false, show 32 + (j - 32) = j by omega, bit_xAtom W (fpSrc_lt _ hj), hx]
+  · rw [ite_eq_right h32, hout .r0 fpG0 (by simp) (j - 32) (by omega_arith), fpG0, ite_eq_left (by omega_arith),
+      xorBits_cons, xorBits_nil, Bool.xor_false, show 32 + (j - 32) = j by omega_arith, bit_xAtom W (fpSrc_lt _ hj), hx]
 
 /-- TDEA encryption of the block in `r0:r1` (its high and low words) with the
 key schedule at `r9`, into `r0:r1`. -/

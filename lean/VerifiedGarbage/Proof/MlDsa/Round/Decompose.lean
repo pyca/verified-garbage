@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: `Decompose` and `Power2Round` by multiplications and shifts, for every target
@@ -45,7 +46,7 @@ theorem hbM_32 : hbM 261888 = 16 := rfl
 theorem hbM_88 : hbM 95232 = 44 := rfl
 
 theorem hbF_le {γ₂ : Nat} (h : γ₂ ∈ gamma2s) {a : Nat} (ha : a < q) : hbF γ₂ a ≤ hbM γ₂ := by
-  rcases mem_gamma2s h with rfl | rfl <;> simp only [hbF, hbM, q_eq] at * <;> omega
+  rcases mem_gamma2s h with rfl | rfl <;> simp only [hbF, hbM, q_eq] at * <;> omega_arith
 
 theorem hbM_mul {γ₂ : Nat} (h : γ₂ ∈ gamma2s) : hbM γ₂ * (2 * γ₂) = q - 1 := by
   rcases mem_gamma2s h with rfl | rfl <;> rfl
@@ -60,11 +61,11 @@ theorem decompose_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) :
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]
     rcases mem_gamma2s h with rfl | rfl <;>
     · simp only [decompose, modPm, hbF, hbM, q_eq] at *
-      split <;> split <;> simp only [Prod.mk.injEq] <;> omega
+      split <;> split <;> simp only [Prod.mk.injEq] <;> omega_arith
   · rw [ite_eq_right_of_eq_false _ _ (eq_false hc)]
     rcases mem_gamma2s h with rfl | rfl <;>
     · simp only [decompose, modPm, hbF, hbM, q_eq] at *
-      split <;> split <;> simp only [Prod.mk.injEq] <;> omega
+      split <;> split <;> simp only [Prod.mk.injEq] <;> omega_arith
 
 theorem highBits_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) :
     highBits γ₂ r = ((hbF γ₂ r.val % hbM γ₂ : Nat) : Int) := by
@@ -92,9 +93,9 @@ theorem hbF_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) {a : Nat} (ha : a < q) :
   rw [q_eq] at ha
   rcases mem_gamma2s h with rfl | rfl
   · show (a + 95232 - 1) / (2 * 95232) = ((a + 127) / 128 * 11275 + 2 ^ 23) / 2 ^ 24
-    omega
+    omega_arith
   · show (a + 261888 - 1) / (2 * 261888) = ((a + 127) / 128 * 1025 + 2 ^ 21) / 2 ^ 22
-    omega
+    omega_arith
 
 /-! ## `ℤ_q` -/
 
@@ -104,7 +105,7 @@ theorem ofInt_val (x : Int) : (ofInt x).val = (x % (q : Int)).toNat % q := rfl
 theorem ofInt_sub_val {a x : Nat} (ha : a < q) (hx : x ≤ q) (c : Int) :
     (ofInt ((a : Int) - (x : Int) - c * (q : Int))).val = if a < x then a + q - x else a - x := by
   rw [ofInt_val, q_eq] at *
-  split <;> omega
+  split <;> omega_arith
 
 theorem val_add (a b : Zq) : (a + b).val = (a.val + b.val) % q := Fin.val_add a b
 
@@ -119,7 +120,7 @@ theorem lowBits_val {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) :
     have := hbM_mul h
     have : hbF γ₂ r.val % hbM γ₂ < hbM γ₂ := Nat.mod_lt _ (by rcases mem_gamma2s h with rfl | rfl <;> decide)
     have := Nat.mul_le_mul_right (2 * γ₂) (Nat.le_of_lt this)
-    omega
+    omega_arith
   rw [lowBits_eq h, ← ofInt_sub_val r.isLt hx (if hbF γ₂ r.val = hbM γ₂ then 1 else 0)]
   congr 2
   split <;> simp
@@ -130,7 +131,7 @@ theorem power2Round_eq (r : Zq) :
     power2Round r = ((((r.val + 4095) / 8192 : Nat) : Int), (((r.val + 4095) % 8192 : Nat) : Int) - 4095) := by
   have := r.isLt
   simp only [power2Round, modPm, d, q_eq] at *
-  split <;> simp only [Prod.mk.injEq] <;> omega
+  split <;> simp only [Prod.mk.injEq] <;> omega_arith
 
 theorem power2Round_t0 (r : Zq) :
     (ofInt (power2Round r).2).val =
@@ -163,7 +164,7 @@ theorem useHint_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (b : Bool) (r : Zq) :
   rcases mem_gamma2s h with rfl | rfl
   all_goals first | rw [hbM_88] at hf ⊢ | rw [hbM_32] at hf ⊢
   all_goals cases b <;> simp only [Bool.false_eq_true, false_and, ↓reduceIte, true_and]
-  all_goals first | omega | (repeat' split) <;> omega
+  all_goals first | omega_arith | (repeat' split) <;> omega_arith
 
 /-- `MakeHint(z, r)`: whether the `f mod m` of `r` and of `r + z` differ. -/
 theorem makeHint_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (z r : Zq) :
@@ -178,7 +179,7 @@ theorem makeHint_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (z r : Zq) :
 theorem normZq_lt (a : Zq) (B : Nat) : normZq a < B ↔ a.val < B ∨ q - a.val < B := by
   have := a.isLt
   simp only [normZq, modPm, q_eq] at *
-  split <;> omega
+  split <;> omega_arith
 
 theorem foldl_max_lt (L : List Nat) (a B : Nat) : L.foldl max a < B ↔ a < B ∧ ∀ x ∈ L, x < B := by
   induction L generalizing a with
@@ -197,7 +198,7 @@ theorem normRq_lt (f : Poly) (B : Nat) : normRq [f] < B ↔ ∀ i < n, normZq f[
     exact h _ (Vector.getElem_mem hi)
   · intro h
     refine ⟨?_, fun x hx => ?_⟩
-    · have := h 0 (by decide); omega
+    · have := h 0 (by decide); omega_arith
     · obtain ⟨i, hi, rfl⟩ := Vector.mem_iff_getElem.mp hx
       have := h i hi
       rwa [getElem!_pos f i hi] at this

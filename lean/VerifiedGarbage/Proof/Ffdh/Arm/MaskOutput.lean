@@ -37,14 +37,7 @@ theorem maskOutputArgs_ok (s : State) {p : Inputs} {flag : BitVec 32} (h : MaskO
   have r4 := h.locals.read (d := 4) (by decide)
   have r32 := h.locals.read (d := 32) (by decide)
   have r64 := h.locals.read (d := 64) (by decide)
-  refine withRest [.r0, .r2, .r3, .lr] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [.ldrSp .r0 4, .ldrSp .lr 32, .ldrSp .r2 64,
-        .mov .r3 (.imm 0), .dp .sub .r2 .r3 (.reg .r2)] : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r2, .r3, .lr] ?_ (by rfl) (by rfl)
   ffrun [addr 4 (by decide), addr 32 (by decide), addr 64 (by decide), r4, r32, r64,
     h.dst, h.count, h.result, off]
 

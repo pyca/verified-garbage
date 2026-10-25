@@ -134,7 +134,7 @@ structure WinFixed (K : WinCfg) (C : Curve) (base : Addr) (s₀ : State) (P : Po
 theorem winRo_val {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F pm size wk) {base : Addr}
     {m m' : Mem} (hU : Unch base (winWX K wk) m m') (hn : base.toNat + size ≤ 2 ^ 32) {x : Nat}
     (hx : x ∈ winRo K) : wordsVal m' base x K.M.n = wordsVal m base x K.M.n :=
-  hU.wordsVal (winRo_apart hL hAcc hx) (by have := hL.lay.le x (winRo_slots K x hx); omega)
+  hU.wordsVal (winRo_apart hL hAcc hx) (by have := hL.lay.le x (winRo_slots K x hx); omega_arith)
 
 theorem winRo_tmv {K : WinCfg} {C : Curve} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     {base : Addr} {s s' : State} (hU : Unch base (winWX K wk) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 32)
@@ -148,10 +148,10 @@ theorem winW_mo {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk 
   intro w hw
   simp only [winWX, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl | rfl
-  · have := hL.lay.mo y (winWs_slots K y hy); dsimp only; omega
-  · have := hM.sep; dsimp only; omega
+  · have := hL.lay.mo y (winWs_slots K y hy); dsimp only; omega_arith
+  · have := hM.sep; dsimp only; omega_arith
   · exact Or.inl hAcc.acc.mo
-  · have := hAcc.acc.mo; have := hAcc.wk_le; exact Or.inl (by dsimp only [Mont.outW]; omega)
+  · have := hAcc.acc.mo; have := hAcc.wk_le; exact Or.inl (by dsimp only [Mont.outW]; omega_arith)
 
 /-- Entries `[1 … m]P` of the table. -/
 def TblOk (K : WinCfg) (C : Curve) (base : Addr) (P : Point C) (m : Nat) (s : State) : Prop :=
@@ -195,12 +195,12 @@ theorem tbl_apart_add {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : 
     rcases hy with hy | hy
     · exact (hL.tbl_apart (rcbW_mem_other y hy) hi).symm
     · obtain ⟨i', hi', rfl, hi'₁, hi'₂⟩ := tblPt_mem K hm1 hm8 y hy
-      exact winTbl_apart K (by omega)
+      exact winTbl_apart K (by omega_arith)
   · exact hL.lay.tmp _ (by
       simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K hi))
   · exact Or.inl (hAcc.acc.sl _ (List.mem_append_right _ (winTbl_mem K hi)))
   · have := hAcc.acc.sl _ (List.mem_append_right _ (winTbl_mem K hi)); have := hAcc.wk_le
-    exact Or.inl (by dsimp only [Mont.outW]; omega)
+    exact Or.inl (by dsimp only [Mont.outW]; omega_arith)
 
 /-- `[m + 1]P = [m]P + P`. -/
 theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
@@ -216,9 +216,9 @@ theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
     rw [winRo_val hL hAcc hI.unch hn hx]; exact hF.ro_lt x hx
   have Tm := hI.tbl m h1 (Nat.le_refl _)
   have T1 := hI.tbl 1 (Nat.le_refl _) h1
-  have sm := tblPt_slots K (m := m) h1 (by omega)
-  have s1 := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega)
-  have so := tblPt_slots K (m := m + 1) (by omega) (by omega)
+  have sm := tblPt_slots K (m := m) h1 (by omega_arith)
+  have s1 := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega_arith)
+  have so := tblPt_slots K (m := m + 1) (by omega_arith) (by omega_arith)
   have hO : ∀ x ∈ rcbW K.S (K.tblPt (m + 1)) ++ rcbR K.S (K.tblPt m) (K.tblPt 1), x ∈ winSlots K := by
     intro x hx
     simp only [rcbW, rcbR, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -278,25 +278,25 @@ theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
   have hoz : (K.tblPt (m + 1)).z ∈ [(K.tblPt (m + 1)).x, (K.tblPt (m + 1)).y, (K.tblPt (m + 1)).z] ++
       rcbR K.S (K.tblPt m) (K.tblPt 1) := by simp
   refine ⟨k₁.scr hI.scr, hI.keep.trans ⟨k₁.gpr, k₁.rd, k₁.wr⟩,
-    (hI.unch.trans U₁).mono fun w hw => ?_, hI.mod.unch U₁ (fun w hw => winW_mo hL hAcc hI.mod w (hWrites w hw)) (by omega),
+    (hI.unch.trans U₁).mono fun w hw => ?_, hI.mod.unch U₁ (fun w hw => winW_mo hL hAcc hI.mod w (hWrites w hw)) (by omega_arith),
     fun j hj1 hjm => ?_⟩
   · rcases List.mem_append.mp hw with hw | hw
     · exact hw
     · exact hWrites w hw
   rcases Nat.lt_or_ge j (m + 1) with hj | hj
   · -- An entry built before keeps its numbers.
-    have ap := tbl_apart_add hL hAcc (j := j) (m := m) hj1 (by omega) (by omega) (by omega) (by omega)
+    have ap := tbl_apart_add hL hAcc (j := j) (m := m) hj1 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     have e : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
         wordsVal s₁.mem base x K.M.n = wordsVal s.mem base x K.M.n := fun x hx =>
-      U₁.wordsVal (ap x hx) (by have := hL.lay.le x ((tblPt_slots K hj1 (by omega)) x hx).1; omega)
-    have Tj := hI.tbl j hj1 (by omega)
+      U₁.wordsVal (ap x hx) (by have := hL.lay.le x ((tblPt_slots K hj1 (by omega_arith)) x hx).1; omega_arith)
+    have Tj := hI.tbl j hj1 (by omega_arith)
     refine ⟨fun x hx => by rw [e x hx]; exact Tj.1 x hx, ?_⟩
     have ex : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
         tmv C K.M.n base s₁ x = tmv C K.M.n base s x := fun x hx => by
       show toM _ _ _ = toM _ _ _; rw [e x hx]
     rw [ex _ (by simp), ex _ (by simp), ex _ (by simp)]
     exact Tj.2
-  · obtain rfl : j = m + 1 := by omega
+  · obtain rfl : j = m + 1 := by omega_arith
     refine ⟨fun x hx => ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
@@ -326,8 +326,8 @@ theorem adds_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
   | 0, _, _, h => WP.block_nil h
   | i + 1, hi, s, h => by
     rw [WinCfg.adds]
-    exact WP.seq (WP.mono (adds_ok hL hAcc hp hC hM3 hP hF i (by omega) s h) fun s₁ h₁ =>
-      addT_ok hL hAcc hp hC hM3 hP hF (m := i + 1) (by omega) (by omega) h₁)
+    exact WP.seq (WP.mono (adds_ok hL hAcc hp hC hM3 hP hF i (by omega_arith) s h) fun s₁ h₁ =>
+      addT_ok hL hAcc hp hC hM3 hP hF (m := i + 1) (by omega_arith) (by omega_arith) h₁)
 
 /-- The table `[1 … 8]P`. -/
 theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
@@ -339,7 +339,7 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : 
   rw [WinCfg.build]
   refine WP.seq (WP.mono (?_ : WP isa (.block (copyPt K.M.n (K.tblPt 1) K.P)) s
     (BuildInv K wk C base size P s 1)) fun s' h => adds_ok hL hAcc hp hC hM3 hP hF 7 (by decide) s' h)
-  have s1 := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega)
+  have s1 := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega_arith)
   have mP : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∈ winRo K ++ winOther K := fun x hx =>
     List.mem_append_left _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -347,11 +347,11 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : 
   have pT : ∀ x ∈ [K.P.x, K.P.y, K.P.z], ∀ y ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z],
       y + 8 * K.M.n ≤ x ∨ x + 8 * K.M.n ≤ y := by
     intro x hx y hy
-    obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K (m := 1) (Nat.le_refl _) (by omega) y hy
+    obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K (m := 1) (Nat.le_refl _) (by omega_arith) y hy
     exact (hL.tbl_apart (mP x hx) hi).symm
-  have ne₁ : (K.tblPt 1).x ≠ (K.tblPt 1).y := by rw [tblPt_x, tblPt_y]; exact hL.tbl_ne₂ (by omega)
-  have ne₂ : (K.tblPt 1).x ≠ (K.tblPt 1).z := by rw [tblPt_x, tblPt_z]; exact hL.tbl_ne₂ (by omega)
-  have ne₃ : (K.tblPt 1).y ≠ (K.tblPt 1).z := by rw [tblPt_y, tblPt_z]; exact hL.tbl_ne₂ (by omega)
+  have ne₁ : (K.tblPt 1).x ≠ (K.tblPt 1).y := by rw [tblPt_x, tblPt_y]; exact hL.tbl_ne₂ (by omega_arith)
+  have ne₂ : (K.tblPt 1).x ≠ (K.tblPt 1).z := by rw [tblPt_x, tblPt_z]; exact hL.tbl_ne₂ (by omega_arith)
+  have ne₃ : (K.tblPt 1).y ≠ (K.tblPt 1).z := by rw [tblPt_y, tblPt_z]; exact hL.tbl_ne₂ (by omega_arith)
   have hle : ∀ x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z, K.P.x, K.P.y, K.P.z],
       x + 8 * K.M.n ≤ size := by
     intro x hx
@@ -379,7 +379,7 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : 
     intro x hx hP'
     have := hL.lay.le x (s1 x hx).1
     have h0 := hL.n0
-    rcases pT x hP' x hx with h | h <;> omega
+    rcases pT x hP' x hx with h | h <;> omega_arith
   refine WP.mono (copyPt_ok hs hle hap hne ⟨ne₁, ne₂, ne₃⟩) fun s₁ ⟨vx, vy, vz, k₁, U₁⟩ => ?_
   have U : Unch base (winWX K wk) s.mem s₁.mem := by
     refine U₁.mono fun w hw => ?_
@@ -392,8 +392,8 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : 
       · exact (s1 _ (by simp)).2
     · rcases hw with rfl | rfl | rfl <;> rfl
   have c1 : ∀ r ∈ [Reg.eax], r ∈ clob := by intro r hr; simp at hr; subst hr; simp [clob]
-  refine ⟨hs.of_keepRegs k₁ (by decide), k₁.mono c1, U, hM.unch U (winW_mo hL hAcc hM) (by omega), fun j hj1 hj => ?_⟩
-  obtain rfl : j = 1 := by omega
+  refine ⟨hs.of_keepRegs k₁ (by decide), k₁.mono c1, U, hM.unch U (winW_mo hL hAcc hM) (by omega_arith), fun j hj1 hj => ?_⟩
+  obtain rfl : j = 1 := by omega_arith
   refine ⟨fun x hx => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl

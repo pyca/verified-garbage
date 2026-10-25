@@ -68,7 +68,7 @@ theorem FV_entry (m m' : Mem) (base : Addr) {e c o : Nat} (ho : o = TAB + 192 * 
   simp only [limbs]
   rw [← h i hi, tw]
   congr 2
-  omega
+  omega_arith
 
 /-- After `tabStore` from slots 3–5 of `s`, entry `e` is their point, with their bounds. -/
 theorem tabStore_pt {s t : State} {base : Addr} {e : Nat}
@@ -76,13 +76,13 @@ theorem tabStore_pt {s t : State} {base : Addr} {e : Nat}
     TPt t.mem base e = pt (EV s.mem base) 3 4 5 := by
   have hs : ∀ c < 3, ∀ i < 8, tw t.mem base e (8 * c + i) = word s.mem base (slot (3 + c) + 8 * i) :=
     fun c hc i hi => by
-      rw [tw, h _ (by omega), src]
+      rw [tw, h _ (by omega_arith), src]
       congr 2
       all_goals (try simp only [slot])
-      all_goals omega
+      all_goals omega_arith
   simp only [TPt, pt]
   refine Point.mk.injEq _ _ _ _ _ _ |>.mpr ⟨?_, ?_, ?_⟩
-  · exact FV_entry _ _ _ (e := e) (c := 0) (o := TAB + 192 * e) (by omega) (hs 0 (by decide))
+  · exact FV_entry _ _ _ (e := e) (c := 0) (o := TAB + 192 * e) (by omega_arith) (hs 0 (by decide))
   · exact FV_entry _ _ _ (e := e) (c := 1) rfl (hs 1 (by decide))
   · exact FV_entry _ _ _ (e := e) (c := 2) rfl (hs 2 (by decide))
 
@@ -90,7 +90,7 @@ theorem tabStore_bnd {s t : State} {base : Addr} {e : Nat} (hb : BEnv s.mem base
     (h : ∀ w < 24, word t.mem base (TAB + 192 * e + 8 * w) = word s.mem base (src w)) : TBnd t.mem base e := by
   intro w hw
   rw [tw, h w hw]
-  have := hb ⟨3 + w / 8, by omega⟩ (w % 8) (Nat.mod_lt _ (by decide))
+  have := hb ⟨3 + w / 8, by omega_arith⟩ (w % 8) (Nat.mod_lt _ (by decide))
   exact this
 
 /-- Entries other than `e` are kept by a store to entry `e`. -/
@@ -98,20 +98,20 @@ theorem tw_outside {m m' : Mem} {base : Addr} {e : Nat} (h : Outside base (TAB +
     {e' w : Nat} (he : e' ≠ e) (he' : e' < 16) (hw : w < 24) :
     tw m' base e' w = tw m base e' w := by
   unfold tw
-  refine h.word ?_ (by simp only [TAB]; omega)
-  rcases Nat.lt_or_gt_of_ne he with h1 | h1 <;> [left; right] <;> omega
+  refine h.word ?_ (by simp only [TAB]; omega_arith)
+  rcases Nat.lt_or_gt_of_ne he with h1 | h1 <;> [left; right] <;> omega_arith
 
 /-- An entry is its words. -/
 theorem TPt_of_tw {m m' : Mem} {base : Addr} {e : Nat} (h : ∀ w < 24, tw m' base e w = tw m base e w) :
     TPt m' base e = TPt m base e := by
   have hc : ∀ c < 3, ∀ i < 8, tw m' base e (8 * c + i) = word m base (TAB + 192 * e + 64 * c + 8 * i) :=
     fun c hc i hi => by
-      rw [h _ (by omega)]
+      rw [h _ (by omega_arith)]
       unfold tw
-      rw [show TAB + 192 * e + 8 * (8 * c + i) = TAB + 192 * e + 64 * c + 8 * i by omega]
+      rw [show TAB + 192 * e + 8 * (8 * c + i) = TAB + 192 * e + 64 * c + 8 * i by omega_arith]
   unfold TPt
-  rw [FV_entry m' m base (e := e) (c := 0) (o := TAB + 192 * e) (o' := TAB + 192 * e) (by omega)
-      (fun i hi => by rw [hc 0 (by decide) i hi, show TAB + 192 * e + 64 * 0 = TAB + 192 * e by omega]),
+  rw [FV_entry m' m base (e := e) (c := 0) (o := TAB + 192 * e) (o' := TAB + 192 * e) (by omega_arith)
+      (fun i hi => by rw [hc 0 (by decide) i hi, show TAB + 192 * e + 64 * 0 = TAB + 192 * e by omega_arith]),
     FV_entry m' m base (e := e) (c := 1) (o' := TAB + 192 * e + 64) rfl (fun i hi => hc 1 (by decide) i hi),
     FV_entry m' m base (e := e) (c := 2) (o' := TAB + 192 * e + 128) rfl (fun i hi => hc 2 (by decide) i hi)]
 
@@ -135,7 +135,7 @@ theorem TFrame.of_outside2 {base : Addr} {m m' : Mem} (h : Outside2 base 64 2816
 
 theorem TFrame.of_entry {base : Addr} {m m' : Mem} {e : Nat} (he : e < 16)
     (h : Outside base (TAB + 192 * e) 192 m m') : TFrame base m m' := fun x _ _ c =>
-  h x (by simp only [TAB] at c ⊢; omega)
+  h x (by simp only [TAB] at c ⊢; omega_arith)
 
 /-- The table's loop before entry `k`, from the state `s₀` at its start. -/
 structure TInv (s₀ : State) (base : Addr) (P : Point) (k : Nat) (s : State) : Prop where
@@ -172,22 +172,22 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
     have := i.isLt
     simp only [VG.Proof.X448.AArch64.Weak.E, VG.Proof.X448.AArch64.Weak.F]
     refine congrArg _ (VG.Proof.X448.Wide.valN_congr fun w hw => ?_)
-    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
+    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_arith)) (by simp only [slot]; omega_arith) (by omega_arith)]
   have hacc1 : pt (EV t1.mem base) 3 4 5 = tabPts P k := by
     rw [e1, Point56.genEnv_pt, (zero_env hz).1, VG.Proof.X448.AArch64.Base.genPt_eq, hacc, hpnt]
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
-    rw [show j + 2 - 1 = j + 1 by omega, tabPts_succ]
+    obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega_arith⟩
+    rw [show j + 2 - 1 = j + 1 by omega_arith, tabPts_succ]
   have hpnt1 : pt (EV t1.mem base) 6 7 8 = P := by
     rw [← hpnt]; simp only [pt]
     rw [Same.env s1 (i := 6) (by decide), Same.env s1 (i := 7) (by decide), Same.env s1 (i := 8) (by decide)]
-  refine ⟨⟨by omega, by omega⟩, hs2.of_keeps k3 (by decide), ?_, fun w hw => ?_, c3, ?_, ?_, ?_, fun e he => ?_,
+  refine ⟨⟨by omega_arith, by omega_arith⟩, hs2.of_keeps k3 (by decide), ?_, fun w hw => ?_, c3, ?_, ?_, ?_, fun e he => ?_,
     ?_, ?_, ?_, ?_⟩
   · intro i w hw
     have := i.isLt
     show limbs t3.mem base (slot i.val) w < Ib
-    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
+    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_arith)) (by simp only [slot]; omega_arith) (by omega_arith)]
     exact b1 i w hw
-  · rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
+  · rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_arith)) (by simp only [slot]; omega_arith) (by omega_arith)]
     exact z1 w hw
   · simp only [pt]; rw [e3 3, e3 4, e3 5, Nat.add_sub_cancel]; exact hacc1
   · simp only [pt]; rw [e3 6, e3 7, e3 8]; exact hpnt1
@@ -196,14 +196,14 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
     by_cases hek : e = k
     · subst hek
       exact ⟨by rw [tabStore_pt w2, hacc1], tabStore_bnd b1 w2⟩
-    · have ⟨te, tb⟩ := htab e (by omega)
+    · have ⟨te, tb⟩ := htab e (by omega_arith)
       have hmem1 : ∀ w < 24, tw t1.mem base e w = tw s.mem base e w := fun w hw => by
         unfold tw
-        exact k1.mem.word (Or.inr (by simp only [TAB]; omega)) (Or.inr (by simp only [ACC, TAB]; omega))
-          (by simp only [TAB]; omega)
+        exact k1.mem.word (Or.inr (by simp only [TAB]; omega_arith)) (Or.inr (by simp only [ACC, TAB]; omega_arith))
+          (by simp only [TAB]; omega_arith)
       refine ⟨?_, fun w hw => ?_⟩
-      · rw [TPt_outside o2 hek (by omega), TPt_of_tw hmem1, te]
-      · rw [tw_outside o2 hek (by omega) hw, hmem1 w hw]; exact tb w hw
+      · rw [TPt_outside o2 hek (by omega_arith), TPt_of_tw hmem1, te]
+      · rw [tw_outside o2 hek (by omega_arith) hw, hmem1 w hw]; exact tb w hw
   · rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.regs.1 _ (by decide)]; exact hchk
   · rw [k3.2.1, k2.2.1, k1.regs.2.1]; exact hrd
   · rw [k3.2.2, k2.2.2, k1.regs.2.2]; exact hwr
@@ -218,13 +218,13 @@ theorem tabLoop_ok {s₀ : State} {base : Addr} {P : Point} :
     (Q := fun t => TInv s₀ base P 16 t)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 14 ∧ TInv s₀ base P (16 - m) s) ?_ m s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩
-  refine WP.mono (tabBody_ok hi (by omega)) fun t ⟨hz, ht⟩ => ?_
+  refine WP.mono (tabBody_ok hi (by omega_arith)) fun t ⟨hz, ht⟩ => ?_
   simp only [eval, State.read, BitVec.setWidth_eq, hz]
   by_cases hm : m = 1
   · subst hm
     exact .inl ⟨by decide, ht⟩
-  · refine .inr ⟨congrArg some (decide_eq_true (by omega)), m - 1, by omega, by omega, by omega, ?_⟩
-    rw [show 16 - (m - 1) = 16 - m + 1 by omega]
+  · refine .inr ⟨congrArg some (decide_eq_true (by omega_arith)), m - 1, by omega_arith, by omega_arith, by omega_arith, ?_⟩
+    rw [show 16 - (m - 1) = 16 - m + 1 by omega_arith]
     exact ht
 
 end VG.Proof.Ed448.AArch64.Window

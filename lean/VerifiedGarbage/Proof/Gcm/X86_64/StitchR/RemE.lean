@@ -92,19 +92,19 @@ theorem lastGR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
     { rdx := by rw [f₂.gpr]
       r11 := by rw [f₂.gpr, hr11]
       xs := fun i _ hi => by
-        rw [f₂.mem, show a + BitVec.ofNat 64 (16 * i) = bAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega),
-          hI.a.blocks _ (by omega)]
-        simp only [show 16 * (e - 1) + i < 16 * e by omega, ite_true]
+        rw [f₂.mem, show a + BitVec.ofNat 64 (16 * i) = bAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_arith),
+          hI.a.blocks _ (by omega_arith)]
+        simp only [show 16 * (e - 1) + i < 16 * e by omega_arith, ite_true]
         rfl
       pv := fun k hk l hl => by rw [f₂.mem]; exact hI.pw k hk l hl
       ina := fun k hk => by
         rw [f₂.rd, f₂.wr, hI.a.rd, hI.a.wr, BitVec.ofInt_natCast,
           show a + BitVec.ofNat 64 (32 * k) = dp s₀ + BitVec.ofNat 64 (256 * (e - 1) + 32 * k) from
-            addr_eq (by omega)]
-        exact in_rdwr (in_sub hp.d_in (by omega))
+            addr_eq (by omega_arith)]
+        exact in_rdwr (in_sub hp.d_in (by omega_arith))
       inp := fun k hk => by
         rw [f₂.rd, f₂.wr, hI.a.rd, hI.a.wr]
-        exact in_rdwr (in_sub_int hp.p_in (by omega))
+        exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
       m0 := fun l hl => by rw [f₂.lane _ (by decide) l hl]; exact hI.a.msk l hl }
   rw [WP.block_append_iff]
   refine WP.mono (ghRun_ok (yl := yl) 8 (Nat.le_refl _) s₂ hE₂ z₂
@@ -144,14 +144,14 @@ theorem lastGR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
     have hd := (dp s₀).isLt
     rw [BitVec.toNat_add, BitVec.toNat_add, show (s.gpr .rdx).toNat = _ from ha, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 256 < 2 ^ 64 by decide),
-      Nat.mod_eq_of_lt (show 256 * e < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+      Nat.mod_eq_of_lt (show 256 * e < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · rw [gk _ (by decide), hI.r9]
-    congr 1; have := hI.a.le; omega
+    congr 1; have := hI.a.le; omega_arith
   · rw [l₅, y4]
     refine (hf X yl hI.y1).trans ?_
-    rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega, ghash_append16]
+    rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega_arith, ghash_append16]
     exact congrArg (fun y => ghashFrom (hk s₀) y ((List.range 16).map X)) hI.y
 
 theorem remE_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P) {e : Nat}
@@ -286,19 +286,19 @@ theorem remE_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat �
     { inS := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
         rw [hrd₃, hwr₃, Offset.add_add, ← Nat.mul_add]
-        exact in_rdwr (in_sub hp.d_in (by omega))
+        exact in_rdwr (in_sub hp.d_in (by omega_arith))
       inK := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (pp s₀ - BitVec.ofNat 64 512 + BitVec.ofNat 64 (768 + 16 * j)) 32
         rw [hrd₃, hwr₃, eK]
-        exact in_rdwr (in_sub hp.p_in (by omega))
+        exact in_rdwr (in_sub hp.p_in (by omega_arith))
       inD := fun j (hj : j + 2 ≤ r) => by
         show InRegions s₃.wr (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
         rw [hwr₃, Offset.add_add, ← Nat.mul_add]
-        exact in_sub hp.d_in (by omega)
+        exact in_sub hp.d_in (by omega_arith)
       inW := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j)) 32
         rw [hrd₃, hwr₃, Offset.add_add]
-        exact in_rdwr (in_sub hp.p_in (by omega)) }
+        exact in_rdwr (in_sub hp.p_in (by omega_arith)) }
   have z1 : ∀ x, s₃.zlane x 1 = 0 → s₃.lane x 1 = 0 := fun x h => by rw [← State.zlane_lt2 _ _ (by decide)]; exact h
   -- The first block alone if `r` is odd, then the pairs and their lanes added.
   refine remMidE_ok (E := E) hE hE2 hI₃ (z1 _ (p₃ 1 (by decide)).1) (z1 _ (p₃ 1 (by decide)).2.1)
@@ -457,9 +457,9 @@ theorem loopER_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
       · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
           fin (e + 1) (by simpa using hlt) s' hI'⟩
       · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-          nb s₀ - 16 * (e + 1), by have := hI.one; omega, e + 1, rfl, by omega, hI'⟩
+          nb s₀ - 16 * (e + 1), by have := hI.one; omega_arith, e + 1, rfl, by omega_arith, hI'⟩
     have := hI.a.le
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by simp at h; omega, hI⟩
+    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by simp at h; omega_arith, hI⟩
 
 /-- `cmp r9, 16` after the loop. -/
 theorem cmpE16_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInv s₀ P e s)
@@ -475,9 +475,9 @@ theorem cmpE16_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : Stat
       by rw [g]; exact hI.rax, fun r h1 h2 h3 h4 => by rw [g]; exact hI.gpr r h1 h2 h3 h4,
       fun k hk l' hl => by rw [m]; exact hI.pw k hk l' hl, fun l' hl => by rw [l]; exact hI.m1 l' hl,
       by rw [l]; exact hI.y, by rw [l]; exact hI.y1⟩
-  · rw [z, hI.r9, show nb s₀ - 16 * (e - 1) = 16 + (nb s₀ - 16 * e) by omega, zero16 _ (by omega)]
+  · rw [z, hI.r9, show nb s₀ - 16 * (e - 1) = 16 + (nb s₀ - 16 * e) by omega_arith, zero16 _ (by omega_arith)]
     congr 1
-    exact decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩
+    exact decide_eq_decide.mpr ⟨fun h => by omega_arith, fun h => by omega_arith⟩
 
 /-- `tailE`, in place, once the loop has stopped. -/
 theorem tailER_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P)
@@ -490,8 +490,8 @@ theorem tailER_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
   · exact final_ok hp hf (by simpa using h) hI₁
   · have hne : nb s₀ ≠ 16 * e := by simpa using h
     rw [List.append_nil]
-    exact WP.seq (WP.mono (lastGR_ok hp hf (by omega) hI₁) fun s₂ hI₂ =>
-      remE_ok hp hr hI₂ (by omega) hne)
+    exact WP.seq (WP.mono (lastGR_ok hp hf (by omega_arith) hI₁) fun s₂ hI₂ =>
+      remE_ok hp hr hI₂ (by omega_arith) hne)
 
 /-- `encR` after the setup, for any number of blocks from 16 on. -/
 theorem encTailR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P)

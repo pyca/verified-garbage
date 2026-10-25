@@ -136,9 +136,9 @@ theorem derPost_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {i : Nat} (hi
       Others [.x9, .x10, .x27] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have hR := L.rounds
   have rb := E.perm.wR (show 224 + 8 ≤ 3808 by decide)
-  have wo := E.perm.wW (d := 16 + 8 * i) (n := 8) (by omega)
+  have wo := E.perm.wW (d := 16 + 8 * i) (n := 8) (by omega_arith)
   have ea : p.W + BitVec.ofNat 64 i <<< 3 + BitVec.ofNat 64 16 = p.W + BitVec.ofNat 64 (16 + 8 * i) := by
-    rw [ofNat_lsl, add_ofNat_assoc]; congr 2; omega
+    rw [ofNat_lsl, add_ofNat_assoc]; congr 2; omega_arith
   rw [← ea] at wo
   refine ⟨_, by simp only [derivePost]; grun [E.x19, E.x22, h27, rb, wo], ?_⟩
   refine ⟨?_, ?_, ?_, by others_tac, rfl, rfl, rfl⟩
@@ -146,7 +146,7 @@ theorem derPost_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {i : Nat} (hi
       read8_readW, ea]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h27, ofNat_add_ofNat]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h27, ofNat_add_ofNat, E.x22]
-    rw [lsr_ofNat _ _ (by omega), ofNat_sub (by omega) (by omega), ofNat_sub (by omega) (by omega)]
+    rw [lsr_ofNat _ _ (by omega_arith), ofNat_sub (by omega_arith) (by omega_arith), ofNat_sub (by omega_arith) (by omega_arith)]
 
 /-- Buffers outside `W` are kept by `derive`. -/
 theorem bytesAt_derR {p : Prm} (_L : Lay p) {P : Addr} {len : Nat} (hP : (⟨P, len⟩ : Region).Disjoint ⟨p.W, 3808⟩)
@@ -159,7 +159,7 @@ theorem bytesAt_derR {p : Prm} (_L : Lay p) {P : Addr} {len : Nat} (hP : (⟨P, 
 theorem ciph_derR {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (derR p.W) m m') :
     Spec.GcmSiv.ctxCiph m' p.K p.R = Spec.GcmSiv.ctxCiph m p.K p.R := by
   unfold Spec.GcmSiv.ctxCiph
-  rw [bytesAt_derR L (L.k_w.sub_left (Region.sub_prefix L.rounds_le)) (by have := L.rounds_le; omega) hf]
+  rw [bytesAt_derR L (L.k_w.sub_left (Region.sub_prefix L.rounds_le)) (by have := L.rounds_le; omega_arith) hf]
 
 /-- The arguments of a step's call. -/
 theorem derCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) (x0 : t₁.gpr .x0 = p.K)
@@ -169,7 +169,7 @@ theorem derCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) (x0 : t
     CtrCall t₁ p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 :=
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, x5 := x5
     rounds := L.rounds3
-    wrap := by rw [L.toNat_W (by decide)]; have := L.ww; omega
+    wrap := by rw [L.toNat_W (by decide)]; have := L.ww; omega_arith
     n_lt := by decide
     kc := L.k_w' (by decide)
     kd := L.k_w' (by decide)
@@ -209,14 +209,14 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
   obtain ⟨t₃, run₃, hm₃, x27₃, x10₃, ho₃, sp₃, rd₃, wr₃⟩ := derPost_ok L E₂ hi h27₂
   refine WP.of_runBlock ⟨t₃, run₃, ⟨E₂.keep (fun r hr => ho₃ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₃ rd₃ wr₃, x27₃, by omega, ?_, ?_⟩,
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₃ rd₃ wr₃, x27₃, by omega_arith, ?_, ?_⟩,
     x10₃⟩
   · -- The frame.
     have fc := P.frame
     refine (I.frame.trans (f₁.sub fun r hr => ?_)).trans ((fc.sub fun r hr => ?_).trans (by
         rw [hm₃]
         exact (Frame.refl _ _).writeW (List.mem_cons_self) _ (Offset.contains p.W (d := 16 + 8 * i) (n := 8)
-          (e := 16) (k := 48) (by omega) (by omega) (by omega))))
+          (e := 16) (k := 48) (by omega_arith) (by omega_arith) (by omega_arith))))
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
@@ -230,18 +230,18 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
     have fc := P.frame
     have dW : ∀ {d k : Nat}, d + k ≤ 3808 → 16 + 8 * i ≤ d ∨ d + k ≤ 16 →
         (⟨p.W + BitVec.ofNat 64 16, 8 * i⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
-      fun h₁ h₂ => L.w_w (by omega) (by omega) h₁
+      fun h₁ h₂ => L.w_w (by omega_arith) (by omega_arith) h₁
     have keep : bytesAt t₃.mem (p.W + BitVec.ofNat 64 16) (8 * i) =
         bytesAt t.mem (p.W + BitVec.ofNat 64 16) (8 * i) := by
       rw [hm₃, Proof.AesGcm.AArch64.bytesAt_frame ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
           (Region.contains_self (p.W + BitVec.ofNat 64 (16 + 8 * i)) 8))
-          (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW (by omega) (by omega)) (by omega),
+          (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW (by omega_arith) (by omega_arith)) (by omega_arith),
         Proof.AesGcm.AArch64.bytesAt_frame fc (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl <;> exact dW (by decide) (by omega)) (by omega),
+          rcases hr with rfl | rfl | rfl <;> exact dW (by decide) (by omega_arith)) (by omega_arith),
         Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl <;> exact dW (by decide) (by omega)) (by omega)]
+          rcases hr with rfl | rfl <;> exact dW (by decide) (by omega_arith)) (by omega_arith)]
     have hout := P.out
     simp only [Spec.Gcm.blocksAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
       hz₁, Proof.Cmac.ctr32_one, List.cons.injEq, and_true] at hout
@@ -256,7 +256,7 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
         rw [Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl <;> exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rounds_le))
-          (by omega)]
+          (by omega_arith)]
       rw [hm₃, ← Proof.Cmac.le8_readW, Mem.readW_writeW_self64, Proof.Cmac.le8_readW,
         show bytesAt t₂.mem (p.W + BitVec.ofNat 64 224) 8 = (bytesAt t₂.mem (p.W + BitVec.ofNat 64 224) 16).take 8 by
           rw [e16, List.take_left' (Proof.Cmac.bytesAt_length _ _ _)],
@@ -264,7 +264,7 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
         Proof.Cmac.aesWith_bytes _ _ (by rw [List.length_append, Proof.Cmac.bytesAt_length]; rfl),
         ← GcmSiv.aesWith_eq, show Spec.GcmSiv.aesWith p.R (bytesAt t₁.mem p.K (16 * (p.R + 1))) =
           Spec.GcmSiv.ctxCiph t₁.mem p.K p.R from rfl, ek₁, eK, eN]
-    rw [show 8 * (i + 1) = 8 * i + 8 by omega, Proof.Cmac.bytesAt_add, GcmSiv.halves_succ, ← I.out, keep,
+    rw [show 8 * (i + 1) = 8 * i + 8 by omega_arith, Proof.Cmac.bytesAt_add, GcmSiv.halves_succ, ← I.out, keep,
       add_ofNat_assoc, last]
 
 /-- `derive`: the halves of `derive_keys` at `W + 16`. -/
@@ -277,13 +277,13 @@ theorem derive_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_write]) rfl rfl rfl,
       by simp [gpr_write], Nat.zero_le _, by rw [mem_write]; exact Frame.refl _ _, rfl⟩
   refine WP.loop (M := isa) (fun m t => ∃ i, m = (p.R / 2 - 1) - i ∧ i < p.R / 2 - 1 ∧ DInv p σ i t) ?_
-    ((p.R / 2 - 1) - 0) _ ⟨0, rfl, by omega, I₀⟩
+    ((p.R / 2 - 1) - 0) _ ⟨0, rfl, by omega_arith, I₀⟩
   rintro m t ⟨i, rfl, hi, I⟩
   refine WP.mono (derStep_ok v L hi I) fun t' ⟨I', h10⟩ => ?_
-  have ev := eval_nonzero h10 (by omega)
+  have ev := eval_nonzero h10 (by omega_arith)
   by_cases he : i + 1 = p.R / 2 - 1
   · left; exact ⟨ev.trans (by simp [he]), he ▸ I'⟩
-  · right; exact ⟨ev.trans (by simp; omega), (p.R / 2 - 1) - (i + 1), by omega, i + 1, rfl, by omega, I'⟩
+  · right; exact ⟨ev.trans (by simp; omega_arith), (p.R / 2 - 1) - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, I'⟩
 
 /-- After `derive`, the message keys: the authentication key at `W + 16`, the
 encryption key at `W + 32`. -/
@@ -292,8 +292,8 @@ theorem DInv.keys {p : Prm} (L : Lay p) {σ t : State} (I : DInv p σ (p.R / 2 -
       (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16,
         bytesAt t.mem (p.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen p.R)) := by
   have hR := L.rounds
-  have hk : Spec.GcmSiv.keyLen p.R / 8 + 2 = p.R / 2 - 1 := by unfold Spec.GcmSiv.keyLen; omega
-  have hl : 8 * (p.R / 2 - 1) = 16 + Spec.GcmSiv.keyLen p.R := by unfold Spec.GcmSiv.keyLen; omega
+  have hk : Spec.GcmSiv.keyLen p.R / 8 + 2 = p.R / 2 - 1 := by unfold Spec.GcmSiv.keyLen; omega_arith
+  have hl : 8 * (p.R / 2 - 1) = 16 + Spec.GcmSiv.keyLen p.R := by unfold Spec.GcmSiv.keyLen; omega_arith
   have e := I.out
   rw [hl, Proof.Cmac.bytesAt_add, add_ofNat_assoc] at e
   rw [GcmSiv.deriveKeys_eq (GcmSiv.ctxCiph_length σ.mem p.K p.R), hk, ← e,

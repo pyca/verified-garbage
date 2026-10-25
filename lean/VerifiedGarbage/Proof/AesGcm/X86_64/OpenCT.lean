@@ -224,7 +224,7 @@ theorem openPre_ok {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have hb : 1 ≤ t ∧ t ≤ 16 := by
     simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
-    omega
+    omega_arith
   have hlt := C.data.ok.lt
   refine WP.seq (WP.mono ha fun s₃ Mi => ?_)
   have hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
@@ -256,8 +256,8 @@ theorem openPre_ok {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog
       (kept_oneFrameB L C.dE C.t_w hd) (by decide)
   refine ⟨⟨⟨F.env, F.rounds, by rw [kp 232 (.inr ⟨by decide, by decide⟩)]; exact hS₃.aad,
     by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact hS₃.alen, F.dat, F.len, hS₃.dA.of_eq F.rd F.wr,
-    (hS₃.dD.of_eq F.rd F.wr).drop (by omega), fun N hN => by cases hN; exact F.tlen,
-    hS₃.ext.oneB (by omega) F.rd F.wr F.frame⟩, hd₃.of_eq F.rd F.wr⟩, ?_⟩
+    (hS₃.dD.of_eq F.rd F.wr).drop (by omega_arith), fun N hN => by cases hN; exact F.tlen,
+    hS₃.ext.oneB (by omega_arith) F.rd F.wr F.frame⟩, hd₃.of_eq F.rd F.wr⟩, ?_⟩
   have dM : ∀ (p : Addr) (k : Nat), (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ → (below SP 8).Disjoint ⟨p, k⟩ →
       ∀ r ∈ [(⟨W, 2560⟩ : Region), below SP 8], (⟨p, k⟩ : Region).Disjoint r := by
     intro p k h₁ h₂ r hr
@@ -267,12 +267,12 @@ theorem openPre_ok {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog
     · exact h₂.symm
   have hc₃ : ciphOf s₃.mem Ctx R = ctxCiph s.mem Ctx R := ciph_frame Mi.frame (fun r hr => dM _ _ L.cw' L.kc r hr) hR'
   have hp₃ : bytesAt s₃.mem D n = bytesAt s.mem D n :=
-    bytesAt_frame Mi.frame (dM _ _ C.dE C.data.ok.stk) (by omega)
+    bytesAt_frame Mi.frame (dM _ _ C.dE C.data.ok.stk) (by omega_arith)
   have hw₃ : bytesAt s₃.mem Tp t = bytesAt s.mem Tp t := bytesAt_frame Mi.frame (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact oT _ (.inl fun _ h => h)
-    · exact oT _ (.inr (.inr (below_sub (by decide) (by decide))))) (by omega)
+    · exact oT _ (.inr (.inr (below_sub (by decide) (by decide))))) (by omega_arith)
   have hz := F.zf
   rw [hc₃, hp₃, hw₃] at hz
   rw [hz]
@@ -307,7 +307,7 @@ theorem openPreW_rel {aadP tg : Prog isa} (htr : TagRel M tg) (htg : TagOk M tg)
       fun _ _ => True := by
   have hDW := C.dE
   have hlt := C.data.ok.lt
-  have hDW' := C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega))
+  have hDW' := C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega_arith))
   have oA := C.arg24 (by decide)
   have a := rel_wp har (fun _ _ h => h) (fun _ h => aadTlW_ok L C X hNp hnl hal hR hT h (ha _ h))
     (fun _ h => aadTlW_ok L C' X' hNp' hnl' hal' hR' hT' h (ha' _ h))
@@ -320,13 +320,13 @@ theorem openPreW_rel {aadP tg : Prog isa} (htr : TagRel M tg) (htg : TagOk M tg)
       (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) (fun _ _ h => h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
-  have b := rel_wp ((htr L hDW' (N := n) (by omega)).mono (P' := fun (s₁ s₂ : State) =>
+  have b := rel_wp ((htr L hDW' (N := n) (by omega_arith)).mono (P' := fun (s₁ s₂ : State) =>
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
           s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₁) ∧
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
           s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₂))
       (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) (fun _ _ h => h)
-    (fun _ h => tagTl_ok L htg hlt (by omega) hDW' oA.ws h) (fun _ h => tagTl_ok L htg hlt (by omega) hDW' oA.ws h)
+    (fun _ h => tagTl_ok L htg hlt (by omega_arith) hDW' oA.ws h) (fun _ h => tagTl_ok L htg hlt (by omega_arith) hDW' oA.ws h)
   have c := rel_wp (rel_taint (P := fun (s₁ s₂ : State) => True ∧
       (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
         s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₁) ∧
@@ -417,7 +417,7 @@ theorem openPost_rel {cr : Prog isa} (hcr : CrRel cr) {R : Nat} {A : Addr} {al :
         ((OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
           DataW Ctx (W + BitVec.ofNat 64 16) W SP s₂ D n) ∧ s₂.zf = some b₂)) ∧ s₁.zf = some true)
     (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
-  have e := (hcr L (M := M) (R := R) (A := A) (al := al) (T := some n) hDW' (by omega)).mono
+  have e := (hcr L (M := M) (R := R) (A := A) (al := al) (T := some n) hDW' (by omega_arith)).mono
     (P' := fun (s₁ s₂ : State) => (True ∧
         ((OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
           DataW Ctx (W + BitVec.ofNat 64 16) W SP s₁ D n) ∧ s₁.zf = some b₁) ∧
@@ -504,7 +504,7 @@ theorem openOkW_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) 
   have L := C.lay
   have hlt := C.data.ok.lt
   refine rel_reassoc7 (RelCT.seq ?_ (openPost_rel v L hcr (M := M) (R := R) (A := A) (al := al) (congrArg (!·) hres)
-    (C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega)))))
+    (C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega_arith)))))
   exact rel_wp ((openPreW_rel L B htr htg C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' har ha ha').mono
       (fun _ _ h => h) fun _ _ h => h) (fun _ _ h => h)
     (fun _ h => openPre_ok B htg C X h hNp hnl hal hR hok hT hTr oT (ha _ h))

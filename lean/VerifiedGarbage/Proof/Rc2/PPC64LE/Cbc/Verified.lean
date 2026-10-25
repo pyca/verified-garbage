@@ -71,24 +71,24 @@ theorem cbc_wp (d : Spec.Rc2.Direction) (s : State) (hs : (cbcC d).pre s) :
   let D := s.gpr .r5
   let n := (s.gpr .r6).toNat
   let W := s.gpr .r7
-  have R : Regions T I D W n := ⟨TI, TD, TW, ID, IW, DW, by omega⟩
+  have R : Regions T I D W n := ⟨TI, TD, TW, ID, IW, DW, by omega_arith⟩
   let s₁ := s.write .r0 s.lr
   let g := s₁.gpr
   have wW : ∀ p ∈ saved, InRegions s₁.wr (s₁.gpr .r7 + BitVec.ofNat 64 p.2) 8 := fun p hp => by
     have hb := saved_in p hp
     show InRegions s.wr (W + BitVec.ofNat 64 p.2) 8
-    rw [hwr]; exact ⟨⟨W, 512⟩, by simp [W], Offset.contains_base _ (by omega) (by omega)⟩
+    rw [hwr]; exact ⟨⟨W, 512⟩, by simp [W], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   unfold cbc
   apply WP.seq
   rw [save_eq, List.cons_append]
   refine WP.block_cons_iff.mpr ⟨s₁, exec_mflr, ?_⟩
   refine Spill.save_ok (by decide) saved_fits wW ?_
   let M₀ := Spill.saveMem s₁.mem (s₁.gpr .r7) g saved
-  have F₀ : Frame [⟨W, 512⟩] s.mem M₀ := Spill.saveMem_frame_base (fun p hp => by have := saved_in p hp; omega)
+  have F₀ : Frame [⟨W, 512⟩] s.mem M₀ := Spill.saveMem_frame_base (fun p hp => by have := saved_in p hp; omega_arith)
     (by decide) _ _ _
   refine WP.mono (WP.keep [.r26, .r27, .r28, .r29, .r30] (c := .block setup) (Q := fun t =>
       t.gpr .r26 = T ∧ t.gpr .r27 = I ∧ t.gpr .r28 = D ∧ t.gpr .r29 = s.gpr .r6 ∧ t.gpr .r30 = W ∧ t.mem = M₀)
-    (by unfold setup; rrun [mov, s₁, T, I, D, W, M₀, g]) (by simp [writesOnly, Code.allInstrs_eq, instrs, setup, mov, dstOf]) rfl)
+    (by unfold setup; rrun [mov, s₁, T, I, D, W, M₀, g]) (by rfl) rfl)
     fun t₀ ⟨⟨a26, a27, a28, a29, a30, m₀⟩, k₀⟩ => ?_
   have H₀ : Inv d T I D W n g M₀ s 0 t₀ := by
     refine ⟨by rw [k₀.2.1]; exact hrd, by rw [k₀.2.2]; exact hwr, a26, a27, by rw [a28]; simp, by
@@ -102,9 +102,9 @@ theorem cbc_wp (d : Spec.Rc2.Direction) (s : State) (hs : (cbcC d).pre s) :
   have loop : WP isa (.ite (.zero .d .r29) (.block []) (.loop (body d) (.nonzero .d .r29))) t₀
       (Inv d T I D W n g M₀ s n) := by
     have hz : isa.eval (.zero .d .r29) t₀ = some (decide (n = 0)) := by
-      rw [eval_zero, H₀.r29, Nat.sub_zero, ofNat_beq_zero (by omega)]
+      rw [eval_zero, H₀.r29, Nat.sub_zero, ofNat_beq_zero (by omega_arith)]
     refine WP.ite _ hz (fun h => WP.block_nil ?_) (fun h => countLoop _ _ _ n
-      (fun j hj t H => body_run d R hj t H) 0 (by have := of_decide_eq_false h; omega) t₀ H₀)
+      (fun j hj t H => body_run d R hj t H) 0 (by have := of_decide_eq_false h; omega_arith) t₀ H₀)
     have e : n = 0 := of_decide_eq_true h
     rw [e]; rw [e] at H₀; exact H₀
   refine WP.mono loop fun t H => ?_
@@ -113,7 +113,7 @@ theorem cbc_wp (d : Spec.Rc2.Direction) (s : State) (hs : (cbcC d).pre s) :
     fun t' Rs => WP.block_cons_iff.mpr ⟨_, exec_mtlr, WP.block_nil ⟨fun r hr => ?_, ?_, ?_⟩⟩
   · have hb := saved_in p hp
     rw [H.rd, H.wr]
-    exact ⟨⟨W, 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨W, 512⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · show t'.gpr r = s.gpr r
     by_cases h : r ∈ saved.map Prod.fst
     · have hr0 : r ≠ .r0 := by revert r; decide

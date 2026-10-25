@@ -29,7 +29,7 @@ theorem exponent_scratch {n e : Nat} (he : e ≤ 2 * n) :
   within_scratch (by
     simp only [exponentRanges, productRanges, List.cons_append, List.nil_append, List.forall_mem_cons,
       List.not_mem_nil, false_imp_iff, implies_true, and_true, contextBytes, slot, stride, maskO]
-    omega)
+    omega_arith)
 
 /-- `b ^ x mod m` into slot 9, for the modulus in slot 0, the base in slot 8
 and the exponent of `e` words in slot 11; the registers the calling
@@ -53,26 +53,26 @@ theorem body_ok {s : State} {base : Addr} {size n e m : Nat} (E : Entry s base s
   unfold body save
   refine WP.seq (wp_mov (op2_reg s .r0) fun s₁ u₁ => ?_)
   have w₁ : Ws s₁ base size := ⟨by rw [u₁.gpr]; exact E.wb, u₁.wr ▸ E.wr, nw⟩
-  refine WP.mono (stores_ok slots w₁ (slots_fit (by omega)) slots_apart) fun s₂ ⟨S₂, O₂, R₂⟩ => ?_
+  refine WP.mono (stores_ok slots w₁ (slots_fit (by omega_arith)) slots_apart) fun s₂ ⟨S₂, O₂, R₂⟩ => ?_
   have w₂ := w₁.of_rest R₂ (by decide)
   have away : ∀ {d k : Nat}, 44 ≤ d → d + 4 * k ≤ 2 ^ 64 →
       val32 s₂.mem base d k = val32 s.mem base d k := fun hd hd' => by
-    rw [O₂.val32 (fun r hr => .inr (by have := slots_words r hr; omega)) hd', u₁.mem]
+    rw [O₂.val32 (fun r hr => .inr (by have := slots_words r hr; omega_arith)) hd', u₁.mem]
   have hv₂ : val32 s₂.mem base (slot n 0) (2 * n) = m := by
-    rw [away (by omega) (by simp only [contextBytes, slot, stride] at *; omega)]; exact hv
-  refine WP.seq (WP.mono (Context.call_ok w₂ (by omega) hn hn48 hv₂ hm1 hodd)
+    rw [away (by omega_arith) (by simp only [contextBytes, slot, stride] at *; omega_arith)]; exact hv
+  refine WP.seq (WP.mono (Context.call_ok w₂ (by omega_arith) hn hn48 hv₂ hm1 hodd)
     fun s₃ ⟨c₃, one₃, rr₃, O₃, R₃⟩ => ?_)
-  refine WP.seq (WP.mono (exponentiate_ok c₃ he hen (by omega) one₃ rr₃) fun s₄ ⟨c₄, V₄, O₄, R₄⟩ => ?_)
-  refine WP.mono (loads_ok slots c₄.ws (slots_fit (by omega)) slots_r12 slots_nodup) fun t ⟨L, R₅, M₅⟩ =>
+  refine WP.seq (WP.mono (exponentiate_ok c₃ he hen (by omega_arith) one₃ rr₃) fun s₄ ⟨c₄, V₄, O₄, R₄⟩ => ?_)
+  refine WP.mono (loads_ok slots c₄.ws (slots_fit (by omega_arith)) slots_r12 slots_nodup) fun t ⟨L, R₅, M₅⟩ =>
     ⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · have k₃ : ∀ {d k : Nat}, (∀ r ∈ Context.callRanges n, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) → d + 4 * k ≤ 2 ^ 64 →
         val32 s₃.mem base d k = val32 s₂.mem base d k := fun h h' => O₃.val32 h h'
     rw [show val32 t.mem base (slot n 9) (2 * n) = val32 s₄.mem base (slot n 9) (2 * n) by rw [M₅], V₄,
       k₃ (by simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
-        implies_true, and_true, slot, stride]; omega) (by omega),
+        implies_true, and_true, slot, stride]; omega_arith) (by omega_arith),
       k₃ (by simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
-        implies_true, and_true, slot, stride]; omega) (by omega),
-      away (by omega) (by omega), away (by omega) (by omega)]
+        implies_true, and_true, slot, stride]; omega_arith) (by omega_arith),
+      away (by omega_arith) (by omega_arith), away (by omega_arith) (by omega_arith)]
   · have O₂' : Outs base (scratch n) s.mem s₂.mem := by rw [← u₁.mem]; exact outs_within O₂ (words_scratch n)
     rw [M₅]
     exact (O₂'.trans (outs_within O₃ (setup_scratch hn))).trans (outs_within O₄ (exponent_scratch hen))
@@ -85,11 +85,11 @@ theorem body_ok {s : State} {base : Addr} {size n e m : Nat} (E : Entry s base s
       outs_readW O₄ (by
         simp only [exponentRanges, productRanges, List.cons_append, List.nil_append, List.forall_mem_cons,
           List.not_mem_nil, false_imp_iff, implies_true, and_true, slot, stride, maskO]
-        omega) (by omega),
+        omega_arith) (by omega_arith),
       outs_readW O₃ (by
         simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
           slot, stride]
-        omega) (by omega),
+        omega_arith) (by omega_arith),
       S₂ x hx, u₁.other _ hx12]
   · rw [R₅.sp, R₄.sp, R₃.sp, R₂.sp, u₁.sp]
   · rw [R₅.rd, R₄.rd, R₃.rd, R₂.rd, u₁.rd]
@@ -117,7 +117,7 @@ theorem powK_correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (he
     ∃ tr t, Exec isa (body n e) s tr t ∧ abiPreserved s t ∧ (powK n e).post s t := by
   obtain ⟨-, hwr, hnw, hz, hodd, hm1⟩ := h
   have E : Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) :=
-    ⟨rfl, ⟨_, Nat.le_refl _, by omega, by rw [hwr]; exact List.mem_singleton_self _⟩,
+    ⟨rfl, ⟨_, Nat.le_refl _, by omega_arith, by rw [hwr]; exact List.mem_singleton_self _⟩,
       by rw [VG.Proof.X25519.Arm.addr_toNat]; exact hnw⟩
   obtain ⟨tr, t, ex, V, O, P, hsp, -, -⟩ := body_ok E hz hn hn48 he hen rfl hm1 hodd
   exact ⟨tr, t, ex, ⟨P, hsp⟩, V, O⟩
@@ -151,12 +151,12 @@ theorem savedSetup_trace {n : Nat} {s₁ s₂ : State} {base : Addr} {size₁ si
     (relCT_of_check (τ := VG.Arm.Taint.ofRegs [.r0]) (σ := wsT false false) (h := .block []) (by decide))
     (VG.Arm.Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Eq))
-    (saveHead_ok E₁ (by omega)) (saveHead_ok E₂ (by omega)) fun u₁ u₂ ⟨W₁, Q₁, _⟩ ⟨W₂, Q₂, _⟩ => ?_
+    (saveHead_ok E₁ (by omega_arith)) (saveHead_ok E₂ (by omega_arith)) fun u₁ u₂ ⟨W₁, Q₁, _⟩ ⟨W₂, Q₂, _⟩ => ?_
   have mod : ∀ {s u : State}, Outs base (words slots) s.mem u.mem →
       val32 u.mem base (modS n) (2 * n) = val32 s.mem base (modS n) (2 * n) := fun O =>
     O.val32 (fun r hr => .inr (by
-      have := slots_words r hr; simp only [modS, slot, stride]; omega)) (by
-      have := E₁.nowrap; simp only [modS, contextBytes, slot, stride] at *; omega)
+      have := slots_words r hr; simp only [modS, slot, stride]; omega_arith)) (by
+      have := E₁.nowrap; simp only [modS, contextBytes, slot, stride] at *; omega_arith)
   refine SameTrace.seq (Context.call_trace W₁ W₂ Z₁ Z₂ hn hn48
     (by rw [mod Q₁]; exact O₁) (by rw [mod Q₁]; exact M₁)
     (by rw [mod Q₂]; exact O₂) (by rw [mod Q₂]; exact M₂))
@@ -173,7 +173,7 @@ theorem powK_ct (n e : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ Eq => ?_
   have E : ∀ {s : State}, (powK n e).pre s → Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) := by
     intro s H
-    exact ⟨rfl, ⟨_, Nat.le_refl _, by have := H.2.2.1; omega, by rw [H.2.1]; simp⟩,
+    exact ⟨rfl, ⟨_, Nat.le_refl _, by have := H.2.2.1; omega_arith, by rw [H.2.1]; simp⟩,
       by simpa only [VG.Proof.X25519.Arm.addr_toNat] using H.2.2.1⟩
   have E₂ : Entry s₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [Eq]; exact E h₂
   unfold body

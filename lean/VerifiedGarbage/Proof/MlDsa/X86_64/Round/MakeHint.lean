@@ -73,10 +73,10 @@ theorem mhB_toNat {g : Nat} (h : g ∈ gamma2s) {z r : BitVec 32} (hz : z.toNat 
   have hr' : (BitVec.setWidth 64 r).toNat < q := by rw [setWidth64_toNat]; exact hr
   have hq : qImm = BitVec.ofNat 32 q := rfl
   have e1 : (BitVec.setWidth 64 (r + z)).toNat = r.toNat + z.toNat := by
-    rw [setWidth64_toNat, BitVec.toNat_add]; rw [q_eq] at hz hr; omega
+    rw [setWidth64_toNat, BitVec.toNat_add]; rw [q_eq] at hz hr; omega_arith
   have e2 : (condAddV (BitVec.setWidth 64 (r + z)) (BitVec.signExtend 64 qImm) qImm).toNat =
       (r.toNat + z.toNat) % q := by
-    rw [hq, condAddV_imm_toNat (by decide) (by rw [e1]; omega), e1]
+    rw [hq, condAddV_imm_toNat (by decide) (by rw [e1]; omega_arith), e1]
   have hs : (condAddV (BitVec.setWidth 64 (r + z)) (BitVec.signExtend 64 qImm) qImm).toNat < q := by
     rw [e2]; exact Nat.mod_lt _ (by decide)
   have hM : Proof.MlDsa.Round.hbM g ≤ 44 ∧ 0 < Proof.MlDsa.Round.hbM g := by
@@ -84,7 +84,7 @@ theorem mhB_toNat {g : Nat} (h : g ∈ gamma2s) {z r : BitVec 32} (hz : z.toNat 
   have hu := Nat.mod_lt (hbF g ((r.toNat + z.toNat) % q)) hM.2
   have hv := Nat.mod_lt (hbF g r.toNat) hM.2
   have hx : hbF g ((r.toNat + z.toNat) % q) % Proof.MlDsa.Round.hbM g ^^^ hbF g r.toNat % Proof.MlDsa.Round.hbM g
-      < 2 ^ 6 := Nat.xor_lt_two_pow (by omega) (by omega)
+      < 2 ^ 6 := Nat.xor_lt_two_pow (by omega_arith) (by omega_arith)
   have hvz : (Fin.ofNat q z.toNat).val = z.toNat := Nat.mod_eq_of_lt hz
   have hvr : (Fin.ofNat q r.toNat).val = r.toNat := Nat.mod_eq_of_lt hr
   rw [makeHint_eq h, hvz, hvr, mhB, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_xor, mhS,
@@ -96,7 +96,7 @@ theorem mhB_toNat {g : Nat} (h : g ∈ gamma2s) {z r : BitVec 32} (hz : z.toNat 
     have : hbF g ((r.toNat + z.toNat) % q) % Proof.MlDsa.Round.hbM g ^^^ hbF g r.toNat % Proof.MlDsa.Round.hbM g ≠ 0 :=
       fun h' => e (xor_eq_zero h').symm
     show _ = 1
-    omega
+    omega_arith
 
 /-! ## The function -/
 
@@ -150,23 +150,23 @@ theorem mh_loop {g : Nat} (hge : arg32 s₀ .rdx = g) {s₁ : State} (h10 : s₁
   · rw [hk'.gpr (by decide), h9, onesFrom_n]; rfl
   · have ha : ∀ p ∈ [Reg.r10, .rdi, .rsi], cfAddr (s.gpr p) (s.gpr .rcx) = coeffAddr (s₁.gpr p) (255 - i) :=
       fun p hp' => hI.addr hc hi hp'
-    refine WP.mono (mhBody_ok hg' s (by rw [ha _ (by simp)]; exact hI.inR hL (by simp) (by omega))
-      (by rw [ha _ (by simp)]; exact hI.inR hL (by simp) (by omega))
-      (by rw [ha _ (by simp)]; exact hI.inW hL (by simp) (by omega)))
+    refine WP.mono (mhBody_ok hg' s (by rw [ha _ (by simp)]; exact hI.inR hL (by simp) (by omega_arith))
+      (by rw [ha _ (by simp)]; exact hI.inR hL (by simp) (by omega_arith))
+      (by rw [ha _ (by simp)]; exact hI.inW hL (by simp) (by omega_arith)))
       fun s' ⟨⟨hm', h9', hc', hz'⟩, hk'⟩ => ⟨⟨?_, hc', hz', ?_⟩, hk'⟩
-    · rw [hm', ha _ (by simp), ha _ (by simp), ha _ (by simp), hI.read hL (by simp) (by omega),
-        hI.read hL (by simp) (by omega), hm, hdi, hsi]
+    · rw [hm', ha _ (by simp), ha _ (by simp), ha _ (by simp), hI.read hL (by simp) (by omega_arith),
+        hI.read hL (by simp) (by omega_arith), hm, hdi, hsi]
       rfl
-    · have hk255 : 255 - i < n := by rw [n_eq]; omega
-      rw [h9', ha _ (by simp), ha _ (by simp), hI.read hL (by simp) (by omega), hI.read hL (by simp) (by omega),
+    · have hk255 : 255 - i < n := by rw [n_eq]; omega_arith
+      rw [h9', ha _ (by simp), ha _ (by simp), hI.read hL (by simp) (by omega_arith), hI.read hL (by simp) (by omega_arith),
         hm, hdi, hsi, BitVec.toNat_add, hI.j, mhB_toNat hg (hz _ hk255) (hr _ hk255),
-        show 256 - (i + 1) = 255 - i by omega, onesFrom_step _ hk255, show 255 - i + 1 = 256 - i by omega, zipWith_get _ _ _ hk255,
+        show 256 - (i + 1) = 255 - i by omega_arith, onesFrom_step _ hk255, show 255 - i + 1 = 256 - i by omega_arith, zipWith_get _ _ _ hk255,
         polyAt_get _ _ hk255, polyAt_get _ _ hk255]
       have : onesFrom (mhHint s₀ g) (256 - i) ≤ 256 := by
         unfold onesFrom; exact Nat.le_trans (List.length_filter_le _ _) (by simp)
       have := Bool.toNat_le (makeHint g (Fin.ofNat q (coeffAt s₀.mem (s₀.gpr .rdi) (255 - i)).toNat)
         (Fin.ofNat q (coeffAt s₀.mem (s₀.gpr .rsi) (255 - i)).toNat))
-      omega
+      omega_arith
 
 theorem mh_correct : ∃ t s', Exec isa makeHint s₀ t s' ∧ abiPreserved s₀ s' ∧ makeHintK.post s₀ s' := by
   have hg : arg32 s₀ .rdx ∈ gamma2s := hp.2.2.2.2.2.2.2.1
@@ -182,7 +182,7 @@ theorem mh_correct : ∃ t s', Exec isa makeHint s₀ t s' ∧ abiPreserved s₀
     subst hge
     refine WP.seq (WP.mono (mh_loop hp rfl h10 h9 hk hm) fun s₂ hI => ?_)
     refine WP.mono (mhEpilogue_ok s₂) fun s' ⟨⟨hax, hm'⟩, _⟩ => ⟨fun k hk' => ?_, ?_, ?_⟩
-    · rw [hm', ← h10]; exact hI.done .r10 (by simp) k (by omega) hk'
+    · rw [hm', ← h10]; exact hI.done .r10 (by simp) k (by omega_arith) hk'
     · rw [hax, hI.j]
     · have := hI.frame
       rw [hm, List.map_singleton, h10] at this
@@ -218,7 +218,7 @@ theorem mh_correct : ∃ t s', Exec isa makeHint s₀ t s' ∧ abiPreserved s₀
   · have : (s'.gpr .rax).toNat ≤ 256 := by
       rw [hax]; unfold onesFrom; exact Nat.le_trans (List.length_filter_le _ _) (by simp)
     rw [BitVec.toNat_setWidth, hintOnes_single, ← hax]
-    omega
+    omega_arith
 
 end
 

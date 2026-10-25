@@ -94,7 +94,7 @@ theorem dword_mk {d : Nat} {j : Nat} (hj : j < 4) : dword (mk d) j = BitVec.ofNa
 theorem toNat_and_mk {d : Nat} (hd : d ≤ 31) (x : BitVec 32) :
     (x &&& BitVec.ofNat 32 (2 ^ d - 1)).toNat = x.toNat % 2 ^ d := by
   have : 2 ^ d ≤ 2 ^ 31 := Nat.pow_le_pow_right (by decide) hd
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.and_two_pow_sub_one_eq_mod]
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.and_two_pow_sub_one_eq_mod]
 
 theorem dword_vals10 (a : BitVec 128) {M : BitVec 128} {o : Nat} (hM : Sel M o) {j : Nat} (hj : j < 4) :
     (dword (vals a M sh10 10) j).toNat =
@@ -137,8 +137,8 @@ theorem dword_ddM (x R : BitVec 128) {d : Nat} (hd : d ≤ 10) {j : Nat} (hj : j
   have h8 : BitVec.toNat (8 : BitVec 8) = 8 := rfl
   have h10 : BitVec.toNat (10 : BitVec 8) = 10 := rfl
   have h12 : BitVec.toNat (12 : BitVec 8) = 12 := rfl
-  have hdn : (BitVec.ofNat 8 d).toNat = d := by rw [BitVec.toNat_ofNat]; omega
-  rw [dword_psrld _ _ (by omega) hj, hdn, dword_paddd _ _ hj, dword_paddd _ _ hj, dword_paddd _ _ hj,
+  have hdn : (BitVec.ofNat 8 d).toNat = d := by rw [BitVec.toNat_ofNat]; omega_arith
+  rw [dword_psrld _ _ (by omega_arith) hj, hdn, dword_paddd _ _ hj, dword_paddd _ _ hj, dword_paddd _ _ hj,
     dword_psubd _ _ hj, dword_pslld _ _ (by decide) hj, dword_pslld _ _ (by decide) hj,
     dword_pslld _ _ (by decide) hj, h8, h10, h12]
   generalize dword x j = y at hy ⊢
@@ -146,7 +146,7 @@ theorem dword_ddM (x R : BitVec 128) {d : Nat} (hd : d ≤ 10) {j : Nat} (hj : j
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   congr 1
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 /-- Each doubleword of `rc v` is `v`. -/
 def rc (v : Nat) : BitVec 128 := let w := BitVec.ofNat 32 v; ofDwords w w w w
@@ -242,7 +242,7 @@ theorem lane4 {s : State} {r : XReg} {q₀ q₁ q₂ q₃ : BitVec 64} {A B : Bi
     (h0 : s.lane r 0 = (q₁ ++ q₀ : BitVec 128)) (h1 : s.lane r 1 = (q₃ ++ q₂ : BitVec 128))
     (hA : (q₁ ++ q₀ : BitVec 128) = A) (hB : (q₃ ++ q₂ : BitVec 128) = B) :
     ∀ l < 2, s.lane r l = if l = 0 then A else B := fun l hl => by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   · rw [h0, hA]; rfl
   · rw [h1, hB]; rfl
 
@@ -345,8 +345,8 @@ theorem body10_ok {m : XReg} {M : Nat → BitVec 128} (hm : ∀ l < 2, s.lane m 
   · rw [l6, o5 r b c d l hl, u4.other r a l hl, u3.other r a l hl, u2.other r a l hl, u1.other r a l hl]
   · rw [State.ymm_eq, ext_app2 _ _ hi, hL]
     by_cases h : i < 4
-    · rw [itT h, v5 0 (by decide), h4 0 (by decide), r4 0 (by decide), show i / 4 = 0 by omega]
-    · rw [itF h, v5 1 (by decide), h4 1 (by decide), r4 1 (by decide), show i / 4 = 1 by omega]
+    · rw [itT h, v5 0 (by decide), h4 0 (by decide), r4 0 (by decide), show i / 4 = 0 by omega_arith]
+    · rw [itF h, v5 1 (by decide), h4 1 (by decide), r4 1 (by decide), show i / 4 = 1 by omega_arith]
 
 /-- A group of `d = 4`: the eight values of the bytes of `ymm0` that the masks `M` select, decompressed,
 stored to `rsi + 32 k`. -/
@@ -374,8 +374,8 @@ theorem body4_ok {m : XReg} {k : Nat} {M : Nat → BitVec 128} {L : BitVec 128}
   · rw [l5, o4 r b c d l hl, u3.other r a l hl, u2.other r a l hl, u1.other r a l hl]
   · rw [State.ymm_eq, ext_app2 _ _ hi]
     by_cases h : i < 4
-    · rw [itT h, v4 0 (by decide), h3 0 (by decide), r3 0 (by decide), show i / 4 = 0 by omega]
-    · rw [itF h, v4 1 (by decide), h3 1 (by decide), r3 1 (by decide), show i / 4 = 1 by omega]
+    · rw [itT h, v4 0 (by decide), h3 0 (by decide), r3 0 (by decide), show i / 4 = 0 by omega_arith]
+    · rw [itF h, v4 1 (by decide), h3 1 (by decide), r3 1 (by decide), show i / 4 = 1 by omega_arith]
 
 end
 
@@ -394,10 +394,10 @@ theorem val10 {B : List Byte} (hB : B.length = 320) {g : Nat} (hg : g < 32) {L :
     (dword (ddM (vals L M sh10 10) (rc 512) 10) j).toNat = ((decodeDecompress 10 B)[8 * g + (4 * l + j)]!).val := by
   have hv := dword_vals10 L hM hj
   rw [dword_ddM _ _ (by decide) hj (by rw [hv]; exact Nat.mod_lt _ (by decide)) (by rw [dword_rc hj]; decide), hv,
-    dword_rc hj, show ob + 5 * l + j = ob + (5 * l + j) by omega,
-    show ob + (5 * l + j) + 1 = ob + (5 * l + j + 1) by omega, hL _ (by omega), hL _ (by omega),
+    dword_rc hj, show ob + 5 * l + j = ob + (5 * l + j) by omega_arith,
+    show ob + (5 * l + j) + 1 = ob + (5 * l + j + 1) by omega_arith, hL _ (by omega_arith), hL _ (by omega_arith),
     ← DD.seg (d := 10) (c := 8) (b := 10) (o := 5 * l + j) (l := 2) (s := 0) (p := 2 * j) (by decide) (by decide)
-      (by decide) B (by omega) (by omega) (by omega) (by omega), dig2]
+      (by decide) B (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), dig2]
   simp only [Nat.add_zero, Nat.pow_zero, Nat.div_one, Nat.reduceSub, Nat.reducePow, BitVec.toNat_ofNat,
     Nat.reduceMod]
 
@@ -409,24 +409,24 @@ theorem val4 {B : List Byte} (hB : B.length = 128) {i : Nat} (hi : i < 8) {L : B
       ((decodeDecompress 4 B)[32 * i + (8 * k + 4 * l + j)]!).val := by
   have hv := dword_vals4 L hM hj
   rw [dword_ddM _ _ (by decide) hj (by rw [hv]; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide))
-      (by rw [dword_rc hj]; decide), hv, dword_rc hj, hL _ (by omega),
+      (by rw [dword_rc hj]; decide), hv, dword_rc hj, hL _ (by omega_arith),
     ← DD.seg (d := 4) (c := 32) (b := 16) (o := 4 * k + 2 * l + j / 2) (l := 1) (s := 0) (p := 4 * (j % 2))
-      (by decide) (by decide) (by decide) B (by omega) (by omega) (by omega) (by omega), dig1]
+      (by decide) (by decide) (by decide) B (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), dig1]
   simp only [Nat.add_zero, Nat.pow_zero, Nat.div_one, Nat.reduceSub, Nat.reducePow, BitVec.toNat_ofNat,
     Nat.reduceMod]
 
 /-! ## The loops -/
 
 theorem hM10 : ∀ l < 2, Sel (if l = 0 then m10a else m10b) (0 + 5 * l) := fun l hl => by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   exacts [sel_m10a, sel_m10b]
 
 theorem hM10' : ∀ l < 2, Sel (if l = 0 then m10c else m10d) (6 + 5 * l) := fun l hl => by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   exacts [sel_m10c, sel_m10d]
 
 theorem hM4 {k : Nat} (hk : k < 4) : ∀ l < 2, Sel1 (if l = 0 then m4 k else m4h k) (4 * k + 2 * l) := fun l hl => by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   exacts [(sel_m4 hk).1, (sel_m4 hk).2]
 
 /-- After `i` groups of `d = 10`. -/
@@ -468,24 +468,24 @@ theorem group10 (hdd : dArg s₀ .rdx = 10) {g ob' ob : Nat} (hg : g < 32) (hob 
       WP isa (.block is) s' Q) :
     WP isa (.block (dd10Grp m ++ is)) s Q := by
   have hrw : s.rd ++ s.wr = [⟨DD.bP s₀, 32 * 10⟩, pR (DD.fP s₀)] := by rw [hrd, hwr, regs hp hdd]
-  refine body10_ok hm hm0 hc (by rw [hrw, hdi]; exact ⟨_, by simp, Offset.contains_base _ ho (by omega)⟩)
+  refine body10_ok hm hm0 hc (by rw [hrw, hdi]; exact ⟨_, by simp, Offset.contains_base _ ho (by omega_arith)⟩)
     (by rw [hwr, hp.2.1, hsi]; exact ⟨_, List.mem_singleton_self _,
-      Offset.contains_base _ (show 4 * (8 * g) + 32 ≤ 1024 by omega) (by omega)⟩)
+      Offset.contains_base _ (show 4 * (8 * g) + 32 ≤ 1024 by omega_arith) (by omega_arith)⟩)
     fun s' hk' hg' hrd' hwr' ⟨V, hmem, hV⟩ => k s' (hc.pres hk') hg' (by rw [hrd', hrd]) (by rw [hwr', hwr]) ?_ ?_
   · rw [hmem, hsi]
     exact hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (show 4 * (8 * g) + 256 / 8 ≤ 1024 by omega) (by omega))
+      (Offset.contains_base _ (show 4 * (8 * g) + 256 / 8 ≤ 1024 by omega_arith) (by omega_arith))
   · intro c hcl
     have hL : ∀ t < 10, byte (s.mem.readW (s.gpr .rdi) 128) (ob + t) = (DD.B s₀ 10).getD (10 * g + t) 0 :=
       fun t ht => by
-        rw [byte, byte_readW _ _ (by omega), hdi, Offset.add_add, DD.byte hp (by decide) hdd hf (by omega),
-          show ob' + (ob + t) = 10 * g + t by omega]
-    rw [hmem, hsi, D12Y.coeffAt_write8 _ _ _ hg (by omega)]
+        rw [byte, byte_readW _ _ (by omega_arith), hdi, Offset.add_add, DD.byte hp (by decide) hdd hf (by omega_arith),
+          show ob' + (ob + t) = 10 * g + t by omega_arith]
+    rw [hmem, hsi, D12Y.coeffAt_write8 _ _ _ hg (by omega_arith)]
     split
     · rename_i hin
-      rw [hV _ (by omega), val10 (bytesAt_length _ _ _) hg hL (show (c - 8 * g) / 4 < 2 by omega)
-        (hM _ (by omega)) (by omega), show 8 * g + (4 * ((c - 8 * g) / 4) + (c - 8 * g) % 4) = c by omega]
-    · exact hd c (by omega)
+      rw [hV _ (by omega_arith), val10 (bytesAt_length _ _ _) hg hL (show (c - 8 * g) / 4 < 2 by omega_arith)
+        (hM _ (by omega_arith)) (by omega_arith), show 8 * g + (4 * ((c - 8 * g) / 4) + (c - 8 * g) % 4) = c by omega_arith]
+    · exact hd c (by omega_arith)
 
 /-- Group `k` of iteration `i` of `d = 4`, of the 16 bytes `L` in `ymm0`. -/
 theorem group4 {i k : Nat} (hi : i < 8) (hk : k < 4) {m : XReg} {M : Nat → BitVec 128}
@@ -503,29 +503,29 @@ theorem group4 {i k : Nat} (hi : i < 8) (hk : k < 4) {m : XReg} {M : Nat → Bit
     WP isa (.block (dd4Grp m k ++ is)) s Q := by
   have ha : s.gpr .rsi + BitVec.ofNat 64 (32 * k) = coeffAddr (DD.fP s₀) (8 * (4 * i + k)) := by
     rw [hsi, coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 4 * (32 * i) + 32 * k = 4 * (8 * (4 * i + k)) by omega]
+      show 4 * (32 * i) + 32 * k = 4 * (8 * (4 * i + k)) by omega_arith]
   refine body4_ok hm h0 hc (by rw [hwr, hp.2.1, ha]; exact ⟨_, List.mem_singleton_self _,
-      Offset.contains_base _ (show 4 * (8 * (4 * i + k)) + 32 ≤ 1024 by omega) (by omega)⟩)
+      Offset.contains_base _ (show 4 * (8 * (4 * i + k)) + 32 ≤ 1024 by omega_arith) (by omega_arith)⟩)
     fun s' hk' hg' hrd' hwr' ⟨V, hmem, hV⟩ => k' s' (hc.pres fun r _ a b c d l hl => hk' r a b c d l hl)
       (fun l hl => by rw [hk' _ (by decide) (by decide) (by decide) (by decide) l hl, h0 l hl]) hg'
       (by rw [hrd', hrd]) (by rw [hwr', hwr]) ?_ ?_
   · rw [hmem, ha]
     exact hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (show 4 * (8 * (4 * i + k)) + 256 / 8 ≤ 1024 by omega) (by omega))
+      (Offset.contains_base _ (show 4 * (8 * (4 * i + k)) + 256 / 8 ≤ 1024 by omega_arith) (by omega_arith))
   · intro c hcl
-    rw [hmem, ha, D12Y.coeffAt_write8 _ _ _ (show 4 * i + k < 32 by omega) (by omega)]
+    rw [hmem, ha, D12Y.coeffAt_write8 _ _ _ (show 4 * i + k < 32 by omega_arith) (by omega_arith)]
     split
     · rename_i hin
-      rw [hV _ (by omega), val4 (bytesAt_length _ _ _) hi hL hk (show (c - 8 * (4 * i + k)) / 4 < 2 by omega)
-        (hM _ (by omega)) (by omega),
-        show 32 * i + (8 * k + 4 * ((c - 8 * (4 * i + k)) / 4) + (c - 8 * (4 * i + k)) % 4) = c by omega]
-    · exact hd c (by omega)
+      rw [hV _ (by omega_arith), val4 (bytesAt_length _ _ _) hi hL hk (show (c - 8 * (4 * i + k)) / 4 < 2 by omega_arith)
+        (hM _ (by omega_arith)) (by omega_arith),
+        show 32 * i + (8 * k + 4 * ((c - 8 * (4 * i + k)) / 4) + (c - 8 * (4 * i + k)) % 4) = c by omega_arith]
+    · exact hd c (by omega_arith)
 
 theorem step10 (hdd : dArg s₀ .rdx = 10) {i : Nat} (hi : i < 31) {s : State} (hI : Inv10 s₀ i s) :
     WP isa (.block (dd10Grp .xmm8 ++
         ([.alu .add .rdi (.imm 10), .alu .add .rsi (.imm 32), .alu .sub .rcx (.imm 1)] : List Instr)))
       s fun s' => Inv10 s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  refine group10 hp hdd (g := i) (ob' := 10 * i) (ob := 0) (by omega) (by omega) (by omega) (by decide) hI.c.c8 (by decide)
+  refine group10 hp hdd (g := i) (ob' := 10 * i) (ob := 0) (by omega_arith) (by omega_arith) (by omega_arith) (by decide) hI.c.c8 (by decide)
     hM10 hI.rdi hI.rsi hI.rd hI.wr hI.c hI.frame hI.done fun s1 hc1 hg1 hrd1 hwr1 hf1 hd1 => ?_
   refine wp_addi' fun s2 u2 => wp_addi' fun s3 u3 => wp_subi' fun s4 u4 hz => WP.block_nil ?_
   have c4 := ((hc1.pres (Hi.of_lane u2.lane)).pres (Hi.of_lane u3.lane)).pres (Hi.of_lane u4.lane)
@@ -533,10 +533,10 @@ theorem step10 (hdd : dArg s₀ .rdx = 10) {i : Nat} (hi : i < 31) {s : State} (
     by rw [u4.mem, u3.mem, u2.mem]; exact hf1, fun k hk => by rw [u4.mem, u3.mem, u2.mem]; exact hd1 k hk⟩, ?_, ?_⟩
   · rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, hg1, hI.rdi,
       show BitVec.signExtend 64 (10 : BitVec 32) = BitVec.ofNat 64 10 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 10 * i + 10 = 10 * (i + 1) by omega]
+      ← BitVec.ofNat_add, show 10 * i + 10 = 10 * (i + 1) by omega_arith]
   · rw [u4.other _ (by decide), u3.gpr, u2.other _ (by decide), hg1, hI.rsi, coeffAddr, coeffAddr,
       show BitVec.signExtend 64 (32 : BitVec 32) = BitVec.ofNat 64 32 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 4 * (8 * i) + 32 = 4 * (8 * (i + 1)) by omega]
+      ← BitVec.ofNat_add, show 4 * (8 * i) + 32 = 4 * (8 * (i + 1)) by omega_arith]
   · rw [u4.gpr, u3.other _ (by decide), u2.other _ (by decide), hg1]; rfl
   · rw [hz, u3.other _ (by decide), u2.other _ (by decide), hg1]; rfl
 
@@ -548,14 +548,14 @@ theorem step4 (hdd : dArg s₀ .rdx = 4) {i : Nat} (hi : i < 8) {s : State} (hI 
   simp only [List.cons_append, List.append_assoc]
   have hrw : s.rd ++ s.wr = [⟨DD.bP s₀, 32 * 4⟩, pR (DD.fP s₀)] := by rw [hI.rd, hI.wr, regs hp hdd]
   refine wp_vbcast128 (a := s.gpr .rdi) (by rw [ea_at, add_ofNat_zero]) (by
-    rw [hrw, hI.rdi]; exact ⟨_, by simp, Offset.contains_base _ (show 16 * i + 16 ≤ 32 * 4 by omega) (by omega)⟩)
+    rw [hrw, hI.rdi]; exact ⟨_, by simp, Offset.contains_base _ (show 16 * i + 16 ≤ 32 * 4 by omega_arith) (by omega_arith)⟩)
     fun s1 u1 => ?_
   have hL : ∀ t < 16, byte (s.mem.readW (s.gpr .rdi) 128) t = (DD.B s₀ 4).getD (16 * i + t) 0 := fun t ht => by
-    rw [byte, byte_readW _ _ (by omega), hI.rdi, Offset.add_add, DD.byte hp (by decide) hdd hI.frame (by omega)]
+    rw [byte, byte_readW _ _ (by omega_arith), hI.rdi, Offset.add_add, DD.byte hp (by decide) hdd hI.frame (by omega_arith)]
   have c1 := hI.c.pres fun r a _ _ _ _ l hl => u1.other r a l hl
   refine group4 hp hi (show 0 < 4 by decide) c1.c8 (hM4 (by decide)) u1.val hL (by rw [u1.gpr, hI.rsi])
     (by rw [u1.rd, hI.rd]) (by rw [u1.wr, hI.wr]) c1 (by rw [u1.mem]; exact hI.frame)
-    (fun c hc => by rw [u1.mem]; exact hI.done c (by omega)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
+    (fun c hc => by rw [u1.mem]; exact hI.done c (by omega_arith)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
   refine group4 hp hi (show 1 < 4 by decide) c2.c9 (hM4 (by decide)) x2 hL (by rw [g2, u1.gpr, hI.rsi]) r2 w2
     c2 f2 d2 fun s3 c3 x3 g3 r3 w3 f3 d3 => ?_
   refine group4 hp hi (show 2 < 4 by decide) c3.c10 (hM4 (by decide)) x3 hL (by rw [g3, g2, u1.gpr, hI.rsi])
@@ -566,14 +566,14 @@ theorem step4 (hdd : dArg s₀ .rdx = 4) {i : Nat} (hi : i < 8) {s : State} (hI 
   refine wp_addi' fun s6 u6 => wp_addi' fun s7 u7 => wp_subi' fun s8 u8 hz => WP.block_nil ?_
   have c8 := ((c5.pres (Hi.of_lane u6.lane)).pres (Hi.of_lane u7.lane)).pres (Hi.of_lane u8.lane)
   refine ⟨⟨?_, ?_, by rw [u8.rd, u7.rd, u6.rd, r5], by rw [u8.wr, u7.wr, u6.wr, w5], c8,
-    by rw [u8.mem, u7.mem, u6.mem]; exact f5, fun c hc => by rw [u8.mem, u7.mem, u6.mem]; exact d5 c (by omega)⟩,
+    by rw [u8.mem, u7.mem, u6.mem]; exact f5, fun c hc => by rw [u8.mem, u7.mem, u6.mem]; exact d5 c (by omega_arith)⟩,
     ?_, ?_⟩
   · rw [u8.other _ (by decide), u7.other _ (by decide), u6.gpr, hg5, hI.rdi,
       show BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 16 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 16 * i + 16 = 16 * (i + 1) by omega]
+      ← BitVec.ofNat_add, show 16 * i + 16 = 16 * (i + 1) by omega_arith]
   · rw [u8.other _ (by decide), u7.gpr, u6.other _ (by decide), hg5, hI.rsi, coeffAddr, coeffAddr,
       show BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 128 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 4 * (32 * i) + 128 = 4 * (32 * (i + 1)) by omega]
+      ← BitVec.ofNat_add, show 4 * (32 * i) + 128 = 4 * (32 * (i + 1)) by omega_arith]
   · rw [u8.gpr, u7.other _ (by decide), u6.other _ (by decide), hg5]; rfl
   · rw [hz, u7.other _ (by decide), u6.other _ (by decide), hg5]; rfl
 
@@ -589,7 +589,7 @@ theorem main10 (hdd : dArg s₀ .rdx = 10) {s : State} (hdi : s.gpr .rdi = DD.bP
   refine WP.seq (wp_countdown (cnt := .rcx) (N := 31) (by decide) (by decide) (Inv10 s₀)
     (fun i hi s hI _ => step10 hp hdd hi hI) (fun s hI => ?_) (s := s2) ⟨?_, ?_, by rw [u2.rd, hr1, hrd],
       by rw [u2.wr, hw1, hwr], hc1.pres (Hi.of_lane u2.lane), by rw [u2.mem, hm1, hm]; exact Frame.refl _ _,
-      fun k hk => absurd hk (by omega)⟩ (by rw [u2.gpr]; rfl))
+      fun k hk => absurd hk (by omega_arith)⟩ (by rw [u2.gpr]; rfl))
   · refine wp_subi' fun s3 u3 _ => group10 hp hdd (g := 31) (ob' := 304) (ob := 6) (by decide) (by decide)
       (by decide) (by decide) (fun l hl => by rw [u3.lane, hI.c.c12 l hl]) (by decide) hM10' ?_
       (by rw [u3.other _ (by decide), hI.rsi]) (by rw [u3.rd, hI.rd]) (by rw [u3.wr, hI.wr])
@@ -609,9 +609,9 @@ theorem main4 (hdd : dArg s₀ .rdx = 4) {s : State} (hdi : s.gpr .rdi = DD.bP s
   refine WP.seq (wp_countdown (cnt := .rcx) (N := 8) (by decide) (by decide) (Inv4 s₀)
     (fun i hi s hI _ => step4 hp hdd hi hI) (fun s hI => ?_) (s := s2) ⟨?_, ?_, by rw [u2.rd, hr1, hrd],
       by rw [u2.wr, hw1, hwr], hc1.pres (Hi.of_lane u2.lane), by rw [u2.mem, hm1, hm]; exact Frame.refl _ _,
-      fun k hk => absurd hk (by omega)⟩ (by rw [u2.gpr]; rfl))
+      fun k hk => absurd hk (by omega_arith)⟩ (by rw [u2.gpr]; rfl))
   · exact wp_vzu fun s5 _ hm5 _ _ => WP.block_nil ⟨by rw [hm5]; exact hI.frame,
-      fun k hk => by rw [hm5]; exact hI.done k (by omega)⟩
+      fun k hk => by rw [hm5]; exact hI.done k (by omega_arith)⟩
   · rw [u2.other _ (by decide), hg1 _ (by decide), hdi]; simp
   · rw [u2.other _ (by decide), hg1 _ (by decide), hsi]; simp
 
@@ -653,14 +653,14 @@ theorem dword_vals1 (a : BitVec 128) {M : BitVec 128} {o : Nat} (hM : Sel4 M o) 
       ((byte a o).toNat + 256 * (byte a (o + 1)).toNat + 65536 * (byte a (o + 2)).toNat +
         16777216 * (byte a (o + 3)).toNat) / 2 ^ (8 * j + 4 * l + i) % 2 ^ 1 := by
   rw [dword_pand, dword_mk hi, toNat_and_mk (by decide), hM, dword_srlv _ _ hi, dword_sh1 _ _ hi,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 8 * j + 4 * l + i < 2 ^ 32 by omega), itT (by omega),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 8 * j + 4 * l + i < 2 ^ 32 by omega_arith), itT (by omega_arith),
     BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, toNat_dword_ofBytes _ hi,
-    show 4 * i % 4 = 0 by omega, show (4 * i + 1) % 4 = 1 by omega, show (4 * i + 2) % 4 = 2 by omega,
-    show (4 * i + 3) % 4 = 3 by omega, Nat.add_zero]
+    show 4 * i % 4 = 0 by omega_arith, show (4 * i + 1) % 4 = 1 by omega_arith, show (4 * i + 2) % 4 = 2 by omega_arith,
+    show (4 * i + 3) % 4 = 3 by omega_arith, Nat.add_zero]
 
 theorem dig4 (f : Nat → Nat) :
     digits 8 ((List.range 4).map f) = f 0 + 256 * f 1 + 65536 * f 2 + 16777216 * f 3 := by
-  simp [List.range_succ, digits_cons, digits_nil]; omega
+  simp [List.range_succ, digits_cons, digits_nil]; omega_arith
 
 /-- Value `i` of lane `l` of byte `j` of doubleword `k` of iteration `t` (`d = 1`), of the 16 bytes `L` of the
 iteration. -/
@@ -671,14 +671,14 @@ theorem val1 {B : List Byte} (hB : B.length = 32) {t : Nat} (ht : t < 2) {L : Bi
       ((decodeDecompress 1 B)[128 * t + (8 * (4 * k + j) + (4 * l + i))]!).val := by
   have hv := dword_vals1 L (sel_m1 hk) hj hl hi
   rw [dword_ddM _ _ (by decide) hi (by rw [hv]; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide))
-      (by rw [dword_rc hi]; decide), hv, dword_rc hi, hL _ (by omega), hL _ (by omega), hL _ (by omega),
-    hL _ (by omega), show 8 * j + 4 * l + i = 8 * j + (4 * l + i) by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul,
-    show 128 * t + (8 * (4 * k + j) + (4 * l + i)) = 8 * (16 * t + 4 * k) + (8 * j + 4 * l + i) by omega,
+      (by rw [dword_rc hi]; decide), hv, dword_rc hi, hL _ (by omega_arith), hL _ (by omega_arith), hL _ (by omega_arith),
+    hL _ (by omega_arith), show 8 * j + 4 * l + i = 8 * j + (4 * l + i) by omega_arith, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+    show 128 * t + (8 * (4 * k + j) + (4 * l + i)) = 8 * (16 * t + 4 * k) + (8 * j + 4 * l + i) by omega_arith,
     ← DD.seg (d := 1) (c := 8) (b := 1) (o := 0) (l := 4) (s := 8 * j) (p := 4 * l + i)
-      (by decide) (by decide) (by decide) B (by omega) (by omega) (by omega) (by omega), dig4]
+      (by decide) (by decide) (by decide) B (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), dig4]
   simp only [Nat.one_mul, Nat.zero_add, Nat.add_zero, Nat.pow_zero, Nat.reduceSub, Nat.reducePow, BitVec.toNat_ofNat,
-    Nat.reduceMod, show 16 * t + 4 * k + 1 = 16 * t + (4 * k + 1) by omega,
-    show 16 * t + 4 * k + 2 = 16 * t + (4 * k + 2) by omega, show 16 * t + 4 * k + 3 = 16 * t + (4 * k + 3) by omega,
+    Nat.reduceMod, show 16 * t + 4 * k + 1 = 16 * t + (4 * k + 1) by omega_arith,
+    show 16 * t + 4 * k + 2 = 16 * t + (4 * k + 2) by omega_arith, show 16 * t + 4 * k + 3 = 16 * t + (4 * k + 3) by omega_arith,
     Nat.add_assoc]
 
 /-- The constants of `d = 1`. -/
@@ -743,14 +743,14 @@ theorem consts1_ok
     exact (lane4 a4 b4 rfl rfl l hl).trans (by split <;> rfl)
   · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
       o7 _ (by decide) (by decide) (by decide) l hl, o6 _ (by decide) (by decide) (by decide) l hl]
-    exact (lane4 a5 b5 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+    exact (lane4 a5 b5 rfl rfl l hl).trans (by rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
   · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
       o7 _ (by decide) (by decide) (by decide) l hl]
-    exact (lane4 a6 b6 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+    exact (lane4 a6 b6 rfl rfl l hl).trans (by rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
   · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl]
-    exact (lane4 a7 b7 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+    exact (lane4 a7 b7 rfl rfl l hl).trans (by rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
   · rw [o9 _ (by decide) l hl]
-    exact (lane4 a8 b8 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+    exact (lane4 a8 b8 rfl rfl l hl).trans (by rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
   · rw [a9 l hl]; rfl
   · rw [g9 g hg, g8 g hg, g7 g hg, g6 g hg, g5 g hg, g4 g hg, g3 g hg, g2 g hg, g1 g hg]
   · rw [m9, m8, m7, m6, m5, m4, m3, m2, m1]
@@ -784,8 +784,8 @@ theorem body1_ok {m sh : XReg} {g : Nat} {M : BitVec 128} {SH : Nat → BitVec 1
   · rw [l5, o4 r b c d l hl, u3.other r a l hl, u2.other r a l hl, u1.other r a l hl]
   · rw [State.ymm_eq, ext_app2 _ _ hi]
     by_cases h : i < 4
-    · rw [itT h, v4 0 (by decide), h3 0 (by decide), r3 0 (by decide), show i / 4 = 0 by omega]
-    · rw [itF h, v4 1 (by decide), h3 1 (by decide), r3 1 (by decide), show i / 4 = 1 by omega]
+    · rw [itT h, v4 0 (by decide), h3 0 (by decide), r3 0 (by decide), show i / 4 = 0 by omega_arith]
+    · rw [itF h, v4 1 (by decide), h3 1 (by decide), r3 1 (by decide), show i / 4 = 1 by omega_arith]
 
 end
 
@@ -821,23 +821,23 @@ theorem group1 {t k j : Nat} (ht : t < 2) (hk : k < 4) (hj : j < 4) {m sh : XReg
     WP isa (.block (dd1Grp m sh (4 * k + j) ++ is)) s Q := by
   have ha : s.gpr .rsi + BitVec.ofNat 64 (32 * (4 * k + j)) = coeffAddr (DD.fP s₀) (8 * (16 * t + (4 * k + j))) := by
     rw [hsi, coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 4 * (128 * t) + 32 * (4 * k + j) = 4 * (8 * (16 * t + (4 * k + j))) by omega]
+      show 4 * (128 * t) + 32 * (4 * k + j) = 4 * (8 * (16 * t + (4 * k + j))) by omega_arith]
   refine body1_ok hm hsh hsh0 h0 hc.c6 (by rw [hwr, hp.2.1, ha]; exact ⟨_, List.mem_singleton_self _,
-      Offset.contains_base _ (show 4 * (8 * (16 * t + (4 * k + j))) + 32 ≤ 1024 by omega) (by omega)⟩)
+      Offset.contains_base _ (show 4 * (8 * (16 * t + (4 * k + j))) + 32 ≤ 1024 by omega_arith) (by omega_arith)⟩)
     fun s' hk' hg' hrd' hwr' ⟨V, hmem, hV⟩ => k' s' (hc.pres fun r _ a b c d l hl => hk' r a b c d l hl)
       (fun l hl => by rw [hk' _ (by decide) (by decide) (by decide) (by decide) l hl, h0 l hl]) hg'
       (by rw [hrd', hrd]) (by rw [hwr', hwr]) ?_ ?_
   · rw [hmem, ha]
     exact hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (show 4 * (8 * (16 * t + (4 * k + j))) + 256 / 8 ≤ 1024 by omega) (by omega))
+      (Offset.contains_base _ (show 4 * (8 * (16 * t + (4 * k + j))) + 256 / 8 ≤ 1024 by omega_arith) (by omega_arith))
   · intro c hcl
-    rw [hmem, ha, D12Y.coeffAt_write8 _ _ _ (show 16 * t + (4 * k + j) < 32 by omega) (by omega)]
+    rw [hmem, ha, D12Y.coeffAt_write8 _ _ _ (show 16 * t + (4 * k + j) < 32 by omega_arith) (by omega_arith)]
     split
     · rename_i hin
-      rw [hV _ (by omega), val1 (bytesAt_length _ _ _) ht hL hk hj (show (c - 8 * (16 * t + (4 * k + j))) / 4 < 2 by omega)
-        (by omega), show 128 * t + (8 * (4 * k + j) + (4 * ((c - 8 * (16 * t + (4 * k + j))) / 4) +
-          (c - 8 * (16 * t + (4 * k + j))) % 4)) = c by omega]
-    · exact hd c (by omega)
+      rw [hV _ (by omega_arith), val1 (bytesAt_length _ _ _) ht hL hk hj (show (c - 8 * (16 * t + (4 * k + j))) / 4 < 2 by omega_arith)
+        (by omega_arith), show 128 * t + (8 * (4 * k + j) + (4 * ((c - 8 * (16 * t + (4 * k + j))) / 4) +
+          (c - 8 * (16 * t + (4 * k + j))) % 4)) = c by omega_arith]
+    · exact hd c (by omega_arith)
 
 /-- The four bytes of doubleword `k` of iteration `t` of `d = 1`. -/
 theorem dw1 {t k : Nat} (ht : t < 2) (hk : k < 4) {m : XReg} {L : BitVec 128} {is : List Instr} {s : State}
@@ -856,14 +856,14 @@ theorem dw1 {t k : Nat} (ht : t < 2) (hk : k < 4) {m : XReg} {L : BitVec 128} {i
     WP isa (.block (dd1Dw m k ++ is)) s Q := by
   simp only [dd1Dw, List.append_assoc]
   refine group1 hp ht hk (show 0 < 4 by decide) hm hc.c12 (by decide) h0 hL hsi hrd hwr hc hf
-    (fun c hc' => hd c (by omega)) fun s1 c1 x1 g1 r1 w1 f1 d1 => ?_
+    (fun c hc' => hd c (by omega_arith)) fun s1 c1 x1 g1 r1 w1 f1 d1 => ?_
   refine group1 hp ht hk (show 1 < 4 by decide) (hm1 s1 c1) c1.c13 (by decide) x1 hL (by rw [g1, hsi]) r1 w1 c1 f1
-    (fun c hc' => d1 c (by omega)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
+    (fun c hc' => d1 c (by omega_arith)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
   refine group1 hp ht hk (show 2 < 4 by decide) (hm1 s2 c2) c2.c14 (by decide) x2 hL (by rw [g2, g1, hsi]) r2 w2
-    c2 f2 (fun c hc' => d2 c (by omega)) fun s3 c3 x3 g3 r3 w3 f3 d3 => ?_
+    c2 f2 (fun c hc' => d2 c (by omega_arith)) fun s3 c3 x3 g3 r3 w3 f3 d3 => ?_
   refine group1 hp ht hk (show 3 < 4 by decide) (hm1 s3 c3) c3.c15 (by decide) x3 hL (by rw [g3, g2, g1, hsi])
-    r3 w3 c3 f3 (fun c hc' => d3 c (by omega)) fun s4 c4 x4 g4 r4 w4 f4 d4 => ?_
-  exact k' s4 c4 x4 (by rw [g4, g3, g2, g1]) r4 w4 f4 fun c hc' => d4 c (by omega)
+    r3 w3 c3 f3 (fun c hc' => d3 c (by omega_arith)) fun s4 c4 x4 g4 r4 w4 f4 d4 => ?_
+  exact k' s4 c4 x4 (by rw [g4, g3, g2, g1]) r4 w4 f4 fun c hc' => d4 c (by omega_arith)
 
 theorem step1 (hdd : dArg s₀ .rdx = 1) {t : Nat} (ht : t < 2) {s : State} (hI : Inv1 s₀ t s) :
     WP isa (.block (.vbroadcasti128 .xmm0 (at_ .rdi 0) :: dd1Dw .xmm8 0 ++ dd1Dw .xmm9 1 ++
@@ -873,14 +873,14 @@ theorem step1 (hdd : dArg s₀ .rdx = 1) {t : Nat} (ht : t < 2) {s : State} (hI 
   simp only [List.cons_append, List.append_assoc]
   have hrw : s.rd ++ s.wr = [⟨DD.bP s₀, 32 * 1⟩, pR (DD.fP s₀)] := by rw [hI.rd, hI.wr, regs hp hdd]
   refine wp_vbcast128 (a := s.gpr .rdi) (by rw [ea_at, add_ofNat_zero]) (by
-    rw [hrw, hI.rdi]; exact ⟨_, by simp, Offset.contains_base _ (show 16 * t + 16 ≤ 32 * 1 by omega) (by omega)⟩)
+    rw [hrw, hI.rdi]; exact ⟨_, by simp, Offset.contains_base _ (show 16 * t + 16 ≤ 32 * 1 by omega_arith) (by omega_arith)⟩)
     fun s1 u1 => ?_
   have hL : ∀ u < 16, byte (s.mem.readW (s.gpr .rdi) 128) u = (DD.B s₀ 1).getD (16 * t + u) 0 := fun u hu => by
-    rw [byte, byte_readW _ _ (by omega), hI.rdi, Offset.add_add, DD.byte hp (by decide) hdd hI.frame (by omega)]
+    rw [byte, byte_readW _ _ (by omega_arith), hI.rdi, Offset.add_add, DD.byte hp (by decide) hdd hI.frame (by omega_arith)]
   have c1 := hI.c.pres fun r a _ _ _ _ l hl => u1.other r a l hl
   refine dw1 hp ht (show 0 < 4 by decide) c1.c8 (fun _ c => c.c8) u1.val hL (by rw [u1.gpr, hI.rsi])
     (by rw [u1.rd, hI.rd]) (by rw [u1.wr, hI.wr]) c1 (by rw [u1.mem]; exact hI.frame)
-    (fun c hc => by rw [u1.mem]; exact hI.done c (by omega)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
+    (fun c hc => by rw [u1.mem]; exact hI.done c (by omega_arith)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
   refine dw1 hp ht (show 1 < 4 by decide) c2.c9 (fun _ c => c.c9) x2 hL (by rw [g2, u1.gpr, hI.rsi]) r2 w2
     c2 f2 d2 fun s3 c3 x3 g3 r3 w3 f3 d3 => ?_
   refine dw1 hp ht (show 2 < 4 by decide) c3.c10 (fun _ c => c.c10) x3 hL (by rw [g3, g2, u1.gpr, hI.rsi])
@@ -891,14 +891,14 @@ theorem step1 (hdd : dArg s₀ .rdx = 1) {t : Nat} (ht : t < 2) {s : State} (hI 
   refine wp_addi' fun s6 u6 => wp_addi' fun s7 u7 => wp_subi' fun s8 u8 hz => WP.block_nil ?_
   have c8 := ((c5.pres (Hi.of_lane u6.lane)).pres (Hi.of_lane u7.lane)).pres (Hi.of_lane u8.lane)
   refine ⟨⟨?_, ?_, by rw [u8.rd, u7.rd, u6.rd, r5], by rw [u8.wr, u7.wr, u6.wr, w5], c8,
-    by rw [u8.mem, u7.mem, u6.mem]; exact f5, fun c hc => by rw [u8.mem, u7.mem, u6.mem]; exact d5 c (by omega)⟩,
+    by rw [u8.mem, u7.mem, u6.mem]; exact f5, fun c hc => by rw [u8.mem, u7.mem, u6.mem]; exact d5 c (by omega_arith)⟩,
     ?_, ?_⟩
   · rw [u8.other _ (by decide), u7.other _ (by decide), u6.gpr, hg5, hI.rdi,
       show BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 16 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 16 * t + 16 = 16 * (t + 1) by omega]
+      ← BitVec.ofNat_add, show 16 * t + 16 = 16 * (t + 1) by omega_arith]
   · rw [u8.other _ (by decide), u7.gpr, u6.other _ (by decide), hg5, hI.rsi, coeffAddr, coeffAddr,
       show BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 4 * (128 * t) + 512 = 4 * (128 * (t + 1)) by omega]
+      ← BitVec.ofNat_add, show 4 * (128 * t) + 512 = 4 * (128 * (t + 1)) by omega_arith]
   · rw [u8.gpr, u7.other _ (by decide), u6.other _ (by decide), hg5]; rfl
   · rw [hz, u7.other _ (by decide), u6.other _ (by decide), hg5]; rfl
 
@@ -910,9 +910,9 @@ theorem main1 (hdd : dArg s₀ .rdx = 1) {s : State} (hdi : s.gpr .rdi = DD.bP s
   refine WP.seq (wp_countdown (cnt := .rcx) (N := 2) (by decide) (by decide) (Inv1 s₀)
     (fun i hi s hI _ => step1 hp hdd hi hI) (fun s hI => ?_) (s := s2) ⟨?_, ?_, by rw [u2.rd, hr1, hrd],
       by rw [u2.wr, hw1, hwr], hc1.pres (Hi.of_lane u2.lane), by rw [u2.mem, hm1, hm]; exact Frame.refl _ _,
-      fun k hk => absurd hk (by omega)⟩ (by rw [u2.gpr]; rfl))
+      fun k hk => absurd hk (by omega_arith)⟩ (by rw [u2.gpr]; rfl))
   · exact wp_vzu fun s5 _ hm5 _ _ => WP.block_nil ⟨by rw [hm5]; exact hI.frame,
-      fun k hk => by rw [hm5]; exact hI.done k (by omega)⟩
+      fun k hk => by rw [hm5]; exact hI.done k (by omega_arith)⟩
   · rw [u2.other _ (by decide), hg1 _ (by decide), hdi]; simp
   · rw [u2.other _ (by decide), hg1 _ (by decide), hsi]; simp
 

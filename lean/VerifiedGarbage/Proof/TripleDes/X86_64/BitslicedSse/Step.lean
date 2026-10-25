@@ -35,21 +35,21 @@ theorem add_self_eq (x : BitVec 64) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.pow_one]
   congr 1
-  omega
+  omega_arith
 
 theorem add_self_carry (a : BitVec 64) : decide (2 ^ 64 ≤ a.toNat + a.toNat) = a.msb := by
   rw [BitVec.msb_eq_decide]
   have := a.isLt
   simp only [Nat.add_one_sub_one]
   apply decide_eq_decide.mpr
-  constructor <;> intro h <;> omega
+  constructor <;> intro h <;> omega_arith
 
 theorem sbb_self (a : BitVec 64) (c : Bool) : a - a - (BitVec.ofBool c).setWidth 64 = maskVal c := by
   cases c <;> simp [maskVal]
 
 theorem msb_shiftLeft (R : BitVec 64) {n : Nat} (hn : n < 64) : (R <<< n).msb = R.getLsbD (63 - n) := by
   rw [BitVec.msb_eq_getLsbD_last, BitVec.getLsbD_shiftLeft]
-  have : ¬ 63 < n := by omega
+  have : ¬ 63 < n := by omega_arith
   simp [this, show (63 : Nat) < 64 by decide]
 
 theorem word_in {s : State} (h : Room s) {w : Nat} (hw : w < 64) :
@@ -70,7 +70,7 @@ theorem Ptrs.congr {ρ : Role} {s s' : State} (h : Ptrs ρ s) (h12 : s'.gpr .r12
 theorem xAddr_off (b : Addr) (e k : Nat) : xAddr (b + BitVec.ofNat 64 (16 * e)) k = xAddr b (k + e) := by
   simp only [xAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 2
-  omega
+  omega_arith
 
 theorem Ptrs.ea_rd {ρ : Role} {s : State} (h : Ptrs ρ s) {q : Nat} (hq : q < 32) :
     s.ea (rdWord (lWord q)) = xAddr (s.gpr .rsi) (readWord ρ q) := by
@@ -168,28 +168,28 @@ theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {
       (∀ r, r ≠ .rax → r ≠ .rbx → s'.gpr r = s.gpr r) ∧
       s'.xmm ones = s.xmm ones ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   induction n with
-  | zero => exact ⟨s, runBlock_nil, by simp, fun m hm => by omega, fun _ _ _ => rfl, rfl, rfl, rfl,
+  | zero => exact ⟨s, runBlock_nil, by simp, fun m hm => by omega_arith, fun _ _ _ => rfl, rfl, rfl, rfl,
       rfl⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, k₁, in₁, g₁, o₁, m₁, rd₁, wr₁⟩ := ih (by omega)
+    obtain ⟨s₁, run₁, k₁, in₁, g₁, o₁, m₁, rd₁, wr₁⟩ := ih (by omega_arith)
     have h₁ : Room s₁ := h.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) wr₁
     have hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide))
       (g₁ _ (by decide) (by decide))
-    obtain ⟨hq, ho⟩ := inReg_ne (5 - n) (by omega)
+    obtain ⟨hq, ho⟩ := inReg_ne (5 - n) (by omega_arith)
     obtain ⟨s₂, run₂, k₂, q₂, g₂, y₂, m₂, rd₂, wr₂⟩ :=
-      inputStep_run h₁ hq (w := readWord ρ (eBit (inBit j (5 - n)))) (readWord_lt ρ j hj _ (by omega))
-        (hp₁.ea_rd (eBit_lt j hj _ (by omega)))
+      inputStep_run h₁ hq (w := readWord ρ (eBit (inBit j (5 - n)))) (readWord_lt ρ j hj _ (by omega_arith))
+        (hp₁.ea_rd (eBit_lt j hj _ (by omega_arith)))
     refine ⟨s₂, ?_, ?_, fun m hm => ?_, fun r h1 h2 => (g₂ r h1 h2).trans (g₁ r h1 h2),
       (y₂ _ (Ne.symm ho) (by decide)).trans o₁, m₂.trans m₁, rd₂.trans rd₁, wr₂.trans wr₁⟩
     · rw [inputsN_succ]; exact runBlock_cat_some run₁ run₂
     · rw [k₂, k₁, ← BitVec.shiftLeft_add]
     · by_cases he : m = n
       · subst he
-        rw [q₂, k₁, msb_shiftLeft _ (by omega)]
+        rw [q₂, k₁, msb_shiftLeft _ (by omega_arith)]
         simp only [words, m₁, g₁ .rsi (by decide) (by decide)]
       · have hne : inReg (5 - m) ≠ inReg (5 - n) := by
-          intro e; have := inReg_inj' _ (by omega) _ (by omega) e; omega
-        rw [y₂ _ hne (inReg_ne (5 - m) (by omega)).1, in₁ m (by omega)]
+          intro e; have := inReg_inj' _ (by omega_arith) _ (by omega_arith) e; omega_arith
+        rw [y₂ _ hne (inReg_ne (5 - m) (by omega_arith)).1, in₁ m (by omega_arith)]
 
 /-! ## Outputs -/
 
@@ -234,7 +234,7 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) (
       Frame [stateR s] s.mem s'.mem := by
   have hw1 : wrOff ρ ≤ 1 := by cases ρ <;> decide
   have hok : Ok wrCfg s := ⟨fun k hk => by
-      have := h.state.slotIn (k + wrOff ρ) (by simp only [wrCfg] at hk; simp only [stateCfg]; omega)
+      have := h.state.slotIn (k + wrOff ρ) (by simp only [wrCfg] at hk; simp only [stateCfg]; omega_arith)
       simp only [wrCfg, stateCfg] at this ⊢
       rw [hp.wr, xAddr_off]; exact this, by decide⟩
   obtain ⟨e', s', hpost, hrun, p⟩ := varsRunB outRegs .r13 (n := 63) (by decide) (output_check j hj) hok
@@ -247,7 +247,7 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) (
       simp [h'] at this)
   have hsub : (slotRegion wrCfg s).Sub (stateR s) := by
     simp only [slotRegion, wrCfg, stateR, hp.wr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
   have eW : ∀ t : State, t.gpr .r13 = t.gpr .rsi + BitVec.ofNat 64 (16 * wrOff ρ) → ∀ k, wrOff ρ ≤ k →
       words t k = wordsB .r13 t (k - wrOff ρ) := fun t ht k hk => by
     simp only [words, wordsB]
@@ -263,8 +263,8 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) (
   rw [outIdx_off ρ j hj k hk]
   by_cases hin : wrOff ρ ≤ k ∧ k < 63 + wrOff ρ
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hin)]
-    have hk' : k - wrOff ρ < 63 := by omega
-    have hk64 : k - wrOff ρ < 64 := by omega
+    have hk' : k - wrOff ρ < 63 := by omega_arith
+    have hk64 : k - wrOff ρ < 64 := by omega_arith
     rw [eW s' (by rw [hg]; exact hp.wr) k hin.1, eW s hp.wr k hin.1]
     apply eq_of_qword; intro q hq
     have hs := p.rel.slot (k - wrOff ρ) _ hk' (hpost (k - wrOff ρ) hk') q hq
@@ -275,10 +275,10 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) (
     split
     · rename_i i hi
       have hi4 := outIdxW_lt j _ i hi
-      rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega) (by simp [varN, outRegs]; omega)]
-      simp only [varValsB, hk64, ite_true, show ¬ 64 + i < 64 by omega, ite_false,
+      rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega_arith) (by simp [varN, outRegs]; omega_arith)]
+      simp only [varValsB, hk64, ite_true, show ¬ 64 + i < 64 by omega_arith, ite_false,
         Nat.add_sub_cancel_left, qword_xor, outReg]
-    · rw [xorSet_two_pow _ (by simp [varN]; omega)]
+    · rw [xorSet_two_pow _ (by simp [varN]; omega_arith)]
       simp only [varValsB, hk64, ite_true]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false hin)]
     show s'.mem.readW (xAddr (s'.gpr .rsi) k) 128 = s.mem.readW (xAddr (s.gpr .rsi) k) 128
@@ -287,7 +287,7 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) (
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     simp only [slotRegion, hp.wr]
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-! ## One S-box -/
 
@@ -304,7 +304,7 @@ theorem words_spill {s s' : State} (h : Room s) (hsi : s'.gpr .rsi = s.gpr .rsi)
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   refine (h.sep.sub_left ?_).sub_right (Region.sub_prefix (by simp [sboxCfg, spills]))
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_arith)
 
 theorem sboxStep_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) (hp : Ptrs ρ s)
     (hones : s.xmm ones = BitVec.allOnes 128) (k : BitVec 48)
@@ -328,9 +328,9 @@ theorem sboxStep_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) 
   have hin : ∀ i < 6, s₁.xmm (inReg i) =
       words s (readWord ρ (eBit (inBit j i))) ^^^ maskX (k.getLsbD (inBit j i)) := by
     intro i hi
-    have e := in₁ (5 - i) (by omega)
-    rw [show 5 - (5 - i) = i by omega] at e
-    rw [e, show 63 - (5 - i) = 58 + i by omega, hkey i hi]
+    have e := in₁ (5 - i) (by omega_arith)
+    rw [show 5 - (5 - i) = i by omega_arith] at e
+    rw [e, show 63 - (5 - i) = 58 + i by omega_arith, hkey i hi]
   refine ⟨s₃, ?_, fun x hx => ?_, ?_, fun r h1 h2 => ?_, ?_, rd₃.trans (rd₂.trans rd₁),
     wr₃.trans (wr₂.trans wr₁), ?_⟩
   · rw [sboxStep, inputCode_eq]; exact runBlock_cat_some (runBlock_cat_some run₁ run₂) run₃
@@ -407,7 +407,7 @@ theorem swapHalves_ok {s : State} (h : Room s) :
   simp only [VarRel] at hs
   have e : qword (words s' x) q = qword (s'.mem.readW (xAddr (s'.gpr stateCfg.base) x) 128) q := by
     simp only [words, stateCfg]
-  rw [e, hs, xorSet_two_pow _ (by simp [varN]; have := swapSlot_lt x hx; omega)]
+  rw [e, hs, xorSet_two_pow _ (by simp [varN]; have := swapSlot_lt x hx; omega_arith)]
   simp only [varVals, swapSlot_lt x hx, ite_true, laneW]
   unfold swapW swapSlot
   cases partner x <;> rfl

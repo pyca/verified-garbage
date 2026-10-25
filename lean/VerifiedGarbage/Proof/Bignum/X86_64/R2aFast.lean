@@ -323,7 +323,7 @@ theorem fast_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
     rw [hm₈, o₇.wv (by omega_using [sXV]) (by omega_using [hnw, e1]), hm₆, ho₅.wv (by omega_using [sXA]) (by omega_using [hnw, e1]), hx₂]
   have hC₈ : wv t₈.mem B (slot w aAcc) w = 2 ^ (64 * w) - N := by
     rw [hm₈, o₇.wv (by omega_using [sAV]) (by omega_using [hnw, sAV, eV]), hm₆, hc₅]
-  have hO₈ : wv t₈.mem B (slot w aR2) w < wv t₈.mem B (slot w aN) w := by rw [hX₈, hN₈]; omega
+  have hO₈ : wv t₈.mem B (slot w aR2) w < wv t₈.mem B (slot w aN) w := by rw [hX₈, hN₈]; omega_arith
   have hsp := steps_ok (hs₇.congr k₈.2.2) ((k₈.gpr (by decide)).trans hdi₇) (hm₈ ▸ hH₇) hZ hw h4 hw30
     (c := w) (by omega_using [hw]) (by omega_using [hw']) h8cx hT₈ hV₈ hO₈ (by rw [hC₈, hN₈]; omega_using [hNR])
   refine WP.mono hsp fun t ⟨hx, _, _, hf, hgt, kt⟩ => ⟨hgt, ?_, ?_, ?_, ?_⟩

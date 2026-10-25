@@ -35,8 +35,8 @@ theorem hdr_keep {base : Addr} {rs : List (Nat × Nat)} {s t : State} {d : Nat} 
     (hO : ∀ r ∈ rs, r.1 + r.2 ≤ d ∨ d + 4 ≤ r.1) (hd : d + 4 ≤ 2 ^ 32) : hdr base t d = hdr base s d :=
   (Mem.readW_congr fun i hi => (O _ fun r hr => by
     have := hO r hr
-    rw [ofs_off base (by omega)]
-    omega).symm).symm
+    rw [ofs_off base (by omega_arith)]
+    omega_arith).symm).symm
 
 theorem mask32_or (p q : Prop) [Decidable p] [Decidable q] : mask32 p ||| mask32 q = mask32 (p ∨ q) := by
   by_cases hp : p <;> by_cases hq : q <;>
@@ -59,14 +59,14 @@ theorem saveWidth_ok {s : State} {base : Addr} {size n bits offset : Nat} (hs : 
   simp only [stride] at s011
   unfold Shape.saveWidth
   refine WP.seq (WP.mono (optionalWidth_ok hs (n := n) (a := modS n) (tmp := expS n) (bits := bits) hn
-    (by simp only [modS]; omega) (by simp only [expS]; omega) (by simp only [modS]; omega)
-    (by simp only [expS]; omega) (by omega) hb (by simp only [modS, expS]; omega)) fun u ⟨eu, Ru, Ou⟩ => ?_)
+    (by simp only [modS]; omega_arith) (by simp only [expS]; omega_arith) (by simp only [modS]; omega_arith)
+    (by simp only [expS]; omega_arith) (by omega_arith) hb (by simp only [modS, expS]; omega_arith)) fun u ⟨eu, Ru, Ou⟩ => ?_)
   have wu := hs.of_rest Ru (by decide)
-  refine wp_str (by omega) (wu.ea12 (by omega)) (wu.write (by omega)) fun t m => WP.block_nil ⟨?_, Ru.trans (m.rest _), ?_⟩
+  refine wp_str (by omega_arith) (wu.ea12 (by omega_arith)) (wu.write (by omega_arith)) fun t m => WP.block_nil ⟨?_, Ru.trans (m.rest _), ?_⟩
   · rw [hdr, m.mem, Mem.readW_writeW_self32, eu, width_iff hb]
     rfl
   · rw [m.mem]
-    exact (Outs.of_outside Ou (by simp [expS])).trans (Outs.of_outside (writeW32_outside _ _ _ (by omega)) (by simp))
+    exact (Outs.of_outside Ou (by simp [expS])).trans (Outs.of_outside (writeW32_outside _ _ _ (by omega_arith)) (by simp))
 
 theorem threeWidths_ok {s : State} {base : Addr} {size n a b c offset : Nat} (hs : Ws s base size)
     (hz : 4960 ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) (ho : 8 ≤ offset)
@@ -88,30 +88,30 @@ theorem threeWidths_ok {s : State} {base : Addr} {size n a b c offset : Nat} (hs
       have e₂ := hx (slot n 11, 8 * n) (by simp)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only at e₁ e₂
-      rcases hr with rfl | rfl <;> simp only <;> omega
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith
   have keep0 : ∀ {d : Nat} {m m' : Mem}, d + 4 ≤ 36 → Outs base [(d, 4), (slot n 11, 8 * n)] m m' →
       val32 m' base (slot n 0) (2 * n) = val32 m base (slot n 0) (2 * n) := fun hd O =>
     O.val32 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)
   have hkeep : ∀ {d e : Nat} {m m' : Mem}, e + 4 ≤ 36 → d + 4 ≤ 36 → (e + 4 ≤ d ∨ d + 4 ≤ e) →
       Outs base [(e, 4), (slot n 11, 8 * n)] m m' → m'.readW (off base d) 32 = m.readW (off base d) 32 :=
     fun he hd hde O => (Mem.readW_congr fun i hi => (O _ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rw [ofs_off base (by omega)]
-      rcases hr with rfl | rfl <;> simp only <;> omega).symm).symm
+      rw [ofs_off base (by omega_arith)]
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith).symm).symm
   unfold Shape.threeWidths
-  refine WP.seq (WP.mono (saveWidth_ok hs hz hn hn48 ha (offset := offset) ho (by omega)) fun u₁ ⟨E₁, R₁, O₁⟩ => ?_)
+  refine WP.seq (WP.mono (saveWidth_ok hs hz hn hn48 ha (offset := offset) ho (by omega_arith)) fun u₁ ⟨E₁, R₁, O₁⟩ => ?_)
   have w₁ := hs.of_rest R₁ (by decide)
-  refine WP.seq (WP.mono (saveWidth_ok w₁ hz hn hn48 hb (offset := offset + 4) (by omega) (by omega))
+  refine WP.seq (WP.mono (saveWidth_ok w₁ hz hn hn48 hb (offset := offset + 4) (by omega_arith) (by omega_arith))
     fun u₂ ⟨E₂, R₂, O₂⟩ => ?_)
   have w₂ := w₁.of_rest R₂ (by decide)
-  refine WP.mono (saveWidth_ok w₂ hz hn hn48 hc (offset := offset + 8) (by omega) (by omega))
-    fun t ⟨E₃, R₃, O₃⟩ => ⟨?_, ?_, ?_, (R₁.trans R₂).trans R₃, ((sub offset (by omega) (by omega) O₁).trans
-      (sub (offset + 4) (by omega) (by omega) O₂)).trans (sub (offset + 8) (by omega) (by omega) O₃)⟩
-  · rw [hdr, hkeep (by omega) (by omega) (.inr (by omega)) O₃, hkeep (by omega) (by omega) (.inr (by omega)) O₂]; exact E₁
-  · rw [hdr, hkeep (by omega) (by omega) (.inr (by omega)) O₃, ← keep0 (by omega) O₁]; exact E₂
-  · rw [E₃, keep0 (by omega) O₂, keep0 (by omega) O₁]
+  refine WP.mono (saveWidth_ok w₂ hz hn hn48 hc (offset := offset + 8) (by omega_arith) (by omega_arith))
+    fun t ⟨E₃, R₃, O₃⟩ => ⟨?_, ?_, ?_, (R₁.trans R₂).trans R₃, ((sub offset (by omega_arith) (by omega_arith) O₁).trans
+      (sub (offset + 4) (by omega_arith) (by omega_arith) O₂)).trans (sub (offset + 8) (by omega_arith) (by omega_arith) O₃)⟩
+  · rw [hdr, hkeep (by omega_arith) (by omega_arith) (.inr (by omega_arith)) O₃, hkeep (by omega_arith) (by omega_arith) (.inr (by omega_arith)) O₂]; exact E₁
+  · rw [hdr, hkeep (by omega_arith) (by omega_arith) (.inr (by omega_arith)) O₃, ← keep0 (by omega_arith) O₁]; exact E₂
+  · rw [E₃, keep0 (by omega_arith) O₂, keep0 (by omega_arith) O₁]
 
 /-- Ranges each within one of others. -/
 theorem Outs.within {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (O : Outs base rs m m')
@@ -119,7 +119,7 @@ theorem Outs.within {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (O :
   fun x hx => O x fun r hr => by
     obtain ⟨r', hr', h₁, h₂⟩ := h r hr
     have := hx r' hr'
-    omega
+    omega_arith
 
 /-- The masks of a modulus's widths. -/
 theorem loadWidths_ok {s : State} {base : Addr} {size len n a b c offset m : Nat} {modulus : Impl.Dsa.Layout.Field}
@@ -147,23 +147,23 @@ theorem loadWidths_ok {s : State} {base : Addr} {size len n a b c offset m : Nat
     ⟨by rw [E₁, Vu], by rw [E₂, Vu], by rw [E₃, Vu], ?_, Ru.trans (Rt.mono (by decide)), ?_⟩
   · rw [Ot.val32 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)]
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]
     exact Vu
   · refine (Outs.within (Outs.of_outside Ou (List.mem_singleton_self _)) ?_).trans (Outs.within Ot ?_)
     · intro r hr
       simp only [List.mem_singleton] at hr
       subst hr
-      exact ⟨(256, 4704), by simp, by simp only; omega, by simp only; omega⟩
+      exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨(offset, 12), by simp, by simp only; omega, by simp only; omega⟩
-      · exact ⟨(256, 4704), by simp, by simp only; omega, by simp only; omega⟩
+      · exact ⟨(offset, 12), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
 
 theorem wp_ldr12 {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t : Reg} {d : Nat}
     (hd : d < 4096) (hd' : d + 4 ≤ size) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', Upd s s' t (hdr base s d) → WP isa (.block is) s' Q) : WP isa (.block (.ldr t .r12 d :: is)) s Q :=
-  wp_ldr hd (hs.ea12 (by omega)) (hs.read hd') k
+  wp_ldr hd (hs.ea12 (by omega_arith)) (hs.read hd') k
 
 theorem inspectP_ok {s : State} {base : Addr} {size pLen nP P : Nat} (hs : Ws s base size) (hz : 4960 ≤ size)
     (w : Width pLen nP) (R : Ready s base (.input .p) pLen) (hm : operand base s (.input .p) pLen = P) :
@@ -181,26 +181,26 @@ theorem inspectP_ok {s : State} {base : Addr} {size pLen nP P : Nat} (hs : Ws s 
     (by decide)) fun u ⟨E₁, E₂, E₃, Vu, Ru, Ou⟩ => ?_)
   have wu := hs.of_rest Ru (by decide)
   simp only [Shape.saveParity]
-  refine wp_ptr (d := .r10) (by decide) (by simp only [modS]; omega) fun u₁ v₁ => ?_
+  refine wp_ptr (d := .r10) (by decide) (by simp only [modS]; omega_arith) fun u₁ v₁ => ?_
   have w₁ := wu.of_upd v₁ (by decide)
   refine wp_ldr (by decide) (w₁.ea (K := modS nP) (d := 0) (by rw [v₁.gpr, v₁.other .r12 (by decide)])
-    (by simp only [modS]; omega)) (w₁.read (d := modS nP + 0) (n := 4) (by simp only [modS]; omega)) fun u₂ v₂ => ?_
+    (by simp only [modS]; omega_arith)) (w₁.read (d := modS nP + 0) (n := 4) (by simp only [modS]; omega_arith)) fun u₂ v₂ => ?_
   have w₂ := w₁.of_upd v₂ (by decide)
-  refine wp_str (by decide) (w₂.ea12 (by omega)) (w₂.write (d := 32) (by omega)) fun t m => WP.block_nil ?_
+  refine wp_str (by decide) (w₂.ea12 (by omega_arith)) (w₂.write (d := 32) (by omega_arith)) fun t m => WP.block_nil ?_
   have mt : t.mem = u.mem.writeW (off base 32) (u.mem.readW (off base (slot nP 0)) 32) := by
     rw [m.mem, v₂.gpr, v₂.mem, v₁.mem, Nat.add_zero]; rfl
   have k : ∀ d, d + 4 ≤ 32 → hdr base t d = hdr base u d := fun d hd => by
     rw [hdr, hdr, mt]
-    exact Mem.readW_writeW_sep (Offset.sep base (.inl hd) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep base (.inl hd) (by omega_arith) (by omega_arith)) (by decide)
   refine ⟨by rw [k 8 (by decide)]; exact E₁, by rw [k 12 (by decide)]; exact E₂, by rw [k 16 (by decide)]; exact E₃,
     ?_, Ru.trans (((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans (m.rest _)), ?_⟩
-  · rw [hdr, mt, Mem.readW_writeW_self32, ← Vu, show 2 * nP = (2 * nP - 1) + 1 by omega, val32_parity]
+  · rw [hdr, mt, Mem.readW_writeW_self32, ← Vu, show 2 * nP = (2 * nP - 1) + 1 by omega_arith, val32_parity]
   · rw [mt]
-    refine (Outs.within Ou (fun r hr => ?_)).trans (Outs.of_outside (writeW32_outside _ _ _ (by omega)) (by simp))
+    refine (Outs.within Ou (fun r hr => ?_)).trans (Outs.of_outside (writeW32_outside _ _ _ (by omega_arith)) (by simp))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨(8, 12), by simp, by simp only; omega, by simp only; omega⟩
-    · exact ⟨(256, 4704), by simp, by simp only; omega, by simp only; omega⟩
+    · exact ⟨(8, 12), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
+    · exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
 
 /-- Both low bits set, as a mask. -/
 theorem odd_mask (x y : BitVec 32) : 0 - (x &&& y &&& 1) = mask32 (x.toNat % 2 = 1 ∧ y.toNat % 2 = 1) := by
@@ -230,37 +230,37 @@ theorem combine_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   have nw := hs.nowrap
   have fm : Impl.Dsa.Arm.Layout.field .mask = 116 := rfl
   simp only [Shape.combine]
-  refine wp_ldr12 hs (by decide) (by omega) fun s₁ u₁ => ?_
+  refine wp_ldr12 hs (by decide) (by omega_arith) fun s₁ u₁ => ?_
   have w₁ := hs.of_upd u₁ (by decide)
-  refine wp_ldr12 w₁ (by decide) (by omega) fun s₂ u₂ => ?_
+  refine wp_ldr12 w₁ (by decide) (by omega_arith) fun s₂ u₂ => ?_
   have w₂ := w₁.of_upd u₂ (by decide)
   refine wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
   have w₃ := w₂.of_upd u₃ (by decide)
-  refine wp_ldr12 w₃ (by decide) (by omega) fun s₄ u₄ => ?_
+  refine wp_ldr12 w₃ (by decide) (by omega_arith) fun s₄ u₄ => ?_
   have w₄ := w₃.of_upd u₄ (by decide)
-  refine wp_ldr12 w₄ (by decide) (by omega) fun s₅ u₅ => ?_
+  refine wp_ldr12 w₄ (by decide) (by omega_arith) fun s₅ u₅ => ?_
   have w₅ := w₄.of_upd u₅ (by decide)
   refine wp_dp (op2_reg _ _) fun s₆ u₆ => ?_
   have w₆ := w₅.of_upd u₆ (by decide)
-  refine wp_ldr12 w₆ (by decide) (by omega) fun s₆a u₆a => ?_
+  refine wp_ldr12 w₆ (by decide) (by omega_arith) fun s₆a u₆a => ?_
   have w₆a := w₆.of_upd u₆a (by decide)
   refine wp_dp (op2_reg _ _) fun s₆b u₆b => ?_
   have w₆b := w₆a.of_upd u₆b (by decide)
-  refine wp_ldr12 w₆b (by decide) (by omega) fun s₇ u₇ => ?_
+  refine wp_ldr12 w₆b (by decide) (by omega_arith) fun s₇ u₇ => ?_
   have w₇ := w₆b.of_upd u₇ (by decide)
   refine wp_dp (op2_reg _ _) fun s₈ u₈ => wp_dp (op2_reg _ _) fun s₉ u₉ => ?_
   have w₉ := (w₇.of_upd u₈ (by decide)).of_upd u₉ (by decide)
-  refine wp_ldr12 w₉ (by decide) (by omega) fun s₁₀ u₁₀ => ?_
+  refine wp_ldr12 w₉ (by decide) (by omega_arith) fun s₁₀ u₁₀ => ?_
   have w₁₀ := w₉.of_upd u₁₀ (by decide)
-  refine wp_ldr12 w₁₀ (by decide) (by omega) fun s₁₁ u₁₁ => ?_
+  refine wp_ldr12 w₁₀ (by decide) (by omega_arith) fun s₁₁ u₁₁ => ?_
   have w₁₁ := w₁₀.of_upd u₁₁ (by decide)
   refine wp_dp (op2_reg _ _) fun s₁₂ u₁₂ => wp_dp (op2_reg _ _) fun s₁₃ u₁₃ => ?_
   have w₁₃ := (w₁₁.of_upd u₁₂ (by decide)).of_upd u₁₃ (by decide)
-  refine wp_ldr12 w₁₃ (by decide) (by omega) fun s₁₄ u₁₄ => ?_
+  refine wp_ldr12 w₁₃ (by decide) (by omega_arith) fun s₁₄ u₁₄ => ?_
   have w₁₄ := w₁₃.of_upd u₁₄ (by decide)
   refine wp_dp (op2_reg _ _) fun s₁₅ u₁₅ => ?_
   have w₁₅ := w₁₄.of_upd u₁₅ (by decide)
-  refine wp_str (by decide) (w₁₅.ea12 (by omega)) (w₁₅.write (d := 116) (by omega)) fun t m => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine wp_str (by decide) (w₁₅.ea12 (by omega_arith)) (w₁₅.write (d := 116) (by omega_arith)) fun t m => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [maskW, flagW, m.mem, show Impl.Dsa.Arm.Layout.field .mask = 116 from rfl, Mem.readW_writeW_self32]
     simp only [u₁₅.get, u₁₄.get, u₁₃.get, u₁₂.get, u₁₁.get, u₁₀.get, u₉.get, u₈.get, u₇.get, u₆b.get, u₆a.get, u₆.get, u₅.get,
       u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal, hdr, u₁₃.mem, u₁₂.mem, u₁₁.mem,
@@ -273,7 +273,7 @@ theorem combine_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
       (m.rest _)
   · rw [m.mem, u₁₅.mem, u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆b.mem, u₆a.mem, u₆.mem, u₅.mem, u₄.mem,
       u₃.mem, u₂.mem, u₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_arith)
 
 /-- `[32]` = whether `[slot 0]` and `[32]` are both odd. -/
 theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size) (hz : 4960 ≤ size) (hn : 0 < n)
@@ -284,17 +284,17 @@ theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size)
   have nw := hs.nowrap
   have s0 := slot_lt (i := 0) hn48 (by decide)
   simp only [Shape.parity]
-  refine wp_ptr (d := .r10) (by decide) (by simp only [modS]; omega) fun u₁ v₁ => ?_
+  refine wp_ptr (d := .r10) (by decide) (by simp only [modS]; omega_arith) fun u₁ v₁ => ?_
   have w₁ := hs.of_upd v₁ (by decide)
   refine wp_ldr (by decide) (w₁.ea (K := modS n) (d := 0) (by rw [v₁.gpr, v₁.other .r12 (by decide)])
-    (by simp only [modS]; omega)) (w₁.read (d := modS n + 0) (n := 4) (by simp only [modS]; omega)) fun u₂ v₂ => ?_
+    (by simp only [modS]; omega_arith)) (w₁.read (d := modS n + 0) (n := 4) (by simp only [modS]; omega_arith)) fun u₂ v₂ => ?_
   have w₂ := w₁.of_upd v₂ (by decide)
-  refine wp_ldr12 w₂ (by decide) (by omega) fun u₃ v₃ => ?_
+  refine wp_ldr12 w₂ (by decide) (by omega_arith) fun u₃ v₃ => ?_
   have w₃ := w₂.of_upd v₃ (by decide)
   refine wp_dp (op2_reg _ _) fun u₄ v₄ => wp_dp (op2_imm (by decide)) fun u₅ v₅ => wp_mov (op2_imm (by decide))
     fun u₆ v₆ => wp_dp (op2_reg _ _) fun u₇ v₇ => ?_
   have w₇ := (((w₃.of_upd v₄ (by decide)).of_upd v₅ (by decide)).of_upd v₆ (by decide)).of_upd v₇ (by decide)
-  refine wp_str (by decide) (w₇.ea12 (by omega)) (w₇.write (d := 32) (by omega)) fun t m => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine wp_str (by decide) (w₇.ea12 (by omega_arith)) (w₇.write (d := 32) (by omega_arith)) fun t m => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [hdr, m.mem, Mem.readW_writeW_self32]
     simp only [v₇.get, v₆.get, v₅.get, v₄.get, v₃.get, v₂.get, reduceCtorEq, ↓reduceIte, dpVal, hdr,
       v₂.mem, v₁.mem, Nat.add_zero]
@@ -303,7 +303,7 @@ theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size)
       (v₄.rest (by decide))).trans (v₅.rest (by decide))).trans ((v₆.rest (by decide)).trans (v₇.rest (by decide)))).trans
       (m.rest _)
   · rw [m.mem, v₇.mem, v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_arith)
 
 /-- The shape of a supported domain. -/
 theorem shape_iff (P Q : Nat) :
@@ -312,7 +312,7 @@ theorem shape_iff (P Q : Nat) :
       (Spec.Dsa.bitLength P = 3072 ∧ Spec.Dsa.bitLength Q = 256)) ∧ (Q % 2 = 1 ∧ P % 2 = 1)) ↔
       shapeValid P Q := by
   simp only [shapeValid, Spec.Dsa.supportedSizes]
-  omega
+  omega_arith
 
 theorem inspectQ_ok {s : State} {base : Addr} {size qLen nQ P Q : Nat} (hs : Ws s base size) (hz : 4960 ≤ size)
     (w : Width qLen nQ) (R : Ready s base (.input .q) qLen) (hm : operand base s (.input .q) qLen = Q)
@@ -335,47 +335,47 @@ theorem inspectQ_ok {s : State} {base : Addr} {size qLen nQ P Q : Nat} (hs : Ws 
   have k : ∀ d, d + 4 ≤ 20 ∨ (32 ≤ d ∧ d + 4 ≤ 256) → hdr base u d = hdr base s d := fun d hd =>
     hdr_keep Ou (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)
   refine VG.Proof.X25519.Arm.WP.append (parity_ok wu hz n0 n48) fun v ⟨Pv, Rv, Ov⟩ => ?_
   have wv := wu.of_rest Rv (by decide)
   have kv : ∀ d, d + 4 ≤ 32 → hdr base v d = hdr base u d := fun d hd =>
     hdr_keep (rs := [(32, 4)]) (Outs.of_outside Ov (by simp)) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      subst hr; simp only; omega) (by omega)
+      subst hr; simp only; omega_arith) (by omega_arith)
   have par : w32 u.mem base (slot nQ 0) % 2 = Q % 2 := by
-    rw [← Vu, show 2 * nQ = (2 * nQ - 1) + 1 by omega, val32_parity]
-  rw [k 32 (by omega), par, h32] at Pv
-  refine WP.mono (combine_ok wv (by omega) (a8 := Spec.Dsa.bitLength P = 1024)
+    rw [← Vu, show 2 * nQ = (2 * nQ - 1) + 1 by omega_arith, val32_parity]
+  rw [k 32 (by omega_arith), par, h32] at Pv
+  refine WP.mono (combine_ok wv (by omega_arith) (a8 := Spec.Dsa.bitLength P = 1024)
     (a12 := Spec.Dsa.bitLength P = 2048) (a16 := Spec.Dsa.bitLength P = 3072)
     (a20 := Spec.Dsa.bitLength Q = 160) (a24 := Spec.Dsa.bitLength Q = 224) (a28 := Spec.Dsa.bitLength Q = 256)
-    (a32 := Q % 2 = 1 ∧ P % 2 = 1) (by rw [← h8, ← k 8 (by omega)]; exact kv 8 (by omega))
-    (by rw [← h12, ← k 12 (by omega)]; exact kv 12 (by omega))
-    (by rw [← h16, ← k 16 (by omega)]; exact kv 16 (by omega))
-    (by rw [← E₁]; exact kv 20 (by omega)) (by rw [← E₂]; exact kv 24 (by omega))
-    (by rw [← E₃]; exact kv 28 (by omega)) Pv) fun t ⟨Mt, Rt, Ot⟩ => ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+    (a32 := Q % 2 = 1 ∧ P % 2 = 1) (by rw [← h8, ← k 8 (by omega_arith)]; exact kv 8 (by omega_arith))
+    (by rw [← h12, ← k 12 (by omega_arith)]; exact kv 12 (by omega_arith))
+    (by rw [← h16, ← k 16 (by omega_arith)]; exact kv 16 (by omega_arith))
+    (by rw [← E₁]; exact kv 20 (by omega_arith)) (by rw [← E₂]; exact kv 24 (by omega_arith))
+    (by rw [← E₃]; exact kv 28 (by omega_arith)) Pv) fun t ⟨Mt, Rt, Ot⟩ => ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [Mt]; exact mask32_iff (shape_iff P Q)
-  · rw [← E₁, ← kv 20 (by omega)]
-    exact hdr_keep (rs := [(116, 4)]) (Outs.of_outside Ot (by simp)) (by simp) (by omega)
-  · rw [← E₂, ← kv 24 (by omega)]
-    exact hdr_keep (rs := [(116, 4)]) (Outs.of_outside Ot (by simp)) (by simp) (by omega)
-  · rw [← E₃, ← kv 28 (by omega)]
-    exact hdr_keep (rs := [(116, 4)]) (Outs.of_outside Ot (by simp)) (by simp) (by omega)
+  · rw [← E₁, ← kv 20 (by omega_arith)]
+    exact hdr_keep (rs := [(116, 4)]) (Outs.of_outside Ot (by simp)) (by simp) (by omega_arith)
+  · rw [← E₂, ← kv 24 (by omega_arith)]
+    exact hdr_keep (rs := [(116, 4)]) (Outs.of_outside Ot (by simp)) (by simp) (by omega_arith)
+  · rw [← E₃, ← kv 28 (by omega_arith)]
+    exact hdr_keep (rs := [(116, 4)]) (Outs.of_outside Ot (by simp)) (by simp) (by omega_arith)
   · exact Ru.trans ((Rv.mono (by decide)).trans (Rt.mono (by decide)))
   · refine ((Outs.within Ou ?_).trans (Outs.within (Outs.of_outside Ov (List.mem_singleton_self _)) ?_)).trans
       (Outs.within (Outs.of_outside Ot (List.mem_singleton_self _)) ?_)
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨(20, 16), by simp, by simp only; omega, by simp only; omega⟩
-      · exact ⟨(256, 4704), by simp, by simp only; omega, by simp only; omega⟩
+      · exact ⟨(20, 16), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
     · intro r hr
       simp only [List.mem_singleton] at hr
       subst hr
-      exact ⟨(20, 16), by simp, by simp only; omega, by simp only; omega⟩
+      exact ⟨(20, 16), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
     · intro r hr
       simp only [List.mem_singleton] at hr
       subst hr
-      exact ⟨(116, 4), by simp, by simp only; omega, by simp only; omega⟩
+      exact ⟨(116, 4), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
 
 /-- The byte width of a supported q, else zero. -/
 def qWidth (Q : Nat) : Nat :=
@@ -383,7 +383,7 @@ def qWidth (Q : Nat) : Nat :=
   else if Spec.Dsa.bitLength Q = 256 then 32 else 0
 
 theorem qWidth_le (Q : Nat) : qWidth Q ≤ 32 := by
-  unfold qWidth; split <;> (try split) <;> (try split) <;> omega
+  unfold qWidth; split <;> (try split) <;> (try split) <;> omega_arith
 
 theorem prefixWidth_ok {s : State} {base : Addr} {size Q : Nat} (hs : Ws s base size) (hz : 120 ≤ size)
     (h20 : hdr base s 20 = mask32 (Spec.Dsa.bitLength Q = 160))
@@ -392,19 +392,19 @@ theorem prefixWidth_ok {s : State} {base : Addr} {size Q : Nat} (hs : Ws s base 
     WP isa (.block Shape.prefixWidth) s fun t =>
       t.gpr .r2 = BitVec.ofNat 32 (qWidth Q) ∧ Rest [.r2, .r4] s t ∧ t.mem = s.mem := by
   simp only [Shape.prefixWidth]
-  refine wp_ldr12 hs (by decide) (by omega) fun s₁ u₁ => wp_dp (op2_imm (by decide)) fun s₂ u₂ => ?_
+  refine wp_ldr12 hs (by decide) (by omega_arith) fun s₁ u₁ => wp_dp (op2_imm (by decide)) fun s₂ u₂ => ?_
   have w₂ := (hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)
-  refine wp_ldr12 w₂ (by decide) (by omega) fun s₃ u₃ => wp_dp (op2_imm (by decide)) fun s₄ u₄ =>
+  refine wp_ldr12 w₂ (by decide) (by omega_arith) fun s₃ u₃ => wp_dp (op2_imm (by decide)) fun s₄ u₄ =>
     wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
   have w₅ := ((w₂.of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅ (by decide)
-  refine wp_ldr12 w₅ (by decide) (by omega) fun s₆ u₆ => wp_dp (op2_imm (by decide)) fun s₇ u₇ =>
+  refine wp_ldr12 w₅ (by decide) (by omega_arith) fun s₆ u₆ => wp_dp (op2_imm (by decide)) fun s₇ u₇ =>
     wp_dp (op2_reg _ _) fun t u₈ => WP.block_nil ⟨?_, ?_, ?_⟩
   · simp only [u₈.get, u₇.get, u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal,
       hdr, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
     simp only [hdr] at h20 h24 h28
     rw [h20, h24, h28]
     unfold qWidth
-    rcases (by omega : Spec.Dsa.bitLength Q = 160 ∨ Spec.Dsa.bitLength Q = 224 ∨ Spec.Dsa.bitLength Q = 256 ∨
+    rcases (by omega_arith : Spec.Dsa.bitLength Q = 160 ∨ Spec.Dsa.bitLength Q = 224 ∨ Spec.Dsa.bitLength Q = 256 ∨
       (Spec.Dsa.bitLength Q ≠ 160 ∧ Spec.Dsa.bitLength Q ≠ 224 ∧ Spec.Dsa.bitLength Q ≠ 256)) with
       h | h | h | ⟨h₁, h₂, h₃⟩ <;> simp [mask32, *] <;> decide
   · exact (((((((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans (u₃.rest (by decide))).trans
@@ -430,7 +430,7 @@ theorem digestClamp_ok {s : State} {base : Addr} {size W : Nat} (hs : Ws s base 
   have fdl : Impl.Dsa.Arm.Layout.field .digestLen = 108 := rfl
   have fdp : Impl.Dsa.Arm.Layout.field .digestPrefixLen = 112 := rfl
   simp only [Shape.digestClamp, List.cons_append, List.append_assoc, List.nil_append]
-  refine wp_ldr12 hs (by decide) (by omega) fun s₁ u₁ => wp_movw fun s₂ u₂ => wp_mov (op2_imm (by decide))
+  refine wp_ldr12 hs (by decide) (by omega_arith) fun s₁ u₁ => wp_movw fun s₂ u₂ => wp_mov (op2_imm (by decide))
     fun s₃ u₃ => wp_mov (op2_reg _ _) fun s₄ u₄ => ?_
   have dl : (s₄.gpr .r7).toNat = (hdr base s 108).toNat := by
     rw [u₄.other .r7 (by decide), u₃.other .r7 (by decide), u₂.other .r7 (by decide), u₁.gpr, fdl]
@@ -440,31 +440,31 @@ theorem digestClamp_ok {s : State} {base : Addr} {size W : Nat} (hs : Ws s base 
   have r6 : s₄.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
     rw [u₄.other .r6 (by decide), u₃.other .r6 (by decide), u₂.gpr]
   have r3 : (s₄.gpr .r3).toNat = 1 := by rw [u₄.other .r3 (by decide), u₃.gpr]; rfl
-  refine borrowDigit_ok (h := 0) (by decide) r6 (by omega) fun s₅ X₅ C₅ R₅ M₅ => ?_
+  refine borrowDigit_ok (h := 0) (by decide) r6 (by omega_arith) fun s₅ X₅ C₅ R₅ M₅ => ?_
   refine borrowDigit_ok (h := 1) (by decide) (by rw [R₅.gpr _ (by decide)]; exact r6)
-    (by have := hdig_lt (s₄.gpr .r7).toNat 0; rw [C₅, X₅]; omega) fun s₆ X₆ C₆ R₆ M₆ => ?_
+    (by have := hdig_lt (s₄.gpr .r7).toNat 0; rw [C₅, X₅]; omega_arith) fun s₆ X₆ C₆ R₆ M₆ => ?_
   rw [R₅.gpr .r7 (by decide), R₅.gpr .r5 (by decide), dl, wv] at X₆
   rw [dl, wv] at X₅
-  obtain ⟨hb, hc⟩ := borrowWord (u := s₄) dl wv (by omega) (by rw [dl, wv]; exact X₅) C₅ X₆ C₆
-    (BitVec.isLt _) (by omega)
+  obtain ⟨hb, hc⟩ := borrowWord (u := s₄) dl wv (by omega_arith) (by rw [dl, wv]; exact X₅) C₅ X₆ C₆
+    (BitVec.isLt _) (by omega_arith)
   rw [r3] at hb
   have carry : s₆.gpr .r3 = if W ≤ (hdr base s 108).toNat then 1 else 0 := by
     apply BitVec.eq_of_toNat_eq
     by_cases h : W ≤ (hdr base s 108).toNat
-    · rw [ite_eq_left h]; show _ = 1; omega
-    · rw [ite_eq_right h]; show _ = 0; omega
+    · rw [ite_eq_left h]; show _ = 1; omega_arith
+    · rw [ite_eq_right h]; show _ = 0; omega_arith
   refine wp_dp (op2_imm (by decide)) fun s₇ u₇ => wp_dp (op2_reg _ _) fun s₈ u₈ => wp_dp (op2_reg _ _) fun s₉ u₉ =>
     wp_dp (op2_reg _ _) fun s₁₀ u₁₀ => ?_
   have w₁₀ := ((((((hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)).of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_rest
     R₅ (by decide)).of_rest R₆ (by decide) |>.of_upd u₇ (by decide) |>.of_upd u₈ (by decide) |>.of_upd u₉ (by decide)
     |>.of_upd u₁₀ (by decide))
-  refine wp_str (by decide) (w₁₀.ea12 (by omega)) (w₁₀.write (d := 112) (by omega)) fun t m => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine wp_str (by decide) (w₁₀.ea12 (by omega_arith)) (w₁₀.write (d := 112) (by omega_arith)) fun t m => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [hdr, m.mem, fdp, Mem.readW_writeW_self32]
     have m3 : s₇.gpr .r3 = if decide ((hdr base s 108).toNat < W) then BitVec.allOnes 32 else 0 := by
       rw [u₇.gpr, dpVal, carry]
       by_cases h : W ≤ (hdr base s 108).toNat
-      · rw [ite_eq_left h, decide_eq_false (by omega)]; rfl
-      · rw [ite_eq_right h, decide_eq_true (by omega)]; rfl
+      · rw [ite_eq_left h, decide_eq_false (by omega_arith)]; rfl
+      · rw [ite_eq_right h, decide_eq_true (by omega_arith)]; rfl
     have r2₆ : s₆.gpr .r2 = BitVec.ofNat 32 W := by
       rw [R₆.gpr .r2 (by decide), R₅.gpr .r2 (by decide), u₄.other .r2 (by decide), u₃.other .r2 (by decide),
         u₂.other .r2 (by decide), u₁.other .r2 (by decide), hw]
@@ -475,14 +475,14 @@ theorem digestClamp_ok {s : State} {base : Addr} {size W : Nat} (hs : Ws s base 
       u₈.gpr, dpVal, u₈.other .r3 (by decide), m3, u₇.other .r7 (by decide), u₇.other .r2 (by decide), r2₆, r7₆,
       select_min]
     by_cases h : (hdr base s 108).toNat < W
-    · simp only [h, decide_true, ↓reduceIte]; omega
-    · simp only [h, decide_false, Bool.false_eq_true, ↓reduceIte, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hW]; omega
+    · simp only [h, decide_true, ↓reduceIte]; omega_arith
+    · simp only [h, decide_false, Bool.false_eq_true, ↓reduceIte, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hW]; omega_arith
   · exact ((((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans ((u₃.rest (by decide)).trans
       (u₄.rest (by decide)))).trans ((R₅.mono (by decide)).trans (R₆.mono (by decide)))).trans
       (((((u₇.rest (by decide)).trans (u₈.rest (by decide))).trans (u₉.rest (by decide))).trans
         (u₁₀.rest (by decide))).trans (m.rest _))
   · rw [m.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, M₆, M₅, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_arith)
 
 theorem digestPrefix_ok {s : State} {base : Addr} {size Q : Nat} (hs : Ws s base size) (hz : 120 ≤ size)
     (h20 : hdr base s 20 = mask32 (Spec.Dsa.bitLength Q = 160))
@@ -493,7 +493,7 @@ theorem digestPrefix_ok {s : State} {base : Addr} {size Q : Nat} (hs : Ws s base
       Rest [.r0, .r2, .r3, .r4, .r5, .r6, .r7] s t ∧ Outside base 112 4 s.mem t.mem := by
   unfold Shape.digestPrefix
   refine VG.Proof.X25519.Arm.WP.append (prefixWidth_ok hs hz h20 h24 h28) fun u ⟨Pu, Ru, Mu⟩ =>
-    WP.mono (digestClamp_ok (hs.of_rest Ru (by decide)) hz Pu (by have := qWidth_le Q; omega))
+    WP.mono (digestClamp_ok (hs.of_rest Ru (by decide)) hz Pu (by have := qWidth_le Q; omega_arith))
     fun t ⟨Vt, Rt, Ot⟩ => ⟨by rw [Vt, hdr, hdr, Mu], (Ru.mono (by decide)).trans Rt, by rw [← Mu]; exact Ot⟩
 
 /-- The memory the shape's checks change. -/
@@ -520,25 +520,25 @@ theorem check_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q : Nat} (hs 
     exact hQ
   refine WP.seq (WP.mono (inspectQ_ok w₁ hz wq Rq₁ Q₁ E₁ E₂ E₃ E₄) fun u₂ ⟨M₂, F₂, F₃, F₄, R₂, O₂⟩ => ?_)
   have w₂ := w₁.of_rest R₂ (by decide)
-  refine WP.seq (WP.mono (digestPrefix_ok w₂ (by omega) F₂ F₃ F₄) fun u₃ ⟨D₃, R₃, O₃⟩ => ?_)
+  refine WP.seq (WP.mono (digestPrefix_ok w₂ (by omega_arith) F₂ F₃ F₄) fun u₃ ⟨D₃, R₃, O₃⟩ => ?_)
   have w₃ := w₂.of_rest R₃ (by decide)
-  refine WP.seq (wp_ldr12 w₃ (by decide) (by omega) fun u₄ v₄ => VG.Proof.X25519.Arm.wp_cmp (op2_imm (by decide))
+  refine WP.seq (wp_ldr12 w₃ (by decide) (by omega_arith) fun u₄ v₄ => VG.Proof.X25519.Arm.wp_cmp (op2_imm (by decide))
     fun t f z => WP.block_nil (WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩))
   · have m₃ : hdr base u₃ (Impl.Dsa.Arm.Layout.field .mask) = mask32 (shapeValid P Q) := by
       rw [show Impl.Dsa.Arm.Layout.field .mask = 116 from rfl, ← M₂]
-      exact hdr_keep (rs := [(112, 4)]) (Outs.of_outside O₃ (by simp)) (by simp) (by omega)
+      exact hdr_keep (rs := [(112, 4)]) (Outs.of_outside O₃ (by simp)) (by simp) (by omega_arith)
     rw [z, v₄.gpr, m₃]
     by_cases h : shapeValid P Q <;> simp only [mask32, h, ↓reduceIte, decide_true, decide_false, not_true_eq_false,
       not_false_eq_true] <;> decide
   · rw [show maskW base t = maskW base u₃ by simp only [maskW, flagW, f.mem, v₄.mem], ← M₂]
-    exact hdr_keep (rs := [(112, 4)]) (Outs.of_outside O₃ (by simp)) (by simp) (by omega)
+    exact hdr_keep (rs := [(112, 4)]) (Outs.of_outside O₃ (by simp)) (by simp) (by omega_arith)
   · rw [show hdr base t 112 = hdr base u₃ 112 by simp only [hdr, f.mem, v₄.mem], D₃]
     rw [hdr_keep (d := 108) O₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega),
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) (by omega_arith),
       hdr_keep (d := 108) O₁ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega)]
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]
   · exact ((R₁.trans R₂).trans (R₃.mono (by decide))).trans ((v₄.rest (by decide)).trans (f.rest _))
   · rw [f.mem, v₄.mem]
     refine ((Outs.within O₁ ?_).trans (Outs.within O₂ ?_)).trans
@@ -547,14 +547,14 @@ theorem check_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q : Nat} (hs 
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     · rcases hr with rfl | rfl | rfl
-      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
-      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
-      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
     · rcases hr with rfl | rfl | rfl
-      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
-      · exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
-      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
     · subst hr
-      exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+      exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
 
 end VG.Proof.Dsa.Arm

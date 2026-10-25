@@ -294,13 +294,13 @@ theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State
   obtain ⟨hq, hres⟩ := hq
   have hR₁ : rounds (σ₁.gpr .x1) := (openLay h₁).1.rounds
   have hR₂ : rounds (σ₂.gpr .x1) := (openLay h₂).1.rounds
-  obtain ⟨f₁, f₂⟩ := oneFacts (by omega : w < w + 1) (openCore h₁) (openCore h₂) hq
+  obtain ⟨f₁, f₂⟩ := oneFacts (by omega_arith : w < w + 1) (openCore h₁) (openCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qt : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by omega)
-  have qg : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega)
+  have qt : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by omega_arith)
+  have qg : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_arith)
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := rfl
   have hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := f₂.hW
-  have hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega
+  have hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega_arith
   have hT₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := rfl
   have hT₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := qt.symm
   have t₁ : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x12 0]) h).isSome = true := ⟨_, by taint_decide⟩
@@ -310,12 +310,12 @@ theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State
   have kc : (Code.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)) : Prog isa).noCalls =
       true := by
     rcases hw with rfl | rfl <;> decide
-  refine rel_seq (RelCT.block_split (rel_seq (entryStash_rel (k := 8 * w) (j := 8) (by omega) rfl (.inr rfl) f₁ f₂
-      (by omega) qsp (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
-      (entryStash_ok (V := stackArg σ₁ 1) hk (by decide) hW₁ (f₁.hsp w (by omega)) (f₁.hsp 1 (by omega))
-        hT₁ (f₁.argW (by omega)) rfl f₁.perm)
-      (entryStash_ok (V := stackArg σ₁ 1) hk (by decide) hW₂ (f₂.hsp w (by omega)) (f₂.hsp 1 (by omega))
-        hT₂ (f₂.argW (by omega)) q0.symm f₂.perm)
+  refine rel_seq (RelCT.block_split (rel_seq (entryStash_rel (k := 8 * w) (j := 8) (by omega_arith) rfl (.inr rfl) f₁ f₂
+      (by omega_arith) qsp (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
+      (entryStash_ok (V := stackArg σ₁ 1) hk (by decide) hW₁ (f₁.hsp w (by omega_arith)) (f₁.hsp 1 (by omega_arith))
+        hT₁ (f₁.argW (by omega_arith)) rfl f₁.perm)
+      (entryStash_ok (V := stackArg σ₁ 1) hk (by decide) hW₂ (f₂.hsp w (by omega_arith)) (f₂.hsp 1 (by omega_arith))
+        hT₂ (f₂.argW (by omega_arith)) q0.symm f₂.perm)
       fun τ₁ τ₂ a₁ a₂ => rel_taint [] (by rw [a₁.1.sp, a₂.1.sp, qsp]) (by agree_tac []) t₁))
     (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw h₁) ka kc)
     (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw h₂) ka kc)

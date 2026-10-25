@@ -29,9 +29,9 @@ theorem wordLoadArr_ok {s : State} {B : Addr} {Z k : Nat} {p : Addr} {bs : List 
       wv t.mem B (slot ((k + 7) / 8) j) ((k + 7) / 8) = Spec.Rsa.os2ip bs ∧
       Arrays B ((k + 7) / 8) [j] s.mem t.mem ∧ Keep [.rax, .rdx, .rbp, .r14] s t := by
   have := slot_le (w := (k + 7) / 8) hj
-  refine WP.mono (WordIO.load_ok hs hsi hcx hbx hk hk1 hk' rfl (by omega) hspan
-    (fun i hi => hsrc.val i (by omega)) (fun i hi => Or.inr (by have := hsrc.out i (by omega); omega)))
-    fun t ⟨h1, h2, h3⟩ => ⟨h1, Arrays.of_outside (List.mem_singleton_self j) h2 (Nat.le_refl _) (by omega), h3⟩
+  refine WP.mono (WordIO.load_ok hs hsi hcx hbx hk hk1 hk' rfl (by omega_arith) hspan
+    (fun i hi => hsrc.val i (by omega_arith)) (fun i hi => Or.inr (by have := hsrc.out i (by omega_arith); omega_arith)))
+    fun t ⟨h1, h2, h3⟩ => ⟨h1, Arrays.of_outside (List.mem_singleton_self j) h2 (Nat.le_refl _) (by omega_arith), h3⟩
 
 theorem wordIn_ok {s : State} {B : Addr} {Z k : Nat} {ip : Addr} {xb : List Byte} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 9 ≤ k) (hk : k < 2 ^ 31)
@@ -49,12 +49,12 @@ theorem wordIn_ok {s : State} {B : Addr} {Z k : Nat} {ip : Addr} {xb : List Byte
   unfold wordIn
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rbx] (Q := fun t => t.gpr .rsi = ip ∧
       t.gpr .rcx = BitVec.ofNat 64 k ∧ t.gpr .rbx = off B (slot ((k + 7) / 8) aX) ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * sIn) (by omega), hs.ld (d := 8 * sK) (by omega),
-      hs.ld (d := 8 * sArr aX) (by omega), hIn, hK, hb aX (by decide)]) rfl)
+    xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * sIn) (by omega_arith), hs.ld (d := 8 * sK) (by omega_arith),
+      hs.ld (d := 8 * sArr aX) (by omega_arith), hIn, hK, hb aX (by decide)]) rfl)
     fun t₁ ⟨⟨hsi, hcx, hbx, hm₁⟩, k₁⟩ => ?_)
   rw [seqs_one]
   refine WP.mono (wordLoadArr_ok (hs.congr k₁.2.2) (by rw [k₁.2.1, k₁.2.2]; exact hspan) (by decide) hZ
-    (hx.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hxl (by omega) hk hsi hcx hbx)
+    (hx.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hxl (by omega_arith) hk hsi hcx hbx)
     fun t ⟨hv, ha, k₂⟩ => ⟨hv, by rw [hm₁] at ha; exact ha, (k₁.trans k₂).mono (by decide)⟩
 
 theorem wordSetup_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat} {eb xb : List Byte} {N R : Nat}
@@ -67,22 +67,22 @@ theorem wordSetup_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : N
   have hZ := h.z
   have hs := h.scr
   have hn := hs.nowrap
-  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
+  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
   -- The input.
   refine wp_seqs_append (by simp [wordIn]) (by simp [restStepsWith])
-    (WP.mono (wordIn_ok hs h.rdi hZ (by omega) (by omega) h.hK h.hIn h.hb h.x h.xl h.inSpan) fun t₁ ⟨hX₁, ha₁, k₁⟩ => ?_)
+    (WP.mono (wordIn_ok hs h.rdi hZ (by omega_arith) (by omega_arith) h.hK h.hIn h.hb h.x h.xl h.inSpan) fun t₁ ⟨hX₁, ha₁, k₁⟩ => ?_)
   have f₁ : Frm B (pdAll ((k + 7) / 8)) s.mem t₁.mem := Frm.of_arrays ha₁ (by simp [pdAll])
   -- The mask, `-m⁻¹` and 1.
-  refine WP.mono (setupRestWith_ok VG.Impl.Rsa.X86_64.Compare8.code @Compare8.code_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h.rdi) hZ (by omega) (by omega)
-      (by rw [ha₁.hslot (by decide)]; exact h.hW) (fun j hj => by rw [ha₁.hslot (by unfold sArr; omega)]; exact h.hb j hj)
+  refine WP.mono (setupRestWith_ok VG.Impl.Rsa.X86_64.Compare8.code @Compare8.code_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h.rdi) hZ (by omega_arith) (by omega_arith)
+      (by rw [ha₁.hslot (by decide)]; exact h.hW) (fun j hj => by rw [ha₁.hslot (by unfold sArr; omega_arith)]; exact h.hb j hj)
       (by rw [ha₁.wv_of_not_mem (by decide) (by decide) hn']; exact h.n) hX₁ h.odd)
       fun t₂ ⟨minv, so, f₂', k₂⟩ => ⟨minv, so, f₁.trans (f₂'.mono (by simp [pdAll])), (k₁.trans k₂).mono (by decide), ?_⟩
   rw [f₂'.wv_eq (fun r hr => by
       have := hdr_lt_slot ((k + 7) / 8) aR2 (show 31 < 32 by decide)
       have := slot_sep (w := (k + 7) / 8) (show aR2 ≠ aOne by decide)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only [sMinv, sMask, sFn] at * <;> omega)
-      (by have := slot_le (w := (k + 7) / 8) (show aR2 < 8 by decide); omega),
+      rcases hr with rfl | rfl | rfl <;> simp only [sMinv, sMask, sFn] at * <;> omega_arith)
+      (by have := slot_le (w := (k + 7) / 8) (show aR2 < 8 by decide); omega_arith),
     ha₁.wv_of_not_mem (by decide) (by decide) hn']
   exact h.r
 
@@ -110,23 +110,23 @@ theorem wordOutPhaseArr_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have h0 := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
   have h0' := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   unfold wordOutStepsArr
   refine WP.seq (WP.mono (WP.keep [.rbx, .rsi, .rcx, .r15] (Q := fun t =>
       t.gpr .rbx = off B (slot ((k + 7) / 8) j) ∧ t.gpr .rsi = out ∧ t.gpr .rcx = BitVec.ofNat 64 k ∧
       t.gpr .r15 = mask c ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sOut (by decide), hl sK (by decide),
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega_arith), hl sOut (by decide), hl sK (by decide),
       hl sMask (by decide), hg.hdr.harr j hj, hO, hK, hM]) rfl)
     fun t₁ ⟨⟨hbx, hsi, hcx, h15, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   refine WP.seq (WP.mono (WordIO.store_ok hs₁ hbx hsi hcx h15 hk1 hk' rfl
-    (by have := slot_le (w := (k + 7) / 8) hj; omega)
+    (by have := slot_le (w := (k + 7) / 8) hj; omega_arith)
     (by rw [k₁.2.2]; exact hout) hsep) fun t₂ ⟨hb₂, hf₂, hwr₂, hrd₂, k₂⟩ => ?_)
   rw [hm₁, hY] at hb₂
   have hw₂ : ∀ i < 32, word t₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     apply Mem.readW_congr
     intro b hb
-    rw [hf₂ _ (scr_ne_out hsep (d := 8 * i) (i := b) (by omega) (by omega)), hm₁]
+    rw [hf₂ _ (scr_ne_out hsep (d := 8 * i) (i := b) (by omega_arith) (by omega_arith)), hm₁]
   have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi => by
     rw [hrd₂, hwr₂, k₁.2.1, k₁.2.2]; exact hl i hi
   have hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)
@@ -144,7 +144,7 @@ theorem wordOutPhaseArr_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     fun t ⟨⟨hax, h0, h1, h2, h3, h4, h5, hm⟩, k₃⟩ => ⟨by rw [hm]; exact hb₂, hax, ?_,
       fun x hx => by rw [hm, hf₂ x hx, hm₁], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   intro i hi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2

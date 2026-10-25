@@ -44,7 +44,7 @@ theorem MulKeep.of_digit {x : BitVec 32} {s t : State} (hc : Ctx x s) (h : Digit
     MulKeep x s t := by
   refine ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame.sub fun r hr => ?_⟩
   rw [List.mem_singleton.mp hr]
-  exact ⟨sub x 24 7144, List.mem_cons_self .., sub_sub hc.fit (by omega) (by omega) (by omega)⟩
+  exact ⟨sub x 24 7144, List.mem_cons_self .., sub_sub hc.fit (by omega_arith) (by omega_arith) (by omega_arith)⟩
 
 theorem MulKeep.of_sel {x : BitVec 32} {s t : State} (hc : Ctx x s) (k : Keep s t)
     (h : SelFrame x s.mem t.mem) : MulKeep x s t :=
@@ -64,7 +64,7 @@ theorem TblAt.mulkeep {x P : BitVec 32} {s t : State} (h : TblAt x P s) (hc : Ct
   have hl := combWords_length
   refine ⟨h.fit, k.rd ▸ h.rd, fun i hi => ?_, h.far⟩
   rw [← h.words i hi]
-  refine k.frame.readW (r := TBL (P.setWidth 64)) (Offset.contains_base _ (by omega) (by omega))
+  refine k.frame.readW (r := TBL (P.setWidth 64)) (Offset.contains_base _ (by omega_arith) (by omega_arith))
     (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -102,7 +102,7 @@ theorem addEven_ok {s : State} {x : BitVec 32} (hc : Ctx x s)
       (17 ≤ (fieldDest op).val ∧ (fieldDest op).val < 21) := by decide
   have := this op hop
   rw [← h] at this
-  omega
+  omega_arith
 
 /-! ## The negations -/
 
@@ -133,7 +133,7 @@ theorem combNeg_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (a b c : Slot) {si
   have hmv : v.gpr .ecx = mask sw.toNat := by
     rw [hv.gpr]
     change wd u.mem x sign = _
-    rw [wd_frame1 ku.frame hc.fit (by decide) hs2 (Or.inr (by omega))]
+    rw [wd_frame1 ku.frame hc.fit (by decide) hs2 (Or.inr (by omega_arith))]
     exact hm
   refine WP.mono (swapFields_ok (kv.ctx cu) _ hdis sw hmv) fun t ⟨kt, _, vt⟩ =>
     ⟨(ku.trans kv).trans kt, ?_⟩
@@ -181,7 +181,7 @@ theorem double4_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {a : EPoint dZ}
     have kk := h.keep.trans kv
     have pp : Rep (point (env v.mem x) 0 1 2 3) ((2 ^ (4 - (n - 1)) : Nat) • a) := by
       rw [pv, show 4 - (n - 1) = (4 - n) + 1 by omega_using [h.lo, h.hi],
-        show (2 ^ ((4 - n) + 1) : Nat) = 2 ^ (4 - n) + 2 ^ (4 - n) by rw [pow_succ]; omega, add_nsmul]
+        show (2 ^ ((4 - n) + 1) : Nat) = 2 ^ (4 - n) + 2 ^ (4 - n) by rw [pow_succ]; omega_arith, add_nsmul]
       exact pointDouble_rep h.value.proj
     have hh : ∀ i : Slot, 16 ≤ i.val → env v.mem x i = env s.mem x i :=
       fun i hi => (high i hi).trans (h.high i hi)
@@ -200,7 +200,7 @@ theorem digit_env {x : BitVec 32} {m m' : Mem} (hf : Frame [sub x 1024 136] m m'
   funext i
   have hi := i.isLt
   exact congrArg VG.Proof.X25519.toFe (fe_frame fun k hk =>
-    wd_frame1 hf hx (by decide) (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega)))
+    wd_frame1 hf hx (by decide) (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith)))
 
 theorem sel_env {x : BitVec 32} {m m' : Mem} (hf : SelFrame x m m') (hx : x.toNat + 8192 ≤ 2 ^ 32)
     (i : Slot) (hi : i.val < 4 ∨ (7 ≤ i.val ∧ i.val < 13) ∨ 16 ≤ i.val) : env m' x i = env m x i := by
@@ -208,10 +208,10 @@ theorem sel_env {x : BitVec 32} {m m' : Mem} (hf : SelFrame x m m') (hx : x.toNa
   exact congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame hf fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact sub_disj (by simp only [offset]; omega) (by simp only [offset]; omega)
-        (by simp only [offset]; omega)
-    · exact sub_disj (by simp only [offset]; omega) (by simp only [offset]; omega)
-        (by simp only [offset]; omega))
+    · exact sub_disj (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)
+        (by simp only [offset]; omega_arith)
+    · exact sub_disj (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)
+        (by simp only [offset]; omega_arith))
 
 theorem combNext_ok {s : State} {j : Nat} (hj : j < 32) (h : s.gpr .esi = BitVec.ofNat 32 j) :
     WP isa (.block [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 32)]) s fun t =>
@@ -223,7 +223,7 @@ theorem combNext_ok {s : State} {j : Nat} (hj : j < 32) (h : s.gpr .esi = BitVec
     by rw [ht.gpr, hu.other .esp (by decide)], by rw [ht.rd, hu.rd], by rw [ht.wr, hu.wr],
     by rw [ht.mem, hu.mem]⟩
   show t.zf.map (!·) = _
-  rw [zt, e, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl, Wp.sub_beq (by omega) (by omega)]
+  rw [zt, e, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl, Wp.sub_beq (by omega_arith) (by omega_arith)]
   rfl
 
 /-- The loop's invariant, after `j` steps, with the tables' address `P`. -/
@@ -255,7 +255,7 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
   have hc := h.keep.ctx hc₀
   have hfit := hc.fit
   have bits : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) :=
-    fun q hq => (h.keep.bit hc₀ q (by omega)).trans (hb q hq)
+    fun q hq => (h.keep.bit hc₀ q (by omega_arith)).trans (hb q hq)
   rw [combStep]
   have no := nib_lt S (2 * j + 1)
   have ne := nib_lt S (2 * j)
@@ -276,8 +276,8 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
     wd_frame fb fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact sub_disj (by omega) (by simp only [offset]; omega) (Or.inr (by simp only [offset]; omega))
-      · exact sub_disj (by omega) (by simp only [offset]; omega) (Or.inr (by simp only [offset]; omega))
+      · exact sub_disj (by omega_arith) (by simp only [offset]; omega_arith) (Or.inr (by simp only [offset]; omega_arith))
+      · exact sub_disj (by omega_arith) (by simp only [offset]; omega_arith) (Or.inr (by simp only [offset]; omega_arith))
   -- The even entry, negated for a negative digit, and added inline.
   refine WP.seq ?_
   simp only [List.append_assoc]
@@ -301,7 +301,7 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
   have cg := kg.ctx cf
   -- The odd entry, negated for a negative digit.
   have eg : ∀ i : Slot, (i.val < 8 ∨ i.val = 16 ∨ 21 ≤ i.val) → env g.mem x i = env b.mem x i :=
-    fun i hi => by rw [gh i (by omega), ef i (by omega)]
+    fun i hi => by rw [gh i (by omega_arith), ef i (by omega_arith)]
   have sg : wd g.mem x combOddSign = wd b.mem x combOddSign := by
     rw [wd_frame1 kg.frame hfit (by decide) (by decide) (Or.inr (by decide)),
       wd_frame1 kf.frame hfit (by decide) (by decide) (Or.inr (by decide))]
@@ -350,7 +350,7 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
       wd_frame1 kf.frame hfit (by decide) (by decide) (Or.inr (by decide)),
       sb _ (by decide) (by decide)]
     exact pa
-  refine ⟨by omega, h.keep.trans kst, t19, pt, ?_, ?_, ?_, ?_⟩
+  refine ⟨by omega_arith, h.keep.trans kst, t19, pt, ?_, ?_, ?_, ?_⟩
   · rw [tmem, dh 21 (by decide), ec 21 (by decide), eg 21 (by decide)]
     exact b21
   · rw [tmem, dh 16 (by decide), ec 16 (by decide), eg 16 (by decide), eb 16 (by decide)]
@@ -416,14 +416,14 @@ theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (
   have hl : WP isa (.loop combStep .ne) b fun t => CombInv x s S P 32 t := by
     apply WP.loop (fun n t => CombInv x s S P (32 - n) t ∧ 0 < n ∧ n ≤ 32) (n := 32)
     · intro n t ⟨hi, hn0, hn⟩
-      obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-      refine WP.mono (combStep_ok hc hb ht hts hi (by omega)) fun u ⟨u8, hu⟩ => ?_
+      obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
+      refine WP.mono (combStep_ok hc hb ht hts hi (by omega_arith)) fun u ⟨u8, hu⟩ => ?_
       by_cases hk : k = 0
       · subst hk
         exact Or.inl ⟨by rw [u8]; rfl, hu⟩
-      · refine Or.inr ⟨by rw [u8, show 32 - (k + 1) + 1 = 32 - k by omega,
-          decide_eq_false (show 32 - k ≠ 32 by omega)]; rfl, k, by omega, ?_, by omega, by omega⟩
-        rw [show 32 - k = 32 - (k + 1) + 1 by omega]; exact hu
+      · refine Or.inr ⟨by rw [u8, show 32 - (k + 1) + 1 = 32 - k by omega_arith,
+          decide_eq_false (show 32 - k ≠ 32 by omega_arith)]; rfl, k, by omega_arith, ?_, by omega_arith, by omega_arith⟩
+        rw [show 32 - k = 32 - (k + 1) + 1 by omega_arith]; exact hu
     · exact ⟨init, by decide, by decide⟩
   refine WP.seq (WP.mono hl fun t hi => ?_)
   refine WP.mono (combFinish_ok (hi.keep.ctx hc) hi.d hi.odd hi.even) fun u ⟨hu, ku⟩ =>

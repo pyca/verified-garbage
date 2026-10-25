@@ -19,14 +19,7 @@ theorem statusGuard_ok (s : State) {base : BitVec 32} {status : Nat}
     (value : lowWord s.mem base 13 = BitVec.ofNat 32 status) :
     WP isa (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 13, .cmp .r9 (.imm 4)]) s fun t =>
       (t.z = decide (status = 4) ∧ t.mem = s.mem) ∧ Rest [.r9] s t := by
-  refine withRest [.r9] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 13, .cmp .r9 (.imm 4)] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r9] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord at *
   ffrun [h.addr (by decide : 13 < 16), h.read (by decide : 13 < 16), value]
   have casesStatus : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 ∨ status = 4 := by omega

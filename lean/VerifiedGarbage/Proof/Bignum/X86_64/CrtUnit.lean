@@ -41,9 +41,9 @@ theorem XVals.of_below {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X
     (ho : o + slot wx 8 ≤ 2 ^ 64) : XVals t B o wx mx X := by
   have hN := slot_le (w := wx) (show Public.aN < 8 by decide)
   have hO := slot_le (w := wx) (show Public.aOne < 8 by decide)
-  exact ⟨by rw [wv_off, hf.wv_eq (fun r h' => Or.inr (by have := hr r h'; omega)) (by omega), ← wv_off]; exact h.n,
-    by rw [word_off, hf.word_eq (fun r h' => Or.inr (by have := hr r h'; omega)) (by omega), ← word_off]; exact h.inv,
-    by rw [wv_off, hf.wv_eq (fun r h' => Or.inr (by have := hr r h'; omega)) (by omega), ← wv_off]; exact h.one⟩
+  exact ⟨by rw [wv_off, hf.wv_eq (fun r h' => Or.inr (by have := hr r h'; omega_arith)) (by omega_arith), ← wv_off]; exact h.n,
+    by rw [word_off, hf.word_eq (fun r h' => Or.inr (by have := hr r h'; omega_arith)) (by omega_arith), ← word_off]; exact h.inv,
+    by rw [wv_off, hf.wv_eq (fun r h' => Or.inr (by have := hr r h'; omega_arith)) (by omega_arith), ← wv_off]; exact h.one⟩
 
 theorem XVals.of_outside {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X j n : Nat}
     (h : XVals s B o wx mx X) (ho : Outside (off B o) (slot wx j) n s.mem t.mem) (hj : j < 8)
@@ -54,8 +54,8 @@ theorem XVals.of_outside {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} 
   have := slot_le (w := wx) (show Public.aN < 8 by decide)
   have := slot_le (w := wx) (show Public.aOne < 8 by decide)
   have := slot_le (w := wx) hj
-  exact ⟨by rw [ho.wv (by omega) (by omega)]; exact h.n, by rw [ho.word (by omega) (by omega)]; exact h.inv,
-    by rw [ho.wv (by omega) (by omega)]; exact h.one⟩
+  exact ⟨by rw [ho.wv (by omega_arith) (by omega_arith)]; exact h.n, by rw [ho.word (by omega_arith) (by omega_arith)]; exact h.inv,
+    by rw [ho.wv (by omega_arith) (by omega_arith)]; exact h.one⟩
 
 /-- The start of a prime's phase: `G = 2^(64 w_X (K + 1)) mod N` into the
 modulus' `Y`, reduced into the prime's `Y`: `R_X mod X` if `X` divides `N`. -/

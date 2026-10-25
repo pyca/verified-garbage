@@ -54,7 +54,7 @@ theorem wp_stdd {s : State} {is : List Instr} {Q : State → Prop} {t n : Reg} {
   rw [exec_store_d hn ho (by rw [ha]; exact hout), ha]
 
 theorem toNat_beq_one {x : Nat} (h : x < 2) : (x == 1).toNat = x := by
-  rcases (by omega : x = 0 ∨ x = 1) with rfl | rfl <;> rfl
+  rcases (by omega_arith : x = 0 ∨ x = 1) with rfl | rfl <;> rfl
 
 section
 variable {b : Addr}
@@ -85,12 +85,12 @@ theorem split_ok {s : State} (hc : Ctx b s) :
     refine Frame.writeW (Frame.writeW (Frame.refl _ _) List.mem_cons_self _ ?_)
       (List.mem_cons_of_mem _ List.mem_cons_self) _ ?_ <;> exact Region.contains_self _ _
   · have hw : (s2.gpr .r7).toNat = limb s.mem b (offset 1) 7 := by rw [u2.gpr, toNat_ext32]; rfl
-    have hx : limb s.mem b (offset 1) 7 / 2 ^ 31 < 2 := by have := limb_lt s.mem b (offset 1) 7; omega
+    have hx : limb s.mem b (offset 1) 7 / 2 ^ 31 < 2 := by have := limb_lt s.mem b (offset 1) 7; omega_arith
     unfold SignAt
-    rw [u7.mem, Mem.readW_writeW_sep (Offset.sep b (.inl (by omega)) (by omega) (by omega)) (by decide), u6.mem,
+    rw [u7.mem, Mem.readW_writeW_sep (Offset.sep b (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide), u6.mem,
       u5.mem, u4.mem, Mem.readW_writeW_self64, u3.gpr]
     apply BitVec.eq_of_toNat_eq
-    rw [toNat_shr, hw, BitVec.toNat_ofNat, toNat_beq_one hx, Nat.mod_eq_of_lt (by omega)]
+    rw [toNat_shr, hw, BitVec.toNat_ofNat, toNat_beq_one hx, Nat.mod_eq_of_lt (by omega_arith)]
   · show wd s7.mem b (offset 1 + 28) = _
     rw [u7.mem, wd_write_self, toNat_lo32, u6.gpr, u5.gpr, low31_val, u4.gpr, u3.other _ (by decide), u2.gpr,
       toNat_ext32]
@@ -99,8 +99,8 @@ theorem split_ok {s : State} (hc : Ctx b s) :
     rfl
   · intro j hj
     show wd s7.mem b (offset 1 + 4 * j) = wd s.mem b (offset 1 + 4 * j)
-    rw [u7.mem, wd_write_other _ _ _ (by omega) (by omega) (by omega), u6.mem, u5.mem, u4.mem, wd,
-      Mem.readW_writeW_sep (Offset.sep b (.inr (by omega)) (by omega) (by omega)) (by decide), u3.mem, u2.mem]
+    rw [u7.mem, wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), u6.mem, u5.mem, u4.mem, wd,
+      Mem.readW_writeW_sep (Offset.sep b (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide), u3.mem, u2.mem]
     rfl
 
 /-- **The encoding loaded**: `y` (bit 255 cleared) in slot 1, the sign at `SIGN`, and `r5` zero exactly
@@ -129,19 +129,19 @@ theorem pointDecodeLoad_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h14 : s.gpr .
   rw [val32_congr lj, l7] at hv2
   rw [show (2 : Nat) ^ (32 * 7) = 2 ^ 224 from rfl] at hv1 hv2 hA
   have hy : V s2.mem b (offset 1) = decodeLE (bytesAt s.mem q 32) % 2 ^ 255 := by
-    rw [hn, V, V, hv1, hv2]; omega
+    rw [hn, V, V, hv1, hv2]; omega_arith
   have hsg : decodeLE (bytesAt s.mem q 32) / 2 ^ 255 = limb s1.mem b (offset 1) 7 / 2 ^ 31 := by
-    rw [hn, V, hv1]; omega
+    rw [hn, V, hv1]; omega_arith
   rw [← hsg] at sg2
   have r12 : Rest [.r7, .r8] s s2 := (r1.mono (by decide)).trans r2
   have hc2 : Ctx8 b s2 := hc.of_rest r12 (by decide)
   have hF2 : Frame [⟨b + BitVec.ofNat 64 SIGN, 8⟩, FA b] s.mem s2.mem := by
     refine (f1.sub fun r hr => ⟨FA b, by simp, ?_⟩).trans (f2.sub fun r hr => ?_)
-    · rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega) (by omega)
+    · rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega_arith) (by omega_arith)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-      · exact ⟨FA b, by simp, Offset.sub b (by omega) (by omega)⟩
+      · exact ⟨FA b, by simp, Offset.sub b (by omega_arith) (by omega_arith)⟩
   -- `y` canonical.
   refine WP.seq (WP.mono (freeze_ok hc2.ctx 1) fun s3 ⟨r3, f3, _, v3⟩ => ?_)
   have hc3 : Ctx b s3 := hc2.ctx.of_rest r3 (by decide)
@@ -149,7 +149,7 @@ theorem pointDecodeLoad_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h14 : s.gpr .
   have hs3 : V s3.mem b (offset 1) = V s2.mem b (offset 1) := by
     unfold V
     exact val32_congr (limb_frame f3 fun r hr k hk => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
   refine ⟨⟨(r12.mono (by decide)).trans ((r3.mono (by decide)).trans (r4.mono (by decide))),
     hF2.trans (by rw [m4]; exact (frame_FR f3).mono (by simp))⟩, ?_, ?_, ?_⟩
   · rw [m4]; exact sg2.frame (frame_FR f3)

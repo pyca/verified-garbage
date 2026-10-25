@@ -62,7 +62,7 @@ theorem loc_store {s t : State} {d : Nat} (hd : d + 4 ≤ 144) {v : BitVec 32}
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) v (Region.contains_self _ _)
   refine ⟨fun e he hde => ?_, ?_, fun k hk => ?_⟩
   · show t.mem.readW _ 32 = _
-    rw [hm, lw_store hp (by omega) he hde.symm]
+    rw [hm, lw_store hp (by omega_arith) he hde.symm]
   · rw [scr_blk hp t.mem (by decide), scr_blk hp s.mem (by decide)]
     refine blockAt_keep f fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
@@ -168,7 +168,7 @@ theorem segStartBlk_ok {s : State} {pass slice lane : Nat} {st : FillState} (h :
   refine ⟨⟨f₄, by rw [lw_mem m₄, L₂ _ (by simp)]; exact h.pass, by rw [lw_mem m₄, L₂ _ (by simp)]; exact h.slice,
     by rw [lw_mem m₄, L₂ _ (by simp)]; exact h.lane⟩, by rw [lw_mem m₄, v₂, u₁.gpr], ?_⟩
   rw [z₄, u₃.gpr, show s₃.mem.readW (addr (E s₀) sliceOff) 32 = lw s₀ s₃ sliceOff from rfl, lw_mem u₃.mem,
-    L₂ _ (by simp), L₂ _ (by simp), h.pass, h.slice, or_zero hpass (by omega)]
+    L₂ _ (by simp), L₂ _ (by simp), h.pass, h.slice, or_zero hpass (by omega_arith)]
 
 /-- `segmentStart`: the counter cleared, and the segment's first index. -/
 theorem segmentStart_ok {s : State} {pass slice lane : Nat} {st : FillState} (h : LS s₀ st pass slice lane s)
@@ -217,7 +217,7 @@ theorem segCmp_ok {s : State} {pass slice lane S ctr : Nat} {st : FillState}
   refine wp_cmpm h₂.inv.ebp (loc_in' hp h₂.inv (d := segLenOff) (by decide)) fun t₃ f₃ c₃ _ => WP.block_nil ?_
   refine ⟨h₂.of_keep (Divide.Keep.of_fupd f₃), ?_⟩
   rw [c₃, u₂.gpr, show t₂.mem.readW (addr (E s₀) segLenOff) 32 = lw s₀ t₂ segLenOff from rfl, h₂.pr.segLen,
-    h.pos.index, Wp.toNat_ofNat_lt (by omega), Wp.toNat_ofNat_lt (by omega)]
+    h.pos.index, Wp.toNat_ofNat_lt (by omega_arith), Wp.toNat_ofNat_lt (by omega_arith)]
 
 /-- One block of a segment, and the index advanced. -/
 theorem segStep_ok {t : State} {pass slice lane i c : Nat} {X : FillState}
@@ -230,8 +230,8 @@ theorem segStep_ok {t : State} {pass slice lane i c : Nat} {X : FillState}
         v.cf = some (decide (i + 1 < (prm s₀).segmentLen)) := by
   have sl := segLen_lt hp
   refine WP.seq ((fillBlock_ok hp ht hpass hl hs hi active).mono fun u hu => ?_)
-  refine (advance_ok hp hu.inv (d := indexOff) (n := i) (by decide) hu.pos.index (by omega)
-    (B := (prm s₀).segmentLen) (by omega) fun v iv mv => ?_).mono fun v ⟨iv, mv, cv, _⟩ => ⟨hu.next hp iv mv, cv⟩
+  refine (advance_ok hp hu.inv (d := indexOff) (n := i) (by decide) hu.pos.index (by omega_arith)
+    (B := (prm s₀).segmentLen) (by omega_arith) fun v iv mv => ?_).mono fun v ⟨iv, mv, cv, _⟩ => ⟨hu.next hp iv mv, cv⟩
   rw [show Impl.Argon2.X86.Derive.fr segLenOff = .mem ⟨.ebp, segLenOff⟩ from rfl,
     Wp.readSrc_mem iv.ebp (loc_in' hp iv (d := segLenOff) (by decide))]
   show some (lw s₀ v segLenOff) = _
@@ -244,7 +244,7 @@ theorem segment_ok {s : State} {pass slice lane : Nat} {st : FillState} (h : LS 
       (LS s₀ (Proof.Argon2.segment (prm s₀) pass lane slice 0 (prm s₀).segmentLen st) pass slice lane) := by
   have s2 := hp.segLen_two
   have sl := segLen_lt hp
-  have hS : Proof.Argon2.segmentStart pass slice ≤ 2 := by unfold Proof.Argon2.segmentStart; split <;> omega
+  have hS : Proof.Argon2.segmentStart pass slice ≤ 2 := by unfold Proof.Argon2.segmentStart; split <;> omega_arith
   have hS2 : pass = 0 → slice = 0 → Proof.Argon2.segmentStart pass slice = 2 := fun a b => by
     unfold Proof.Argon2.segmentStart; rw [ite_eq_left ⟨a, b⟩]
   generalize hSd : Proof.Argon2.segmentStart pass slice = S at hS hS2
@@ -262,21 +262,21 @@ theorem segment_ok {s : State} {pass slice lane : Nat} {st : FillState} (h : LS 
     refine (segStep_ok hp ht hpass hl hs hi (by
         by_cases a : pass = 0
         · by_cases b : slice = 0
-          · have := hS2 a b; omega
+          · have := hS2 a b; omega_arith
           · exact .inr (.inl b)
         · exact .inl a)).mono fun v ⟨hv, cv⟩ => ?_
     have eq : Proof.Argon2.segment (prm s₀) pass lane slice S (i + 1 - S) st =
         Spec.Argon2.fillBlock (prm s₀) pass slice lane i (Proof.Argon2.segment (prm s₀) pass lane slice S (i - S) st) := by
-      rw [show i + 1 - S = (i - S) + 1 by omega, segment_snoc, show S + (i - S) = i by omega]
+      rw [show i + 1 - S = (i - S) + 1 by omega_arith, segment_snoc, show S + (i - S) = i by omega_arith]
     rw [← eq] at hv
     by_cases e : i + 1 < (prm s₀).segmentLen
-    · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega, i + 1, rfl, by omega, e, _, hv⟩
+    · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega_arith, i + 1, rfl, by omega_arith, e, _, hv⟩
     · refine .inl ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], ?_⟩
-      rw [show (prm s₀).segmentLen - S = i + 1 - S by omega]
+      rw [show (prm s₀).segmentLen - S = i + 1 - S by omega_arith]
       exact hv.ls
   · have hb' : ¬S < (prm s₀).segmentLen := of_decide_eq_false hb
     refine WP.block_nil ?_
-    rw [show (prm s₀).segmentLen - S = 0 by omega, Proof.Argon2.segment_zero]
+    rw [show (prm s₀).segmentLen - S = 0 by omega_arith, Proof.Argon2.segment_zero]
     exact h₃.ls
 
 end
@@ -321,8 +321,8 @@ theorem laneStep_ok {t : State} {pass slice l : Nat} {X : FillState} (ht : LS s�
       v.cf = some (decide (l + 1 < lanesN s₀)) := by
   have hlt := hp.lanes_lt
   refine WP.seq ((segment_ok hp ht hpass hs hl).mono fun u hu => ?_)
-  refine (advance_ok hp hu.fb.inv (d := laneOff) (n := l) (by decide) hu.lane (by omega) (B := lanesN s₀)
-    (by omega) fun v iv _ => ?_).mono fun v ⟨iv, mv, cv, _⟩ => ⟨?_, cv⟩
+  refine (advance_ok hp hu.fb.inv (d := laneOff) (n := l) (by decide) hu.lane (by omega_arith) (B := lanesN s₀)
+    (by omega_arith) fun v iv _ => ?_).mono fun v ⟨iv, mv, cv, _⟩ => ⟨?_, cv⟩
   · rw [show Impl.Argon2.X86.Derive.fr (argOff 7) = .mem ⟨.ebp, argOff 7⟩ from rfl,
       Wp.readSrc_mem iv.ebp (iv.arg_in hp (by decide)), iv.arg hp (by decide)]
     simp
@@ -343,7 +343,7 @@ theorem lanes_ok {s : State} {pass slice : Nat} {st : FillState} (h : SS s₀ st
   refine WP.seq ((setLocal_ok hp h.fb (d := laneOff) (by decide) (by decide) 0).mono fun t₁ ⟨f₁, v₁, o₁⟩ => ?_)
   refine WP.loop (M := isa) (fun n t => ∃ l, n = lanesN s₀ - l ∧ l < lanesN s₀ ∧
     LS s₀ (Proof.Argon2.lanes (prm s₀) pass slice 0 l st) pass slice l t) ?_ (lanesN s₀) t₁
-    ⟨0, by omega, hl1, f₁, by rw [o₁ _ (by decide) (by decide)]; exact h.pass,
+    ⟨0, by omega_arith, hl1, f₁, by rw [o₁ _ (by decide) (by decide)]; exact h.pass,
       by rw [o₁ _ (by decide) (by decide)]; exact h.slice, v₁⟩
   rintro n t ⟨l, rfl, hl, ht⟩
   refine (laneStep_ok hp ht hpass hs hl).mono fun v ⟨hv, cv⟩ => ?_
@@ -351,9 +351,9 @@ theorem lanes_ok {s : State} {pass slice : Nat} {st : FillState} (h : SS s₀ st
       (Proof.Argon2.lanes (prm s₀) pass slice 0 l st) = Proof.Argon2.lanes (prm s₀) pass slice 0 (l + 1) st from by
     unfold Proof.Argon2.lanes; rw [foldl_range'_snoc, Nat.zero_add]] at hv
   by_cases e : l + 1 < lanesN s₀
-  · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega, l + 1, rfl, e, hv⟩
+  · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega_arith, l + 1, rfl, e, hv⟩
   · refine .inl ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], ?_⟩
-    rw [show lanesN s₀ = l + 1 by omega]
+    rw [show lanesN s₀ = l + 1 by omega_arith]
     exact ⟨hv.fb, hv.pass, hv.slice⟩
 
 /-- A slice of a pass, and the slice advanced. -/
@@ -364,7 +364,7 @@ theorem sliceStep_ok {t : State} {pass j : Nat} {X : FillState} (ht : SS s₀ X 
       SS s₀ (Proof.Argon2.lanes (prm s₀) pass j 0 (lanesN s₀) X) pass (j + 1) v ∧
       v.cf = some (decide (j + 1 < 4)) := by
   refine WP.seq ((lanes_ok hp ht hpass hj).mono fun u hu => ?_)
-  refine (advance_ok hp hu.fb.inv (d := sliceOff) (n := j) (by decide) hu.slice (by omega) (B := 4)
+  refine (advance_ok hp hu.fb.inv (d := sliceOff) (n := j) (by decide) hu.slice (by omega_arith) (B := 4)
     (by decide) fun v iv _ => rfl).mono fun v ⟨iv, mv, cv, _⟩ => ⟨?_, cv⟩
   obtain ⟨lv, _, _⟩ := loc_store hp (d := sliceOff) (by decide) mv
   refine ⟨hu.fb.store hp iv (d := sliceOff) (by decide) (by decide) mv, ?_, ?_⟩
@@ -393,9 +393,9 @@ theorem slices_ok {s : State} {pass : Nat} {st : FillState} (h : PS s₀ st pass
       Proof.Argon2.slices (prm s₀) pass 0 (j + 1) st from by
     unfold Proof.Argon2.slices; rw [foldl_range'_snoc, Nat.zero_add]; rfl] at hv
   by_cases e : j + 1 < 4
-  · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega, j + 1, rfl, e, hv⟩
+  · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega_arith, j + 1, rfl, e, hv⟩
   · refine .inl ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], ?_⟩
-    rw [show (4 : Nat) = j + 1 by omega]
+    rw [show (4 : Nat) = j + 1 by omega_arith]
     exact ⟨hv.fb, hv.pass⟩
 
 /-- A pass, and the pass advanced. -/
@@ -404,8 +404,8 @@ theorem passStep_ok {t : State} {k : Nat} {X : FillState} (ht : PS s₀ X k t) (
       (.block (Impl.Argon2.X86.Derive.advance passOff (Impl.Argon2.X86.Derive.fr (argOff 5))))) t fun v =>
       PS s₀ (Spec.Argon2.fillPass (prm s₀) X k) (k + 1) v ∧ v.cf = some (decide (k + 1 < itersN s₀)) := by
   have hpl : itersN s₀ < 2 ^ 32 := (arg s₀ 5).isLt
-  refine WP.seq ((slices_ok hp ht (by omega)).mono fun u hu => ?_)
-  refine (advance_ok hp hu.fb.inv (d := passOff) (n := k) (by decide) hu.pass (by omega) (B := itersN s₀)
+  refine WP.seq ((slices_ok hp ht (by omega_arith)).mono fun u hu => ?_)
+  refine (advance_ok hp hu.fb.inv (d := passOff) (n := k) (by decide) hu.pass (by omega_arith) (B := itersN s₀)
     hpl fun v iv _ => ?_).mono fun v ⟨iv, mv, cv, _⟩ => ⟨?_, cv⟩
   · rw [show Impl.Argon2.X86.Derive.fr (argOff 5) = .mem ⟨.ebp, argOff 5⟩ from rfl,
       Wp.readSrc_mem iv.ebp (iv.arg_in hp (by decide)), iv.arg hp (by decide)]
@@ -421,16 +421,16 @@ theorem passes_ok {s : State} {st : FillState} (h : FB s₀ st s) :
   unfold Impl.Argon2.X86.Derive.passesLoop
   refine WP.seq ((setLocal_ok hp h (d := passOff) (by decide) (by decide) 0).mono fun t₁ ⟨f₁, v₁, _⟩ => ?_)
   refine WP.loop (M := isa) (fun n t => ∃ k, n = itersN s₀ - k ∧ k < itersN s₀ ∧
-    PS s₀ (Proof.Argon2.iterations (prm s₀) 0 k st) k t) ?_ (itersN s₀) t₁ ⟨0, by omega, by omega, f₁, v₁⟩
+    PS s₀ (Proof.Argon2.iterations (prm s₀) 0 k st) k t) ?_ (itersN s₀) t₁ ⟨0, by omega_arith, by omega_arith, f₁, v₁⟩
   rintro n t ⟨k, rfl, hk, ht⟩
   refine (passStep_ok hp ht hk).mono fun v ⟨hv, cv⟩ => ?_
   rw [show Spec.Argon2.fillPass (prm s₀) (Proof.Argon2.iterations (prm s₀) 0 k st) k =
       Proof.Argon2.iterations (prm s₀) 0 (k + 1) st from by
     unfold Proof.Argon2.iterations; rw [foldl_range'_snoc, Nat.zero_add]] at hv
   by_cases e : k + 1 < itersN s₀
-  · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega, k + 1, rfl, e, hv⟩
+  · exact .inr ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], _, by omega_arith, k + 1, rfl, e, hv⟩
   · refine .inl ⟨by rw [show isa.eval .b v = v.cf from rfl, cv]; simp [e], ?_⟩
-    rw [show itersN s₀ = k + 1 by omega]
+    rw [show itersN s₀ = k + 1 by omega_arith]
     exact hv.fb
 
 end

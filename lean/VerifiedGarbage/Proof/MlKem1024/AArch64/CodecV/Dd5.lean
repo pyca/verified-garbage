@@ -63,26 +63,26 @@ theorem dd5Quarter_ok {s : State} {a : VReg} (ha : a = .v2 ∨ a = .v3) {o : Nat
     exact lanes_mask (lanes_get h1 a1 hP) (by rw [h1.get .v22 (by decide)]; exact h22)
   -- the values in order: `pair5 P i` for `i < 4` in `v0`, `4 ≤ i < 8` in `a`
   have hi : ∀ i < 8, (if i % 2 = 0 then P (i / 2) % 2 ^ 5 else P (i / 2) / 2 ^ 5) = pair5 P i := fun i hi8 => by
-    have := hPl (i / 2) (by omega)
+    have := hPl (i / 2) (by omega_arith)
     simp only [pair5]
     rcases Nat.mod_two_eq_zero_or_one i with h | h
     · rw [ite_eq_left h, h, Nat.mul_zero, Nat.pow_zero, Nat.div_one]
-    · rw [ite_eq_right (by omega), h, Nat.mul_one]; omega
+    · rw [ite_eq_right (by omega_arith), h, Nat.mul_one]; omega_arith
   have L3 : Lanes (s3.v .v0) fun e => pair5 P e := fun e he => by
     rw [h3'.v, vword_zip1_s4' _ _ he]
     show _ = pair5 P e
-    rw [← hi e (by omega)]
+    rw [← hi e (by omega_arith)]
     split
-    · exact L2 _ (by omega)
-    · rw [h2.get .v1 (Ne.symm a1)]; exact L1 _ (by omega)
+    · exact L2 _ (by omega_arith)
+    · rw [h2.get .v1 (Ne.symm a1)]; exact L1 _ (by omega_arith)
   have L4 : Lanes (s4.v a) fun e => pair5 P (4 + e) := fun e he => by
     rw [h4.v, vword_zip2_s4 _ _ he]
     show _ = pair5 P (4 + e)
-    rw [← hi (4 + e) (by omega), h3'.get a a0, h3'.get .v1 (by decide),
-      h2.get .v1 (Ne.symm a1), show (4 + e) / 2 = 2 + e / 2 by omega, show (4 + e) % 2 = e % 2 by omega]
+    rw [← hi (4 + e) (by omega_arith), h3'.get a a0, h3'.get .v1 (by decide),
+      h2.get .v1 (Ne.symm a1), show (4 + e) / 2 = 2 + e / 2 by omega_arith, show (4 + e) % 2 = e % 2 by omega_arith]
     split
-    · exact L2 _ (by omega)
-    · exact L1 _ (by omega)
+    · exact L2 _ (by omega_arith)
+    · exact L1 _ (by omega_arith)
   have c4 : VChg [.v1, a, .v0, a] s s4 := ((h1.chg.trans h2.chg).trans h3'.chg).trans h4.chg
   have cs4 : DConsts 5 s4 := hc.chg c4 (by simp [Ne.symm a16]) (by simp [Ne.symm a17])
   have plt : ∀ i, pair5 P i < 2 ^ 5 := fun i => Nat.mod_lt _ (by decide)
@@ -97,8 +97,8 @@ theorem dd5Quarter_ok {s : State} {a : VReg} (ha : a = .v2 ∨ a = .v3) {o : Nat
   simp only [List.cons_append, List.nil_append]
   refine wp_strq2 (by rw [c.wr]; exact hw) (by rw [c.gpr]; exact h3) ho ht (by rw [c.mem]; exact hcu)
     (by rw [c.mem]; exact hf)
-    (vword_G (Lanes.chg d2 (by simp [Ne.symm a0]) r0) fun e he => by rw [hval e (by omega)])
-    (vword_G ra fun e he => by rw [Nat.add_assoc, hval (4 + e) (by omega)])
+    (vword_G (Lanes.chg d2 (by simp [Ne.symm a0]) r0) fun e he => by rw [hval e (by omega_arith)])
+    (vword_G ra fun e he => by rw [Nat.add_assoc, hval (4 + e) (by omega_arith)])
     fun s' st o f => k s' (by rw [st.gpr, c.gpr]) (by rw [st.rd, c.rd]) (by rw [st.wr, c.wr])
       (by rw [st.sp, c.sp]) (fun r x y z => by rw [st.v, c.v r (by simp [x, y, z])]) o f
 
@@ -135,34 +135,34 @@ theorem dd5Half_ok {s : State} {g : VReg} (hg : g = .v6 ∨ g = .v7) {o : Nat}
   have pq : ∀ (j : Nat) (X : Nat), j < 8 →
       (X / 2 ^ (10 * (j / 2)) % 2 ^ 10) / 2 ^ (5 * (j % 2)) % 2 ^ 5 = X / 2 ^ (5 * j) % 2 ^ 5 := by
     intro j X hj
-    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> omega
-  refine dd5Quarter_ok (a := .v2) (.inl rfl) (o := o) ⟨ho.1, by omega⟩ cs7 l22 L2 (fun e _ => dlt e)
-    (by rw [c7.wr]; exact hw) (by rw [c7.gpr]; exact h3) (by omega) (by rw [c7.mem]; exact hcu)
+    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_arith) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> omega_arith
+  refine dd5Quarter_ok (a := .v2) (.inl rfl) (o := o) ⟨ho.1, by omega_arith⟩ cs7 l22 L2 (fun e _ => dlt e)
+    (by rw [c7.wr]; exact hw) (by rw [c7.gpr]; exact h3) (by omega_arith) (by rw [c7.mem]; exact hcu)
     (by rw [c7.mem]; exact hf)
     (fun i hi => by
-      rw [hval i (by omega)]
+      rw [hval i (by omega_arith)]
       simp only [pair5, dig, dig5]
-      rw [show i / 2 / 4 = 0 by omega, show i / 2 % 4 = i / 2 by omega, show i / 8 = 0 by omega,
-        show i % 8 = i by omega, pq i _ hi])
+      rw [show i / 2 / 4 = 0 by omega_arith, show i / 2 % 4 = i / 2 by omega_arith, show i / 8 = 0 by omega_arith,
+        show i % 8 = i by omega_arith, pq i _ hi])
     fun s1 g1' rd1 wr1 sp1 v1 o1 f1 => ?_
-  refine dd5Quarter_ok (a := .v3) (.inr rfl) (o := o + 32) ⟨by omega, by omega⟩
+  refine dd5Quarter_ok (a := .v3) (.inr rfl) (o := o + 32) ⟨by omega_arith, by omega_arith⟩
     ⟨by rw [v1 .v16 (by decide) (by decide) (by decide)]; exact cs7.q,
      by rw [v1 .v17 (by decide) (by decide) (by decide)]; exact cs7.h⟩
     (by rw [v1 .v22 (by decide) (by decide) (by decide)]; exact l22)
     (by rw [v1 .v3 (by decide) (by decide) (by decide)]; exact L3) (fun e _ => dlt _)
     (by rw [wr1, c7.wr]; exact hw)
     (by rw [g1', c7.gpr, ← ptr_add, h3]; exact coeffAddr_off _ _ 8)
-    (by omega) o1 f1
+    (by omega_arith) o1 f1
     (fun i hi => by
-      rw [show t + 8 + i = t + (8 + i) by omega, hval (8 + i) (by omega)]
+      rw [show t + 8 + i = t + (8 + i) by omega_arith, hval (8 + i) (by omega_arith)]
       simp only [pair5, dig, dig5]
-      rw [show (4 + i / 2) / 4 = 1 by omega, show (4 + i / 2) % 4 = i / 2 by omega, show (8 + i) / 8 = 1 by omega,
-        show (8 + i) % 8 = i by omega, pq i _ hi])
+      rw [show (4 + i / 2) / 4 = 1 by omega_arith, show (4 + i / 2) % 4 = i / 2 by omega_arith, show (8 + i) / 8 = 1 by omega_arith,
+        show (8 + i) % 8 = i by omega_arith, pq i _ hi])
     fun s2 g2' rd2 wr2 sp2 v2 o2 f2 => ?_
   exact k s2 (by rw [g2', g1', c7.gpr]) (by rw [rd2, rd1, c7.rd]) (by rw [wr2, wr1, c7.wr])
     (by rw [sp2, sp1, c7.sp]) (fun r a b c d e => by
       rw [v2 r e b c, v1 r d b c, c7.v r (by simp [a, c, d, e])])
-    (by rw [show t + 16 = t + 8 + 8 by omega]; exact o2) f2
+    (by rw [show t + 16 = t + 8 + 8 by omega_arith]; exact o2) f2
 
 end VG.Proof.MlKem1024.AArch64.CodecV

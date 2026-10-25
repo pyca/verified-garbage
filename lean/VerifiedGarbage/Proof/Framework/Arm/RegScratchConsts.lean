@@ -48,7 +48,7 @@ theorem sp_bound_consts (hb : FitsR bytes e n) {s : State}
   obtain ⟨⟨hst, -⟩, -⟩ := hs'
   simp only [stripConsts_sp] at hst
   have := hb.1
-  omega
+  omega_arith
 
 /-- What the calling convention says of the tables holds in `narrowR s`, with
 `stack` bytes of stack, if it does in `s` with `stack + bytes`. -/
@@ -58,21 +58,21 @@ theorem narrowR_consts {K : List (String × List (BitVec 64))} (hb : FitsR bytes
   obtain ⟨hd, hh, ht⟩ := h
   obtain ⟨hb0, -, -, -, hb4⟩ := hb
   have hsp : State.addr (s.sp - BitVec.ofNat 32 bytes) = State.addr s.sp - BitVec.ofNat 64 bytes :=
-    addr_sub' (by omega)
+    addr_sub' (by omega_arith)
   have htR : ∀ t ∈ constRegs K s, ∀ {a k : Nat}, a ≤ stack + bytes → stack + bytes - a + k ≤ stack + bytes →
       t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 a, k⟩ := fun t ht' _ _ ha hk =>
-    ((ht t ht').2.2 _ (reserved_below (by omega) s)).sub_right (Offset.sub_below _ ha hk)
+    ((ht t ht').2.2 _ (reserved_below (by omega_arith) s)).sub_right (Offset.sub_below _ ha hk)
   refine ⟨hd, hh, fun t ht' => ⟨(ht t ht').1, fun q hq => ?_, fun q hq => ?_⟩⟩
   · rcases List.mem_append.mp hq with hq | hq
     · exact (ht t ht').2.1 q hq
     · simp only [List.mem_singleton] at hq; subst hq
-      rw [hsp]; exact htR t ht' (by omega) (by omega)
+      rw [hsp]; exact htR t ht' (by omega_arith) (by omega_arith)
   · have hq' : q ∈ stackBelow (State.addr (s.sp - BitVec.ofNat 32 bytes)) stack := hq
     rw [hsp, stackBelow_sub] at hq'
     by_cases h0 : stack = 0
     · simp [h0] at hq'
     · simp only [h0, ite_false, List.mem_singleton] at hq'; subst hq'
-      exact htR t ht' (by omega) (by omega)
+      exact htR t ht' (by omega_arith) (by omega_arith)
 
 /-- The precondition under `abi.withConsts` gives the one with the buffer in
 `narrowR`. -/
@@ -98,7 +98,7 @@ theorem withRegScratchC_run {c : Prog isa} (hcl : ScratchInReg sig r) (hb : Fits
   obtain ⟨hb0, hb1, hb2, hb3, hb4⟩ := hb
   have hpush : isa.push (.alloc bytes) s = some (allocState bytes s) := by
     simp only [isa, push]
-    exact ite_eq_left ⟨hb0, hb1, hb2, hb3, by omega⟩
+    exact ite_eq_left ⟨hb0, hb1, hb2, hb3, by omega_arith⟩
   have hblk : Exec isa (.block [.addSp r 0]) (allocState bytes s) [] (regState bytes r s) :=
     .block (by simp only [execBlock, isa, exec, show (0 : Nat) < 256 by decide, ite_true,
       Option.map_some, addrs, List.map_nil, List.append_nil, regState])
@@ -106,7 +106,7 @@ theorem withRegScratchC_run {c : Prog isa} (hcl : ScratchInReg sig r) (hb : Fits
       (⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr) :=
     Covers.append_left (Covers.of_mem fun r hr => List.mem_cons_of_mem _ hr)
       (Covers.one ⟨_, List.mem_cons_self .., by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩)
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩)
   have hw := Exec.widen he (rd := s.rd) (wr := ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr)
     (by simpa using Covers.append (Covers.refl s.rd) hcov) (by simpa using hcov)
   rw [show (narrowR e n bytes r s).withRegions s.rd
@@ -158,9 +158,9 @@ theorem Verified.regScratchWipedC {c : Prog isa}
     obtain ⟨-, -, -, -, hres, -, -⟩ := hs'
     simp only [stripConsts_sp] at hres
     rw [allRegions, argArea_eq_nil hcl.2.1, List.append_nil] at hres
-    rw [addr_sub' (by omega)]
-    exact (Region.Disjoint.symm (hres _ (reserved_below (by have := hb.1; omega) s) b hb')).sub_right
-      (Offset.sub_below _ (by omega) (by have := hb.2.2.2.2; omega))
+    rw [addr_sub' (by omega_arith)]
+    exact (Region.Disjoint.symm (hres _ (reserved_below (by have := hb.1; omega_arith) s) b hb')).sub_right
+      (Offset.sub_below _ (by omega_arith) (by have := hb.2.2.2.2; omega_arith))
   -- Every run is the code's run from `narrowR`, then the wipe.
   have hrun : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s →
       ∃ t s₃ s₄,
@@ -180,10 +180,10 @@ theorem Verified.regScratchWipedC {c : Prog isa}
     have h0 := sp_bound_consts hb hs hl
     have hn := hb.2.2.2.2
     obtain ⟨m', hblk, hfr⟩ := wipe_run ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), n * e.size⟩ s₃ words
-      (by rw [hwr₃, narrowR_wr]; simp) (by have := hb.2.1; omega)
+      (by rw [hwr₃, narrowR_wr]; simp) (by have := hb.2.1; omega_arith)
       (fun k hk' => by
-        rw [hsp₃, addr_add (by rw [sub_toNat' (by omega)]; have := s.sp.isLt; omega)]
-        exact Offset.contains_base _ (by omega) (by omega))
+        rw [hsp₃, addr_add (by rw [sub_toNat' (by omega_arith)]; have := s.sp.isLt; omega_arith)]
+        exact Offset.contains_base _ (by omega_arith) (by omega_arith))
     have he' := Exec.seq he (Exec.block hblk)
     have ha' : abiPreserved (narrowR e n bytes r s)
         { (s₃.setReg .r12 (s₃.sp + BitVec.ofNat 32 0)).setReg .r2 0 with mem := m' } := by

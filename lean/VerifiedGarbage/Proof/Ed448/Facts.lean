@@ -69,12 +69,12 @@ theorem recover_ok : RecoverOk := fun y sign => by rw [recoverX_eq]; rfl
 
 theorem shift_step (k t : Nat) : k >>> t = 2 * (k >>> (t + 1)) + ((k >>> t) &&& 1) := by
   rw [Nat.shiftRight_succ, Nat.and_one_is_mod]
-  omega
+  omega_arith
 
 theorem bit_cases (k t : Nat) : ((k >>> t) &&& 1 = 0 ∧ bitAt k t = false) ∨
     ((k >>> t) &&& 1 = 1 ∧ bitAt k t = true) := by
   have hb : (k >>> t) &&& 1 < 2 := Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-  rcases (by omega : (k >>> t) &&& 1 = 0 ∨ (k >>> t) &&& 1 = 1) with h | h
+  rcases (by omega_arith : (k >>> t) &&& 1 = 0 ∨ (k >>> t) &&& 1 = 1) with h | h
   · exact .inl ⟨h, by simp [bitAt, h]⟩
   · exact .inr ⟨h, by simp [bitAt, h]⟩
 
@@ -96,8 +96,8 @@ theorem ladder_rep {k : Nat} (hk : Below456 k) :
   | 0, _ => by rw [Nat.sub_zero, shift_456 hk, zero_nsmul]; exact identity_rep
   | m + 1, hm => by
     have h := ladderStep_rep (t := 455 - m) (show Rep (ladder k m) ((k >>> (455 - m + 1)) • baseAff) by
-      rw [show 455 - m + 1 = 456 - m by omega]; exact ladder_rep hk m (by omega))
-    rw [show 456 - (m + 1) = 455 - m by omega]
+      rw [show 455 - m + 1 = 456 - m by omega_arith]; exact ladder_rep hk m (by omega_arith))
+    rw [show 456 - (m + 1) = 455 - m by omega_arith]
     exact h
 
 theorem baseLadder_ok : BaseLadderOk := fun k hk => by
@@ -124,8 +124,8 @@ theorem ladder2_rep {k : Nat} (hk : Below456 k) :
   | 0, _ => by rw [Nat.sub_zero, shift_456 hk, zero_nsmul]; exact identity_rep
   | m + 1, hm => by
     have h := ladderStep2_rep (t := 455 - m) (show Rep (ladder2 k m) ((k >>> (455 - m + 1)) • baseAff) by
-      rw [show 455 - m + 1 = 456 - m by omega]; exact ladder2_rep hk m (by omega))
-    rw [show 456 - (m + 1) = 455 - m by omega]
+      rw [show 455 - m + 1 = 456 - m by omega_arith]; exact ladder2_rep hk m (by omega_arith))
+    rw [show 456 - (m + 1) = 455 - m by omega_arith]
     exact h
 
 theorem baseLadder2_ok : BaseLadder2Ok := fun k hk => by
@@ -163,8 +163,8 @@ theorem vladder_rep {S K : Nat} (hS : Below456 S) (hK : Below456 K) {a' : Point}
   | m + 1, hm => by
     have h := vstepRef_rep (t := 455 - m) (show Rep (vladder S K a' m)
       ((S >>> (455 - m + 1)) • baseAff + (K >>> (455 - m + 1)) • a) by
-      rw [show 455 - m + 1 = 456 - m by omega]; exact vladder_rep hS hK ha m (by omega)) ha
-    rw [show 456 - (m + 1) = 455 - m by omega]
+      rw [show 455 - m + 1 = 456 - m by omega_arith]; exact vladder_rep hS hK ha m (by omega_arith)) ha
+    rw [show 456 - (m + 1) = 455 - m by omega_arith]
     exact h
 
 theorem verifyEq_ok : VerifyEqOk := by
@@ -218,8 +218,8 @@ theorem vladder4_rep {S K M : Nat} (hS : S >>> 458 = 0) (hK : K >>> 458 = 0) (hM
   | m + 1, hm => by
     have h := vstep4_rep (t := 457 - m) (show Rep (vladder4 S K M a' r' m)
       ((S >>> (457 - m + 1)) • baseAff + (K >>> (457 - m + 1)) • a + (M >>> (457 - m + 1)) • r) by
-      rw [show 457 - m + 1 = 458 - m by omega]; exact vladder4_rep hS hK hM ha hr m (by omega)) ha hr
-    rw [show 458 - (m + 1) = 457 - m by omega]
+      rw [show 457 - m + 1 = 458 - m by omega_arith]; exact vladder4_rep hS hK hM ha hr m (by omega_arith)) ha hr
+    rw [show 458 - (m + 1) = 457 - m by omega_arith]
     exact h
 
 theorem verifyEq4_ok : VerifyEq4Ok := by
@@ -235,7 +235,7 @@ theorem verifyEq4_ok : VerifyEq4Ok := by
   generalize Spec.Ed448.decodeLE ch = K at *
   have h4 : ∀ x, (4 * x) >>> 458 = x >>> 456 := fun x => by
     rw [show 458 = 2 + 456 from rfl, Nat.shiftRight_add,
-      show (4 * x) >>> 2 = x by rw [Nat.shiftRight_eq_div_pow]; omega]
+      show (4 * x) >>> 2 = x by rw [Nat.shiftRight_eq_div_pow]; omega_arith]
   have hQ := vladder4_rep (S := 4 * S) (K := 4 * K) (M := 4) (by rw [h4]; exact shift_456 hS)
     (by rw [h4]; exact shift_456 hK)
     (by rw [show 458 = 3 + 455 from rfl, Nat.shiftRight_add, show (4 : Nat) >>> 3 = 0 by decide,

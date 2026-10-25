@@ -73,9 +73,9 @@ theorem countBlock_ok {is : List Instr} {Q : State → Prop} (h : In Ex base byt
     rw [U₅.gpr, U₄.gpr, U₃.gpr, e1, show (1025 : BitVec 32).toNat = 1025 from rfl]
     unfold sieveCount
     by_cases small : bits ≤ 1024
-    · rw [ite_eq_left_iff.mpr (fun h => absurd small h), show decide (bits < 1025) = true from decide_eq_true (by omega)]
+    · rw [ite_eq_left_iff.mpr (fun h => absurd small h), show decide (bits < 1025) = true from decide_eq_true (by omega_arith)]
       decide
-    · rw [ite_eq_right_iff.mpr (fun h => absurd h small), show decide (bits < 1025) = false from decide_eq_false (by omega)]
+    · rw [ite_eq_right_iff.mpr (fun h => absurd h small), show decide (bits < 1025) = false from decide_eq_false (by omega_arith)]
       decide
 
 theorem trialPrefix_sieveCount {c bits : Nat} (hc : 8161 < c) :
@@ -87,11 +87,11 @@ theorem trialPrefix_sieveCount {c bits : Nat} (hc : 8161 < c) :
   · have := VG.Proof.RsaKeyGen.trialPrefix_spec (w := 16) hc
     simp only [show (16 : Nat) ≤ 16 from Nat.le_refl _, ↓reduceIte] at this
     simp only [sieveCount, small, ↓reduceIte, this]
-    exact oc _ _ (by simp only [Spec.RsaKeyGen.trialPrimes]; split <;> split <;> omega)
+    exact oc _ _ (by simp only [Spec.RsaKeyGen.trialPrimes]; split <;> split <;> omega_arith)
   · have := VG.Proof.RsaKeyGen.trialPrefix_spec (w := 17) hc
     simp only [show ¬ (17 : Nat) ≤ 16 by decide, ↓reduceIte] at this
     simp only [sieveCount, small, ↓reduceIte, this]
-    exact oc _ _ (by simp only [Spec.RsaKeyGen.trialPrimes]; split <;> split <;> omega)
+    exact oc _ _ (by simp only [Spec.RsaKeyGen.trialPrimes]; split <;> split <;> omega_arith)
 
 /-- The stack below `sp − 20`, for four bytes, within the 96 below `sp`. -/
 theorem below_frames {sp : BitVec 32} (low : 96 ≤ sp.toNat) :
@@ -99,11 +99,11 @@ theorem below_frames {sp : BitVec 32} (low : 96 ≤ sp.toNat) :
       Region.Sub ⟨(sp - BitVec.ofNat 32 20).setWidth 64, 20⟩ (below sp 96) := by
   have e24 : (sp - BitVec.ofNat 32 20 - BitVec.ofNat 32 4).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 24 := by
     rw [BitVec.sub_sub, show BitVec.ofNat 32 20 + BitVec.ofNat 32 4 = BitVec.ofNat 32 24 from rfl]
-    exact VG.X86.Taint.sub_setWidth (by omega)
+    exact VG.X86.Taint.sub_setWidth (by omega_arith)
   have e20 : (sp - BitVec.ofNat 32 20).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 20 :=
-    VG.X86.Taint.sub_setWidth (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_arith)
   have e40 : (sp - BitVec.ofNat 32 96).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 96 :=
-    VG.X86.Taint.sub_setWidth (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_arith)
   simp only [below]
   rw [e24, e20, e40]
   exact ⟨Offset.sub_below _ (by decide) (by decide), Offset.sub_below _ (by decide) (by decide)⟩
@@ -122,25 +122,25 @@ theorem sieveGeo_valid (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 2
   have low := h.room.low
   have lw := h.lower'
   have up := h.upper'
-  have mwu : mw len ≤ 128 := by simp only [mw, Spec.Rsa.modulusWords]; omega
-  have mwp : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega
+  have mwu : mw len ≤ 128 := by simp only [mw, Spec.Rsa.modulusWords]; omega_arith
+  have mwp : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega_arith
   have bc8 : bc len .wide = 8 * mw len := rfl
   have frames := below_frames low
   have PA : byteAddr P = off base (lo len (.slot .wide j)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [byteAddr, off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, au]
     have := base.isLt
-    omega
+    omega_arith
   have wsFar : Region.Disjoint (sieveGeo (s.gpr .esp) P T len bits).candidateRegion (below (s.gpr .esp) 96) := by
     have sub : Region.Sub (sieveGeo (s.gpr .esp) P T len bits).candidateRegion ⟨base, bytes⟩ := by
       show Region.Sub ⟨P.setWidth 64, 8 * mw len⟩ _
       rw [show P.setWidth 64 = byteAddr P from rfl, PA]
-      exact Offset.sub_base _ (by omega)
+      exact Offset.sub_base _ (by omega_arith)
     exact (h.room.apart.symm.sub_left sub)
-  refine ⟨⟨by show 0 < mw len; omega, mwu, ?_, ?_, ?_, TT.fit, ?_, ?_⟩, wsFar⟩
+  refine ⟨⟨by show 0 < mw len; omega_arith, mwu, ?_, ?_, ?_, TT.fit, ?_, ?_⟩, wsFar⟩
   · show 0 < sieveCount bits; unfold sieveCount; split <;> decide
   · show sieveCount bits ≤ 1024; unfold sieveCount; split <;> decide
-  · show P.toNat + 8 * mw len ≤ 2 ^ 32; omega
+  · show P.toNat + 8 * mw len ≤ 2 ^ 32; omega_arith
   · exact wsFar.sub_right frames.2
   · exact TT.far.sub_right frames.2
 
@@ -175,18 +175,18 @@ theorem sieveSetup_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27
     apply BitVec.eq_of_toNat_eq
     simp only [byteAddr, off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, au]
     have := base.isLt
-    omega
+    omega_arith
   let g : Geometry := sieveGeo (s.gpr .esp) P T len bits
   have gw : g.w = mw len := rfl
   obtain ⟨v, wsFar⟩ := sieveGeo_valid h hj TT au bits
   have candidateFar : g.candidateRegion.Disjoint (below g.sp 4) := wsFar.sub_right frames.1
   have tableFar : g.tableRegion.Disjoint (below g.sp 4) := TT.far.sub_right frames.1
-  have gsp : g.sp.toNat = (s.gpr .esp).toNat - 20 := VG.X86.sub_toNat (by omega)
+  have gsp : g.sp.toNat = (s.gpr .esp).toNat - 20 := VG.X86.sub_toNat (by omega_arith)
   have sa : (allocFrame 20 u').gpr .esp = g.sp := by rw [allocFrame_esp, spU]
   have SC : StackContext g.sp (allocFrame 20 u') := by
     refine ⟨⟨?_, ?_⟩, sa⟩
     · rw [allocFrame_wr, spU]; exact List.mem_cons_self ..
-    · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := g.sp.isLt; omega)]; omega
+    · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := g.sp.isLt; omega_arith)]; omega_arith
   have wsA : Ws (allocFrame 20 u') base bytes :=
     ⟨by rw [allocFrame_wr, wrU]; exact List.mem_cons_of_mem _ h.ws.wr, nw⟩
   have PS : P.setWidth 64 = off base (lo len (.slot .wide j)) := PA
@@ -194,7 +194,7 @@ theorem sieveSetup_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27
     refine ⟨SC, fun i hi => ?_, fun i hi d hd => ?_, fun i hi => ?_, ?_⟩
     · show InRegions _ (off (P.setWidth 64) (4 * i)) 4
       rw [PS, off, VG.Offset.add_add, ← off]
-      exact ws_read wsA (by omega)
+      exact ws_read wsA (by omega_arith)
     · rw [allocFrame_rd, allocFrame_wr, rdU, wrU]
       obtain ⟨r, hr, hc⟩ := TT.read i hi d hd
       refine ⟨r, ?_, hc⟩
@@ -209,7 +209,7 @@ theorem sieveSetup_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27
     rw [allocFrame_gpr _ _ (by decide), ecU, bc8]; rfl
   have ed₀ : (allocFrame 20 u').gpr .edx = BitVec.ofNat 32 g.limit := by
     rw [allocFrame_gpr _ _ (by decide), du']
-  have gsp4 : 4 ≤ g.sp.toNat := by omega
+  have gsp4 : 4 ≤ g.sp.toNat := by omega_arith
   -- The three stores of the geometry.
   have stores : WP isa (.block [.store (VG.Impl.RsaKeyGen.X86.Sieve.slot 0) .eax,
       .store (VG.Impl.RsaKeyGen.X86.Sieve.slot 4) .ecx, .store (VG.Impl.RsaKeyGen.X86.Sieve.slot 12) .edx])
@@ -307,8 +307,8 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
   have hE := (s.gpr .esp).isLt
   have lw := h.lower'
   have up := h.upper'
-  have mwp : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega
-  have mwu : mw len ≤ 128 := by simp only [mw, Spec.Rsa.modulusWords]; omega
+  have mwp : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega_arith
+  have mwu : mw len ≤ 128 := by simp only [mw, Spec.Rsa.modulusWords]; omega_arith
   have bc8 : bc len .wide = 8 * mw len := rfl
   have frames := below_frames low
   unfold sieve
@@ -332,7 +332,7 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
       t.gpr .eax = BitVec.ofNat 32
         (VG.Proof.RsaKeyGen.trialPrefix (sv s.mem base len .wide j) (sieveCount bits)).toNat ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t) (by decide) (by decide)
-    (by decide) (by rw [spU]; omega) (NoSp.of_all (by rfl)) ?_) fun t ht => ?_)
+    (by decide) (by rw [spU]; omega_arith) (NoSp.of_all (by rfl)) ?_) fun t ht => ?_)
   · -- The frame's body.
     obtain ⟨v, -⟩ := sieveGeo_valid h hj TT au bits
     refine WP.seq (WP.mono (sieveSetup_ok h hj TT au eaU ecU du' Ku' mU Su) fun c₂ ⟨H, spc, rdc, wrc, Fc⟩ => ?_)

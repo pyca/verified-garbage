@@ -30,7 +30,7 @@ theorem ivr_spec {W a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) (ha : a < 2 ^ (32 *
       (ivr W a m).2.2.2 < m := by
   have D := VG.Proof.Rsa.invIter_done (a := a) (K := 2 * (32 * W)) hm (by
     calc a * m < 2 ^ (32 * W) * 2 ^ (32 * W) := Nat.mul_lt_mul'' ha hmW
-      _ = 2 ^ (2 * (32 * W)) := by rw [← Nat.pow_add]; congr 1; omega)
+      _ = 2 ^ (2 * (32 * W)) := by rw [← Nat.pow_add]; congr 1; omega_arith)
   rw [Nat.mod_eq_of_lt h1] at D
   exact ⟨D.2.1, D.2.2.1, D.2.2.2⟩
 
@@ -55,12 +55,12 @@ theorem inverse_ok' {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N)
   have wp := h.wpos
   have wl := h.wle
   have start : InvLoopI s B Z w N 0 s1 := ⟨h1, by rw [u1.mem]; exact Keep.refl _ _ _ _ _, u1.rest (by simp),
-    by rw [u1.gpr, h.r9]; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; simp; omega,
+    by rw [u1.gpr, h.r9]; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; simp; omega_arith,
     fun _ _ _ _ _ => by rw [u1.mem]; rfl⟩
   refine WP.loop (M := isa) (fun k t => ∃ i, i + k = 32 * w ∧ 0 < k ∧ InvLoopI s B Z w N i t) ?_ (32 * w) s1
-    ⟨0, by omega, by omega, start⟩
+    ⟨0, by omega_arith, by omega_arith, start⟩
   · intro k t ⟨i, hik, hk, inv⟩
-    refine WP.mono (inverseBody_ok hN15 hN inv (by omega)) fun u ⟨iu, hz⟩ => ?_
+    refine WP.mono (inverseBody_ok hN15 hN inv (by omega_arith)) fun u ⟨iu, hz⟩ => ?_
     by_cases e : i + 1 = 32 * w
     · left
       refine ⟨by change some (!u.z) = some false; simp [hz, e], iu.ws, iu.keep, iu.rest, ?_⟩
@@ -69,7 +69,7 @@ theorem inverse_ok' {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N)
       rw [e, hst] at v
       exact v
     · right
-      exact ⟨by change some (!u.z) = some true; simp [hz, e], k - 1, by omega, i + 1, by omega, by omega, iu⟩
+      exact ⟨by change some (!u.z) = some true; simp [hz, e], k - 1, by omega_arith, i + 1, by omega_arith, by omega_arith, iu⟩
 
 end VG.Proof.Rsa.Arm.Keys
 
@@ -153,7 +153,7 @@ theorem St.pinv {a m : Nat} (cm : Cert (copy aM m)) (ca : Cert (copy 0 a)) (ha :
   have low : ∀ j, (j = aZero ∨ 15 ≤ j) → j ∉ invArrs ∧ j ≠ aM ∧ j ≠ aNM ∧ j ≠ 0 := fun j h => by
     rcases h with rfl | h
     · decide
-    · simp only [invArrs, aM, aNM, aT1, aT2, aT3, aT4, List.mem_cons, List.not_mem_nil, or_false]; omega
+    · simp only [invArrs, aM, aNM, aT1, aT2, aT3, aT4, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
   have nmM : aM ≠ m := fun x => (low m (hL m hm)).2.1 x.symm
   have na0 : (0 : Nat) ≠ a := fun x => (low a (hL a ha)).2.2.2 x.symm
   have hL0 : ∀ j ∈ L, j ∉ invArrs := fun j hj => (low j (hL j hj)).1
@@ -174,8 +174,8 @@ theorem St.pinv {a m : Nat} (cm : Cert (copy aM m)) (ca : Cert (copy 0 a)) (ha :
       exact this
     simp (config := {decide := true}) only [upd, sub32, ↓reduceIte]
     refine ⟨vZ, ?_, vodd, v1, trivial, vO, vZ⟩
-    rw [vZ, Nat.zero_add, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [vZ, Nat.zero_add, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · simp only [List.mem_cons] at hj ⊢
     rcases hj with rfl | rfl | hj
     · exact .inl rfl

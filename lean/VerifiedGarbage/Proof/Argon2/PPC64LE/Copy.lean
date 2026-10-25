@@ -37,7 +37,7 @@ theorem CopyKeeps.trans {s t u : State} (h : CopyKeeps s t) (h' : CopyKeeps t u)
 theorem Scratch.of_copy {s t : State} {p : Addr} (hs : Scratch s p) (h : CopyKeeps s t) :
     Scratch t p := ⟨(h.1 .r6 (by decide) (by decide)).trans hs.reg, h.2.2.1 ▸ hs.wr⟩
 
-theorem off8 (i : Nat) (hi : i < 128) : 8 * i < 2 ^ 15 ∧ (8 * i) % 4 = 0 := by omega
+theorem off8 (i : Nat) (hi : i < 128) : 8 * i < 2 ^ 15 ∧ (8 * i) % 4 = 0 := by omega_arith
 
 theorem initWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Nat) (hi : i < 128)
     (hx : InRegions (s.rd ++ s.wr) (off (s.gpr .r3) (8 * i)) 8)
@@ -47,8 +47,8 @@ theorem initWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Nat) (hi : i 
       t.mem = (s.mem.writeW (off p (8 * i)) a).writeW (off p (1024 + 8 * i)) a ∧
       CopyKeeps s t := by
   dsimp only
-  have w1 := hs.write (d := 8 * i) (n := 8) (by omega)
-  have w2 := hs.write (d := 1024 + 8 * i) (n := 8) (by omega)
+  have w1 := hs.write (d := 8 * i) (n := 8) (by omega_arith)
+  have w2 := hs.write (d := 1024 + 8 * i) (n := 8) (by omega_arith)
   rw [← hs.reg] at w1 w2
   unfold initWord
   refine WP.block_cons_iff.mpr ⟨_, exec_load_d (by decide) (off8 i hi) hx, ?_⟩
@@ -66,8 +66,8 @@ theorem finishWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Nat) (hi : 
       t.mem = s.mem.writeW (off (s.gpr .r5) (8 * i))
           (word s.mem p i ^^^ s.mem.readW (off p (8 * i)) 64) ∧
       CopyKeeps s t := by
-  have r1 := hs.read (d := 8 * i) (n := 8) (by omega)
-  have r2 := hs.read (d := 1024 + 8 * i) (n := 8) (by omega)
+  have r1 := hs.read (d := 8 * i) (n := 8) (by omega_arith)
+  have r2 := hs.read (d := 1024 + 8 * i) (n := 8) (by omega_arith)
   rw [← hs.reg] at r1 r2
   unfold finishWord
   refine WP.block_cons_iff.mpr ⟨_, exec_load_d (by decide) (word_offset i hi) r2, ?_⟩
@@ -94,7 +94,7 @@ theorem Inputs.of_copy {s t : State} {x y p : Addr} (h : Inputs s x y p) (hk : C
 theorem input_unchanged {m m' : Mem} {x p : Addr} {n : Nat} (hf : Frame [⟨p, n⟩] m m')
     (hd : (⟨x, 1024⟩ : Region).Disjoint ⟨p, n⟩) (i : Fin 128) :
     m'.readW (off x (8 * i.val)) 64 = m.readW (off x (8 * i.val)) 64 :=
-  hf.readW (r := ⟨x, 1024⟩) (Offset.contains_base x (by omega) (by omega))
+  hf.readW (r := ⟨x, 1024⟩) (Offset.contains_base x (by omega_arith) (by omega_arith))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 
 /-- A prefix of the two scratch copies is initialized. -/
@@ -109,15 +109,15 @@ theorem initialized_step {m : Mem} {p : Addr} {r : Block} {n : Nat}
   obtain ⟨k, hk⟩ := i
   simp only at hi
   simp only [word]
-  rcases (by omega : k = n ∨ k < n) with rfl | he
+  rcases (by omega_arith : k = n ∨ k < n) with rfl | he
   · refine ⟨?_, Mem.readW_writeW_self64 _ _ _⟩
-    rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
+    rw [Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
     rfl
-  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)]
+  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
     exact h ⟨k, hk⟩ he
 
 /-- Initialize a prefix of the words, framing the first half of scratch. -/
@@ -128,21 +128,21 @@ theorem init_prefix (n : Nat) (hn : n ≤ 128) (s : State) {x y p : Addr}
       Frame [⟨p, 2048⟩] s.mem t.mem ∧ CopyKeeps s t := by
   induction n with
   | zero =>
-    exact WP.block_nil ⟨fun i hi => by omega, Frame.refl _ _, CopyKeeps.refl s⟩
+    exact WP.block_nil ⟨fun i hi => by omega_arith, Frame.refl _ _, CopyKeeps.refl s⟩
   | succ n ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro t ⟨ht, hf, hk⟩
-    have hn' : n < 128 := by omega
+    have hn' : n < 128 := by omega_arith
     have htIn := hin.of_copy hk
     have lx : InRegions (t.rd ++ t.wr) (off (t.gpr .r3) (8 * n)) 8 := by
       rw [htIn.xreg]
-      exact ⟨_, htIn.xread, Offset.contains_base x (by omega) (by omega)⟩
+      exact ⟨_, htIn.xread, Offset.contains_base x (by omega_arith) (by omega_arith)⟩
     have ly : InRegions (t.rd ++ t.wr) (off (t.gpr .r4) (8 * n)) 8 := by
       rw [htIn.yreg]
-      exact ⟨_, htIn.yread, Offset.contains_base y (by omega) (by omega)⟩
+      exact ⟨_, htIn.yread, Offset.contains_base y (by omega_arith) (by omega_arith)⟩
     refine (initWord_ok t (hs.of_copy hk) n hn' lx ly).mono ?_
     rintro u ⟨hm, hk'⟩
     have hv : t.mem.readW (off x (8 * n)) 64 ^^^ t.mem.readW (off y (8 * n)) 64 =
@@ -150,15 +150,15 @@ theorem init_prefix (n : Nat) (hn : n ≤ 128) (s : State) {x y p : Addr}
       rw [show (xorBlock (blockAt s.mem x) (blockAt s.mem y))[n] =
           (xorBlock (blockAt s.mem x) (blockAt s.mem y))[(⟨n, hn'⟩ : Fin 128)] from rfl,
         xorBlock_get, blockAt_get, blockAt_get,
-        input_unchanged hf (hin.xsep.sub_right (Region.sub_prefix (by omega))) ⟨n, hn'⟩,
-        input_unchanged hf (hin.ysep.sub_right (Region.sub_prefix (by omega))) ⟨n, hn'⟩]
+        input_unchanged hf (hin.xsep.sub_right (Region.sub_prefix (by omega_arith))) ⟨n, hn'⟩,
+        input_unchanged hf (hin.ysep.sub_right (Region.sub_prefix (by omega_arith))) ⟨n, hn'⟩]
     refine ⟨?_, ?_, hk.trans hk'⟩
     · rw [hm, htIn.xreg, htIn.yreg, hv]
       exact initialized_step hn' ht
     · rw [hm]
       exact (hf.writeW (r := ⟨p, 2048⟩) (by simp) _
-        (Offset.contains_base p (by omega) (by omega))).writeW (r := ⟨p, 2048⟩) (by simp) _
-        (Offset.contains_base p (by omega) (by omega))
+        (Offset.contains_base p (by omega_arith) (by omega_arith))).writeW (r := ⟨p, 2048⟩) (by simp) _
+        (Offset.contains_base p (by omega_arith) (by omega_arith))
 
 /-- The initialized copies both contain X XOR Y. -/
 theorem initialized_blocks {m : Mem} {p : Addr} {r : Block} (h : Initialized m p r 128) :
@@ -186,13 +186,13 @@ theorem written_step {m : Mem} {out : Addr} {r : Block} {n : Nat}
   by_cases he : i.val = n
   · subst n
     exact Mem.readW_writeW_self64 _ _ _
-  · rw [Mem.readW_writeW_sep (Offset.sep out (by omega) (by omega) (by omega)) (by decide)]
-    exact h i (by omega)
+  · rw [Mem.readW_writeW_sep (Offset.sep out (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+    exact h i (by omega_arith)
 
 theorem scratch_unchanged {m m' : Mem} {out p : Addr} (hf : Frame [⟨out, 1024⟩] m m')
     (hd : (⟨p, 4096⟩ : Region).Disjoint ⟨out, 1024⟩) {d : Nat} (hd' : d + 8 ≤ 4096) :
     m'.readW (off p d) 64 = m.readW (off p d) 64 :=
-  hf.readW (r := ⟨p, 4096⟩) (Offset.contains_base p hd' (by omega))
+  hf.readW (r := ⟨p, 4096⟩) (Offset.contains_base p hd' (by omega_arith))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 
 /-- Finish a prefix of the words. -/
@@ -203,18 +203,18 @@ theorem finish_prefix (n : Nat) (hn : n ≤ 128) (s : State) {p out : Addr}
       Written t.mem out (xorBlock (working s.mem p) (blockAt s.mem p)) n ∧
       Frame [⟨out, 1024⟩] s.mem t.mem ∧ CopyKeeps s t := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun i hi => by omega, Frame.refl _ _, CopyKeeps.refl s⟩
+  | zero => exact WP.block_nil ⟨fun i hi => by omega_arith, Frame.refl _ _, CopyKeeps.refl s⟩
   | succ n ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro t ⟨ht, hf, hk⟩
-    have hn' : n < 128 := by omega
+    have hn' : n < 128 := by omega_arith
     have ho' : t.gpr .r5 = out := (hk.1 .r5 (by decide) (by decide)).trans ho
     have hout : InRegions t.wr (off (t.gpr .r5) (8 * n)) 8 := by
       rw [ho', hk.2.2.1]
-      exact ⟨_, hw, Offset.contains_base out (by omega) (by omega)⟩
+      exact ⟨_, hw, Offset.contains_base out (by omega_arith) (by omega_arith)⟩
     refine (finishWord_ok t (hs.of_copy hk) n hn' hout).mono ?_
     rintro u ⟨hm, hk'⟩
     have hv : word t.mem p n ^^^ t.mem.readW (off p (8 * n)) 64 =
@@ -222,13 +222,13 @@ theorem finish_prefix (n : Nat) (hn : n ≤ 128) (s : State) {p out : Addr}
       rw [show (xorBlock (working s.mem p) (blockAt s.mem p))[n] =
           (xorBlock (working s.mem p) (blockAt s.mem p))[(⟨n, hn'⟩ : Fin 128)] from rfl,
         xorBlock_get, working_get, blockAt_get]
-      simp only [word, scratch_unchanged hf hd (d := 1024 + 8 * n) (by omega),
-        scratch_unchanged hf hd (d := 8 * n) (by omega)]
+      simp only [word, scratch_unchanged hf hd (d := 1024 + 8 * n) (by omega_arith),
+        scratch_unchanged hf hd (d := 8 * n) (by omega_arith)]
     refine ⟨?_, ?_, hk.trans hk'⟩
     · rw [hm, ho', hv]
       exact written_step hn' ht
     · rw [hm, ho']
-      exact hf.writeW (r := ⟨out, 1024⟩) (by simp) _ (Offset.contains_base out (by omega) (by omega))
+      exact hf.writeW (r := ⟨out, 1024⟩) (by simp) _ (Offset.contains_base out (by omega_arith) (by omega_arith))
 
 theorem written_block {m : Mem} {out : Addr} {r : Block} (h : Written m out r 128) :
     blockAt m out = r := by

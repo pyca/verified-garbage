@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
 
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Miller–Rabin by windows of 4 bits
@@ -44,9 +45,9 @@ def mrSig (c : Nat) : Nat := sigOf (mrA c)
 def mrE (c : Nat) : Nat := (c - 1) / 2 ^ mrSig c
 
 theorem sigOf_mod (a : Nat) : sigOf (a % 64) = sigOf a := by
-  unfold sigOf; rw [show a % 64 % 4 = a % 4 by omega]
+  unfold sigOf; rw [show a % 64 % 4 = a % 4 by omega_arith]
 
-theorem sigOf_pos (a : Nat) : 1 ≤ sigOf a ∧ sigOf a ≤ 4 := by unfold sigOf; split <;> omega
+theorem sigOf_pos (a : Nat) : 1 ≤ sigOf a ∧ sigOf a ≤ 4 := by unfold sigOf; split <;> omega_arith
 
 /-- The exponent from `c / 2`, halved under `σ > 1`, `σ > 2` and `σ > 3`. -/
 theorem mrE_halves {c : Nat} (hodd : c % 2 = 1) :
@@ -56,13 +57,13 @@ theorem mrE_halves {c : Nat} (hodd : c % 2 = 1) :
      if 3 < mrSig c then e3 / 2 else e3) = mrE c := by
   unfold mrE
   have h := sigOf_pos (mrA c)
-  have e1 : c / 2 = (c - 1) / 2 ^ 1 := by rw [Nat.pow_one]; omega
+  have e1 : c / 2 = (c - 1) / 2 ^ 1 := by rw [Nat.pow_one]; omega_arith
   have hd : ∀ k, (c - 1) / 2 ^ k / 2 = (c - 1) / 2 ^ (k + 1) := fun k => by
     rw [Nat.div_div_eq_div_mul, Nat.pow_succ]
   simp only
   rw [e1]
   unfold mrSig at *
-  rcases (by omega : sigOf (mrA c) = 1 ∨ sigOf (mrA c) = 2 ∨ sigOf (mrA c) = 3 ∨ sigOf (mrA c) = 4)
+  rcases (by omega_arith : sigOf (mrA c) = 1 ∨ sigOf (mrA c) = 2 ∨ sigOf (mrA c) = 3 ∨ sigOf (mrA c) = 4)
     with h1 | h1 | h1 | h1 <;> simp [h1, Nat.div_div_eq_div_mul]
 
 /-! ## Squarings -/
@@ -76,7 +77,7 @@ theorem sqIter_pow (c z : Nat) : ∀ t, 1 ≤ t → sqIter c z t = z ^ (2 ^ t) %
   | 0, h => absurd h (by decide)
   | 1, _ => by simp only [sqIter, Nat.pow_one, Nat.pow_two]
   | t + 2, _ => by
-    rw [sqIter, sqIter_pow c z (t + 1) (by omega), ← Nat.mul_mod, ← Nat.pow_two, ← Nat.pow_mul,
+    rw [sqIter, sqIter_pow c z (t + 1) (by omega_arith), ← Nat.mul_mod, ← Nat.pow_two, ← Nat.pow_mul,
       show 2 ^ (t + 1) * 2 = 2 ^ (t + 2) by rw [← Nat.pow_succ]]
 
 theorem sqIter_lt {c : Nat} (hc : 0 < c) (z : Nat) : ∀ t, 1 ≤ t → sqIter c z t < c
@@ -102,20 +103,20 @@ theorem sqs_snd (c : Nat) (st : Nat × Bool) : ∀ n, ((sqs c n st).2 = true ↔
     (st.2 = true ∨ ∃ i, 1 ≤ i ∧ i ≤ n ∧ sqIter c st.1 i = c - 1))
   | 0 => by
     simp only [sqs]
-    exact ⟨Or.inl, fun h => h.elim id fun ⟨i, h1, h2, _⟩ => absurd h2 (by omega)⟩
+    exact ⟨Or.inl, fun h => h.elim id fun ⟨i, h1, h2, _⟩ => absurd h2 (by omega_arith)⟩
   | n + 1 => by
     simp only [sqs, wSq, Bool.or_eq_true, Bool.true_and, decide_eq_true_eq]
     rw [sqs_snd c st n, sqs_fst c st n]
     constructor
     · rintro ((h | ⟨i, h1, h2, h3⟩) | h)
       · exact .inl h
-      · exact .inr ⟨i, h1, by omega, h3⟩
-      · exact .inr ⟨n + 1, by omega, Nat.le_refl _, by rw [sqIter]; exact h⟩
+      · exact .inr ⟨i, h1, by omega_arith, h3⟩
+      · exact .inr ⟨n + 1, by omega_arith, Nat.le_refl _, by rw [sqIter]; exact h⟩
     · rintro (h | ⟨i, h1, h2, h3⟩)
       · exact .inl (.inl h)
       · rcases Nat.lt_or_ge i (n + 1) with hi | hi
-        · exact .inl (.inr ⟨i, h1, by omega, h3⟩)
-        · rw [show i = n + 1 by omega, sqIter] at h3; exact .inr h3
+        · exact .inl (.inr ⟨i, h1, by omega_arith, h3⟩)
+        · rw [show i = n + 1 by omega_arith, sqIter] at h3; exact .inr h3
 
 /-! ## Windows -/
 
@@ -151,7 +152,7 @@ theorem powMod_win (b X d c : Nat) :
     powMod b (16 * X + d) c = sqIter c (powMod b X c) 4 * powMod b d c % c := by
   rw [sqIter_pow c _ 4 (by decide), VG.Proof.Bignum.powMod_eq, VG.Proof.Bignum.powMod_eq,
     VG.Proof.Bignum.powMod_eq, ← Nat.pow_mod, ← Nat.mul_mod, ← Nat.pow_mul, ← Nat.pow_add,
-    show 16 * X = X * 2 ^ 4 by omega]
+    show 16 * X = X * 2 ^ 4 by omega_arith]
 
 /-- One window. -/
 theorem win_step {c b X d : Nat} {P : Bool} (hc : 3 ≤ c) (hd : d < 16) (hF : FlagOK c b X P) :
@@ -170,7 +171,7 @@ theorem win_step {c b X d : Nat} {P : Bool} (hc : 3 ≤ c) (hd : d < 16) (hF : F
     by_cases hX : X = 0
     · subst hX
       have hP0 := hF.1 rfl
-      have hy1 : powMod b 0 c = 1 := powMod_zero' (by omega)
+      have hy1 : powMod b 0 c = 1 := powMod_zero' (by omega_arith)
       refine ⟨fun _ => ?_, fun Y t hYt hY => absurd (by
         rcases Nat.eq_zero_or_pos Y with h | h
         · subst h; rfl
@@ -180,16 +181,16 @@ theorem win_step {c b X d : Nat} {P : Bool} (hc : 3 ≤ c) (hd : d < 16) (hF : F
       rw [sqs_snd] at h
       rcases h with h | ⟨i, _, _, hi⟩
       · rw [hP0] at h; cases h
-      · simp only [hy1, sqIter_one c (by omega)] at hi; omega
-    · refine ⟨fun h => absurd h (by omega), fun Y t hYt hY => ?_⟩
+      · simp only [hy1, sqIter_one c (by omega_arith)] at hi; omega_arith
+    · refine ⟨fun h => absurd h (by omega_arith), fun Y t hYt hY => ?_⟩
       obtain ⟨t, rfl⟩ : ∃ t', t = t' + 1 := by
         rcases t with _ | t
-        · rw [Nat.pow_zero, Nat.mul_one] at hYt; omega
+        · rw [Nat.pow_zero, Nat.mul_one] at hYt; omega_arith
         · exact ⟨t, rfl⟩
       have hXY : X = Y * 16 ^ t := by
         rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_comm (Y * 16 ^ t) 16] at hYt
         exact Nat.eq_of_mul_eq_mul_left (by decide) hYt
-      have hYp : 0 < Y := by omega
+      have hYp : 0 < Y := by omega_arith
       have hz : powMod b X c = sqIter c (powMod b Y c) (4 * t) := by
         rw [hXY, sixteen_pow]
         exact powMod_pow2 b Y c hYp (4 * t)
@@ -199,25 +200,25 @@ theorem win_step {c b X d : Nat} {P : Bool} (hc : 3 ≤ c) (hd : d < 16) (hF : F
       · rintro ((h | h | ⟨i, h1, h2, h3⟩) | ⟨i, h1, h2, h3⟩)
         · exact .inl h
         · exact .inr (.inl h)
-        · exact .inr (.inr ⟨i, h1, by omega, h3⟩)
-        · exact .inr (.inr ⟨4 * t + i, by omega, by omega, h3⟩)
+        · exact .inr (.inr ⟨i, h1, by omega_arith, h3⟩)
+        · exact .inr (.inr ⟨4 * t + i, by omega_arith, by omega_arith, h3⟩)
       · rintro (h | h | ⟨i, h1, h2, h3⟩)
         · exact .inl (.inl h)
         · exact .inl (.inr (.inl h))
         · rcases Nat.lt_or_ge (4 * t) i with hi | hi
-          · exact .inr ⟨i - 4 * t, by omega, by omega, by rw [Nat.add_sub_cancel' (Nat.le_of_lt hi)]; exact h3⟩
+          · exact .inr ⟨i - 4 * t, by omega_arith, by omega_arith, by rw [Nat.add_sub_cancel' (Nat.le_of_lt hi)]; exact h3⟩
           · exact .inl (.inr (.inr ⟨i, h1, hi, h3⟩))
   · have hP : (wWin c b d (powMod b X c, P)).2 =
         (decide (powMod b (16 * X + d) c = 1) || decide (powMod b (16 * X + d) c = c - 1)) := by
       rw [← hy]; simp only [wWin, hd0, ↓reduceIte]
     rw [hP]
-    refine ⟨fun h => absurd h (by omega), fun Y t hYt hY => ?_⟩
+    refine ⟨fun h => absurd h (by omega_arith), fun Y t hYt hY => ?_⟩
     have ht : t = 0 := by
       rcases t with _ | t
       · rfl
       · exfalso
         have : (16 * X + d) % 16 = 0 := by rw [hYt, Nat.pow_succ, ← Nat.mul_assoc]; exact Nat.mul_mod_left _ _
-        omega
+        omega_arith
     subst ht
     rw [Nat.pow_zero, Nat.mul_one] at hYt
     subst hYt
@@ -229,7 +230,7 @@ theorem win_step {c b X d : Nat} {P : Bool} (hc : 3 ≤ c) (hd : d < 16) (hF : F
     · rintro (h | h | ⟨i, h1, h2, _⟩)
       · exact .inl h
       · exact .inr h
-      · omega
+      · omega_arith
 
 /-- The windows so far: `y = b^X mod c` and the flag of `X`, for the top
 `X` of `E`. -/
@@ -237,25 +238,25 @@ theorem wRun_ok {c b E W : Nat} (hc : 3 ≤ c) (hE : E < 16 ^ W) : ∀ j, j ≤ 
     (wRun c b E W j).1 = powMod b (E / 16 ^ (W - j)) c ∧ FlagOK c b (E / 16 ^ (W - j)) (wRun c b E W j).2
   | 0, _ => by
     rw [Nat.sub_zero, Nat.div_eq_of_lt hE]
-    exact ⟨(powMod_zero' (by omega)).symm, fun _ => rfl, fun Y t hYt hY => absurd (by
+    exact ⟨(powMod_zero' (by omega_arith)).symm, fun _ => rfl, fun Y t hYt hY => absurd (by
       rcases Nat.eq_zero_or_pos Y with h | h
       · subst h; rfl
       · exact absurd hYt.symm (Nat.ne_of_gt (Nat.mul_pos h (Nat.pow_pos (by decide))))) hY⟩
   | j + 1, hj => by
-    obtain ⟨hy, hF⟩ := wRun_ok hc hE j (by omega)
+    obtain ⟨hy, hF⟩ := wRun_ok hc hE j (by omega_arith)
     have e : E / 16 ^ (W - (j + 1)) = 16 * (E / 16 ^ (W - j)) + E / 16 ^ (W - 1 - j) % 16 := by
-      rw [show W - j = (W - 1 - j) + 1 by omega, show W - (j + 1) = W - 1 - j by omega, Nat.pow_succ,
+      rw [show W - j = (W - 1 - j) + 1 by omega_arith, show W - (j + 1) = W - 1 - j by omega_arith, Nat.pow_succ,
         ← Nat.div_div_eq_div_mul]
-      omega
+      omega_arith
     rw [wRun, show wRun c b E W j = (powMod b (E / 16 ^ (W - j)) c, (wRun c b E W j).2) by rw [← hy],
       e]
     exact win_step hc (Nat.mod_lt _ (by decide)) hF
 
-theorem sigOf_le {a : Nat} (ha : 1 ≤ a) : sigOf a ≤ a := by unfold sigOf; split <;> omega
+theorem sigOf_le {a : Nat} (ha : 1 ≤ a) : sigOf a ≤ a := by unfold sigOf; split <;> omega_arith
 
-theorem sigOf_sub {a : Nat} : (a - sigOf a) % 4 = 0 := by unfold sigOf; split <;> omega
+theorem sigOf_sub {a : Nat} : (a - sigOf a) % 4 = 0 := by unfold sigOf; split <;> omega_arith
 
-theorem sigOf_lt {a : Nat} (ha : 1 ≤ a) : a - sigOf a + sigOf a = a := by have := sigOf_le ha; omega
+theorem sigOf_lt {a : Nat} (ha : 1 ≤ a) : a - sigOf a + sigOf a = a := by have := sigOf_le ha; omega_arith
 
 theorem wSq_iter (c z n : Nat) (m P : Bool) :
     wSq c m (sqIter c z n, P) = (sqIter c z (n + 1), P || (m && decide (sqIter c z (n + 1) = c - 1))) := rfl
@@ -276,29 +277,29 @@ theorem wEnd_flag {c b m v σ y : Nat} {P : Bool} (hσ1 : 1 ≤ σ) (hσ : σ �
   constructor
   · rintro ((((h | h | ⟨i, h1, h2, h3⟩) | ⟨h4, h5⟩) | ⟨h4, h5⟩) | ⟨h4, h5⟩)
     · exact .inl h
-    · exact .inr ⟨0, by omega, h⟩
-    · exact .inr ⟨i, by omega, h3⟩
-    · exact .inr ⟨4 * v + 1, by omega, h5⟩
-    · exact .inr ⟨4 * v + 1 + 1, by omega, h5⟩
-    · exact .inr ⟨4 * v + 1 + 1 + 1, by omega, h5⟩
+    · exact .inr ⟨0, by omega_arith, h⟩
+    · exact .inr ⟨i, by omega_arith, h3⟩
+    · exact .inr ⟨4 * v + 1, by omega_arith, h5⟩
+    · exact .inr ⟨4 * v + 1 + 1, by omega_arith, h5⟩
+    · exact .inr ⟨4 * v + 1 + 1 + 1, by omega_arith, h5⟩
   · rintro (h | ⟨t, ht, h3⟩)
     · exact .inl (.inl (.inl (.inl h)))
     · rcases t with _ | t
       · exact .inl (.inl (.inl (.inr (.inl h3))))
       · rcases Nat.lt_or_ge (t + 1) (4 * v + 1) with h | h
-        · exact .inl (.inl (.inl (.inr (.inr ⟨t + 1, by omega, by omega, h3⟩))))
-        · have e : t + 1 = 4 * v + 1 ∨ t + 1 = 4 * v + 1 + 1 ∨ t + 1 = 4 * v + 1 + 1 + 1 := by omega
+        · exact .inl (.inl (.inl (.inr (.inr ⟨t + 1, by omega_arith, by omega_arith, h3⟩))))
+        · have e : t + 1 = 4 * v + 1 ∨ t + 1 = 4 * v + 1 + 1 ∨ t + 1 = 4 * v + 1 + 1 + 1 := by omega_arith
           rcases e with e | e | e <;> rw [e] at h3
-          · exact .inl (.inl (.inr ⟨by omega, h3⟩))
-          · exact .inl (.inr ⟨by omega, h3⟩)
-          · exact .inr ⟨by omega, h3⟩
+          · exact .inl (.inl (.inr ⟨by omega_arith, h3⟩))
+          · exact .inl (.inr ⟨by omega_arith, h3⟩)
+          · exact .inr ⟨by omega_arith, h3⟩
 
 /-- The windows of `E` and the three squarings: `mrIteration`'s result. -/
 theorem wEnd_eq {c W : Nat} (b : Nat) (hc : 3 ≤ c) (hodd : c % 2 = 1) (haw : mrA c ≤ bitLength c - 1)
     (hE : mrE c < 16 ^ W) :
     (wEnd c (wRun c b (mrE c) W W)).2 = mrIteration c (mrA c) (splitTwos (c - 1)).2 b := by
-  obtain ⟨hN, hm2⟩ := splitTwos_spec (c - 1) (by omega)
-  have hm16 : (splitTwos (c - 1)).2 % 16 ≠ 0 := by omega
+  obtain ⟨hN, hm2⟩ := splitTwos_spec (c - 1) (by omega_arith)
+  have hm16 : (splitTwos (c - 1)).2 % 16 ≠ 0 := by omega_arith
   change c - 1 = (splitTwos (c - 1)).2 * 2 ^ mrA c at hN
   have hEd : mrE c = (c - 1) / 2 ^ sigOf (mrA c) := rfl
   have hsd : mrSig c = sigOf (mrA c) := rfl
@@ -313,14 +314,14 @@ theorem wEnd_eq {c W : Nat} (b : Nat) (hc : 3 ≤ c) (hodd : c % 2 = 1) (haw : m
   generalize hm : (splitTwos (c - 1)).2 = m at hN hm2 hm16 ⊢
   generalize ha : mrA c = a at hN haw hEd ⊢
   subst hEd
-  have hmp : 0 < m := by omega
+  have hmp : 0 < m := by omega_arith
   have ha1 : 1 ≤ a := by
     rcases a with _ | a
-    · rw [Nat.pow_zero, Nat.mul_one] at hN; omega
-    · omega
+    · rw [Nat.pow_zero, Nat.mul_one] at hN; omega_arith
+    · omega_arith
   have hsig := sigOf_pos a
   have hσa := sigOf_le ha1
-  obtain ⟨v, hv'⟩ : ∃ v, a - sigOf a = 4 * v := ⟨(a - sigOf a) / 4, by have := sigOf_sub (a := a); omega⟩
+  obtain ⟨v, hv'⟩ : ∃ v, a - sigOf a = 4 * v := ⟨(a - sigOf a) / 4, by have := sigOf_sub (a := a); omega_arith⟩
   have has : 4 * v + sigOf a = a := by rw [← hv']; exact Nat.sub_add_cancel hσa
   have hEm : (c - 1) / 2 ^ sigOf a = m * 16 ^ v := by
     have h2 : 2 ^ a = 2 ^ (a - sigOf a) * 2 ^ sigOf a := by rw [← Nat.pow_add, Nat.sub_add_cancel hσa]
@@ -341,8 +342,8 @@ theorem wEnd_cand {w c : Nat} (b : Nat) (hw : 1 ≤ w) (hc : PrimeShape (64 * w)
   obtain ⟨hodd, hlo, hhi⟩ := hc
   have : 4 ≤ 2 ^ (64 * w - 2) := by
     calc 4 = 2 ^ 2 := rfl
-      _ ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega)
-  obtain ⟨hN, _⟩ := splitTwos_spec (c - 1) (by omega)
+      _ ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain ⟨hN, _⟩ := splitTwos_spec (c - 1) (by omega_arith)
   change c - 1 = (splitTwos (c - 1)).2 * 2 ^ mrA c at hN
   have haT : mrA c < 64 * w := by
     rcases Nat.lt_or_ge (mrA c) (64 * w) with h | h
@@ -351,13 +352,13 @@ theorem wEnd_cand {w c : Nat} (b : Nat) (hw : 1 ≤ w) (hc : PrimeShape (64 * w)
     have : 2 ^ (64 * w) ≤ 2 ^ mrA c := Nat.pow_le_pow_right (by decide) h
     have : 2 ^ mrA c ≤ (splitTwos (c - 1)).2 * 2 ^ mrA c :=
       Nat.le_mul_of_pos_left _ (by rcases Nat.eq_zero_or_pos (splitTwos (c - 1)).2 with h0 | h0
-                                   · rw [h0, Nat.zero_mul] at hN; omega
+                                   · rw [h0, Nat.zero_mul] at hN; omega_arith
                                    · exact h0)
-    omega
-  refine wEnd_eq b (by omega) hodd (by rw [hb]; omega) ?_
+    omega_arith
+  refine wEnd_eq b (by omega_arith) hodd (by rw [hb]; omega_arith) ?_
   have : mrE c ≤ c - 1 := Nat.div_le_self _ _
-  rw [sixteen_pow, show 4 * (16 * w) = 64 * w by omega]
-  omega
+  rw [sixteen_pow, show 4 * (16 * w) = 64 * w by omega_arith]
+  omega_arith
 
 /-! ## The lowest set bit -/
 
@@ -368,12 +369,12 @@ theorem and_neg_eq_twoPow {x : BitVec 64} {k : Nat} (hk : k < 64) (h1 : x.getLsb
   intro i hi
   rw [BitVec.getLsbD_and, BitVec.getLsbD_neg, BitVec.getLsbD_twoPow]
   rcases Nat.lt_trichotomy i k with h | rfl | h
-  · rw [h0 i h, decide_eq_false (show ¬ k = i by omega)]; simp
+  · rw [h0 i h, decide_eq_false (show ¬ k = i by omega_arith)]; simp
   · rw [h1]
     have : ¬ ∃ j < i, x.getLsbD j = true := fun ⟨j, hj, hj'⟩ => by rw [h0 j hj] at hj'; cases hj'
     simp [this, hk]
   · have : ∃ j < i, x.getLsbD j = true := ⟨k, h, h1⟩
-    rw [decide_eq_false (show ¬ k = i by omega)]
+    rw [decide_eq_false (show ¬ k = i by omega_arith)]
     cases x.getLsbD i <;> simp [this, hi]
 
 /-- The words of `N = m 2^a` (`m` odd) below the one with bit `a` are zero,
@@ -387,15 +388,15 @@ theorem lowWord_bits {N m a : Nat} (hN : N = m * 2 ^ a) (hm : m % 2 = 1) :
   refine ⟨fun j hj => Nat.eq_of_testBit_eq fun i => ?_, ?_, fun j hj => ?_⟩
   · rw [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, hb, Nat.zero_testBit]
     by_cases hi : i < 64
-    · simp only [hi, decide_true, Bool.true_and]; simp only [Bool.and_eq_false_iff]; left; simp; omega
+    · simp only [hi, decide_true, Bool.true_and]; simp only [Bool.and_eq_false_iff]; left; simp; omega_arith
     · simp [hi]
   · rw [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, hb]
-    simp only [show a % 64 < 64 by omega, decide_true, Bool.true_and, show a ≤ a % 64 + 64 * (a / 64) by omega,
-      show a % 64 + 64 * (a / 64) - a = 0 by omega]
+    simp only [show a % 64 < 64 by omega_arith, decide_true, Bool.true_and, show a ≤ a % 64 + 64 * (a / 64) by omega_arith,
+      show a % 64 + 64 * (a / 64) - a = 0 by omega_arith]
     rw [Nat.testBit_zero]; simp [hm]
   · rw [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, hb]
-    simp only [show j < 64 by omega, decide_true, Bool.true_and, Bool.and_eq_false_iff]
-    left; simp; omega
+    simp only [show j < 64 by omega_arith, decide_true, Bool.true_and, Bool.and_eq_false_iff]
+    left; simp; omega_arith
 
 /-- The masks of `σ > 1`, `σ > 2` and `σ > 3` from the lowest set bit
 `2^k`: `l & K ≠ 0` for the constants of the implementations. -/
@@ -419,9 +420,9 @@ theorem shl_shr60 (x : BitVec 64) {t : Nat} (ht : t < 16) :
     Nat.testBit_div_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_mul_two_pow, Nat.testBit_mod_two_pow,
     Nat.testBit_div_two_pow]
   by_cases hi : i < 4
-  · simp only [show i + 60 < 64 by omega, hi, decide_true, Bool.true_and, show 4 * t ≤ i + 60 by omega]
-    congr 1; omega
-  · simp only [show ¬ i + 60 < 64 by omega, hi, decide_false, Bool.false_and]
+  · simp only [show i + 60 < 64 by omega_arith, hi, decide_true, Bool.true_and, show 4 * t ≤ i + 60 by omega_arith]
+    congr 1; omega_arith
+  · simp only [show ¬ i + 60 < 64 by omega_arith, hi, decide_false, Bool.false_and]
 
 theorem mod_div_mod {x a b n : Nat} (h : a + b ≤ n) : x % 2 ^ n / 2 ^ a % 2 ^ b = x / 2 ^ a % 2 ^ b := by
   apply Nat.eq_of_testBit_eq
@@ -429,16 +430,16 @@ theorem mod_div_mod {x a b n : Nat} (h : a + b ≤ n) : x % 2 ^ n / 2 ^ a % 2 ^ 
   rw [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_mod_two_pow,
     Nat.testBit_div_two_pow]
   by_cases hi : i < b
-  · simp [hi, show i + a < n by omega]
+  · simp [hi, show i + a < n by omega_arith]
   · simp [hi]
 
 /-- The digit of the window: digit `16 (k − 1) + 15 − t` of `E`. -/
 theorem win_digit {W : BitVec 64} {E k t : Nat} (hW : W.toNat = E / 2 ^ (64 * (k - 1)) % 2 ^ 64) (ht : t < 16) :
     ((W <<< (4 * t)) >>> 60).toNat = E / 16 ^ (16 * (k - 1) + (15 - t)) % 16 := by
-  rw [shl_shr60 W ht, hW, mod_div_mod (by omega), Nat.div_div_eq_div_mul, ← Nat.pow_add, sixteen_pow,
-    show 64 * (k - 1) + (60 - 4 * t) = 4 * (16 * (k - 1) + (15 - t)) by omega]
+  rw [shl_shr60 W ht, hW, mod_div_mod (by omega_arith), Nat.div_div_eq_div_mul, ← Nat.pow_add, sixteen_pow,
+    show 64 * (k - 1) + (60 - 4 * t) = 4 * (16 * (k - 1) + (15 - t)) by omega_arith]
 
 theorem shl4_succ (x : BitVec 64) (t : Nat) : x <<< (4 * t) <<< 4 = x <<< (4 * (t + 1)) := by
-  rw [← BitVec.shiftLeft_add, show 4 * t + 4 = 4 * (t + 1) by omega]
+  rw [← BitVec.shiftLeft_add, show 4 * t + 4 = 4 * (t + 1) by omega_arith]
 
 end VG.Proof.RsaKeyGen

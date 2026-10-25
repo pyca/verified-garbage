@@ -48,7 +48,7 @@ theorem fs_disj {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {q : Nat}
     FS m' b q = FS m b q := by
   have e : ∀ k < 14, limb m' b q k = limb m b q k :=
     limb_frame hf fun r hr k hk => (hd r hr).sub_left (Offset.sub b (d := q + 4 * k) (n := 4) (e := q) (k := 56)
-      (by omega) (by omega))
+      (by omega_arith) (by omega_arith))
   rw [FS, V, val32_congr e]; rfl
 
 theorem disj_decW {d n xo yo : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 3520) (hxo : d + n ≤ xo ∨ xo + 56 ≤ d)
@@ -58,8 +58,8 @@ theorem disj_decW {d n xo yo : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 3520) (hxo
   intro r hr
   simp only [decW, yW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact Offset.disjoint_base _ (by omega) (by omega)
-  all_goals exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  all_goals exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem disj_FAB {d n : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 3520) :
     ∀ r ∈ [FA b, ⟨b + BitVec.ofNat 64 BAD, 8⟩], Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
@@ -67,20 +67,20 @@ theorem disj_FAB {d n : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 3520) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint_base _ (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem disj_TAB {d n : Nat} (h1 : TAB + 1832 ≤ d ∨ d + n ≤ TAB) (h2 : d + n ≤ 8192) :
     ∀ r ∈ [(⟨b + BitVec.ofNat 64 TAB, 1832⟩ : Region)], Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint _ (by unfold TAB BITS at h1 ⊢; omega) (by omega) (by decide)
+  exact Offset.disjoint _ (by unfold TAB BITS at h1 ⊢; omega_arith) (by omega_arith) (by decide)
 
 theorem disj_FA {d n : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 8192) :
     ∀ r ∈ [FA b], Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint_base _ (by unfold ACC; omega) (by omega)
+  exact Offset.disjoint_base _ (by unfold ACC; omega_arith) (by omega_arith)
 
 theorem bytes_take (m : Mem) (p : Addr) :
     (Spec.Ed448.bytesAt m p 114).take 57 = Spec.Ed448.bytesAt m p 57 := by
@@ -123,7 +123,7 @@ theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.Ve
   have hCH : CH = 3459 := rfl
   -- The inputs, as the phases read them.
   have kA : Spec.Ed448.bytesAt s2.mem (b + BitVec.ofNat 64 PK) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r3) 57 := by
-    rw [bytes_keep hf2 (disj_decW (by omega) (by omega) (by decide) (by decide) (by decide) (by decide)) (by decide),
+    rw [bytes_keep hf2 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide)) (by decide),
       ePK]
   have kR : Spec.Ed448.bytesAt s1.mem (b + BitVec.ofNat 64 SG) 57 =
       (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).take 57 := by rw [← eSG, bytes_take]
@@ -131,32 +131,32 @@ theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.Ve
       Spec.Ed448.bytesAt m (b + BitVec.ofNat 64 (SG + 57)) 57 := by intro m; rw [Offset.add_add]
   have kS3 : Spec.Ed448.bytesAt s3.mem (b + BitVec.ofNat 64 (SG + 57)) 57 =
       (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).drop 57 := by
-    rw [bytes_keep hf3 (disj_decW (by omega) (by omega) (by decide) (by decide) (by decide) (by decide)) (by decide),
-      bytes_keep hf2 (disj_decW (by omega) (by omega) (by decide) (by decide) (by decide) (by decide)) (by decide),
+    rw [bytes_keep hf3 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide)) (by decide),
+      bytes_keep hf2 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide)) (by decide),
       ← eSG, bytes_drop, sS]
   have kS5 : Spec.Ed448.bytesAt s5.mem (b + BitVec.ofNat 64 (SG + 57)) 57 =
       Spec.Ed448.bytesAt s3.mem (b + BitVec.ofNat 64 (SG + 57)) 57 := by
-    rw [bytes_keep hf5 (disj_TAB (by omega) (by omega)) (by decide),
-      bytes_keep hf4 (disj_FAB (by omega) (by omega)) (by decide)]
+    rw [bytes_keep hf5 (disj_TAB (by omega_arith) (by omega_arith)) (by decide),
+      bytes_keep hf4 (disj_FAB (by omega_arith) (by omega_arith)) (by decide)]
   have kK : Spec.Ed448.bytesAt s6.mem (b + BitVec.ofNat 64 CH) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57 := by
-    rw [bytes_keep hf6 (disj_TAB (by omega) (by omega)) (by decide),
-      bytes_keep hf5 (disj_TAB (by omega) (by omega)) (by decide),
-      bytes_keep hf4 (disj_FAB (by omega) (by omega)) (by decide),
-      bytes_keep hf3 (disj_decW (by omega) (by omega) (by decide) (by decide) (by decide) (by decide)) (by decide),
-      bytes_keep hf2 (disj_decW (by omega) (by omega) (by decide) (by decide) (by decide) (by decide)) (by decide), eCH]
+    rw [bytes_keep hf6 (disj_TAB (by omega_arith) (by omega_arith)) (by decide),
+      bytes_keep hf5 (disj_TAB (by omega_arith) (by omega_arith)) (by decide),
+      bytes_keep hf4 (disj_FAB (by omega_arith) (by omega_arith)) (by decide),
+      bytes_keep hf3 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide)) (by decide),
+      bytes_keep hf2 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide)) (by decide), eCH]
   generalize hS : Spec.Ed448.decodeLE ((Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).drop 57) = S at *
   generalize hK : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57) = K at *
   have hT : TabIs b s7.mem (tabV S K) := fun h hh => by
     rw [ht7 h hh, kK, hK, kS5, kS3, hS, tab_eq S K h hh]
   -- The points.
   have kFS : ∀ {q : Nat}, 2896 ≤ q → q + 56 ≤ 3288 → FS s7.mem b q = FS s3.mem b q := fun h1 h2 => by
-    rw [fs_disj hf7 (disj_TAB (by omega) (by omega)), fs_disj hf6 (disj_TAB (by omega) (by omega)),
-      fs_disj hf5 (disj_TAB (by omega) (by omega)), fs_disj hf4 (disj_FAB (by omega) (by omega))]
+    rw [fs_disj hf7 (disj_TAB (by omega_arith) (by omega_arith)), fs_disj hf6 (disj_TAB (by omega_arith) (by omega_arith)),
+      fs_disj hf5 (disj_TAB (by omega_arith) (by omega_arith)), fs_disj hf4 (disj_FAB (by omega_arith) (by omega_arith))]
   have kFS1 : ∀ {q : Nat}, 2896 ≤ q → q + 56 ≤ 3008 ∨ 3232 ≤ q → q + 56 ≤ 3288 → FS s3.mem b q = FS s1.mem b q :=
     fun h1 h2 h3 => by
-      rw [fs_disj hf3 (disj_decW (by omega) (by omega) (by unfold NAX; omega) (by unfold NAY; omega) (by decide)
+      rw [fs_disj hf3 (disj_decW (by omega_arith) (by omega_arith) (by unfold NAX; omega_arith) (by unfold NAY; omega_arith) (by decide)
           (by decide)),
-        fs_disj hf2 (disj_decW (by omega) (by omega) (by unfold NRX; omega) (by unfold NRY; omega) (by decide)
+        fs_disj hf2 (disj_decW (by omega_arith) (by omega_arith) (by unfold NRX; omega_arith) (by unfold NRY; omega_arith) (by decide)
           (by decide))]
   have kR3 : ∀ {q : Nat}, q = NRX ∨ q = NRY → FS s3.mem b q = FS s2.mem b q := fun h => by
     rcases h with rfl | rfl <;>
@@ -177,10 +177,10 @@ theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.Ve
   rw [ht]
   have hb8 : bad s8.mem b = bad s4.mem b := by
     unfold bad
-    rw [hst8.frame.readW (Region.contains_self _ (64 / 8)) (disj_FA (by omega) (by omega)) (by decide),
-      hf7.readW (Region.contains_self _ (64 / 8)) (disj_TAB (by omega) (by omega)) (by decide),
-      hf6.readW (Region.contains_self _ (64 / 8)) (disj_TAB (by omega) (by omega)) (by decide),
-      hf5.readW (Region.contains_self _ (64 / 8)) (disj_TAB (by omega) (by omega)) (by decide)]
+    rw [hst8.frame.readW (Region.contains_self _ (64 / 8)) (disj_FA (by omega_arith) (by omega_arith)) (by decide),
+      hf7.readW (Region.contains_self _ (64 / 8)) (disj_TAB (by omega_arith) (by omega_arith)) (by decide),
+      hf6.readW (Region.contains_self _ (64 / 8)) (disj_TAB (by omega_arith) (by omega_arith)) (by decide),
+      hf5.readW (Region.contains_self _ (64 / 8)) (disj_TAB (by omega_arith) (by omega_arith)) (by decide)]
   have hbad : bad s8.mem b = 0 ↔ (Spec.Ed448.decodePoint ((Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).take 57)).isSome ∧
       (Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem (s.gpr .r3) 57)).isSome ∧ S < Spec.Ed448.L := by
     rw [hb8, hb4, hb3, hb2, kA, kR, kS3, hS]

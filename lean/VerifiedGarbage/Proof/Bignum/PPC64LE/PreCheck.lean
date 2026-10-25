@@ -36,54 +36,54 @@ theorem odd_xor (x : Nat) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (1#64).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_arith
   rw [e]
-  rcases (show x % 2 = 0 ∨ x % 2 = 1 by omega) with h | h <;> rw [h] <;> decide
+  rcases (show x % 2 = 0 ∨ x % 2 = 1 by omega_arith) with h | h <;> rw [h] <;> decide
 
 theorem top_xor {x : Nat} (hx : x < 256) : BitVec.ofNat 64 x >>> 7 ^^^ (1 : BitVec 64) = 0 ↔ 128 ≤ x := by
   have e : BitVec.ofNat 64 x >>> 7 = BitVec.ofNat 64 (x / 128) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   rw [e]
-  rcases (show x / 128 = 0 ∨ x / 128 = 1 by omega) with h | h
-  · rw [h]; constructor <;> intro h' <;> first | (exact absurd h' (by decide)) | omega
-  · rw [h]; constructor <;> intro <;> first | decide | omega
+  rcases (show x / 128 = 0 ∨ x / 128 = 1 by omega_arith) with h | h
+  · rw [h]; constructor <;> intro h' <;> first | (exact absurd h' (by decide)) | omega_arith
+  · rw [h]; constructor <;> intro <;> first | decide | omega_arith
 
 theorem check1_ok {s : State} {N : Addr} {k : Nat} {nb : List Byte}
     (h12 : s.gpr .r12 = off N 0) (h6 : s.gpr .r6 = BitVec.ofNat 64 k) (hk : 64 ≤ k)
     (hlen : nb.length = k)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off N i) 1)
-    (hb : ∀ i (h : i < k), s.mem (off N i) = nb[i]'(by omega)) :
+    (hb : ∀ i (h : i < k), s.mem (off N i) = nb[i]'(by omega_arith)) :
     WP isa (.block check1) s fun t =>
-      ((t.gpr .r0 = 0 ↔ (nb[k - 1]'(by omega)).toNat % 2 = 1) ∧
-        t.gpr .r15 = BitVec.ofNat 64 (nb[0]'(by omega)).toNat ∧ t.gpr .r18 = 1 ∧ t.mem = s.mem) ∧
+      ((t.gpr .r0 = 0 ↔ (nb[k - 1]'(by omega_arith)).toNat % 2 = 1) ∧
+        t.gpr .r15 = BitVec.ofNat 64 (nb[0]'(by omega_arith)).toNat ∧ t.gpr .r18 = 1 ∧ t.mem = s.mem) ∧
         Keep [.r0, .r15, .r18] s t := by
   refine WP.keep _ ?_ (by decide)
   unfold check1
-  have r0 := hrd 0 (by omega)
-  have rl := hrd (k - 1) (by omega)
-  have b0 := hb 0 (by omega)
-  have bl := hb (k - 1) (by omega)
-  prun [h12, h6, Nat.zero_add, off_sub1 N (show 1 ≤ k by omega), r0, rl, read_byte64, b0, bl, exec_lbz' (show Reg.r15 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
+  have r0 := hrd 0 (by omega_arith)
+  have rl := hrd (k - 1) (by omega_arith)
+  have b0 := hb 0 (by omega_arith)
+  have bl := hb (k - 1) (by omega_arith)
+  prun [h12, h6, Nat.zero_add, off_sub1 N (show 1 ≤ k by omega_arith), r0, rl, read_byte64, b0, bl, exec_lbz' (show Reg.r15 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
     exec_lbz' (show Reg.r12 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide)]
   exact ⟨odd_xor _, rfl⟩
 
 theorem check2_ok {s : State} {k : Nat} {nb : List Byte}
     (h6 : s.gpr .r6 = BitVec.ofNat 64 k) (hk : 64 ≤ k) (hk' : k ≤ 1024) (hlen : nb.length = k)
-    (i0 : s.gpr .r0 = 0 ↔ (nb[k - 1]'(by omega)).toNat % 2 = 1)
-    (i15 : s.gpr .r15 = BitVec.ofNat 64 (nb[0]'(by omega)).toNat) (i18 : s.gpr .r18 = 1) :
+    (i0 : s.gpr .r0 = 0 ↔ (nb[k - 1]'(by omega_arith)).toNat % 2 = 1)
+    (i15 : s.gpr .r15 = BitVec.ofNat 64 (nb[0]'(by omega_arith)).toNat) (i18 : s.gpr .r18 = 1) :
     WP isa check2 s fun t =>
       (t.gpr .r0 = 0 ↔ Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) ∧ t.mem = s.mem ∧
         Keep [.r0, .r15, .r16, .r18] s t := by
-  have hB0 := (nb[0]'(by omega)).isLt
-  have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true ↔ (1 ≤ (nb[0]'(by omega)).toNat ∧
-      (nb[k - 1]'(by omega)).toNat % 2 = 1 ∧ 128 ≤ (k - 64) * 256 + (nb[0]'(by omega)).toNat) := by
+  have hB0 := (nb[0]'(by omega_arith)).isLt
+  have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true ↔ (1 ≤ (nb[0]'(by omega_arith)).toNat ∧
+      (nb[k - 1]'(by omega_arith)).toNat % 2 = 1 ∧ 128 ≤ (k - 64) * 256 + (nb[0]'(by omega_arith)).toNat) := by
     rw [modulusValid_iff hlen hk hk']
     simp only [Bool.not_or, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_lt]
-    omega
-  have hrest : ∀ t₂ : State, (t₂.gpr .r0 = 0 ↔ 1 ≤ (nb[0]'(by omega)).toNat ∧
-      (nb[k - 1]'(by omega)).toNat % 2 = 1) → t₂.gpr .r15 = BitVec.ofNat 64 (nb[0]'(by omega)).toNat →
+    omega_arith
+  have hrest : ∀ t₂ : State, (t₂.gpr .r0 = 0 ↔ 1 ≤ (nb[0]'(by omega_arith)).toNat ∧
+      (nb[k - 1]'(by omega_arith)).toNat % 2 = 1) → t₂.gpr .r15 = BitVec.ofNat 64 (nb[0]'(by omega_arith)).toNat →
       t₂.gpr .r18 = 1 → t₂.mem = s.mem → Keep [.r0, .r15, .r18] s t₂ →
       WP isa (.seq (.block [.subi .r16 .r6 64])
         (.ite (.zero .d .r16) (.block [.lsr .d .r15 .r15 7, .logic .xor .r15 .r15 .r18,
@@ -95,36 +95,36 @@ theorem check2_ok {s : State} {k : Nat} {nb : List Byte}
       t.mem = t₂.mem) (by prun [k₂.gpr .r6 (by decide), h6, Offset.ofNat_sub_ofNat hk]) (by decide))
       fun t₃ ⟨⟨l16, lm⟩, k₃⟩ => ?_)
     have k23 := k₂.trans k₃
-    refine WP.ite _ (eval_zero_ofNat _ _ (by omega) l16) (fun hz => ?_) (fun hz => ?_)
+    refine WP.ite _ (eval_zero_ofNat _ _ (by omega_arith) l16) (fun hz => ?_) (fun hz => ?_)
     · refine WP.mono (WP.keep [.r0, .r15] (Q := fun t =>
-        t.gpr .r0 = t₃.gpr .r0 ||| (BitVec.ofNat 64 (nb[0]'(by omega)).toNat >>> 7 ^^^ (1 : BitVec 64)) ∧
+        t.gpr .r0 = t₃.gpr .r0 ||| (BitVec.ofNat 64 (nb[0]'(by omega_arith)).toNat >>> 7 ^^^ (1 : BitVec 64)) ∧
           t.mem = t₃.mem) (by prun [k₃.gpr .r15 (by decide), k₃.gpr .r18 (by decide), j15, j18])
         (by decide)) fun t ⟨⟨m0, mm⟩, k₄⟩ => ⟨?_, by rw [mm, lm, jm], (k23.trans k₄).mono⟩
       rw [m0, show ∀ a b : BitVec 64, (a ||| b = 0 ↔ a = 0 ∧ b = 0) from fun _ _ => BitVec.or_eq_zero_iff, k₃.gpr .r0 (by decide), j0, top_xor hB0, hv]
-      have : k = 64 := by simp at hz; omega
+      have : k = 64 := by simp at hz; omega_arith
       subst this
-      constructor <;> intro h <;> omega
+      constructor <;> intro h <;> omega_arith
     · refine wp_nil ⟨?_, by rw [lm, jm], k23.mono⟩
       rw [k₃.gpr .r0 (by decide), j0, hv]
-      have : k ≠ 64 := by simp at hz; omega
-      constructor <;> intro h <;> omega
+      have : k ≠ 64 := by simp at hz; omega_arith
+      constructor <;> intro h <;> omega_arith
   unfold check2
-  refine WP.seq (WP.ite _ (eval_zero_ofNat _ _ (by omega) i15) (fun hz => ?_) (fun hz => ?_))
+  refine WP.seq (WP.ite _ (eval_zero_ofNat _ _ (by omega_arith) i15) (fun hz => ?_) (fun hz => ?_))
   · refine WP.mono (WP.keep [.r0] (Q := fun t => t.gpr .r0 = 1 ∧ t.mem = s.mem) (by prun; rfl) (by decide))
       fun t₂ ⟨⟨m0, mm⟩, k₂⟩ => hrest t₂ ?_ (by rw [k₂.gpr .r15 (by decide), i15])
         (by rw [k₂.gpr .r18 (by decide), i18]) mm k₂.mono
-    have : (nb[0]'(by omega)).toNat = 0 := by simpa using hz
+    have : (nb[0]'(by omega_arith)).toNat = 0 := by simpa using hz
     rw [m0, this]
-    exact ⟨fun h => absurd h (by decide), fun h => absurd h.1 (by omega)⟩
+    exact ⟨fun h => absurd h (by decide), fun h => absurd h.1 (by omega_arith)⟩
   · refine wp_nil (hrest s ?_ i15 i18 rfl (Keep.refl _ _))
-    have : (nb[0]'(by omega)).toNat ≠ 0 := by simpa using hz
-    rw [i0]; omega
+    have : (nb[0]'(by omega_arith)).toNat ≠ 0 := by simpa using hz
+    rw [i0]; omega_arith
 
 theorem check_ok {s : State} {N : Addr} {k : Nat} {nb : List Byte}
     (h12 : s.gpr .r12 = off N 0) (h6 : s.gpr .r6 = BitVec.ofNat 64 k) (hk : 64 ≤ k) (hk' : k ≤ 1024)
     (hlen : nb.length = k)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off N i) 1)
-    (hb : ∀ i (h : i < k), s.mem (off N i) = nb[i]'(by omega)) :
+    (hb : ∀ i (h : i < k), s.mem (off N i) = nb[i]'(by omega_arith)) :
     WP isa check s fun t =>
       (t.gpr .r0 = 0 ↔ Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) ∧ t.mem = s.mem ∧
         Keep [.r0, .r15, .r16, .r18] s t := by

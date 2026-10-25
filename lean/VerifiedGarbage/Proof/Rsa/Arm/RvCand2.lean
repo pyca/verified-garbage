@@ -85,7 +85,7 @@ theorem expA_vp {E : State → Prop} {j i : Nat} {R : Prog isa} {G : State → S
   refine VP.seq (St.phalf (by decide) (by decide)) ?_
   refine VP.seq St.pctxw ?_
   refine VP.seq ((St.psel selXm_taint (o := mXm) (a := aO) (b := mG) (sl := sBit) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (fun σ _ => by simp [upd]; omega)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (fun σ _ => by simp [upd]; omega_arith)
     (by decide)).mono (fun _ _ h => h) fun σ s h => St.mono h ?_ ?_ ?_) hR
   · intro x hx
     refine ⟨hx, ?_⟩
@@ -109,7 +109,7 @@ theorem expA_vp {E : State → Prop} {j i : Nat} {R : Prog isa} {G : State → S
 
 theorem expY_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} {j i : Nat} :
     VP (Ms P E j i) (seqs (mmul iY iY iXm)) (My P E j i) := by
-  have hn0 : 0 < P.n := by omega
+  have hn0 : 0 < P.n := by omega_arith
   refine St.pmmul (o := iY) (a := iY) (b := iXm) (by decide) hn.1 (by decide) (by decide) (by decide) (by decide)
     (by decide) fun σ _ => ?_
   have eY : Am P σ j i (mBase + iY) = gR P j (rv P σ % 2 ^ i) := by simp [Am, Ae, upd, mXm, mY, mBase, iY, mG]
@@ -122,7 +122,7 @@ theorem expY_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} {j i : Nat} 
 
 theorem expG_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} {j i : Nat} :
     VP (My P E j i) (seqs (mmul iG iG iG)) (Mg P E j i) := by
-  have hn0 : 0 < P.n := by omega
+  have hn0 : 0 < P.n := by omega_arith
   refine St.pmmul (o := iG) (a := iG) (b := iG) (by decide) hn.1 (by decide) (by decide) (by decide) (by decide)
     (by decide) fun σ _ => ?_
   have eG : upd (Am P σ j i) (mBase + iY) (gR P j (rv P σ % 2 ^ (i + 1))) (mBase + iG) = gR P j (2 ^ i) := by
@@ -138,13 +138,13 @@ theorem expN_vp (hcl : P.c < 2 ^ 31) {E : State → Prop} {j i : Nat} (hi : i < 
       (fun σ s => isa.eval .ne s = some (decide (i + 1 < P.c)) ∧ Xs P E j (i + 1) σ s) := by
   refine (St.pcnt cntNext_taint (fun _ h => h) (by decide) (fun σ _ => ?_) (fun σ _ => ?_)).mono (fun _ _ h => h)
     fun σ s ⟨h, z⟩ => ⟨?_, St.mono h ?_ ?_ ?_⟩
-  · simp [upd, Vc, sBit, sCnt]; omega
-  · simp [upd, Vc, sBit, sCnt]; omega
+  · simp [upd, Vc, sBit, sCnt]; omega_arith
+  · simp [upd, Vc, sBit, sCnt]; omega_arith
   · show some (!s.z) = some (decide (i + 1 < P.c))
     rw [z]
     simp only [upd_self, upd_ne _ _ (show sCnt ≠ sBit by decide), Vc]
     simp only [Option.some.injEq, Bool.not_eq_eq_eq_not]
-    by_cases h : i + 1 < P.c <;> simp [h] <;> omega
+    by_cases h : i + 1 < P.c <;> simp [h] <;> omega_arith
   · intro x hx
     refine ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx)), ?_⟩
     simp only [Le, liveM, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -155,7 +155,7 @@ theorem expN_vp (hcl : P.c < 2 ^ 31) {E : State → Prop} {j i : Nat} (hi : i < 
     refine ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx), ?_⟩
     simp only [LSe, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> simp [upd, Vc, sBit, sCnt, sCand, sTc]
-    omega
+    omega_arith
 
 /-- The bit `i` of `r`. -/
 theorem expStep_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State → Prop} {j i : Nat}
@@ -168,11 +168,11 @@ theorem expStep_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : Stat
 theorem expLoop_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) (hc0 : 0 < P.c) {E : State → Prop}
     {j : Nat} : VP (Xs P E j 0) expLoop (Xs P E j P.c) := by
   have hl := VP.loop (I := fun m σ s => m ≤ P.c ∧ Xs P E j (P.c - m) σ s) (body := expBody) (c := .ne)
-    (Q := Xs P E j P.c) (fun n => VP.pure fun hle => (expStep_vp hn hcl (i := P.c - (n + 1)) (by omega)).mono
-      (fun _ _ h => h) fun σ s ⟨ev, h⟩ => ⟨by rw [ev]; congr 1; simp only [decide_eq_decide]; omega,
-        fun h0 => by subst h0; rwa [show P.c - (0 + 1) + 1 = P.c by omega] at h,
-        fun _ => ⟨by omega, by rwa [show P.c - (n + 1) + 1 = P.c - n by omega] at h⟩⟩) (P.c - 1)
-  exact hl.mono (fun σ s h => ⟨by omega, by rwa [show P.c - (P.c - 1 + 1) = 0 by omega]⟩) fun _ _ h => h
+    (Q := Xs P E j P.c) (fun n => VP.pure fun hle => (expStep_vp hn hcl (i := P.c - (n + 1)) (by omega_arith)).mono
+      (fun _ _ h => h) fun σ s ⟨ev, h⟩ => ⟨by rw [ev]; congr 1; simp only [decide_eq_decide]; omega_arith,
+        fun h0 => by subst h0; rwa [show P.c - (0 + 1) + 1 = P.c by omega_arith] at h,
+        fun _ => ⟨by omega_arith, by rwa [show P.c - (n + 1) + 1 = P.c - n by omega_arith] at h⟩⟩) (P.c - 1)
+  exact hl.mono (fun σ s h => ⟨by omega_arith, by rwa [show P.c - (P.c - 1 + 1) = 0 by omega_arith]⟩) fun _ _ h => h
 
 end
 

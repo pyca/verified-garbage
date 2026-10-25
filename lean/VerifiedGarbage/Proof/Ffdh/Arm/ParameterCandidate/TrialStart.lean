@@ -25,14 +25,7 @@ theorem trialStart_ok (s : State) (dst : BitVec 32) (n : Nat)
         t.gpr .r2 = 0 ∧ t.gpr .r3 = s.gpr .r7 ∧
         t.gpr .r4 = VG.Proof.RsaKeyGen.ninv (s.gpr .r7) ∧ t.mem = s.mem) ∧
         Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6] s t := by
-  refine withRest [.r0, .r1, .r2, .r3, .r4, .r5, .r6] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.trialStart : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r2, .r3, .r4, .r5, .r6] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.trialStart
   simp only [List.cons_append, List.nil_append]
   refine wp_mov (op2_reg _ _) fun u1 v1 => wp_mov (op2_reg _ _) fun u2 v2 =>

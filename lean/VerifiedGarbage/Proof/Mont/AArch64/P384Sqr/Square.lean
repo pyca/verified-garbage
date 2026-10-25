@@ -134,7 +134,7 @@ theorem dblAdcs_ok : ∀ (ts : List Reg) (s : State), ts.Nodup →
     rw [gt] at e₂
     simp only [regsVal, List.length_cons, g₁, pow64_succ]
     simp only [Nat.mul_assoc] at ev ⊢
-    omega
+    omega_arith
 
 /-- The accumulator doubled, its carry out in the flag. -/
 theorem dbl_ok (s : State) :
@@ -153,7 +153,7 @@ theorem dbl_ok (s : State) :
   rw [← v₁, ← c₁] at ev
   rw [gt, show 64 * P384Mul.accRegs.tail.length = 704 from rfl] at e₂
   simp only [regsVal, g₁, Bool.toNat_false] at ev ⊢
-  omega
+  omega_arith
 
 /-! ## The squares of the words -/
 
@@ -213,10 +213,10 @@ theorem diagStep_ok (s : State) {a lo hi : Reg} (first : Bool) (ha : a ≠ .x2) 
   rw [← v₄, ← c₄, hi₃, v₃, c₃, a₂] at e₄
   have hhi : (BitVec.ofNat 64 ((s.gpr a).toNat * (s.gpr a).toNat / 2 ^ 64)).toNat =
       (s.gpr a).toNat * (s.gpr a).toNat / 2 ^ 64 := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   rw [hhi] at e₄
   rw [lo₄]
-  cases first <;> simp only [Bool.false_eq_true, ite_false, ite_true, Bool.toNat_false] at e₂ ⊢ <;> omega
+  cases first <;> simp only [Bool.false_eq_true, ite_false, ite_true, Bool.toNat_false] at e₂ ⊢ <;> omega_arith
 
 /-- `ts += Σ_i 2^(128 i) a_i^2` with the carry in (unless `first`), and its carry out. -/
 theorem diagIn_ok : ∀ (as ts : List Reg) (first : Bool) (s : State), ts.length = 2 * as.length →
@@ -230,7 +230,7 @@ theorem diagIn_ok : ∀ (as ts : List Reg) (first : Bool) (s : State), ts.length
     · exact absurd rfl (hne rfl)
   | [], _ :: _, _, _, hl, _, _, _ => absurd hl (by simp)
   | _ :: _, [], _, _, hl, _, _, _ => absurd hl (by simp)
-  | _ :: _, [_], _, _, hl, _, _, _ => by simp at hl; omega
+  | _ :: _, [_], _, _, hl, _, _, _ => by simp at hl; omega_arith
   | a :: as, lo :: hi :: ts, first, s, hl, _, hnd, ha => by
     simp only [List.nodup_cons, List.mem_cons, not_or] at hnd
     obtain ⟨⟨h2l, h2h, h2t⟩, ⟨hlh, hlt⟩, hht, hnd⟩ := hnd
@@ -243,7 +243,7 @@ theorem diagIn_ok : ∀ (as ts : List Reg) (first : Bool) (s : State), ts.length
       obtain ⟨h1, h2⟩ := ha b (List.mem_cons_of_mem _ hb)
       simp only [List.mem_cons, not_or] at h2
       exact ⟨h1, h2.2.2⟩
-    refine WP.mono (diagIn_ok as ts false s₁ (by simp at hl; omega) (by simp)
+    refine WP.mono (diagIn_ok as ts false s₁ (by simp at hl; omega_arith) (by simp)
       (List.nodup_cons.mpr ⟨h2t, hnd⟩) has) fun t ⟨e₂, k₂⟩ => ?_
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     have gt : regsVal s₁ ts = regsVal s ts := regsVal_congr fun r hr => k₁.gpr r (by
@@ -268,7 +268,7 @@ theorem diagIn_ok : ∀ (as ts : List Reg) (first : Bool) (s : State), ts.length
     simp only [regsVal, dgList, List.length_cons, glo, ghi, pow64_succ, Bool.false_eq_true,
       ite_false] at e₁ e₂ ⊢
     simp only [Nat.mul_add, Nat.mul_assoc] at e₁ e₂ ⊢
-    omega
+    omega_arith
 
 /-- The squares of the words added to the accumulator, its carry out in the flag. -/
 theorem diag_ok (s : State) :
@@ -281,7 +281,7 @@ theorem diag_ok (s : State) :
     simp only [dgList, diagSum, aRegs, P384Mul.bRegs384, sqX, List.getD, List.getElem?_cons_zero,
       List.getElem?_cons_succ, Option.getD_some, List.range, List.range.loop, List.map, List.sum_cons,
       List.sum_nil]
-    omega
+    omega_arith
   rw [← hd]
   simpa only [ite_true, Nat.add_zero, show 64 * P384Mul.accRegs.length = 768 from rfl] using e
 
@@ -319,7 +319,7 @@ theorem sqAt_ok {rm : Reg} (hrm : RmOk rm) {s : State} {base : Addr} {size : Nat
   have := Bool.toNat_le s₂.c
   have := Bool.toNat_le t.c
   rcases Nat.eq_zero_or_pos s₂.c.toNat with h | h <;> rcases Nat.eq_zero_or_pos t.c.toNat with h' | h' <;>
-    omega
+    omega_arith
 
 /-- The square as `vg_p384_sqr_mod_p` computes it. -/
 theorem sq_ok {s : State} {base : Addr} (hp : Ptr s .x27 base 48) (hz : s.gpr .x7 = 0) :

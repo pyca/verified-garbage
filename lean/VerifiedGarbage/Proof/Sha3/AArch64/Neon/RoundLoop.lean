@@ -38,15 +38,15 @@ theorem RcTable.frame {s t : State} {T : Addr} (h : RcTable s T) {rs : List Regi
     (hf : Frame rs s.mem t.mem) (hd : ∀ r ∈ rs, (Region.mk T 384).Disjoint r) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) : RcTable t T :=
   ⟨fun k hk => by rw [hrd, hwr]; exact h.rd k hk, fun k hk => by
-    rw [hf.readW (r := ⟨T, 384⟩) (Offset.contains_base T (by omega) (by omega)) hd (by decide)]
+    rw [hf.readW (r := ⟨T, 384⟩) (Offset.contains_base T (by omega_arith) (by omega_arith)) hd (by decide)]
     exact h.word k hk⟩
 
 /-- Entry `r` of the table, as the value `ldrq` loads. -/
 theorem RcTable.entry {s : State} {T : Addr} (h : RcTable s T) {r : Nat} (hr : r < 24) :
     s.mem.read (T + BitVec.ofNat 64 (16 * r)) 16 = ofVDwords (Spec.Sha3.RC r) (Spec.Sha3.RC r) := by
-  rw [read16_dwords, Offset.add_add, show 16 * r = 8 * (2 * r) by omega, h.word _ (by omega),
-    show 8 * (2 * r) + 8 = 8 * (2 * r + 1) by omega, h.word _ (by omega)]
-  congr 2 <;> omega
+  rw [read16_dwords, Offset.add_add, show 16 * r = 8 * (2 * r) by omega_arith, h.word _ (by omega_arith),
+    show 8 * (2 * r) + 8 = 8 * (2 * r + 1) by omega_arith, h.word _ (by omega_arith)]
+  congr 2 <;> omega_arith
 
 /-- The vector operations of a round before iota. -/
 def Core2 (core : List Instr) : Prop :=
@@ -102,7 +102,7 @@ theorem word_store {m : Mem} {T : Addr} {j i : Nat} (hj : j < 48) (hi : i < 48) 
   by_cases h : i = j
   · subst h; simp only [↓reduceIte]; exact Mem.readW_writeW_self _ _ 8 _ (by decide)
   · simp only [h, ↓reduceIte]
-    rw [Mem.readW_writeW_sep (Offset.sep T (by omega) (by omega) (by omega)) (by decide)]
+    rw [Mem.readW_writeW_sep (Offset.sep T (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
 
 /-- The table's stores, to `T` at `p`, writable. -/
 theorem rcStore_ok {s : State} {p : Reg} (hp16 : p ≠ .x16) {T : Addr} (hT : s.gpr p = T)
@@ -112,7 +112,7 @@ theorem rcStore_ok {s : State} {p : Reg} (hp16 : p ≠ .x16) {T : Addr} (hT : s.
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ Frame [⟨T, 384⟩] s.mem t.mem ∧ RcTable t T := by
   unfold rcStore
   refine WP.mono (wp_range_flatMap (M := isa) (StInv s T) (fun k t hk h => ?_) 24 (Nat.le_refl _) s
-    ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩)
+    ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (by omega_arith)⟩)
     fun t h => ⟨h.gpr, h.v, h.rd, h.wr, h.sp, h.frame,
       ⟨fun r hr => by
         obtain ⟨R, hR, hc⟩ := hw16 r hr
@@ -123,16 +123,16 @@ theorem rcStore_ok {s : State} {p : Reg} (hp16 : p ≠ .x16) {T : Addr} (hT : s.
   have hx : t₁.gpr .x16 = Spec.Sha3.RC k := by
     rw [x₁, VG.Proof.Sha3.AArch64.Sha3.Vector.constantLow_RC k hk]
   have ha : t₁.gpr p + BitVec.ofNat 64 (0 + 16 * k) = T + BitVec.ofNat 64 (8 * (2 * k)) := by
-    rw [k₁.gpr p hp16, h.gpr p hp16, hT]; congr 2; omega
+    rw [k₁.gpr p hp16, h.gpr p hp16, hT]; congr 2; omega_arith
   have hb : t₁.gpr p + BitVec.ofNat 64 (0 + 16 * k + 8) = T + BitVec.ofNat 64 (8 * (2 * k + 1)) := by
-    rw [k₁.gpr p hp16, h.gpr p hp16, hT]; congr 2; omega
+    rw [k₁.gpr p hp16, h.gpr p hp16, hT]; congr 2; omega_arith
   rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (str_ok (by omega) ha (by rw [k₁.wr, h.wr]; exact hw _ (by omega)))
+  refine WP.mono (str_ok (by omega_arith) ha (by rw [k₁.wr, h.wr]; exact hw _ (by omega_arith)))
     fun t₂ ⟨v₂, g₂, rd₂, wr₂, sp₂, m₂⟩ => ?_
   have hb₂ : t₂.gpr p + BitVec.ofNat 64 (0 + 16 * k + 8) = T + BitVec.ofNat 64 (8 * (2 * k + 1)) := by
     rw [g₂]; exact hb
-  refine WP.mono (str_ok (a := T + BitVec.ofNat 64 (8 * (2 * k + 1))) (by omega) hb₂
-    (by rw [wr₂, k₁.wr, h.wr]; exact hw _ (by omega)))
+  refine WP.mono (str_ok (a := T + BitVec.ofNat 64 (8 * (2 * k + 1))) (by omega_arith) hb₂
+    (by rw [wr₂, k₁.wr, h.wr]; exact hw _ (by omega_arith)))
     fun t₃ ⟨v₃, g₃, rd₃, wr₃, sp₃, m₃⟩ => ?_
   have hm : t₃.mem = (t.mem.writeW (T + BitVec.ofNat 64 (8 * (2 * k))) (Spec.Sha3.RC k)).writeW
       (T + BitVec.ofNat 64 (8 * (2 * k + 1))) (Spec.Sha3.RC k) := by
@@ -141,15 +141,15 @@ theorem rcStore_ok {s : State} {p : Reg} (hp16 : p ≠ .x16) {T : Addr} (hT : s.
     by rw [rd₃, rd₂, k₁.rd, h.rd], by rw [wr₃, wr₂, k₁.wr, h.wr], by rw [sp₃, sp₂, k₁.sp, h.sp], ?_,
     fun i hi => ?_⟩
   · rw [hm]
-    exact (h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base T (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base T (by omega) (by omega))
-  · rw [hm, word_store (by omega) (by omega), word_store (by omega) (by omega)]
+    exact (h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base T (by omega_arith) (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base T (by omega_arith) (by omega_arith))
+  · rw [hm, word_store (by omega_arith) (by omega_arith), word_store (by omega_arith) (by omega_arith)]
     by_cases h1 : i = 2 * k + 1
-    · simp only [h1, ↓reduceIte]; congr 1; omega
+    · simp only [h1, ↓reduceIte]; congr 1; omega_arith
     · simp only [h1, ↓reduceIte]
       by_cases h0 : i = 2 * k
-      · simp only [h0, ↓reduceIte]; congr 1; omega
-      · simp only [h0, ↓reduceIte]; exact h.word i (by omega)
+      · simp only [h0, ↓reduceIte]; congr 1; omega_arith
+      · simp only [h0, ↓reduceIte]; exact h.word i (by omega_arith)
 
 /-- The iota step: the constant from the table, XORed into lane 0. -/
 theorem iotaQ_ok {s : State} {A B : Spec.Sha3.State} (hp : CPairs s A B) {p : Reg} {rc : BitVec 64}
@@ -170,7 +170,7 @@ theorem iotaQ_ok {s : State} {A B : Spec.Sha3.State} (hp : CPairs s A B) {p : Re
     rw [hp0,pair_xor]
   · rw [ite_eq_right h0,ite_eq_right h0,h2.get (vreg i) (by
       change ¬ vreg i = vreg 0
-      rw [vreg_inj i (by omega) 0 (by decide)]; exact h0),h1.get (vreg i)
+      rw [vreg_inj i (by omega_arith) 0 (by decide)]; exact h0),h1.get (vreg i)
       ((show ∀ i < 25,vreg i ≠ .v26 by decide) i hi)]
     exact hp i hi
 
@@ -178,7 +178,7 @@ theorem ofNat_ne_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k != 0) = de
   by_cases hk : k = 0
   · subst hk; rfl
   · have : BitVec.ofNat 64 k ≠ 0 := by
-      intro e; have := congrArg BitVec.toNat e; simp at this; omega
+      intro e; have := congrArg BitVec.toNat e; simp at this; omega_arith
     rw [show (BitVec.ofNat 64 k != 0) = true from bne_iff_ne.mpr this]
     simp [hk]
 
@@ -228,7 +228,7 @@ theorem roundsLoop_ok {core : List Instr} (hc : Core2 core) {p : Reg} (hp16 : p 
     have hcnt : t'.gpr .x16 = BitVec.ofNat 64 (24 - (r + 1)) := by
       rw [x₄, g₃ _ hp16.symm, c₂.gpr, ku.gpr, h.cnt]
       have := h.lt
-      rw [show 24 - r = (24 - (r + 1)) + 1 by omega, BitVec.ofNat_add]
+      rw [show 24 - r = (24 - (r + 1)) + 1 by omega_arith, BitVec.ofNat_add]
       exact BitVec.add_sub_cancel _ _
     have hpairs : Pairs t' ((List.range (r + 1)).foldl Spec.Sha3.rnd A)
         ((List.range (r + 1)).foldl Spec.Sha3.rnd B) := by
@@ -247,15 +247,15 @@ theorem roundsLoop_ok {core : List Instr} (hc : Core2 core) {p : Reg} (hp16 : p 
     have hsp : t'.sp = s.sp := by rw [sp₄, sp₃, c₂.sp, ku.sp, h.sp]
     show (some (t'.read .x .x16 != 0) = some false ∧ _) ∨ (some (t'.read .x .x16 != 0) = some true ∧ _)
     have hrd16 : t'.read .x .x16 = t'.gpr .x16 := rfl
-    rw [hrd16, hcnt, ofNat_ne_zero (by omega)]
+    rw [hrd16, hcnt, ofNat_ne_zero (by omega_arith)]
     by_cases hl : r + 1 = 24
     · left
       refine ⟨by simp [hl], hgpr, hmem, hrd, hwr, hsp, by rw [hptr, hl], ?_⟩
       rw [hl] at hpairs
       exact hpairs
     · right
-      refine ⟨by have := h.lt; simp; omega, 24 - (r + 1), by have := h.lt; omega, r + 1, rfl,
-        ⟨by have := h.lt; omega, hgpr, hmem, hrd, hwr, hsp, hptr, hcnt, hpairs⟩⟩
+      refine ⟨by have := h.lt; simp; omega_arith, 24 - (r + 1), by have := h.lt; omega_arith, r + 1, rfl,
+        ⟨by have := h.lt; omega_arith, hgpr, hmem, hrd, hwr, hsp, hptr, hcnt, hpairs⟩⟩
   · -- the invariant at the start
     refine ⟨by decide, fun g h1 _ => by simp [State.write, h1], rfl, rfl, rfl, rfl,
       by simp [State.write, hp16], by simp [State.write], fun i hi => hpr i hi⟩

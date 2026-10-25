@@ -76,19 +76,19 @@ theorem pairedLowKernel_ok (g : Nat) (hg : VG.Proof.MlDsa.AArch64.Round.IsG g) {
     simp only [hu.rd,hu.wr,hb.rd,hb.wr,BitVec.add_assoc,←BitVec.ofNat_add]
     apply ha.workRead
     obtain ⟨i,rfl⟩ := (extraSlots_mem _ _).mp hp
-    omega
+    omega_arith
   · simpa only [hu16] using hsa
   · simpa only [hu15] using hdd
   · simpa only [hu16] using hda
   · simpa only [hu.rd,hu.wr,hb.rd,hb.wr] using ha.table
   · intro i hi p j
     simp only [hu.rd,hu.wr,hb.rd,hb.wr,hu2',BitVec.add_assoc,←BitVec.ofNat_add]
-    exact ha.workRead _ (by omega)
+    exact ha.workRead _ (by omega_arith)
   · intro v hv i
     simp only [hu.rd,hu.wr,hb.rd,hb.wr,hu15,hu16,BitVec.add_assoc,←BitVec.ofNat_add]
-    have hi0 : lowOff i≤1792 := by unfold lowOff; omega
-    refine ⟨ha.dataRead _ (by omega),ha.dataRead _ (by omega),ha.dataWrite _ (by omega),
-      ha.dataWrite _ (by omega),haw _ (by omega),haw _ (by omega)⟩
+    have hi0 : lowOff i≤1792 := by unfold lowOff; omega_arith
+    refine ⟨ha.dataRead _ (by omega_arith),ha.dataRead _ (by omega_arith),ha.dataWrite _ (by omega_arith),
+      ha.dataWrite _ (by omega_arith),haw _ (by omega_arith),haw _ (by omega_arith)⟩
   · refine ⟨u,⟨hum.trans hm,hu2',hu15,hu16⟩,hac,?_,?_,?_⟩
     · refine hkeep.mono ?_
       intro r hr
@@ -217,7 +217,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Paired
 private theorem accessRegion {p : Addr} {len : Nat} {rs : List Region}
     (h : (⟨p,len⟩:Region)∈rs) {off : Nat} (ho : off+16≤len) (hl : len<2^64) :
     InRegions rs (p+BitVec.ofNat 64 off) 16 :=
-  ⟨_,h,Offset.contains_base p ho (by omega)⟩
+  ⟨_,h,Offset.contains_base p ho (by omega_arith)⟩
 
 theorem LowSpecPre.access {s : State} (h : LowSpecPre s) : EntryAccess s := by
   constructor
@@ -364,21 +364,21 @@ theorem lowPass_read_high (g : Nat) (work out aux : Addr) (c : LowConstants)
       lowHighOutput g d.mem (lowAddr (out+BitVec.ofNat 64 (16*k)) i h)
         (lowHalfValue (fun p => Inverse.rawFinalValues (readPair d.mem (work+BitVec.ofNat 64 (16*k)) 128 p)) i h) := by
   induction n with
-  | zero => omega
+  | zero => omega_arith
   | succ n ih =>
     by_cases he : k=n
     · subst k
-      rw [lowPass_step g work out aux c d (by omega) ho ha,
+      rw [lowPass_step g work out aux c d (by omega_arith) ho ha,
         lowRun_read_high _ _ _ _ _ _ _ _ _ (allLow_mem i) allLow_nodup (shifted_disjoint out aux _ hd)]
       exact lowHighOutput_read_eq _ _ _
-        (lowPass_read_future g work out aux c d (Nat.le_refl n) (by omega) i h hd)
+        (lowPass_read_future g work out aux c d (Nat.le_refl n) (by omega_arith) i h hd)
     · rw [lowPassData,lowRun_read_other _ _ _ _ _ _ _ _ ?_]
-      · exact ih (by omega) (by omega)
+      · exact ih (by omega_arith) (by omega_arith)
       · intro j _
-        have h0 := lowSlice_sep out (by omega : n<8) (by omega : k<8) he i j h 0
-        have h1 := lowSlice_sep out (by omega : n<8) (by omega : k<8) he i j h 1
-        have h2 := hd.sep (lowAddr_contains out (by omega : k<8) i h) (lowAddr_contains aux (by omega : n<8) j 0)
-        have h3 := hd.sep (lowAddr_contains out (by omega : k<8) i h) (lowAddr_contains aux (by omega : n<8) j 1)
+        have h0 := lowSlice_sep out (by omega_arith : n<8) (by omega_arith : k<8) he i j h 0
+        have h1 := lowSlice_sep out (by omega_arith : n<8) (by omega_arith : k<8) he i j h 1
+        have h2 := hd.sep (lowAddr_contains out (by omega_arith : k<8) i h) (lowAddr_contains aux (by omega_arith : n<8) j 0)
+        have h3 := hd.sep (lowAddr_contains out (by omega_arith : k<8) i h) (lowAddr_contains aux (by omega_arith : n<8) j 1)
         simpa only [lowAddr,Fin.val_zero,Fin.val_one,Nat.mul_zero,Nat.add_zero,Nat.mul_one] using
           And.intro h0 (And.intro h1 (And.intro h2 h3))
 
@@ -403,21 +403,21 @@ theorem lowPass_read_low (g : Nat) (work out aux : Addr) (c : LowConstants)
       lowLowOutput g d.mem (lowAddr (out+BitVec.ofNat 64 (16*k)) i h)
         (lowHalfValue (fun p => Inverse.rawFinalValues (readPair d.mem (work+BitVec.ofNat 64 (16*k)) 128 p)) i h) c := by
   induction n with
-  | zero => omega
+  | zero => omega_arith
   | succ n ih =>
     by_cases he : k=n
     · subst k
-      rw [lowPass_step g work out aux c d (by omega) ho ha,
+      rw [lowPass_step g work out aux c d (by omega_arith) ho ha,
         lowRun_read_low _ _ _ _ _ _ _ _ _ (allLow_mem i) allLow_nodup (shifted_disjoint out aux _ hd)]
       exact lowLowOutput_read_eq _ _ _ _
-        (lowPass_read_future g work out aux c d (Nat.le_refl n) (by omega) i h hd)
+        (lowPass_read_future g work out aux c d (Nat.le_refl n) (by omega_arith) i h hd)
     · rw [lowPassData,lowRun_read_other _ _ _ _ _ _ _ _ ?_]
-      · exact ih (by omega) (by omega)
+      · exact ih (by omega_arith) (by omega_arith)
       · intro j _
-        have h0 := hd.symm.sep (lowAddr_contains aux (by omega : k<8) i h) (lowAddr_contains out (by omega : n<8) j 0)
-        have h1 := hd.symm.sep (lowAddr_contains aux (by omega : k<8) i h) (lowAddr_contains out (by omega : n<8) j 1)
-        have h2 := lowSlice_sep aux (by omega : n<8) (by omega : k<8) he i j h 0
-        have h3 := lowSlice_sep aux (by omega : n<8) (by omega : k<8) he i j h 1
+        have h0 := hd.symm.sep (lowAddr_contains aux (by omega_arith : k<8) i h) (lowAddr_contains out (by omega_arith : n<8) j 0)
+        have h1 := hd.symm.sep (lowAddr_contains aux (by omega_arith : k<8) i h) (lowAddr_contains out (by omega_arith : n<8) j 1)
+        have h2 := lowSlice_sep aux (by omega_arith : n<8) (by omega_arith : k<8) he i j h 0
+        have h3 := lowSlice_sep aux (by omega_arith : n<8) (by omega_arith : k<8) he i j h 1
         simpa only [lowAddr,Fin.val_zero,Fin.val_one,Nat.mul_zero,Nat.add_zero,Nat.mul_one] using
           And.intro h0 (And.intro h1 (And.intro h2 h3))
 
@@ -436,7 +436,7 @@ def lowCoeff (u : Nat) (i : LowIndex) (h : Fin 2) (e : Nat) : Nat :=
   4*u+64*i.2.val+32*h.val+e
 
 theorem lowCoeff_lt {u e : Nat} (hu : u<8) (he : e<4) (i : LowIndex) (h : Fin 2) :
-    lowCoeff u i h e<n := by unfold lowCoeff n; omega
+    lowCoeff u i h e<n := by unfold lowCoeff n; omega_arith
 
 /-- The paired strided vector lane names exactly its contiguous polynomial coefficient. -/
 theorem lowAddr_coeff (m : Mem) (base : Addr) (u : Nat) (i : LowIndex) (h : Fin 2)
@@ -446,10 +446,10 @@ theorem lowAddr_coeff (m : Mem) (base : Addr) (u : Nat) (i : LowIndex) (h : Fin 
   rw [VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he]
   simp only [lowAddr,lowOff,lowCoeff,coeffAt,BitVec.add_assoc,←BitVec.ofNat_add]
   rw [show 16*u+(1024*i.1.val+256*i.2.val+128*h.val)+4*e=
-    1024*i.1.val+4*(4*u+64*i.2.val+32*h.val+e) by omega]
+    1024*i.1.val+4*(4*u+64*i.2.val+32*h.val+e) by omega_arith]
 
 theorem lowCoeff_rawIndex (u : Nat) (i : LowIndex) (h : Fin 2) (e : Nat) :
-    4*u+32*(2*i.2.val+h.val)+e=lowCoeff u i h e := by unfold lowCoeff; omega
+    4*u+32*(2*i.2.val+h.val)+e=lowCoeff u i h e := by unfold lowCoeff; omega_arith
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
@@ -603,7 +603,7 @@ theorem lowHalf_raw_field {m : Mem} {work challenge secret : Addr} {u e : Nat}
       ofInt (vword raw e).toInt=(pairedProduct m challenge secret i.1.val)[lowCoeff u i h e]! := by
   have hv := rawFinal_field hu hc hs i.1 (Inverse.positiveReduced_is hp.1)
     (Inverse.positiveReduced_is (hp.2 i.1.val i.1.isLt))
-    ⟨2*i.2.val+h.val,by omega⟩ he
+    ⟨2*i.2.val+h.val,by omega_arith⟩ he
   simpa only [lowHalfValue,pairedProduct,pairPolyPtr,lowCoeff_rawIndex] using hv
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired

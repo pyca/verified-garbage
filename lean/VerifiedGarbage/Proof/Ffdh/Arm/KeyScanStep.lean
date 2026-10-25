@@ -24,13 +24,7 @@ theorem scanStep_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List By
     (ptr : s.gpr .r4 = src) (count : s.gpr .r6 = BitVec.ofNat 32 bs.length) :
     WP isa VG.Impl.Ffdh.Arm.Domain.GenerateKey.scanStep s fun t =>
       ScanStepPost src bs s t ∧ Rest [.r3, .r4, .r6, .r11] s t := by
-  refine withRest [.r3, .r4, .r6, .r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs VG.Impl.Ffdh.Arm.Domain.GenerateKey.scanStep).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try decide +kernel
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4, .r6, .r11] ?_ (by rfl) (by rfl)
   rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.scanStep, VG.Impl.Ffdh.Arm.PublicScan.step, WP.seq_iff]
   refine WP.mono (scanRead_ok s source positive ptr) ?_
   rintro u ⟨⟨byte, zeroU, memU⟩, restU⟩

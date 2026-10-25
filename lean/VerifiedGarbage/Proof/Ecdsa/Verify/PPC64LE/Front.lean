@@ -95,13 +95,13 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
   wr := by show (⟨s.gpr .r6, size⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
   sc_fit := hp.sc_fit
   k_in := fun e he => ⟨⟨s.gpr .r5, 2 * c.C.len⟩, by rw [hp.rd]; simp,
-    Offset.contains_base _ (by omega) (by have := hp.sig_fit; omega)⟩
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
-  k_sc := hp.sig_sc.sub_left (Region.sub_prefix (by omega))
+    Offset.contains_base _ (by omega_arith) (by have := hp.sig_fit; omega_arith)⟩
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega_arith)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega_arith)
+  k_sc := hp.sig_sc.sub_left (Region.sub_prefix (by omega_arith))
   d_sc := hp.dg_sc
   e_sc := hp.dg_sc
-  k_fit := show (s.gpr .r5).toNat + c.C.len ≤ 2 ^ 64 by have := hp.sig_fit; omega
+  k_fit := show (s.gpr .r5).toNat + c.C.len ≤ 2 ^ 64 by have := hp.sig_fit; omega_arith
   d_fit := hp.dg_fit
   e_fit := hp.dg_fit
 
@@ -109,11 +109,11 @@ theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w
   intro w hw
   have hsz : size = 8192 := rfl
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-  have := sl_le c h7 (hl i hi); dsimp only; omega
+  have := sl_le c h7 (hl i hi); dsimp only; omega_arith
 
 theorem flag_le (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size := fun w hw => by
   have hsz : size = 8192 := rfl
-  rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega
+  rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega_arith
 
 theorem prefix_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.prefix' c =
     .seq (.block (c.setupWith Args.verify ++ [mov .r12 .r5]))
@@ -161,20 +161,20 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
   have W₂ : Outside base 0 size s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
   rw [loadS_eq]
-  refine WP.seq (wp_step (exec_addi (by decide) (show c.C.len < 2 ^ 15 by omega)) ?_)
+  refine WP.seq (wp_step (exec_addi (by decide) (show c.C.len < 2 ^ 15 by omega_arith)) ?_)
   have kw₂ : Kp [.r6] s₂ (s₂.write .r6 (s₂.gpr .r12 + BitVec.ofNat 64 c.C.len)) := Kp.write _ _ (by decide)
   have hfitS : (s₀.gpr .r5 + BitVec.ofNat 64 c.C.len).toNat + c.C.len ≤ 2 ^ 64 := by
     have := hp.sig_fit
-    rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show c.C.len < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show c.C.len < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   refine WP.mono (setupLoad_ok hc (s := s₂) (i := PT) (src := .r6) (p := s₀.gpr .r5 + BitVec.ofNat 64 c.C.len)
     (S₂.ws.of_kp kw₂) (by decide) (by decide) (by simp only [write_gpr, ite_true, r12₂]) hfitS
     (fun e he => ⟨⟨s₀.gpr .r5, 2 * c.C.len⟩, by rw [kw₂.rd, kw₂.wr, hrw₂, hp.rd]; simp, by
-      rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by have := hp.sig_fit; omega)⟩)
-    (hsg.sub_left (Offset.sub_base _ (d := c.C.len) (n := c.C.len) (by omega))) (by simp only [write_mem]; exact Outside.refl _ _ _ _))
+      rw [Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by have := hp.sig_fit; omega_arith)⟩)
+    (hsg.sub_left (Offset.sub_base _ (d := c.C.len) (n := c.C.len) (by omega_arith))) (by simp only [write_mem]; exact Outside.refl _ _ _ _))
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have U₃ : Unch base (slW c [PT]) s₂.mem s₃.mem := O₃.unch
-  rw [bytesAt_keep W₂ (hsg.sub_left (Offset.sub_base _ (d := c.C.len) (n := c.C.len) (by omega))) (by omega) (by omega)] at e₃
+  rw [bytesAt_keep W₂ (hsg.sub_left (Offset.sub_base _ (d := c.C.len) (n := c.C.len) (by omega_arith))) (by omega_arith) (by omega_arith)] at e₃
   have K₃ := S₂.toKeep.step h7 (((kw₂.mono (rs' := [.r6, .r8, .r9]) (by decide)).trans
     (k₃.mono (by decide))).rk (rs' := [.r6, .r8, .r9])) (hU := U₃) (hW := fixedOk_slW (l := [PT]) (by decide))
     (hWs := slW_le h7 (by decide))
@@ -190,17 +190,17 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
     (hW := (fixedOk_slW (by decide)).append fixedOk_flag) (hWs := le_append (slW_le h7 (by decide)) (flag_le h7))
   have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, E, QY] → i ≠ FLAG → sv c base s₄ i = sv c base s₃ i :=
     fun hi hl hf => sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
-  have W₃ : Outside base 0 size s₀.mem s₃.mem := W₂.trans (O₃.mono (Nat.zero_le _) (by omega))
+  have W₃ : Outside base 0 size s₀.mem s₃.mem := W₂.trans (O₃.mono (Nat.zero_le _) (by omega_arith))
   have x₄' : sv c base s₄ E = keyX c s₀ := by
-    rw [x₄, bytesAt_keep W₃ (hpk.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [x₄, bytesAt_keep W₃ (hpk.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have y₄' : sv c base s₄ QY = keyY c s₀ := by
-    rw [y₄, bytesAt_keep W₃ (hpk.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [y₄, bytesAt_keep W₃ (hpk.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have hq0 : s₃.mem (s₀.gpr .r3) = s₀.mem (s₀.gpr .r3) := by
-    have := keep_of_disjoint' W₃ hpk (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₃ hpk (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   have fl₃ : flagW c base s₃ = BitVec.allOnes 64 := by
     rw [flagW, U₃.word (fun w hw => (apart_slW (c := c) (l := [PT])
-      (i := FLAG) (by decide) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
+      (i := FLAG) (by decide) w hw).imp (fun h => by omega_arith) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)]
     exact S₂.flag
   have hf₄ : flagW c base s₄ = mask64 (((s₀.mem (s₀.gpr .r3) = 4 ∧
       sv c base s₄ E < c.C.p) ∧ sv c base s₄ QY < c.C.p)) := by

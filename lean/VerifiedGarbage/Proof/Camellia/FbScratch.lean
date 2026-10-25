@@ -88,7 +88,7 @@ private theorem cbcBlocksAt_congr {n : Nat}
   refine List.map_congr_left fun i hi => bytesAt_congr' fun j hj => ?_
   have := List.mem_range.mp hi
   rw [Offset.add_add]
-  exact h _ (by omega)
+  exact h _ (by omega_arith)
 
 end
 
@@ -145,8 +145,8 @@ theorem ofbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).len
   dsimp only [Curry.apply, ofbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
-    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_arith) fun i hi => hs i (by omega_arith), bytesAt_congr' hv,
+    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hR
 
 theorem cfbEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbSig.words pb).length →
@@ -176,8 +176,8 @@ theorem cfbEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbSig.words 
   dsimp only [Curry.apply, cfbEncryptPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
-    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_arith) fun i hi => hs i (by omega_arith), bytesAt_congr' hv,
+    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hR
 
 theorem cfbDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbSig.words pb).length →
@@ -207,8 +207,8 @@ theorem cfbDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbSig.words 
   dsimp only [Curry.apply, cfbDecryptPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
-    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_arith) fun i hi => hs i (by omega_arith), bytesAt_congr' hv,
+    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hR
 
 theorem ofbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).length →
@@ -237,7 +237,7 @@ theorem ofbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).l
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith), bytesAt_congr' hv]
   exact h hR
 
 theorem cfbEncryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbSig.words pb).length →
@@ -266,7 +266,7 @@ theorem cfbEncryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbSig.word
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith), bytesAt_congr' hv]
   exact h hR
 
 theorem cfbDecryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbSig.words pb).length →
@@ -295,7 +295,7 @@ theorem cfbDecryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbSig.word
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith), bytesAt_congr' hv]
   exact h hR
 
 end VG.Proof.Camellia

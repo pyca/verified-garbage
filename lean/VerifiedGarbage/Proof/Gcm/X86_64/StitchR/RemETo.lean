@@ -107,17 +107,17 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
     { rdx := by rw [f₂.gpr]
       r11 := by rw [f₂.gpr]; exact hr11
       xs := fun i _ hi => by
-        rw [f₂.mem, show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega),
-          hI.a.blocks _ (by omega)]
+        rw [f₂.mem, show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_arith),
+          hI.a.blocks _ (by omega_arith)]
       pv := fun k hk l hl => by rw [f₂.mem]; exact hI.pw k hk l hl
       ina := fun k hk => by
         rw [f₂.rd, f₂.wr, hI.a.rd, hI.a.wr, BitVec.ofInt_natCast,
           show a + BitVec.ofNat 64 (32 * k) = op s₀ + BitVec.ofNat 64 (256 * (e - 1) + 32 * k) from
-            addr_eq (by omega)]
-        exact in_rdwr (in_sub hp.o_in (by omega))
+            addr_eq (by omega_arith)]
+        exact in_rdwr (in_sub hp.o_in (by omega_arith))
       inp := fun k hk => by
         rw [f₂.rd, f₂.wr, hI.a.rd, hI.a.wr]
-        exact in_rdwr (in_sub_int hp.p_in (by omega))
+        exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
       m0 := fun l hl => by rw [f₂.lane _ (by decide) l hl]; exact hI.a.msk l hl }
   rw [WP.block_append_iff]
   refine WP.mono (ghRun_ok (yl := yl) 8 (Nat.le_refl _) s₂ hE₂ z₂
@@ -138,9 +138,9 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
     have hd := (op s₀).isLt
     rw [BitVec.toNat_add, BitVec.toNat_add, show (s.gpr .rdx).toNat = _ from ha, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 256 < 2 ^ 64 by decide),
-      Nat.mod_eq_of_lt (show 256 * e < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+      Nat.mod_eq_of_lt (show 256 * e < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   refine
     { le := hA₄.le
       ctr := fun l hl => by rw [l₅]; exact hA₄.ctr l hl
@@ -157,7 +157,7 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
         rw [r8₅, F.gpr, hd, hI.a.r8, ← BitVec.add_assoc, BitVec.sub_add_cancel]
       r9 := by
         rw [gk _ (by decide) (by decide), hI.r9]
-        congr 1; have := hI.a.le; omega
+        congr 1; have := hI.a.le; omega_arith
       rax := by rw [gk _ (by decide) (by decide)]; exact hI.rax
       gpr := fun q h1 h2 h3 h4 h5 => by rw [gk q h2 h3]; exact hI.gpr q h1 h2 h3 h4 h5
       pw := fun k hk l hl => by rw [hm]; exact hI.pw k hk l hl
@@ -165,7 +165,7 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       y := by
         rw [l₅, y4]
         refine (hf X yl hI.y1).trans ?_
-        rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega, ghash_append16]
+        rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega_arith, ghash_append16]
         exact congrArg (fun y => ghashFrom (hk s₀) y ((List.range 16).map X)) hI.y
       y1 := by rw [l₅]; exact y41 }
 
@@ -315,19 +315,19 @@ theorem remETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
     { inS := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (sAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
         rw [hrd₃, hwr₃, Offset.add_add, ← Nat.mul_add]
-        exact in_sub hp.s_in (by omega)
+        exact in_sub hp.s_in (by omega_arith)
       inK := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (pp s₀ - BitVec.ofNat 64 512 + BitVec.ofNat 64 (768 + 16 * j)) 32
         rw [hrd₃, hwr₃, eK]
-        exact in_rdwr (in_sub hp.p_in (by omega))
+        exact in_rdwr (in_sub hp.p_in (by omega_arith))
       inD := fun j (hj : j + 2 ≤ r) => by
         show InRegions s₃.wr (oAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
         rw [hwr₃, Offset.add_add, ← Nat.mul_add]
-        exact in_sub hp.o_in (by omega)
+        exact in_sub hp.o_in (by omega_arith)
       inW := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j)) 32
         rw [hrd₃, hwr₃, Offset.add_add]
-        exact in_rdwr (in_sub hp.p_in (by omega)) }
+        exact in_rdwr (in_sub hp.p_in (by omega_arith)) }
   have z1 : ∀ x, s₃.zlane x 1 = 0 → s₃.lane x 1 = 0 := fun x h => by rw [← State.zlane_lt2 _ _ (by decide)]; exact h
   -- The first block alone if `r` is odd, then the pairs and their lanes added.
   refine remMidE_ok (E := E) hE hE2 hI₃ (z1 _ (p₃ 1 (by decide)).1) (z1 _ (p₃ 1 (by decide)).2.1)
@@ -490,9 +490,9 @@ theorem loopERTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
           e + 1, by simpa using hlt, hI'⟩
       · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-          nb s₀ - 16 * (e + 1), by have := hI.one; omega, e + 1, rfl, by omega, hI'⟩
+          nb s₀ - 16 * (e + 1), by have := hI.one; omega_arith, e + 1, rfl, by omega_arith, hI'⟩
     have := hI.a.le
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by simp at h; omega, hI⟩
+    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by simp at h; omega_arith, hI⟩
 
 /-- `cmp r9, 16` after the out-of-place loop. -/
 theorem cmpE16To_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInvTo s₀ P e s)
@@ -507,9 +507,9 @@ theorem cmpE16To_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : St
       by rw [g]; exact hI.rax, fun r h1 h2 h3 h4 h5 => by rw [g]; exact hI.gpr r h1 h2 h3 h4 h5,
       fun k hk l' hl => by rw [m]; exact hI.pw k hk l' hl, fun l' hl => by rw [l]; exact hI.m1 l' hl,
       by rw [l]; exact hI.y, by rw [l]; exact hI.y1⟩
-  · rw [z, hI.r9, show nb s₀ - 16 * (e - 1) = 16 + (nb s₀ - 16 * e) by omega, zero16 _ (by omega)]
+  · rw [z, hI.r9, show nb s₀ - 16 * (e - 1) = 16 + (nb s₀ - 16 * e) by omega_arith, zero16 _ (by omega_arith)]
     congr 1
-    exact decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩
+    exact decide_eq_decide.mpr ⟨fun h => by omega_arith, fun h => by omega_arith⟩
 
 /-- `tailE`, out of place, once the loop has stopped. -/
 theorem tailERTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block}
@@ -522,8 +522,8 @@ theorem tailERTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
   refine WP.ite (decide (nb s₀ = 16 * e)) (by simp only [eval, z₁]) (fun h => ?_) (fun h => ?_)
   · exact StitchTo.finalTo_ok hp hf (by simpa using h) hI₁
   · have hne : nb s₀ ≠ 16 * e := by simpa using h
-    exact WP.seq (WP.mono (lastGRTo_ok hp hf (by omega) hI₁) fun s₂ hI₂ =>
-      remETo_ok hp hr hI₂ (by omega) hne)
+    exact WP.seq (WP.mono (lastGRTo_ok hp hf (by omega_arith) hI₁) fun s₂ hI₂ =>
+      remETo_ok hp hr hI₂ (by omega_arith) hne)
 
 /-- `encToR` after the setup, for any number of blocks from 16 on. -/
 theorem encTailRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block}

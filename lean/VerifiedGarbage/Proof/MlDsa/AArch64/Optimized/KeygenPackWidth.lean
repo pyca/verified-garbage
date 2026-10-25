@@ -105,21 +105,21 @@ theorem width_step {i : Nat} (hi : i<256/c) {s : State}
       WidthInv signed b d c start.mem input out B start (i+1) t ∧ t.gpr .x15=s.gpr .x15-1 := by
   obtain ⟨hci,hbi⟩ := hs.group hi
   have hpoly : 4*c*i+4*c≤1024 := by simpa only [Nat.mul_add,Nat.mul_assoc] using Nat.mul_le_mul_left 4 hci
-  have hn : 32*d<2^64 := by have := hs.d20;omega
-  have hg : d*c%8=0 := by have := hs.dc;omega
+  have hn : 32*d<2^64 := by have := hs.d20;omega_arith
+  have hg : d*c%8=0 := by have := hs.dc;omega_arith
   refine WP.mono (body_ok signed b d c hs.d20 hs.c0 hs.c8 hc4 hg ht s h.constants ?_ ?_
-    (fun j=>V (c*i+j)) (fun j hj=>hv _ (by omega)) ?_) fun t ⟨hw,h0,h2,h15,hk,hc⟩=>?_
+    (fun j=>V (c*i+j)) (fun j hj=>hv _ (by omega_arith)) ?_) fun t ⟨hw,h0,h2,h15,hk,hc⟩=>?_
   · intro off hoff
     rw [h.input,ptr_add,h.keep.rd,h.keep.wr]
-    exact ⟨_,hin,Offset.contains_base input (by omega) (by omega)⟩
+    exact ⟨_,hin,Offset.contains_base input (by omega_arith) (by omega_arith)⟩
   · intro off sz hoff
     rw [h.output,ptr_add,h.keep.wr]
-    exact ⟨_,hout,Offset.contains_base out (by omega) (by omega)⟩
+    exact ⟨_,hout,Offset.contains_base out (by omega_arith) (by omega_arith)⟩
   · intro j hj
-    have hij : c*i+j<256 := by omega
+    have hij : c*i+j<256 := by omega_arith
     rw [h.input,show 4*c*i=4*(c*i) by rw [Nat.mul_assoc],inputValue_shift,
       inputValue_frame signed b h.frame (by intro r hr;simp only [List.mem_singleton] at hr;subst r;exact hsep) hij]
-    exact hvalues _ (by omega)
+    exact hvalues _ (by omega_arith)
   · have hw' := hw.congr (hbytes i hi)
     rw [h.output] at hw'
     obtain ⟨hf,hb⟩ := Written.step h.frame h.bytes hw' hbi hn
@@ -135,13 +135,13 @@ theorem width_loop {s : State} (h0 : s.gpr .x0=input) (h2 : s.gpr .x2=out)
       (∀j<32*d,t.mem (out+BitVec.ofNat 64 j)=B j) ∧
       Frame [⟨out,32*d⟩] start.mem t.mem ∧ Keep widthRegs start t := by
   obtain ⟨hN0,hN⟩ := hs.G
-  refine WP.mono (VG.Proof.MlDsa.AArch64.Arith.wp_countdown (by omega) hN0
+  refine WP.mono (VG.Proof.MlDsa.AArch64.Arith.wp_countdown (by omega_arith) hN0
     (WidthInv signed b d c start.mem input out B start)
     (fun i hi s h _=>width_step signed b d c hs hc4 ht start input out V B hin hout hsep hv hvalues hbytes hi h)
     (s:=s) ?_ h15) fun t h=>?_
   · exact ⟨by simpa only [Nat.mul_zero,VG.Proof.MlKem.AArch64.ptr_zero] using h0,
       by simpa only [Nat.mul_zero,VG.Proof.MlKem.AArch64.ptr_zero] using h2,
-      by intro j hj;simp only [Nat.mul_zero] at hj;omega,
+      by intro j hj;simp only [Nat.mul_zero] at hj;omega_arith,
       by rw [hm];exact Frame.refl _ _,hk,hc⟩
   · exact ⟨by simpa only [hs.bN] using h.bytes,h.frame,h.keep⟩
 
@@ -167,13 +167,13 @@ theorem packed_group (F : BitVec 32 → Nat) (m : Mem) (input : Addr)
     byteOf (digits d ((List.range c).map fun k=>F (coeffAt m input (c*i+k)))) j=
       (bitsToBytes (fieldBits d (vals F m input)))[d*c/8*i+j]! := by
   obtain ⟨hc,hb⟩ := hs.group hi
-  rw [pack_group (c:=c) (by have := hs.d1;omega) hs.dc (by simp) (vals_lt hV) hj (by omega),
-    take_drop_eq _ 0 (by simp;omega)]
+  rw [pack_group (c:=c) (by have := hs.d1;omega_arith) hs.dc (by simp) (vals_lt hV) hj (by omega_arith),
+    take_drop_eq _ 0 (by simp;omega_arith)]
   apply congrArg (fun L=>BitVec.ofNat 8 (digits d L/2^(8*j)))
   apply List.map_congr_left
   intro k hk
   symm
-  exact vals_getD F m input (by have := List.mem_range.mp hk;omega)
+  exact vals_getD F m input (by have := List.mem_range.mp hk;omega_arith)
 
 theorem width_loop_bytes (signed : Bool) (b d c : Nat) (hs : Shape d c (d*c/8)) (hc4 : c%4=0)
     (ht : TailWidth (d*c/8)) (start : State) (input out : Addr) (F : BitVec 32 → Nat)
@@ -233,7 +233,7 @@ theorem width_ok (signed : Bool) (b d c : Nat) (hs : Shape d c (d*c/8)) (hc4 : c
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (setup_ok signed b s) fun a ⟨ka,ma,oa,ca⟩=>?_
-  refine WP.mono (counter_ok (256/c) (by have := hs.G;omega) a) fun u ⟨⟨⟨cu,mu⟩,ku⟩,vu⟩=>?_
+  refine WP.mono (counter_ok (256/c) (by have := hs.G;omega_arith) a) fun u ⟨⟨⟨cu,mu⟩,ku⟩,vu⟩=>?_
   have hk : Keep widthRegs s u := (ka.trans ku).mono
   exact width_loop_bytes signed b d c hs hc4 ht s (s.gpr .x0)
     (if signed then s.gpr .x3 else s.gpr .x2) F hin hout hsep hv hvalues

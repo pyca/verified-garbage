@@ -65,7 +65,7 @@ theorem accPre {t : Poly → Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 :
     (accC t S).pre (s1.callEntry.withRegions [pR (pa s g)] [pR (pa s f)]) := by
   obtain ⟨_, i1, i2, d12, _⟩ := accChk_spec hc
   obtain ⟨e1, e2⟩ := argsIn2 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   have hwf := ce_wfS (ws := [64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [pR (pa s g)] [pR (pa s f)]
   sig_pre [accSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [e1, e2, Arg.val]
@@ -82,7 +82,7 @@ theorem accAt_ok {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : C
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
   obtain ⟨w1, i1, i2, _, ok⟩ := accChk_spec hc
-  have hD : 8 ≤ D := by have := C.hS; omega
+  have hD : 8 ≤ D := by have := C.hS; omega_arith
   refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
     (fun s1 hA hm k => accPre C.hS (At.of L hm k) hc hA rf rg)
     (Covers.append_left (L.cR i2) (Covers.right (L.cW w1))) (L.cW w1))
@@ -158,7 +158,7 @@ theorem rejPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
       (s1.callEntry.withRegions [⟨pa s (sc oRS), 34⟩] [pR (pa s a), ⟨pa s (sc oPS), 2048⟩]) := by
   obtain ⟨_, _, i1, i2, i3, d12, d13, d23, _⟩ := rejChk_spec hc
   obtain ⟨e1, e2, e3⟩ := argsIn3 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   have hwf := ce_wfS (ws := [64, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [⟨pa s (sc oRS), 34⟩]
     [pR (pa s a), ⟨pa s (sc oPS), 2048⟩]
   sig_pre [rejNTTContract, rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
@@ -180,7 +180,7 @@ theorem rejCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs
         (polyAt s'.mem (pa s a)) ∧
       ((s'.gpr .rax).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (pa s (sc oRS)) 34)).isSome) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rejChk_spec hc
-  have hD : 8 ≤ D := by have := hP.rejNTT.hS; omega
+  have hD : 8 ≤ D := by have := hP.rejNTT.hS; omega_arith
   refine WP.mono (callP_ok (hv_with hP.rejNTT.ver.1 hP.rejMax) hP.rejNTT.nosp hP.rejNTT.depth L.dsm ok
     (fun s1 hA hm k => rejPre hP.rejNTT.hS (At.of L hm k) hc hA)
     (Covers.append_left (L.cR i1) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
@@ -199,7 +199,7 @@ theorem rejCall_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChk (rbs ++
       (callP "vg_mldsa_rej_ntt_poly" P.rejNTT [.ptr (sc oRS), .ptr a, .ptr (sc oPS)])
       fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rejChk_spec hc
-  have hD : 8 ≤ D := by have := hP.rejNTT.hS; omega
+  have hD : 8 ≤ D := by have := hP.rejNTT.hS; omega_arith
   refine callPRet_tr hP.rejNTT.ver.1 hP.rejRet ok
     fun x y x1 y1 ⟨R, hb⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, rejPre hP.rejNTT.hS (At.of R.lx hmx kx) hc hAx, rejPre hP.rejNTT.hS (At.of R.ly hmy ky) hc hAy, ?_,
@@ -241,7 +241,7 @@ theorem rej4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
       (s1.callEntry.withRegions [⟨pa s (sc oRS4), 136⟩] [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩]) := by
   obtain ⟨_, _, i1, i2, i3, d12, d13, d23, _⟩ := rej4Chk_spec hc
   obtain ⟨e1, e2, e3⟩ := argsIn3 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   have hwf := ce_wfS (ws := [64, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [⟨pa s (sc oRS4), 136⟩]
     [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩]
   sig_pre [rejNTT4Contract, rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
@@ -257,8 +257,8 @@ theorem At.seeds4 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs) 
     {k : Nat} (hk : k < 4) :
     seed4 (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s (sc oRS4)) k = seed4 s.mem (pa s (sc oRS4)) k := by
   unfold seed4
-  rw [← VG.Proof.MlKem.bytesAt_slice _ _ (show 34 * k + 34 ≤ 136 by omega),
-    ← VG.Proof.MlKem.bytesAt_slice s.mem _ (show 34 * k + 34 ≤ 136 by omega), A.bytes' hi hD]
+  rw [← VG.Proof.MlKem.bytesAt_slice _ _ (show 34 * k + 34 ≤ 136 by omega_arith),
+    ← VG.Proof.MlKem.bytesAt_slice s.mem _ (show 34 * k + 34 ≤ 136 by omega_arith), A.bytes' hi hD]
 
 /-- The call of `vg_mldsa_rej_ntt_poly4`: its outcome, and that it succeeds
 only if `RejNTTPoly` finishes within `maxBounds` on each seed. -/
@@ -274,7 +274,7 @@ theorem rej4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
       ((s'.gpr .rax).setWidth 32 = 1 → ∀ k < 4,
         (rejNTTPoly maxBounds.rejNTT (seed4 s.mem (pa s (sc oRS4)) k)).isSome) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rej4Chk_spec hc
-  have hD : 8 ≤ D := by have := hP.rej4.hS; omega
+  have hD : 8 ≤ D := by have := hP.rej4.hS; omega_arith
   refine WP.mono (callP_ok (hv_with hP.rej4.ver.1 hP.rej4Max) hP.rej4.nosp hP.rej4.depth L.dsm ok
     (fun s1 hA hm k => rej4Pre hP.rej4.hS (At.of L hm k) hc hA)
     (Covers.append_left (L.cR i1) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
@@ -298,7 +298,7 @@ theorem rej4Call_tr {P : Prims} (hP : PrimsOk P D) {a w : Ptr} (hc : rej4Chk (rb
       (callP ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr a, .ptr w])
       fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rej4Chk_spec hc
-  have hD : 8 ≤ D := by have := hP.rej4.hS; omega
+  have hD : 8 ≤ D := by have := hP.rej4.hS; omega_arith
   refine callPRet_tr hP.rej4.ver.1 hP.rej4Ret ok
     fun x y x1 y1 ⟨R, hb⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, rej4Pre hP.rej4.hS (At.of R.lx hmx kx) hc hAx, rej4Pre hP.rej4.hS (At.of R.ly hmy ky) hc hAy, ?_,
@@ -338,8 +338,8 @@ theorem maskPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
       (s1.callEntry.withRegions [⟨pa s (sc oMS), 66⟩] [pR (pa s a), ⟨pa s (sc oPS), 2048⟩]) := by
   obtain ⟨_, _, i1, i2, i3, d12, d13, d23, _⟩ := maskChk_spec hc
   obtain ⟨e1, e2, e3, e4⟩ := argsIn4 hA
-  have hD : 8 ≤ D := by omega
-  have hγ' : γ < 2 ^ 32 := by omega
+  have hD : 8 ≤ D := by omega_arith
+  have hγ' : γ < 2 ^ 32 := by omega_arith
   have hwf := ce_wfS (ws := [64, 32, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [⟨pa s (sc oMS), 66⟩]
     [pR (pa s a), ⟨pa s (sc oPS), 2048⟩]
   sig_pre [expandMaskContract, expandMaskSig, X86_64.abi, VG.X86_64.argRegs]
@@ -357,8 +357,8 @@ theorem maskAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs 
       PolyIs s'.mem (pa s a) (toRq (bitUnpack (H (bytesAt s.mem (pa s (sc oMS)) 66) (32 * (1 + bitlen (γ - 1))))
         (γ - 1) γ)) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1⟩ := maskChk_spec hc
-  have hD : 8 ≤ D := by have := hP.expandMask.hS; omega
-  have hγ' : γ < 2 ^ 32 := by omega
+  have hD : 8 ≤ D := by have := hP.expandMask.hS; omega_arith
+  have hγ' : γ < 2 ^ 32 := by omega_arith
   refine WP.mono (callP_ok hP.expandMask.ver.1 hP.expandMask.nosp hP.expandMask.depth L.dsm
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, decide_true, Bool.and_true, decide_eq_true hγ']; decide)
     (fun s1 hA hm k => maskPre hP.expandMask.hS (At.of L hm k) hγ hc hA)
@@ -374,7 +374,7 @@ theorem maskAt_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a : Ptr} (hγ : γ 
     (hc : maskChk (rbs ++ wbs) wbs a = true) :
     RelCT isa (LRel D rbs wbs) (maskAt P γ a) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1⟩ := maskChk_spec hc
-  have hγ' : γ < 2 ^ 32 := by omega
+  have hγ' : γ < 2 ^ 32 := by omega_arith
   refine callP_tr hP.expandMask.ver.1 hP.expandMask.ver.2.1
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, decide_true, Bool.and_true, decide_eq_true hγ']; decide)
     fun x y x1 y1 R ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
@@ -415,8 +415,8 @@ theorem mask4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s
       (s1.callEntry.withRegions [⟨pa s (sc oMS4), 264⟩] [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩]) := by
   obtain ⟨_, _, i1, i2, i3, d12, d13, d23, _⟩ := mask4Chk_spec hc
   obtain ⟨e1, e2, e3, e4⟩ := argsIn4 hA
-  have hD : 8 ≤ D := by omega
-  have hγ' : γ < 2 ^ 32 := by omega
+  have hD : 8 ≤ D := by omega_arith
+  have hγ' : γ < 2 ^ 32 := by omega_arith
   have hwf := ce_wfS (ws := [64, 32, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [⟨pa s (sc oMS4), 264⟩]
     [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩]
   sig_pre [expandMask4Contract, expandMask4Sig, X86_64.abi, VG.X86_64.argRegs]
@@ -432,8 +432,8 @@ theorem At.seeds66 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs)
     {k : Nat} (hk : k < 4) :
     seed66 (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s (sc oMS4)) k = seed66 s.mem (pa s (sc oMS4)) k := by
   unfold seed66
-  rw [← VG.Proof.MlKem.bytesAt_slice _ _ (show 66 * k + 66 ≤ 264 by omega),
-    ← VG.Proof.MlKem.bytesAt_slice s.mem _ (show 66 * k + 66 ≤ 264 by omega), A.bytes' hi hD]
+  rw [← VG.Proof.MlKem.bytesAt_slice _ _ (show 66 * k + 66 ≤ 264 by omega_arith),
+    ← VG.Proof.MlKem.bytesAt_slice s.mem _ (show 66 * k + 66 ≤ 264 by omega_arith), A.bytes' hi hD]
 
 /-- The call of `vg_mldsa_expand_mask_poly4`. -/
 theorem mask4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {γ : Nat} {a w : Ptr}
@@ -443,8 +443,8 @@ theorem mask4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs w
       PolyIs s'.mem (poly4 (pa s a) k) (toRq (bitUnpack
         (H (seed66 s.mem (pa s (sc oMS4)) k) (32 * (1 + bitlen (γ - 1)))) (γ - 1) γ)) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1, b2, o2⟩ := mask4Chk_spec hc
-  have hD : 8 ≤ D := by have := hP.expandMask4.hS; omega
-  have hγ' : γ < 2 ^ 32 := by omega
+  have hD : 8 ≤ D := by have := hP.expandMask4.hS; omega_arith
+  have hγ' : γ < 2 ^ 32 := by omega_arith
   refine WP.mono (callP_ok hP.expandMask4.ver.1 hP.expandMask4.nosp hP.expandMask4.depth L.dsm
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
       decide_eq_true hγ']; decide)
@@ -461,7 +461,7 @@ theorem mask4Call_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a w : Ptr} (hγ 
     (hc : mask4Chk (rbs ++ wbs) wbs a w = true) :
     RelCT isa (LRel D rbs wbs) (mask4At P γ a w) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1, b2, o2⟩ := mask4Chk_spec hc
-  have hγ' : γ < 2 ^ 32 := by omega
+  have hγ' : γ < 2 ^ 32 := by omega_arith
   refine callP_tr hP.expandMask4.ver.1 hP.expandMask4.ver.2.1
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
       decide_eq_true hγ']; decide)
@@ -498,7 +498,7 @@ theorem ballChk_spec {bs wbs : List (Reg × Nat)} {len : Nat} {c : Ptr} (hc : ba
 theorem ballArgs_ok {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams) (b1 : c.1 ∈ bases)
     (o1 : c.2 < 2 ^ 31) : [Arg.ptr (sc oCT), .imm len, .imm tau, .ptr c, .ptr (sc oPS)].all Arg.ok = true := by
   have : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega_arith
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, decide_true, Bool.and_true, decide_eq_true this.1,
     decide_eq_true this.2]
   decide
@@ -510,9 +510,9 @@ theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
       (s1.callEntry.withRegions [⟨pa s (sc oCT), len⟩] [pR (pa s c), ⟨pa s (sc oPS), 2048⟩]) := by
   obtain ⟨_, _, i1, i2, i3, d12, d13, d23, _⟩ := ballChk_spec hc
   obtain ⟨e1, e2, e3, e4, e5⟩ := argsIn5 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega_arith
   have hwf := ce_wfS (ws := [64, 64, 32, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [⟨pa s (sc oCT), len⟩]
     [pR (pa s c), ⟨pa s (sc oPS), 2048⟩]
   sig_pre [sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs]
@@ -534,9 +534,9 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
         ((s'.gpr .rax).setWidth 32) (polyAt s'.mem (pa s c)) ∧
       ((s'.gpr .rax).setWidth 32 = 1 → (sampleInBall tau maxBounds.ball (bytesAt s.mem (pa s (sc oCT)) len)).isSome) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1⟩ := ballChk_spec hc
-  have hD : 8 ≤ D := by have := hP.ball.hS; omega
+  have hD : 8 ≤ D := by have := hP.ball.hS; omega_arith
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega_arith
   refine WP.mono (callP_ok (hv_with hP.ball.ver.1 hP.ballMax) hP.ball.nosp hP.ball.depth L.dsm (ballArgs_ok hp b1 o1)
     (fun s1 hA hm k => ballPre hP.ball.hS (At.of L hm k) hp hc hA)
     (Covers.append_left (L.cR i1) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
@@ -556,9 +556,9 @@ theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oCT)) len = bytesAt y.mem (pa y (sc oCT)) len)
       (ballAt P len tau c) fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1⟩ := ballChk_spec hc
-  have hD : 8 ≤ D := by have := hP.ball.hS; omega
+  have hD : 8 ≤ D := by have := hP.ball.hS; omega_arith
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega_arith
   refine callPRet_tr hP.ball.ver.1 hP.ballRet (ballArgs_ok hp b1 o1)
     fun x y x1 y1 ⟨R, hb⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, ballPre hP.ball.hS (At.of R.lx hmx kx) hp hc hAx, ballPre hP.ball.hS (At.of R.ly hmy ky) hp hc hAy,

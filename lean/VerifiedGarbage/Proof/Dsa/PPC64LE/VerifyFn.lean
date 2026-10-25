@@ -136,7 +136,7 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     (by rw [VG.Proof.Bignum.bytesAt_length]; exact hplq.symm)
     (by rw [VG.Proof.Bignum.bytesAt_length]; exact hsl) hkey
   rw [hsg0, hsg1] at hspec
-  refine WP.seq (hX hL scr₁ hr₁ r2₁ (by omega) (srcK s₁ k₁.rd k₁.wr) (fun hv => hKs.mpr (hV hv))
+  refine WP.seq (hX hL scr₁ hr₁ r2₁ (by omega_arith) (srcK s₁ k₁.rd k₁.wr) (fun hv => hKs.mpr (hV hv))
     (fun t hK hc hkp kc => ?_)
     (fun t hn hkp hrt scrt kc => ?_))
   · have hkp := Kept.ofBody hL hkp

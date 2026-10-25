@@ -56,22 +56,22 @@ theorem fixedHead_ct (hc : VerifyChecks H.P H.D) :
   have h1 := Nat.lt_div_mul_add (a := 8 + H.D + (stackArg s 1).toNat + H.P.L) (b := H.P.B) hB0
   have h2 := Nat.div_mul_le_self (8 + H.D + (stackArg s 1).toNat + H.P.L) H.P.B
   have hnb : fixedNb H s * H.P.B ≤ 2048 := by
-    unfold fixedNb; rw [Nat.succ_mul]; unfold vdb veml at hfit; omega
+    unfold fixedNb; rw [Nat.succ_mul]; unfold vdb veml at hfit; omega_arith
   unfold fixedHead seqs seqs
   refine WP.seq (WP.mono (hashSaltLen_ok hH v.L R (k := 36) (by decide)
     (show W 36 = BitVec.ofNat 64 (stackArg s 1).toNat by rw [hw 36 (by decide)]; simp [vw])
-    (by unfold vdb veml at hfit; omega)) fun u0 ⟨L0, k0, R0⟩ => ?_)
+    (by unfold vdb veml at hfit; omega_arith)) fun u0 ⟨L0, k0, R0⟩ => ?_)
   refine WP.seq (WP.mono (clearNb_ok hH L0 R0 (nbm := fixedNb H s) (by simp [upd, fixedNb])
     (Nat.succ_pos _) hnb) fun u1 ⟨L1, k1, hcx1, R1⟩ => ?_)
   refine WP.mono (copyDigest_ok hH L1 R1 (p := s.gpr .r8) (by simp [upd]; exact hw 37 (by decide)) hcx1
     (fun i hi => by
       rw [k1.2.1, k0.2.1, hrd]
       exact hp.hrd.left _ _ ⟨⟨s.gpr .r8, lk.G.len⟩, by simp,
-        Offset.contains_base _ (by omega) (by omega)⟩)
+        Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     (fun i hi j hj => Outside.ne L1 (by
       have := hp.outside lk.G hp.ddgs hp.dKdg (a := s.gpr .r8 + BitVec.ofNat 64 i)
-        (Offset.contains_base _ (by omega) (by omega))
-      rwa [k1.2.2, k0.2.2, v.wr]) (by unfold oY oRsa; omega))) fun u2 ⟨L2, k2, R2⟩ => ?_
+        (Offset.contains_base _ (by omega_arith) (by omega_arith))
+      rwa [k1.2.2, k0.2.2, v.wr]) (by unfold oY oRsa; omega_arith))) fun u2 ⟨L2, k2, R2⟩ => ?_
   exact ⟨s, S, ⟨v.next L2 (k2.2.2.trans (k1.2.2.trans k0.2.2)) R2
     (km_upd (km_upd hw (by decide) _) (by decide) _) ⟨by simp [upd], by simp [upd, fixedNb]⟩,
     k2.2.1.trans (k1.2.1.trans (k0.2.1.trans hrd)), hok, hfit⟩, (k2.gpr (by decide)).trans hcx1⟩
@@ -94,7 +94,7 @@ theorem fixedCopy_ct (hc : VerifyChecks H.P H.D) :
   refine WP.mono (copyFixedSalt_ok hH v.L R (e := oEm + vlo s) (db := vdb H.D s)
     (hw 23 (by decide)) (hw 24 (by decide))
     (show W 36 = BitVec.ofNat 64 (stackArg s 1).toNat by rw [hw 36 (by decide)]; simp [vw]) hf
-    (by unfold vdb veml oEm oY; omega) (by unfold vdb veml at hf; omega) hcx)
+    (by unfold vdb veml oEm oY; omega_arith) (by unfold vdb veml at hf; omega_arith) hcx)
     fun u ⟨L, k, R⟩ => ?_
   exact ⟨s, S, v.next L k.2.2 R hw hx, k.2.1.trans hrd, hok, hf⟩
 
@@ -113,7 +113,7 @@ theorem padSalt_ct (hc : VerifyChecks H.P H.D) :
   have hN := hH.N_le
   refine WP.mono (padSalt_ok v.L R (sl := (stackArg s 1).toNat)
     (show W 36 = BitVec.ofNat 64 (stackArg s 1).toNat by rw [hw 36 (by decide)]; simp [vw])
-    (by unfold vdb veml at hf; omega)) fun u ⟨L, k, R⟩ => ?_
+    (by unfold vdb veml at hf; omega_arith)) fun u ⟨L, k, R⟩ => ?_
   exact ⟨s, S, v.next L k.2.2 R hw hx, k.2.1.trans hrd, hok, hf⟩
 
 include hH in
@@ -147,7 +147,7 @@ theorem body2_wp {a : HA} {j : Nat} {t : State} (hj : j < a.nbm) (h : HL H 1 a j
   have hnbm : a.nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right a.nbm hH.B_pos) h.1.2.2
   refine WP.seq_assoc (WP.seq (WP.mono (compCall_ok hH h.2.L R hbB w29)
     fun v ⟨Lv, _, hwrv, _, Rv, _⟩ => ?_))
-  refine WP.mono (nextBlock_ok Lv Rv (b := j) (nbm := a.nbm) w29 w28 (by omega) (by omega))
+  refine WP.mono (nextBlock_ok Lv Rv (b := j) (nbm := a.nbm) w29 w28 (by omega_arith) (by omega_arith))
     fun u' ⟨hz, Lu', hk', Ru'⟩ => ⟨eval_ne_cnt hj hz, fun _ => ⟨h.1, Lu', hk'.2.2.trans
       (hwrv.trans h.2.wr), ⟨_, _, Ru', fun q hq => ?_, fb, by simp [upd, hf], hfb⟩, fun _ hp => by cases hp⟩,
       fun _ => ⟨h.1, Lu', hk'.2.2.trans (hwrv.trans h.2.wr),
@@ -192,14 +192,14 @@ theorem fixedN_he {a t : State} (h : VAt (extra := extra) G (JFixedN H) a t) :
   have h1 := Nat.lt_div_mul_add (a := 8 + H.D + (stackArg a 1).toNat + H.P.L) (b := H.P.B) hB0
   have h2 := Nat.div_mul_le_self (8 + H.D + (stackArg a 1).toNat + H.P.L) H.P.B
   refine ⟨⟨S.rest, Nat.succ_pos _, by
-    simp only [fixedHashA, fixedNb]; rw [Nat.succ_mul]; unfold vdb veml at hf; omega⟩, ?_⟩
+    simp only [fixedHashA, fixedNb]; rw [Nat.succ_mul]; unfold vdb veml at hf; omega_arith⟩, ?_⟩
   obtain ⟨L, wr, ⟨V, W, R, hw, h27, h28⟩, regs⟩ := vs_pub S v
   refine ⟨L, wr, ⟨V, W, R, fun p hp => ?_, 8 + H.D + (stackArg s 1).toNat, h27, ?_⟩, regs⟩
   · simp only [hws, fixedHashA, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl
     · exact hw (21, stackArg a 3) (by simp [pw, KM, vw])
     · simpa only [fixedNb, S.arg1] using h28
-  · simp only [fixedHashA, fixedNb, S.arg1]; rw [Nat.succ_mul]; omega
+  · simp only [fixedHashA, fixedNb, S.arg1]; rw [Nat.succ_mul]; omega_arith
 
 include hH K in
 theorem fixedMhash_ct (hc : HashChecks H.P H.D 1) (hv : VerifyChecks H.P H.D) :
@@ -217,7 +217,7 @@ theorem fixedMhash_ct (hc : HashChecks H.P H.D 1) (hv : VerifyChecks H.P H.D) :
   have h1 := Nat.lt_div_mul_add (a := 8 + H.D + (stackArg s 1).toNat + H.P.L) (b := H.P.B) hB0
   have h2 := Nat.div_mul_le_self (8 + H.D + (stackArg s 1).toNat + H.P.L) H.P.B
   refine WP.mono (fixedHash_gen hH K v.L R h27 h28 rfl
-    (by unfold fixedNb; rw [Nat.succ_mul]; unfold vdb veml at hf; omega))
+    (by unfold fixedNb; rw [Nat.succ_mul]; unfold vdb veml at hf; omega_arith))
     fun u ⟨L', rd', wr', _, V', W', R', _, hW', _⟩ => ?_
   exact ⟨s, S, v.next L' wr' R' (fun k hk =>
     (hW' k (km_lt hk) (km_ne hk (by decide)) (km_ne hk (by decide))).trans (hw k hk)) trivial,

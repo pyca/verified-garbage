@@ -53,7 +53,7 @@ theorem enc_cipher {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s�
   have LE : LookEnv u := by
     refine ⟨fun o ho => ?_, by rw [I.keep.gpr (by decide)]; exact E.r0⟩
     rw [I.keep.gpr (by decide), E.r3, I.keep.2.1, I.keep.2.2]
-    exact ⟨_, List.mem_append_right _ E.wS, Offset.contains_base S ho (by omega)⟩
+    exact ⟨_, List.mem_append_right _ E.wS, Offset.contains_base S ho (by omega_arith)⟩
   refine WP.mono (cipher_run LE true) fun u' ⟨h, k, m⟩ => ⟨?_, k, m⟩
   have e1 := congrArg Prod.fst I.halves
   have e2 := congrArg Prod.snd I.halves
@@ -63,11 +63,11 @@ theorem enc_cipher {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s�
 theorem ksIter_step (key : List Byte) {j : Nat} (hj : j < 521) :
     ksIter key (j + 1) =
       (((ksIter key j).1.set (2 * j) (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).1
-          (by omega)).set (2 * j + 1)
-          (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).2 (by omega),
+          (by omega_arith)).set (2 * j + 1)
+          (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).2 (by omega_arith),
         (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).1,
         (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).2) := by
-  rw [ksIter_succ, ksStep, set!_eq_set _ (by omega), set!_eq_set _ (by omega)]
+  rw [ksIter_succ, ksStep, set!_eq_set _ (by omega_arith), set!_eq_set _ (by omega_arith)]
 
 /-! ## The P-array -/
 
@@ -98,23 +98,23 @@ theorem encP_step {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀
   refine WP.mono (enc_cipher E I.toEncInv) fun v ⟨hv, kv, mv⟩ => ?_
   have wr : v.wr = s₀.wr := by rw [kv.2.2, I.keep.2.2]
   have a0 : S + BitVec.ofNat 64 (4096 + 8 * j) = S + BitVec.ofNat 64 (4096 + 4 * (2 * j)) := by
-    congr 2; omega
+    congr 2; omega_arith
   have a4 : S + BitVec.ofNat 64 (4096 + 8 * j) + BitVec.ofNat 64 4 =
-      S + BitVec.ofNat 64 (4096 + 4 * (2 * j + 1)) := Offset.add_add_eq _ (by omega)
+      S + BitVec.ofNat 64 (4096 + 4 * (2 * j + 1)) := Offset.add_add_eq _ (by omega_arith)
   refine WP.mono (storeP_run v (a := S + BitVec.ofNat 64 (4096 + 8 * j)) (by rw [kv.gpr (by decide), I.ptr])
-    (by rw [wr]; exact ⟨_, E.wS, Offset.contains_base S (by omega) (by omega)⟩)
-    (by rw [wr, a4]; exact ⟨_, E.wS, Offset.contains_base S (by omega) (by omega)⟩))
+    (by rw [wr]; exact ⟨_, E.wS, Offset.contains_base S (by omega_arith) (by omega_arith)⟩)
+    (by rw [wr, a4]; exact ⟨_, E.wS, Offset.contains_base S (by omega_arith) (by omega_arith)⟩))
     fun t ⟨tm, t16, t17, tk⟩ => ?_
   have c17 : t.gpr .r17 = BitVec.ofNat 64 (9 - (j + 1)) := by
-    rw [t17, kv.gpr (by decide), I.cnt]; apply BitVec.eq_of_toNat_eq; simp; omega
-  refine ⟨⟨⟨?_, ?_, ((I.keep.trans kv).trans tk).mono (by decide), ?_⟩, by omega, ?_, c17⟩, c17⟩
-  · rw [tm, a4, a0, scheduleAt_writeW_P _ _ (by omega), scheduleAt_writeW_P _ _ (by omega), mv, I.sched,
-      ksIter_step key (by omega), ← hv]
-  · rw [tk.gpr (by decide), tk.gpr (by decide), ksIter_step key (by omega), ← hv]
+    rw [t17, kv.gpr (by decide), I.cnt]; apply BitVec.eq_of_toNat_eq; simp; omega_arith
+  refine ⟨⟨⟨?_, ?_, ((I.keep.trans kv).trans tk).mono (by decide), ?_⟩, by omega_arith, ?_, c17⟩, c17⟩
+  · rw [tm, a4, a0, scheduleAt_writeW_P _ _ (by omega_arith), scheduleAt_writeW_P _ _ (by omega_arith), mv, I.sched,
+      ksIter_step key (by omega_arith), ← hv]
+  · rw [tk.gpr (by decide), tk.gpr (by decide), ksIter_step key (by omega_arith), ← hv]
   · rw [tm, mv]
     refine (I.frame.writeW List.mem_cons_self _ ?_).writeW List.mem_cons_self _ ?_
-    · rw [a0]; exact Offset.contains_base S (by omega) (by omega)
-    · rw [a4]; exact Offset.contains_base S (by omega) (by omega)
+    · rw [a0]; exact Offset.contains_base S (by omega_arith) (by omega_arith)
+    · rw [a4]; exact Offset.contains_base S (by omega_arith) (by omega_arith)
   · rw [t16, show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.add_add]
     congr 2
 
@@ -129,16 +129,16 @@ theorem encryptP_run {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s
     fun t ⟨⟨a, b, c⟩, k⟩ => ?_
   have I₀ : PInv key S s₀ 0 t :=
     ⟨⟨by rw [c]; exact I.sched, by rw [k.gpr (by decide), k.gpr (by decide)]; exact I.halves,
-      (I.keep.trans k).mono (by decide), by rw [c]; exact I.frame⟩, by omega, a, b⟩
+      (I.keep.trans k).mono (by decide), by rw [c]; exact I.frame⟩, by omega_arith, a, b⟩
   refine WP.loop (M := isa) (fun m v => ∃ j, j < 9 ∧ m = 9 - j ∧ PInv key S s₀ j v)
-    ?_ 9 t ⟨0, by omega, rfl, I₀⟩
+    ?_ 9 t ⟨0, by omega_arith, rfl, I₀⟩
   intro m v ⟨j, hj, hm, J⟩
   refine WP.mono (encP_step E hj J) fun v' ⟨J', z'⟩ => ?_
-  rw [cnt, eval_nonzero, z', ofNat_bne_zero (by omega)]
+  rw [cnt, eval_nonzero, z', ofNat_bne_zero (by omega_arith)]
   by_cases h : j + 1 = 9
   · left; exact ⟨by simp [h], h ▸ J'⟩
   · right
-    exact ⟨by simp; omega, 9 - (j + 1), by omega, j + 1, by omega, rfl, J'⟩
+    exact ⟨by simp; omega_arith, 9 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, J'⟩
 
 /-! ## The S-boxes -/
 
@@ -150,11 +150,11 @@ theorem sOff_entry {j : Nat} (h9 : 9 ≤ j) (hj : j < 521) {b k : Nat} (hk : k <
   rw [← entryOff_sbox h9 hj k hk, sOff]
 
 theorem sOff_lt {j : Nat} (h9 : 9 ≤ j) (hj : j < 521) : sOff j ≤ 3326 := by
-  unfold sOff sDone; omega
+  unfold sOff sDone; omega_arith
 
 theorem sOff_succ {j : Nat} (h9 : 9 ≤ j) :
     sOff (j + 1) = if (sOff j + 2) % 256 = 0 then sOff j + 2 + 768 else sOff j + 2 := by
-  unfold sOff sDone; split <;> omega
+  unfold sOff sDone; split <;> omega_arith
 
 /-- The bytes of `x` and `y` into the planes of S-box entries `q` and `q + 1`
 of the schedule at `S`. -/
@@ -169,8 +169,8 @@ def sW (m : Mem) (S : Addr) (q : Nat) (x y : BitVec 32) : Mem :=
     (S + BitVec.ofNat 64 q + BitVec.ofNat 64 769) 1 (y.extractLsb' 24 8)
 
 theorem sW_sched (m : Mem) (S : Addr) {j : Nat} (h9 : 9 ≤ j) (hj : j < 521) (x y : BitVec 32) :
-    scheduleAt (sW m S (sOff j) x y) S = ((scheduleAt m S).set (2 * j) x (by omega)).set (2 * j + 1) y
-      (by omega) := by
+    scheduleAt (sW m S (sOff j) x y) S = ((scheduleAt m S).set (2 * j) x (by omega_arith)).set (2 * j + 1) y
+      (by omega_arith) := by
   have e : ∀ b k, k < 2 → S + BitVec.ofNat 64 (sOff j) + BitVec.ofNat 64 (256 * b + k) =
       S + BitVec.ofNat 64 (entryOff (2 * j + k) b) := fun b k hk => by
     rw [Offset.add_add, sOff_entry h9 hj hk]
@@ -181,8 +181,8 @@ theorem sW_sched (m : Mem) (S : Addr) {j : Nat} (h9 : 9 ≤ j) (hj : j < 521) (x
   unfold sW
   rw [e' 256 1 0 (by decide) rfl, e' 512 2 0 (by decide) rfl, e' 768 3 0 (by decide) rfl,
     e' 1 0 1 (by decide) rfl, e' 257 1 1 (by decide) rfl, e' 513 2 1 (by decide) rfl,
-    e' 769 3 1 (by decide) rfl, e0, scheduleAt_write_bytes _ _ (by omega), Nat.add_zero,
-    scheduleAt_write_bytes _ _ (by omega)]
+    e' 769 3 1 (by decide) rfl, e0, scheduleAt_write_bytes _ _ (by omega_arith), Nat.add_zero,
+    scheduleAt_write_bytes _ _ (by omega_arith)]
 
 theorem write1_eq (m : Mem) (a : Addr) (v : BitVec 8) : m.write a 1 v = m.writeW a v := by
   simp only [Mem.writeW, BitVec.setWidth_eq]
@@ -190,9 +190,9 @@ theorem write1_eq (m : Mem) (a : Addr) (v : BitVec 8) : m.write a 1 v = m.writeW
 theorem sW_frame (m : Mem) (S : Addr) {q : Nat} (hq : q + 770 ≤ 4168) (x y : BitVec 32) :
     Frame [⟨S, 4168⟩] m (sW m S q x y) := by
   have c : ∀ e, e < 770 → Region.Contains ⟨S, 4168⟩ (S + BitVec.ofNat 64 q + BitVec.ofNat 64 e) (8 / 8) :=
-    fun e he => by rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+    fun e he => by rw [Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have c0 : Region.Contains ⟨S, 4168⟩ (S + BitVec.ofNat 64 q) (8 / 8) :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   unfold sW
   simp only [write1_eq]
   exact (((((((((Frame.refl _ m).writeW List.mem_cons_self _ c0).writeW List.mem_cons_self _
@@ -202,12 +202,12 @@ theorem sW_frame (m : Mem) (S : Addr) {q : Nat} (hq : q + 770 ≤ 4168) (x y : B
     (c 769 (by decide)))
 
 theorem byte0 (g : BitVec 64) : g.setWidth 8 = (lo g).extractLsb' 0 8 := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi, show i < 32 by omega]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi, show i < 32 by omega_arith]
 
 theorem extract_shr (x : BitVec 32) {k : Nat} (hk : k + 8 ≤ 32) :
     (x >>> k).extractLsb' 0 8 = x.extractLsb' k 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [hi, show i < 32 by omega, show k + i < 32 by omega, Nat.add_comm]
+  simp [hi, show i < 32 by omega_arith, show k + i < 32 by omega_arith, Nat.add_comm]
 
 def storeSHead : List Instr :=
   storeEntry xL 0 ++ storeEntry xR 1 ++ [.addi ptr ptr 2, .sub tmp ptr sch, .lsl tmp tmp 56]
@@ -221,8 +221,8 @@ theorem storeSHead_run (u : State) {S : Addr} {q : Nat} (hq : q + 770 ≤ 4168) 
       t.mem = sW u.mem S q (lo (u.gpr .r4)) (lo (u.gpr .r5)) ∧ t.gpr .r16 = S + BitVec.ofNat 64 (q + 2) ∧
       t.gpr .r12 = BitVec.ofNat 64 (q + 2) <<< 56) ?_ (by decide) rfl) fun t ⟨⟨a, b, c⟩, d⟩ => ⟨a, b, c, d⟩
   have c : ∀ e, e < 770 → InRegions u.wr (S + BitVec.ofNat 64 q + BitVec.ofNat 64 e) 1 :=
-    fun e he => ⟨_, hw, by rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
-  have c0 : InRegions u.wr (S + BitVec.ofNat 64 q) 1 := ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+    fun e he => ⟨_, hw, by rw [Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  have c0 : InRegions u.wr (S + BitVec.ofNat 64 q) 1 := ⟨_, hw, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have w256 := c 256 (by decide); have w512 := c 512 (by decide); have w768 := c 768 (by decide)
   have w1 := c 1 (by decide); have w257 := c 257 (by decide); have w513 := c 513 (by decide)
   have w769 := c 769 (by decide)
@@ -243,12 +243,12 @@ theorem shl56_beq {n : Nat} (hn : n < 2 ^ 64) :
       have := congrArg BitVec.toNat h
       simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, 
         Nat.mod_eq_of_lt hn] at this
-      omega
+      omega_arith
     · intro h
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, 
         Nat.mod_eq_of_lt hn]
-      omega
+      omega_arith
   by_cases h : n % 256 = 0
   · simp [e.mpr h, h]
   · have : ¬ BitVec.ofNat 64 n <<< 56 = 0#64 := fun h' => h (e.mp h')
@@ -273,7 +273,7 @@ theorem encS_step {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀
   have Kv : Keep encRegs s₀ v := (I.keep.trans kv).mono (by decide)
   unfold storeS
   apply WP.seq
-  refine WP.mono (storeSHead_run v (S := S) (q := sOff j) (by omega) (by rw [kv.gpr (by decide), I.ptr])
+  refine WP.mono (storeSHead_run v (S := S) (q := sOff j) (by omega_arith) (by rw [kv.gpr (by decide), I.ptr])
     (by rw [Kv.gpr (by decide), E.r3]) (by rw [Kv.2.2]; exact E.wS)) fun t ⟨tm, t16, t12, tk⟩ => ?_
   have Kt : Keep encRegs s₀ t := (Kv.trans tk).mono (by decide)
   have hsch : scheduleAt t.mem S = (ksIter key (j + 1)).1 := by
@@ -281,13 +281,13 @@ theorem encS_step {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀
   have hhalf : (lo (t.gpr .r4), lo (t.gpr .r5)) = ((ksIter key (j + 1)).2.1, (ksIter key (j + 1)).2.2) := by
     rw [tk.gpr (by decide), tk.gpr (by decide), ksIter_step key hj, ← hv]
   have hfr : Frame [⟨S, 4168⟩] s₀.mem t.mem := by
-    rw [tm, mv]; exact I.frame.trans (sW_frame _ _ (by omega) _ _)
+    rw [tm, mv]; exact I.frame.trans (sW_frame _ _ (by omega_arith) _ _)
   have h17 : t.gpr .r17 = BitVec.ofNat 64 (521 - j) := by
     rw [tk.gpr (by decide), kv.gpr (by decide), I.cnt]
   apply WP.seq
   refine WP.mono (Q := fun (w : State) => w.gpr .r16 = S + BitVec.ofNat 64 (sOff (j + 1)) ∧ w.mem = t.mem ∧
       Keep [.r16] t w) ?_ fun w ⟨w16, wm, wk⟩ => ?_
-  · refine WP.ite (decide ((sOff j + 2) % 256 = 0)) (by rw [tmp, eval_zero, t12, shl56_beq (by omega)])
+  · refine WP.ite (decide ((sOff j + 2) % 256 = 0)) (by rw [tmp, eval_zero, t12, shl56_beq (by omega_arith)])
       (fun h => ?_) (fun h => ?_)
     · have h' : (sOff j + 2) % 256 = 0 := by simpa using h
       refine WP.mono (WP.keep [.r16] (Q := fun (w : State) =>
@@ -302,9 +302,9 @@ theorem encS_step {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀
     refine WP.mono (WP.keep [.r17] (Q := fun x => x.gpr .r17 = BitVec.ofNat 64 (521 - (j + 1)) ∧
         x.mem = w.mem) ?_ (by decide) rfl) fun x ⟨⟨x17, xm⟩, xk⟩ => ?_
     · brun [wk.gpr (show Reg.r17 ∉ [Reg.r16] by decide), h17]
-      apply BitVec.eq_of_toNat_eq; simp; omega
+      apply BitVec.eq_of_toNat_eq; simp; omega_arith
     refine ⟨⟨⟨by rw [xm, wm]; exact hsch, ?_, (Kw.trans xk).mono (by decide), by rw [xm, wm]; exact hfr⟩,
-      by omega, by omega, by rw [xk.gpr (by decide)]; exact w16, x17⟩, x17⟩
+      by omega_arith, by omega_arith, by rw [xk.gpr (by decide)]; exact w16, x17⟩, x17⟩
     rw [xk.gpr (by decide), xk.gpr (by decide), wk.gpr (by decide), wk.gpr (by decide)]
     exact hhalf
 
@@ -319,16 +319,16 @@ theorem encryptS_run {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s
     fun t ⟨⟨a, b, c⟩, k⟩ => ?_
   have I₀ : SInv key S s₀ 9 t :=
     ⟨⟨by rw [c]; exact I.sched, by rw [k.gpr (by decide), k.gpr (by decide)]; exact I.halves,
-      (I.keep.trans k).mono (by decide), by rw [c]; exact I.frame⟩, by omega, by omega,
+      (I.keep.trans k).mono (by decide), by rw [c]; exact I.frame⟩, by omega_arith, by omega_arith,
       by rw [a]; simp [sOff, sDone], b⟩
   refine WP.loop (M := isa) (fun m v => ∃ j, 9 ≤ j ∧ j < 521 ∧ m = 521 - j ∧ SInv key S s₀ j v)
-    ?_ 512 t ⟨9, by omega, by omega, rfl, I₀⟩
+    ?_ 512 t ⟨9, by omega_arith, by omega_arith, rfl, I₀⟩
   intro m v ⟨j, hj9, hj, hm, J⟩
   refine WP.mono (encS_step E hj J) fun v' ⟨J', z'⟩ => ?_
-  rw [cnt, eval_nonzero, z', ofNat_bne_zero (by omega)]
+  rw [cnt, eval_nonzero, z', ofNat_bne_zero (by omega_arith)]
   by_cases h : j + 1 = 521
   · left; exact ⟨by simp [h], h ▸ J'⟩
   · right
-    exact ⟨by simp; omega, 521 - (j + 1), by omega, j + 1, by omega, by omega, rfl, J'⟩
+    exact ⟨by simp; omega_arith, 521 - (j + 1), by omega_arith, j + 1, by omega_arith, by omega_arith, rfl, J'⟩
 
 end VG.Proof.Blowfish.PPC64LE

@@ -62,15 +62,15 @@ theorem kakb_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg} {D b : Na
   have ts : Scr t base := hs.of_keeps tk (by decide)
   have treg : ∀ i < 8, t.gpr (Mul.A i) = s.gpr (Mul.A i) := fun i hi => tk.1 _ (A_ne i hi)
   have tw : ∀ d, d + 8 ≤ KA → word t.mem base d = word s.mem base d := fun d hd =>
-    tO.word (Or.inl hd) (by omega)
+    tO.word (Or.inl hd) (by omega_arith)
   refine WP.mono (kakbStep_ok ts (hp.of_keeps tk hrb) hb hrb hn) fun u ⟨ua, ub, uo, uk, uw⟩ => ?_
   refine ⟨fun i hi => ?_, fun i hi => ?_, tO.trans uo, tk.trans uk⟩
   · by_cases h : i = n
-    · subst h; rw [ua, treg i (by omega), treg (i + 4) (by omega)]
-    · rw [uw _ (by omega) (by omega) (by omega)]; exact ta i (by omega)
+    · subst h; rw [ua, treg i (by omega_arith), treg (i + 4) (by omega_arith)]
+    · rw [uw _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact ta i (by omega_arith)
   · by_cases h : i = n
-    · subst h; rw [ub, tw _ (by omega), tw _ (by omega)]
-    · rw [uw _ (by omega) (by omega) (by omega)]; exact tb i (by omega)
+    · subst h; rw [ub, tw _ (by omega_arith), tw _ (by omega_arith)]
+    · rw [uw _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact tb i (by omega_arith)
 
 theorem mul_good : Good Mul.R [Mul.L, Mul.H, Mul.X, Mul.Y] := by decide
 theorem mul_colRegs : ColRegs Mul.R [Mul.L, Mul.H, Mul.X, Mul.Y] := by decide
@@ -96,15 +96,15 @@ theorem stage_limbs {base : Addr} {o : Nat} {r : Nat → Nat} {s t : State} (hi 
   intro i hi'
   by_cases h : i < 4
   · rw [ite_eq_left h]; exact hi.lo i h
-  · rw [ite_eq_right h, show i = 4 + (i - 4) by omega]
-    rw [hi.hi (i - 4) (by omega)]; simp
+  · rw [ite_eq_right h, show i = 4 + (i - 4) by omega_arith]
+    rw [hi.hi (i - 4) (by omega_arith)]; simp
 
 theorem finVal_out (r : Nat → Nat) :
     ∀ i < 8, finVal (fun i => if i < 4 then chainLimb r 0 i else chainLimb r 4 (i - 4))
       (chain r 0 4) (chain r 4 4) i = out r i := by
   intro i hi
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-      i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+      i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_arith
   all_goals simp only [finVal, out]; rfl
 
 theorem aRegs_clob : ∀ r ∈ aRegs, r ∈ clob := by decide
@@ -152,10 +152,10 @@ theorem mulAt_ok {s : State} {base : Addr} (hs : Scr s base) {ra rb ro : Reg} {d
     rw [k3.1 _ (A_ne i hi), k2.1 _ (A_consts i hi), a1 i hi]
   have g3 : ∀ j < 8, word t3.mem base (b + 8 * j) = word s.mem base (b + 8 * j) := by
     intro j hj
-    rw [o3.word (Or.inl (by omega)) (by omega), m2, m1]
+    rw [o3.word (Or.inl (by omega_arith)) (by omega_arith), m2, m1]
   have sumlt : ∀ x y : BitVec 64, x.toNat < Ib → y.toNat < Ib → (x + y).toNat = x.toNat + y.toNat :=
     fun x y hx hy => by
-      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by simp only [Ib] at hx hy; omega)]
+      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by simp only [Ib] at hx hy; omega_arith)]
   have hfit := fits_of fa fb
   let P := fun (t : State) =>
     (∀ i < 8, t.gpr (Mul.A i) = t3.gpr (Mul.A i)) ∧
@@ -172,28 +172,28 @@ theorem mulAt_ok {s : State} {base : Addr} (hs : Scr s base) {ra rb ro : Reg} {d
     have va : ∀ i < 8, srcVal t base b (.reg (Mul.A i)) = f i := fun i hi => by
       simp only [srcVal]; rw [pa i hi, A3 i hi]
     have vb : ∀ j < 8, srcVal t base b (.arg j) = g j := fun j hj => by
-      simp only [srcVal]; rw [pm _ (by omega) (by omega), g3 j hj]
+      simp only [srcVal]; rw [pm _ (by omega_arith) (by omega_arith), g3 j hj]
     refine mulCol_ok f g (srcVal t base b) ?_ ?_ ?_ e hd
     · intro i j hi hj
       change ((srcVal t base b (.reg (Mul.A i)) : Nat) : Int) * (srcVal t base b (.arg j) : Nat) = _
-      rw [va i (by omega), vb j (by omega)]
+      rw [va i (by omega_arith), vb j (by omega_arith)]
     · intro i j hi hj
       change ((srcVal t base b (.reg (Mul.A (i + 4))) : Nat) : Int) *
         (srcVal t base b (.arg (j + 4)) : Nat) = _
-      rw [va _ (by omega), vb _ (by omega)]
+      rw [va _ (by omega_arith), vb _ (by omega_arith)]
     · intro i j hi hj
       change ((word t.mem base (KA + 8 * i)).toNat : Int) * ((word t.mem base (KB + 8 * j)).toNat : Int) = _
       have e1 : ∀ i < 8, (t2.gpr (Mul.A i)).toNat = f i := fun i hi => by
         rw [k2.1 _ (A_consts i hi), a1 i hi]
-      rw [pm _ (by omega) (by omega), pm _ (by omega) (by omega), ka3 i hi, kb3 j hj,
+      rw [pm _ (by omega_arith) (by omega_arith), pm _ (by omega_arith) (by omega_arith), ka3 i hi, kb3 j hj,
         m2, m1]
       have x1 := sumlt (t2.gpr (Mul.A i)) (t2.gpr (Mul.A (i + 4)))
-        (by rw [e1 i (by omega)]; exact fa i (by omega)) (by rw [e1 (i + 4) (by omega)]; exact fa _ (by omega))
+        (by rw [e1 i (by omega_arith)]; exact fa i (by omega_arith)) (by rw [e1 (i + 4) (by omega_arith)]; exact fa _ (by omega_arith))
       have gb : word s.mem base (b + 32 + 8 * j) = word s.mem base (b + 8 * (j + 4)) := by
-        rw [show b + 32 + 8 * j = b + 8 * (j + 4) by omega]
+        rw [show b + 32 + 8 * j = b + 8 * (j + 4) by omega_arith]
       have x2 := sumlt (word s.mem base (b + 8 * j)) (word s.mem base (b + 32 + 8 * j))
-        (fb j (by omega)) (by rw [gb]; exact fb _ (by omega))
-      rw [x1, x2, e1 i (by omega), e1 (i + 4) (by omega), gb]
+        (fb j (by omega_arith)) (by rw [gb]; exact fb _ (by omega_arith))
+      rw [x1, x2, e1 i (by omega_arith), e1 (i + 4) (by omega_arith), gb]
       push_cast
       rfl
   rw [WP.block_append_iff]
@@ -212,8 +212,8 @@ theorem mulAt_ok {s : State} {base : Addr} (hs : Scr s base) {ra rb ro : Reg} {d
     fun t5 ⟨v5, o5, k5⟩ => ⟨fun i hi => by rw [v5 i hi, finVal_out _ i hi], ?_, ?_⟩
   · intro x h1 h2
     simp only [ofs] at h1 h2
-    rw [o5 x (by simp only [ofs]; omega), i4.out x (by simp only [ofs]; omega),
-      o3 x (by simp only [ofs]; omega), m2, m1]
+    rw [o5 x (by simp only [ofs]; omega_arith), i4.out x (by simp only [ofs]; omega_arith),
+      o3 x (by simp only [ofs]; omega_arith), m2, m1]
   · refine (k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans (k5.mono ?_))))
     all_goals intro r hr; revert r; decide
 
@@ -226,8 +226,8 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
       FieldMem base o s.mem t.mem ∧ Keeps clob s t := by
   have hA : ACC = 3584 := rfl
   have hKA : KA = 3584 := rfl
-  refine WP.mono (mulAt_ok hs (PtrOk.x3 hs ha8 (by omega)) (PtrOk.x3 hs hb8 (by omega))
-    (PtrOk.x3 hs ho8 (by omega)) (by decide) (by decide) (by decide) ho hb hob fa fb)
-    fun t ⟨tv, tm, tk⟩ => ⟨tv, fun x h1 h2 => tm x (by omega) (by omega), tk⟩
+  refine WP.mono (mulAt_ok hs (PtrOk.x3 hs ha8 (by omega_arith)) (PtrOk.x3 hs hb8 (by omega_arith))
+    (PtrOk.x3 hs ho8 (by omega_arith)) (by decide) (by decide) (by decide) ho hb hob fa fb)
+    fun t ⟨tv, tm, tk⟩ => ⟨tv, fun x h1 h2 => tm x (by omega_arith) (by omega_arith), tk⟩
 
 end VG.Proof.Curve448.AArch64.Fast

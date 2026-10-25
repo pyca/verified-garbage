@@ -84,10 +84,10 @@ theorem wp_strP {s₀ t : State} (A : RandomABI s₀) (P : PreR s₀ t) {r : Reg
   have hs := A.stackBound
   have hl := A.stackLow
   have ha : State.addr (t.gpr .r12 + BitVec.ofNat 32 d) = off (rBase s₀) d := by
-    rw [P.r12, VG.Arm.addr_add (by rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega),
+    rw [P.r12, VG.Arm.addr_add (by rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega_arith),
       alloc_base A]
-  refine wp_str (by unfold frameBytes at hd; omega) ha
-    ⟨_, by rw [P.wr]; exact List.mem_cons_self, Offset.contains_base _ hd (by unfold frameBytes at *; omega)⟩
+  refine wp_str (by unfold frameBytes at hd; omega_arith) ha
+    ⟨_, by rw [P.wr]; exact List.mem_cons_self, Offset.contains_base _ hd (by unfold frameBytes at *; omega_arith)⟩
     fun u m => k u ⟨by rw [m.gpr]; exact P.r12, m.sp.trans P.sp, m.rd.trans P.rd, m.wr.trans P.wr,
       P.frame.trans (by
         rw [m.mem]
@@ -122,7 +122,7 @@ theorem entry_ok {s₀ : State} (A : RandomABI s₀) :
   have gg : ∀ r, r ≠ .r12 → t₉.gpr r = s₀.gpr r := fun r h => by
     rw [g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁]; exact g₀ r h
   have nw : (rBase s₀).toNat + frameBytes + 36 ≤ 2 ^ 32 := by
-    rw [rBase_toNat A]; have := A.stackBound; have := A.stackLow; unfold frameBytes; omega
+    rw [rBase_toNat A]; have := A.stackBound; have := A.stackLow; unfold frameBytes; omega_arith
   have h₁₀ : RReady s₀ t₁₀ :=
     ⟨⟨by rw [u₁₀.gpr, P₉.r12, alloc_base A], by rw [u₁₀.wr, P₉.wr]; exact List.mem_cons_self,
       by rw [u₁₀.rd, P₉.rd, A.rd, rBase_args A]; simp, nw⟩,
@@ -156,7 +156,7 @@ theorem entry_ok {s₀ : State} (A : RandomABI s₀) :
     rfl
   refine ⟨h₁₈, ⟨fun i hi => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, fun r h0 h11 h12 => ?_⟩
   · obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨
-      i = 6 ∨ i = 7 ∨ i = 8 := by omega
+      i = 6 ∨ i = 7 ∨ i = 8 := by omega_arith
     all_goals (rw [hm]; simp (disch := decide) only [slot_write_self, slot_write_ne]; rfl)
   all_goals first
     | (rw [hm]; simp (disch := decide) only [slot_write_self, slot_write_ne]; done)
@@ -182,7 +182,7 @@ theorem body_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
   refine WP.seq (WP.mono (entry_ok A) fun t₁ ⟨h₁, sv₁, us₁, at₁, _⟩ => ?_)
   refine WP.seq (WP.mono (prepare_ok A h₁ sv₁.2.2.2.2) fun t₂ ⟨ax₂, P₂, h₂, o₂, _⟩ => ?_)
   have lo₂ : ∀ d, d + 4 ≤ oQ → slot t₂.mem (rBase s₀) d = slot t₁.mem (rBase s₀) d := fun d hd =>
-    outs_low o₂ (by decide) hd (by unfold oQ at hd; omega)
+    outs_low o₂ (by decide) hd (by unfold oQ at hd; omega_arith)
   refine WP.seq (wp_cmp0 fun t₃ f₃ z₃ => WP.block_nil ?_)
   have h₃ := h₂.fupd f₃
   have m₃ : t₃.mem = t₂.mem := f₃.mem
@@ -200,14 +200,14 @@ theorem body_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
     have T₀ : Att s₀ 0 8 t₃ := by
       refine ⟨⟨(slot t₃.mem (rBase s₀) oDraws).toNat, ⟨h₃, by rw [m₃]; exact P.q, by rw [m₃]; exact P.width,
         by rw [m₃]; exact P.mask, us₃, by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq],
-        fun i hi => by rw [m₃]; exact P.nonce i (by omega), Nat.zero_le _⟩⟩, at₃, sv₃, ?_⟩
+        fun i hi => by rw [m₃]; exact P.nonce i (by omega_arith), Nat.zero_le _⟩⟩, at₃, sv₃, ?_⟩
       have e : VG.Proof.Dsa.randomSignRemaining (rInput s₀) 0 8 = rResult s₀ := by
         rw [rResult_loop A]; rfl
       exact ⟨by rw [e], by rw [e], by rw [e]⟩
     refine WP.loop (M := isa) (fun (n : Nat) (u : State) => ∃ used, 1 ≤ n ∧ n ≤ 8 ∧ Att s₀ used n u)
       (fun n u hu => ?_) 8 t₃ ⟨0, by decide, by decide, T₀⟩
     obtain ⟨used, hn1, hn8, T⟩ := hu
-    obtain ⟨f, rfl⟩ : ∃ f, n = f + 1 := ⟨n - 1, by omega⟩
+    obtain ⟨f, rfl⟩ : ∃ f, n = f + 1 := ⟨n - 1, by omega_arith⟩
     refine WP.seq (WP.mono (attempt_ok name A T hn8 hq) fun v hv => ?_)
     have hrv : RReady s₀ v := by
       rcases hv with ⟨_, _, T', _⟩ | ⟨_, D, _⟩
@@ -219,11 +219,11 @@ theorem body_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
     rw [uv₁.gpr] at zv₂
     rcases hv with ⟨st, h1f, T', _⟩ | ⟨st, D, _⟩
     · right
-      refine ⟨by rw [eval_eq, zv₂, st]; rfl, f, by omega, _, h1f, by omega, T'.mem A hv₂ mv₂⟩
+      refine ⟨by rw [eval_eq, zv₂, st]; rfl, f, by omega_arith, _, h1f, by omega_arith, T'.mem A hv₂ mv₂⟩
     · left
       refine ⟨?_, (D.mem A hv₂ mv₂).rfin⟩
       have hz : (slot v.mem (rBase s₀) oStatus - 4 == 0) = false := by
-        rw [D.status, status_beq (by omega), decide_eq_false (by omega)]
+        rw [D.status, status_beq (by omega_arith), decide_eq_false (by omega_arith)]
       rw [eval_eq, zv₂, hz]
   · simp only [hq, ↓reduceIte] at z₃
     have hR' := rResult_small A hq
@@ -233,7 +233,7 @@ theorem body_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
       rw [f₃.gpr, ax₂, hR']; simp only [hq, ↓reduceIte]; rfl
     rw [r0] at m₄
     refine ⟨h₄, ?_, by rw [m₄.mem, slot_write_self], fun e => by rw [hR'] at e; exact absurd e (by decide),
-      sv₃.of_slots fun d hd _ => by rw [m₄.mem, slot_write_ne _ _ _ (by unfold oStatus; omega) (by omega)
+      sv₃.of_slots fun d hd _ => by rw [m₄.mem, slot_write_ne _ _ _ (by unfold oStatus; omega_arith) (by omega_arith)
         (by decide)]⟩
     rw [m₄.mem, slot_write_ne _ _ _ (by decide) (by decide) (by decide), us₃, hR']; rfl
 

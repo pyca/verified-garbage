@@ -91,23 +91,23 @@ theorem copy_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
       u.gpr .ebp = D.ptr s₀ + BitVec.ofNat 32 (4 * k) ∧ u.gpr .ecx = BitVec.ofNat 32 (n - k) ∧
       Frame [D.rgn s₀] s.mem u.mem ∧ ∀ j < 4 * k, u.mem (D.addr s₀ + BitVec.ofNat 64 j) = s.mem (S.addr s₀ + BitVec.ofNat 64 j)
     have i0 : I 0 s₁ := ⟨h₁, by rw [e₁]; simp, by rw [e₂]; simp, e₃, by rw [m₁]; exact Frame.refl _ _,
-      fun j hj => absurd hj (by omega)⟩
+      fun j hj => absurd hj (by omega_arith)⟩
     refine (wp_count hn I i0 fun k hk u ⟨cu, du, bu, xu, fu, cpu⟩ => ?_).mono fun u ⟨cu, _, _, _, fu, cpu⟩ => ?_
     · have eS : u.ea (at_ .edi 0) = S.addr s₀ + BitVec.ofNat 64 (4 * k) := by
-        simp only [State.ea, at_, du]; rw [ea_add (by omega)]; rfl
+        simp only [State.ea, at_, du]; rw [ea_add (by omega_arith)]; rfl
       have eD : u.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
-        simp only [State.ea, at_, bu]; rw [ea_add (by omega)]; rfl
+        simp only [State.ea, at_, bu]; rw [ea_add (by omega_arith)]; rfl
       have hinS : InRegions (u.rd ++ u.wr) (S.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
-        Buf.inRegR hp hS cu.rd cu.wr (show 4 * k + 4 ≤ 4 * n by omega)
+        Buf.inRegR hp hS cu.rd cu.wr (show 4 * k + 4 ≤ 4 * n by omega_arith)
       refine wp_movm' (by rw [eS]; exact hinS) fun u₁ o₁ v₁ => ?_
       have c₁ := cu.only o₁ (by decide) (by decide)
       have eD₁ : u₁.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
         rw [← eD]; simp only [State.ea, at_, o₁.gpr _ (by decide : Reg.ebp ∉ [Reg.eax])]
       have hinD : InRegions u₁.wr (D.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
-        Buf.inRegW hp hD₁ (Lay.okW_iff.mp hD).2 c₁.wr (show 4 * k + 4 ≤ 4 * n by omega)
+        Buf.inRegW hp hD₁ (Lay.okW_iff.mp hD).2 c₁.wr (show 4 * k + 4 ≤ 4 * n by omega_arith)
       refine wp_store' (by rw [eD₁]; exact hinD) fun u₂ g₂ r₂ w₂ m₂ => ?_
       obtain ⟨r, hr, hcr⟩ := Buf.contains hp hD₁ (Lay.okW_iff.mp hD).2 (o := 4 * k) (n := 4)
-        (show 4 * k + 4 ≤ 4 * n by omega)
+        (show 4 * k + 4 ≤ 4 * n by omega_arith)
       have c₂ : Ctx (Y p) s₀ u₂ := ⟨by rw [g₂]; exact c₁.esp, by rw [r₂]; exact c₁.rd, by rw [w₂]; exact c₁.wr,
         by rw [g₂]; exact c₁.esi, by rw [m₂, eD₁]; exact c₁.frame.writeW hr _ hcr⟩
       refine wp_addi fun u₃ o₃ v₃ => wp_addi fun u₄ o₄ v₄ => wp_subi_last fun u₅ o₅ v₅ z₅ => ?_
@@ -121,26 +121,26 @@ theorem copy_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
       refine ⟨⟨c₅, ?_, ?_, by rw [v₅, ex]; exact cnt_next hk, ?_, ?_⟩, ?_⟩
       · rw [o₅.gpr _ (by decide), o₄.gpr _ (by decide), v₃, g₂, o₁.gpr _ (by decide), du]
         show _ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 4 = _
-        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega]
+        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega_arith]
       · rw [o₅.gpr _ (by decide), v₄, o₃.gpr _ (by decide), g₂, o₁.gpr _ (by decide), bu]
         show _ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 4 = _
-        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega]
+        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega_arith]
       · rw [m₅, o₁.mem]
         exact fu.writeW (List.mem_singleton_self _) _ (by
           show (⟨D.addr s₀, 4 * n⟩ : Region).Contains _ 4
-          simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+          simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
       · intro j hj
-        rw [m₅, o₁.mem, wordw_bytes (by omega) hj]
+        rw [m₅, o₁.mem, wordw_bytes (by omega_arith) hj]
         split
         · rename_i e
-          rw [← Mem.readW_byte _ _ (by omega), BitVec.add_assoc, ← BitVec.ofNat_add,
-            show 4 * k + (j - 4 * k) = j by omega]
+          rw [← Mem.readW_byte _ _ (by omega_arith), BitVec.add_assoc, ← BitVec.ofNat_add,
+            show 4 * k + (j - 4 * k) = j by omega_arith]
           exact fu.bytes (R := S.rgn s₀) (fun r hr => by
-            rw [List.mem_singleton] at hr; subst hr; exact dd) (by show 4 * n ≤ 2 ^ 64; omega)
-            (show j < 4 * n by omega)
-        · exact cpu j (by omega)
+            rw [List.mem_singleton] at hr; subst hr; exact dd) (by show 4 * n ≤ 2 ^ 64; omega_arith)
+            (show j < 4 * n by omega_arith)
+        · exact cpu j (by omega_arith)
       · show u₅.zf.map (!·) = _
-        rw [z₅, ex]; exact cnt_ne hk (by omega)
+        rw [z₅, ex]; exact cnt_ne hk (by omega_arith)
     · refine hQ s₀ s u hp ha cu fu ?_
       exact List.map_congr_left fun j hj => cpu j (List.mem_range.mp hj)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -278,7 +278,7 @@ theorem hash2_piece' (rate sfx : Nat) (b₁ b₂ o : Buf) (hr : rate ∈ rates)
   simp only [Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hS, hW⟩, hb₁⟩, hb₂⟩, hO⟩, dSW⟩, d₁S⟩, d₁W⟩, d₂S⟩, d₂W⟩, dSO⟩, dOW⟩ := hc'
   have hrate := (rate_lt hr)
-  have hr0 : 0 < rate := by simp [rates] at hr; omega
+  have hr0 : 0 < rate := by simp [rates] at hr; omega_arith
   -- after zeroing, absorbing `b₁`, absorbing `b₂`, padding
   let P : Nat → State → State → Prop := fun i s₀ u => ∃ s, A s₀ s ∧ Ctx (Y p) s₀ u ∧ Frame (kF oST oWK (Y p) s₀) s.mem u.mem ∧
     (i = 0 → stateAt u.mem (Buf.addr s₀ ⟨SC, oST, 200⟩) = Spec.Sha3.zero) ∧

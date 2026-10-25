@@ -61,14 +61,14 @@ theorem St.terminal {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : S
 theorem out_keep {o : State} (A : PSearchABI o) {m m' : Mem} (h : Frame [sR o] m m') :
     Spec.Rsa.bytesAt m' (argumentPointer o 0) (arg o 1).toNat = Spec.Rsa.bytesAt m (argumentPointer o 0) (arg o 1).toNat := by
   have := A.oBound
-  refine KeySearch.bytes_frame h (fun r hr => ?_) (by omega)
+  refine KeySearch.bytes_frame h (fun r hr => ?_) (by omega_arith)
   simp only [List.mem_singleton] at hr; subst hr
   exact A.os
 
 theorem cap_lt {o : State} (A : PSearchABI o) : (ofState o).cap < 2 ^ 27 := by
   have := A.bitsHigh
   simp only [PPub.cap, parameterEntropy, ofState]
-  omega
+  omega_arith
 
 theorem attempts_le {o : State} (A : PSearchABI o) : (ofState o).attempts ≤ 2 ^ 32 := by
   have h := A.attempts
@@ -77,7 +77,7 @@ theorem attempts_le {o : State} (A : PSearchABI o) : (ofState o).attempts ≤ 2 
   refine Nat.le_trans h ?_
   unfold parameterAttempts
   have : (arg o 3).toNat * (arg o 3).toNat ≤ 8192 * 8192 := Nat.mul_le_mul hb hb
-  omega
+  omega_arith
 
 theorem exhausted_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s) :
     WP isa exhausted s (Done p o (.exhausted used)) := by
@@ -113,8 +113,8 @@ theorem select_max {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
       else BitVec.ofNat 32 a) = BitVec.ofNat 32 (max a b) := by
   rw [toNat_ofNat_lt ha, toNat_ofNat_lt hb]
   by_cases h : a < b
-  · simp only [h, decide_true, ite_true]; congr 1; omega
-  · simp only [h, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega
+  · simp only [h, decide_true, ite_true]; congr 1; omega_arith
+  · simp only [h, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega_arith
 
 /-- The selection of the smaller of two numbers below `2³²`. -/
 theorem select_min {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
@@ -122,8 +122,8 @@ theorem select_min {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
       else BitVec.ofNat 32 a) = BitVec.ofNat 32 (min a b) := by
   rw [toNat_ofNat_lt ha, toNat_ofNat_lt hb]
   by_cases h : b < a
-  · simp only [h, decide_true, ite_true]; congr 1; omega
-  · simp only [h, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega
+  · simp only [h, decide_true, ite_true]; congr 1; omega_arith
+  · simp only [h, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega_arith
 
 /-- `k` doublings of `ecx`. -/
 theorem doublings_ok {s : State} {v : Nat} (hv : s.gpr .ecx = BitVec.ofNat 32 v) (k : Nat) {rest : List Instr}
@@ -176,7 +176,7 @@ theorem St.requestWords {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h
   have y₇ : t₇.gpr .ecx = _ := U₇.gpr.trans (by rw [U₆.gpr, d₆])
   have x₇ : t₇.gpr .eax = t₃.gpr .eax := by rw [U₇.other _ (by decide), U₆.other _ (by decide), x₅]
   have v₈ : t₈.gpr .eax = BitVec.ofNat 32 (max a (256 * L)) := by
-    rw [U₈.gpr, x₇, y₇, y₅, x₅, a₃, e₃, select, ← select_max (by omega) (by omega)]
+    rw [U₈.gpr, x₇, y₇, y₅, x₅, a₃, e₃, select, ← select_max (by omega_arith) (by omega_arith)]
   have v₉ : t₉.gpr .eax = BitVec.ofNat 32 (2 * max a (256 * L)) := by
     rw [U₉.gpr, v₈, BitVec.ofNat_add_ofNat, Nat.two_mul]
   refine S₉.ld (Or.inr (Or.inl rfl)) hc (by decide) fun t₁₀ S₁₀ g₁₀ o₁₀ _ _ => ?_
@@ -192,7 +192,7 @@ theorem St.requestWords {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h
     have d₁₃ : t₁₃.gpr .edx = _ := (U₁₃.other _ (by decide)).trans U₁₂.gpr
     have y₁₄ : t₁₄.gpr .ecx = _ := U₁₄.gpr.trans (by rw [U₁₃.gpr, d₁₃])
     have x₁₄ : t₁₄.gpr .eax = t₁₀.gpr .eax := by rw [U₁₄.other _ (by decide), U₁₃.other _ (by decide), x₁₂]
-    rw [U₁₅.gpr, x₁₄, y₁₄, y₁₂, x₁₂, a₁₀, g₁₀, hcap, select, ← select_min (by omega) hc']
+    rw [U₁₅.gpr, x₁₄, y₁₄, y₁₂, x₁₂, a₁₀, g₁₀, hcap, select, ← select_min (by omega_arith) hc']
   refine S₁₅.stw hA (d := requestOff) (by decide) (by decide) fun t₁₆ S₁₆ _ _ _ _ => ?_
   refine wp_movi fun t₁₇ U₁₇ => ?_
   have S₁₇ := S₁₆.reg U₁₇ (Or.inl rfl)
@@ -217,7 +217,7 @@ theorem request_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
   unfold request
   refine WP.seq (WP.mono (S.requestWords hA (by decide) (by decide) (by decide) (a := (ofState o).randLen - used)
     (L := (ofState o).len) (c := (ofState o).cap) (by simp [liveF, leftOff]) (by simp [liveF, widthOff])
-    (by simp [liveF, capOff]) (by rw [ec] at hc; omega) (by omega) (by omega))
+    (by simp [liveF, capOff]) (by rw [ec] at hc; omega_arith) (by omega_arith) (by omega_arith))
     fun t St => ?_)
   have hA₄ : Aligned (statusOff :: requestOff :: liveDs) := by decide
   refine WP.mono (St.zeroOut hA₄ (by simp [upd, liveF, ofState, outOff, statusOff, requestOff])
@@ -226,7 +226,7 @@ theorem request_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
   have eq : min (2 * max ((ofState o).randLen - used) (256 * (ofState o).len)) (ofState o).cap =
       parameterRequest (ofState o).bits ((ofState o).randLen - used) := by
     simp only [parameterRequest, PPub.cap, ofState, hb]
-  refine Su.done (by decide) ?_ Zo ⟨h.n_le, by rw [ParameterSearchResult.requested, parameterRequest, ec, eb]; omega,
+  refine Su.done (by decide) ?_ Zo ⟨h.n_le, by rw [ParameterSearchResult.requested, parameterRequest, ec, eb]; omega_arith,
     h.used_le⟩
   simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
   rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>

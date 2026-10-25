@@ -61,7 +61,7 @@ theorem stk_apart {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) (hlo :
       Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
   have e : (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16 :=
     VG.X86.Taint.sub_setWidth hlo
-  have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+  have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_arith)
   refine ⟨?_, ?_⟩
   · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ _
     rw [e, ea]; exact VG.Offset.disjoint_below_above _ (by decide)
@@ -137,11 +137,11 @@ theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : S
   have hL := (dirCoreSpec d).layout
   obtain ⟨sA, sR⟩ := stk_apart fE fLo
   refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, schedSlot]),
-      (by simp only [dirCore, schedSlot]; omega)⟩, (by rw [hwr]; simp [dirCore]),
-    (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp [dirCore]),
+      (by simp only [dirCore, schedSlot]; omega_arith)⟩, (by rw [hwr]; simp [dirCore]),
+    (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega_arith), (by rw [hwr, hstep]; simp [dirCore]),
     (by rw [hstep]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
-    (fun _ => dRV), (by rw [hstep]; exact dSD), ?_, sA, sR, (by simp [dirCore]; omega),
-    (by rw [hstep]; simp only [dirCore]; omega), hL⟩
+    (fun _ => dRV), (by rw [hstep]; exact dSD), ?_, sA, sR, (by simp [dirCore]; omega_arith),
+    (by rw [hstep]; simp only [dirCore]; omega_arith), hL⟩
   · rw [hstep, scr_eq]; exact dDS
   · rw [scr_eq]; exact dVS
   · rw [hstep]; exact dVD
@@ -149,7 +149,7 @@ theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : S
   · rw [hstep]; exact dAD
   · rw [scr_eq]; exact dRS
   · rw [hstep]; exact dRD
-  · exact dSS.sub_right (VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega))
+  · exact dSS.sub_right (VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega_arith))
 
 theorem keyArgs_of {st : Nat} {post : State → State → Prop} (d : Spec.TripleDes.Direction) {s : State}
     (h : (fbX86 st post).pre s) : KeyArgs s [Modes.X86.scrR s (dirCore d)]
@@ -158,7 +158,7 @@ theorem keyArgs_of {st : Nat} {post : State → State → Prop} (d : Spec.Triple
   refine ⟨arg s 0, ⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK,
     fun r hr => ?_, fun r hr => ?_, fun r hr => ?_⟩
   · show (⟨argAddr s 0, 20⟩ : Region).Contains (argAddr s 0) 4
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact dKS
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
     exact dAS.sub_left (Region.sub_prefix (by decide))
@@ -220,19 +220,19 @@ theorem fbTaint_wf {st : Nat} {post : State → State → Prop} {s : State} (hp 
   obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, fK, fV, fD, fS, fE, fLo⟩ := hp
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [fbTaint]; omega, ?_⟩, ?_⟩ ?_
+    fun _ => ⟨by simp only [fbTaint]; omega_arith, ?_⟩, ?_⟩ ?_
   · rw [hwr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
       List.Pairwise.nil, and_true]
     exact ⟨⟨dVD.symm, dDS⟩, dVS, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRD dAD
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRV dAV
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRS dAS
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_arith) dRD dAD
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_arith) dRV dAV
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_arith) dRS dAS
   · intro p hp'
     simp only [fbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -260,12 +260,12 @@ theorem fbTaint_agree {st : Nat} {post : State → State → Prop} {s₁ s₂ : 
     fun k h4 hk => ?_⟩
   · simp only [fbTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
-  · rw [hwr₁, hwr₂, ha 1 (by omega), ha 2 (by omega), ha 3 (by omega), ha 4 (by omega)]
+  · rw [hwr₁, hwr₂, ha 1 (by omega_arith), ha 2 (by omega_arith), ha 3 (by omega_arith), ha 4 (by omega_arith)]
   · simp only [fbTaint] at hk
     rw [show VG.X86.Taint.depth fbTaint.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 24) fE₁ h4 hk, VG.X86.Taint.argByte_eq (n := 24) fE₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_arith)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_arith))]
+    exact congrArg _ (ha _ (by omega_arith))
 
 theorem ofb_ct : ConstantTime isa (fbX86 8 ofbPost).pre (fbX86 8 ofbPost).pub ofb := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint ofb h).isSome = true :=
@@ -355,8 +355,8 @@ theorem wide_implies_ofb :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
+      | omega_arith
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Proof.TripleDes.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ofbPost, ciph, ivAt, dataAt, bytesOf]
   · sig_implies_pub [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Proof.TripleDes.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]
@@ -375,8 +375,8 @@ theorem wide_implies_cfbEnc :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
+      | omega_arith
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Proof.TripleDes.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, cfbEncPost, ciph, ivAt, dataAt, bytesOf]
   · sig_implies_pub [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Proof.TripleDes.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]
@@ -395,8 +395,8 @@ theorem wide_implies_cfbDec :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
+      | omega_arith
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Proof.TripleDes.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, cfbDecPost, ciph, ivAt, dataAt, bytesOf]
   · sig_implies_pub [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Proof.TripleDes.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]
@@ -415,10 +415,10 @@ theorem wide_implies_cfb8Enc :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
+      | omega_arith
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
       | (simp only [Nat.one_mul] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; simp only [Nat.one_mul] at *; with_reducible assumption)
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; simp only [Nat.one_mul] at *; with_reducible assumption)
   · sig_implies_post [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig, Proof.TripleDes.cfb8EncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, cfb8EncPost, ciph, ivAt, dataAt, bytesOf]
   · sig_implies_pub [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig, Proof.TripleDes.cfb8EncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]
   · sig_implies_sat [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig, Proof.TripleDes.cfb8EncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]
@@ -436,10 +436,10 @@ theorem wide_implies_cfb8Dec :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
+      | omega_arith
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
       | (simp only [Nat.one_mul] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; simp only [Nat.one_mul] at *; with_reducible assumption)
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; simp only [Nat.one_mul] at *; with_reducible assumption)
   · sig_implies_post [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig, Proof.TripleDes.cfb8DecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, cfb8DecPost, ciph, ivAt, dataAt, bytesOf]
   · sig_implies_pub [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig, Proof.TripleDes.cfb8DecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]
   · sig_implies_sat [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig, Proof.TripleDes.cfb8DecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]

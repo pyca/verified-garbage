@@ -114,13 +114,13 @@ theorem emLen_ct (hc : VerifyChecks H.P H.D) (hH : HashOK H) :
   have L3 : Lay t3 (fb s) (stackArg s 3) := v.L.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 3) V W := hm3 ▸ R
   refine WP.mono (WP.keepIn (by safe_by [emLen]) (by exact Nat.zero_le 8)
-    (emLen_ok (H := H) (by omega) L3 R3 (x := n0v s) (k := (s.gpr .rsi).toNat)
+    (emLen_ok (H := H) (by omega_arith) L3 R3 (x := n0v s) (k := (s.gpr .rsi).toNat)
       (by rw [hw 17 (by decide)]; show s.gpr .rsi = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
-      (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ =>
+      (by omega_arith) (by omega_arith) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ =>
     ⟨s, S, ⟨L4, k4.2.2.trans (k3.2.2.trans v.wr), ⟨V, _, R4, fun k hk => ?_, trivial⟩, fun _ hp => by cases hp⟩,
       k4.2.1.trans (k3.2.1.trans hrd), vframe_keep hp (k3.2.2.trans v.wr) L3.rsp (hm3 ▸ hM) f4, hax4, hc4⟩
   rcases List.mem_append.mp hk with hk | hk
-  · have : k ≠ 25 ∧ k ≠ 26 := by simp only [K1, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+  · have : k ≠ 25 ∧ k ≠ 26 := by simp only [K1, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_arith
     simp only [upd]; rw [ifn this.2, ifn this.1]; exact hw k hk
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
     rcases hk with rfl | rfl <;> simp [upd, vw, vlo]
@@ -138,8 +138,8 @@ theorem any1_ok {s : State} (hp : VPre G s) {u : State} {S : Addr} (L : Lay u (f
   have a1 := varg_read' hp hf (j := 1) (by decide)
   have a2 : (u.mem.writeW (off (fb s) sSlen) (stackArg s 1)).readW (off (fb s) (frameBytes + 8 + 8 * 2)) 32 =
       (stackArg s 2).setWidth 32 := by
-    rw [readW32_low, Mem.readW_writeW_sep (Offset.sep _ (.inr (by unfold sSlen frameBytes; omega))
-      (by unfold frameBytes; omega) (by unfold sSlen; omega)) (by decide), varg_read' hp hf (j := 2) (by decide)]
+    rw [readW32_low, Mem.readW_writeW_sep (Offset.sep _ (.inr (by unfold sSlen frameBytes; omega_arith))
+      (by unfold frameBytes; omega_arith) (by unfold sSlen; omega_arith)) (by decide), varg_read' hp hf (j := 2) (by decide)]
   refine WP.mono (WP.keep [.rax] (Q := fun v => v.mem = u.mem.writeW (off (fb s) sSlen) (stackArg s 1) ∧
       v.zf = some (decide ((stackArg s 2).setWidth 32 = 0))) ?_ rfl) fun v ⟨⟨hm, hz⟩, hk⟩ =>
     ⟨L.of_rep' R (hm ▸ R1) (by simp [upd]) (hk.gpr (by decide)) hk.2.2, hk, hm ▸ R1, hz⟩
@@ -174,7 +174,7 @@ theorem anyArgs_ct :
   have hp := S.ps
   have hok : H.D + 2 ≤ veml s := by
     rw [show isa.eval .b t = t.cf from rfl, hcf] at hb
-    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega
+    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega_arith
   obtain ⟨V, W, R, hw, -⟩ := v.W
   refine WP.mono (WP.keepIn (by safe_by [anyArgs]) (by exact Nat.zero_le 8)
     (anyArgs_ok hp v.L hrd hM R)) fun u ⟨⟨L', k', R', hdx⟩, f⟩ =>
@@ -185,7 +185,7 @@ theorem anyArgs_ct :
   by_cases h36 : k = 36
   · subst h36; simp [upd, vw]
   simp only [upd]; rw [ifn h35, ifn h36]
-  exact hw k (by simp only [K5, K1, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hk ⊢; omega)
+  exact hw k (by simp only [K5, K1, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hk ⊢; omega_arith)
 
 theorem salt_ct (hc : VerifyChecks H.P H.D) (hH : HashOK H) :
     RelCT isa (Two (VAt (extra := extra) G (J5 H))) (.block (([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
@@ -211,8 +211,8 @@ theorem salt_ct (hc : VerifyChecks H.P H.D) (hH : HashOK H) :
     apply BitVec.eq_of_toNat_eq
     have := (s.gpr .rsi).isLt
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
-  refine WP.mono (saltFits_ok (H := H) (by omega) t6 (a := veml s) (b := vrdx s) hok (by unfold veml; omega) hax6
+    omega_arith
+  refine WP.mono (saltFits_ok (H := H) (by omega_arith) t6 (a := veml s) (b := vrdx s) hok (by unfold veml; omega_arith) hax6
     (by rw [k6.gpr (by decide)]; exact hdx)) fun t7 ⟨k7, hm7, hax7, hc7⟩ => ?_
   have hm : t7.mem = t.mem := by rw [hm7, hm6]
   exact ⟨s, S, v.keep (k6.trans k7) hm (by decide) (fun _ hp => by cases hp), k7.2.1.trans (k6.2.1.trans hrd),

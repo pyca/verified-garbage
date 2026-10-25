@@ -52,7 +52,7 @@ theorem Outs.frame {base : Addr} {size : Nat} {rs : List (Nat × Nat)} {m m' : M
   have := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains, ofs] at this ⊢
   have := hrs r hr
-  omega
+  omega_arith
 
 variable {k : Nat} {s : State}
 
@@ -85,7 +85,7 @@ theorem Outside.frame {base : Addr} {size o n : Nat} {m m' : Mem} (h : Outside b
     rw [List.mem_singleton.mp hr]; exact hon
 
 theorem saveAt_le {k : Nat} (h0 : 0 < k) (h9 : k ≤ 9) : saveAt k + 16 ≤ 4096 ∧ own k + 64 * k = 4096 := by
-  simp only [saveAt, tmpAt, own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
+  simp only [saveAt, tmpAt, own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_arith
 
 /-- A store through `r` holding the working space's base. -/
 theorem ea_base {t : State} {r : Reg} {W : BitVec 32} (hr : t.gpr r = W) (hW : W.toNat + 8192 ≤ 2 ^ 32)
@@ -105,7 +105,7 @@ theorem mulEntry_ok (hp : Pre k s) :
       w32 u.mem (wsOf s) (saveAt k + 8) = (s.gpr .edi).toNat ∧
       w32 u.mem (wsOf s) (saveAt k + 12) = (s.gpr .ebp).toNat := by
   have hn := hp.ws_fit
-  have hws : (wsOf s).toNat = (arg s 0).toNat := by simp only [wsOf, BitVec.toNat_setWidth]; omega
+  have hws : (wsOf s).toNat = (arg s 0).toNat := by simp only [wsOf, BitVec.toNat_setWidth]; omega_arith
   have hn' : (wsOf s).toNat + 8192 ≤ 2 ^ 32 := by rw [hws]; exact hn
   obtain ⟨hsv, -⟩ := saveAt_le hp.k0 hp.k9
   have hwr : ∀ {t : State}, t.wr = s.wr → ∀ {d}, d + 4 ≤ 8192 → InRegions t.wr (off (wsOf s) d) 4 :=
@@ -202,7 +202,7 @@ theorem csubPre_ok {base : Addr} {size : Nat} (hb : Bx s base size) {m src tmp N
       val32 u.mem base (if b then tmp else src) N = val32 s.mem base src (N + 1) % m → WP isa (.block L) u Q) :
     WP isa (.block (diffsI m src tmp N ++ (maskTop src N ++ (outPtr ++ L)))) s Q := by
   have hn := hb.nowrap
-  obtain ⟨N', rfl⟩ : ∃ N', N = N' + 1 := ⟨N - 1, by omega⟩
+  obtain ⟨N', rfl⟩ : ∃ N', N = N' + 1 := ⟨N - 1, by omega_arith⟩
   have hX : SrcOk (fun j => .mem (bp (src + 4 * j))) (fun j => s.mem.readW (off base (src + 4 * j)) 32) .eax
       base tmp (N' + 1) s := fun j hj t ht hrd hwr O' => by
     dsimp only
@@ -260,7 +260,7 @@ theorem Pre.outs_le (hp : Pre k s) : ∀ r ∈ outs k s, r.1 + r.2 ≤ 8192 := b
   have := hp.fo; have := saveAt_le hp.k0 hp.k9
   intro r hr
   simp only [outs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> dsimp only <;> omega
+  rcases hr with rfl | rfl <;> dsimp only <;> omega_arith
 
 /-- An argument, read from a state that wrote only `outs`. -/
 theorem Pre.readArg' (hp : Pre k s) {t : State} (hsp : t.gpr .esp = s.gpr .esp) (hrd : t.rd = s.rd)
@@ -281,14 +281,14 @@ theorem mulFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
   have hk0 := hp.k0
   have ⟨hsv, hown⟩ := saveAt_le hp.k0 hp.k9
   have := hp.fo; have := hp.fa; have := hp.fb
-  have hsv' : saveAt k = own k + 24 * k + 4 := by simp only [saveAt, tmpAt]; omega
-  have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega
+  have hsv' : saveAt k = own k + 24 * k + 4 := by simp only [saveAt, tmpAt]; omega_arith
+  have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega_arith
   simp only [mulFn, csubOut, List.append_assoc]
   refine WP.seq (WP.mono (mulEntry_ok hp) fun s₁ ⟨bx₁, pb₁, pa₁, K₁, esp₁, O₁, v₁, v₂, v₃, v₄⟩ => ?_)
   have hn := bx₁.nowrap
   have hB₁ : val32 s₁.mem (wsOf s) (arg s 3).toNat (2 * k) < m := by
     rw [O₁.val32 (by omega_using [this, hsv']) (by omega_using [hown])]; exact hB
-  have hL : MulLayB k 8192 (arg s 2).toNat (arg s 3).toNat (own k) := ⟨by omega, by omega, by omega⟩
+  have hL : MulLayB k 8192 (arg s 2).toNat (arg s 3).toNat (own k) := ⟨by omega_arith, by omega_arith, by omega_arith⟩
   refine WP.seq (WP.mono (mulBody_ok bx₁ hM pa₁ pb₁ hL hB₁)
     fun s₂ ⟨O₂, K₂, T₂, U, hU⟩ => ?_)
   have bx₂ := bx₁.of_keeps K₂ (by decide)
@@ -357,7 +357,7 @@ theorem mulFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
     have hB' : val32 s₁.mem (wsOf s) (arg s 3).toNat (2 * k) = val32 s.mem (wsOf s) (arg s 3).toNat (2 * k) :=
       O₁.val32 (by omega_using [this, hsv']) (by omega_using [hown])
     rw [hA, hB'] at hU
-    rw [Nat.mod_mul_mod, show 64 * k = 32 * (2 * k) by omega, Nat.mul_comm, hU, Nat.add_mul_mod_self_right]
+    rw [Nat.mod_mul_mod, show 64 * k = 32 * (2 * k) by omega_arith, Nat.mul_comm, hU, Nat.add_mul_mod_self_right]
 
 /-! ## The sum and the difference -/
 
@@ -369,7 +369,7 @@ theorem asEntry_ok (hp : Pre k s) :
       Keeps [.eax, .ecx, .edx, .ebp] s u ∧ Outside (wsOf s) (saveAt k + 12) 4 s.mem u.mem ∧
       w32 u.mem (wsOf s) (saveAt k + 12) = (s.gpr .ebp).toNat := by
   have hn := hp.ws_fit
-  have hws : (wsOf s).toNat = (arg s 0).toNat := by simp only [wsOf, BitVec.toNat_setWidth]; omega
+  have hws : (wsOf s).toNat = (arg s 0).toNat := by simp only [wsOf, BitVec.toNat_setWidth]; omega_arith
   have hn' : (wsOf s).toNat + 8192 ≤ 2 ^ 32 := by rw [hws]; exact hn
   obtain ⟨hsv, -⟩ := saveAt_le hp.k0 hp.k9
   simp only [asEntry]
@@ -437,8 +437,8 @@ theorem addFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
   have hk0 := hp.k0
   have ⟨hsv, hown⟩ := saveAt_le hp.k0 hp.k9
   have := hp.fo; have := hp.fa; have := hp.fb
-  have hsv' : saveAt k = own k + 24 * k + 4 := by simp only [saveAt, tmpAt]; omega
-  have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega
+  have hsv' : saveAt k = own k + 24 * k + 4 := by simp only [saveAt, tmpAt]; omega_arith
+  have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega_arith
   simp only [addFn, csubOut, List.append_assoc, List.nil_append, chainP_eq]
   refine WP.block_append (WP.mono (asEntry_ok hp) fun s₁ ⟨bx₁, pa₁, pb₁, K₁, O₁, v₁⟩ => ?_)
   have hn := bx₁.nowrap
@@ -446,7 +446,7 @@ theorem addFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
     (by omega_arith) (by omega_using [hown])) (chainP_src bx₁ pb₁ (by decide) (by omega_using [this]) (by omega_using [hown]))
     (fun j hj t ht hwr => have hbt := bx₁.of_other ht (by decide) hwr; ⟨hbt.ea (by omega_using [hown, hj]), hbt.write (by omega_using [hown, hj])⟩)
     (by omega_using [hown]) (2 * k - 1) (by omega_using [hk0])
-  rw [show 2 * k - 1 + 1 = 2 * k by omega] at C
+  rw [show 2 * k - 1 + 1 = 2 * k by omega_arith] at C
   refine WP.block_append (WP.mono C fun s₂ ⟨O₂, ⟨c, hc, V₂⟩, K₂⟩ => ?_)
   have bx₂ := bx₁.of_keeps K₂ (by decide)
   simp only [List.cons_append]
@@ -529,10 +529,10 @@ theorem sub_arith {A B D R m P : Nat} {c c' : Bool} (hA : A < m) (hB : B < m) (h
   have key : (R = A + m - B ∧ A < B) ∨ (R = A - B ∧ B ≤ A) := by
     cases c <;> cases c' <;>
       simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Bool.false_eq_true, ite_false,
-        ite_true, Nat.add_zero] at h1 h2 <;> omega
+        ite_true, Nat.add_zero] at h1 h2 <;> omega_arith
   rcases key with ⟨rfl, h⟩ | ⟨rfl, h⟩
   · rw [Nat.mod_eq_of_lt (by omega_using [hB, h])]
-  · rw [show A + m - B = (A - B) + m by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hA])]
+  · rw [show A + m - B = (A - B) + m by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hA])]
 
 /-- `vg_<curve>_sub_mod_<p|n>`: `[o] = ([a] - [b]) mod m`. -/
 theorem subFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
@@ -543,8 +543,8 @@ theorem subFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
   have hk0 := hp.k0
   have ⟨hsv, hown⟩ := saveAt_le hp.k0 hp.k9
   have := hp.fo; have := hp.fa; have := hp.fb
-  have hsv' : saveAt k = own k + 24 * k + 4 := by simp only [saveAt, tmpAt]; omega
-  have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega
+  have hsv' : saveAt k = own k + 24 * k + 4 := by simp only [saveAt, tmpAt]; omega_arith
+  have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega_arith
   simp only [subFn, List.append_assoc, chainP_eq]
   refine WP.block_append (WP.mono (asEntry_ok hp) fun s₁ ⟨bx₁, pa₁, pb₁, K₁, O₁, v₁⟩ => ?_)
   have hn := bx₁.nowrap
@@ -552,7 +552,7 @@ theorem subFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
     (by omega_arith) (by omega_using [hown])) (chainP_src bx₁ pb₁ (by decide) (by omega_using [this]) (by omega_using [hown]))
     (fun j hj t ht hwr => have hbt := bx₁.of_other ht (by decide) hwr; ⟨hbt.ea (by omega_using [hown, hj]), hbt.write (by omega_using [hown, hj])⟩)
     (by omega_using [hown]) (2 * k - 1) (by omega_using [hk0])
-  rw [show 2 * k - 1 + 1 = 2 * k by omega] at C
+  rw [show 2 * k - 1 + 1 = 2 * k by omega_arith] at C
   refine WP.block_append (WP.mono C fun s₂ ⟨O₂, ⟨c, hc, V₂⟩, K₂⟩ => ?_)
   have bx₂ := bx₁.of_keeps K₂ (by decide)
   simp only [List.cons_append, List.nil_append]
@@ -589,7 +589,7 @@ theorem subFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
         change t.gpr .ecx = t.gpr .ebp + _; rw [ht _ (by decide), ht _ (by decide)]; exact po₆
       exact ⟨hbt.ea_ptr hpt (by omega_arith), hbt.write (by omega_arith)⟩)
     (by omega_using [hown]) (2 * k - 1) (by omega_using [hk0])
-  rw [show 2 * k - 1 + 1 = 2 * k by omega] at C'
+  rw [show 2 * k - 1 + 1 = 2 * k by omega_arith] at C'
   refine WP.block_append (WP.mono C' fun s₇ ⟨O₇, ⟨c', hc', V₇⟩, K₇⟩ => ?_)
   have bx₇ := bx₆.of_keeps K₇ (by decide)
   simp only [restoreP]

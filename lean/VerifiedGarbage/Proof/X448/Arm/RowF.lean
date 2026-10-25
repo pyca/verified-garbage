@@ -146,9 +146,9 @@ theorem rowF_ok {x y : Nat} (hx : x + 112 ≤ ACC) (hy : y + 112 ≤ ACC) {s0 : 
     WP isa (.block rowF) s fun s' =>
       RowInvF b x y s0 (i + 2) 0 s' ∧ s'.z = decide (14 - (i + 2) / 2 = 0) := by
   rw [rowF, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (rowHalfF_ok hx hy hlx hly (by omega) (by decide) h) fun s1 h1 => ?_
+  refine WP.mono (rowHalfF_ok hx hy hlx hly (by omega_arith) (by decide) h) fun s1 h1 => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (rowHalfF_ok hx hy hlx hly (by omega) (by decide) h1) fun s2 h2 => ?_
+  refine WP.mono (rowHalfF_ok hx hy hlx hly (by omega_arith) (by decide) h1) fun s2 h2 => ?_
   have hfit := h2.ctx.fit
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
   refine wp_subs (op2_imm (by decide)) fun s5 u5 hz => WP.block_nil ?_
@@ -158,18 +158,18 @@ theorem rowF_ok {x y : Nat} (hx : x + 112 ≤ ACC) (hy : y + 112 ≤ ACC) {s0 : 
     rw [u5.gpr, u4.other _ (by decide), u3.other _ (by decide), h2.r4]
     have t1 : (1 : BitVec 32).toNat = 1 := rfl
     apply BitVec.eq_of_toNat_eq
-    rw [toNat_sub_le (by rw [toNat_imm (by omega), t1]; omega), toNat_imm (by omega), toNat_imm (by omega),
+    rw [toNat_sub_le (by rw [toNat_imm (by omega_arith), t1]; omega_arith), toNat_imm (by omega_arith), toNat_imm (by omega_arith),
       t1]
-    omega
+    omega_arith
   have m5 : s5.mem = s2.mem := by rw [u5.mem, u4.mem, u3.mem]
-  refine ⟨⟨by omega, h2.ctx.of_rest hr5 (by decide), h2.rest.trans hr5, by rw [hr5.gpr _ (by decide), h2.r6],
+  refine ⟨⟨by omega_arith, h2.ctx.of_rest hr5 (by decide), h2.rest.trans hr5, by rw [hr5.gpr _ (by decide), h2.r6],
     ?_, ?_, hr4, by rw [hr5.gpr _ (by decide), h2.r12], m5 ▸ h2.frame, m5 ▸ h2.lt, m5 ▸ h2.val⟩, ?_⟩
   · rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, h2.r7]
     show b + BitVec.ofNat 32 (4 * (i + 1 + 1 - (0 + 1 + 1))) + BitVec.ofNat 32 8 = _
-    rw [Offset.add_add, show 4 * (i + 1 + 1 - (0 + 1 + 1)) + 8 = 4 * (i + 2 - 0) by omega]
+    rw [Offset.add_add, show 4 * (i + 1 + 1 - (0 + 1 + 1)) + 8 = 4 * (i + 2 - 0) by omega_arith]
   · rw [u5.other _ (by decide), u4.gpr, u3.other _ (by decide), h2.lr]
     show b + BitVec.ofNat 32 (x + 4 * (i + 1 + 1 - (0 + 1 + 1))) + BitVec.ofNat 32 8 = _
-    rw [Offset.add_add, show x + 4 * (i + 1 + 1 - (0 + 1 + 1)) + 8 = x + 4 * (i + 2 - 0) by omega]
-  · rw [hz, ← u5.gpr, hr4, ofNat_beq_zero (by omega), Nat.sub_zero]
+    rw [Offset.add_add, show x + 4 * (i + 1 + 1 - (0 + 1 + 1)) + 8 = x + 4 * (i + 2 - 0) by omega_arith]
+  · rw [hz, ← u5.gpr, hr4, ofNat_beq_zero (by omega_arith), Nat.sub_zero]
 
 end VG.Proof.X448.Arm

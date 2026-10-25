@@ -61,7 +61,7 @@ theorem jstep_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C}
     rw [Window5.winPt_zero h0, add_infinity]
     exact h1
   · simp only [h0, ↓reduceIte]
-    obtain ⟨J2, z2⟩ := h2 (by omega)
+    obtain ⟨J2, z2⟩ := h2 (by omega_arith)
     have hQ := hC.onCurve_mul hP (32 * e)
     have hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
     by_cases hz : Z1 = 0
@@ -112,7 +112,7 @@ theorem jstep_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (h
   · simp only [h0, ↓reduceIte]
     exact ⟨Q1, hQ1, nk _, h1⟩
   · simp only [h0, ↓reduceIte]
-    obtain ⟨J2, z2⟩ := h2 (by omega)
+    obtain ⟨J2, z2⟩ := h2 (by omega_arith)
     have hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
     by_cases hz : Z1 = 0
     · simp only [hz, ↓reduceIte]
@@ -206,16 +206,16 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
       rcases hw with rfl | rfl | rfl <;> exact mem_jwW_ws (other_ws (by jw_mem)))
   have hb₂ : s₂.gpr .rbx = BitVec.ofNat 64 i := by rw [k₂.gpr _ (by decide), k₁.1 _ (by decide), hb]
   rw [WP.block_append_iff]
-  have hwj : 5 * i + 5 ≤ 5 * K.J := by omega
+  have hwj : 5 * i + 5 ≤ 5 * K.J := by omega_arith
   have hbits₂ := F₂.bits hL hF
   refine WP.mono (digit_ok K.tc hs₂ (N := 5 * K.J) (by show 1 ≤ 5; decide) (by show 5 < 9; decide) hwj
-    (by show K.bits + 5 * K.J ≤ size; omega) hb₂ hbits₂) fun s₃ ⟨_, r₃, k₃⟩ => ?_
+    (by show K.bits + 5 * K.J ≤ size; omega_arith) hb₂ hbits₂) fun s₃ ⟨_, r₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   rw [show K.tc.w = 5 from rfl, Window5.combWin_five, show K.tc.H = 16 from rfl] at r₃
   have hm := magH_le (H := 16) (v := Window5.nib (k + JacWinCfg.offset K.J) i)
-    (by have := Window5.nib_lt (k + JacWinCfg.offset K.J) i; omega)
+    (by have := Window5.nib_lt (k + JacWinCfg.offset K.J) i; omega_arith)
   rw [WP.block_append_iff]
-  refine WP.mono (eqMask_ok s₃ (v := 0) (by decide) (by omega) r₃) fun s₄ ⟨c₄, k₄, _⟩ => ?_
+  refine WP.mono (eqMask_ok s₃ (v := 0) (by decide) (by omega_arith) r₃) fun s₄ ⟨c₄, k₄, _⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (selPtKeep_ok hs₄ (decide (magH 16 (Window5.nib (k + JacWinCfg.offset K.J) i) = 0))
@@ -225,7 +225,7 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   have hb₅ : s₅.gpr .rbx = BitVec.ofNat 64 i := by
     rw [k₅.gpr _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide), hb₂]
-  refine WP.mono (testRbx_ok s₅ (by omega) hb₅) fun t ⟨z₆, k₆⟩ => ?_
+  refine WP.mono (testRbx_ok s₅ (by omega_arith) hb₅) fun t ⟨z₆, k₆⟩ => ?_
   have m₆ : t.mem = s₅.mem := k₆.2.1
   have UR : Unch base [(K.R.x, 8 * K.M.n), (K.R.y, 8 * K.M.n), (K.R.z, 8 * K.M.n)] s₂.mem t.mem := by
     rw [m₆]; exact fun x hx => O₅ x (hx (K.R.x, 8 * K.M.n) (by simp)) (hx (K.R.y, 8 * K.M.n) (by simp))
@@ -235,7 +235,7 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
     ((Keeps.regs k₆).mono (by simp))) UR (by
       intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl <;> exact mem_jwW_ws (other_ws (by jw_mem)))
-  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega
+  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
   -- `R` and `E` are not written by the first selection.
   have kR : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z],
       wordsVal s₂.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
@@ -262,7 +262,7 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
   refine ⟨F₆, (UD.trans UR).mono fun w hw => ?_, by rw [k₆.1 _ (by simp), hb₅], z₆, fun c hc => ?_⟩
   · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with (rfl | rfl | rfl) | (rfl | rfl | rfl) <;> exact other_loopW (by jw_mem)
-  · have : c = 0 ∨ c = 1 ∨ c = 2 := by omega
+  · have : c = 0 ∨ c = 1 ∨ c = 2 := by omega_arith
     rcases this with rfl | rfl | rfl
     · show wordsVal t.mem base K.R.x K.M.n = _
       rw [m₆, rx, dx, kR K.R.x (by simp)]

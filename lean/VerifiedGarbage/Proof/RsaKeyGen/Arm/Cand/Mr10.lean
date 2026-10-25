@@ -37,7 +37,7 @@ abbrev GQ (P : CP) (E : State → Prop) (n : Nat) (σ s : State) : Prop :=
 
 theorem go_iff (a b c : Nat) :
     (decide (a + 1 < 17) || decide (b < c)) = decide (a + 1 ≤ Spec.RsaKeyGen.blindedChecks ∨ b < c) := by
-  by_cases h1 : a + 1 < 17 <;> by_cases h2 : b < c <;> simp [h1, h2, Spec.RsaKeyGen.blindedChecks] <;> omega
+  by_cases h1 : a + 1 < 17 <;> by_cases h2 : b < c <;> simp [h1, h2, Spec.RsaKeyGen.blindedChecks] <;> omega_arith
 
 section
 variable {P : CP} {E : State → Prop}
@@ -50,7 +50,7 @@ theorem rv_pass {σ : State} (pre : In P σ) (hm : EM P σ) {k n : Nat}
   have hL := pre.k1
   have := VG.Proof.RsaKeyGen.mr_pass (c := cv P σ) (ch := chP P) (a := taP P σ) (m := tmP P σ) (r := rB P σ)
     (i := (mrS (cv P σ) P.L (rB P σ) k).1) (uni := (mrS (cv P σ) P.L (rB P σ) k).2) (used := P.L * (k + 1))
-    h.go hwb (by omega) (by rw [rB_length]; exact hav)
+    h.go hwb (by omega_arith) (by rw [rB_length]; exact hav)
   rw [rB_length, ← h.loop] at this
   rw [hs]
   exact this.symm
@@ -70,7 +70,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
     VP (fun σ s => St P (EK P E (Nt P - n) n) (AF P (Nt P - n)) LF
         (fun σ => upd (VF P (Nt P - n) σ) sF (rv P σ (Nt P - n))) (sF :: LSF) σ s ∧ MS P σ s)
       (seqs [.block (isOne sF), .ite .eq (.block onPass) (.block (setS sStat 3))]) (GQ P E n) := by
-  have hk1 : Nt P + 1 - n = Nt P - n + 1 := by omega
+  have hk1 : Nt P + 1 - n = Nt P - n + 1 := by omega_arith
   simp only [seqs]
   refine VP.seq (St.pisOneM isOneF_taint (by simp) fun σ _ => by
     simp only [upd_self]; exact VG.Proof.Rsa.b2n_le _) ?_
@@ -100,15 +100,15 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
       have := (hE σ e).1.k1
       have := (hE σ e).1.rlt
       rw [rB_length] at *
-      refine ⟨?_, ?_, by omega, by omega⟩
+      refine ⟨?_, ?_, by omega_arith, by omega_arith⟩
       · have : Nt P - n + 1 ≤ P.rl / 32 := by
           rw [Nat.le_div_iff_mul_le (by decide)]
-          exact Nat.le_trans (Nat.mul_le_mul_left _ (by omega)) (by rw [Nat.mul_comm]; omega)
-        omega
+          exact Nat.le_trans (Nat.mul_le_mul_left _ (by omega_arith)) (by rw [Nat.mul_comm]; omega_arith)
+        omega_arith
       · have : Nt P - n + 1 ≤ P.rl / 32 := by
           rw [Nat.le_div_iff_mul_le (by decide)]
-          exact Nat.le_trans (Nat.mul_le_mul_left _ (by omega)) (by rw [Nat.mul_comm]; omega)
-        omega
+          exact Nat.le_trans (Nat.mul_le_mul_left _ (by omega_arith)) (by rw [Nat.mul_comm]; omega_arith)
+        omega_arith
     · obtain ⟨pre, hm⟩ := hE σ e
       obtain ⟨-, hwb, -, hch⟩ := mr_facts pre hm
       have hpass : Spec.RsaKeyGen.mrIteration (cv P σ) (taP P σ) (tmP P σ) (wit (cv P σ) P.L (rB P σ)
@@ -127,9 +127,9 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
           by simp only [AF, AW]; rw [upd_ne _ _ (by revert hj; revert j; decide),
           upd_ne _ _ (by revert hj; revert j; decide)]⟩
       by_cases hg : goS (chP P) (mrS (cv P σ) P.L (rB P σ) (Nt P - n + 1))
-      · obtain ⟨hn0, mr'⟩ := VG.Proof.RsaKeyGen.mrAt_next mr hwb (by have := pre.k1; omega) (by rw [rB_length]; exact av) hpass hg
-        refine .inr ⟨hn0, by omega, by omega, by rw [hk1, show n - 1 = n - 1 from rfl]; exact
-          (show Nt P - n + 1 = Nt P + 1 - n by omega) ▸ mr', ?_, m⟩
+      · obtain ⟨hn0, mr'⟩ := VG.Proof.RsaKeyGen.mrAt_next mr hwb (by have := pre.k1; omega_arith) (by rw [rB_length]; exact av) hpass hg
+        refine .inr ⟨hn0, by omega_arith, by omega_arith, by rw [hk1, show n - 1 = n - 1 from rfl]; exact
+          (show Nt P - n + 1 = Nt P + 1 - n by omega_arith) ▸ mr', ?_, m⟩
         rw [hk1]
         refine ⟨e, h.mono hAF fun d hd => ⟨by revert hd; revert d; decide, ?_⟩, hw⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -145,7 +145,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
         · simp (config := {decide := true}) only [upd, ↓reduceIte, VF, VW, VI]
           simp only [Nat.mul_succ]
         · simp (config := {decide := true}) only [upd, ↓reduceIte, VF, VW, VI]
-      · obtain ⟨hn0, hres⟩ := VG.Proof.RsaKeyGen.mrAt_done mr hwb (by have := pre.k1; omega) (by rw [rB_length]; exact av) hpass hg
+      · obtain ⟨hn0, hres⟩ := VG.Proof.RsaKeyGen.mrAt_done mr hwb (by have := pre.k1; omega_arith) (by rw [rB_length]; exact av) hpass hg
         have hres' : resP P σ = some (true, (rB P σ).drop (P.L * (Nt P - n + 1) + P.L)) := hres
         refine .inl ⟨hn0, e, h.mono hAF fun d hd => ⟨by revert hd; revert d; decide, ?_⟩, hw⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -158,7 +158,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
           unfold usedQ; rw [hres']
           dsimp only
           rw [List.length_drop, rB_length]
-          omega
+          omega_arith
   · refine VP.ofImp (p := passS P.L P.rl P.sch.mr (P.L * (Nt P - n + 1)) = false) (fun σ s h => ?_) fun hp => ?_
     · obtain ⟨e, mr, av⟩ := h.1.1.1.1
       have z := h.1.2
@@ -177,7 +177,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
       rw [hp] at this
       exact this
     obtain ⟨-, -, -, -, vUsed, -⟩ := vF_vals (P := P) σ (Nt P - n)
-    obtain ⟨hn0, hres⟩ := VG.Proof.RsaKeyGen.mrAt_fail mr hwb (by have := pre.k1; omega) (by rw [rB_length]; exact av) hfail
+    obtain ⟨hn0, hres⟩ := VG.Proof.RsaKeyGen.mrAt_fail mr hwb (by have := pre.k1; omega_arith) (by rw [rB_length]; exact av) hfail
     have hres' : resP P σ = some (false, (rB P σ).drop (P.L * (Nt P - n + 1) + P.L)) := hres
     have hAF : ∀ j ∈ LB2, j ∈ LF ∧ AF P (Nt P - n) σ j = AB2 P σ j := fun j hj =>
       ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hj),
@@ -192,7 +192,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
       unfold usedQ; rw [hres']
       dsimp only
       rw [List.length_drop, rB_length]
-      omega
+      omega_arith
 
 end
 

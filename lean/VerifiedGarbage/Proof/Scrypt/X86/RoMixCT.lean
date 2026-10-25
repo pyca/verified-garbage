@@ -109,7 +109,7 @@ theorem bm_args :
     arg (pushed bmRegs s).callEntry 4 = scr := by
   have hrs : Reg.esp ∉ bmRegs := by decide
   have fit : 4 * bmRegs.length + 4 ≤ (s.gpr .esp).toNat := by
-    simp only [List.length_cons, List.length_nil]; omega
+    simp only [List.length_cons, List.length_nil]; omega_arith
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> rw [callEntry_arg fit hrs (by simp)] <;> simp [h0, h1, h2, h3]
 
 /-- The callee's precondition, and the permissions it is given. -/
@@ -126,23 +126,23 @@ theorem bm_callPre (hr : 0 < r) (hlt : 128 * r < 2 ^ 32)
     (idst : InRegions s.wr (dst.setWidth 64) (128 * r)) (iscr : InRegions s.wr (scr.setWidth 64) 128) :
     CallPre Proof.Scrypt.blockMixX86 bmRegs (bmRd (s.gpr .esp) src r) (bmWr dst scr r) s := by
   have tr : (BitVec.ofNat 32 r).toNat = r := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   have c128 : r * 128 = 128 * r := Nat.mul_comm _ _
   obtain ⟨a0, a1, a2, a3, a4⟩ := bm_args h0 h1 h2 h3 hlo
   have eA : argAddr (pushed bmRegs s).callEntry 0 = (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64 := by
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed bmRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 24 := by
     rw [callEntry_esp']; rfl
-  have b20 : Region.Sub (below (s.gpr .esp) 20) (below (s.gpr .esp) 36) := below_sub (by omega) hlo
+  have b20 : Region.Sub (below (s.gpr .esp) 20) (below (s.gpr .esp) 36) := below_sub (by omega_arith) hlo
   have r4 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below (s.gpr .esp) 36) := by
-    have := below_inner (sp := s.gpr .esp) (a := 4) (b := 36) (k := 20) (by omega) hlo
+    have := below_inner (sp := s.gpr .esp) (a := 4) (b := 36) (k := 20) (by omega_arith) hlo
     rw [show s.gpr .esp - BitVec.ofNat 32 24 = s.gpr .esp - BitVec.ofNat 32 20 - BitVec.ofNat 32 4 by
       bv_omega_arith]
     exact this
   have s12 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 - 12, 12⟩ (below (s.gpr .esp) 36) := by
     intro a ha
     simp only [Region.Contains] at ha ⊢
-    rw [Taint.sub_setWidth (by omega)] at ha ⊢
+    rw [Taint.sub_setWidth (by omega_arith)] at ha ⊢
     have := (s.gpr .esp).isLt
     have hE : ((s.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat := addr_toNat _
     generalize (s.gpr .esp).setWidth 64 = b at *
@@ -155,8 +155,8 @@ theorem bm_callPre (hr : 0 < r) (hlt : 128 * r < 2 ^ 32)
     refine ⟨trivial, trivial, hds, hsd, hss, ddst.sub_left b20, dscr.sub_left b20, ddst.sub_left r4,
       dscr.sub_left r4, dsrc.sub_left s12, ddst.sub_left s12, dscr.sub_left s12, nsrc, ndst, nscr,
       ?_, ?_, trivial, hr⟩
-    · rw [sub_toNat (by omega)]; omega
-    · rw [sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega
+    · rw [sub_toNat (by omega_arith)]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; have := (s.gpr .esp).isLt; omega_arith
   · intro a n ⟨R, hR, hcn⟩
     simp only [bmRd, bmWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hR
@@ -194,11 +194,11 @@ theorem blockMixSpec : BlockMixSpec Impl.Scrypt.X86.blockMix := by
   intro s src dst scr r h0 h1 h2 h3 hr hlt hds hsd hss nsrc ndst nscr hlo dsrc ddst dscr isrc idst iscr
     Q hQ
   have tr : (BitVec.ofNat 32 r).toNat = r := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   have c128 : r * 128 = 128 * r := Nat.mul_comm _ _
   have hrs : Reg.esp ∉ bmRegs := by decide
   have fit : 4 * bmRegs.length + 4 ≤ (s.gpr .esp).toNat := by
-    simp only [List.length_cons, List.length_nil]; omega
+    simp only [List.length_cons, List.length_nil]; omega_arith
   obtain ⟨a0, a1, a2, -, -⟩ := bm_args h0 h1 h2 h3 hlo
   have e36 : 4 * bmRegs.length + stackUse Impl.Scrypt.X86.blockMix + 4 = 36 := by
     rw [blockMix_stack]; rfl
@@ -214,9 +214,9 @@ theorem blockMixSpec : BlockMixSpec Impl.Scrypt.X86.blockMix := by
   refine hQ s' rd' wr' cs' (f'.mono fun R hR => by simpa [bmWr, c128] using hR) ?_
   rw [post]
   congr 1
-  refine frame_bytesAt hsE (fun R hR => ?_) (by omega)
+  refine frame_bytesAt hsE (fun R hR => ?_) (by omega_arith)
   simp only [List.mem_singleton] at hR; subst hR
-  exact (dsrc.sub_left (below_sub (by omega) hlo)).symm
+  exact (dsrc.sub_left (below_sub (by omega_arith) hlo)).symm
 
 /-! ## What each run knows -/
 
@@ -230,12 +230,12 @@ variable {s₀ s₀' : State} (hq : PubEq s₀ s₀')
 include hq
 
 theorem PubEq.esp₀ : esp₀ s₀ = esp₀ s₀' := hq.esp
-theorem PubEq.rr : rr s₀ = rr s₀' := by simp only [RoMix.rr, hq.args 1 (by omega)]
+theorem PubEq.rr : rr s₀ = rr s₀' := by simp only [RoMix.rr, hq.args 1 (by omega_arith)]
 theorem PubEq.NN : NN s₀ = NN s₀' := by
-  simp only [RoMix.NN, RoMix.vl, RoMix.rr, hq.args 1 (by omega), hq.args 3 (by omega)]
+  simp only [RoMix.NN, RoMix.vl, RoMix.rr, hq.args 1 (by omega_arith), hq.args 3 (by omega_arith)]
 theorem PubEq.vAt32 (i : Nat) : vAt32 s₀ i = vAt32 s₀' i := by
-  simp only [RoMix.vAt32, RoMix.vP, RoMix.rr, hq.args 1 (by omega), hq.args 2 (by omega)]
-theorem PubEq.tP32 : tP32 s₀ = tP32 s₀' := by simp only [RoMix.tP32, RoMix.sc, hq.args 4 (by omega)]
+  simp only [RoMix.vAt32, RoMix.vP, RoMix.rr, hq.args 1 (by omega_arith), hq.args 2 (by omega_arith)]
+theorem PubEq.tP32 : tP32 s₀ = tP32 s₀' := by simp only [RoMix.tP32, RoMix.sc, hq.args 4 (by omega_arith)]
 
 end
 
@@ -250,9 +250,9 @@ theorem wf_k {s₀ : State} (hp : Pre s₀) (rs : List Reg) {s : State} (h : Bas
     fun _ h => (List.not_mem_nil h).elim⟩
   simp only [h.wr, hp.wr, h.esp, τk, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega) hp.ret_b hp.a_b
-  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega) hp.ret_v hp.a_v
-  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega) hp.ret_s hp.a_s
+  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_arith) hp.ret_b hp.a_b
+  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_arith) hp.ret_v hp.a_v
+  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_arith) hp.ret_s hp.a_s
 
 theorem Base.argW {s₀ : State} (hp : Pre s₀) {s : State} (h : Base s₀ s) {i : Nat} (hi : i < 6) :
     s.mem.readW (argAddr s i) 32 = VG.X86.arg s₀ i :=
@@ -274,9 +274,9 @@ theorem agree_k {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (hq : Pub
   · simp only [τk] at hk
     rw [show VG.X86.Taint.depth (τk (.esp :: rs)).stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
-      Mem.readW_byte s.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s'.mem _ (Nat.mod_lt _ (by omega)),
-      h.argW hp (i := (k - 4) / 4) (by omega), h'.argW hp' (i := (k - 4) / 4) (by omega),
-      hq.args _ (by omega)]
+      Mem.readW_byte s.mem _ (Nat.mod_lt _ (by omega_arith)), Mem.readW_byte s'.mem _ (Nat.mod_lt _ (by omega_arith)),
+      h.argW hp (i := (k - 4) / 4) (by omega_arith), h'.argW hp' (i := (k - 4) / 4) (by omega_arith),
+      hq.args _ (by omega_arith)]
 
 /-- The registers the pieces of an iteration keep: `ebx = q` and `ebp = N`. -/
 structure KR (s₀ : State) (q : BitVec 32) (s : State) : Prop extends Base s₀ s where
@@ -354,8 +354,8 @@ theorem call_rel {A A' : BitVec 32} (hA : SrcOK s₀ A) (hA' : SrcOK s₀' A') (
   subst hAA
   have lt := r_lt hp
   have er : rr s₀' = rr s₀ := hq.rr.symm
-  have eb : bP s₀' = bP s₀ := (hq.args 0 (by omega)).symm
-  have es : sc s₀' = sc s₀ := (hq.args 4 (by omega)).symm
+  have eb : bP s₀' = bP s₀ := (hq.args 0 (by omega_arith)).symm
+  have es : sc s₀' = sc s₀ := (hq.args 4 (by omega_arith)).symm
   -- The arguments, set in each run.
   let F (t₀ : State) (q : BitVec 32) (s : State) : Prop :=
     KR t₀ q s ∧ s.gpr .esi = A ∧ s.gpr .eax = sc t₀ ∧ s.gpr .ecx = BitVec.ofNat 32 (rr t₀) ∧
@@ -393,7 +393,7 @@ theorem call_rel {A A' : BitVec 32} (hA : SrcOK s₀ A) (hA' : SrcOK s₀' A') (
         have hsub : Region.Sub ⟨scA t₀, 128⟩ (scR t₀) := w_sub
         have := bm_callPre h.2.1 h.2.2.2.1 h.2.2.2.2 h.2.2.1 (by rw [h.1.esp]; exact hp.sp_lo) hp.pos
           (r_lt hp) ((hp.b_s.sub_left b_sub').sub_right hsub) hA.b hA.w hA.nw
-          (by have := hp.b_nw; omega) (by have := hp.s_nw; omega) (by rw [h.1.esp]; exact hA.stk)
+          (by have := hp.b_nw; omega_arith) (by have := hp.s_nw; omega_arith) (by rw [h.1.esp]; exact hA.stk)
           (by rw [h.1.esp]; exact hp.stk_b.sub_right b_sub') (by rw [h.1.esp]; exact hp.stk_s.sub_right hsub)
           (by rw [h.1.rd, h.1.wr]; exact hA.inr) (by rw [h.1.wr]; exact b_in hp)
           (by rw [h.1.wr]; exact w_in hp)
@@ -403,10 +403,10 @@ theorem call_rel {A A' : BitVec 32} (hA : SrcOK s₀ A) (hA' : SrcOK s₀' A') (
     rw [show esp₀ s₀' = esp₀ s₀ from hq.esp₀.symm, er, eb, es] at p₂
     have hsp : s.gpr .esp = s'.gpr .esp := by rw [h.1.esp, h'.1.esp, hq.esp₀]
     have fit : 4 * bmRegs.length + 4 ≤ (s.gpr .esp).toNat := by
-      rw [h.1.esp]; have := hp.sp_lo; simp only [List.length_cons, List.length_nil]; omega
+      rw [h.1.esp]; have := hp.sp_lo; simp only [List.length_cons, List.length_nil]; omega_arith
     refine ⟨p₁, p₂, hsp, ⟨by simp only [State.withRegions_gpr, callEntry_esp', hsp], fun i hi => ?_⟩⟩
     simp only [arg_withRegions]
-    have hi' : i < bmRegs.length := by simp only [List.length_cons, List.length_nil]; omega
+    have hi' : i < bmRegs.length := by simp only [List.length_cons, List.length_nil]; omega_arith
     refine callEntry_arg_eq (by decide) fit hsp (fun r hr => ?_) hi'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -434,7 +434,7 @@ theorem KR.exec' {c : Prog isa} (hc : c.allInstrs (free [.esp, .ebx, .ebp, .esi]
 theorem t_wp {s₀ : State} (hp : Pre s₀) {q : BitVec 32} {s : State} (h : KR s₀ q s) :
     WP isa (.block tBlock) s fun s' => KR s₀ q s' ∧ s'.gpr .esi = tP32 s₀ := by
   unfold tBlock
-  refine wp_arg (i := 4) hp h.toBase (by omega) fun a ua => wp_addi fun b ub => WP.block_nil ?_
+  refine wp_arg (i := 4) hp h.toBase (by omega_arith) fun a ua => wp_addi fun b ub => WP.block_nil ?_
   exact ⟨⟨(h.toBase.upd ua (by decide)).upd ub (by decide),
     by rw [ub.other _ (by decide), ua.other _ (by decide), h.ebx],
     by rw [ub.other _ (by decide), ua.other _ (by decide), h.ebp]⟩, by rw [ub.gpr, ua.gpr]; rfl⟩
@@ -496,7 +496,7 @@ theorem loop2_rel :
       · have hl : i + 1 = NN s₀ := by simpa using hf
         exact ⟨hl ▸ j, hl ▸ j'⟩
       · have hl : i + 1 ≠ NN s₀ := by simpa using ht'
-        exact ⟨NN s₀ - (i + 1), by omega, i + 1, rfl, by omega, j, j'⟩) (NN s₀)
+        exact ⟨NN s₀ - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, j, j'⟩) (NN s₀)
   exact lp.mono (fun _ _ h => ⟨0, rfl, NN_pos hp, h.1, h.2⟩) fun _ _ h => h
 
 end
@@ -506,7 +506,7 @@ end
 /-- The next index, from the ones still to come. -/
 theorem drop_js {s₀ : State} {i : Nat} (hi : i < NN s₀) {s : State} (h : Inv3 s₀ i s) :
     ∃ rest, (Spec.Scrypt.roMixIndices (rr s₀) (NN s₀) (B s₀)).drop i = jOf s₀ s.mem :: rest := by
-  have e : NN s₀ - i = NN s₀ - (i + 1) + 1 := by omega
+  have e : NN s₀ - i = NN s₀ - (i + 1) + 1 := by omega_arith
   have hs := h.js
   rw [e, mixLoop_succ_snd] at hs
   exact ⟨_, hs.symm⟩
@@ -605,7 +605,7 @@ theorem loop3_rel :
       · have hl : i + 1 = NN s₀ := by simpa using hf
         exact ⟨hl ▸ j, hl ▸ j'⟩
       · have hl : i + 1 ≠ NN s₀ := by simpa using ht'
-        exact ⟨NN s₀ - (i + 1), by omega, i + 1, rfl, by omega, j, j'⟩) (NN s₀)
+        exact ⟨NN s₀ - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, j, j'⟩) (NN s₀)
   exact lp.mono (fun _ _ h => ⟨0, rfl, NN_pos hp, h.1, h.2⟩) fun _ _ h => h
 
 theorem roMix_rel :
@@ -628,7 +628,7 @@ theorem roMix_rel :
         rcases hr with rfl | rfl | rfl
         · rw [h.eax, h'.eax, hq.rr]
         · rw [h.ecx, h'.ecx]
-        · rw [h.edx, h'.edx, RoMix.vl, RoMix.vl, hq.args 3 (by omega)]) (c := nLoop)
+        · rw [h.edx, h'.edx, RoMix.vl, RoMix.vl, hq.args 3 (by omega_arith)]) (c := nLoop)
       (by taint_decide)).wp
       fun _ _ h => ⟨nloop_ok hp h.1, nloop_ok hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have st : RelCT isa (fun s s' => N1 s₀ s ∧ N1 s₀' s') (.block rmSetup)

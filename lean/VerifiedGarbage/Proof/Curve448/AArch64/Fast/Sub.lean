@@ -56,7 +56,7 @@ theorem ld2 {t : State} {base : Addr} (ht : Scr t base) {d e : Nat} (hd : d % 8 
     InRegions (t.rd ++ t.wr) (base + BitVec.ofNat 64 d) 8 ∧
       (d % 8 = 0 ∧ d < 4096 * 8) ∧ InRegions (t.rd ++ t.wr) (base + BitVec.ofNat 64 e) 8 ∧
       (e % 8 = 0 ∧ e < 4096 * 8) :=
-  ⟨ht.read hd', ⟨hd, by omega⟩, ht.read he', ⟨he, by omega⟩⟩
+  ⟨ht.read hd', ⟨hd, by omega_arith⟩, ht.read he', ⟨he, by omega_arith⟩⟩
 
 theorem subStep_ok {t : State} {base : Addr} (ht : Scr t base) {o a b i : Nat} (hi : i < 8)
     (ho : o + 64 ≤ 8192) (ha : a + 64 ≤ 8192) (hb : b + 64 ≤ 8192) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
@@ -66,10 +66,10 @@ theorem subStep_ok {t : State} {base : Addr} (ht : Scr t base) {o a b i : Nat} (
       u.mem = t.mem.writeW (off base (o + 8 * i))
         (word t.mem base (a + 8 * i) + twoPW i - word t.mem base (b + 8 * i)) ∧
       Keeps [.x4, .x5] t u := by
-  obtain ⟨ra, aa, rb, ab⟩ := ld2 ht (d := a + 8 * i) (e := b + 8 * i) (by omega) (by omega) (by omega)
-    (by omega)
-  have wo := ht.write (d := o + 8 * i) (n := 8) (by omega)
-  have ao : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 4096 * 8 := ⟨by omega, by omega⟩
+  obtain ⟨ra, aa, rb, ab⟩ := ld2 ht (d := a + 8 * i) (e := b + 8 * i) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith)
+  have wo := ht.write (d := o + 8 * i) (n := 8) (by omega_arith)
+  have ao : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 4096 * 8 := ⟨by omega_arith, by omega_arith⟩
   have tw : twoPReg i ≠ .x4 ∧ twoPReg i ≠ .x5 := by simp only [twoPReg]; split <;> decide
   refine WP.of_runBlock ⟨_, by
     simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
@@ -84,7 +84,7 @@ theorem subStep_ok {t : State} {base : Addr} (ht : Scr t base) {o a b i : Nat} (
 theorem away_word {base : Addr} {outs : List Nat} {m m' : Mem}
     (h : ∀ x, Away base outs 64 x → m' x = m x) {d : Nat} (hd : d + 8 ≤ 8192)
     (ho : ∀ o ∈ outs, d + 8 ≤ o ∨ o + 64 ≤ d) : word m' base d = word m base d :=
-  word_congr hd fun x h1 h2 => h x fun o h' => by have := ho o h'; omega
+  word_congr hd fun x h1 h2 => h x fun o h' => by have := ho o h'; omega_arith
 
 theorem writeW_frame {base : Addr} (m : Mem) {d : Nat} (hd : d + 8 ≤ 8192) (v : BitVec 64) (x : Addr)
     (hx : ofs base x < d ∨ d + 8 ≤ ofs base x) : (m.writeW (off base d) v) x = m x :=
@@ -109,10 +109,10 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     (fun i hi u us ⟨h0, h2⟩ hm => WP.mono (subStep_ok us hi ho ha hb ho8 ha8 hb8 h0 h2)
       fun w ⟨wm, wk⟩ => ⟨fun o' ho' => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at ho'; subst ho'
-          rw [wm, word, Mem.readW_writeW_self64, away_word hm (by omega) (by simp; omega),
-            away_word hm (by omega) (by simp; omega)],
-        fun x hx => by rw [wm]; exact writeW_frame _ (by omega) _ x (hx o (by simp)), wk⟩)
-    (by simp; omega) (by simp) ts ⟨t0, t2⟩
+          rw [wm, word, Mem.readW_writeW_self64, away_word hm (by omega_arith) (by simp; omega_arith),
+            away_word hm (by omega_arith) (by simp; omega_arith)],
+        fun x hx => by rw [wm]; exact writeW_frame _ (by omega_arith) _ x (hx o (by simp)), wk⟩)
+    (by simp; omega_arith) (by simp) ts ⟨t0, t2⟩
   refine WP.mono this fun u ⟨uv, um, uk⟩ => ⟨fun i hi => by rw [uv o (by simp) i hi, tm], fun x hx => by
     rw [um x hx, tm], (tk.mono (by decide)).trans (uk.mono (by decide))⟩
 
@@ -126,12 +126,12 @@ theorem addSubStep_ok {t : State} {base : Addr} (ht : Scr t base) {o₁ o₂ a b
         (word t.mem base (a + 8 * i) + word t.mem base (b + 8 * i))).writeW (off base (o₂ + 8 * i))
         (word t.mem base (a + 8 * i) + twoPW i - word t.mem base (b + 8 * i)) ∧
       Keeps [.x4, .x5, .x6, .x7] t u := by
-  obtain ⟨ra, aa, rb, ab⟩ := ld2 ht (d := a + 8 * i) (e := b + 8 * i) (by omega) (by omega) (by omega)
-    (by omega)
-  have wo₁ := ht.write (d := o₁ + 8 * i) (n := 8) (by omega)
-  have wo₂ := ht.write (d := o₂ + 8 * i) (n := 8) (by omega)
-  have ao₁ : (o₁ + 8 * i) % 8 = 0 ∧ o₁ + 8 * i < 4096 * 8 := ⟨by omega, by omega⟩
-  have ao₂ : (o₂ + 8 * i) % 8 = 0 ∧ o₂ + 8 * i < 4096 * 8 := ⟨by omega, by omega⟩
+  obtain ⟨ra, aa, rb, ab⟩ := ld2 ht (d := a + 8 * i) (e := b + 8 * i) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith)
+  have wo₁ := ht.write (d := o₁ + 8 * i) (n := 8) (by omega_arith)
+  have wo₂ := ht.write (d := o₂ + 8 * i) (n := 8) (by omega_arith)
+  have ao₁ : (o₁ + 8 * i) % 8 = 0 ∧ o₁ + 8 * i < 4096 * 8 := ⟨by omega_arith, by omega_arith⟩
+  have ao₂ : (o₂ + 8 * i) % 8 = 0 ∧ o₂ + 8 * i < 4096 * 8 := ⟨by omega_arith, by omega_arith⟩
   have tw : twoPReg i ≠ .x4 ∧ twoPReg i ≠ .x5 ∧ twoPReg i ≠ .x6 ∧ twoPReg i ≠ .x7 := by
     simp only [twoPReg]; split <;> decide
   refine WP.of_runBlock ⟨_, by
@@ -159,7 +159,7 @@ theorem addSub_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ a b : N
   rw [Impl.Curve448.AArch64.Fast.addSub, WP.block_append_iff]
   refine WP.mono (twoPRegs_ok s) fun t ⟨t0, t2, tm, tk⟩ => ?_
   have ts : Scr t base := hs.of_keeps tk (by decide)
-  have ne : o₁ ≠ o₂ := by omega
+  have ne : o₁ ≠ o₂ := by omega_arith
   have := limbs_loop (base := base) (outs := [o₁, o₂]) (rs := [.x4, .x5, .x6, .x7])
     (body := fun i => [ld .x4 (a + 8 * i), ld .x5 (b + 8 * i), .add .x .x6 .x4 .x5, st .x6 (o₁ + 8 * i),
       .add .x .x7 .x4 (twoPReg i), .sub .x .x7 .x7 .x5, st .x7 (o₂ + 8 * i)])
@@ -169,17 +169,17 @@ theorem addSub_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ a b : N
       else word t.mem base (a + 8 * i) + twoPW i - word t.mem base (b + 8 * i)) t
     (fun i hi u us ⟨h0, h2⟩ hm => WP.mono (addSubStep_ok us hi ho₁ ho₂ ha hb ho₁8 ho₂8 ha8 hb8 h0 h2)
       fun w ⟨wm, wk⟩ => ⟨fun o' ho' => by
-          have ea := away_word hm (d := a + 8 * i) (by omega) (by simp; omega)
-          have eb := away_word hm (d := b + 8 * i) (by omega) (by simp; omega)
+          have ea := away_word hm (d := a + 8 * i) (by omega_arith) (by simp; omega_arith)
+          have eb := away_word hm (d := b + 8 * i) (by omega_arith) (by simp; omega_arith)
           simp only [List.mem_cons, List.not_mem_nil, or_false] at ho'
           rcases ho' with rfl | rfl
-          · rw [wm, VG.Proof.Curve448.AArch64.Fast.word_writeW _ _ (by omega) (by omega) (by omega),
-              ite_eq_right (by omega), word, Mem.readW_writeW_self64, ite_eq_left rfl, ea, eb]
+          · rw [wm, VG.Proof.Curve448.AArch64.Fast.word_writeW _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+              ite_eq_right (by omega_arith), word, Mem.readW_writeW_self64, ite_eq_left rfl, ea, eb]
           · rw [wm, word, Mem.readW_writeW_self64, ite_eq_right (Ne.symm ne), ea, eb],
         fun x hx => by
-          rw [wm, writeW_frame _ (by omega) _ x (hx o₂ (by simp)),
-            writeW_frame _ (by omega) _ x (hx o₁ (by simp))], wk⟩)
-    (by simp; omega) (by simp; omega) ts ⟨t0, t2⟩
+          rw [wm, writeW_frame _ (by omega_arith) _ x (hx o₂ (by simp)),
+            writeW_frame _ (by omega_arith) _ x (hx o₁ (by simp))], wk⟩)
+    (by simp; omega_arith) (by simp; omega_arith) ts ⟨t0, t2⟩
   refine WP.mono this fun u ⟨uv, um, uk⟩ => ⟨fun i hi => ?_, fun i hi => ?_, fun x hx => by
     rw [um x hx, tm], (tk.mono (by decide)).trans (uk.mono (by decide))⟩
   · rw [uv o₁ (by simp) i hi, ite_eq_left rfl, tm]

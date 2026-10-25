@@ -45,7 +45,7 @@ theorem ob1_ok {n : Nat} (hn : n < 2 ^ 64) {s : State} (he : Env Ctx (W + BitVec
   have q₁ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
   have w₁ := he.perm.wW (show 192 + 8 ≤ 2560 by decide)
   have h4 := shr4 n hn
-  have hz := and_self_beq (show n / 16 < 2 ^ 64 by omega)
+  have hz := and_self_beq (show n / 16 < 2 ^ 64 by omega_arith)
   apply WP.of_runBlock
   refine ⟨_, by xrun [he.r15, q₁, w₁, hlen, h4], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, h4]
@@ -73,9 +73,9 @@ theorem ob3_ok {D : Addr} {n : Nat} (hn : n < 2 ^ 64) {s : State} (he : Env Ctx 
   have e15 := and15 (BitVec.ofNat 64 n)
   rw [toNat_ofNat_of_lt hn, imm_eq (by decide)] at e15
   have esub : BitVec.ofNat 64 n - BitVec.ofNat 64 (n % 16) = BitVec.ofNat 64 (16 * (n / 16)) := by
-    rw [ofNat_sub (Nat.mod_le _ _) hn]; congr 1; omega
+    rw [ofNat_sub (Nat.mod_le _ _) hn]; congr 1; omega_arith
   have sep : Mem.Sep (W + BitVec.ofNat 64 200) (64 / 8) (W + BitVec.ofNat 64 208) (64 / 8) :=
-    Offset.sep _ (.inl (by decide)) (by have := he.perm; omega) (by omega)
+    Offset.sep _ (.inl (by decide)) (by have := he.perm; omega_arith) (by omega_arith)
   have hdat' : (s.mem.writeW (W + BitVec.ofNat 64 208) (BitVec.ofNat 64 (n % 16))).readW
       (W + BitVec.ofNat 64 200) 64 = D := by rw [Mem.readW_writeW_sep sep (by decide), hdat]
   apply WP.of_runBlock
@@ -83,10 +83,10 @@ theorem ob3_ok {D : Addr} {n : Nat} (hn : n < 2 ^ 64) {s : State} (he : Env Ctx 
   · intro r a b; simp [gpr_setReg, gpr_arithFlags, a, b]
   · simp [mem_arithFlags, mem_setReg, Mem.readW_writeW_self64, BitVec.add_comm]
   · simp only [mem_arithFlags, mem_setReg]
-    rw [Mem.readW_writeW_sep (sep_of_disj (Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)))
+    rw [Mem.readW_writeW_sep (sep_of_disj (Offset.disjoint _ (.inr (by decide)) (by omega_arith) (by omega_arith)))
       (by decide), Mem.readW_writeW_self64]
   · have c : ∀ d, 200 ≤ d → d + 8 ≤ 216 → (⟨W + BitVec.ofNat 64 200, 16⟩ : Region).Contains
-        (W + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+        (W + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => Offset.contains _ h₁ (by omega_arith) (by omega_arith)
     simp only [mem_arithFlags, mem_setReg]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 208 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 200 (by decide) (by decide))
@@ -218,7 +218,7 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
   have hsp := h.env.rsp
   have psp : (pushed [.rax] s).gpr .rsp = SP - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
   have e24 : SP - BitVec.ofNat 64 8 - 16 = SP - BitVec.ofNat 64 24 := by rw [← Offset.sub_add_eq]; rfl
-  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
+  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨-, hpj⟩ := pushRegs_mem s [.rax] (by decide) hn8
   have harg : (pushed [.rax] s).mem.readW (SP - BitVec.ofNat 64 8) 64 = W + BitVec.ofNat 64 448 := by
     have := hpj 0 (by decide); rw [hsp] at this; rw [← h.rax]; exact this
@@ -226,20 +226,20 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
   have sw := L.sw
   have hw := h.data.ok.wrap
   have hq := h.q_le
-  have qd : Region.Sub ⟨D, q * 16⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
+  have qd : Region.Sub ⟨D, q * 16⟩ ⟨D, n⟩ := Region.sub_prefix (by omega_arith)
   have sS : Region.Sub ⟨W + BitVec.ofNat 64 448, 2112⟩ ⟨W, 2560⟩ := Lay.wSub (by decide)
   have sC : Region.Sub ⟨St + BitVec.ofNat 64 48, 16⟩ ⟨St, 80⟩ := Lay.stSub (by decide)
   have sY : Region.Sub ⟨St + BitVec.ofNat 64 16, 16⟩ ⟨St, 80⟩ := Lay.stSub (by decide)
   have tS : Region.Sub ⟨(pushed [.rax] s).gpr .rsp - 16, 24⟩ (below SP 24) := by
     rw [psp, e24]; exact fun _ h => h
   have toN : ∀ d, d < 2560 → (W + BitVec.ofNat 64 d).toNat = W.toNat + d := fun d hd => by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   have toS : ∀ d, d < 80 → (St + BitVec.ofNat 64 d).toNat = St.toNat + d := fun d hd => by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   refine ⟨by rw [pushed_gpr _ _ (by decide)]; exact h.rdi, by rw [pushed_gpr _ _ (by decide)]; exact h.rsi,
     by rw [pushed_gpr _ _ (by decide)]; exact h.rdx, by rw [pushed_gpr _ _ (by decide)]; exact h.rcx,
     by rw [pushed_gpr _ _ (by decide)]; exact h.r8, by rw [pushed_gpr _ _ (by decide)]; exact h.r9,
-    by rw [psp]; exact harg, h.rounds, h.ext.w, ?_, ?_, by omega, by rw [toN 448 (by decide)]; omega, ?_,
+    by rw [psp]; exact harg, h.rounds, h.ext.w, ?_, ?_, by omega_arith, by rw [toN 448 (by decide)]; omega_arith, ?_,
     h.ext.cs.sub_right sC, h.ext.cs.sub_right sY, h.ext.cd.sub_right qd, h.ext.cw.sub_right sS,
     L.st_st (.inr (by decide)) (by decide) (by decide), (h.data.ok.st.sub_right (Lay.stSub (by decide))).symm.sub_right qd,
     L.st_w (by decide) (.inr ⟨by decide, by decide⟩),
@@ -247,11 +247,11 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
     L.st_w (by decide) (.inr ⟨by decide, by decide⟩), (h.data.ok.w.sub_left qd).sub_right sS,
     h.ext.ct.sub_left tS, (h.t_s.sub_left tS).sub_right sC, (h.t_s.sub_left tS).sub_right sY,
     (h.t_d.sub_left tS).sub_right qd, (h.t_w.sub_left tS).sub_right sS, ?_, ?_, ?_⟩
-  · rw [toS 48 (by decide)]; omega
-  · rw [toS 16 (by decide)]; omega
+  · rw [toS 48 (by decide)]; omega_arith
+  · rw [toS 16 (by decide)]; omega_arith
   · have e16 : SP - BitVec.ofNat 64 8 - 8 = SP - BitVec.ofNat 64 16 := by rw [← Offset.sub_add_eq]; rfl
     rw [psp, e16]; have := h.sp24
-    rw [toNat_sub_ofNat (by omega)]; omega
+    rw [toNat_sub_ofNat (by omega_arith)]; omega_arith
   · simp only [pushed_rd, pushed_wr, psp, hsp]
     refine covers_cons ?_ (covers_cons ?_ (covers_cons ?_ (covers_cons ?_ (covers_cons ?_ ?_))))
     · exact fun a m hi => by
@@ -264,16 +264,16 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
     all_goals refine covers_left (Covers.trans ?_ (covers_cons_r _ (Covers.refl _)))
     · exact h.env.perm.stC (by decide)
     · exact h.env.perm.stC (by decide)
-    · exact Blocks.covers_prefix h.data.wr (by omega)
+    · exact Blocks.covers_prefix h.data.wr (by omega_arith)
     · exact h.env.perm.wC (by decide)
   · simp only [pushed_wr, hsp]
     refine Covers.trans ?_ (covers_cons_r _ (Covers.refl _))
     refine covers_cons ?_ (covers_cons ?_ (covers_cons ?_ ?_))
     · exact h.env.perm.stC (by decide)
     · exact h.env.perm.stC (by decide)
-    · exact Blocks.covers_prefix h.data.wr (by omega)
+    · exact Blocks.covers_prefix h.data.wr (by omega_arith)
     · exact h.env.perm.wC (by decide)
-  · have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
+  · have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
     obtain ⟨hf, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
     rw [hsp] at hf
     exact M.frame hf (fun r hr => by
@@ -291,7 +291,7 @@ theorem ObIn.push_eqs {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State}
     blocksAt (pushed [.rax] s).mem D q = blocksAt s.mem D q ∧
     blockAt (pushed [.rax] s).mem (Ctx + 240) = blockAt s.mem (Ctx + 240) := by
   have hsp := h.env.rsp
-  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
+  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨hf, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
   have hf' : Frame [below SP 8] s.mem (pushed [.rax] s).mem := by
     have := hf; rw [hsp] at this; exact this
@@ -303,9 +303,9 @@ theorem ObIn.push_eqs {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State}
   have one : ∀ {r : Region}, (below SP 24).Disjoint r → ∀ r' ∈ [below SP 8], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (hd.sub_left b8).symm
   refine ⟨hf'.sub fun r hr => ⟨below SP 24, by simp [obFrame], by simp only [List.mem_singleton] at hr; subst hr; exact b8⟩,
-    bytesAt_frame hf' (one (h.t_c.sub_right (Region.sub_prefix hRb))) (by have := L.cw; omega),
+    bytesAt_frame hf' (one (h.t_c.sub_right (Region.sub_prefix hRb))) (by have := L.cw; omega_arith),
     blockAt_frame hf' (one (h.t_s.sub_right sC)), blockAt_frame hf' (one (h.t_s.sub_right sY)),
-    blocksAt_frame hf' (one (h.t_d.sub_right (Region.sub_prefix (by omega)))) (by have := h.data.ok.wrap; omega),
+    blocksAt_frame hf' (one (h.t_d.sub_right (Region.sub_prefix (by omega_arith)))) (by have := h.data.ok.wrap; omega_arith),
     blockAt_frame hf' (one (h.t_c.sub_right (Offset.sub_base (d := 240) _ (by decide))))⟩
 
 /-- The registers, permissions and memory after the frame of a call. -/
@@ -348,7 +348,7 @@ theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
       blockAt s₄.mem (St + BitVec.ofNat 64 16) = Spec.Gcm.ghashFrom (blockAt s.mem (Ctx + 240))
         (blockAt s.mem (St + BitVec.ofNat 64 16)) (blocksAt s₄.mem D q) := by
   have hsp := h.env.rsp
-  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
+  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
@@ -370,7 +370,7 @@ theorem obFrameD_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
       blockAt s₄.mem (St + BitVec.ofNat 64 16) = Spec.Gcm.ghashFrom (blockAt s.mem (Ctx + 240))
         (blockAt s.mem (St + BitVec.ofNat 64 16)) (blocksAt s.mem D q) := by
   have hsp := h.env.rsp
-  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
+  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
@@ -417,11 +417,11 @@ theorem ob_slots {D : Addr} {n q : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨
   intro r hr
   simp only [obFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega)) (by omega) (by decide)
-  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact (hD.sub_left (Region.sub_prefix hq)).symm.sub_left (Lay.wSub (by omega)) |>.symm |> fun h => h.symm
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (t_w.sub_right (Lay.wSub (by omega))).symm
+  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact (hD.sub_left (Region.sub_prefix hq)).symm.sub_left (Lay.wSub (by omega_arith)) |>.symm |> fun h => h.symm
+  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (t_w.sub_right (Lay.wSub (by omega_arith))).symm
 
 end
 

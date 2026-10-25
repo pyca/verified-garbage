@@ -25,14 +25,7 @@ theorem halfByte_ok (s : State)
         t.mem = s.mem.writeW (State.addr (s.gpr .r0))
           (((s.mem (State.addr (s.gpr .r0))).setWidth 32 >>> 1 ||| s.gpr .r2).setWidth 8)) ∧
         Rest [.r0, .r1, .r2, .r3, .lr] s t := by
-  refine withRest [.r0, .r1, .r2, .r3, .lr] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.halfByte : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r2, .r3, .lr] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.halfByte
   ffrun [BitVec.add_zero, read, write]
 

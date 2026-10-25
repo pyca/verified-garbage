@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Carry
 public import VerifiedGarbage.Proof.X448.Wide.Product
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bounds of a product's coefficients and carries
@@ -34,18 +35,18 @@ theorem rows_le {f g : Nat → Nat} {B : Nat} (hf : ∀ i < 8, f i ≤ B) (hg : 
     | zero => simp [rows]
     | succ n ih =>
       rw [rows, addRow_at, List.range_succ, List.filter_append, List.length_append]
-      have := ih (by omega)
+      have := ih (by omega_arith)
       split
       · rename_i h
         have hp : f n * g (k - n) ≤ B * B :=
-          Nat.mul_le_mul (hf n (by omega)) (hg (k - n) (by omega))
+          Nat.mul_le_mul (hf n (by omega_arith)) (hg (k - n) (by omega_arith))
         simp only [List.filter_cons, List.filter_nil, decide_eq_true h, ite_true,
           List.length_singleton, Nat.add_mul, Nat.one_mul]
-        omega
+        omega_arith
       · rename_i h
         simp only [List.filter_cons, List.filter_nil, decide_eq_false h, Bool.false_eq_true,
           ite_false, List.length_nil, Nat.add_zero]
-        omega
+        omega_arith
   exact this 8 (Nat.le_refl _)
 
 /-- The number of products in coefficient `k` of a reduced product. -/
@@ -60,9 +61,9 @@ theorem reduced_le {f g : Nat → Nat} {B : Nat} (hf : ∀ i < 8, f i ≤ B) (hg
   simp only [reduced, rc]
   split
   · have := r k; have := r (k + 8); have := r (k + 12)
-    rw [Nat.add_mul, Nat.add_mul]; omega
+    rw [Nat.add_mul, Nat.add_mul]; omega_arith
   · have := r k; have := r (k + 8); have := r (k + 4)
-    rw [Nat.add_mul, Nat.add_mul, Nat.add_mul]; omega
+    rw [Nat.add_mul, Nat.add_mul, Nat.add_mul]; omega_arith
 
 /-- What the code needs of a product's coefficients. -/
 structure Fits (r : Nat → Nat) : Prop where
@@ -99,14 +100,14 @@ theorem fits {r : Nat → Nat} (h : ∀ k < 8, r k ≤ rc k * ((Ib - 1) * (Ib - 
   have k41 : chainLimb r 4 1 < 2 ^ 56 := Nat.mod_lt _ (by decide)
   have k42 : chainLimb r 4 2 < 2 ^ 56 := Nat.mod_lt _ (by decide)
   have k43 : chainLimb r 4 3 < 2 ^ 56 := Nat.mod_lt _ (by decide)
-  refine ⟨fun n hn => ?_, fun n hn => ?_, by omega, by omega, fun i hi => ?_⟩
-  · obtain rfl | rfl | rfl | rfl : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 := by omega
-    all_goals omega
-  · obtain rfl | rfl | rfl | rfl : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 := by omega
-    all_goals simp only [Nat.reduceAdd]; omega
+  refine ⟨fun n hn => ?_, fun n hn => ?_, by omega_arith, by omega_arith, fun i hi => ?_⟩
+  · obtain rfl | rfl | rfl | rfl : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 := by omega_arith
+    all_goals omega_arith
+  · obtain rfl | rfl | rfl | rfl : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 := by omega_arith
+    all_goals simp only [Nat.reduceAdd]; omega_arith
   · simp only [Mb]
     obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-        i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
-    all_goals simp only [out, radix, Nat.reducePow]; omega
+        i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_arith
+    all_goals simp only [out, radix, Nat.reducePow]; omega_arith
 
 end VG.Proof.Curve448.AArch64.Fast

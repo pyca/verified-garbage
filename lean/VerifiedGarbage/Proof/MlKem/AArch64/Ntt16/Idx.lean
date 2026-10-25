@@ -145,7 +145,7 @@ private theorem mod_div_base {d base o : Nat} (hd : 0 < d) (h : base % d = 0) :
 private theorem zeta_idx_lt : ∀ j < 7, ∀ i < 256, 128 / (128 >>> j) + i / (2 * (128 >>> j)) < 128 := by
   intro j hj i hi
   match j, hj with
-  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ => simp only [Nat.reduceShiftRight]; omega
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ => simp only [Nat.reduceShiftRight]; omega_arith
 
 section
 variable {rest : List Instr} {s : State} {Q : State → Prop}
@@ -178,39 +178,39 @@ theorem irep_bf {x y z t : VReg} (hxy : x ≠ y := by decide) (hx16 : x ≠ .v16
     by_cases h : K₀ + kz.getD e 0 < 128
     · exact zetaTable_lt _ h
     · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by
-        rw [zetaTable_eq, zetas_length]; omega)]; decide
+        rw [zetaTable_eq, zetas_length]; omega_arith)]; decide
   all_goals
     rw [show (j + 1 + 1) * 3329 = (j + 1) * 3329 + 3329 by rw [Nat.succ_mul]]
   · refine hx'.congr fun e he => ?_
     obtain ⟨o1, o2, o3, o4, o5⟩ := hl e he
     obtain ⟨m1, d1⟩ := mod_div_base (o := ox.getD e 0) (Nat.mul_pos (by decide) hlen) hbd
     have hidx : K₀ + kz.getD e 0 < 128 := by
-      rw [hK, o5, Nat.add_assoc, ← d1, ← hL]; exact zeta_idx_lt j hj _ (by omega)
-    rw [nttL_succ_get P hj (by omega), hL, ite_eq_left (by rw [m1]; exact o3), d1, ← o5,
+      rw [hK, o5, Nat.add_assoc, ← d1, ← hL]; exact zeta_idx_lt j hj _ (by omega_arith)
+    rw [nttL_succ_get P hj (by omega_arith), hL, ite_eq_left (by rw [m1]; exact o3), d1, ← o5,
       ← Nat.add_assoc, ← hK, ← ofNat_zeta hidx, o4, Nat.add_assoc]
   · refine hy'.congr fun e he => ?_
     obtain ⟨o1, o2, o3, o4, o5⟩ := hl e he
     obtain ⟨m1, d1⟩ := mod_div_base (o := ox.getD e 0) (Nat.mul_pos (by decide) hlen) hbd
     obtain ⟨m2, d2⟩ := mod_div_base (o := oy.getD e 0) (Nat.mul_pos (by decide) hlen) hbd
     have hidx : K₀ + kz.getD e 0 < 128 := by
-      rw [hK, o5, Nat.add_assoc, ← d1, ← hL]; exact zeta_idx_lt j hj _ (by omega)
+      rw [hK, o5, Nat.add_assoc, ← d1, ← hL]; exact zeta_idx_lt j hj _ (by omega_arith)
     have hm : ¬ oy.getD e 0 % (2 * len) < len := by
       rw [o4]
       have : (ox.getD e 0 + len) % (2 * len) = ox.getD e 0 % (2 * len) + len := by
         rw [Nat.add_mod]
-        rw [Nat.mod_eq_of_lt (show len < 2 * len by omega)]
-        have := Nat.mod_lt (ox.getD e 0) (show 0 < 2 * len by omega)
-        exact Nat.mod_eq_of_lt (by omega)
-      omega
+        rw [Nat.mod_eq_of_lt (show len < 2 * len by omega_arith)]
+        have := Nat.mod_lt (ox.getD e 0) (show 0 < 2 * len by omega_arith)
+        exact Nat.mod_eq_of_lt (by omega_arith)
+      omega_arith
     have hq2 : oy.getD e 0 / (2 * len) = ox.getD e 0 / (2 * len) := by
       rw [o4]
       have h1 := Nat.div_add_mod (ox.getD e 0) (2 * len)
       refine Nat.div_eq_of_lt_le ?_ ?_
-      · rw [Nat.mul_comm]; omega
-      · rw [Nat.succ_mul, Nat.mul_comm]; omega
-    rw [nttL_succ_get P hj (by omega), hL, ite_eq_right (by rw [m2]; exact hm), d2, hq2, ← o5,
+      · rw [Nat.mul_comm]; omega_arith
+      · rw [Nat.succ_mul, Nat.mul_comm]; omega_arith
+    rw [nttL_succ_get P hj (by omega_arith), hL, ite_eq_right (by rw [m2]; exact hm), d2, hq2, ← o5,
       ← Nat.add_assoc, ← hK, ← ofNat_zeta hidx, o4,
-      show base + (ox.getD e 0 + len) - len = base + ox.getD e 0 by omega]
+      show base + (ox.getD e 0 + len) - len = base + ox.getD e 0 by omega_arith]
 
 end
 
@@ -226,12 +226,12 @@ theorem nonneg_lane {r : BitVec 16} (h1 : -3329 < r.toInt) (h2 : r.toInt < 3329)
       if r.toInt < 0 then r.toInt + 3329 else r.toInt := by
   rw [BitVec.sshiftRight_eq, Int.shiftRight_eq_div_pow]
   by_cases h : r.toInt < 0
-  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = -1 by omega, ite_eq_left h,
+  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = -1 by omega_arith, ite_eq_left h,
       show BitVec.ofInt 16 (-1) &&& BitVec.ofNat 16 3329 = BitVec.ofNat 16 3329 by decide,
       BitVec.toInt_add]
     simp only [Int.bmod_def, show (BitVec.ofNat 16 3329).toInt = 3329 by decide]
-    split <;> omega
-  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = 0 by omega, ite_eq_right h,
+    split <;> omega_arith
+  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = 0 by omega_arith, ite_eq_right h,
       show BitVec.ofInt 16 0 &&& BitVec.ofNat 16 3329 = 0#16 by decide, BitVec.add_zero]
 
 theorem tw_one : tw 1 = 10 := by decide
@@ -253,11 +253,11 @@ theorem norm_ok {x : VReg} (h16 : x ≠ .v16 := by decide) (h31 : x ≠ .v31 := 
       ((vhalf (s.v x) e - T * BitVec.ofNat 16 3329).toInt - ((X e).val : Int)) % 3329 = 0 := by
     intro e he
     obtain ⟨a1, a2, a3⟩ := hx e he
-    obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok (vhalf (s.v x) e) (z := 1) (by omega) (by decide)
+    obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok (vhalf (s.v x) e) (z := 1) (by omega_arith) (by decide)
     rw [tw_one, show (vhalf (s.v x) e) * BitVec.ofNat 16 1 = vhalf (s.v x) e from BitVec.mul_one _]
       at *
     refine ⟨T, hT, b1, b2, ?_⟩
-    omega
+    omega_arith
   refine wp_vop (eval_mulH fun e he => by
     obtain ⟨T, hT, -⟩ := L e he
     simp only [VMulHOp.lane, h10 e he, hT, Option.isSome_some]) fun s₁ h₁ => ?_
@@ -278,7 +278,7 @@ theorem norm_ok {x : VReg} (h16 : x ≠ .v16 := by decide) (h31 : x ≠ .v31 := 
   have nn := nonneg_lane c1 c2
   rw [r5]
   rw [BitVec.toInt_eq_toNat_cond] at nn
-  split at nn <;> split at nn <;> omega
+  split at nn <;> split at nn <;> omega_arith
 
 end
 

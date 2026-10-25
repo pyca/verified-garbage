@@ -49,23 +49,23 @@ theorem memZeros_ok {s : State} (h : Inv s₀ s) (hx : s.gpr .r3 = memP s₀) (h
     have hb := blocks22 hp
     have hm := hp.mem_fits
     rw [List.range_succ, List.map_append, List.map_singleton]
-    refine WP.block_append ((memZeros_ok h hx ha n (by omega)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
+    refine WP.block_append ((memZeros_ok h hx ha n (by omega_arith)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
     have ea : State.addr (t.gpr .r3 + BitVec.ofNat 32 (4 * n)) = A (memP s₀) (4 * n) := by rw [gt, hx]
-    have ea' : A (memP s₀) (4 * n) = memB s₀ + BitVec.ofNat 64 (4 * n) := mem_addr' hp (by omega)
+    have ea' : A (memP s₀) (4 * n) = memB s₀ + BitVec.ofNat 64 (4 * n) := mem_addr' hp (by omega_arith)
     have hc : (memR s₀).Contains (A (memP s₀) (4 * n)) 4 := by
-      rw [ea']; exact Offset.contains_base _ (by omega) (by omega)
+      rw [ea']; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     have hc' : (⟨matrixCell (memB s₀) 0, 1024⟩ : Region).Contains (A (memP s₀) (4 * n)) 4 := by
       rw [ea', show matrixCell (memB s₀) 0 = memB s₀ by simp [matrixCell]]
-      exact Offset.contains_base _ (by omega) (by omega)
-    refine wp_str (by omega) ea ⟨_, by rw [it.wr]; exact mem_mem hp, hc⟩ fun t₁ u₁ => WP.block_nil
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+    refine wp_str (by omega_arith) ea ⟨_, by rw [it.wr]; exact mem_mem hp, hc⟩ fun t₁ u₁ => WP.block_nil
       ⟨it.store (R := memR s₀) (by simp) hc u₁, by rw [u₁.gpr, gt], ?_, fun i hi => ?_⟩
     · rw [u₁.mem]
       exact ft.writeW (List.mem_singleton_self _) _ hc'
-    · rw [u₁.mem, gt, show 4 * n = 0 + 4 * n by omega, show 4 * i = 0 + 4 * i by omega,
-        mw_store hp _ (by omega) (by omega) (by omega), ha]
+    · rw [u₁.mem, gt, show 4 * n = 0 + 4 * n by omega_arith, show 4 * i = 0 + 4 * i by omega_arith,
+        mw_store hp _ (by omega_arith) (by omega_arith) (by omega_arith), ha]
       by_cases e : 0 + 4 * n = 0 + 4 * i
       · rw [ite_eq_left e]
-      · rw [ite_eq_right e, show 0 + 4 * i = 4 * i by omega]; exact wt i (by omega)
+      · rw [ite_eq_right e, show 0 + 4 * i = 4 * i by omega_arith]; exact wt i (by omega_arith)
 
 end
 
@@ -97,10 +97,10 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   have L8 := laneLen_ge hp
   have hlt := hp.lanes_lt
   have hb : blocksN s₀ = (prm s₀).blocks := hp.blocks
-  obtain ⟨cl, _⟩ := cell_fits hp hl (col := (prm s₀).laneLen - 1) (by omega)
+  obtain ⟨cl, _⟩ := cell_fits hp hl (col := (prm s₀).laneLen - 1) (by omega_arith)
   have last : Proof.Argon2.lastIndex (prm s₀) l = l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) := by
-    unfold Proof.Argon2.lastIndex; rw [Nat.succ_mul]; omega
-  have ne0 : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) ≠ 0 := by omega
+    unfold Proof.Argon2.lastIndex; rw [Nat.succ_mul]; omega_arith
+  have ne0 : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) ≠ 0 := by omega_arith
   unfold Impl.Argon2.Arm.Derive.reduceLane Impl.Argon2.Arm.Derive.writeBlock
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_ldloc hp h.inv (d := laneOff) (by decide) fun s₁ u₁ => ?_
@@ -108,9 +108,9 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   refine wp_ldloc hp i₁ (d := laneLenOff) (by decide) fun s₂ u₂ => wp_sub (op2_imm (by decide)) fun s₃ u₃ => ?_
   have i₃ := (i₁.upd u₂ (by decide)).upd u₃ (by decide)
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega)
+  refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega_arith)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.lane])
-    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, ofNat_pred (by omega) rfl]) fun s₄ a₄ k₄ => ?_
+    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, ofNat_pred (by omega_arith) rfl]) fun s₄ a₄ k₄ => ?_
   have i₄ := i₃.only k₄ (by decide)
   refine wp_mov (op2_reg _ _) fun s₅ u₅ => ?_
   have i₅ := i₄.upd u₅ (by decide)
@@ -137,7 +137,7 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
       simp only [List.mem_singleton] at hr; subst hr
       exact (loc_disj hp hd (memR s₀) (by simp)).sub_right (cell_in_mem b1)) (by decide)
   refine (advance_ok hp i₇ (d := laneOff) (n := l) (by decide) (by rw [lt₇ _ (by decide)]; exact h.lane)
-    (by omega) (o := argOff 7) (B := lanesN s₀) (by decide) (by omega) (fun v iv => iv.arg_in hp (by decide))
+    (by omega_arith) (o := argOff 7) (B := lanesN s₀) (by decide) (by omega_arith) (fun v iv => iv.arg_in hp (by decide))
     fun v iv _ => iv.arg hp (by decide) |>.trans (by simp)).mono fun t ⟨it, mt, ct, _⟩ => ⟨?_, ct⟩
   obtain ⟨lt, _, ct⟩ := loc_store hp (d := laneOff) (by decide) mt
   have new : blockAt t₇.mem (matrixCell (memB s₀) 0) =
@@ -152,7 +152,7 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   refine ⟨it, Prm.of_lw h.pr fun d hd => ?_, ?_, ?_, fun k hk k0 => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     have hd4 : d + 4 ≤ 144 := by rcases hd with rfl | rfl | rfl | rfl <;> decide
-    rw [lt d (by omega) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lt₇ d hd4]
+    rw [lt d (by omega_arith) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lt₇ d hd4]
   · show t.mem.readW _ 32 = _
     rw [mt, Mem.readW_writeW_self32]
   · rw [ct _ (by rw [← hb]; exact b1), new, h.first, h.rest _ (by rw [← hb]; exact cl) ne0, reduction_snoc,
@@ -187,7 +187,7 @@ theorem reduceStart_ok {s : State} {M : Array Block} (h : Inv s₀ s) (pr : Prm 
   refine ⟨i₅, Prm.of_lw pr fun d hd => ?_, by rw [v₅, u₄.gpr]; rfl, ?_, fun k hk k0 => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     have hd4 : d + 4 ≤ 144 := by rcases hd with rfl | rfl | rfl | rfl <;> decide
-    rw [l₅ d (by omega) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lw_mem u₄.mem, lt₃ d hd4]
+    rw [l₅ d (by omega_arith) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lw_mem u₄.mem, lt₃ d hd4]
   · rw [c₅ _ (by rw [← hb]; exact b1), u₄.mem, cell_blk hp _ b1,
       blk_of_words (f := fun _ => 0) fun i hi => by rw [← mw, Nat.zero_mul, Nat.zero_add]; exact z₃ i hi,
       ofWords_zero]
@@ -205,13 +205,13 @@ theorem reduce_ok {s : State} {M : Array Block} (h : Inv s₀ s) (pr : Prm s₀ 
   unfold Impl.Argon2.Arm.Derive.reduce
   refine WP.seq ((reduceStart_ok hp h pr hm).mono fun s₅ start => ?_)
   refine WP.loop (M := isa) (fun n t => ∃ l, n = lanesN s₀ - l ∧ l < lanesN s₀ ∧ RI s₀ M l t) ?_ (lanesN s₀) s₅
-    ⟨0, by omega, hl1, start⟩
+    ⟨0, by omega_arith, hl1, start⟩
   rintro n t ⟨l, rfl, hl, ht⟩
   refine (reduceLane_ok hp ht hl).mono fun u ⟨hu, cu⟩ => ?_
   by_cases e : l + 1 = lanesN s₀
   · refine .inl ⟨by show VG.Arm.eval .ne u = _; rw [cu]; simp [e], hu.inv, hu.pr, ?_⟩
     rw [hu.first, e]
-  · exact .inr ⟨by show VG.Arm.eval .ne u = _; rw [cu]; simp [e], _, by omega, l + 1, rfl, by omega, hu⟩
+  · exact .inr ⟨by show VG.Arm.eval .ne u = _; rw [cu]; simp [e], _, by omega_arith, l + 1, rfl, by omega_arith, hu⟩
 
 /-- `finalOutput`: H′ of the memory's first block, to `out`. -/
 theorem finalOutput_ok {s : State} (h : Inv s₀ s) :
@@ -243,9 +243,9 @@ theorem finalOutput_ok {s : State} (h : Inv s₀ s) :
   have cx : (s₅.gpr .r3).toNat = outL s₀ := by
     rw [u₅.other _ (by decide), u₄.gpr]
   refine hcall_ok hp i₅ u₅.gpr
-    ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega⟩
-    (by rw [si, ax]; omega) ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega⟩
-    (by rw [di, cx]; exact ho) (by rw [cx]; omega) fun t it _ _ post => ⟨it, ?_⟩
+    ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega_arith⟩
+    (by rw [si, ax]; omega_arith) ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega_arith⟩
+    (by rw [di, cx]; exact ho) (by rw [cx]; omega_arith) fun t it _ _ post => ⟨it, ?_⟩
   rw [← di, ← cx, post, cx, ax, si, m₅, cell0, Proof.Argon2.serialize_blockAt]
 
 end

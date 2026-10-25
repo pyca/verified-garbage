@@ -45,23 +45,23 @@ structure Shape (d c nb : Nat) : Prop where
   bN : nb * (256 / c) = 32 * d
 
 theorem Shape.nb20 {d c nb : Nat} (h : Shape d c nb) : nb ≤ 20 := by
-  have := Nat.mul_le_mul h.d20 h.c8; have := h.dc; omega
+  have := Nat.mul_le_mul h.d20 h.c8; have := h.dc; omega_arith
 
 theorem Shape.nb0 {d c nb : Nat} (h : Shape d c nb) : 0 < nb := by
   have := h.d1; have := h.c0; have := h.dc
-  have : 0 < d * c := Nat.mul_pos (by omega) (by omega)
-  omega
+  have : 0 < d * c := Nat.mul_pos (by omega_arith) (by omega_arith)
+  omega_arith
 
 theorem Shape.group {d c nb : Nat} (h : Shape d c nb) {i : Nat} (hi : i < 256 / c) :
     c * i + c ≤ 256 ∧ nb * i + nb ≤ 32 * d := by
-  have h1 := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega)
-  have h2 := Nat.mul_le_mul_left nb (show i + 1 ≤ 256 / c by omega)
+  have h1 := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega_arith)
+  have h2 := Nat.mul_le_mul_left nb (show i + 1 ≤ 256 / c by omega_arith)
   rw [Nat.mul_succ] at h1 h2
   have := h.cN; have := h.bN
-  omega
+  omega_arith
 
 theorem Shape.N {d c nb : Nat} (h : Shape d c nb) : 0 < 256 / c ∧ 256 / c ≤ 256 :=
-  ⟨Nat.div_pos (by have := h.c8; omega) h.c0, Nat.div_le_self _ _⟩
+  ⟨Nat.div_pos (by have := h.c8; omega_arith) h.c0, Nat.div_le_self _ _⟩
 
 theorem off_add (p : Addr) (a b : Nat) : p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, BitVec.ofNat_add]
@@ -152,9 +152,9 @@ theorem packStep (hld : LdOk ld F) (hs : Shape d c nb) {s₀ : State} (hk : Pack
   have fi := hk.ifit
   have fo := hk.ofit
   have ha : ∀ j < c, addr (s.gpr .esi) (4 * j) = coeffAddr (iA iP s₀) (c * i + j) := fun j _ => by
-    rw [hI.esi, addr_add (by rw [Nat.mul_assoc]; omega)]; congr 2; rw [Nat.mul_add, Nat.mul_assoc]
+    rw [hI.esi, addr_add (by rw [Nat.mul_assoc]; omega_arith)]; congr 2; rw [Nat.mul_add, Nat.mul_assoc]
   have ho : (s.gpr .edi).setWidth 64 = oA oP s₀ + BitVec.ofNat 64 (nb * i) := by
-    rw [hI.edi]; exact ea_off (by omega)
+    rw [hI.edi]; exact ea_off (by omega_arith)
   have hb : ∀ t, (s.gpr .edi).setWidth 64 + BitVec.ofNat 64 t = oA oP s₀ + BitVec.ofNat 64 (nb * i + t) :=
     fun t => by rw [ho, off_add]
   -- The words of the group are those on entry.
@@ -162,27 +162,27 @@ theorem packStep (hld : LdOk ld F) (hs : Shape d c nb) {s₀ : State} (hk : Pack
     fun j hj => by
       rw [ha j hj]
       exact coeffAt_frame hI.frame (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hk.sep)
-        (by omega)
-  refine WP.mono (packBody_ok hld hs.d20 hs.dc s (by rw [hI.edi, toNat_add_fit (by omega)]; omega)
-    (fun j hj => by rw [ha j hj, hI.rd, hI.wr]; exact inRegions_of hk.inR (coeff_contains _ (by omega)))
-    (fun t ht => by rw [hb, hI.wr]; exact inRegions_of hk.outR (Offset.contains_base _ (by omega) (by omega)))
+        (by omega_arith)
+  refine WP.mono (packBody_ok hld hs.d20 hs.dc s (by rw [hI.edi, toNat_add_fit (by omega_arith)]; omega_arith)
+    (fun j hj => by rw [ha j hj, hI.rd, hI.wr]; exact inRegions_of hk.inR (coeff_contains _ (by omega_arith)))
+    (fun t ht => by rw [hb, hI.wr]; exact inRegions_of hk.outR (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     (fun j hj => by
       rw [ha j hj, ho]
-      exact (hk.sep.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)))
-    (fun j hj => by rw [hw j hj]; exact hk.lt _ (by omega)))
-    fun s' ⟨hW, si', di', cx', z', k'⟩ => ⟨?_, ecx_ne hi (by omega) hI.ecx z'⟩
+      exact (hk.sep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith)))
+    (fun j hj => by rw [hw j hj]; exact hk.lt _ (by omega_arith)))
+    fun s' ⟨hW, si', di', cx', z', k'⟩ => ⟨?_, ecx_ne hi (by omega_arith) hI.ecx z'⟩
   have hW' : Written s.mem s'.mem (oA oP s₀ + BitVec.ofNat 64 (nb * i)) nb
       fun t => (packed F d iP s₀)[nb * i + t]! := by
     rw [← ho]
     refine hW.congr fun t ht => ?_
-    rw [pack_group (c := c) (by have := hs.d1; omega) hs.dc (by simp) (vals_lt hk.lt) ht (by omega),
-      take_drop_eq _ 0 (by simp; omega)]
+    rw [pack_group (c := c) (by have := hs.d1; omega_arith) hs.dc (by simp) (vals_lt hk.lt) ht (by omega_arith),
+      take_drop_eq _ 0 (by simp; omega_arith)]
     refine congrArg (fun L => BitVec.ofNat 8 (digits d L / 2 ^ (8 * t))) (List.map_congr_left fun j hj => ?_)
     have hj := List.mem_range.mp hj
-    rw [hw j hj, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega)]
+    rw [hw j hj, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega_arith)]
     rfl
-  obtain ⟨hf', hd'⟩ := Written.step hI.frame hI.done hW' hbi (by omega)
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hf', fun k hk => hd' k (by rw [Nat.mul_succ] at hk; omega)⟩
+  obtain ⟨hf', hd'⟩ := Written.step hI.frame hI.done hW' hbi (by omega_arith)
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hf', fun k hk => hd' k (by rw [Nat.mul_succ] at hk; omega_arith)⟩
   · rw [k'.gpr (by decide), hI.esp]
   · rw [k'.2.1, hI.rd]
   · rw [k'.2.2, hI.wr]
@@ -212,7 +212,7 @@ theorem packLoop_piece (hld : LdOk ld F) (hs : Shape d c nb) (iP oP : State → 
   case wp =>
     xrun
     refine ⟨⟨?_, h.rd, h.wr, ?_, ?_, ?_, by rw [setReg_mem, h.mem]; exact Frame.refl _ _,
-      fun k hk => absurd hk (by omega)⟩, hx⟩ <;>
+      fun k hk => absurd hk (by omega_arith)⟩, hx⟩ <;>
     simp only [reduceCtorEq, ↓reduceIte, setReg_gpr, h.esp, h.esi, h.edi,
       Nat.mul_zero, BitVec.add_zero, Nat.sub_zero]
   case regs =>
@@ -274,31 +274,31 @@ theorem unpackStep (hfin : FinOk fin d W) (hs : Shape d c nb) {s₀ : State} (hk
   have fi := hk.ifit
   have fo := hk.ofit
   have ho : (s.gpr .edi).setWidth 64 = oA oP s₀ + BitVec.ofNat 64 (4 * c * i) := by
-    rw [hI.edi]; exact ea_off (by rw [Nat.mul_assoc]; omega)
+    rw [hI.edi]; exact ea_off (by rw [Nat.mul_assoc]; omega_arith)
   have ha : ∀ j, (s.gpr .edi).setWidth 64 + BitVec.ofNat 64 (4 * j) = coeffAddr (oA oP s₀) (c * i + j) :=
     fun j => by rw [ho, off_add]; congr 2; rw [Nat.mul_add, Nat.mul_assoc]
   have hb : ∀ t < nb, addr (s.gpr .esi) t = iA iP s₀ + BitVec.ofNat 64 (nb * i + t) := fun t ht => by
-    rw [hI.esi]; exact addr_add (by omega)
+    rw [hI.esi]; exact addr_add (by omega_arith)
   have hsub : Region.Sub ⟨(s.gpr .edi).setWidth 64, 4 * c⟩ (polyRegion (oA oP s₀)) := by
-    rw [ho]; exact Offset.sub_base _ (by rw [Nat.mul_assoc]; omega)
+    rw [ho]; exact Offset.sub_base _ (by rw [Nat.mul_assoc]; omega_arith)
   refine WP.mono (unpackBody_ok hfin hs.d1 hs.d20 hs.dc hs.c8 s
-    (by rw [hI.edi, toNat_add_fit (by rw [Nat.mul_assoc]; omega)]; rw [Nat.mul_assoc]; omega)
-    (fun t ht => by rw [hb t ht, hI.rd, hI.wr]; exact inRegions_of hk.inR (Offset.contains_base _ (by omega) (by omega)))
-    (fun j hj => by rw [ha, hI.wr]; exact inRegions_of hk.outR (coeff_contains _ (by omega)))
+    (by rw [hI.edi, toNat_add_fit (by rw [Nat.mul_assoc]; omega_arith)]; rw [Nat.mul_assoc]; omega_arith)
+    (fun t ht => by rw [hb t ht, hI.rd, hI.wr]; exact inRegions_of hk.inR (Offset.contains_base _ (by omega_arith) (by omega_arith)))
+    (fun j hj => by rw [ha, hI.wr]; exact inRegions_of hk.outR (coeff_contains _ (by omega_arith)))
     (fun t ht => by
       rw [hb t ht]
-      exact (hk.sep.sub_left (Offset.sub_base _ (by omega))).sub_right hsub))
-    fun s' ⟨hw, hf, si', di', cx', z', k'⟩ => ⟨?_, ecx_ne hi (by omega) hI.ecx z'⟩
+      exact (hk.sep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right hsub))
+    fun s' ⟨hw, hf, si', di', cx', z', k'⟩ => ⟨?_, ecx_ne hi (by omega_arith) hI.ecx z'⟩
   -- The bytes of the group, on entry.
   have hB : (List.range nb).map (fun t => (s.mem (addr (s.gpr .esi) t)).toNat) =
       (((bytesAt (P0 s₀).mem (iA iP s₀) (32 * d)).map (·.toNat)).drop (nb * i)).take nb := by
-    rw [take_drop_eq _ 0 (by rw [List.length_map, bytesAt_length]; omega)]
+    rw [take_drop_eq _ 0 (by rw [List.length_map, bytesAt_length]; omega_arith)]
     refine List.map_congr_left fun t ht => ?_
     have ht := List.mem_range.mp ht
-    rw [getD_map_toNat, bytesAt_getD _ _ (by omega), hb t ht]
+    rw [getD_map_toNat, bytesAt_getD _ _ (by omega_arith), hb t ht]
     refine congrArg BitVec.toNat (hI.frame _ fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact hk.sep _ (Offset.contains_base _ (by omega) (by omega))
+    exact hk.sep _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   have hlt : ∀ a ∈ (bytesAt (P0 s₀).mem (iA iP s₀) (32 * d)).map (·.toNat), a < 2 ^ 8 := fun a ha => by
     obtain ⟨x, _, rfl⟩ := List.mem_map.mp ha; exact x.isLt
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hI.frame.trans (hf.sub fun r hr => ?_), fun k hk => ?_⟩
@@ -315,12 +315,12 @@ theorem unpackStep (hfin : FinOk fin d W) (hs : Shape d c nb) {s₀ : State} (hk
     refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     rw [ho]
-    exact Offset.disjoint _ (by rw [Nat.mul_assoc]; omega) (by omega) (by rw [Nat.mul_assoc]; omega)
+    exact Offset.disjoint _ (by rw [Nat.mul_assoc]; omega_arith) (by omega_arith) (by rw [Nat.mul_assoc]; omega_arith)
   · -- Written by this group.
-    have hj : k - c * i < c := by rw [Nat.mul_succ] at hk; omega
+    have hj : k - c * i < c := by rw [Nat.mul_succ] at hk; omega_arith
     have := hw (k - c * i) hj
-    rw [ha, show c * i + (k - c * i) = k by omega, hB, digits_group hs.dc hlt hj,
-      show c * i + (k - c * i) = k by omega] at this
+    rw [ha, show c * i + (k - c * i) = k by omega_arith, hB, digits_group hs.dc hlt hj,
+      show c * i + (k - c * i) = k by omega_arith] at this
     rw [coeffAt_eq, this]
 
 variable {Pre : State → Prop} {Pub : State → State → Prop} {X : State → Prop}
@@ -346,7 +346,7 @@ theorem unpackLoop_piece (hfin : FinOk fin d W) (hs : Shape d c nb) (iP oP : Sta
   case wp =>
     xrun
     refine ⟨⟨?_, h.rd, h.wr, ?_, ?_, ?_, by rw [setReg_mem, h.mem]; exact Frame.refl _ _,
-      fun k hk => absurd hk (by omega)⟩, hx⟩ <;>
+      fun k hk => absurd hk (by omega_arith)⟩, hx⟩ <;>
     simp only [reduceCtorEq, ↓reduceIte, setReg_gpr, h.esp, h.esi, h.edi,
       Nat.mul_zero, BitVec.add_zero, Nat.sub_zero]
   case regs =>

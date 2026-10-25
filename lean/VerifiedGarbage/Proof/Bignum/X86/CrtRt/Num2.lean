@@ -32,13 +32,13 @@ theorem chainSetup_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} 
       ([.mov .edi (.reg .eax), .mov .ecx (.imm 0)] : List Instr))) s Q := by
   have bl := h.bytes_lt
   simp only [List.append_assoc]
-  refine ptrTo_ok (r := .ebp) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega)
+  refine ptrTo_ok (r := .ebp) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega_arith)
     fun u K m p => ?_
   have hu := h.regs K m
-  refine ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega)
+  refine ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega_arith)
     fun v Kv mv pv => ?_
   have hv := hu.regs Kv mv
-  refine ptrTo_ok (r := .eax) (t := .edx) (by decide) (by decide) hv.edi hv.width h.upper' (by omega)
+  refine ptrTo_ok (r := .eax) (t := .edx) (by decide) (by decide) hv.edi hv.width h.upper' (by omega_arith)
     fun w Kw mw pw => ?_
   have hw := hv.regs Kw mw
   refine cntTo_ok (r := .edx) hw.width h.upper' N.extra fun y Ky my cy => ?_
@@ -67,7 +67,7 @@ theorem chainSub_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} (N
     (n := cw len n) (cw_pos h.lower') (by omega) (by omega) (by omega) (by omega) (by omega) pa pb po c e)
     fun t ⟨O, P, V, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := K.trans Kt
-  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega)
+  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega_arith)
   refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
   have ed : t₁.gpr .edi = s.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
   obtain ⟨c', ec', V'⟩ := V
@@ -90,7 +90,7 @@ theorem chainAdd_ok (h : In Ex base bytes len args s) {o a b : Loc} {n : Cnt} (N
     (n := cw len n) (cw_pos h.lower') (by omega) (by omega) (by omega) (by omega) (by omega) pa pb po c e)
     fun t ⟨O, P, _, V, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := K.trans Kt
-  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega)
+  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m]; exact O.mono (Nat.zero_le _) (by omega_arith)
   refine wp_movS ((h.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
   have ed : t₁.gpr .edi = s.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
   obtain ⟨c', ec', V'⟩ := V
@@ -107,10 +107,10 @@ theorem lessThan_ok (h : In Ex base bytes len args s) {a b : Loc} {n : Cnt} (N :
   have ce := cb_eq (len := len) N
   unfold lessThan
   simp only [List.append_assoc]
-  refine WP.seq (ptrTo_ok (r := .esi) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega)
+  refine WP.seq (ptrTo_ok (r := .esi) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega_arith)
     fun u K m p => ?_)
   have hu := h.regs K m
-  refine ptrTo_ok (r := .ebp) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega)
+  refine ptrTo_ok (r := .ebp) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega_arith)
     fun v Kv mv pv => ?_
   have hv := hu.regs Kv mv
   refine cntTo_ok (r := .edx) hv.width h.upper' N.extra fun w Kw mw cv => wp_movS rfl fun y uy _ => WP.block_nil ?_
@@ -118,7 +118,7 @@ theorem lessThan_ok (h : In Ex base bytes len args s) {a b : Loc} {n : Cnt} (N :
     (((K.mono (by decide)).trans (Kv.mono (by decide))).trans (Kw.mono (by decide))).trans (uy.keeps.mono (by decide))
   have my : y.mem = s.mem := by rw [uy.mem, mw, mv, m]
   refine WP.mono (compareLoop_ok (h.ws.of_keeps Ky) (x := lo len a) (y := lo len b) (N := cw len n)
-    (cw_pos h.lower') (by omega) (by omega)
+    (cw_pos h.lower') (by omega_arith) (by omega_arith)
     (by rw [PtrAt, uy.other _ (by decide), Kw.1 _ (by decide), Kv.1 _ (by decide)]; exact p)
     (by rw [PtrAt, uy.other _ (by decide), Kw.1 _ (by decide)]; exact pv)
     (by rw [uy.other _ (by decide)]; exact cnt_toNat h.upper' N cv) uy.gpr)
@@ -150,7 +150,7 @@ theorem equal_ok (h : In Ex base bytes len args s) {a b : Loc} {n : Cnt} (N : Cn
   rw [w₁.gpr, ev, ebx, mem₁, cmask_or_not]
   congr 1
   rw [show ∀ x y : Nat, (decide (x = y)) = !(decide (y < x) || decide (x < y)) from fun x y => by
-    by_cases h₁ : x = y <;> by_cases h₂ : y < x <;> by_cases h₃ : x < y <;> simp_all <;> omega]
+    by_cases h₁ : x = y <;> by_cases h₂ : y < x <;> by_cases h₃ : x < y <;> simp_all <;> omega_arith]
 
 end
 

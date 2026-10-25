@@ -77,55 +77,55 @@ theorem FV_of_limbs {m m' : Mem} {base : Addr} {o o' : Nat} (h : ∀ i < 8, limb
 theorem copy3_ok {s₀ s : State} {base : Addr} (h : MFrame s₀ base s) (o a : Nat) (ho : o + 3 ≤ 10) (ha : a + 3 ≤ 10)
     (hsep : o + 3 ≤ a ∨ a + 3 ≤ o) :
     WP isa (.block (copy3 o a)) s fun t => MFrame s₀ base t ∧
-      pt (EV t.mem base) ⟨o, by omega⟩ ⟨o + 1, by omega⟩ ⟨o + 2, by omega⟩ =
-        pt (EV s.mem base) ⟨a, by omega⟩ ⟨a + 1, by omega⟩ ⟨a + 2, by omega⟩ ∧
+      pt (EV t.mem base) ⟨o, by omega_arith⟩ ⟨o + 1, by omega_arith⟩ ⟨o + 2, by omega_arith⟩ =
+        pt (EV s.mem base) ⟨a, by omega_arith⟩ ⟨a + 1, by omega_arith⟩ ⟨a + 2, by omega_arith⟩ ∧
       (∀ i : Index, (i.val < o ∨ o + 3 ≤ i.val) → ∀ j < 8, limbs t.mem base (slot i.val) j =
         limbs s.mem base (slot i.val) j) ∧
       Keeps VG.Proof.X448.AArch64.clob s t := by
   have hs := h.scr
   rw [copy3, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs (o := slot o) (a := slot a) (by simp only [slot]; omega)
-    (by simp only [slot]; omega) (by simp only [slot]; omega) (by simp only [slot]; omega)
-    (Or.inr (by simp only [slot]; omega))) fun t1 ⟨v1, o1, k1⟩ => ?_
+  refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs (o := slot o) (a := slot a) (by simp only [slot]; omega_arith)
+    (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
+    (Or.inr (by simp only [slot]; omega_arith))) fun t1 ⟨v1, o1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs1 (o := slot (o + 1)) (a := slot (a + 1))
-    (by simp only [slot]; omega) (by simp only [slot]; omega) (by simp only [slot]; omega)
-    (by simp only [slot]; omega) (Or.inr (by simp only [slot]; omega))) fun t2 ⟨v2, o2, k2⟩ => ?_
+    (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
+    (by simp only [slot]; omega_arith) (Or.inr (by simp only [slot]; omega_arith))) fun t2 ⟨v2, o2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by decide)
   refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs2 (o := slot (o + 2)) (a := slot (a + 2))
-    (by simp only [slot]; omega) (by simp only [slot]; omega) (by simp only [slot]; omega)
-    (by simp only [slot]; omega) (Or.inr (by simp only [slot]; omega))) fun t ⟨v3, o3, k3⟩ => ?_
+    (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
+    (by simp only [slot]; omega_arith) (Or.inr (by simp only [slot]; omega_arith))) fun t ⟨v3, o3, k3⟩ => ?_
   have hc : ∀ c < 3, ∀ j < 8, limbs t.mem base (slot (o + c)) j = limbs s.mem base (slot (a + c)) j := by
     intro c hc j hj
-    rcases (show c = 0 ∨ c = 1 ∨ c = 2 by omega) with rfl | rfl | rfl
-    · rw [o3.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-        o2.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega), Nat.add_zero, v1 j hj,
+    rcases (show c = 0 ∨ c = 1 ∨ c = 2 by omega_arith) with rfl | rfl | rfl
+    · rw [o3.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+        o2.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith), Nat.add_zero, v1 j hj,
         Nat.add_zero]
-    · rw [o3.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega), v2 j hj,
-        o1.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega)]
-    · rw [v3 j hj, o2.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-        o1.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega)]
+    · rw [o3.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith), v2 j hj,
+        o1.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
+    · rw [v3 j hj, o2.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+        o1.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
   have hk : ∀ i : Index, (i.val < o ∨ o + 3 ≤ i.val) → ∀ j < 8, limbs t.mem base (slot i.val) j =
       limbs s.mem base (slot i.val) j := fun i hi j hj => by
     have := i.isLt
-    rw [o3.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-      o2.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-      o1.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega)]
+    rw [o3.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+      o2.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+      o1.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
   have k : Keeps VG.Proof.X448.AArch64.clob s t := (k1.trans k2).trans k3
   have om : Outside base (slot o) 384 s.mem t.mem := by
     intro x hx
-    rw [o3 x (by simp only [slot] at hx ⊢; omega), o2 x (by simp only [slot] at hx ⊢; omega),
-      o1 x (by simp only [slot] at hx ⊢; omega)]
+    rw [o3 x (by simp only [slot] at hx ⊢; omega_arith), o2 x (by simp only [slot] at hx ⊢; omega_arith),
+      o1 x (by simp only [slot] at hx ⊢; omega_arith)]
   refine ⟨⟨hs.of_keeps k (by decide), fun i => ?_, fun w hw => ?_, by rw [k.1 _ (by decide)]; exact h.out,
     by rw [k.2.1]; exact h.rd, by rw [k.2.2]; exact h.wr, h.mem.trans fun x h1 _ => om x (by
-      simp only [slot] at h1 ⊢; omega)⟩, ?_, hk, k⟩
+      simp only [slot] at h1 ⊢; omega_arith)⟩, ?_, hk, k⟩
   · by_cases hi : i.val < o ∨ o + 3 ≤ i.val
     · exact fun j hj => by rw [hk i hi j hj]; exact h.env i j hj
-    · have e : i.val = o + (i.val - o) := by omega
+    · have e : i.val = o + (i.val - o) := by omega_arith
       exact fun j hj => by
         show limbs t.mem base (slot i.val) j < Ib
-        rw [e, hc _ (by omega) j hj]; exact h.env ⟨a + (i.val - o), by omega⟩ j hj
-  · rw [hk 19 (by simp; omega) w hw]; exact h.zero w hw
+        rw [e, hc _ (by omega_arith) j hj]; exact h.env ⟨a + (i.val - o), by omega_arith⟩ j hj
+  · rw [hk 19 (by simp; omega_arith) w hw]; exact h.zero w hw
   · simp only [pt, VG.Proof.X448.AArch64.Weak.E]
     rw [FV_of_limbs (o := slot a) (o' := slot o) (fun j hj => by simpa using hc 0 (by decide) j hj),
       FV_of_limbs (hc 1 (by decide)), FV_of_limbs (hc 2 (by decide))]
@@ -182,8 +182,8 @@ theorem dbl_ok {s₀ s : State} {base : Addr} {v w : ℤ} {m : Nat} (hm : 1 ≤ 
   have e1 : ∀ i : Index, i.val < 6 → EV t1.mem base i = EV s.mem base i := fun i hi =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (k1 i (.inl hi)))
   refine WP.seq (WP.mono (addC_ok f1) fun t2 ⟨f2, kk2, q2, b2⟩ => ?_)
-  refine WP.mono (decX1_ok (n := m - 1) t2 (by omega) (by
-      rw [kk2.1 _ (by decide), g1.1 _ (by decide), h.counter]; congr 1; omega))
+  refine WP.mono (decX1_ok (n := m - 1) t2 (by omega_arith) (by
+      rw [kk2.1 _ (by decide), g1.1 _ (by decide), h.counter]; congr 1; omega_arith))
     fun u ⟨uc, uk, um, uz⟩ => ⟨⟨f2.keeps uk (by decide) (by decide) um, uc, ?_, ?_⟩, uz⟩
   · rw [um, q2]
     have p3 : pt (EV t1.mem base) 3 4 5 = pt (EV s.mem base) 3 4 5 := by
@@ -193,7 +193,7 @@ theorem dbl_ok {s₀ s : State} {base : Addr} {v w : ℤ} {m : Nat} (hm : 1 ≤ 
     have := addPt_rep h.a h.a
     rw [← add_smul] at this
     rw [show (2 : ℤ) ^ (4 - (m - 1)) * v = 2 ^ (4 - m) * v + 2 ^ (4 - m) * v by
-      rw [show 4 - (m - 1) = (4 - m) + 1 by omega, pow_succ]; ring]
+      rw [show 4 - (m - 1) = (4 - m) + 1 by omega_arith, pow_succ]; ring]
     exact this
   · rw [um]
     simp only [pt]
@@ -246,8 +246,8 @@ theorem combineMid_ok {s₀ s : State} {base : Addr} {v w : ℤ} (f0 : MFrame s�
     simp only [eval, State.read, BitVec.setWidth_eq, hz]
     by_cases hm : m = 1
     · subst hm; exact .inl ⟨rfl, hu⟩
-    · exact .inr ⟨by simp only [decide_eq_true (by omega : m - 1 ≠ 0)], m - 1,
-        by omega, by omega, by omega, hu⟩
+    · exact .inr ⟨by simp only [decide_eq_true (by omega_arith : m - 1 ≠ 0)], m - 1,
+        by omega_arith, by omega_arith, by omega_arith, hu⟩
   · intro t ht
     refine WP.seq (WP.mono (copy3_ok ht.frame 6 0 (by decide) (by decide) (by decide))
       fun t5 ⟨f5, p5, k5, _⟩ => ?_)

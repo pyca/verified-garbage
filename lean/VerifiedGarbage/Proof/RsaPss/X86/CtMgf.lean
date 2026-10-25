@@ -44,7 +44,7 @@ theorem slotW (hg : Geo L scr) {d : Nat} (hd : d + 4 ≤ frameBytes) : ∃ R ∈
 /-- Two slots apart. -/
 theorem slotSep {d e : Nat} (hd : d + 4 ≤ frameBytes) (he : e + 4 ≤ frameBytes) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
     (slotR L d).Disjoint (slotR L e) :=
-  Lay.fr_sep h (by unfold frameBytes at hd; omega) (by unfold frameBytes at he; omega)
+  Lay.fr_sep h (by unfold frameBytes at hd; omega_arith) (by unfold frameBytes at he; omega_arith)
 
 /-- A slot other than `sLb` and `sBi` misses what `ctHash` writes. -/
 theorem ctW_slot (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) {d : Nat} (hd : d + 4 ≤ frameBytes)
@@ -54,13 +54,13 @@ theorem ctW_slot (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) {d : Nat} (hd : d 
   have hB := h.B_le
   have hso := h.so_le
   obtain ⟨σ', ok⟩ := hg.ok
-  have hF : d + 4 ≤ L.F + 16 := by rw [hg.F]; omega
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega
+  have hF : d + 4 ≤ L.F + 16 := by rw [hg.F]; omega_arith
+  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact hg.slot ok (by pomega) hF
-  · exact Lay.fr_low (by unfold frameBytes at hd; omega) hC
+  · exact Lay.fr_low (by unfold frameBytes at hd; omega_arith) hC
   · exact hg.slot ok (by pomega) hF
   · exact slotSep hd (by decide) hl
   · exact hg.slot ok (by pomega) hF
@@ -108,8 +108,8 @@ theorem MB.keep {lo db c : Nat} {dbv : Nat → Byte} {seed : List Byte} {m m' : 
       (sR scr (oEm + lo) db).Disjoint r ∧ (sR scr (oEm + lo + db) h.D).Disjoint r) :
     MB h L scr lo db c dbv seed m' :=
   ⟨slot_keep hf (fun r hr => (hs r hr).1) hm.ctr, slot_keep hf (fun r hr => (hs r hr).2.1) hm.done,
-    sbytes_keep hf (fun r hr => (hs r hr).2.2.1) (by omega) hm.dbx,
-    sbytes_keep hf (fun r hr => (hs r hr).2.2.2) (by omega) hm.sd⟩
+    sbytes_keep hf (fun r hr => (hs r hr).2.2.1) (by omega_arith) hm.dbx,
+    sbytes_keep hf (fun r hr => (hs r hr).2.2.2) (by omega_arith) hm.sd⟩
 
 /-- The counter's bytes. -/
 theorem i2osp4_getD (c j : Nat) (hj : j < 4) :
@@ -124,7 +124,7 @@ theorem bswap_bit (v : BitVec 32) {k j : Nat} (hk : k < 4) (hj : j < 8) :
   unfold bswap
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   repeat' split
-  all_goals first | omega | (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+  all_goals first | omega_arith | (rw [decide_eq_true (by omega_arith), Bool.true_and]; congr 1; omega_arith)
 
 /-- Byte `k` of the counter, big-endian. -/
 theorem ctrByte {c : Nat} (hc : c < 2 ^ 32) {k : Nat} (hk : k < 4) :
@@ -145,11 +145,11 @@ theorem sa_writeW32 (scr : BitVec 32) (m : Mem) {o i : Nat} (v : BitVec 32) (ho 
   by_cases e : o ≤ i ∧ i < o + 4
   · rw [ite_eq_left e, show sa scr i = sa scr o + BitVec.ofNat 64 (i - o) by
       rw [sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' e.1]]
-    exact VG.X86.writeW_byte m _ v (by omega) (by decide)
+    exact VG.X86.writeW_byte m _ v (by omega_arith) (by decide)
   · rw [ite_eq_right e]
     refine VG.X86.writeW_byte_off m _ v _ ?_
-    rw [sa, sa, Offset.sub_toNat' _ (by omega) hi]
-    split <;> omega
+    rw [sa, sa, Offset.sub_toNat' _ (by omega_arith) hi]
+    split <;> omega_arith
 
 /-! ## The parameters and the stages of an iteration -/
 
@@ -181,7 +181,7 @@ abbrev Away (L : Lay) (scr : BitVec 32) (lo db : Nat) (r : Region) : Prop :=
 theorem MP.keep (P : MP h L scr lo db seed Inv) {c : Nat} {σ : State} {m m' : Mem} {rs : List Region}
     (hm : MI h L scr lo db c dbv seed Inv σ m) (hf : Frame rs m m') (hsub : ∀ r ∈ rs, r ∈ mgfW h L scr lo db)
     (hs : ∀ r ∈ rs, Away h L scr lo db r) : MI h L scr lo db c dbv seed Inv σ m' :=
-  ⟨P.I σ m m' hm.1 (hf.mono hsub), hm.2.keep h hf (by have := P.fit; unfold oEm; omega) hs⟩
+  ⟨P.I σ m m' hm.1 (hf.mono hsub), hm.2.keep h hf (by have := P.fit; unfold oEm; omega_arith) hs⟩
 
 /-- What `ctHash` writes misses them. -/
 theorem MP.ctW_away (P : MP h L scr lo db seed Inv) : ∀ r ∈ ctW h L scr h.B, Away h L scr lo db r := by
@@ -189,18 +189,18 @@ theorem MP.ctW_away (P : MP h L scr lo db seed Inv) : ∀ r ∈ ctW h L scr h.B,
   have := h.B_le
   intro r hr
   refine ⟨?_, ?_, ?_, ?_⟩
-  · exact ctW_slot h P.hg (by omega) (d := sCtr) (by decide) (by decide) (by decide) r hr
-  · exact ctW_slot h P.hg (by omega) (d := sDone) (by decide) (by decide) (by decide) r hr
-  · exact ctW_em h P.hg (by omega) (o := oEm + lo) (n := db) (Nat.le_add_right _ _) (by pomega) r hr
-  · exact ctW_em h P.hg (by omega) (o := oEm + lo + db) (n := h.D) (by pomega) (by pomega) r hr
+  · exact ctW_slot h P.hg (by omega_arith) (d := sCtr) (by decide) (by decide) (by decide) r hr
+  · exact ctW_slot h P.hg (by omega_arith) (d := sDone) (by decide) (by decide) (by decide) r hr
+  · exact ctW_em h P.hg (by omega_arith) (o := oEm + lo) (n := db) (Nat.le_add_right _ _) (by pomega) r hr
+  · exact ctW_em h P.hg (by omega_arith) (o := oEm + lo + db) (n := h.D) (by pomega) (by pomega) r hr
 
 /-- So does a slot other than theirs. -/
 theorem MP.slot_away (P : MP h L scr lo db seed Inv) {d : Nat} (hd : d + 4 ≤ frameBytes)
     (h₁ : d + 4 ≤ sCtr ∨ sDone + 4 ≤ d) : Away h L scr lo db (slotR L d) := by
   have := P.fit
   obtain ⟨σ', ok⟩ := P.hg.ok
-  have hF : d + 4 ≤ L.F + 16 := by rw [P.hg.F]; omega
-  refine ⟨slotSep (by decide) hd (by unfold sCtr sDone at *; omega), slotSep (by decide) hd (by unfold sCtr sDone at *; omega),
+  have hF : d + 4 ≤ L.F + 16 := by rw [P.hg.F]; omega_arith
+  refine ⟨slotSep (by decide) hd (by unfold sCtr sDone at *; omega_arith), slotSep (by decide) hd (by unfold sCtr sDone at *; omega_arith),
     (P.hg.slot ok (by pomega) hF).symm, (P.hg.slot ok (by pomega) hF).symm⟩
 
 /-- `Y`'s first block, zero. -/
@@ -219,7 +219,7 @@ theorem mgfA_vp (P : MP h L scr lo db seed Inv) (c : Nat) {c' : Prog isa} {Q : S
   have hB64 := h.B_ge
   have hg := P.hg
   refine VP.seq (VP.taint [.esp, .ebp] h.certs.clrY (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hm⟩ => ?_)
-    (VP.seq ((zero_vp (hg.wbuf (o := oY) (n := h.B) (by pomega) (by omega)) (by omega)
+    (VP.seq ((zero_vp (hg.wbuf (o := oY) (n := h.B) (by pomega) (by omega_arith)) (by omega_arith)
       (Inv := MI h L scr lo db c dbv seed Inv) fun σ m m' hm hf => P.keep h hm (by rwa [hg.scrA (by pomega)] at hf)
         (by simp) fun r hr => P.ctW_away h r (by simp only [List.mem_singleton] at hr; subst hr; simp)).mono
       (fun _ _ h => h) fun σ s ⟨hc, hm, hz⟩ => ⟨hc, hm, fun i hi => by
@@ -270,7 +270,7 @@ theorem mgfB_vp (P : MP h L scr lo db seed Inv) (c : Nat) {c' : Prog isa} {Q : S
     have m7 : t7.mem = s.mem := by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨(((c3.upd u4 (by decide) (by decide)).upd u5 (by decide) (by decide)).upd u6 (by decide)
       (by decide)).upd u7 (by decide) (by decide), ⟨m7 ▸ hm, fun i hi => ?_⟩, ?_, ?_, ?_, fun i hi => ?_⟩
-    · rw [m7, Nat.add_assoc]; exact hz _ (by omega)
+    · rw [m7, Nat.add_assoc]; exact hz _ (by omega_arith)
     · simp (disch := decide) only [u7.other, u6.gpr, u5.gpr, u4.other, u3.other, u2.other, u1.other, hc.ebp]
     · simp (disch := decide) only [u7.other, u6.other, u5.other, u4.gpr, u3.gpr, u2.gpr, u1.gpr, hc.ebp,
         u3.mem, u2.mem, u1.mem, hg.aFr ok sLo (by decide), hg.aFr ok sDb (by decide), P.lo σ _ hm.1, P.dbs σ _ hm.1,
@@ -279,13 +279,13 @@ theorem mgfB_vp (P : MP h L scr lo db seed Inv) (c : Nat) {c' : Prog isa} {Q : S
     · rw [m7, hg.byteAt_scr (by pomega)]; exact hm.2.sd i hi
   · rw [hg.scrA (by pomega)] at hf
     refine ⟨P.keep h (rs := [sR scr oY h.B]) hm (Frame.sub hf fun r hr => ⟨sR scr oY h.B, by simp, by
-        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (Nat.le_refl _) (by omega)⟩) (by simp)
+        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (Nat.le_refl _) (by omega_arith)⟩) (by simp)
       fun r hr => P.ctW_away h r (by simp only [List.mem_singleton] at hr; subst hr; simp), ?_⟩
     exact sbytes_keep hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega)) (by pomega) hz
   · by_cases hi' : i < h.D
     · rw [ite_eq_left hi', ← hy i hi', hg.byteAt_scr (by pomega)]
-    · rw [ite_eq_right hi', show oY + i = oY + h.D + (i - h.D) by omega]; exact hz _ (by omega)
+    · rw [ite_eq_right hi', show oY + i = oY + h.D + (i - h.D) by omega_arith]; exact hz _ (by omega_arith)
 
 /-- What `ctHash` keeps of an iteration: the memory before it, and the
 slots of its message's length and blocks. -/
@@ -362,11 +362,11 @@ theorem mgfC_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hc32 : c < 2 ^ 32) :
   rw [ey,
     sa_writeW32 scr _ _ (by pomega) (by pomega), RsaPss.getD_app, P.sd σ]
   by_cases h1 : i < h.D
-  · rw [ite_eq_right (by omega), ite_eq_left h1, hy i hi, ite_eq_left h1]
+  · rw [ite_eq_right (by omega_arith), ite_eq_left h1, hy i hi, ite_eq_left h1]
   by_cases h2 : i < h.D + 4
-  · rw [ite_eq_left (by omega), ite_eq_right h1, show oY + i - (oY + h.D) = i - h.D by omega,
-      ctrByte hc32 (by omega), i2osp4_getD c _ (by omega)]
-  · rw [ite_eq_right (by omega), ite_eq_right h1, hy i hi, ite_eq_right h1,
-      getD_ge (l := Spec.Rsa.i2osp c 4) (i := i - h.D) (by rw [i2osp4_length]; omega)]
+  · rw [ite_eq_left (by omega_arith), ite_eq_right h1, show oY + i - (oY + h.D) = i - h.D by omega_arith,
+      ctrByte hc32 (by omega_arith), i2osp4_getD c _ (by omega_arith)]
+  · rw [ite_eq_right (by omega_arith), ite_eq_right h1, hy i hi, ite_eq_right h1,
+      getD_ge (l := Spec.Rsa.i2osp c 4) (i := i - h.D) (by rw [i2osp4_length]; omega_arith)]
 
 end VG.Proof.RsaPss.X86

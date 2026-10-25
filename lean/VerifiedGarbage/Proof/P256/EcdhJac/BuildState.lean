@@ -51,10 +51,10 @@ theorem storeEntry_ok {base : Addr} {s : State} {m : Nat}
   rw [storeEntry,WP.block_append_iff]
   refine WP.mono (entryAddr_ok hs.x0 hm h19) fun a ⟨pa,ka⟩ => ?_
   have ha := hs.of_keeps ka (by decide)
-  refine WP.mono (tableStoreWords_ok (n:=20) ha pa (by omega)
-    (by intro i hi; change (if i<12 then 704+8*i else 5400+8*(i-12))+8≤8192; split <;> omega)
-    (by intro i hi; change (if i<12 then 704+8*i else 5400+8*(i-12))%8=0; split <;> omega)
-    (by intro i hi; change 2816+160*(m-1)+8*20≤(if i<12 then 704+8*i else 5400+8*(i-12)) ∨ (if i<12 then 704+8*i else 5400+8*(i-12))+8≤2816+160*(m-1); split <;> omega) 20 (by omega)) fun t ⟨vals,kt,ot⟩ => ?_
+  refine WP.mono (tableStoreWords_ok (n:=20) ha pa (by omega_arith)
+    (by intro i hi; change (if i<12 then 704+8*i else 5400+8*(i-12))+8≤8192; split <;> omega_arith)
+    (by intro i hi; change (if i<12 then 704+8*i else 5400+8*(i-12))%8=0; split <;> omega_arith)
+    (by intro i hi; change 2816+160*(m-1)+8*20≤(if i<12 then 704+8*i else 5400+8*(i-12)) ∨ (if i<12 then 704+8*i else 5400+8*(i-12))+8≤2816+160*(m-1); split <;> omega_arith) 20 (by omega_arith)) fun t ⟨vals,kt,ot⟩ => ?_
   refine ⟨?_,(Keeps.regs ka).trans (kt.mono (by regions_sub)),?_⟩
   · simpa only [ka.mem] using vals
   · simpa only [ka.mem] using ot
@@ -69,17 +69,17 @@ theorem storePoint_ok {base : Addr} {s : State} {m : Nat} {Q : Spec.Weierstrass.
   refine WP.mono (storeEntry_ok hs hm hm16 h19) fun t ⟨hv,hk,ho⟩ => ⟨?_,ho,?_,hk.gpr _ (by decide)⟩
   · exact ⟨hk.mono (by decide),ho.unch.cover (by
       intro w hw; rw [List.mem_singleton.mp hw]
-      exact ⟨(2816,2560),by simp [buildWork],by omega,by omega⟩)⟩
+      exact ⟨(2816,2560),by simp [buildWork],by omega_arith,by omega_arith⟩)⟩
   · apply hq.congr
     intro c hc
     apply wordsVal_of_words₂
     intro i hi
-    have h := hv (4*c+i) (by omega)
-    have dst : 2816+160*(m-1)+8*(4*c+i)=entrySlot m c+8*i := by unfold entrySlot; omega
+    have h := hv (4*c+i) (by omega_arith)
+    have dst : 2816+160*(m-1)+8*(4*c+i)=entrySlot m c+8*i := by unfold entrySlot; omega_arith
     have src : selectedWord (4*c+i)=selectedSlot c+8*i := by
       change (if 4*c+i<12 then 704+8*(4*c+i) else 5400+8*(4*c+i-12))=
         (if c<3 then 704+32*c else 5400+32*(c-3))+8*i
-      split <;> split <;> omega
+      split <;> split <;> omega_arith
     simpa only [dst,src] using h
 
 end VG.Proof.P256.EcdhJac
@@ -129,10 +129,10 @@ open Spec.Weierstrass
       if i=0 then tmv C 4 base s K.P.x else if i=1 then tmv C 4 base s K.P.y else 1 := by
     intro i hi
     have he := it.val (selectedSlot i) (by
-      have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega
+      have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega_arith
       rcases this with rfl|rfl|rfl|rfl|rfl <;> decide)
     change tmv C 4 base t (selectedSlot i)=_ at he
-    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega
+    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;>
       simpa only [selectedSlot,show K.P.x=1280 from rfl,show K.P.y=1440 from rfl,
         show K.P.z=224 from rfl,Function.update_apply,Nat.reduceLT,Nat.reduceAdd,Nat.reduceMul,
@@ -140,7 +140,7 @@ open Spec.Weierstrass
   refine ⟨fr,hf.keep (frame_build fr),?_,?_,?_,?_,?_⟩
   · intro i hi
     apply it.lt
-    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega
+    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;> decide
   · rw [hv 0 (by decide),hv 1 (by decide),hv 2 (by decide)]
     simp only [Nat.reduceEqDiff,ite_true,ite_false]
@@ -184,7 +184,7 @@ theorem table_keep {base : Addr} {P : Point C} {n : Nat} {s t : State}
   intro i hi
   exact hk.unch.wordsVal (by
     have hh : ∀a∈List.range 17,1≤a→∀i<5,∀w∈work,entrySlot a i+32≤w.1 ∨ w.1+w.2≤entrySlot a i := by decide +kernel
-    exact hh a (List.mem_range.mpr (by omega)) ha i hi) (by unfold entrySlot; omega)
+    exact hh a (List.mem_range.mpr (by omega_arith)) ha i hi) (by unfold entrySlot; omega_arith)
 
 theorem table_store {base : Addr} {P : Point C} {m : Nat} {s t : State}
     (h : TblOk base P m s) (hm : m<16)
@@ -192,7 +192,7 @@ theorem table_store {base : Addr} {P : Point C} {m : Nat} {s t : State}
   intro a ha ham
   apply (h a ha ham).congr
   intro i hi
-  exact ho.wordsVal (by unfold entrySlot; omega) (by unfold entrySlot; omega)
+  exact ho.wordsVal (by unfold entrySlot; omega_arith) (by unfold entrySlot; omega_arith)
 
 theorem selected_store {base : Addr} {Q : Point C} {m : Nat} {s t : State}
     (h : JPt base s selectedSlot Q) (hm : 1≤m) (hm16 : m≤16)
@@ -200,8 +200,8 @@ theorem selected_store {base : Addr} {Q : Point C} {m : Nat} {s t : State}
   apply h.congr
   intro i hi
   apply ho.wordsVal
-  · unfold selectedSlot; split <;> omega
-  · unfold selectedSlot; split <;> omega
+  · unfold selectedSlot; split <;> omega_arith
+  · unfold selectedSlot; split <;> omega_arith
 
  theorem selected_keeps {base : Addr} {Q : Point C} {s t : State} {rs : List Reg}
     (h : JPt base s selectedSlot Q) (hk : VG.Proof.Ed25519.AArch64.Keeps rs s t) :

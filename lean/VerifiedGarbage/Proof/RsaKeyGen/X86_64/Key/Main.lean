@@ -48,7 +48,7 @@ theorem storeK_ws {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sL
   WP.mono (storeA_ok h hj hP hL (by decide) hp hl hm hl1 hlw hout hsep) fun t ⟨hb, hx, hwr, hrd, k⟩ =>
     have hf := frm_scr hsep hx
     ⟨hb, hx, h.congr hf (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Or.inl (by have := h.h256; omega)) k (by decide), hf, k⟩
+      rw [List.mem_singleton.mp hr]; exact Or.inl (by have := h.h256; omega_arith)) k (by decide), hf, k⟩
 
 /-- A store: the array, the header slots of its output's pointer and length,
 the output and its length. -/
@@ -78,7 +78,7 @@ structure St.Ok (e : St) (s : State) (B : Addr) (Z w : Nat) : Prop where
 
 theorem frm_word {m m' : Mem} {B : Addr} {Z : Nat} (hf : Frm B [(Z, 2 ^ 64)] m m') (hZ : 8 * 32 ≤ Z) {i : Nat}
     (hi : i < 32) : word m' B (8 * i) = word m B (8 * i) :=
-  hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+  hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith)) (by omega_arith)
 
 /-- The registers the stores change. -/
 abbrev stRegs : List Reg := [.r12, .r9, .rbx, .rsi, .rcx, .r15, .rax, .rdx, .rbp, .r14]
@@ -117,7 +117,7 @@ theorem stores_ok {B : Addr} {Z w : Nat} {c : Bool} {Q : State → Prop} :
         have := (ho e' he').lw
         have := h.sl hj'
         have := h.scr.nowrap
-        rw [f₁.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)]
+        rw [f₁.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith)) (by omega_arith)]
     · intro x hx
       rw [xt x fun e' he' => hx e' (List.mem_cons_of_mem _ he'), x₁ x (hx e List.mem_cons_self)]
 termination_by structural L => L
@@ -131,7 +131,7 @@ theorem keyExit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool
   have hs := h.scr
   have hn := hs.nowrap
   have h256 := h.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   rw [exit_eq]
   refine WP.mono (WP.keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun t =>
       t.gpr .rax = BitVec.ofNat 64 c.toNat ∧ t.gpr .rbx = word s.mem B (8 * 0) ∧
@@ -144,7 +144,7 @@ theorem keyExit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool
       hl 5 (by decide)]) rfl)
     fun t ⟨⟨hax, h0, h1, h2, h3, h4, h5, hm'⟩, k⟩ => ⟨hax, ?_, hm', k⟩
   intro i hi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2
@@ -169,14 +169,14 @@ theorem zeros_ok {B : Addr} {Z w : Nat} {Q : State → Prop} :
     have h256 := h.h256
     obtain ⟨_, hp, hl, hpv, hlv, hl1, hlw, hwr, hsep⟩ := ho e List.mem_cons_self
     have hpw' := List.pairwise_cons.mp hpw
-    have hz := zeroOut_ok h.scr h.rdi h256 hp hl hpv hlv hl1 (by have := h.w2; omega) ⟨hwr, hsep⟩
+    have hz := zeroOut_ok h.scr h.rdi h256 hp hl hpv hlv hl1 (by have := h.w2; omega_arith) ⟨hwr, hsep⟩
     have step : ∀ s₁, ((∀ i < e.len, s₁.mem (e.out + BitVec.ofNat 64 i) = 0) ∧
         (∀ x, (∀ j < e.len, x ≠ e.out + BitVec.ofNat 64 j) → s₁.mem x = s.mem x) ∧ Keep [.rsi, .rcx, .rax] s s₁) →
         WP isa (seqs (zerosK L ++ rest)) s₁ Q := by
       intro s₁ ⟨z₁, x₁, k₁⟩
       have f₁ := frm_scr hsep x₁
       have h₁ : Ws s₁ B Z w := h.congr f₁ (fun r hr' => by
-        rw [List.mem_singleton.mp hr']; exact Or.inl (by omega)) k₁ (by decide)
+        rw [List.mem_singleton.mp hr']; exact Or.inl (by omega_arith)) k₁ (by decide)
       refine zeros_ok L rest s₁ hr h₁ (fun e' he' => ?_) hpw'.2
         (fun t ht ft zt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by decide)))
       · obtain ⟨hj', hp', hl', hpv', hlv', hl1', hlw', hwr', hsep'⟩ := ho e' (List.mem_cons_of_mem _ he')
@@ -248,7 +248,7 @@ structure Front (I : KIn) (m₀ : Mem) (t : State) : Prop where
     t.zf = some (!(decide (av I t.mem aDd ≤ 2 ^ (8 * I.pl)) && ok))
 
 theorem KLens.W {I : KIn} (L : KLens I) : I.W = 2 * (I.pl / 8) := by
-  have := L.pl8; simp only [KIn.W]; omega
+  have := L.pl8; simp only [KIn.W]; omega_arith
 
 theorem lt_of_os2ip_len {bs : List Byte} {n : Nat} (h : bs.length = n) : Spec.Rsa.os2ip bs < 2 ^ (8 * n) := by
   have := VG.Proof.Rsa.lt_of_os2ip bs
@@ -262,15 +262,15 @@ theorem front_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens 
       fun t => Front I m₀ t ∧ InScr I.B I.Z s.mem t.mem := by
   have hZ := h.hZ
   have hW := L.W
-  have hw8 : 8 * I.pl = 64 * (I.pl / 8) := by have := L.pl8; omega
+  have hw8 : 8 * I.pl = 64 * (I.pl / 8) := by have := L.pl8; omega_arith
   have hP₀ : I.P₀ < 2 ^ (64 * (I.pl / 8)) := by rw [← hw8]; exact lt_of_os2ip_len L.pbl
   have hQ₀ : I.Q₀ < 2 ^ (64 * (I.pl / 8)) := by rw [← hw8]; exact lt_of_os2ip_len L.qbl
   have hE : I.E < 2 ^ 64 := by
     have := lt_of_os2ip_len L.ebl
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega_arith))
   -- The loads.
   refine wp_seqs_append (by simp [loadA]) (by simp [order, ltA]) (WP.mono (loads_k h L.pbl L.qbl L.ebl
-    (by have := L.pl1; omega) (by rw [hW]; have := L.pl8; omega) L.el1 L.el8) fun s₁ ⟨h₁, f₁, vP₁, vQ₁, ev₁⟩ => ?_)
+    (by have := L.pl1; omega_arith) (by rw [hW]; have := L.pl8; omega_arith) L.el1 L.el8) fun s₁ ⟨h₁, f₁, vP₁, vQ₁, ev₁⟩ => ?_)
   -- The order.
   refine wp_seqs_append (by simp [order, ltA]) (by simp [decTo]) (WP.mono (order_k h₁) fun s₂ ⟨h₂, f₂, vP₂, vQ₂⟩ => ?_)
   rw [vP₁, vQ₁] at vP₂ vQ₂
@@ -289,9 +289,9 @@ theorem front_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens 
   rw [f₃.av hok3 (by decide) (by decide) hZ, vQ₂] at vQm₄
   have vPm₄ : av I s₄.mem aPm = I.P - 1 := by rw [f₄.av hok4 (by decide) (by decide) hZ, vPm₃]
   have hPw : I.P < 2 ^ (64 * (I.pl / 8)) := by
-    simp only [KIn.P, KIn.P₀, KIn.Q₀] at hP₀ hQ₀ ⊢; split <;> omega
+    simp only [KIn.P, KIn.P₀, KIn.Q₀] at hP₀ hQ₀ ⊢; split <;> omega_arith
   have hQw : I.Q < 2 ^ (64 * (I.pl / 8)) := by
-    simp only [KIn.Q, KIn.P₀, KIn.Q₀] at hP₀ hQ₀ ⊢; split <;> omega
+    simp only [KIn.Q, KIn.P₀, KIn.Q₀] at hP₀ hQ₀ ⊢; split <;> omega_arith
   -- `L`.
   refine wp_seqs_append (by simp [lcmPart, phi]) (by simp) (WP.mono (lcm_k h₄ hW vPm₄ vQm₄ (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hPw)
     (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hQw))
@@ -309,10 +309,10 @@ theorem front_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens 
         rcases Nat.mul_eq_zero.mp h0 with h' | h' <;> simp [h']
       · left; exact Nat.le_of_dvd h0 (Nat.lcm_dvd_mul _ _)
     have h2 : (I.P - 1) * (I.Q - 1) < 2 ^ (64 * I.W) := by
-      rw [hW, show 64 * (2 * (I.pl / 8)) = 64 * (I.pl / 8) + 64 * (I.pl / 8) by omega, Nat.pow_add]
-      exact Nat.mul_lt_mul_of_lt_of_le (by omega) (by omega) (Nat.two_pow_pos _)
+      rw [hW, show 64 * (2 * (I.pl / 8)) = 64 * (I.pl / 8) + 64 * (I.pl / 8) by omega_arith, Nat.pow_add]
+      exact Nat.mul_lt_mul_of_lt_of_le (by omega_arith) (by omega_arith) (Nat.two_pow_pos _)
     rcases h1 with h1 | h1
-    · omega
+    · omega_arith
     · rw [h1]; exact Nat.two_pow_pos _
   -- `d`.
   refine wp_seqs_append (by simp) (by simp [smallMask, constA]) ?_
@@ -331,7 +331,7 @@ theorem front_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens 
   have hD : av I t.mem aDd = av I s₆.mem aDd := f₇.av hok7 (by decide) (by decide) hZ
   have hi : InScr I.B I.Z s.mem t.mem := fun x hx => (ht.inScr x hx).trans (h.inScr x hx).symm
   refine ⟨⟨ht, ?_, ?_, ?_, ?_, ?_, ⟨ok, okt, iff₆, fun d hd => by rw [hD]; exact dd₆ d hd⟩,
-    ⟨ok, okt, iff₆, by rw [zf₇, ← hD, show 64 * (I.pl / 8) = 8 * I.pl by omega]⟩⟩, hi⟩
+    ⟨ok, okt, iff₆, by rw [zf₇, ← hD, show 64 * (I.pl / 8) = 8 * I.pl by omega_arith]⟩⟩, hi⟩
   · rw [pres aPa (by decide) (by decide) (by decide) (by decide), vP₄]
   · rw [pres aQa (by decide) (by decide) (by decide) (by decide), vQ₄]
   · rw [pres aPm (by decide) (by decide) (by decide) (by decide), vPm₄]

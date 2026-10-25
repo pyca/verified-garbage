@@ -44,38 +44,38 @@ theorem powersLoop_ok (batch : Bool) {s₀ : State} {b : BitVec 32} (hc : Ctx b 
       PowersKeep b o (128 * count) s₀ t := by
   apply WP.loop (fun n => PowersInv s₀ b o count n batch) (n := count)
   · intro n s hi
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega : n ≠ 0)
-    have hk : k < count := by have := hi.bound; omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega_arith : n ≠ 0)
+    have hk : k < count := by have := hi.bound; omega_arith
     refine WP.mono (powersBody_ok batch hi.ctx hi.lim o (count - (k + 1)) count hlo hbound
-      (by omega) hn hi.counter ((hi.high 16 (by decide)).trans hd))
+      (by omega_arith) hn hi.counter ((hi.high 16 (by decide)).trans hd))
       fun t ⟨htc, htz, htl, htt, htv, hthi, htk⟩ => ?_
-    have hstep : count - (k + 1) + 1 = count - k := by omega
+    have hstep : count - (k + 1) + 1 = count - k := by omega_arith
     have hv : point (env t.mem b) 0 1 2 3 =
         powerPoint (point (env s₀.mem b) 0 1 2 3) (powerStride batch * (count - k)) := by
       rw [htv, hi.value, ← powerPoint_add]
       exact congrArg (powerPoint _) (by
-        cases batch <;> simp only [powerStride, Bool.false_eq_true, ite_true, ite_false] <;> omega)
+        cases batch <;> simp only [powerStride, Bool.false_eq_true, ite_true, ite_false] <;> omega_arith)
     have ht : ∀ j < count - k, tablePoint t.mem b (o + 128 * j) =
         powerPoint (point (env s₀.mem b) 0 1 2 3) (powerStride batch * j) := by
       intro j hj
       by_cases h : j < count - (k + 1)
-      · rw [TableFrame.point htk.frame (by omega) (.inl (by omega)) (by omega) (by omega), hi.table j h]
-      · have he : j = count - (k + 1) := by omega
+      · rw [TableFrame.point htk.frame (by omega_arith) (.inl (by omega_arith)) (by omega_arith) (by omega_arith), hi.table j h]
+      · have he : j = count - (k + 1) := by omega_arith
         rw [he, htt, hi.value]
     have hh : ∀ i : Slot, 16 ≤ i.val → env t.mem b i = env s₀.mem b i :=
       fun i h => (hthi i h).trans (hi.high i h)
-    have hkeep := hi.keep.trans (htk.mono (by omega) (by omega))
+    have hkeep := hi.keep.trans (htk.mono (by omega_arith) (by omega_arith))
     by_cases hk0 : k = 0
     · subst hk0
-      exact .inl ⟨by simp only [VG.Arm.eval, htz, show count - (0 + 1) + 1 = count by omega,
+      exact .inl ⟨by simp only [VG.Arm.eval, htz, show count - (0 + 1) + 1 = count by omega_arith,
         decide_true, Bool.not_true], htl, ht, hv, hh, hkeep⟩
     · exact .inr ⟨by simp only [VG.Arm.eval, htz,
-        decide_eq_false (show count - (k + 1) + 1 ≠ count by omega), Bool.not_false],
-        k, by omega, ⟨by omega, by omega, htk.ctx hi.ctx, htl, hstep ▸ htc, hv, ht, hh, hkeep⟩⟩
+        decide_eq_false (show count - (k + 1) + 1 ≠ count by omega_arith), Bool.not_false],
+        k, by omega_arith, ⟨by omega_arith, by omega_arith, htk.ctx hi.ctx, htl, hstep ▸ htc, hv, ht, hh, hkeep⟩⟩
   · refine ⟨hn0, Nat.le_refl _, hc, hl, ?_, ?_, ?_, fun _ _ => rfl, PowersKeep.refl _ _ _ _⟩
     · rw [Nat.sub_self]; exact h11
     · simp only [Nat.sub_self, Nat.mul_zero, powerPoint]
-    · intro j hj; omega
+    · intro j hj; omega_arith
 
 theorem pointPowers_ok (batch : Bool) {s : State} {b : BitVec 32} (hc : Ctx b s)
     (hl : AllLim s.mem b) (o count : Nat) (hlo : 1632 ≤ o) (hbound : o + 128 * count ≤ 8192)
@@ -131,8 +131,8 @@ theorem accumulateLoop_ok {s₀ : State} {b : BitVec 32} (hc : Ctx b s₀) (hl :
       LoopKeep b s₀ t := by
   apply WP.loop (AccumulateInv s₀ b start scalar p) (n := 16)
   · intro n s h
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := h.positive; omega : n ≠ 0)
-    have hk : k < 16 := by have := h.bound; omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := h.positive; omega_arith : n ≠ 0)
+    have hk : k < 16 := by have := h.bound; omega_arith
     refine WP.mono (accumulateBody_ok h.ctx h.lim k start scalar p hk h.counter
       (h.bits k hk) h.d (by rw [Nat.add_assoc]; exact h.value) (h.table k hk))
       fun t ⟨tc, tz, tl, tv, td, tk⟩ => ?_
@@ -141,12 +141,12 @@ theorem accumulateLoop_ok {s₀ : State} {b : BitVec 32} (hc : Ctx b s₀) (hl :
       fun i hi => (tk.bit i hi).trans (h.bits i hi)
     have ht' : ∀ i < 16, tablePoint t.mem b (5728 + 128 * i) = powerPoint p (start + i) := by
       intro i hi
-      exact (workspace_tablePoint tk.frame (by omega) (by omega)).trans (h.table i hi)
+      exact (workspace_tablePoint tk.frame (by omega_arith) (by omega_arith)).trans (h.table i hi)
     by_cases hk0 : k = 0
     · subst hk0
       exact .inl ⟨by simp only [VG.Arm.eval, tz, decide_true, Bool.not_true], tl, tv, td, h.keep.trans tk⟩
     · exact .inr ⟨by simp only [VG.Arm.eval, tz, decide_eq_false hk0, Bool.not_false],
-        k, by omega, ⟨by omega, by omega, tk.ctx h.ctx, tl, tc, td, tv, hb', ht', h.keep.trans tk⟩⟩
+        k, by omega_arith, ⟨by omega_arith, by omega_arith, tk.ctx h.ctx, tl, tc, td, tv, hb', ht', h.keep.trans tk⟩⟩
   · exact ⟨by decide, by decide, hc, hl, h11, hd, hp, hb, ht, LoopKeep.refl _ _⟩
 
 theorem accumulate16_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
@@ -186,14 +186,14 @@ theorem loadCheckpoint_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLi
       env t.mem b 16 = env s.mem b 16 := by
   refine WP.seq (WP.mono (fieldCode_ok savePointOps hc hl) fun a ⟨ka, la, ea⟩ => ?_)
   rw [WP.block_append_iff]
-  refine WP.mono (tableAddr_ok (ka.ctx hc) 1632 j (by omega) hj
+  refine WP.mono (tableAddr_ok (ka.ctx hc) 1632 j (by omega_arith) hj
     ((ka.rest.gpr _ (by decide)).trans h11)) fun a' ⟨hptr, hr, hm⟩ => ?_
   have ka' : AccKeep b a a' := AccKeep.of_rest hr (by decide) hm
   refine WP.mono (pointFromTable_ok (ka'.ctx (ka.ctx hc)) (by rw [hm]; exact la)
-    hptr (by omega) (by omega)) fun t ⟨pt, lt, kt⟩ => ?_
+    hptr (by omega_arith) (by omega_arith)) fun t ⟨pt, lt, kt⟩ => ?_
   refine ⟨(AccKeep.of_keep ka).trans (ka'.trans (AccKeep.of_table kt (by decide) (by decide))), lt, ?_, ?_, ?_⟩
   · rw [pt, hm]
-    exact workspace_tablePoint ka.frame (by omega) (by omega)
+    exact workspace_tablePoint ka.frame (by omega_arith) (by omega_arith)
   · rw [point_congr (e := env t.mem b) (f := env a'.mem b) 17 18 19 20
       (kt.high 17 (by decide)) (kt.high 18 (by decide)) (kt.high 19 (by decide)) (kt.high 20 (by decide)),
       hm, ea, savePoint_eval]
@@ -217,7 +217,7 @@ theorem prepareBatch_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : A
   · intro i hi
     have htab := bt i hi
     simp only [powerStride, Bool.false_eq_true, ite_false, Nat.one_mul] at htab
-    exact (workspace_tablePoint kt.frame (by omega) (by omega)).trans
+    exact (workspace_tablePoint kt.frame (by omega_arith) (by omega_arith)).trans
       (htab.trans (congrArg (fun p => powerPoint p i) ap))
   · rw [et, restorePoint_d, bh 16 (by decide), ad, hd]
 
@@ -278,7 +278,7 @@ theorem MulKeep.word {b : BitVec 32} {o n : Nat} {s t : State}
   exact wd_frame h.frame fun r hr => by
     simp only [mulRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem MulKeep.table {b : BitVec 32} {o n : Nat} {s t : State}
     (h : MulKeep b o n s t) {d : Nat} (hd : 1632 ≤ d) (hb : d + 128 ≤ 8192)
@@ -287,7 +287,7 @@ theorem MulKeep.table {b : BitVec 32} {o n : Nat} {s t : State}
   refine tablePoint_frame h.frame fun r hr => ?_
   simp only [mulRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;>
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem smallFrame_env {b : BitVec 32} {m m' : Mem} {o n : Nat}
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] m m') (hn : o + n ≤ 64) :
@@ -297,7 +297,7 @@ theorem smallFrame_env {b : BitVec 32} {m m' : Mem} {o n : Nat}
     rw [List.mem_singleton.mp hr]
     have hi := slot_range i
     rw [ACC_eq] at hi
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)))
+    exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)))
 
 theorem smallFrame_lim {b : BitVec 32} {m m' : Mem} {o n : Nat}
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] m m') (hn : o + n ≤ 64)
@@ -307,7 +307,7 @@ theorem smallFrame_lim {b : BitVec 32} {m m' : Mem} {o n : Nat}
     rw [List.mem_singleton.mp hr]
     have hi := slot_range i
     rw [ACC_eq] at hi
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) k hk]
+    exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) k hk]
   exact hl i k hk
 
 end VG.Proof.Ed25519.Arm

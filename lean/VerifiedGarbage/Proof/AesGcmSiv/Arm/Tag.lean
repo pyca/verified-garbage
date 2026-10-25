@@ -87,18 +87,18 @@ theorem tagArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho
   have w₁ := E.perm.wW (show 116 + 4 ≤ 3760 by decide)
   have w₂ := E.perm.wW (show 120 + 4 ≤ 3760 by decide)
   have w₃ := E.perm.wW (show 124 + 4 ≤ 3760 by decide)
-  have z₀ := E.perm.wW (show o + 4 ≤ 3760 by omega)
-  have z₁ := E.perm.wW (show o + 4 + 4 ≤ 3760 by omega)
-  have z₂ := E.perm.wW (show o + 8 + 4 ≤ 3760 by omega)
-  have z₃ := E.perm.wW (show o + 12 + 4 ≤ 3760 by omega)
-  have o₁ : o < 3760 := by omega
-  have o₂ : o + 4 < 3760 := by omega
-  have o₃ : o + 8 < 3760 := by omega
-  have o₄ : o + 12 < 3760 := by omega
-  have i₁ : o < 4096 := by omega
-  have i₂ : o + 4 < 4096 := by omega
-  have i₃ : o + 8 < 4096 := by omega
-  have i₄ : o + 12 < 4096 := by omega
+  have z₀ := E.perm.wW (show o + 4 ≤ 3760 by omega_arith)
+  have z₁ := E.perm.wW (show o + 4 + 4 ≤ 3760 by omega_arith)
+  have z₂ := E.perm.wW (show o + 8 + 4 ≤ 3760 by omega_arith)
+  have z₃ := E.perm.wW (show o + 12 + 4 ≤ 3760 by omega_arith)
+  have o₁ : o < 3760 := by omega_arith
+  have o₂ : o + 4 < 3760 := by omega_arith
+  have o₃ : o + 8 < 3760 := by omega_arith
+  have o₄ : o + 12 < 3760 := by omega_arith
+  have i₁ : o < 4096 := by omega_arith
+  have i₂ : o + 4 < 4096 := by omega_arith
+  have i₃ : o + 8 < 4096 := by omega_arith
+  have i₄ : o + 12 < 4096 := by omega_arith
   have oe : encodable (BitVec.ofNat 32 o) = true := by rcases ho with rfl | rfl <;> decide
   refine ⟨_, by simp only [copy16, Impl.AesGcm.Arm.zero16, ctrArgs]; srun [E.r8, E.r11, L.wA, r₀, r₁, r₂, r₃,
     w₀, w₁, w₂, w₃, z₀, z₁, z₂, z₃, o₁, o₂, o₃, o₄, i₁, i₂, i₃, i₄, oe], ?_, ?_, ?_, ?_, ?_, ?_, ?_, by others_tac, by rfl,
@@ -116,35 +116,35 @@ theorem tagCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {o : Na
     CtrCall t₁ (p.W + BitVec.ofNat 32 192) (p.W + BitVec.ofNat 32 112) (p.W + BitVec.ofNat 32 o)
       (p.W + BitVec.ofNat 32 1712) p.R 1 := by
   have hw := L.ww
-  have o₁ : o < 3760 := by omega
-  refine ⟨r0, r1, r2, r3, r12, lr, L.rounds3, by rw [E₁.sp]; exact L.sp8, by rw [L.wN (by decide)]; omega,
-    by rw [L.wN (by decide)]; omega, by rw [L.wN o₁]; omega, by rw [L.wN (by decide)]; omega,
+  have o₁ : o < 3760 := by omega_arith
+  refine ⟨r0, r1, r2, r3, r12, lr, L.rounds3, by rw [E₁.sp]; exact L.sp8, by rw [L.wN (by decide)]; omega_arith,
+    by rw [L.wN (by decide)]; omega_arith, by rw [L.wN o₁]; omega_arith, by rw [L.wN (by decide)]; omega_arith,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     try simp only [L.wA (show 192 < 3760 by decide), L.wA (show 112 < 3760 by decide), L.wA o₁,
       L.wA (show 1712 < 3760 by decide), E₁.sp, Nat.mul_one]
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inr (by omega)) (by decide) (by omega)
+  · exact L.w_w (.inr (by omega_arith)) (by decide) (by omega_arith)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.w_w (by omega) (by omega) (by decide) :
+  · exact (L.w_w (by omega_arith) (by omega_arith) (by decide) :
       (⟨State.addr p.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 112, 16⟩).symm
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   · exact L.bw' (by decide)
   · exact L.bw' (by decide)
-  · exact L.bw' (by omega)
+  · exact L.bw' (by omega_arith)
   · exact L.bw' (by decide)
   · exact E₁.perm.wCR (by decide)
-  · exact covers_cons (E₁.perm.wC (by decide)) (covers_cons (E₁.perm.wC (by omega))
+  · exact covers_cons (E₁.perm.wC (by decide)) (covers_cons (E₁.perm.wC (by omega_arith))
       (covers_cons (E₁.perm.wC (by decide)) covers_nil))
 
 theorem tag_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho : o = 0 ∨ o = 176) :
     WP isa (tag o) t (TagPost p o t) := by
   have hw := L.ww
-  have o₁ : o < 3760 := by omega
+  have o₁ : o < 3760 := by omega_arith
   obtain ⟨t₁, run₁, hm₁, r0, r1, r2, r3, r12, lr, ho₁, sp₁, rd₁, wr₁⟩ := tagArgs_ok L E ho
   have E₁ : Env p t₁ := E.of_others ho₁ sp₁ rd₁ wr₁
   have dO : (⟨State.addr p.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 112, 16⟩ :=
-    L.w_w (by omega) (by omega) (by decide)
+    L.w_w (by omega_arith) (by omega_arith) (by decide)
   have cc := tagCall L E₁ ho r0 r1 r2 r3 r12 lr
   have fZ := Proof.Cmac.frame_store4 (m := copyMem t.mem (State.addr p.W)) (State.addr p.W + BitVec.ofNat 64 o) 0 0 0 0
   have f₁ : Frame [⟨State.addr p.W + BitVec.ofNat 64 112, 16⟩, ⟨State.addr p.W + BitVec.ofNat 64 o, 16⟩]
@@ -165,8 +165,8 @@ theorem tag_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho : o
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl
       · exact (L.w_w (.inr (by decide)) (by decide) (by decide)).sub_left (Region.sub_prefix L.rounds_le)
-      · exact (L.w_w (.inr (by omega)) (by decide) (by omega)).sub_left (Region.sub_prefix L.rounds_le))
-      (by have := L.rounds_le; omega)]
+      · exact (L.w_w (.inr (by omega_arith)) (by decide) (by omega_arith)).sub_left (Region.sub_prefix L.rounds_le))
+      (by have := L.rounds_le; omega_arith)]
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (ctr_call cc) fun t₂ P => ?_
   have fc := P.frame

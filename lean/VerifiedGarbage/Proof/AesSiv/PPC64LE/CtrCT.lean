@@ -64,7 +64,7 @@ theorem ctrPre_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
   refine ⟨pk₁.trans (pk₂.trans pk₈),
     by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.other, g₂, g₁],
     by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.other, g₂, g₁], ?_⟩
-  exact cargs L E₈ (E₈.perm.wC (by decide)) (by rw [L.wrapW (by decide)]; have := L.ww; simp only [ksO]; omega)
+  exact cargs L E₈ (E₈.perm.wC (by decide)) (by rw [L.wrapW (by decide)]; have := L.ww; simp only [ksO]; omega_arith)
     (L.c_w' (by decide) (by decide)) (L.w_w (.inr (by decide)) (by decide) (by decide))
     (L.w_w (.inl (by decide)) (by decide) (by decide))
     (by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.gpr, g₂, g₁, E.r15])
@@ -124,7 +124,7 @@ theorem ctr_rel {src : Nat} (hsrc : src + 16 ≤ cntO) (hsrc8 : src % 8 = 0) : R
   have hk := wholeOf_le c.n
   have t : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [])) (.block (counter src)) h).isSome = true := by
     have : src = 0 ∨ src = 8 ∨ src = 16 ∨ src = 24 ∨ src = 32 ∨ src = 40 ∨ src = 48 := by
-      simp only [cntO] at hsrc; omega
+      simp only [cntO] at hsrc; omega_arith
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   -- The counter `Q`, in each run.
   have start : ∀ {σ : State}, Env c σ → Runs (.block (counter src)) σ fun τ => PK σ τ ∧ ∃ q : List Byte,
@@ -142,12 +142,12 @@ theorem ctr_rel {src : Nat} (hsrc : src + 16 ≤ cntO) (hsrc8 : src % 8 = 0) : R
   have hspτ : τ₁.sp = τ₂.sp := by rw [pk₁.sp, pk₂.sp, hsp]
   refine rel_seqR (ctrWhole_rel L F₁ F₂ hspτ) (Runs.of_wp (ctrWhole_wp L F₁ hl₁ lo₁ hi₁ q₁))
     (Runs.of_wp (ctrWhole_wp L F₂ hl₂ lo₂ hi₂ q₂)) fun ρ₁ ρ₂ I₁ I₂ => ?_
-  refine rel_ite (eval_zero I₁.r20 (by omega)) (eval_zero I₂.r20 (by omega)) (fun _ => ?_) (fun hf => ?_)
+  refine rel_ite (eval_zero I₁.r20 (by omega_arith)) (eval_zero I₂.r20 (by omega_arith)) (fun _ => ?_) (fun hf => ?_)
   · exact rel_env [] (F₁.of_pk I₁.pk) (F₂.of_pk I₂.pk) (by rw [I₁.pk.sp, I₂.pk.sp, hspτ]) agree_nil
       ⟨_, by taint_decide⟩
   have h0 : 16 * wholeOf c.n < c.n := by
     have : c.n - 16 * wholeOf c.n ≠ 0 := by simpa using hf
-    omega
+    omega_arith
   refine (RelCT.loop (Q := TT) (fun m (a b : State) => ∃ i, m = c.n - 16 * i ∧ 16 * i < c.n ∧
       CInv c τ₁ Q₁ i a ∧ CInv c τ₂ Q₂ i b) (fun m => ?_) (c.n - 16 * wholeOf c.n)).mono
     (fun a b hab => by
@@ -157,16 +157,16 @@ theorem ctr_rel {src : Nat} (hsrc : src + 16 ≤ cntO) (hsrc8 : src % 8 = 0) : R
   refine (rel_post (ctrBody_rel L (F₁.of_pk J₁.pk) (F₂.of_pk J₂.pk) (by rw [J₁.pk.sp, J₂.pk.sp, hspτ])
       (by rw [J₁.r19, J₂.r19]) (by rw [J₁.r20, J₂.r20]))
     (ctrBody_runs L F₁ hi₁ J₁ hi) (ctrBody_runs L F₂ hi₂ J₂ hi)).mono (fun _ _ h => h) fun a' b' ⟨S₁, S₂⟩ => ?_
-  have ev₁ := eval_nonzero S₁.r20 (by omega)
-  have ev₂ := eval_nonzero S₂.r20 (by omega)
+  have ev₁ := eval_nonzero S₁.r20 (by omega_arith)
+  have ev₂ := eval_nonzero S₂.r20 (by omega_arith)
   refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ?_⟩
   rw [ev₁] at ht
-  have hgt : 16 < c.n - 16 * i := by simp at ht; omega
+  have hgt : 16 < c.n - 16 * i := by simp at ht; omega_arith
   have mk : ∀ {τ u u' : State} {q : List Byte}, CInv c τ q i u → Stepped c τ q i u u' →
       CInv c τ q (i + 1) u' := fun J S =>
-    ⟨J.pk.trans S.pk, S.r19, by rw [S.r20]; congr 1; omega, by omega, S.cnt, by rw [S.data]; congr 1; omega,
+    ⟨J.pk.trans S.pk, S.r19, by rw [S.r20]; congr 1; omega_arith, by omega_arith, S.cnt, by rw [S.data]; congr 1; omega_arith,
       S.frame⟩
-  exact ⟨c.n - 16 * (i + 1), by omega, i + 1, rfl, by omega, mk J₁ S₁, mk J₂ S₂⟩
+  exact ⟨c.n - 16 * (i + 1), by omega_arith, i + 1, rfl, by omega_arith, mk J₁ S₁, mk J₂ S₂⟩
 
 end
 

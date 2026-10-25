@@ -62,20 +62,20 @@ theorem nibble_pair (a b : Nat) (ha : a<16) (hb : b<16) :
 theorem four_byte (V : Nat → Nat) (hV : ∀j<16,V j<16) {i : Nat} (hi : i<8) :
     byteOf (digits 4 ((List.range 16).map V)) i=
       (BitVec.ofNat 4 (V (2*i))).setWidth 8 ||| ((BitVec.ofNat 4 (V (2*i+1))).setWidth 8<<<4) := by
-  rw [nibble_pair _ _ (hV _ (by omega)) (hV _ (by omega))]
+  rw [nibble_pair _ _ (hV _ (by omega_arith)) (hV _ (by omega_arith))]
   let G := digits 4 ((List.range 16).map V)
-  have h0 := digits_range_get (d:=4) (c:=16) hV (show 2*i<16 by omega)
-  have h1 := digits_range_get (d:=4) (c:=16) hV (show 2*i+1<16 by omega)
+  have h0 := digits_range_get (d:=4) (c:=16) hV (show 2*i<16 by omega_arith)
+  have h1 := digits_range_get (d:=4) (c:=16) hV (show 2*i+1<16 by omega_arith)
   change G/2^(4*(2*i))%16=V (2*i) at h0
   change G/2^(4*(2*i+1))%16=V (2*i+1) at h1
   apply BitVec.eq_of_toNat_eq
   change (G/2^(8*i))%256=(V (2*i)+16*V (2*i+1))%256
-  have hsum : V (2*i)+16*V (2*i+1)<256 := by have := hV (2*i) (by omega);have := hV (2*i+1) (by omega);omega
+  have hsum : V (2*i)+16*V (2*i+1)<256 := by have := hV (2*i) (by omega_arith);have := hV (2*i+1) (by omega_arith);omega_arith
   rw [Nat.mod_eq_of_lt hsum,show 256=16*16 by decide,Nat.mod_mul]
-  rw [show 8*i=4*(2*i) by omega,h0]
+  rw [show 8*i=4*(2*i) by omega_arith,h0]
   congr 1
   rw [show 16=2^4 by decide,Nat.div_div_eq_div_mul,←Nat.pow_add,
-    show 4*(2*i)+4=4*(2*i+1) by omega]
+    show 4*(2*i)+4=4*(2*i+1) by omega_arith]
   exact congrArg (16*·) h1
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
@@ -98,16 +98,16 @@ theorem four_input (signed : Bool) (s : State) (V : Nat → Nat) (hV : ∀j<16,V
     (if signed then encoded 4 (vword (s.mem.read (s.gpr .x0+BitVec.ofNat 64 (16*j)) 16) e)
       else vword (s.mem.read (s.gpr .x0+BitVec.ofNat 64 (16*j)) 16) e)=
       (BitVec.ofNat 4 (V (4*j+e))).setWidth 32 := by
-  have h := congrArg (BitVec.setWidth 32) (hvalues (4*j+e) (by omega))
+  have h := congrArg (BitVec.setWidth 32) (hvalues (4*j+e) (by omega_arith))
   simp only [inputValue,BitVec.setWidth_setWidth_of_le _ (by decide : 32≤64),BitVec.setWidth_eq] at h
   have hw := inputWord s.mem (s.gpr .x0) (4*j+e)
-  rw [show (4*j+e)/4=j by omega,show (4*j+e)%4=e by omega] at hw
+  rw [show (4*j+e)/4=j by omega_arith,show (4*j+e)%4=e by omega_arith] at hw
   rw [hw,h]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat,
     show 2^4=16 by decide]
-  have hv := hV (4*j+e) (by omega)
-  omega
+  have hv := hV (4*j+e) (by omega_arith)
+  omega_arith
 
 theorem fourGroup_written (signed : Bool) (s : State) (V : Nat → Nat) (hV : ∀j<16,V j<16)
     (hvalues : ∀j<16,inputValue signed 4 s.mem (s.gpr .x0) j=BitVec.ofNat 64 (V j))
@@ -207,20 +207,20 @@ theorem four_step {i : Nat} (hi : i<16) {s : State}
     (h : FourInv signed start.mem input out B start i s) :
     WP isa (.block (fourBody signed)) s fun t=>
       FourInv signed start.mem input out B start (i+1) t ∧ t.gpr .x15=s.gpr .x15-1 := by
-  refine WP.mono (fourBody_ok signed s (fun j=>V (16*i+j)) (fun j hj=>hv _ (by omega)) ?_
+  refine WP.mono (fourBody_ok signed s (fun j=>V (16*i+j)) (fun j hj=>hv _ (by omega_arith)) ?_
     h.constants ?_ h.gather h.pack h.mask ?_) fun t ⟨hw,h0,h2,h15,hk,hc,hg,hp,hm⟩=>?_
   · intro j hj
-    rw [h.input,show 64*i=4*(16*i) by omega,inputValue_shift,
-      inputValue_frame signed 4 h.frame (by intro r hr;simp only [List.mem_singleton] at hr;subst r;exact hsep) (by omega)]
-    exact hvalues _ (by omega)
+    rw [h.input,show 64*i=4*(16*i) by omega_arith,inputValue_shift,
+      inputValue_frame signed 4 h.frame (by intro r hr;simp only [List.mem_singleton] at hr;subst r;exact hsep) (by omega_arith)]
+    exact hvalues _ (by omega_arith)
   · intro j hj
     rw [h.input,ptr_add,h.keep.rd,h.keep.wr]
-    exact ⟨_,hin,Offset.contains_base input (by omega) (by omega)⟩
+    exact ⟨_,hin,Offset.contains_base input (by omega_arith) (by omega_arith)⟩
   · rw [h.output,h.keep.wr]
-    exact ⟨_,hout,Offset.contains_base out (by omega) (by omega)⟩
+    exact ⟨_,hout,Offset.contains_base out (by omega_arith) (by omega_arith)⟩
   · have hw' := hw.congr (hbytes i hi)
     rw [h.output] at hw'
-    obtain ⟨hf,hb⟩ := Written.step h.frame h.bytes hw' (by omega) (by decide : 128<2^64)
+    obtain ⟨hf,hb⟩ := Written.step h.frame h.bytes hw' (by omega_arith) (by decide : 128<2^64)
     refine ⟨⟨?_,?_,?_,hf,(h.keep.trans hk).mono,hc,hg,hp,hm⟩,h15⟩
     · rw [h0,h.input,show (64:BitVec 64)=BitVec.ofNat 64 64 by rfl,ptr_add,Nat.mul_succ]
     · rw [h2,h.output,show (8:BitVec 64)=BitVec.ofNat 64 8 by rfl,ptr_add,Nat.mul_succ]
@@ -240,7 +240,7 @@ theorem four_loop {s : State} (h0 : s.gpr .x0=input) (h2 : s.gpr .x2=out)
     (s:=s) ?_ h15) fun t h=>⟨h.bytes,h.frame,h.keep⟩
   exact ⟨by simpa only [Nat.mul_zero,VG.Proof.MlKem.AArch64.ptr_zero] using h0,
     by simpa only [Nat.mul_zero,VG.Proof.MlKem.AArch64.ptr_zero] using h2,
-    by intro j hj;simp only [Nat.mul_zero] at hj;omega,
+    by intro j hj;simp only [Nat.mul_zero] at hj;omega_arith,
     by rw [hm];exact Frame.refl _ _,hk,hc,hg,hp,hmask⟩
 
 end
@@ -263,12 +263,12 @@ theorem four_packed_group (F : BitVec 32 → Nat) (m : Mem) (input : Addr)
     byteOf (digits 4 ((List.range 16).map fun k=>F (coeffAt m input (16*i+k)))) j=
       (bitsToBytes (fieldBits 4 (vals F m input)))[8*i+j]! := by
   rw [pack_group (c:=16) (by decide : 0<4) (by decide : 4*16=8*8) (by simp)
-    (vals_lt hV) hj (by omega),take_drop_eq _ 0 (by simp;omega)]
+    (vals_lt hV) hj (by omega_arith),take_drop_eq _ 0 (by simp;omega_arith)]
   apply congrArg (fun L=>BitVec.ofNat 8 (digits 4 L/2^(8*j)))
   apply List.map_congr_left
   intro k hk
   symm
-  exact vals_getD F m input (by have := List.mem_range.mp hk;omega)
+  exact vals_getD F m input (by have := List.mem_range.mp hk;omega_arith)
 
 theorem four_ok (signed : Bool) (s : State) (F : BitVec 32 → Nat)
     (hin : polyRegion (s.gpr .x0) ∈ s.rd++s.wr)
@@ -312,7 +312,7 @@ theorem simple_four_wp {s₀ s : State} (hp : simpleBitPackK.pre s₀) (ho : Onl
     WP isa (Impl.MlDsa.AArch64.Optimized.KeygenPack.four false) s
       (fun t=>simpleBitPackK.post s₀ t) := by
   have hcases := sbp_cases hp.2.2.2.1 hp.2.2.2.2.1
-  have hd : bitlen (wArg s₀ .x1)=4 := by omega
+  have hd : bitlen (wArg s₀ .x1)=4 := by omega_arith
   obtain ⟨hrd,hwr,hsep,hb,hlen,hle⟩ := hp
   rw [hd] at hlen
   refine WP.mono (four_ok false s BitVec.toNat ?_ ?_ ?_ ?_ ?_) fun t ⟨hbytes,_,_⟩=>?_
@@ -336,8 +336,8 @@ theorem signed_four_wp {s₀ s : State} (hp : bitPackK.pre s₀) (ho : Only [.x9
     WP isa (Impl.MlDsa.AArch64.Optimized.KeygenPack.four true) s
       (fun t=>bitPackK.post s₀ t) := by
   have hcases := bp_cases hp.2.2.2.1 hp.2.2.2.2.1
-  have hd : bitlen (wArg s₀ .x1+wArg s₀ .x2)=4 := by omega
-  have hB : wArg s₀ .x2=4 := by omega
+  have hd : bitlen (wArg s₀ .x1+wArg s₀ .x2)=4 := by omega_arith
+  have hB : wArg s₀ .x2=4 := by omega_arith
   obtain ⟨hrd,hwr,hsep,hab,hlen,hred,hbnd⟩ := hp
   have hc := bp_cases hab hlen
   have hq : q=8380417 := rfl
@@ -354,16 +354,16 @@ theorem signed_four_wp {s₀ s : State} (hp : bitPackK.pre s₀) (ho : Only [.x9
     obtain ⟨h₁,h₂⟩ := hbnd i hi
     rw [hB] at h₂
     have hx := hred i hi
-    rw [bpVal,←BitVec.ofNat_toNat,subModQ_toNat (by omega) hx,
-      ←sub_modPm hx (by omega) h₂]
+    rw [bpVal,←BitVec.ofNat_toNat,subModQ_toNat (by omega_arith) hx,
+      ←sub_modPm hx (by omega_arith) h₂]
     have hh := lt_bitlen (sub_modPm_le h₁ h₂)
     simpa only [show bitlen (wArg s₀ .x1+4)=4 by simpa only [hB] using hd] using hh
   · intro i hi
     simpa only [fieldValueNat,↓reduceIte] using inputValue_nat true 4 s.mem (s.gpr .x0) i
-      (by omega) (by rw [ho.mem,ho.get .x0];exact hred i hi)
+      (by omega_arith) (by rw [ho.mem,ho.get .x0];exact hred i hi)
   · change VG.Spec.Sha3.bytesAt t.mem (s₀.gpr .x3) (s₀.gpr .x4).toNat=bitPack _ _ _
     simp only [↓reduceIte,ho.get .x3,ho.get .x0,ho.mem] at hbytes
-    rw [hlen,hbytes,bitPack_eq,bitPack_vals hred (by omega) (fun i hi=>(hbnd i hi).2),hd,hB]
+    rw [hlen,hbytes,bitPack_eq,bitPack_vals hred (by omega_arith) (fun i hi=>(hbnd i hi).2),hd,hB]
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
 

@@ -93,15 +93,15 @@ theorem pubCtx_of {s : State} (h : pubContract.pre s) : PubCtx s := by
   unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl
   have hs : Scr s (stackArg s 0) ((stackArg s 1).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
-  refine ⟨hk1, hk2, hL1, hL2, by omega, hs,
-    ⟨pdArgs s, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd, ← hil]; simp) (by omega) (by rw [← hil]; exact dis),
+  refine ⟨hk1, hk2, hL1, hL2, by omega_arith, hs,
+    ⟨pdArgs s, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) des,
+    src_of_region (by rw [hrd, ← hil]; simp) (by omega_arith) (by rw [← hil]; exact dis),
     span_of_region (by rw [hrd, ← hil]; simp),
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
-    ⟨_, by rw [hwr]; exact List.mem_cons_self .., by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega))⟩
+    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_arith) (by omega_arith)⟩,
+    ⟨_, by rw [hwr]; exact List.mem_cons_self .., by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩,
+    fun j hj => out_scr dOs (contains_byte _ (by omega_arith) (by omega_arith))⟩
 
 /-! ## The entry -/
 
@@ -133,7 +133,7 @@ theorem pubEntry_ok {s : State} {B : Addr} (hB : stackArg s 0 = B)
   rw [hm]
   intro x hx
   have e : ∀ i, i < 22 → ∀ (m : Mem) (v : BitVec 64), (m.writeW (off B (8 * i)) v) x = m x := fun i hi m v =>
-    writeW_outside m B v (d := 8 * i) (by omega) x (by omega)
+    writeW_outside m B v (d := 8 * i) (by omega_arith) x (by omega_arith)
   rw [e sIn (by decide), e sElen (by decide), e sE (by decide), e sK (by decide), e sN (by decide),
     e sOut (by decide)]
 
@@ -155,11 +155,11 @@ theorem pubCode_correct (s : State) (h : pubContract.pre s) :
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, hg, hp⟩
   unfold Public.code
-  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 0) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 0) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (pubEntry_ok rfl hw c.ha0) fun t₁ ⟨h0, hO, hN, hK, hE, hL, hIn, ho₁, k₁⟩ => ?_
-  have i₁ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
+  have i₁ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_arith)
   have hnb₁ := c.hnb.congrK i₁ k₁
   refine WP.mono (invalid_ok (k₁.gpr .x2 (by decide)) (by rw [k₁.gpr .x3 (by decide), ofNat_toNat64]) hk1 hk2
     (bytesAt_length _ _ _) (fun i hi => hnb₁.rd i (by rw [bytesAt_length]; exact hi)) (fun i hi => hnb₁.val i _))
@@ -167,7 +167,7 @@ theorem pubCode_correct (s : State) (h : pubContract.pre s) :
   have kk := k₁.trans k₂
   have hs₂ := c.hs.congr kk.wr
   have h0₂ : t₂.gpr .x0 = stackArg s 0 := (k₂.gpr .x0 (by decide)).trans h0
-  have hz : slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega
+  have hz : slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega_arith
   have i₂ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₂.mem := by rw [hm₂]; exact i₁
   have hO₂ : word t₂.mem (stackArg s 0) (8 * sOut) = s.gpr .x0 := by rw [hm₂]; exact hO
   have hK₂ : word t₂.mem (stackArg s 0) (8 * sK) = BitVec.ofNat 64 (s.gpr .x3).toNat := by
@@ -199,18 +199,18 @@ theorem pubCode_correct (s : State) (h : pubContract.pre s) :
   · -- Not a valid modulus.
     have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
         (s.gpr .x3).toNat = false := by simpa using hb
-    refine WP.mono (pdFail_ok hs₂ h0₂ (by omega) (by omega) (by omega) hO₂ hK₂ hout₂)
+    refine WP.mono (pdFail_ok hs₂ h0₂ (by omega_arith) (by omega_arith) (by omega_arith) hO₂ hK₂ hout₂)
       fun t ⟨hbz, hx0, _, kf⟩ => fin t 0 false kf (by decide) (by rw [hbz, i2osp_zero'])
         (by rw [hx0]; rfl) (fun h => absurd h (by rw [hv]; decide)) fun _ => ⟨rfl, rfl⟩
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
         (s.gpr .x3).toNat = true := by simpa using hb
     obtain ⟨hodd, hN1, hlo⟩ := valid_facts hv hk1
-    have hn' : (stackArg s 0).toNat + slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ 2 ^ 64 := by omega
+    have hn' : (stackArg s 0).toNat + slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
     refine wp_seqs_append (by simp [pcLoad, pcLoadWith]) (by simp [r2Steps])
-      (WP.mono (pcLoad_ok hs₂ h0₂ hz (by omega) (by omega) hK₂ (by rw [hm₂]; exact hN)
+      (WP.mono (pcLoad_ok hs₂ h0₂ hz (by omega_arith) (by omega_arith) hK₂ (by rw [hm₂]; exact hN)
         (c.hnb.congrK i₂ kk) (bytesAt_length _ _ _) hodd) fun t₃ ⟨minv, hg₃, hn₃, hinv₃, f₃, k₃⟩ => ?_)
     refine wp_seqs_append (by simp [r2Steps]) (by simp)
-      (WP.mono (r2_ok Mont.base hg₃ hz (by omega) (by omega) hn₃ hinv₃ hodd hlo)
+      (WP.mono (r2_ok Mont.base hg₃ hz (by omega_arith) (by omega_arith) hn₃ hinv₃ hodd hlo)
         fun t₄ ⟨hg₄, hlt₄, hr₄, f₄, k₄⟩ => ?_)
     rw [seqs_one]
     have x₂₄ := (Fixed.of_frm f₃ (pcLoadRanges_fixed _)).trans (Fixed.of_frm f₄ (r2Ranges_fixed _))

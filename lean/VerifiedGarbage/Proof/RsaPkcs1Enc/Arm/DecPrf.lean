@@ -93,12 +93,12 @@ theorem CI.keep (h : CI P R i σ s) (st : P.lay.St σ t) {rs : List Region} (hf 
   base := h.base.frame st hf fun r hr => (hk r hr).safe
   kdk := (bytes_frame hf (R := sc P sKDK 32) (fun r hr => (hk r hr).kdk) (by show 32 ≤ 2 ^ 64; decide)).trans h.kdk
   x := (bytes_frame hf (R := sc P R.xo R.xn) (fun r hr => (hk r hr).x)
-    (by have := R.x_hi; show R.xn ≤ 2 ^ 64; omega)).trans h.x
+    (by have := R.x_hi; show R.xn ≤ 2 ^ 64; omega_arith)).trans h.x
   sNB := by
     rw [hf.readW (r := ⟨P.lay.fr oNB, 4⟩) (Region.contains_self _ _) (fun r hr => (hk r hr).nb) (by decide)]
     exact h.sNB
   blk := (bytes_frame hf (R := sc P R.dst (32 * i)) (fun r hr => (hk r hr).blk)
-    (by have := R.dst_hi; have := h.hi; show 32 * i ≤ 2 ^ 64; omega)).trans h.blk
+    (by have := R.dst_hi; have := h.hi; show 32 * i ≤ 2 ^ 64; omega_arith)).trans h.blk
 
 theorem CI.of_mem (h : CI P R i σ s) (st : P.lay.St σ t) (hm : t.mem = s.mem) : CI P R i σ t :=
   h.keep st (rs := []) (by rw [hm]; exact Frame.refl _ _) fun _ h => absurd h List.not_mem_nil
@@ -118,33 +118,33 @@ theorem keep_sc {o n : Nat} (hn : o + n ≤ 8448) (hk : o + n ≤ sKDK ∨ sKDK 
     (hx : o + n ≤ R.xo ∨ R.xo + R.xn ≤ o) (hb : o + n ≤ R.dst ∨ R.dst + 32 * i ≤ o) (hi : i ≤ R.nb) :
     Keep P R i (sc P o n) where
   safe := h.safe_sc hn
-  kdk := sc_sep (by simp only [sKDK] at hk ⊢; omega) (by decide) hn
-  x := sc_sep (by omega) R.x_hi hn
-  blk := sc_sep (by omega) (by have := R.dst_hi; omega) hn
+  kdk := sc_sep (by simp only [sKDK] at hk ⊢; omega_arith) (by decide) hn
+  x := sc_sep (by omega_arith) R.x_hi hn
+  blk := sc_sep (by omega_arith) (by have := R.dst_hi; omega_arith) hn
   nb := h.fr_sc (by simp only [oNB, frameBytes]; decide) hn
 
 theorem keep_low (hi : i ≤ R.nb) : Keep P R i P.lay.LOW where
   safe := h.safe_low
   kdk := (h.low_sc (by decide)).symm
   x := (h.low_sc R.x_hi).symm
-  blk := (h.low_sc (by have := R.dst_hi; omega)).symm
+  blk := (h.low_sc (by have := R.dst_hi; omega_arith)).symm
   nb := Lay.fr_low (by simp only [oNB]; decide)
 
 theorem keep_fr {d n : Nat} (hd : d + n ≤ frameBytes) (ho : d + n ≤ oR ∨ oR + 4 ≤ d)
     (hnb : d + n ≤ oNB ∨ oNB + 4 ≤ d) (hi : i ≤ R.nb) : Keep P R i ⟨P.lay.fr d, n⟩ where
   safe := h.safe_fr hd ho
-  kdk := (h.fr_sc (by simp only [frameBytes] at hd ⊢; omega) (by decide)).symm
-  x := (h.fr_sc (by simp only [frameBytes] at hd ⊢; omega) R.x_hi).symm
-  blk := (h.fr_sc (by simp only [frameBytes] at hd ⊢; omega) (by have := R.dst_hi; omega)).symm
-  nb := Lay.fr_sep (by simp only [oNB] at hnb ⊢; omega) (by decide) (by simp only [frameBytes] at hd; omega)
+  kdk := (h.fr_sc (by simp only [frameBytes] at hd ⊢; omega_arith) (by decide)).symm
+  x := (h.fr_sc (by simp only [frameBytes] at hd ⊢; omega_arith) R.x_hi).symm
+  blk := (h.fr_sc (by simp only [frameBytes] at hd ⊢; omega_arith) (by have := R.dst_hi; omega_arith)).symm
+  nb := Lay.fr_sep (by simp only [oNB] at hnb ⊢; omega_arith) (by decide) (by simp only [frameBytes] at hd; omega_arith)
 
 /-- The data of `update` in `scratch`. -/
 theorem dataSc {s : State} (hs : S P σ s) {o n : Nat} (hn : o + n ≤ 8448) (ho : 96 ≤ o) (ho8 : o < 8448) :
     DataOk P s (P.scr + BitVec.ofNat 32 o) n where
-  cov := (In.scW hs hn (by omega)).right
-  dS := h.sc0_sepW ho (by decide) hn (by omega)
-  lo := h.lowR_sc (by decide) hn (by omega)
-  fit := h.fit_sc hn (by omega)
+  cov := (In.scW hs hn (by omega_arith)).right
+  dS := h.sc0_sepW ho (by decide) hn (by omega_arith)
+  lo := h.lowR_sc (by decide) hn (by omega_arith)
+  fit := h.fit_sc hn (by omega_arith)
 
 end In
 
@@ -221,8 +221,8 @@ theorem msgBytes_b2 (h : B1 P R i σ s) (hi : i < 256) :
   refine WP.mono (msgBytes_wp (L := R.L) hs r0 r1 hi R.vs_len R.vs_lt (R.lenOk hs r0 r3)) fun t ⟨st, fr, _, hb⟩ => ?_
   have hk : ∀ r ∈ [sc P sMsg 16], Keep P R i r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hs.1.keep_sc (by decide) (by decide) (.inl (by have := R.x_lo; simp only [sMsg]; omega))
-      (.inl (by have := R.dst_lo; simp only [sMsg]; omega)) hc.hi
+    exact hs.1.keep_sc (by decide) (by decide) (.inl (by have := R.x_lo; simp only [sMsg]; omega_arith))
+      (.inl (by have := R.dst_lo; simp only [sMsg]; omega_arith)) hc.hi
   refine ⟨⟨hc.keep st.2 fr hk, ?_⟩, hb⟩
   rw [slot_keep fr fun r hr => ?_]
   · exact sI
@@ -232,7 +232,7 @@ theorem msgBytes_b2 (h : B1 P R i σ s) (hi : i < 256) :
 theorem B2.msg_frame (h : B2 P R i σ s) {t : State} {rs : List Region} (hf : Frame rs s.mem t.mem)
     (hd : ∀ r ∈ rs, (sc P sMsg R.tl).Disjoint r) :
     Spec.Rsa.bytesAt t.mem (sc P sMsg R.tl).base R.tl = msgV i R.lab R.L :=
-  (bytes_frame hf hd (by have := R.vs_len; show R.vs.length + 4 ≤ 2 ^ 64; omega)).trans h.2
+  (bytes_frame hf hd (by have := R.vs_len; show R.vs.length + 4 ≤ 2 ^ 64; omega_arith)).trans h.2
 
 theorem B0.keep (h : B0 P R i σ s) {t : State} (st : P.lay.St σ t) {rs : List Region} (hf : Frame rs s.mem t.mem)
     (hk : ∀ r ∈ rs, Keep P R i r ∧ Region.Disjoint ⟨P.lay.fr oI, 4⟩ r) : B0 P R i σ t :=
@@ -252,7 +252,7 @@ theorem prfUpdArgs_wp (h : B4 P R i σ s) : WP isa (.block (prfUpdArgs (R.vs.len
   have s3 : P.lay.St σ t3 := s2.of_rest (u3.rest (ws := [.r1]) (by simp)) u3.mem
   refine s3.wp_strFr (d := 0) (by show 0 + 4 ≤ frameBytes; decide) (by decide)
     (by rw [u3.other _ (by decide), u2.other _ (by decide), r12]) fun t4 s4 m4 => ?_
-  refine wp_mov (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega)))
+  refine wp_mov (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith)))
     fun t5 u5 => ?_
   have s5 : P.lay.St σ t5 := s4.of_rest (u5.rest (ws := [.r1]) (by simp)) u5.mem
   refine s5.wp_strFr (d := 4) (by show 4 + 4 ≤ frameBytes; decide) (by decide)
@@ -268,12 +268,12 @@ theorem prfUpdArgs_wp (h : B4 P R i σ s) : WP isa (.block (prfUpdArgs (R.vs.len
   have hfr : ∀ r ∈ [(⟨P.lay.fr 0, 8⟩ : Region)], Region.Disjoint (sc P 0 192) r ∧ (sc P sMsg R.tl).Disjoint r ∧
       (Keep P R i r ∧ Region.Disjoint ⟨P.lay.fr oI, 4⟩ r) := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨(hs.1.fr_sc (by decide) (by decide)).symm, (hs.1.fr_sc (by decide) (by simp only [sMsg]; omega)).symm,
+    exact ⟨(hs.1.fr_sc (by decide) (by decide)).symm, (hs.1.fr_sc (by decide) (by simp only [sMsg]; omega_arith)).symm,
       hs.1.keep_fr (by decide) (by simp only [oR]; decide) (by simp only [oNB]; decide) hb.1.1.hi,
       Lay.fr_sep (by simp only [oI]; decide) (by decide) (by decide)⟩
   have r1v : t3.gpr .r1 = P.scr + BitVec.ofNat 32 sMsg := by rw [u3.gpr, dpVal, u2.gpr]; rfl
   refine ⟨⟨⟨hb.1.keep s8 fr fun r hr => (hfr r hr).2.2, hb.msg_frame fr fun r hr => (hfr r hr).2.1⟩,
-    macd_frame hs.1 fr (fun r hr => (hfr r hr).1) md⟩, ?_, ?_, u8.gpr, ?_, ?_, by omega, by decide⟩
+    macd_frame hs.1 fr (fun r hr => (hfr r hr).1) md⟩, ?_, ?_, u8.gpr, ?_, ?_, by omega_arith, by decide⟩
   · rw [u8.other _ (by decide), u7.other _ (by decide), m6.gpr, u5.other _ (by decide), m4.gpr,
       u3.other _ (by decide), u2.gpr]; rfl
   · rw [u8.other _ (by decide), u7.gpr]
@@ -284,7 +284,7 @@ theorem prfUpdArgs_wp (h : B4 P R i σ s) : WP isa (.block (prfUpdArgs (R.vs.len
 theorem shl5 (i : Nat) : BitVec.ofNat 32 i <<< 5 = BitVec.ofNat 32 (32 * i) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem prfFinArgs_wp (h : B6 P R i σ s) :
     WP isa (.block (prfFinArgs (R.vs.length + 4) R.dst)) s (B7 P R i σ) := by
@@ -306,7 +306,7 @@ theorem prfFinArgs_wp (h : B6 P R i σ s) :
     (by rw [u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), r12])
     fun t6 s6 m6 => ?_
   refine wp_dp (op2_imm (by decide)) fun t7 u7 => ?_
-  refine wp_mov (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega)))
+  refine wp_mov (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith)))
     fun t8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun t9 u9 => WP.block_nil ?_
   have s9 : P.lay.St σ t9 := ((s6.of_rest (u7.rest (ws := [.r1]) (by simp)) u7.mem).of_rest
@@ -326,7 +326,7 @@ theorem prfFinArgs_wp (h : B6 P R i σ s) :
     rw [u5.gpr, dpVal, u4.gpr, dpVal, u3.other _ (by decide), r0v, u4.other _ (by decide), u3.gpr, u2.mem, u1.mem, hb.2,
       shl5, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   refine ⟨⟨hb.keep s9 fr fun r hr => (hfr r hr).2, macd_frame hs.1 fr (fun r hr => (hfr r hr).1) md⟩, ?_, ?_, ?_,
-    u9.gpr, ?_, by omega⟩
+    u9.gpr, ?_, by omega_arith⟩
   · rw [u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide), m6.gpr, u5.other _ (by decide),
       u4.other _ (by decide), u3.other _ (by decide), r0v]
   · rw [u9.other _ (by decide), u8.other _ (by decide), u7.gpr, dpVal, m6.gpr, u5.other _ (by decide),

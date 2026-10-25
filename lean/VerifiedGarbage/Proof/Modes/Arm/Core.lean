@@ -164,8 +164,8 @@ theorem held_frame {K : List (String × List (BitVec 64))} {rs : List Region} {m
   have ht : (⟨f x.1, 8 * x.2.length⟩ : Region) ∈ Abi.constRegions f K :=
     List.mem_map_of_mem (f := fun x : String × List (BitVec 64) => (⟨f x.1, 8 * x.2.length⟩ : Region)) hx
   have hl := hfit _ ht
-  rw [hf.readW (r := ⟨f x.1, 8 * x.2.length⟩) (Offset.contains_base _ (d := 8 * i) (n := 64 / 8) (by omega)
-    (by simp only at hl; omega)) (hd _ ht) (by decide)]
+  rw [hf.readW (r := ⟨f x.1, 8 * x.2.length⟩) (Offset.contains_base _ (d := 8 * i) (n := 64 / 8) (by omega_arith)
+    (by simp only at hl; omega_arith)) (hd _ ht) (by decide)]
   exact h x hx i hi
 
 /-! ## A call on one block -/
@@ -281,13 +281,13 @@ variable {c : Core} {S : CoreSpec c} {s : State} {K R B C : BitVec 32}
 
 /-- The stack holds the push. -/
 theorem CallPre.sp8 (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) : 8 ≤ s.sp.toNat := by
-  have := S.depthS hs; have := h.stk; omega
+  have := S.depthS hs; have := h.stk; omega_arith
 
 omit S in
 /-- The callee's stack argument lies in the stack the core may use. -/
 theorem argSub {st : Nat} (h : 8 ≤ st) :
     Region.Sub (Push.argR s) ⟨State.addr s.sp - BitVec.ofNat 64 st, st⟩ :=
-  VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := st) h (by omega)
+  VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := st) h (by omega_arith)
 
 /-- The callee's own stack: the `stack - 8` bytes below the push. -/
 theorem CallPre.calleeBelow (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) (rd wr : List Region) :
@@ -295,12 +295,12 @@ theorem CallPre.calleeBelow (h : CallPre c S s K R B C) (hs : c.stackScratch ≠
       ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack - 8⟩ := by
   have := S.depthS hs
   rw [Push.view_addr (h.sp8 hs), show (8 : Addr) = BitVec.ofNat 64 8 from rfl, BitVec.sub_sub,
-    ← BitVec.ofNat_add, show 8 + (S.stack - 8) = S.stack by omega]
+    ← BitVec.ofNat_add, show 8 + (S.stack - 8) = S.stack by omega_arith]
 
 omit S in
 theorem calleeSub (st : Nat) :
     Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 st, st - 8⟩ ⟨State.addr s.sp - BitVec.ofNat 64 st, st⟩ :=
-  Region.sub_prefix (by omega)
+  Region.sub_prefix (by omega_arith)
 
 /-- The callee's precondition, on the state it is entered in, with its
 working space pushed. -/
@@ -313,20 +313,20 @@ theorem CallPre.ecbPreS (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) 
   have hd := c.dReg_ne
   have hn := c.nReg_ne
   have dS := S.depthS hs
-  have aS := argSub (s := s) (st := S.stack) (by omega)
+  have aS := argSub (s := s) (st := S.stack) (by omega_arith)
   have cS := calleeSub (s := s) S.stack
   have e0 : ∀ r : Reg, r ≠ .r12 → r ≠ .lr → ∀ rd wr, (Push.view s rd wr).gpr r = s.gpr r :=
     fun r a b rd wr => Push.view_gpr _ _ _ _ (by simp [linkRegs, a, b])
   have below_arg : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack - 8⟩ (Push.argR s) := by
     show Region.Disjoint _ ⟨State.addr s.sp - 8, 4⟩
     rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, VG.Offset.sub_ofNat_eq (State.addr s.sp) (a := 8) (b := S.stack)
-      (by omega)]
-    exact VG.Offset.base_disjoint _ (by omega) (by omega)
+      (by omega_arith)]
+    exact VG.Offset.base_disjoint _ (by omega_arith) (by omega_arith)
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hr => ?_, ?_, ?_, fun k hk => ?_⟩ <;>
     try simp only [e0 .r0 (by decide) (by decide), e0 _ hd.1 hd.2.1, e0 _ hn.1 hn.2.1, h.r0, h.rd, h.rn, one_mul',
       State.withRegions_rd, State.withRegions_wr, Push.arg0 h8, h.r12 hs, Push.sa0 h8, h.calleeBelow hs]
-  · rw [Push.view_sp h8]; omega
-  · rw [Push.view_sp h8]; have := s.sp.isLt; omega
+  · rw [Push.view_sp h8]; omega_arith
+  · rw [Push.view_sp h8]; have := s.sp.isLt; omega_arith
   · rfl
   · exact h.kb
   · exact h.kc
@@ -347,12 +347,12 @@ theorem CallPre.ecbPreS (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) 
     have hf : (State.addr (s.syms x.1)).toNat + 8 * x.2.length ≤ 2 ^ 32 := h.tFit _ ht
     rw [Push.view_mem]
     refine ((Push.fA h8).readW (r := ⟨State.addr (s.syms x.1), 8 * x.2.length⟩)
-      (Offset.contains_base _ (d := 8 * i) (n := 64 / 8) (by omega) (by omega)) (fun r hr => ?_) (by decide)).trans
+      (Offset.contains_base _ (d := 8 * i) (n := 64 / 8) (by omega_arith) (by omega_arith)) (fun r hr => ?_) (by decide)).trans
       (h.tHeld x hx i hi)
     simp only [List.mem_singleton] at hr; subst hr
     rw [belowA, addr_sub' h8]
     exact (h.tS _ ht).sub_right (VG.Offset.sub_below (State.addr s.sp) (a := 8) (n := 8) (b := S.stack) (m := S.stack)
-      (by omega) (by omega))
+      (by omega_arith) (by omega_arith))
   · intro t ht
     refine ⟨h.tFit t ht, fun r hr => ?_, (h.tS t ht).sub_right cS⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -396,20 +396,20 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
     (h.cov hs)
     (Push.covW (show Covers ([⟨State.addr B, c.bs⟩] ++ [⟨State.addr C, c.stackScratch⟩]) s.wr from
       Covers.append_left h.wB (h.wC hs)))
-    (by rw [hspN]; omega) fun s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost => ?_
+    (by rw [hspN]; omega_arith) fun s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost => ?_
   have fK : ∀ i < S.keyLen, (pushed [.r12, .lr] s).mem (State.addr K + BitVec.ofNat 64 i) =
       s.mem (State.addr K + BitVec.ofNat 64 i) := fun i hi =>
     (Push.fA h8).bytes (R := ⟨State.addr K, S.keyLen⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [belowA, addr_sub' h8]
-      exact (h.bk.sub_left (VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := S.stack) (by omega) (by omega))).symm)
-      (by show S.keyLen ≤ 2 ^ 64; have := h.fK; omega) hi
+      exact (h.bk.sub_left (VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := S.stack) (by omega_arith) (by omega_arith))).symm)
+      (by show S.keyLen ≤ 2 ^ 64; have := h.fK; omega_arith) hi
   have fB : Spec.Aes.bytesAt (pushed [.r12, .lr] s).mem (State.addr B) c.bs = bytesAt s.mem (State.addr B) c.bs :=
     VG.Proof.Modes.bytesAt_frame (Push.fA h8) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [belowA, addr_sub' h8]
-      exact (h.bb.sub_left (VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := S.stack) (by omega) (by omega))).symm)
-      (by have := h.fB; omega)
+      exact (h.bb.sub_left (VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := S.stack) (by omega_arith) (by omega_arith))).symm)
+      (by have := h.fB; omega_arith)
   refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
@@ -421,14 +421,14 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
       rw [belowA, addr_sub' hst]; exact fun _ h => h
     refine ((Push.fA h8).sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, by simp, fun x hx => bel x (belowA_sub (by omega) hst x hx)⟩
+      exact ⟨_, by simp, fun x hx => bel x (belowA_sub (by omega_arith) hst x hx)⟩
     · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
       · refine ⟨_, by simp, fun x hx => bel x ?_⟩
         rw [hsp'] at hx
-        exact belowA_inner (k := 8) (by omega) hst x hx
+        exact belowA_inner (k := 8) (by omega_arith) hst x hx
   · have e := S.post_ofS hs _ _ (h.ecbPreS hs) hpost
     have hd := c.dReg_ne
     have hn := c.nReg_ne

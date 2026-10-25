@@ -187,7 +187,7 @@ theorem head_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafL
     (inv_of S₁.scr S₁.mod (V := winRo K) (winRo_slots K) (S₁.ro hW hF).1) hone_lt) fun s₂ h₂ => ?_
   obtain ⟨sc₂, k₂, U₂, M₂, Dl, DJ, -, -⟩ := jacPost_frame hW S₁.scr S₁.mod (Or.inr (Or.inl rfl)) h₂
   have S₂ := S₁.next hW sc₂ (k₂.mono clob_nafClob) U₂
-  refine WP.mono (setCounter_ok s₂ (j := 64 * K.M.n) (by omega)) fun s₃ ⟨x₃, k₃⟩ => ?_
+  refine WP.mono (setCounter_ok s₂ (j := 64 * K.M.n) (by omega_arith)) fun s₃ ⟨x₃, k₃⟩ => ?_
   have S₃ := S₂.regs hW k₃ (fun r hr => nafClob_mem (by
     simp only [List.mem_singleton] at hr; subst hr; simp)) (by decide)
   have t₃ : ∀ x, tmv C K.M.n base s₃ x = tmv C K.M.n base s₂ x := fun x => by
@@ -235,13 +235,13 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Na
   apply WP.seq
   refine WP.mono (head_ok hL hone_lt F₂ S₂ C₂ hk) fun s₃ ⟨S₃, C₃, x₃, Dl₃, DJ₃⟩ => ?_
   apply WP.seq
-  refine WP.mono (digit_ok hL hp hC hM3 hone_lt hP S₃ F₂ C₃ (j := 64 * K.M.n) (by omega) x₃ Dl₃ DJ₃)
+  refine WP.mono (digit_ok hL hp hC hM3 hone_lt hP S₃ F₂ C₃ (j := 64 * K.M.n) (by omega_arith) x₃ Dl₃ DJ₃)
     fun s₄ I₄ => ?_
   apply WP.seq
   refine countLoop_ok (Inv := fun j t => NInv K C base size P s₂ t j (Naf5.residual k j))
-    (n := 64 * K.M.n) (by omega) (fun j t hj1 hjn hI => ?_) (fun t hI => ?_) (by omega) I₄
-  · have e : j - 1 + 1 = j := by omega
-    refine WP.mono (stepOf_ok hL hp hC hM3 hone_lt hP F₂ hD (j := j - 1) (by omega) (by rw [e]; exact hI))
+    (n := 64 * K.M.n) (by omega_arith) (fun j t hj1 hjn hI => ?_) (fun t hI => ?_) (by omega_arith) I₄
+  · have e : j - 1 + 1 = j := by omega_arith
+    refine WP.mono (stepOf_ok hL hp hC hM3 hone_lt hP F₂ hD (j := j - 1) (by omega_arith) (by rw [e]; exact hI))
       fun t' h' => ⟨h', h'.x19⟩
   · refine WP.mono (finish_ok hL hp hC hpn hone_lt hone F₂ hI.st hI.rlt hI.r) fun t' ⟨S', l', r'⟩ => ?_
     refine ⟨S'.scr, S₁.keep.trans (k₂.trans S'.keep), (U₀₂.trans S'.unch).mono fun w hw => ?_, S'.mod, l',

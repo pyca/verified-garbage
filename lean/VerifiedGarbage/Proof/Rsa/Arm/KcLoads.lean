@@ -52,13 +52,13 @@ theorem EntSt.load_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins σ s
   have hS : S (geo iS σ).w = 4 * ((geo iS σ).w + 2) := rfl
   have hkw : k ≤ 4 * (geo iS σ).w := by
     have : (geo iS σ).w = (fK σ + 3) / 4 := rfl
-    omega
+    omega_arith
   have hB : (geo iS σ).B.toNat + (arr (geo iS σ).w j + 4 * ((geo iS σ).w + 2)) ≤ 2 ^ 32 := by
     have f2 : arr (geo iS σ).w j + 4 * ((geo iS σ).w + 2) ≤ (geo iS σ).Z := hw.arr_fit hj
     have := hw.nowrap
-    omega
+    omega_arith
   rw [CrtValues.load, WP.seq_iff]
-  refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega_arith) fun s1 p1 r1 m1 h1 => ?_
   refine wp_mov (op2_reg _ _) fun s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u4 => WP.block_nil ?_
@@ -68,20 +68,20 @@ theorem EntSt.load_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins σ s
   have bu := h.base.of_rest rest mu
   have hu := hw.rest rest
   have ad : State.addr ((geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j)) =
-      off (State.addr (geo iS σ).B) (arr (geo iS σ).w j) := hw.addr (by omega)
+      off (State.addr (geo iS σ).B) (arr (geo iS σ).w j) := hw.addr (by omega_arith)
   have p0 : u.gpr .r0 = (geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j) := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), p1]
   refine WP.mono (loadBE_ok u (src := src) (dst := (geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j))
-    (n := (geo iS σ).w + 2) pos (by omega) (by omega) fit
-    (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
-          BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega)
+    (n := (geo iS σ).w + 2) pos (by omega_arith) (by omega_arith) fit
+    (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith),
+          BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith)
     ⟨reg src k, List.mem_append_left _ (by rw [bu.rd]; exact hrd), Region.contains_self _ _⟩
-    ⟨rS iS σ, by rw [bu.wr, pre.wr]; simp, by rw [ad]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨rS iS σ, by rw [bu.wr, pre.wr]; simp, by rw [ad]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     (by rw [ad]
         refine fun a ha hb => hsep a ha ?_
         exact Region.Contains.byte (r := rS iS σ) (b := off (State.addr (geo iS σ).B) (arr (geo iS σ).w j))
-          (n := 4 * ((geo iS σ).w + 2)) (Offset.contains_base _ (by omega) (by omega))
-          (by simp only [Region.Contains] at hb ⊢; omega))
+          (n := 4 * ((geo iS σ).w + 2)) (Offset.contains_base _ (by omega_arith) (by omega_arith))
+          (by simp only [Region.Contains] at hb ⊢; omega_arith))
     p0 (by rw [rest.gpr _ (by decide), p4])
     (by rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, p1])
     (by rw [rest.gpr _ (by decide), p6])
@@ -90,7 +90,7 @@ theorem EntSt.load_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins σ s
     (by rw [u4.gpr])) ?_
   rintro t ⟨v, f, r⟩
   rw [ad] at f v
-  have k' : Keep (geo iS σ).B (geo iS σ).w [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega)
+  have k' : Keep (geo iS σ).B (geo iS σ).w [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega_arith)
   have RT : Rest [.r0, .r1, .r2, .r3, .r5, .lr] s t := (rest.mono (by simp)).trans (r.mono (by simp))
   refine ⟨⟨bu.keep k' (by simpa using hj) (by simp) (by simp) r.sp r.rd r.wr, hu.rest r, ?_, fun i hi => ?_,
     (RT.gpr _ (by decide)).trans h.r10, (RT.gpr _ (by decide)).trans h.r11⟩, RT⟩
@@ -99,7 +99,7 @@ theorem EntSt.load_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins σ s
     split
     · subst i
       rw [val32_off, Nat.add_zero] at v
-      rw [v, mu, bytes_frame h.base.frame (by simpa using hsep) (by omega)]
+      rw [v, mu, bytes_frame h.base.frame (by simpa using hsep) (by omega_arith)]
     · rename_i hne
       rw [k'.full (by simpa using fun e => hne e.symm) (by simp) (hw.fit64 hi), mu, h.full i hi]
 
@@ -117,10 +117,10 @@ theorem EntSt.loadArg_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins �
   have hn := pre.ins1 p hp
   unfold loadArg CrtValues.args
   rw [List.cons_append, List.cons_append, List.nil_append, wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine h.base.ldrSp (i := p.1) (by omega) (by omega) fun s1 b1 u1 => ?_
-  have e : 4 * p.1 + 4 = 4 * (p.1 + 1) := by omega
+  refine h.base.ldrSp (i := p.1) (by omega_arith) (by omega_arith) fun s1 b1 u1 => ?_
+  have e : 4 * p.1 + 4 = 4 * (p.1 + 1) := by omega_arith
   rw [e]
-  refine b1.ldrSp (i := p.1 + 1) hi.1 (by omega) fun s2 b2 u2 => WP.block_nil ?_
+  refine b1.ldrSp (i := p.1 + 1) hi.1 (by omega_arith) fun s2 b2 u2 => WP.block_nil ?_
   have h2 : EntSt nA iS ins σ s2 A :=
     (h.of_rest ((u1.rest (ws := [.r4, .r6]) (by simp)).trans (u2.rest (ws := [.r4, .r6]) (by simp)))
       (u2.mem.trans u1.mem) (by decide) (by decide) (by decide) (by decide) (by decide))

@@ -53,7 +53,7 @@ theorem fillCompress_ok {s : State} {pass slice lane index ctr : Nat} {st : Fill
         (blockAt s.mem (matrixCell (memP s₀) R)) := by
   have L8 := laneLen_ge hp
   obtain ⟨cl, _⟩ := cell_fits hp hl (col := (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
-    (prm s₀).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀).laneLen) (Nat.mod_lt _ (by omega_arith))
   unfold Impl.Argon2.PPC64LE.Derive.fillCompress Impl.Argon2.PPC64LE.HPrime.mov
   refine WP.seq ((prevPointer_ok hp h.inv h.pr h.pos hl hs hi).mono fun s₁ ⟨a₁, k₁⟩ => ?_)
   generalize (lane * (prm s₀).laneLen + (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
@@ -128,7 +128,7 @@ theorem fillWrite_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
       · simp only [Bool.false_eq_true, ite_false]; rw [blockAt_get _ _ hj]
       · simp only [ite_true]
         rw [xorBlock, Vector.getElem_zipWith, blockAt_get _ _ hj, cell_get _ _ hj]
-  refine WP.ite (decide (pass = 0)) (zero_eval (by omega) (by rw [u₃.gpr, h₂.pos.pass]))
+  refine WP.ite (decide (pass = 0)) (zero_eval (by omega_arith) (by rw [u₃.gpr, h₂.pos.pass]))
     (fun hb => ?_) fun hb => ?_
   · refine ((writeWords_ok hp h₃.inv hC false si Pw PC di 128 (Nat.le_refl _)).mono fun t ⟨it, _, ft, wt⟩ =>
       ⟨it, by rw [← m₃]; exact ft, ?_⟩)
@@ -170,8 +170,8 @@ theorem fillBlock_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
     lw_keep hp ft (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨memR s₀, by simp, Proof.Argon2.matrixCell_sub _ _ _ cur'⟩) h₁ h₂
-  refine ⟨it, Prm.of_lw h₃.pr fun d h₁ h₂ => lt d (by omega) (by omega),
-    h₃.pos.of_lw fun d h₁ h₂ => lt d (by omega) (by omega), ?_, ?_⟩
+  refine ⟨it, Prm.of_lw h₃.pr fun d h₁ h₂ => lt d (by omega_arith) (by omega_arith),
+    h₃.pos.of_lw fun d h₁ h₂ => lt d (by omega_arith) (by omega_arith), ?_, ?_⟩
   · obtain ⟨c0, c1, c2 | ⟨c3, c4⟩⟩ := h₃.cache
     · exact ⟨c0, by rw [lt _ (by decide) (by decide)]; exact c1, .inl c2⟩
     · refine ⟨c0, by rw [lt _ (by decide) (by decide)]; exact c1, .inr ⟨c3, ?_⟩⟩

@@ -38,7 +38,7 @@ def srow (E : VG.Proof.X25519.X86_64.Ifma.Env) (l k : Nat) : Nat := E.v (11 + l)
 theorem esplitS_regs (E : VG.Proof.X25519.X86_64.Ifma.Env) : ∀ j < 5, ∀ l < 4, (esplitS.reg (5 + j)).nat E l =
     limbNat (srow E l) (E.m KM l) j := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 def esplitB : Bnds :=
@@ -65,11 +65,11 @@ theorem esplit_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s
       · exact lt64 _) (fun _ _ _ => Nat.zero_le _)
   have e : Sym.init.run esplit = some esplitS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, esplitS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr l hl => h.keep (by omega) hl (esplitS_keep r hr)⟩
+    fun r hr l hl => h.keep (by omega_arith) hl (esplitS_keep r hr)⟩
   obtain ⟨o, b⟩ := esplitS_ok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
   simp only [lanes] at e ⊢
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_arith⟩
   rw [e, esplitS_regs _ i hi l hl, envOf_m hs, hk.km l hl]
 
 /-! ## The negation -/
@@ -92,9 +92,9 @@ theorem vnegBody_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx
       (∀ r < 5, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
   have e : Sym.init.run vnegBody = some vnegBodyS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vnegBodyS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr l hl => h.keep (by omega) hl (vnegBodyS_keep r hr)⟩
+    fun r hr l hl => h.keep (by omega_arith) hl (vnegBodyS_keep r hr)⟩
   have hq := h.reg (xr (5 + i)) l hl
-  rw [VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega), vnegBodyS_regs i hi] at hq
+  rw [VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega_arith), vnegBodyS_regs i hi] at hq
   simp only [lanes]
   rw [hq]
   simp only [T.eval]
@@ -132,7 +132,7 @@ theorem ventryN_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx 
       lanePt s' = vAddPt (lanePt s) (negIf b (lanePt5 s)) := by
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (vnegBody_wp hs hc hk.toCConsts hm
-    fun l hl i hi => by have := hy l hl i hi; have := kbv_ge i; omega) fun s₂ ⟨v₂, m₂, u₂, k₂⟩ => ?_
+    fun l hl i hi => by have := hy l hl i hi; have := kbv_ge i; omega_arith) fun s₂ ⟨v₂, m₂, u₂, k₂⟩ => ?_
   have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs
   have hc₂ : Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc d hd
   have hk₂ : EConsts s₂.mem base := by rw [m₂]; exact hk
@@ -141,10 +141,10 @@ theorem ventryN_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx 
     have h0 := hy 0 (by decide) i hi; have h1 := hy 1 (by decide) i hi
     have h3 := hy 3 (by decide) i hi; have := hy l hl i hi
     have := kbv_ge i
-    have : kbv i < 2 ^ 63 := by simp only [kbv]; split <;> omega
+    have : kbv i < 2 ^ 63 := by simp only [kbv]; split <;> omega_arith
     split
-    · rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp only [negL] <;> omega
-    · omega
+    · rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp only [negL] <;> omega_arith
+    · omega_arith
   have f₂ : ∀ l < 4, fe5 (lanes s₂ 5 l) = [(negIf b (lanePt5 s)).X, (negIf b (lanePt5 s)).Y,
       (negIf b (lanePt5 s)).Z, (negIf b (lanePt5 s)).T].getD l 0 := fun l hl => by
     rw [fe5_congr (fun i hi => u₂ l hl i hi)]
@@ -157,7 +157,7 @@ theorem ventryN_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx 
       · rfl
       · rw [show fe5 (fun i => negL (lanes s 5) 2 i) = fe5 (fun _ => 0) - fe5 (lanes s 5 2) from
           fe5_sub (fun i _ => (Nat.zero_add _).symm)
-            (fun i hi => by have := hy 2 (by decide) i hi; have := kbv_ge i; omega)]
+            (fun i hi => by have := hy 2 (by decide) i hi; have := kbv_ge i; omega_arith)]
         rfl
       · rfl
   rw [WP.block_append_iff]
@@ -167,7 +167,7 @@ theorem ventryN_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx 
   have hk₃ : EConsts s₃.mem base := by rw [m₃]; exact hk₂
   have l₃ : ∀ l < 4, ∀ i < 5, lanes s₃ 0 l i = lanes s 0 l i := fun l hl i hi => by
     simp only [lanes, Nat.zero_add]
-    rw [k₃ i (by omega) (by omega) (by omega) l hl, k₂ i (by omega) l hl]
+    rw [k₃ i (by omega_arith) (by omega_arith) (by omega_arith) l hl, k₂ i (by omega_arith) l hl]
   refine WP.mono (vadd_wp hs₃ hc₃ hk₃ (fun l hl i hi => by rw [l₃ l hl i hi]; exact hx l hl i hi)
     (fun l hl i hi => (u₃ l hl i hi).2)) fun t ⟨tg, trd, twr, ho, tsm, tp⟩ => ?_
   refine ⟨by rw [tg, vm_gpr v₃, vm_gpr v₂], by rw [trd, vm_rd v₃, vm_rd v₂],

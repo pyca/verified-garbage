@@ -127,14 +127,14 @@ theorem square_fn_ok {s : State} {W : Nat} (hp : Pre 9 W s)
   rw [WP.block_append_iff]
   refine WP.mono (pointers_ok s₂) fun s₃ ⟨go,ga,k₃,v₃⟩ => ?_
   have x0₃ : s₃.gpr .x0=base := by rw [k₃.gpr _ (by decide),k₂.gpr,k₁.gpr _ (by decide)]
-  have hs₃ : Scr s₃ base W := ⟨x0₃,by rw [k₃.wr,k₂.wr,k₁.wr,hp.wr]; simp [base],hp.fit,by omega⟩
+  have hs₃ : Scr s₃ base W := ⟨x0₃,by rw [k₃.wr,k₂.wr,k₁.wr,hp.wr]; simp [base],hp.fit,by omega_arith⟩
   have gpa : s₃.gpr .x1=pa := by rw [ga,k₂.gpr,g₂,k₁.gpr _ (by decide)]
   have hpa : Ptr s₃ .x1 pa 72 := by
     refine ⟨gpa,fun d hd => ?_,by decide⟩
     change InRegions _ (off pa d) 8
     dsimp only [pa]
     rw [off_off]
-    have h := hs₃.ld (d:=arg s .x2+d) (by omega)
+    have h := hs₃.ld (d:=arg s .x2+d) (by omega_arith)
     rwa [x0₃] at h
   have hmem₃ : s₃.mem=s.mem := k₃.mem.trans (k₂.mem.trans k₁.mem)
   rw [WP.block_append_iff]
@@ -167,12 +167,12 @@ theorem square_fn_ok {s : State} {W : Nat} (hp : Pre 9 W s)
     · change InRegions _ (off po d) 8
       dsimp only [po]
       rw [off_off]
-      have h := hs₇.st (d:=arg s .x1+d) (by omega)
+      have h := hs₇.st (d:=arg s .x1+d) (by omega_arith)
       rwa [hs₇.x0] at h
     · have hfit := hp.fit
       dsimp only [po,base,off]
-      rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (a:=arg s .x1) (by omega),Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (a:=arg s .x1) (by omega_arith),Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
   have out₇ : regsVal s₇ (uRegs.take 9)=regsVal s₆ (uRegs.take 9) :=
     regsVal_congr (fun r hr => k₇.gpr r (by
       have h : ∀r∈uRegs.take 9,r∉([Reg.x30]:List Reg) := by decide
@@ -201,7 +201,7 @@ theorem square_fn_ok {s : State} {W : Nat} (hp : Pre 9 W s)
     rw [Nat.zero_add] at l
     rw [r₉ i hi,Nat.zero_add,lane,v₈,v₇₂ _ (by
       have h : ∀i<12,(slot i).1≠.v22 := by decide
-      exact h i (by have hlen : saved.length=11 := rfl; omega))]
+      exact h i (by have hlen : saved.length=11 := rfl; omega_arith))]
     change lane s₂.v i=s.gpr saved[i]
     rw [l,k₁.gpr _ (by
       have h : ∀r∈saved,r∉([Reg.x1,.x2,.x3]:List Reg) := by decide
@@ -213,7 +213,7 @@ theorem square_fn_ok {s : State} {W : Nat} (hp : Pre 9 W s)
     rw [vkeep d (h d hd).1 (h d hd).2]
   · intro x hx _
     rw [k₉.mem]
-    have h := Outside.of_off o₈ (by dsimp only [po,base] at *; have hfit:=hp.fit; omega)
+    have h := Outside.of_off o₈ (by dsimp only [po,base] at *; have hfit:=hp.fit; omega_arith)
     rw [h x hx,hmem₇]
   · rw [k₉.gpr _ (by decide),k₈.gpr _ (by simp),k₃₇.gpr _ (by decide),k₃.gpr _ (by decide),k₂.gpr,k₁.gpr _ (by decide)]
   · rw [k₉.rd,k₈.rd,k₃₇.rd,k₃.rd,k₂.rd,k₁.rd]

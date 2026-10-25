@@ -27,14 +27,7 @@ theorem domainPointers_store (s : State) {p : Inputs} {slots : List Nat}
   have q : p.g + BitVec.ofNat 32 p.k = p.q := by
     change (p.domain + BitVec.ofNat 32 p.k) + BitVec.ofNat 32 p.k = p.domain + BitVec.ofNat 32 (2 * p.k)
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, show p.k + p.k = 2 * p.k by omega]
-  refine withRest [.r3] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.Domain.domainPointers : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hi' : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.domainPointers VG.Impl.Ffdh.Arm.Domain.st
   ffrun [source, count, stackBase, addr 56 (by decide), addr 60 (by decide), w56, w60, off, Inputs.g, Inputs.q,
     BitVec.add_assoc, ← BitVec.ofNat_add, show p.k + p.k = 2 * p.k by omega]

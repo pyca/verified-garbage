@@ -35,7 +35,7 @@ theorem sd_store {s₀ : State} (m : Mem) {a b : Nat} (ha : a + 8 ≤ 16384) (hb
   by_cases e : a = b
   · subst e; rw [ite_eq_left rfl]; exact Mem.readW_writeW_self64 _ _ _
   · rw [ite_eq_right e]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 /-- A block of `scratch`, from its doublewords. -/
 theorem blockAt_of_sd {s₀ : State} {m : Mem} {o : Nat} {f : Nat → BitVec 64}
@@ -58,18 +58,18 @@ theorem zeros_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 8192)
   | 0, _ => WP.block_nil ⟨h, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | n + 1, hn => by
     rw [List.range_succ, List.map_append, List.map_singleton]
-    refine WP.block_append ((zeros_ok h hd hd8 ha n (by omega)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
+    refine WP.block_append ((zeros_ok h hd hd8 ha n (by omega_arith)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
     have hc' : (⟨scrP s₀ + BitVec.ofNat 64 d, 1024⟩ : Region).Contains
         (scrP s₀ + BitVec.ofNat 64 (d + 8 * n)) 8 :=
-      Offset.contains _ (by omega) (by omega) (by omega)
-    refine wp_stscrd hp it (o := d + 8 * n) (by omega) (by omega) (by omega)
+      Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
+    refine wp_stscrd hp it (o := d + 8 * n) (by omega_arith) (by omega_arith) (by omega_arith)
       fun t₁ i₁ m₁ g₁ _ _ => WP.block_nil ⟨i₁, by rw [g₁, gt], ?_, fun i hi => ?_⟩
     · rw [m₁]
       exact ft.writeW (List.mem_singleton_self _) _ hc'
-    · rw [m₁, gt, ha, sd_store _ (by omega) (by omega) (by omega)]
+    · rw [m₁, gt, ha, sd_store _ (by omega_arith) (by omega_arith) (by omega_arith)]
       by_cases e : d + 8 * n = d + 8 * i
       · rw [ite_eq_left e]
-      · rw [ite_eq_right e]; exact wt i (by omega)
+      · rw [ite_eq_right e]; exact wt i (by omega_arith)
 
 /-- `clearAt d`: zero `scratch[d, d + 1024)`. -/
 theorem clearAt_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 8192) (hd8 : d % 8 = 0)
@@ -117,17 +117,17 @@ theorem hdr_step {m : Mem} {pass lane slice c n : Nat} (hn : n < 7) {u : State} 
     WP isa (.block (.store .d .r3 .r31 (5120 + 8 * n) :: is)) u Q := by
   have hc' : (⟨scrP s₀ + BitVec.ofNat 64 5120, 1024⟩ : Region).Contains
       (scrP s₀ + BitVec.ofNat 64 (5120 + 8 * n)) 8 :=
-    Offset.contains _ (by omega) (by omega) (by omega)
-  refine wp_stscrd hp h (o := 5120 + 8 * n) (by omega) (by omega) (by omega)
+    Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
+  refine wp_stscrd hp h (o := 5120 + 8 * n) (by omega_arith) (by omega_arith) (by omega_arith)
     fun t it mt gt _ _ => k t it gt ?_ fun i hi => ?_
   · rw [mt]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc'
-  · rw [mt, sd_store _ (by omega) (by omega) (by omega), ha, hw i hi]
+  · rw [mt, sd_store _ (by omega_arith) (by omega_arith) (by omega_arith), ha, hw i hi]
     by_cases e : 5120 + 8 * n = 5120 + 8 * i
-    · rw [ite_eq_left e, ite_eq_left (by omega), show i = n by omega]
+    · rw [ite_eq_left e, ite_eq_left (by omega_arith), show i = n by omega_arith]
     · rw [ite_eq_right e]
       by_cases c₁ : i < n
-      · rw [ite_eq_left c₁, ite_eq_left (by omega)]
-      · rw [ite_eq_right c₁, ite_eq_right (by omega)]
+      · rw [ite_eq_left c₁, ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right c₁, ite_eq_right (by omega_arith)]
 
 omit hp in
 theorem addressHeader_eq : Impl.Argon2.PPC64LE.Derive.addressHeader =
@@ -187,7 +187,7 @@ theorem sd_frame {m m' : Mem} {a n : Nat} (f : Frame [⟨scrP s₀ + BitVec.ofNa
     (h : o + 8 ≤ a ∨ a + n ≤ o) (ho : o + 8 ≤ 16384) (hn : a + n ≤ 16384) : sd s₀ m' o = sd s₀ m o := by
   refine f.readW (r := ⟨scrP s₀ + BitVec.ofNat 64 o, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
-  exact Offset.disjoint _ h (by omega) (by omega)
+  exact Offset.disjoint _ h (by omega_arith) (by omega_arith)
 
 theorem input_words {pass lane slice c : Nat} :
     (Vector.ofFn fun j : Fin 128 => if j.val < 7 then hdr s₀ pass lane slice c j.val else 0) =
@@ -200,7 +200,7 @@ theorem input_words {pass lane slice c : Nat} :
   intro j hj
   simp only [Vector.getElem_ofFn, Proof.Argon2.addressInput, Vector.getElem_set, zeroBlock,
     Vector.getElem_replicate]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ 7 ≤ j) with
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ 7 ≤ j) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | hj7
   · simp [hdr]
   · simp [hdr]
@@ -209,8 +209,8 @@ theorem input_words {pass lane slice c : Nat} :
   · simp [hdr, ep]
   · simp [hdr, ek]
   · simp [hdr]
-  · rw [ite_eq_right (by omega)]
-    simp (disch := omega) only [ite_eq_right]
+  · rw [ite_eq_right (by omega_arith)]
+    simp (disch := omega_arith) only [ite_eq_right]
 
 /-- The address-generation input block at `scratch + 5120`, and a zero block at `scratch + 7168`. -/
 theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
@@ -231,7 +231,7 @@ theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
   have L : ∀ d, 32 ≤ d → d + 8 ≤ 336 → lw s₀ t₂ d = lw s₀ s d := fun d h₁ h₂ => by
     rw [lw_keep hp f₂ (fsub _ (by decide)) h₁ h₂, lw_keep hp f₁ (fsub _ (by decide)) h₁ h₂]
   refine (aheader_ok hp i₂ (pass := pass) (slice := slice) (lane := lane) (index := index) (c := c)
-    (ps.of_lw fun d h₁ h₂ => L d (by omega) (by omega)) (by rw [L _ (by decide) (by decide)]; exact hc)).mono
+    (ps.of_lw fun d h₁ h₂ => L d (by omega_arith) (by omega_arith)) (by rw [L _ (by decide) (by decide)]; exact hc)).mono
     fun t ⟨it, gt, ft, wt⟩ => ⟨it, fun r a => by rw [gt r a, g₂ r a, g₁ r a], ?_, ?_, ?_⟩
   · refine (Frame.trans (f₁.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩)
       (f₂.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inr hr, fun _ h => h⟩)).trans
@@ -242,11 +242,11 @@ theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
     rw [wt i hi]
     by_cases e : i < 7
     · rw [ite_eq_left e, ite_eq_left e]
-    · rw [ite_eq_right e, ite_eq_right e, sd_frame f₂ (by omega) (by omega) (by decide)]
+    · rw [ite_eq_right e, ite_eq_right e, sd_frame f₂ (by omega_arith) (by omega_arith) (by decide)]
       exact z₁ i hi
   · rw [blockAt_of_sd (f := fun _ => 0) fun i hi => ?_]
     · apply Vector.ext; intro j hj; simp [zeroBlock]
-    rw [sd_frame ft (by omega) (by omega) (by decide)]
+    rw [sd_frame ft (by omega_arith) (by omega_arith) (by decide)]
     exact z₂ i hi
 
 end

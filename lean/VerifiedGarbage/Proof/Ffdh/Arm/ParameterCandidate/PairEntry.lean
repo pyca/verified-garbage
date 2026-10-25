@@ -35,14 +35,7 @@ theorem pairEntry_ok {s : State} {dst base : BitVec 32} {n i : Nat}
   have address : State.addr (base + BitVec.ofNat 32 (arrAt ((n + 7) / 8) 34 + 4 * i)) =
       off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i) :=
     VG.Arm.addr_add (by have := h.tableFits; omega)
-  refine withRest [.r7] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r7] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry
   ffrun [BitVec.add_zero, cursor, address, read, word]
 

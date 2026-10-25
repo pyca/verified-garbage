@@ -44,7 +44,7 @@ theorem trial_ok {s : State} {B : Addr} {Z o w x d : Nat} (hs : Scr s B Z) (h10 
     WP isa (trial d) s fun t => ((t.gpr .r22 = 0#64 ↔ P ∧ x % d ≠ 0) ∧ t.mem = s.mem) ∧ Keep trRegs s t := by
   unfold trial
   refine WP.seq (WP.mono (WP.keep [.r4] (Q := fun v => v.gpr .r4 = BitVec.ofNat 64 d ∧ v.mem = s.mem) ?_
-    (by simp [writesOnly, instrs, dstOf, Instr.writesLr])) fun v ⟨⟨v4, vm⟩, kv⟩ => ?_)
+    (by rfl)) fun v ⟨⟨v4, vm⟩, kv⟩ => ?_)
   · apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_li hd, gpr_write, mem_write, ↓reduceIte,
       Option.some.injEq, exists_eq_left', and_self]

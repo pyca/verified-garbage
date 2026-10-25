@@ -35,10 +35,10 @@ theorem slot_apart (len : Nat) (c : Ctx) {o j : Nat} (hne : j ≠ o) :
   have ej : lo len (.slot c j) = numBase + j * st len c := rfl
   have eo : lo len (.slot c o) = numBase + o * st len c := rfl
   rcases Nat.lt_or_gt_of_ne hne with hlt | hlt
-  · have := Nat.mul_le_mul_right (st len c) (show j + 1 ≤ o by omega)
-    rw [Nat.succ_mul] at this; omega
-  · have := Nat.mul_le_mul_right (st len c) (show o + 1 ≤ j by omega)
-    rw [Nat.succ_mul] at this; omega
+  · have := Nat.mul_le_mul_right (st len c) (show j + 1 ≤ o by omega_arith)
+    rw [Nat.succ_mul] at this; omega_arith
+  · have := Nat.mul_le_mul_right (st len c) (show o + 1 ≤ j by omega_arith)
+    rw [Nat.succ_mul] at this; omega_arith
 
 theorem slot_past1 (len : Nat) (c : Ctx) {j : Nat} (hj3 : 3 ≤ j) :
     lo len (.slot c 1) + (3 * bc len c + 56) ≤ lo len (.slot c j) := by
@@ -46,7 +46,7 @@ theorem slot_past1 (len : Nat) (c : Ctx) {j : Nat} (hj3 : 3 ≤ j) :
   have ej : lo len (.slot c j) = numBase + j * st len c := rfl
   have e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
   have := Nat.mul_le_mul_right (st len c) hj3
-  omega
+  omega_arith
 
 /-- A product into slot `o` keeps the other slots from 3 to 8. -/
 theorem mulR_sv (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem} {o j : Nat}
@@ -57,15 +57,15 @@ theorem mulR_sv (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem} 
   have bw := bc_eq_cwc len c
   have est : st len c = 2 * bc len c + 32 := rfl
   have j8 : lo len (.slot c j) ≤ lo len (.slot c 8) := by
-    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega
+    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega_arith
   have o8 : lo len (.slot c o) ≤ lo len (.slot c 8) := by
-    have := Nat.mul_le_mul_right (st len c) ho; simp only [lo]; omega
+    have := Nat.mul_le_mul_right (st len c) ho; simp only [lo]; omega_arith
   have a := slot_apart len c hne
   have p1 := slot_past1 len c hj3
   have p1o := slot_past1 len c ho3
-  refine frameR_val32 F R nw (by omega) ?_ ?_ <;>
+  refine frameR_val32 F R nw (by omega_arith) ?_ ?_ <;>
     intro p hp <;> simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp <;>
-    rcases hp with rfl | rfl <;> dsimp only <;> omega
+    rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
 
 /-- The table keeps slots 3 to 8 but 7. -/
 theorem tabR_sv (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem} {j : Nat}
@@ -77,13 +77,13 @@ theorem tabR_sv (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem} 
   have bw := bc_eq_cwc len c
   have est : st len c = 2 * bc len c + 32 := rfl
   have j8 : lo len (.slot c j) ≤ lo len (.slot c 8) := by
-    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega
+    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega_arith
   have a := slot_apart len c (o := 7) h7
   have p1 := slot_past1 len c hj3
   have t0 : te len c 0 = lo len (.slot .wide 20) := by simp [te]
-  refine frameR_val32 F R nw (by omega) ?_ (tabR_fit h c)
+  refine frameR_val32 F R nw (by omega_arith) ?_ (tabR_fit h c)
   intro p hp; simp only [tabR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl <;> dsimp only <;> omega_arith
 
 theorem pwR_fit (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ pwR len c, p.1 + p.2 ≤ bytes := by
   have fw := wR_fit h c
@@ -96,7 +96,7 @@ theorem pwR_fit (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ pwR len 
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact fw _ (by simp)
   · exact fw _ (by simp)
-  · dsimp only; omega
+  · dsimp only; omega_arith
   · exact fw _ (by simp)
   · exact fw _ (by simp)
   · exact fw _ (by simp)
@@ -119,7 +119,7 @@ theorem windowPowerWith_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.m
   have g := bc_ge h.lower' c
   have hb := bc_le h.upper' c
   have RR : 2 ^ (16 * bc len c) = 2 ^ (8 * bc len c) * 2 ^ (8 * bc len c) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_arith
   unfold windowPowerWith
   -- One in Montgomery form into slot 6.
   refine WP.seq (WP.mono (cmul_ok C (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide) (by decide)
@@ -134,7 +134,7 @@ theorem windowPowerWith_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.m
   have m8₁ := mulR_sv h F₁ h.room (o := 6) (j := 8) (by decide) (by decide) (by decide) (by decide) (by decide)
   -- The base in Montgomery form.
   refine WP.seq (WP.mono (cmul_ok C₁ (o := 5) (a := 5) (b := 4) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [m4₁, h4]; exact Nat.mod_lt _ (by omega))) fun s₂ ⟨C₂, K₂, F₂, L₂, V₂⟩ => ?_)
+    (by decide) (by decide) (by rw [m4₁, h4]; exact Nat.mod_lt _ (by omega_arith))) fun s₂ ⟨C₂, K₂, F₂, L₂, V₂⟩ => ?_)
   have B₂ : sv s₂.mem base len c 5 = sv s.mem base len c 5 * 2 ^ (8 * bc len c) % M := by
     have v := VG.Proof.Dsa.mont_scale C.coprime (out := sv s₂.mem base len c 5) (input := sv s.mem base len c 5)
       (c := 2 ^ (8 * bc len c)) (by rw [V₂, m5₁, m4₁, h4, RR])
@@ -165,13 +165,13 @@ theorem windowPowerWith_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.m
     rw [sv, mem₅]; simp only [sv] at m3₃ m3₂ m3₁ h3 ⊢; rw [m3₃, m3₂, m3₁, h3]
   have hE : E < P := val32_lt _ _ _ _
   -- The windows.
-  refine WP.seq (WP.mono (PublicRt.countLoop (N := N) (by omega) (fun j t =>
+  refine WP.seq (WP.mono (PublicRt.countLoop (N := N) (by omega_arith) (fun j t =>
       CtxOk Ex base bytes len args c M t ∧ Frame (frameR base (s₅.gpr .esp) (wR len c)) s₅.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s₅ t ∧ t.gpr .esi = BitVec.ofNat 32 (N - j) ∧
       (∀ j' < 16, val32 t.mem base (te len c j') (cwc len c) = b ^ j' * 2 ^ (8 * bc len c) % M) ∧
       sv t.mem base len c 8 = E * 16 ^ j % P ∧
       sv t.mem base len c 6 = b ^ (E * 16 ^ j / P) * 2 ^ (8 * bc len c) % M)
-    (fun j t hj ⟨Ct, Ft, Kt, et, Tt, Et, Yt⟩ => WP.mono (windowStep_ok Ct Tt Yt (by omega) (by omega) et)
+    (fun j t hj ⟨Ct, Ft, Kt, et, Tt, Et, Yt⟩ => WP.mono (windowStep_ok Ct Tt Yt (by omega_arith) (by omega_arith) et)
       fun u ⟨Cu, Fu, Ku, eu, zu, Yu, Eu⟩ => ?_)
     ⟨C₅, Frame.refl _ _, Keeps.refl _ _, by rw [esi₅, Nat.sub_zero], T₅,
       by rw [E₅, Nat.pow_zero, Nat.mul_one, Nat.mod_eq_of_lt hE],
@@ -181,7 +181,7 @@ theorem windowPowerWith_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.m
     rw [sp] at Fu
     obtain ⟨_, Tu⟩ := wR_keep Ct.inp Fu (sp ▸ Ct.inp.room)
     refine ⟨⟨Cu, Ft.trans Fu, Kt.trans Ku, by rw [eu, Nat.sub_sub], fun j' hj' => by rw [Tu j' hj', Tt j' hj'], ?_, ?_⟩,
-      by rw [zu]; congr 1; exact decide_eq_decide.mpr (by omega)⟩
+      by rw [zu]; congr 1; exact decide_eq_decide.mpr (by omega_arith)⟩
     · rw [Eu, Et, Nat.pow_succ, ← Nat.mul_assoc, Nat.mod_mul_mod]
     · rw [Yu, Et, VG.Proof.Mont.X86.Dynamic.window_power, Nat.pow_succ, ← Nat.mul_assoc,
         VG.Proof.Mont.X86.Dynamic.window_exponent (E * 16 ^ j) _ (Nat.two_pow_pos _)]
@@ -234,11 +234,11 @@ theorem windowPower_ok (C : CtxOk Ex base bytes len args c M s) (h3 : sv s.mem b
   have bw := bc_eq_cwc len c
   have g := bc_ge h.lower' c
   have hb := bc_le h.upper' c
-  refine WP.mono (windowPowerWith_ok C h3 h4 (N := 2 * bc len c) (by omega) (Nat.le_refl _) fun t Ct =>
+  refine WP.mono (windowPowerWith_ok C h3 h4 (N := 2 * bc len c) (by omega_arith) (Nat.le_refl _) fun t Ct =>
     widthC_ok (k := 0) (c := c) (r := .esi) (is := [_]) Ct.inp.width h.upper' fun s₄ K₄ M₄ e₄ =>
       wp_addS rfl fun s₅ a₅ _ => WP.block_nil ⟨K₄.trans (a₅.keeps.mono (by decide)), by rw [a₅.mem, M₄], by
-        rw [a₅.gpr, e₄, BitVec.ofNat_add_ofNat]; congr 1; omega⟩) fun u ⟨Cu, Fu, Ku, Vu⟩ => ⟨Cu, Fu, Ku, ?_⟩
-  rw [Vu, show 2 * bc len c = 8 * cwc len c by omega, VG.Proof.Mont.X86.Dynamic.window_all]
+        rw [a₅.gpr, e₄, BitVec.ofNat_add_ofNat]; congr 1; omega_arith⟩) fun u ⟨Cu, Fu, Ku, Vu⟩ => ⟨Cu, Fu, Ku, ?_⟩
+  rw [Vu, show 2 * bc len c = 8 * cwc len c by omega_arith, VG.Proof.Mont.X86.Dynamic.window_all]
 
 end
 

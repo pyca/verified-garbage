@@ -215,21 +215,21 @@ theorem ckCtx_of {s : State} (h : ckA.pre s) : CkCtx s := by
   rw [hdql] at ddqs wDq hrd
   refine ⟨⟨hk1, hk2, hel1, hel2, hdl1, hdl2, hpl1, hpl2, hql1, hql2, bytesAt_length _ _ _, bytesAt_length _ _ _,
       bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _,
-      bytesAt_length _ _ _, by simp only [ckIn]; omega, by simp only [ckIn]; omega, by rfl,
-      by simp only [ckIn]; omega, by simp only [ckIn]; omega, by simp only [ckIn]; omega,
-      by simp only [ckIn, wW, wk]; omega⟩, hs,
-    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+      bytesAt_length _ _ _, by simp only [ckIn]; omega_arith, by simp only [ckIn]; omega_arith, by rfl,
+      by simp only [ckIn]; omega_arith, by simp only [ckIn]; omega_arith, by simp only [ckIn]; omega_arith,
+      by simp only [ckIn, wW, wk]; omega_arith⟩, hs,
+    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega) (by omega))
-      rw [← stkAddr_add s j b] at this; omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    src_of_region (by rw [hrd]; simp) (by omega) dps,
-    src_of_region (by rw [hrd]; simp) (by omega) dqs,
-    src_of_region (by rw [hrd]; simp) (by omega) ddps,
-    src_of_region (by rw [hrd]; simp) (by omega) ddqs,
-    src_of_region (by rw [hrd]; simp) (by omega) dqis⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega_arith) (by omega_arith))
+      rw [← stkAddr_add s j b] at this; omega_arith)),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) des,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dds,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dps,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dqs,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) ddps,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) ddqs,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dqis⟩
 
 /-- After `entry`, from `s`. -/
 structure CkHeadPost (s t : State) : Prop where
@@ -247,7 +247,7 @@ theorem ckHead_ok' {s : State} (c : CkCtx s) : WP isa (.block entry) s (CkHeadPo
   have hn := c.hs.nowrap
   have hZ : 128 * (s.gpr .x1).toNat ≤ (stackArg s 9).toNat * 8 := c.L.z
   have hk1 : 64 ≤ (s.gpr .x1).toNat := c.L.k1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 8) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 8) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   refine WP.mono (ckEntry_ok rfl hw c.ha c.hsep) fun t ⟨h0, h4, h5, hm, k⟩ => ?_
   obtain ⟨hN, hK, hE, hEl, hD, hDl, hP, hPl, hQ, hQl, hDP, hDQ, hQI, ho⟩ :=
     ckEntryMem_facts s.mem (stackArg s 8) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5)
@@ -260,7 +260,7 @@ theorem ckHead_ok' {s : State} (c : CkCtx s) : WP isa (.block entry) s (CkHeadPo
       show word _ (stackArg s 8) _ = BitVec.ofNat 64 (s.gpr .x7).toNat by rw [hPl, ofNat_toNat64], hQ,
       show word _ (stackArg s 8) _ = BitVec.ofNat 64 (stackArg s 1).toNat by rw [hQl, ofNat_toNat64], hDP, hDQ,
       hQI⟩,
-    InScr.of_outside ho (by omega), k⟩
+    InScr.of_outside ho (by omega_arith), k⟩
 
 /-- `main`'s hypotheses after the head and the checks of `e` and `n`. -/
 theorem ckPre_of {s t₁ t : State} (c : CkCtx s) (h : CkHeadPost s t₁) (hm : t.mem = t₁.mem)
@@ -301,7 +301,7 @@ theorem ckCode_correct (s : State) (h : ckA.pre s) :
   refine WP.seq (WP.mono (ckHead_ok' c) fun t₁ h₁ => ?_)
   have heb₁ := c.e.congrK h₁.inScr h₁.keep
   have hel : (ckIn s).eb.length = (s.gpr .x3).toNat := bytesAt_length _ _ _
-  refine WP.seq (WP.mono (expCheck_ok (eb := (ckIn s).eb) h₁.x4 h₁.x5 hel1 (by omega)
+  refine WP.seq (WP.mono (expCheck_ok (eb := (ckIn s).eb) h₁.x4 h₁.x5 hel1 (by omega_arith)
     (fun i hi => heb₁.rd i (by rw [hel]; exact hi)) ?_) fun t₂ ⟨hz₂, hm₂, k₂⟩ => ?_)
   · rw [← hel]
     refine List.ext_getElem (by simp [Spec.Rsa.bytesAt]) fun i h1 h2 => ?_
@@ -321,7 +321,7 @@ theorem ckCode_correct (s : State) (h : ckA.pre s) :
     have hn := hs₂.nowrap
     have hZ : 128 * (s.gpr .x1).toNat ≤ (stackArg s 9).toNat * 8 := c.L.z
     have h0₂ : t₂.gpr .x0 = stackArg s 8 := (k₂.gpr .x0 (by decide)).trans h₁.x0
-    have hl : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (stackArg s 8) (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
+    have hl : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (stackArg s 8) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_arith)
     have aN : word t₂.mem (stackArg s 8) (8 * Public.sN) = s.gpr .x0 := by rw [hm₂]; exact h₁.args.n
     have aK : word t₂.mem (stackArg s 8) (8 * Public.sK) = BitVec.ofNat 64 (s.gpr .x1).toNat := by
       rw [hm₂]; exact h₁.args.k

@@ -46,9 +46,9 @@ theorem done_kvw {dst : Nat} (h : dst + P.F.H.D ≤ 128) :
   kvw_of fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inl (Region.sub_prefix (by omega))
-    · exact .inr (Region.sub_prefix (by omega))
-    · exact .inr (Offset.sub_base _ (by omega))
+    · exact .inl (Region.sub_prefix (by omega_arith))
+    · exact .inr (Region.sub_prefix (by omega_arith))
+    · exact .inr (Offset.sub_base _ (by omega_arith))
 
 /-- The data of `V = HMAC_K(V)`: `V`, in the frame. -/
 theorem dataV : DataA L g m₀ [.dp .add .r1 .r8 (.imm (BitVec.ofNat 32 fV))] (L.fp + BitVec.ofNat 32 64) := fun _ _ _ hc k =>
@@ -65,8 +65,8 @@ theorem kv_disj {d : Nat} (hd : d = 0 ∨ d = 64) (hL : L.Ok) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (hL.kc.sub_left (Offset.sub_base _ (by rcases hd with rfl | rfl <;> anums))).sub_right
-      (Region.sub_prefix (by omega))
-  · exact Offset.disjoint_base _ (by omega) (by rcases hd with rfl | rfl <;> anums)
+      (Region.sub_prefix (by omega_arith))
+  · exact Offset.disjoint_base _ (by omega_arith) (by rcases hd with rfl | rfl <;> anums)
   · exact Offset.disjoint _ (by rcases hd with rfl | rfl <;> anums) (by rcases hd with rfl | rfl <;> anums)
       (by rcases hd with rfl | rfl <;> anums)
 
@@ -74,7 +74,7 @@ theorem kv_disj {d : Nat} (hd : d = 0 ∨ d = 64) (hL : L.Ok) :
 theorem hmacV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).hmacV t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = kOf P L t.mem ∧ vOfP P L t'.mem = P.mac (kOf P L t.mem) (vOfP P L t.mem) := by
-  have hv : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by omega)
+  have hv : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by omega_arith)
   refine WP.mono (hmac_ok (P := P) hL hc (da := L.fp + BitVec.ofNat 32 64) (len := P.F.H.D) (dst := 64)
     dataV (.inl ⟨64, rfl, by anums⟩) (by anums) (by anums) (by decide)) fun t' h => ?_
   have hm := h.mac
@@ -89,7 +89,7 @@ theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen
       kOf P L t'.mem = P.mac (kOf P L t.mem) (Spec.Sha256.bytesAt t.mem (msgA L) len) := by
   have hm : State.addr (L.scr + BitVec.ofNat 32 2256) = msgA L := scrA hL (by decide)
   refine WP.mono (hmac_ok (P := P) hL hc (da := L.scr + BitVec.ofNat 32 2256) (len := len) (dst := 0)
-    dataM (.inr ⟨2256, rfl, by omega, by omega⟩) hlen (by anums) (by decide)) fun t' h => ?_
+    dataM (.inr ⟨2256, rfl, by omega_arith, by omega_arith⟩) hlen (by anums) (by decide)) fun t' h => ?_
   have hmac := h.mac
   rw [hm] at hmac
   exact ⟨h.ctx, h.r9, h.frame.sub (done_kvw (by anums)),
@@ -122,16 +122,16 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
       rw [hho hf]
       simp only [RfcHash.k] at this hk hb₂ ⊢
       generalize P.hB = hb at hb₁ hb₂ ⊢
-      exact ⟨by omega, by omega, by omega⟩)
+      exact ⟨by omega_arith, by omega_arith, by omega_arith⟩)
     (fun hf hwt => by
       have hW : P.R.wide = true := by rw [hwd, hf] at hwt; exact hwt
-      have := P.sizesW hW; exact ⟨by omega, by omega, hdn hW⟩)
+      have := P.sizesW hW; exact ⟨by omega_arith, by omega_arith, hdn hW⟩)
   have hh : (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) P.Q ++ hPart wd P.Q P.F.H.D (24 + ho) L t.mem
       else []) = (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) P.Q ++ hOf P L t.mem else []) := by
     cases full
     · rfl
     · have := hB_ge P
-      rw [hwd, hho rfl, show 24 + (P.hB - 24) = P.hB by omega]; rfl
+      rw [hwd, hho rfl, show 24 + (P.hB - 24) = P.hB by omega_arith]; rfl
   rw [hh] at hmsg
   refine WP.seq (WP.mono hmsg fun u ⟨hcu, h9u, hfu, hbu⟩ => ?_)
   refine WP.seq (WP.mono (hmacK_ok (P := P) hL hcu (len := len)

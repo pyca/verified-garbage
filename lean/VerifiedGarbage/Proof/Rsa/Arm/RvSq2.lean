@@ -72,7 +72,7 @@ theorem sqM_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State �
     (hR : VP (Qm P E j k) R G) :
     VP (Qs P E j k) (.seq (seqs (mmul iX iY iY)) (.seq (eqAt sE1 mX aO) (.seq (eqAt sE2 mX aNg)
       (.seq (.block sqMasks) R)))) G := by
-  have hn0 : 0 < P.n := by omega
+  have hn0 : 0 < P.n := by omega_arith
   have hR' : Nat.Coprime (Rm P) P.n := VG.Proof.Bignum.coprime_pow2 hn.1 _
   refine VP.seq (St.pmmul (o := iX) (a := iY) (b := iY) (by decide) hn.1 (T := fun σ => xq P σ j k * Rm P % P.n)
     (by decide) (by decide) (by decide) (by decide) (by decide) fun σ _ => ?_) ?_
@@ -104,7 +104,7 @@ theorem sqM_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State �
       simp only [show (xq P σ j k * Rm P % P.n = P.n - Ov P) ↔ xq P σ j k = P.n - 1 from this]
       by_cases h : xq P σ j k = P.n - 1 <;> simp only [h, b2n, decide_true, decide_false, ite_true, ite_false, Bool.false_eq_true]
     rw [eX, eO, eN, i1, i2]
-    refine ⟨by omega, by omega, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [upd, Vq, sE1, sE2, sK, sTc, sDone, sOk, sCnt, sCand]
+    refine ⟨by omega_arith, by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [upd, Vq, sE1, sE2, sK, sTc, sDone, sOk, sCnt, sCand]
   · exact fun x hx => ⟨hx, rfl⟩
   · exact fun x hx => ⟨hx, rfl⟩
   · intro d hd
@@ -156,7 +156,7 @@ variable {P : RP}
 theorem sqB_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State → Prop} {j k : Nat} (hk : k < P.c) :
     VP (Qm P E j k) (.seq (copy aU mY) (.seq (sel mY aU mX sLive) (.block sqNext)))
       (fun σ s => isa.eval .ne s = some (decide (k + 1 < P.c)) ∧ Qs P E j (k + 1) σ s) := by
-  have hn0 : 0 < P.n := by omega
+  have hn0 : 0 < P.n := by omega_arith
   refine VP.seq (St.pcopy uY_taint (o := aU) (a := mY) (by decide) (by decide) (by decide) (by decide)
     (by decide)) ?_
   refine VP.seq (St.psel selY_taint (o := mY) (a := aU) (b := mX) (sl := sLive) (by decide) (by decide) (by decide)
@@ -164,10 +164,10 @@ theorem sqB_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State �
     (by decide)) ?_
   refine (St.psqNext (by decide) (by decide) fun σ _ => ?_).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ =>
     ⟨?_, St.mono h ?_ (fun x hx => ⟨hx, rfl⟩) ?_⟩
-  · simp [upd, Vq, sK, sCnt, sOk, sDone, sLive]; omega
+  · simp [upd, Vq, sK, sCnt, sOk, sDone, sLive]; omega_arith
   · show some (!s.z) = some (decide (k + 1 < P.c))
     rw [z]
-    by_cases hh : k + 1 < P.c <;> simp [hh, upd, Vq, sK, sCnt, sOk, sDone, sLive] <;> omega
+    by_cases hh : k + 1 < P.c <;> simp [hh, upd, Vq, sK, sCnt, sOk, sDone, sLive] <;> omega_arith
   · intro x hx
     refine ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx)), ?_⟩
     simp only [Lq, liveM, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -188,7 +188,7 @@ theorem sqB_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State �
       (List.mem_cons_of_mem _ hd)))), ?_⟩
     simp only [LSq, List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [upd, Vq, sK, sCnt, sOk, sDone, sLive, sCand, sTc]
-    omega
+    omega_arith
 
 /-- The squaring `k`. -/
 theorem sqStep_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State → Prop} {j k : Nat} (hk : k < P.c)
@@ -201,11 +201,11 @@ theorem sqStep_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State
 theorem sqLoop_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) (hc0 : 0 < P.c) {E : State → Prop}
     (ht : ∀ σ, E σ → tv P σ ≤ P.c) {j : Nat} : VP (Qs P E j 0) sqLoop (Qs P E j P.c) := by
   have hl := VP.loop (I := fun m σ s => m ≤ P.c ∧ Qs P E j (P.c - m) σ s) (body := sqBody) (c := .ne)
-    (Q := Qs P E j P.c) (fun n => VP.pure fun hle => (sqStep_vp hn hcl (k := P.c - (n + 1)) (by omega) ht).mono
-      (fun _ _ h => h) fun σ s ⟨ev, h⟩ => ⟨by rw [ev]; congr 1; simp only [decide_eq_decide]; omega,
-        fun h0 => by subst h0; rwa [show P.c - (0 + 1) + 1 = P.c by omega] at h,
-        fun _ => ⟨by omega, by rwa [show P.c - (n + 1) + 1 = P.c - n by omega] at h⟩⟩) (P.c - 1)
-  exact hl.mono (fun σ s h => ⟨by omega, by rwa [show P.c - (P.c - 1 + 1) = 0 by omega]⟩) fun _ _ h => h
+    (Q := Qs P E j P.c) (fun n => VP.pure fun hle => (sqStep_vp hn hcl (k := P.c - (n + 1)) (by omega_arith) ht).mono
+      (fun _ _ h => h) fun σ s ⟨ev, h⟩ => ⟨by rw [ev]; congr 1; simp only [decide_eq_decide]; omega_arith,
+        fun h0 => by subst h0; rwa [show P.c - (0 + 1) + 1 = P.c by omega_arith] at h,
+        fun _ => ⟨by omega_arith, by rwa [show P.c - (n + 1) + 1 = P.c - n by omega_arith] at h⟩⟩) (P.c - 1)
+  exact hl.mono (fun σ s h => ⟨by omega_arith, by rwa [show P.c - (P.c - 1 + 1) = 0 by omega_arith]⟩) fun _ _ h => h
 
 end
 

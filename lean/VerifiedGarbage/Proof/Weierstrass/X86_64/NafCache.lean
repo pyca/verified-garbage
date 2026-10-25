@@ -39,7 +39,7 @@ theorem nafCacheOffset_ok (s : State) {n a : Nat} (h8 : s.gpr .r8=BitVec.ofNat 6
     · rw [hsub]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
-      omega
+      omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
       simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,hr.1,ite_false]
   · simp only [Naf.cacheOffset,h4,ite_false,runBlock_cons,runStep_some,runBlock_nil,exec,readSrc,
@@ -49,10 +49,10 @@ theorem nafCacheOffset_ok (s : State) {n a : Nat} (h8 : s.gpr .r8=BitVec.ofNat 6
     refine ⟨?_,fun r hr => ?_,rfl,rfl,rfl⟩
     · rw [hsub]
       apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_ofNat,BitVec.toNat_setWidth,Nat.mod_eq_of_lt (show 8*n<2^32 by omega)]
-      rw [Nat.mod_eq_of_lt (show a-1<2^64 by omega),Nat.mod_eq_of_lt (show 8*n<2^64 by omega)]
-      obtain ⟨k,hk⟩ : ∃ k,a-1=2*k := ⟨(a-1)/2,by omega⟩
-      rw [hk,show 2*k/2=k by omega,show 2*k*(8*n)=16*n*k by grind]
+      simp only [BitVec.toNat_ofNat,BitVec.toNat_setWidth,Nat.mod_eq_of_lt (show 8*n<2^32 by omega_arith)]
+      rw [Nat.mod_eq_of_lt (show a-1<2^64 by omega_arith),Nat.mod_eq_of_lt (show 8*n<2^64 by omega_arith)]
+      obtain ⟨k,hk⟩ : ∃ k,a-1=2*k := ⟨(a-1)/2,by omega_arith⟩
+      rw [hk,show 2*k/2=k by omega_arith,show 2*k*(8*n)=16*n*k by grind]
     · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
       simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,
         hr.1,hr.2.1,hr.2.2,ite_false]
@@ -85,17 +85,17 @@ theorem nafCacheRead_ok {s : State} {base : Addr} {size n tbl dst a : Nat}
       (∀ j<2,wordsVal t.mem base (dst+8*n*j) n=
         wordsVal s.mem base (tbl+16*n*((a-1)/2)+8*n*j) n) ∧
       KeepRegs [.rax,.rcx,.rdx] s t ∧ Outside base dst (16*n) s.mem t.mem := by
-  have hi := entry_end_le (16*n) (show (a-1)/2<8 by omega)
+  have hi := entry_end_le (16*n) (show (a-1)/2<8 by omega_arith)
   rw [Naf.cacheRead,WP.block_append_iff]
-  refine WP.mono (nafCacheAddress_ok hs.rdi h8 ha ha' hodd ht (by omega)) fun u ⟨hu,ku⟩ => ?_
+  refine WP.mono (nafCacheAddress_ok hs.rdi h8 ha ha' hodd ht (by omega_arith)) fun u ⟨hu,ku⟩ => ?_
   have su := hs.of_keeps ku (by decide)
   refine WP.mono (nafCopyPieces_ok (a:=tbl+16*n*((a-1)/2)) (o:=dst) n u su
-    (by omega) (by omega) (by omega)
+    (by omega_arith) (by omega_arith) (by omega_arith)
     (fun i _ => by rw [ea_tblAt,hu]; unfold off; rw [Offset.add_add])
     (fun i _ => by rw [ea_sc,su.rdi])) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun j hj => ?_,⟨fun r hr => ?_,rt.trans ku.2.2.1,wt.trans ku.2.2.2⟩,?_⟩
-  · obtain rfl|rfl : j=0∨j=1 := by omega
-    all_goals rw [nafCopy_fieldAt et (by omega) (by omega),ku.2.1]
+  · obtain rfl|rfl : j=0∨j=1 := by omega_arith
+    all_goals rw [nafCopy_fieldAt et (by omega_arith) (by omega_arith),ku.2.1]
   · rw [gt,ku.1 r hr]
   · rw [ku.2.1] at ot
     exact ot
@@ -119,7 +119,7 @@ theorem nafCachedEntry_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst a
       (∀ x,(ofs base x<K.E.x ∨ K.E.x+24*K.M.n≤ofs base x) →
         (ofs base x<dst ∨ dst+16*K.M.n≤ofs base x) → t.mem x=s.mem x) := by
   have hn' := hs.nowrap
-  have hi := entry_end_le (16*K.M.n) (show (a-1)/2<8 by omega)
+  have hi := entry_end_le (16*K.M.n) (show (a-1)/2<8 by omega_arith)
   rw [Naf.cachedEntry,WP.block_append_iff]
   refine WP.mono (nafPublicEntry_ok hs ha ha' h8 hn hp hP hE hEP) fun u ⟨eu,ku,ou⟩ => ?_
   have su := hs.of_keepRegs ku (by decide)
@@ -127,9 +127,9 @@ theorem nafCachedEntry_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst a
   refine WP.mono (nafCacheRead_ok su hu8 ha ha' hodd hc hn hC hD hDC) fun t ⟨et,kt,ot⟩ => ?_
   refine ⟨fun j hj => ?_,fun j hj => ?_,ku.trans (kt.mono (by regions_sub)),fun x he hd => ?_⟩
   · have := entry_end_le (8*K.M.n) hj
-    rw [ot.wordsVal (by omega) (by omega),eu j hj]
+    rw [ot.wordsVal (by omega_arith) (by omega_arith),eu j hj]
   · have := entry_end_le (8*K.M.n) hj
-    rw [et j hj,ou.wordsVal (by omega) (by omega)]
+    rw [et j hj,ou.wordsVal (by omega_arith) (by omega_arith)]
   · rw [ot x hd,ou x he]
 
 end VG.Proof.Weierstrass.X86_64

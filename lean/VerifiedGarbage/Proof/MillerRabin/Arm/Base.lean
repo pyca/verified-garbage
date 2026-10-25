@@ -93,26 +93,26 @@ structure In (P : MP) (σ : State) : Prop where
 section
 variable {P : MP} {σ : State}
 
-theorem In.S_eq (_ : In P σ) : S P.W = 8 * (P.w + 2) := by simp only [S, MP.W]; omega
+theorem In.S_eq (_ : In P σ) : S P.W = 8 * (P.w + 2) := by simp only [S, MP.W]; omega_arith
 
 theorem In.len (h : In P σ) : 256 + 28 * (8 * (P.w + 2)) ≤ 8 * P.len := by
-  have := h.fits; simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at this; omega
+  have := h.fits; simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at this; omega_arith
 
-theorem In.Z_le (h : In P σ) : P.Z ≤ 2 ^ 32 := by have := h.fit; have := h.len; simp only [MP.Z, kOff]; omega
+theorem In.Z_le (h : In P σ) : P.Z ≤ 2 ^ 32 := by have := h.fit; have := h.len; simp only [MP.Z, kOff]; omega_arith
 
 theorem In.B_toNat (h : In P σ) : P.B.toNat = P.ws.toNat + kOff := by
   have := h.fit; have := h.len
-  simp only [MP.B, BitVec.toNat_add, BitVec.toNat_ofNat, kOff]; omega
+  simp only [MP.B, BitVec.toNat_add, BitVec.toNat_ofNat, kOff]; omega_arith
 
 theorem In.addrB (h : In P σ) : State.addr P.B = State.addr P.ws + BitVec.ofNat 64 kOff :=
-  addr_add (by have := h.fit; have := h.len; simp only [kOff]; omega)
+  addr_add (by have := h.fit; have := h.len; simp only [kOff]; omega_arith)
 
 theorem In.nowrapB (h : In P σ) : P.B.toNat + P.Z ≤ 2 ^ 32 := by
-  have := h.fit; have := h.len; rw [h.B_toNat]; simp only [MP.Z, kOff]; omega
+  have := h.fit; have := h.len; rw [h.B_toNat]; simp only [MP.Z, kOff]; omega_arith
 
 /-- The key view's arrays are the working space's. -/
 theorem In.arr_eq (h : In P σ) (j : Nat) : kOff + arr P.W j = arrAt P.w j := by
-  have := h.S_eq; simp only [arr, arrAt, hdr, kOff, Spec.Rsa.Mont.hdrBytes] at *; rw [this]; omega
+  have := h.S_eq; simp only [arr, arrAt, hdr, kOff, Spec.Rsa.Mont.hdrBytes] at *; rw [this]; omega_arith
 
 /-- Offsets from `B` of addresses at least 96 bytes past `ws`. -/
 theorem In.ofsB (h : In P σ) {x : Addr} (hx : kOff ≤ ofs (State.addr P.ws) x) :
@@ -125,10 +125,10 @@ theorem In.ofsB_lo (h : In P σ) {d : Nat} (hd : d < kOff) : P.Z ≤ ofs (State.
   rw [h.addrB]; simp only [ofs, off, MP.Z, kOff] at hd ⊢
   rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   have := (State.addr P.ws).isLt
-  omega
+  omega_arith
 
 theorem In.fitsK (h : In P σ) : arr P.W nArr ≤ P.Z := by
-  have := h.arr_eq nArr; have := h.fits; simp only [MP.Z, kOff] at *; omega
+  have := h.arr_eq nArr; have := h.fits; simp only [MP.Z, kOff] at *; omega_arith
 
 theorem In.off_eq (h : In P σ) (d : Nat) : off (State.addr P.B) d = off (State.addr P.ws) (kOff + d) := by
   simp only [off]; rw [h.addrB, Offset.add_add]
@@ -138,7 +138,7 @@ theorem In.numAt_val32 (h : In P σ) (m : Mem) (j : Nat) :
     numAt m (State.addr P.ws) P.w j = val32 m (State.addr P.B) (arr P.W j) (2 * P.w) := by
   unfold numAt
   rw [show State.addr P.ws + BitVec.ofNat 64 (arrAt P.w j) = off (State.addr P.ws) (arrAt P.w j) from rfl,
-    ← h.arr_eq j, ← h.off_eq, show 8 * P.w = 4 * (2 * P.w) by omega, read_eq_val32]
+    ← h.arr_eq j, ← h.off_eq, show 8 * P.w = 4 * (2 * P.w) by omega_arith, read_eq_val32]
 
 /-- A key number whose top words are zero is Montgomery multiplication's number. -/
 theorem In.numAt_eq (h : In P σ) {m : Mem} {j : Nat} (hl : num m P.B P.W j < P.R) :
@@ -152,11 +152,11 @@ theorem In.numAt_eq (h : In P σ) {m : Mem} {j : Nat} (hl : num m P.B P.W j < P.
   rw [e] at hl ⊢
   rcases Nat.eq_zero_or_pos (val32 m (State.addr P.B) (arr P.W j + 4 * (2 * P.w)) 2) with z | z
   · rw [z, Nat.mul_zero, Nat.add_zero]
-  · have := Nat.le_mul_of_pos_right P.R z; omega
+  · have := Nat.le_mul_of_pos_right P.R z; omega_arith
 
 theorem In.c_lt (h : In P σ) : cOf P σ.mem < P.R := by
   have := val32_lt σ.mem (State.addr P.B) (arr P.W 0) (2 * P.w)
-  rw [← h.numAt_val32, show 32 * (2 * P.w) = 64 * P.w by omega] at this
+  rw [← h.numAt_val32, show 32 * (2 * P.w) = 64 * P.w by omega_arith] at this
   exact this
 
 end
@@ -185,8 +185,8 @@ theorem In.ks (h : In P σ) : KS P σ (fun _ => 0) [] (fun _ => 0) [] σ :=
 /-- The key view's context. -/
 theorem KS.ws (h : KS P σ A live V ls s) (r7 : s.gpr .r7 = BitVec.ofNat 32 (S P.W)) (r8 : s.gpr .r8 = P.B)
     (r9 : s.gpr .r9 = BitVec.ofNat 32 P.W) : Ws s P.B P.Z P.W nArr :=
-  ⟨h.pre.nowrapB, by rw [h.wr, h.pre.wr]; simp, h.pre.fitsK, by simp only [MP.W]; omega,
-    by have := h.pre.w128; simp only [MP.W]; omega, r7, r8, r9⟩
+  ⟨h.pre.nowrapB, by rw [h.wr, h.pre.wr]; simp, h.pre.fitsK, by simp only [MP.W]; omega_arith,
+    by have := h.pre.w128; simp only [MP.W]; omega_arith, r7, r8, r9⟩
 
 /-- The same memory, other registers. -/
 theorem KS.of_rest (h : KS P σ A live V ls s) {rs : List Reg} (r : Rest rs s t) (m : t.mem = s.mem) :
@@ -209,10 +209,10 @@ theorem KS.mem_out (h : KS P σ A live V ls s) {x : Addr} (hx : P.Z ≤ ofs (Sta
   have hZ := pre.fitsK
   refine h.keep.out (Z := P.Z) (fun j hj => ?_) (fun d hd => ?_) hx
   · have := arr_end (w := P.W) (wJs_lt j hj).2
-    omega
+    omega_arith
   · have := wDs_ok d hd
     have : hdr ≤ arr P.W nArr := Nat.le_add_right _ _
-    simp only [hdr] at this; omega
+    simp only [hdr] at this; omega_arith
 
 /-- The frame's words keep their values. -/
 theorem KS.frameWord (h : KS P σ A live V ls s) {o : Nat} (ho : o + 4 ≤ 56) :
@@ -223,12 +223,12 @@ theorem KS.frameWord (h : KS P σ A live V ls s) {o : Nat} (ho : o + 4 ≤ 56) :
   have hin : (P.rF).Contains (off (State.addr P.sp) o + BitVec.ofNat 64 i) 1 := by
     simp only [Region.Contains, off]
     rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have hout := pre.sep _ hin
   simp only [Region.Contains] at hout
   have len := pre.len
-  rw [pre.ofsB (by simp only [ofs, kOff]; omega)]
-  simp only [ofs, MP.Z, kOff]; omega
+  rw [pre.ofsB (by simp only [ofs, kOff]; omega_arith)]
+  simp only [ofs, MP.Z, kOff]; omega_arith
 
 /-- The candidate keeps its value. -/
 theorem KS.c_eq (h : KS P σ A live V ls s) : cOf P s.mem = cOf P σ.mem := by
@@ -238,14 +238,14 @@ theorem KS.c_eq (h : KS P σ A live V ls s) : cOf P s.mem = cOf P σ.mem := by
   have hK := pre.fitsK
   have h0 := arr_end (w := P.W) (show 0 < nArr by decide)
   rw [cOf, cOf, pre.numAt_val32, pre.numAt_val32]
-  refine h.keep.val32 (fun r hr => ?_) (by omega)
+  refine h.keep.val32 (fun r hr => ?_) (by omega_arith)
   simp only [ranges, List.mem_append, List.mem_map] at hr
   rcases hr with ⟨j, hj, rfl⟩ | ⟨d', hd', rfl⟩
-  · have := arr_end (w := P.W) (show 0 < j by have := (wJs_lt j hj).1; omega)
-    dsimp only; omega
+  · have := arr_end (w := P.W) (show 0 < j by have := (wJs_lt j hj).1; omega_arith)
+    dsimp only; omega_arith
   · have := wDs_ok d' hd'
     have : hdr ≤ arr P.W 0 := Nat.le_add_right _ _
-    simp only [hdr] at this; dsimp only; omega
+    simp only [hdr] at this; dsimp only; omega_arith
 
 /-- Bytes of the header but words 23 to 31, and of array 0, keep their values. -/
 theorem KS.mem_hdr (h : KS P σ A live V ls s) {d : Nat} (hd : d + 1 ≤ arrAt P.w 1) (hd2 : d < 184 ∨ 256 ≤ d) :
@@ -256,18 +256,18 @@ theorem KS.mem_hdr (h : KS P σ A live V ls s) {d : Nat} (hd : d + 1 ≤ arrAt P
   have fit := pre.fit
   by_cases hlo : d < kOff
   · exact h.mem_out (pre.ofsB_lo hlo)
-  · obtain ⟨e, rfl⟩ : ∃ e, d = kOff + e := ⟨d - kOff, by omega⟩
+  · obtain ⟨e, rfl⟩ : ∃ e, d = kOff + e := ⟨d - kOff, by omega_arith⟩
     rw [← pre.off_eq]
     refine h.keep _ fun r hr => ?_
-    rw [ofs_off0 _ (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes, kOff] at hd; omega)]
+    rw [ofs_off0 _ (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes, kOff] at hd; omega_arith)]
     simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨j, hj, rfl⟩ | ⟨d', hd', rfl⟩
     · have := pre.arr_eq 1
-      have := arr_mono (w := P.W) (show 1 ≤ j by have := (wJs_lt j hj).1; omega)
-      dsimp only; omega
+      have := arr_mono (w := P.W) (show 1 ≤ j by have := (wJs_lt j hj).1; omega_arith)
+      dsimp only; omega_arith
     · have := wDs_ok d' hd'
       simp only [arrAt, Spec.Rsa.Mont.hdrBytes, kOff] at hd hd2
-      dsimp only; omega
+      dsimp only; omega_arith
 
 /-- Reads of the header but words 23 to 31, and of array 0. -/
 theorem KS.read_hdr (h : KS P σ A live V ls s) {d n : Nat} (hdn : d + n ≤ arrAt P.w 1) (hdn2 : d + n ≤ 184 ∨ 256 ≤ d) :
@@ -275,12 +275,12 @@ theorem KS.read_hdr (h : KS P σ A live V ls s) {d n : Nat} (hdn : d + n ≤ arr
   refine Mem.read_congr fun i hi => ?_
   rw [show off (State.addr P.ws) d + BitVec.ofNat 64 i = off (State.addr P.ws) (d + i) by
     simp only [off]; rw [Offset.add_add]]
-  exact h.mem_hdr (by omega) (by omega)
+  exact h.mem_hdr (by omega_arith) (by omega_arith)
 
 /-- `w`, from the header. -/
 theorem KS.width (h : KS P σ A live V ls s) : wOf s.mem (State.addr P.ws) = P.w := by
   have e : s.mem.readW (off (State.addr P.ws) 48) 64 = σ.mem.readW (off (State.addr P.ws) 48) 64 := by
-    simp only [Mem.readW, h.read_hdr (d := 48) (n := 8) (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) (.inl (by decide))]
+    simp only [Mem.readW, h.read_hdr (d := 48) (n := 8) (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith) (.inl (by decide))]
   exact (congrArg BitVec.toNat e).trans h.pre.width
 
 /-- Montgomery multiplication is ready. -/
@@ -296,26 +296,26 @@ theorem KS.ready (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) : Arithmeti
     fun d n h1 h2 => h.read_hdr h1 h2
   have hw : ∀ d, d + 8 ≤ 184 →
       s.mem.readW (off (State.addr P.ws) d) 64 = σ.mem.readW (off (State.addr P.ws) d) 64 :=
-    fun d hd' => by simp only [Mem.readW, hr d 8 (by omega) (.inl hd')]
+    fun d hd' => by simp only [Mem.readW, hr d 8 (by omega_arith) (.inl hd')]
   have width : wOf s.mem (State.addr P.ws) = wOf σ.mem (State.addr P.ws) :=
-    congrArg BitVec.toNat (hw 48 (by omega))
+    congrArg BitVec.toNat (hw 48 (by omega_arith))
   refine ⟨⟨fit, by rw [h.wr, pre.wr]; simp⟩, ?_, width.trans pre.width, r0, ?_, ?_, ?_, ?_, ?_⟩
   · have layout := pre.layout
     unfold Layout at layout ⊢
     rw [width]
     refine ⟨layout.1, layout.2.1, layout.2.2.1, fun j hj => ?_⟩
     unfold wordAt
-    rw [hw _ (by simp only [Spec.Rsa.Mont.arrWord]; omega)]
+    rw [hw _ (by simp only [Spec.Rsa.Mont.arrWord]; omega_arith)]
     exact layout.2.2.2 j hj
   · change ((s.mem.readW (off (State.addr P.ws) (arrAt P.w 0)) 64).toNat *
       (s.mem.readW (off (State.addr P.ws) 56) 64).toNat + 1) % 2 ^ 64 = 0
     rw [show s.mem.readW (off (State.addr P.ws) (arrAt P.w 0)) 64 =
       σ.mem.readW (off (State.addr P.ws) (arrAt P.w 0)) 64 by
-        simp only [Mem.readW, hr (arrAt P.w 0) 8 (by omega) (.inr (Nat.le_of_eq a0.symm))],
-      hw 56 (by omega)]
+        simp only [Mem.readW, hr (arrAt P.w 0) 8 (by omega_arith) (.inr (Nat.le_of_eq a0.symm))],
+      hw 56 (by omega_arith)]
     exact pre.inverse
   · rw [show numAt s.mem (State.addr P.ws) P.w 0 = cOf P s.mem from rfl, h.c_eq]
-    have := pre.c3; omega
+    have := pre.c3; omega_arith
   · refine ⟨P.rF, List.mem_append_right _ (by rw [h.wr, pre.wr]; simp), ?_⟩
     rw [h.sp, pre.sp]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
   · rw [h.sp, pre.sp]

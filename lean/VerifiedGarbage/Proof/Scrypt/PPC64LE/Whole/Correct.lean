@@ -56,7 +56,7 @@ theorem pbk_pre {s : State} (h : pbkK.pre s) :
   all_goals first
     | with_reducible assumption
     | with_reducible exact Region.Disjoint.symm ‹_›
-    | omega
+    | omega_arith
 
 theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2ScratchContract PPC64LE.abi 1008).post s s') :
     pbkK.post s s' := by
@@ -123,11 +123,11 @@ theorem stk_in {d n : Nat} (h₁ : d + n ≤ 1120) {r : Region} (h : InBuf L r) 
 
 /-- The 1008 bytes the calls use miss every writable buffer. -/
 theorem low_in {r : Region} (h : InBuf L r) : Region.Disjoint ⟨L.B, 1008⟩ r := by
-  have := hL.stk_in (d := 0) (n := 1008) (by omega) h
+  have := hL.stk_in (d := 0) (n := 1008) (by omega_arith) h
   simpa using this
 
 theorem scr_in : InBuf L ⟨L.scr, 1600⟩ :=
-  .inr (.inr (.inl (within_base _ (by have := hL.slen17; omega))))
+  .inr (.inr (.inl (within_base _ (by have := hL.slen17; omega_arith))))
 
 end Lay.Ok
 
@@ -156,18 +156,18 @@ theorem pbk_pre' (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {salt : Addr} 
     {ol : BitVec 64} (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :
     pbkK.pre (t.callEntry.withRegions (pbkRd L salt sl) (pbkWr L out ol)) := by
   have hnB := hL.nB
-  have t1008 : (L.B + BitVec.ofNat 64 1008).toNat = L.B.toNat + 1008 := toNat_add_ofNat _ (by omega)
+  have t1008 : (L.B + BitVec.ofNat 64 1008).toNat = L.B.toNat + 1008 := toNat_add_ofNat _ (by omega_arith)
   have sw : InBuf L ⟨L.scr, 1600⟩ := hL.scr_in
-  have lo : Region.Sub ⟨L.B, 1008⟩ L.STK := by simpa using Offset.sub_base L.B (d := 0) (n := 1008) (k := 1120) (by omega)
+  have lo : Region.Sub ⟨L.B, 1008⟩ L.STK := by simpa using Offset.sub_base L.B (d := 0) (n := 1008) (k := 1120) (by omega_arith)
   simp only [pbkK, pbkG, below, Spec.Hmac.sha256S, State.withRegions_rd, State.withRegions_wr,
     hc.ce_sp, sub1008, t1008, gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r7 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.r8 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r9 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.r10 ∉ linkRegs), ha.r3, ha.r4, ha.r5, ha.r6, ha.r7, ha.r8, ha.r9, ha.r10]
-  exact ⟨trivial, trivial, hL.pw_buf hr.ow, hL.pw_buf sw, hr.so, hr.sc, hr.oc, by omega,
+  exact ⟨trivial, trivial, hL.pw_buf hr.ow, hL.pw_buf sw, hr.so, hr.sc, hr.oc, by omega_arith,
     hL.kp.sub_left lo, hr.ks.sub_left lo, hL.low_in hr.ow, hL.low_in sw, hL.np, hr.ns, hr.no,
-    by have := hL.nc; have := hL.slen17; omega, by decide, hr.ol⟩
+    by have := hL.nc; have := hL.slen17; omega_arith, by decide, hr.ol⟩
 
 theorem pbk_sub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
     (hr : PbkRegions L salt sl out ol) :
@@ -184,7 +184,7 @@ theorem pbk_sub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : Bi
     · exact ⟨_, by simp, h⟩
     · exact ⟨_, by simp, h⟩
     · exact ⟨_, by simp, h⟩
-  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen17; omega)⟩
+  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen17; omega_arith)⟩
 
 theorem pbk_wsub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
     (hr : PbkRegions L salt sl out ol) : ∀ r ∈ pbkWr L out ol, InBuf L r := by
@@ -232,7 +232,7 @@ theorem blk_in (hL : L.Ok) {i : Nat} (hi : i < L.pp) : InBuf L ⟨blkAt L i, L.r
 
 theorem r2 (hL : L.Ok) : (L.r + BitVec.ofNat 64 2).toNat = L.r.toNat + 2 := by
   have := hL.r_lt
-  exact toNat_add_ofNat _ (by omega)
+  exact toNat_add_ofNat _ (by omega_arith)
 
 theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {i : Nat} (hi : i < L.pp)
     (ha : RomixArgs L (blkAt L i) t) :
@@ -241,11 +241,11 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {i : Nat} (hi
   have hb := blk_in hL hi
   have hv : InBuf L ⟨L.v, L.vlen.toNat * 128⟩ := .inr (.inl (within_base _ (Nat.le_refl _)))
   have hs : InBuf L ⟨L.scr, (L.r.toNat + 2) * 128⟩ :=
-    .inr (.inr (.inl (within_base _ (by have := hL.slen; omega))))
+    .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
   have tb : (blkAt L i).toNat = L.b.toNat + 128 * L.r.toNat * i := by
     have := blk_le hL hi; have := hL.nb; have := hL.rpos
-    exact toNat_add_ofNat _ (by omega)
-  have t1008 : (L.B + BitVec.ofNat 64 1008).toNat = L.B.toNat + 1008 := toNat_add_ofNat _ (by omega)
+    exact toNat_add_ofNat _ (by omega_arith)
+  have t1008 : (L.B + BitVec.ofNat 64 1008).toNat = L.B.toNat + 1008 := toNat_add_ofNat _ (by omega_arith)
   simp only [Proof.Scrypt.roMixPPC64LE, State.withRegions_rd, State.withRegions_wr, hc.ce_sp, sub48, t1008,
     gpr_ce _ _ _ (by decide : Reg.r3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r4 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.r5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.r6 ∉ linkRegs),
@@ -253,11 +253,11 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {i : Nat} (hi
     ha.r3, ha.r4, ha.r5, ha.r6, ha.r7, ha.r8, r2 hL]
   have kb := Within.sub (within_off L.b (blk_le hL hi))
   have ks := Within.sub (within_base L.scr (n := (L.r.toNat + 2) * 128) (k := L.slen.toNat * 128)
-    (by have := hL.slen; omega))
+    (by have := hL.slen; omega_arith))
   exact ⟨trivial, trivial, hL.bv.sub_left kb, (hL.bc.sub_left kb).sub_right ks, hL.vc.sub_right ks,
-    by omega, hL.stk_in (by omega) hb, hL.stk_in (by omega) hv, hL.stk_in (by omega) hs,
-    by rw [tb]; have := blk_le hL hi; have := hL.nb; omega, hL.nv,
-    by have := hL.nc; have := hL.slen; omega, hL.rpos, hL.vmod, Whole.valid_pow hL.valid, trivial⟩
+    by omega_arith, hL.stk_in (by omega_arith) hb, hL.stk_in (by omega_arith) hv, hL.stk_in (by omega_arith) hs,
+    by rw [tb]; have := blk_le hL hi; have := hL.nb; omega_arith, hL.nv,
+    by have := hL.nc; have := hL.slen; omega_arith, hL.rpos, hL.vmod, Whole.valid_pow hL.valid, trivial⟩
 
 theorem romix_sub (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
     ∀ r ∈ ([] : List Region) ++ romixWr L i, ∃ R ∈ L.regions, Within r R := by
@@ -265,14 +265,14 @@ theorem romix_sub (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
   rintro r (rfl | rfl | rfl)
   · exact ⟨L.BB, by simp, within_off _ (blk_le hL hi)⟩
   · exact ⟨L.VV, by simp, within_base _ (Nat.le_refl _)⟩
-  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen; omega)⟩
+  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen; omega_arith)⟩
 
 theorem romix_wsub (hL : L.Ok) {i : Nat} (hi : i < L.pp) : ∀ r ∈ romixWr L i, InBuf L r := by
   simp only [romixWr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact blk_in hL hi
   · exact .inr (.inl (within_base _ (Nat.le_refl _)))
-  · exact .inr (.inr (.inl (within_base _ (by have := hL.slen; omega))))
+  · exact .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
 
 theorem roMix_sdepth : sdepth Impl.Scrypt.PPC64LE.roMix ≤ 1008 := by lit_decide
 
@@ -306,13 +306,13 @@ theorem pw_bytes : bytesAt t.mem L.pw L.pwl.toNat = bytesAt m₀ L.pw L.pwl.toNa
   Memory.frame_bytesAt hc.frame (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
-    exacts [hL.pb, hL.pv, hL.pc, hL.po, hL.kp.symm]) (by have := hL.np; omega)
+    exacts [hL.pb, hL.pv, hL.pc, hL.po, hL.kp.symm]) (by have := hL.np; omega_arith)
 
 theorem salt_bytes : bytesAt t.mem L.salt L.sl.toNat = bytesAt m₀ L.salt L.sl.toNat :=
   Memory.frame_bytesAt hc.frame (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
-    exacts [hL.sb, hL.sv, hL.sc, hL.so, hL.ks.symm]) (by have := hL.ns; omega)
+    exacts [hL.sb, hL.sv, hL.sc, hL.so, hL.ks.symm]) (by have := hL.ns; omega_arith)
 
 end Ctx
 
@@ -343,24 +343,24 @@ theorem blk_disj (hL : L.Ok) {k i : Nat} (hk : k < L.pp) (hi : i < L.pp) (hne : 
   have h₂ := blk_le hL hi
   have := hL.nb
   have hr := hL.rpos
-  refine Offset.disjoint _ ?_ (by omega) (by omega)
+  refine Offset.disjoint _ ?_ (by omega_arith) (by omega_arith)
   rcases Nat.lt_or_gt_of_ne hne with h | h
   · left
     have : 128 * L.r.toNat * k + 128 * L.r.toNat ≤ 128 * L.r.toNat * i := by
       rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h
-    omega
+    omega_arith
   · right
     have : 128 * L.r.toNat * i + 128 * L.r.toNat ≤ 128 * L.r.toNat * k := by
       rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h
-    omega
+    omega_arith
 
 theorem blk_sub (hL : L.Ok) {k : Nat} (hk : k < L.pp) :
     Region.Sub ⟨blkAt L k, 128 * L.r.toNat⟩ L.BB := by
   have := blk_le hL hk
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_arith)
 
 theorem scr_sub (hL : L.Ok) : Region.Sub ⟨L.scr, 1600⟩ L.SC :=
-  Within.sub (within_base _ (by have := hL.slen17; omega))
+  Within.sub (within_base _ (by have := hL.slen17; omega_arith))
 
 /-! ## Step 1 -/
 
@@ -433,7 +433,7 @@ theorem blk0 (L : Lay) : blkAt L 0 = L.b := by
 /-- A block of `b` misses the frame's cur slot. -/
 theorem blk_fr (hL : L.Ok) {k : Nat} (hk : k < L.pp) :
     Region.Disjoint ⟨blkAt L k, 128 * L.r.toNat⟩ (curR L) :=
-  (hL.kb.symm.sub_left (blk_sub hL hk)).sub_right (Offset.sub_base _ (by omega))
+  (hL.kb.symm.sub_left (blk_sub hL hk)).sub_right (Offset.sub_base _ (by omega_arith))
 
 theorem start_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t)
     (hx : ∀ k < L.pp, bytesAt t.mem (blkAt L k) (128 * L.r.toNat) = X L m₀ k) :
@@ -443,7 +443,7 @@ theorem start_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t)
     rw [← hx k hk]
     exact Memory.frame_bytesAt hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact blk_fr hL hk)
-      (by have := hL.blen_lt; have := blk_le hL hk; omega)⟩
+      (by have := hL.blen_lt; have := blk_le hL hk; omega_arith)⟩
 
 theorem next_eq (L : Lay) (i : Nat) :
     blkAt L i + BitVec.ofNat 64 (L.r.toNat * 128) = blkAt L (i + 1) := by
@@ -459,11 +459,11 @@ theorem left_eq (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
   simp only [blkAt]
   rw [Offset.add_sub_add_left, ← hL.len_b]
   have e₁ : 128 * L.r.toNat * (i + 1) < 2 ^ 64 := by
-    rw [Nat.mul_succ]; rw [← hL.len_b] at h₁ hb; omega
+    rw [Nat.mul_succ]; rw [← hL.len_b] at h₁ hb; omega_arith
   have e₂ : 128 * L.r.toNat * L.pp < 2 ^ 64 := by rw [hL.len_b]; exact hb
   rw [bne, Offset.ofNat_sub_ofNat_beq e₂ e₁, decide_not]
   refine congrArg (!·) (decide_eq_decide.mpr ⟨fun h => ?_, fun h => by rw [h]⟩)
-  exact (Nat.eq_of_mul_eq_mul_left (by omega) h).symm
+  exact (Nat.eq_of_mul_eq_mul_left (by omega_arith) h).symm
 
 theorem call_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L g lr m₀ t)
     (hb : InvB L m₀ i t) (ha : RomixArgs L (blkAt L i) t) :
@@ -476,10 +476,10 @@ theorem call_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L 
     simp only [romixWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact hL.stk_in (by omega) (blk_in hL hi)
-    · exact hL.stk_in (by omega) (.inr (.inl (within_base _ (Nat.le_refl _))))
-    · exact hL.stk_in (by omega) (.inr (.inr (.inl (within_base _ (by have := hL.slen; omega)))))
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact hL.stk_in (by omega_arith) (blk_in hL hi)
+    · exact hL.stk_in (by omega_arith) (.inr (.inl (within_base _ (Nat.le_refl _))))
+    · exact hL.stk_in (by omega_arith) (.inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith)))))
+    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
   · by_cases hki : k = i
     · subst hki
       rw [hr₂, hb.blks k hk]
@@ -492,14 +492,14 @@ theorem call_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L 
           · exact blk_disj hL hk hi hki
           · exact hL.bv.sub_left (blk_sub hL hk)
           · exact (hL.bc.sub_left (blk_sub hL hk)).sub_right
-              (Within.sub (within_base _ (by have := hL.slen; omega)))
-          · exact (hL.kb.symm.sub_left (blk_sub hL hk)).sub_right (Region.sub_prefix (by omega)))
-          (by have := hL.blen_lt; have := blk_le hL hk; omega)
+              (Within.sub (within_base _ (by have := hL.slen; omega_arith)))
+          · exact (hL.kb.symm.sub_left (blk_sub hL hk)).sub_right (Region.sub_prefix (by omega_arith)))
+          (by have := hL.blen_lt; have := blk_le hL hk; omega_arith)
       rw [e₂, hb.blks k hk]
       by_cases hlt : k < i
-      · have : k < i + 1 := by omega
+      · have : k < i + 1 := by omega_arith
         simp only [hlt, this, ite_true]
-      · have : ¬ k < i + 1 := by omega
+      · have : ¬ k < i + 1 := by omega_arith
         simp only [hlt, this, ite_false]
 
 theorem next_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L g lr m₀ t)
@@ -511,7 +511,7 @@ theorem next_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L 
       rw [← hm.blks k hk]
       exact Memory.frame_bytesAt hf₃ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact blk_fr hL hk)
-        (by have := hL.blen_lt; have := blk_le hL hk; omega)⟩,
+        (by have := hL.blen_lt; have := blk_le hL hk; omega_arith)⟩,
       by rw [hx₃, next_eq, left_eq hL hi]⟩
 
 theorem body_ok (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (h : Inv L g lr m₀ i t) :
@@ -601,7 +601,7 @@ theorem scrypt_ok {s : State} (h : scryptPPC.pre s) :
     WP isa (scrypt name pbk) s fun s' => abiPreserved s s' ∧ scryptPPC.post s s' := by
   have hL := lay_ok h
   have h1120 : 1120 ≤ s.sp.toNat := h.1
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by simp only [locals]; omega) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by simp only [locals]; omega_arith) ?_
   refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, he⟩ => ?_)
   refine rest_ok hv hd name hL hc he fun u hu ho => WP.mono (restore_ok hu) fun v ⟨vlr, vm, vsp, _, _, vg⟩ => ?_
   refine ⟨⟨fun r hr => vg r hr, ?_, vlr⟩, ?_⟩

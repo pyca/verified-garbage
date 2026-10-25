@@ -90,7 +90,7 @@ theorem tailHead_ok {t : State} (H : HInv K W SP D n ciph l A a s₀ t (a.length
     refine ⟨_, by orun [H.env.r15, r₁, rest], ?_, ?_, fun r h => ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_arithFlags, ite_true]
     · simp only [zf_arithFlags, gpr_setReg, ite_true,
-        Proof.AesCcm.X86_64.and_self_beq (show a.length % 16 < 2 ^ 64 by omega)]
+        Proof.AesCcm.X86_64.and_self_beq (show a.length % 16 < 2 ^ 64 by omega_arith)]
     · simp only [gpr_setReg, gpr_arithFlags, h, ite_false]
     all_goals rfl
   exact WP.of_runBlock ⟨t₁, run₁,
@@ -121,13 +121,13 @@ theorem hashRestPre_one {N : Addr} {nl tl : Nat} (C : HCtx K W SP D n R ciph l A
     (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by decide)) (E.perm.wW (by decide))
   have E₁ : Env K W SP t₁ := E.keep (fun r hr => B₁.gpr r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
     B₁.rd B₁.wr
-  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega)
+  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega_arith)
   have hS : Covers [⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩] (t₁.rd ++ t₁.wr) := by
     rw [B₁.rd, B₁.wr, H.rd, H.wr]; exact hB.rd
   have hSD : (⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 bufO, 16⟩ :=
     hB.w.sub_right (Lay.wSub (by decide))
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (padTo_ok E₁ hr (by omega) (by decide) (by rw [B₁.gpr _ (by decide), H.rbx])
+  refine WP.seq (WP.mono (padTo_ok E₁ hr (by omega_arith) (by decide) (by rw [B₁.gpr _ (by decide), H.rbx])
     (by rw [B₁.gpr _ (by decide), h12]) hS hSD) fun t₂ ⟨fr₂, _, g₂, rd₂, wr₂⟩ => ?_)
   have E₂ : Env K W SP t₂ := E₁.keep (fun r hr => g₂ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
     (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
@@ -173,9 +173,9 @@ theorem chunk_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph�
         (.seq (.ite .b (.block []) (.block [.mov .r12 (.imm 8)])) (.seq (.block bufStart) (.loop hashFill .ne)))) s
         (FillInv K W SP D n ciph l A a s₀ j c · c) := fun {ciph l a s₀ s} C hm hj H => by
     have hc : min 8 (a.length / 16 - j) = c := by rw [hm, hcd]
-    refine wp_seq_assoc (WP.seq (WP.mono (chunkHead_ok C H (by omega)) fun t ⟨H', h12⟩ => ?_))
+    refine wp_seq_assoc (WP.seq (WP.mono (chunkHead_ok C H (by omega_arith)) fun t ⟨H', h12⟩ => ?_))
     rw [hc] at h12
-    exact chunkFill_ok C H' (by omega) (by omega) (by omega) h12
+    exact chunkFill_ok C H' (by omega_arith) (by omega_arith) (by omega_arith) h12
   have bX : ∀ s₁ s₂, (k = M - j ∧ j < M ∧ HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j ∧
       HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j) → Both K W SP R N A D nl n tl [.rbx, .rbp] [248] s₁ s₂ :=
     fun s₁ s₂ ⟨_, _, H₁, H₂⟩ => by
@@ -194,19 +194,19 @@ theorem chunk_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph�
     ⟨_, by taint_decide⟩).wp
     (F₁ := (FillInv K W SP D n ciph₁ l₁ A a₁ s₀₁ j c · c)) (F₂ := (FillInv K W SP D n ciph₂ l₂ A a₂ s₀₂ j c · c))
     fun s₁ s₂ ⟨_, hj, H₁, H₂⟩ => ⟨pre C₁ hMd.symm hj H₁, pre C₂ hM hj H₂⟩
-  have hc8 : c ≤ 8 := by omega
+  have hc8 : c ≤ 8 := by omega_arith
   have call : ∀ {ciph : Cipher} {l : Block} {a : List Byte} {s₀ s : State}, HCtx K W SP D n R ciph l A a s₀ →
       One K W SP R N A D nl n tl s₀ → FillInv K W SP D n ciph l A a s₀ j c s c →
       WP isa (callBlocks (callees v).enc [mvr .rdx .r15, addi .rdx bufO, mvr .rcx .r12]) s fun s' =>
         One K W SP R N A D nl n tl s' ∧ s'.gpr .r12 = BitVec.ofNat 64 c := fun {ciph l a s₀ s} C o F => by
     have O := F.one C o
     exact WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L O.env C.rounds O.sl.rounds
-      (bufArgs_ok F.env.r15 F.r12) (dstW L F.env.perm (d := 384) (n := c) (by omega))) fun s' Q => by
+      (bufArgs_ok F.env.r15 F.r12) (dstW L F.env.perm (d := 384) (n := c) (by omega_arith))) fun s' Q => by
       refine ⟨O.step L hDW (O.env.of_saved Q.saved Q.rd Q.wr) Q.wr (Q.frame.sub fun r hr => ?_),
         by rw [Q.saved _ (by decide), F.r12]⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨_, by simp, sub_wC (by decide) (by omega)⟩
+      · exact ⟨_, by simp, sub_wC (by decide) (by omega_arith)⟩
       · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
       · rw [O.env.rsp]; exact ⟨_, by simp, fun _ h => h⟩
   have B := (callBlocks_rel (b := (callees v).enc) v.encOk v.encCt L C₁.rounds hDW hn [] []
@@ -215,8 +215,8 @@ theorem chunk_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph�
     (P := fun s₁ s₂ => True ∧ FillInv K W SP D n ciph₁ l₁ A a₁ s₀₁ j c s₁ c ∧
       FillInv K W SP D n ciph₂ l₂ A a₂ s₀₂ j c s₂ c) fun s₁ s₂ h =>
       ⟨Both.of (h.2.1.one C₁ o₁) (h.2.2.one C₂ o₂), bufArgs_ok h.2.1.env.r15 h.2.1.r12,
-        bufArgs_ok h.2.2.env.r15 h.2.2.r12, dstW L h.2.1.env.perm (d := 384) (n := c) (by omega),
-        dstW L h.2.2.env.perm (d := 384) (n := c) (by omega)⟩).wp
+        bufArgs_ok h.2.2.env.r15 h.2.2.r12, dstW L h.2.1.env.perm (d := 384) (n := c) (by omega_arith),
+        dstW L h.2.2.env.perm (d := 384) (n := c) (by omega_arith)⟩).wp
     (F₁ := fun (s : State) => One K W SP R N A D nl n tl s ∧ s.gpr .r12 = BitVec.ofNat 64 c)
     (F₂ := fun (s : State) => One K W SP R N A D nl n tl s ∧ s.gpr .r12 = BitVec.ofNat 64 c)
     fun s₁ s₂ h => ⟨call C₁ o₁ h.2.1, call C₂ o₂ h.2.2⟩
@@ -234,18 +234,18 @@ theorem chunk_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph�
       t.zf = some (decide (M - (j + c) = 0)))
     (F₂ := fun (t : State) => HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ t (j + c) ∧ t.zf = some (decide (M - (j + c) = 0)))
     fun s₁ s₂ ⟨_, hj, H₁, H₂⟩ => ⟨?_, ?_⟩).mono (fun _ _ h => h) fun s₁ s₂ ⟨_, ⟨H₁, z₁⟩, ⟨H₂, z₂⟩⟩ => ?_
-  · have := hashChunk_ok v C₁ H₁ (by omega)
+  · have := hashChunk_ok v C₁ H₁ (by omega_arith)
     rw [← hMd, ← hcd] at this
     exact this
-  · have := hashChunk_ok v C₂ H₂ (by omega)
+  · have := hashChunk_ok v C₂ H₂ (by omega_arith)
     rw [hM, ← hcd] at this
     exact this
   · rw [eval_ne z₁, eval_ne z₂]
     refine ⟨rfl, fun h => ?_, fun h => ?_⟩
-    · have he : j + c = M := by simp at h; omega
+    · have he : j + c = M := by simp at h; omega_arith
       rw [hM, ← he]; exact ⟨H₁, H₂⟩
     · have he : ¬ M - (j + c) = 0 := by simpa using h
-      exact ⟨M - (j + c), by omega, j + c, rfl, by omega, H₁, H₂⟩
+      exact ⟨M - (j + c), by omega_arith, j + c, rfl, by omega_arith, H₁, H₂⟩
 
 /-- The call on the block at `W + bufO` keeps the public arguments. -/
 theorem callBuf_one (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -346,7 +346,7 @@ theorem hash_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph₂
           · rw [h.1.2, h.2.2, hr], fun _ h => (nomatch h)⟩ : Both K W SP R N A D nl n tl [.rbx, .r12] [] s₁ s₂))
       (c := .seq (.block (xor16 .r14 240 ohO)) (.seq (padTo bufO) (.block (xor16 .r15 ohO bufO))))
       ⟨_, by taint_decide⟩).wp (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
-      fun s₁ s₂ h => ⟨hashRestPre_one C₁ o₁ h.1.1 hr0 h.1.2, hashRestPre_one C₂ o₂ h.2.1 (by omega) h.2.2⟩
+      fun s₁ s₂ h => ⟨hashRestPre_one C₁ o₁ h.1.1 hr0 h.1.2, hashRestPre_one C₂ o₂ h.2.1 (by omega_arith) h.2.2⟩
     have c := (callBlocks_rel (b := (callees v).enc) v.encOk v.encCt L C₁.rounds hDW hn [] [] (args := oneBlock bufO)
       ⟨_, by taint_decide⟩ (D' := W + BitVec.ofNat 64 bufO) (k := 1)
       (P := fun s₁ s₂ => True ∧ One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) fun s₁ s₂ h =>

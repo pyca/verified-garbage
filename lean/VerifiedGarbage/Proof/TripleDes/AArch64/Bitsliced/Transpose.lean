@@ -87,13 +87,13 @@ theorem group_run {n K : Nat} {is : List Instr} {g : Nat → Nat → Nat} {s : S
     have hj' : j < n := hj
     simp only [envIn, hj', ↓reduceIte, Option.some.injEq] at hsl
     subst hsl
-    exact inWord_rel (laneW s q) (by omega)
+    exact inWord_rel (laneW s q) (by omega_arith)
   obtain ⟨s', hs', p⟩ := run (fun _ _ => lanes_sound) hok hrel he
   refine ⟨s', hs', fun q hq j hj b hb => ?_, fun r hr => p.gpr r (by simp [hr]), p.rd, p.wr, p.sp, p.frame⟩
   have hpj := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
   have hs := p.rel.slot j _ hj (beq_iff_eq.mp hpj) q hq
   have bits := outWord_rel (fun p hp a ha => by
-    simp only [List.mem_singleton] at ha; subst ha; have := hg j hj p hp; omega) hs
+    simp only [List.mem_singleton] at ha; subst ha; have := hg j hj p hp; omega_arith) hs
   have hb' : s'.gpr .x4 = s.gpr .x4 := p.base
   have hsj : laneAt s'.mem (s.gpr .x4) q j =
       vdword (s'.mem.readW (vAddr (s'.gpr (⟨.x4, n⟩ : Cfg).base) j) 128) q := by
@@ -126,9 +126,9 @@ theorem gA_lt : ∀ j < 57, ∀ p < 64, gA j p < 64 * 57 := by
   split
   · have h1 : (p >>> 3) &&& 7 ≤ 7 := Nat.and_le_right
     have h2 : ((p &&& 7) ||| ((j / 8) <<< 3)) < 2 ^ 6 :=
-      Nat.or_lt_two_pow (Nat.lt_of_le_of_lt Nat.and_le_right (by decide)) (by rw [Nat.shiftLeft_eq]; omega)
-    omega
-  · omega
+      Nat.or_lt_two_pow (Nat.lt_of_le_of_lt Nat.and_le_right (by decide)) (by rw [Nat.shiftLeft_eq]; omega_arith)
+    omega_arith
+  · omega_arith
 
 theorem gB_lt : ∀ j < 8, ∀ p < 64, gB j p < 64 * 8 := by decide +kernel
 
@@ -156,8 +156,8 @@ theorem ok_window {s₀ s : State} {D : Addr} (h₀ : Ok stateCfg s₀) (hD : s�
     have hk' : k < n := hk
     show InRegions s.wr (vAddr (s.gpr .x4) k) 16
     rw [hb, vAddr_add, hw, ← hD]
-    exact h₀.slotIn (a + k) (by show a + k < 64; omega)
-  slots := by show 16 * n < 2 ^ 64; omega
+    exact h₀.slotIn (a + k) (by show a + k < 64; omega_arith)
+  slots := by show 16 * n < 2 ^ 64; omega_arith
 
 /-- A word outside a group's slots is unchanged. -/
 theorem lane_out {m m' : Mem} {D : Addr} {a n : Nat} (ha : a + n ≤ 64)
@@ -166,7 +166,7 @@ theorem lane_out {m m' : Mem} {D : Addr} {a n : Nat} (ha : a + n ≤ 64)
   simp only [laneAt]
   rw [hf.readW (r := ⟨vAddr D j, 16⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint D (by omega) (by omega) (by omega)) (by decide)]
+    exact Offset.disjoint D (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
 
 /-- A word in a group's slots, from the group's view. -/
 theorem lane_in (m : Mem) (D : Addr) (a q j : Nat) : laneAt m (vAddr D a) q j = laneAt m D q (a + j) := by
@@ -220,7 +220,7 @@ theorem frame_state {s₀ : State} {m m' : Mem} {a n : Nat} (ha : a + n ≤ 64)
     (hf : Frame [⟨vAddr (s₀.gpr .x4) a, 16 * n⟩] m m') : Frame [stateR s₀] m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega_arith)⟩
 
 /-- A group's code, then `x4` past it and the count down: what each keeps. -/
 theorem group_step {s : State} {body : List Instr} {step : Nat} (hst : step < 4096) {Q : State → Prop}
@@ -280,7 +280,7 @@ theorem stageA_step {s₀ : State} (h₀ : Ok stateCfg s₀) {n : Nat} {s : Stat
   let D := s₀.gpr .x4
   have hn₁ := hs.pos
   have hn₂ := hs.le
-  have hok := ok_window (a := 8 - n) (n := 57) h₀ rfl (by omega) hs.x4 hs.keep.wr
+  have hok := ok_window (a := 8 - n) (n := 57) h₀ rfl (by omega_arith) hs.x4 hs.keep.wr
   obtain ⟨s₁, run₁, l₁, k₁, rd₁, wr₁, sp₁, f₁⟩ := group_run (by decide) gA_lt bodyA_check hok
   rw [show stageBody (fun k => 8 * k) 8 16 =
     bodyA ++ ([.addImm .x .x4 .x4 16, .subImm .x .x9 .x9 1] : List Instr) by
@@ -294,52 +294,52 @@ theorem stageA_step {s₀ : State} (h₀ : Ok stateCfg s₀) {n : Nat} {s : Stat
     intro q hq j hj
     rw [m₃]
     by_cases hw : 8 - n ≤ j ∧ j < 8 - n + 57
-    · obtain ⟨j', rfl⟩ : ∃ j', j = 8 - n + j' := ⟨j - (8 - n), by omega⟩
-      have hj' : j' < 57 := by omega
+    · obtain ⟨j', rfl⟩ : ∃ j', j = 8 - n + j' := ⟨j - (8 - n), by omega_arith⟩
+      have hj' : j' < 57 := by omega_arith
       apply BitVec.eq_of_getLsbD_eq
       intro p hp
       rw [← lane_in, l₁ q hq j' hj' p hp, lane_in]
       by_cases h8 : j' % 8 = 0
-      · obtain ⟨e₁, e₂⟩ := gA_idx (j' / 8) (by omega) p hp
+      · obtain ⟨e₁, e₂⟩ := gA_idx (j' / 8) (by omega_arith) p hp
         have eg : gA j' p = 64 * (8 * ((p >>> 3) &&& 7)) + ((p &&& 7) ||| ((j' / 8) <<< 3)) := by
           simp only [gA, h8, ↓reduceIte]
         rw [eg, show (64 * (8 * ((p >>> 3) &&& 7)) + ((p &&& 7) ||| ((j' / 8) <<< 3))) / 64 =
-            8 * ((p >>> 3) &&& 7) by omega,
+            8 * ((p >>> 3) &&& 7) by omega_arith,
           show (64 * (8 * ((p >>> 3) &&& 7)) + ((p &&& 7) ||| ((j' / 8) <<< 3))) % 64 =
-            ((p &&& 7) ||| ((j' / 8) <<< 3)) by omega,
-          hs.lanes q hq _ (by omega)]
-        have c₁ : ¬ (8 - n + 8 * ((p >>> 3) &&& 7)) % 8 < 8 - n := by omega
-        have c₂ : (8 - n + j') % 8 < 8 - n + 1 := by omega
+            ((p &&& 7) ||| ((j' / 8) <<< 3)) by omega_arith,
+          hs.lanes q hq _ (by omega_arith)]
+        have c₁ : ¬ (8 - n + 8 * ((p >>> 3) &&& 7)) % 8 < 8 - n := by omega_arith
+        have c₂ : (8 - n + j') % 8 < 8 - n + 1 := by omega_arith
         simp only [c₁, c₂, ↓reduceIte, stA, getLsbD_ofBits, hp, decide_true, Bool.true_and]
-        rw [show (8 - n + j') % 8 = 8 - n by omega, show (8 - n + j') / 8 = j' / 8 by omega]
+        rw [show (8 - n + j') % 8 = 8 - n by omega_arith, show (8 - n + j') / 8 = j' / 8 by omega_arith]
       · have eg : gA j' p = 64 * j' + p := by simp only [gA, h8, ↓reduceIte]
-        rw [eg, show (64 * j' + p) / 64 = j' by omega, show (64 * j' + p) % 64 = p by omega,
+        rw [eg, show (64 * j' + p) / 64 = j' by omega_arith, show (64 * j' + p) % 64 = p by omega_arith,
           hs.lanes q hq _ hj]
         have : ((8 - n + j') % 8 < 8 - n) = ((8 - n + j') % 8 < 8 - n + 1) := by
-          apply propext; constructor <;> intro h <;> omega
+          apply propext; constructor <;> intro h <;> omega_arith
         simp only [this]
-    · rw [lane_out (by omega) f₁ hj (by omega) q, hs.lanes q hq j hj]
+    · rw [lane_out (by omega_arith) f₁ hj (by omega_arith) q, hs.lanes q hq j hj]
       have : (j % 8 < 8 - n) = (j % 8 < 8 - n + 1) := by
-        apply propext; constructor <;> intro h <;> omega
+        apply propext; constructor <;> intro h <;> omega_arith
       simp only [this]
   have keep₃ : Keep s₀ s₃ :=
     ⟨fun r a b c => (g₃ r a b c).trans (hs.keep.gpr r a b c), rd₃.trans (rd₁.trans hs.keep.rd),
-      wr₃.trans (wr₁.trans hs.keep.wr), sp₃.trans hs.keep.sp, hs.keep.frame.trans (m₃ ▸ frame_state (by omega) f₁)⟩
+      wr₃.trans (wr₁.trans hs.keep.wr), sp₃.trans hs.keep.sp, hs.keep.frame.trans (m₃ ▸ frame_state (by omega_arith) f₁)⟩
   have rsi₃ : s₃.gpr .x4 = vAddr D (8 - n + 1) := by
     rw [si₃, hs.x4, show BitVec.ofNat 64 16 = BitVec.ofNat 64 (16 * 1) from rfl]
     exact vAddr_succ D (8 - n) 1
   have cnt : s.gpr .x9 - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by rw [hs.x9]; exact cnt8_sub n hn₁
-  rw [eval_nz, c₃, cnt, cnt8_zero (n - 1) (by omega)]
+  rw [eval_nz, c₃, cnt, cnt8_zero (n - 1) (by omega_arith)]
   by_cases h1 : n = 1
   · subst h1
     left
     refine ⟨rfl, keep₃, rsi₃, fun q hq j hj => ?_⟩
-    have c : j % 8 < 8 - 1 + 1 := by omega
+    have c : j % 8 < 8 - 1 + 1 := by omega_arith
     rw [lanes₃ q hq j hj]; simp only [c, ↓reduceIte]
   · right
-    refine ⟨by simp; omega, n - 1, by omega, keep₃, by omega, by omega,
-      by rw [rsi₃]; congr 1; omega, by rw [c₃, cnt], fun q hq j hj => ?_⟩
-    rw [lanes₃ q hq j hj, show 8 - (n - 1) = 8 - n + 1 by omega]
+    refine ⟨by simp; omega_arith, n - 1, by omega_arith, keep₃, by omega_arith, by omega_arith,
+      by rw [rsi₃]; congr 1; omega_arith, by rw [c₃, cnt], fun q hq j hj => ?_⟩
+    rw [lanes₃ q hq j hj, show 8 - (n - 1) = 8 - n + 1 by omega_arith]
 
 /-- Before the second stage: the first done, `x4` back at the state words. -/
 structure PreB (s₀ : State) (s : State) : Prop where
@@ -370,7 +370,7 @@ theorem stageB_step {s₀ : State} (h₀ : Ok stateCfg s₀) {n : Nat} {s : Stat
   let D := s₀.gpr .x4
   have hn₁ := hs.pos
   have hn₂ := hs.le
-  have hok := ok_window (a := 8 * (8 - n)) (n := 8) h₀ rfl (by omega) hs.x4 hs.keep.wr
+  have hok := ok_window (a := 8 * (8 - n)) (n := 8) h₀ rfl (by omega_arith) hs.x4 hs.keep.wr
   obtain ⟨s₁, run₁, l₁, k₁, rd₁, wr₁, sp₁, f₁⟩ := group_run (by decide) gB_lt bodyB_check hok
   rw [show stageBody (fun k => k) 1 128 =
     bodyB ++ ([.addImm .x .x4 .x4 128, .subImm .x .x9 .x9 1] : List Instr) by
@@ -383,41 +383,41 @@ theorem stageB_step {s₀ : State} (h₀ : Ok stateCfg s₀) {n : Nat} {s : Stat
     intro q hq j hj
     rw [m₃]
     by_cases hw : 8 * (8 - n) ≤ j ∧ j < 8 * (8 - n) + 8
-    · obtain ⟨j', rfl⟩ : ∃ j', j = 8 * (8 - n) + j' := ⟨j - 8 * (8 - n), by omega⟩
-      have hj' : j' < 8 := by omega
+    · obtain ⟨j', rfl⟩ : ∃ j', j = 8 * (8 - n) + j' := ⟨j - 8 * (8 - n), by omega_arith⟩
+      have hj' : j' < 8 := by omega_arith
       apply BitVec.eq_of_getLsbD_eq
       intro p hp
       rw [← lane_in, l₁ q hq j' hj' p hp, lane_in]
       obtain ⟨e₁, e₂⟩ := gB_idx j' hj' p hp
-      rw [show gB j' p / 64 = p &&& 7 by simp only [gB]; omega,
-        show gB j' p % 64 = (p &&& 56) ||| j' by simp only [gB]; omega,
-        hs.lanes q hq _ (by omega)]
-      have c₁ : ¬ (8 * (8 - n) + (p &&& 7)) / 8 < 8 - n := by omega
-      have c₂ : (8 * (8 - n) + j') / 8 < 8 - n + 1 := by omega
+      rw [show gB j' p / 64 = p &&& 7 by simp only [gB]; omega_arith,
+        show gB j' p % 64 = (p &&& 56) ||| j' by simp only [gB]; omega_arith,
+        hs.lanes q hq _ (by omega_arith)]
+      have c₁ : ¬ (8 * (8 - n) + (p &&& 7)) / 8 < 8 - n := by omega_arith
+      have c₂ : (8 * (8 - n) + j') / 8 < 8 - n + 1 := by omega_arith
       simp only [c₁, c₂, ↓reduceIte, stB, getLsbD_ofBits, hp, decide_true, Bool.true_and]
-      rw [show (8 * (8 - n) + j') / 8 = 8 - n by omega, show (8 * (8 - n) + j') % 8 = j' by omega]
-    · rw [lane_out (by omega) f₁ hj (by omega) q, hs.lanes q hq j hj]
+      rw [show (8 * (8 - n) + j') / 8 = 8 - n by omega_arith, show (8 * (8 - n) + j') % 8 = j' by omega_arith]
+    · rw [lane_out (by omega_arith) f₁ hj (by omega_arith) q, hs.lanes q hq j hj]
       have : (j / 8 < 8 - n) = (j / 8 < 8 - n + 1) := by
-        apply propext; constructor <;> intro h <;> omega
+        apply propext; constructor <;> intro h <;> omega_arith
       simp only [this]
   have keep₃ : Keep s₀ s₃ :=
     ⟨fun r a b c => (g₃ r a b c).trans (hs.keep.gpr r a b c), rd₃.trans (rd₁.trans hs.keep.rd),
-      wr₃.trans (wr₁.trans hs.keep.wr), sp₃.trans hs.keep.sp, hs.keep.frame.trans (m₃ ▸ frame_state (by omega) f₁)⟩
+      wr₃.trans (wr₁.trans hs.keep.wr), sp₃.trans hs.keep.sp, hs.keep.frame.trans (m₃ ▸ frame_state (by omega_arith) f₁)⟩
   have rsi₃ : s₃.gpr .x4 = vAddr D (8 * (8 - n) + 8) := by
     rw [si₃, hs.x4, show BitVec.ofNat 64 128 = BitVec.ofNat 64 (16 * 8) from rfl]
     exact vAddr_succ D (8 * (8 - n)) 8
   have cnt : s.gpr .x9 - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by rw [hs.x9]; exact cnt8_sub n hn₁
-  rw [eval_nz, c₃, cnt, cnt8_zero (n - 1) (by omega)]
+  rw [eval_nz, c₃, cnt, cnt8_zero (n - 1) (by omega_arith)]
   by_cases h1 : n = 1
   · subst h1
     left
     refine ⟨rfl, keep₃, by rw [rsi₃], fun q hq j hj => ?_⟩
-    have c : j / 8 < 8 - 1 + 1 := by omega
+    have c : j / 8 < 8 - 1 + 1 := by omega_arith
     rw [lanes₃ q hq j hj]; simp only [c, ↓reduceIte]
   · right
-    refine ⟨by simp; omega, n - 1, by omega, keep₃, by omega, by omega,
-      by rw [rsi₃]; congr 1; omega, by rw [c₃, cnt], fun q hq j hj => ?_⟩
-    rw [lanes₃ q hq j hj, show 8 - (n - 1) = 8 - n + 1 by omega]
+    refine ⟨by simp; omega_arith, n - 1, by omega_arith, keep₃, by omega_arith, by omega_arith,
+      by rw [rsi₃]; congr 1; omega_arith, by rw [c₃, cnt], fun q hq j hj => ?_⟩
+    rw [lanes₃ q hq j hj, show 8 - (n - 1) = 8 - n + 1 by omega_arith]
 
 theorem vAddr_zero (D : Addr) : vAddr D 0 = D := by simp [vAddr]
 

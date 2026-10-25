@@ -82,12 +82,12 @@ theorem contextAt_congr {m₁ m₂ : Mem} {p : Addr} {d : Direction} {k : Nat} (
   refine ⟨?_, ?_, ?_⟩
   · simp only [scheduleAt]
     congr 1; funext i
-    rw [h _ (by omega), h _ (by omega)]
+    rw [h _ (by omega_arith), h _ (by omega_arith)]
   · simp only [blockAt]
     congr 1; funext i
-    rw [show p + 128 = p + BitVec.ofNat 64 128 from rfl, Offset.add_add, h _ (by omega)]
+    rw [show p + 128 = p + BitVec.ofNat 64 128 from rfl, Offset.add_add, h _ (by omega_arith)]
   · rw [show p + 136 = p + BitVec.ofNat 64 136 from rfl]
-    exact bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+    exact bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega_arith)
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
 region. -/
@@ -97,10 +97,10 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_arith) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_arith
 
 variable (pb : Nat)
 
@@ -134,9 +134,9 @@ theorem cbcInitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcInitSig.words
   have := Nat.mod_le kl.toNat (2 ^ pb)
   have := Nat.mod_le il.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi' => hk i (by
-      rw [BitVec.toNat_setWidth] at hi'; omega),
+      rw [BitVec.toNat_setWidth] at hi'; omega_arith),
     bytesAt_congr (n := (il.setWidth pb).toNat) fun i hi' => hi i (by
-      rw [BitVec.toNat_setWidth] at hi'; omega)]
+      rw [BitVec.toNat_setWidth] at hi'; omega_arith)]
   exact h
 
 theorem cbcInitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcInitSig.words pb).length →
@@ -164,7 +164,7 @@ theorem cbcInitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcInitSig.wor
   have h' := h direction
   revert h'
   split
-  · rintro ⟨h1, h2⟩; exact ⟨h1, by rw [contextAt_congr (by omega) hc]; exact h2⟩
+  · rintro ⟨h1, h2⟩; exact ⟨h1, by rw [contextAt_congr (by omega_arith) hc]; exact h2⟩
   · exact id
 
 theorem cbcUpdatePre_local : ∀ vs m₁ m₂, vs.length = (cbcUpdateSig.words pb).length →
@@ -209,8 +209,8 @@ theorem cbcUpdatePost_local (d : Direction) : ∀ vs m₁ m₂ m' r,
   dsimp only [Curry.apply, cbcUpdatePost, ArgWord.ofRaw] at h ⊢
   intro hp
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [contextAt_congr (by omega) hc, bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi =>
-    hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+  rw [contextAt_congr (by omega_arith) hc, bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi =>
+    hd i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hp
 
 theorem cbcUpdatePostOut_local (d : Direction) : ∀ vs m m₁ m₂ r,
@@ -241,9 +241,9 @@ theorem cbcUpdatePostOut_local (d : Direction) : ∀ vs m m₁ m₂ r,
   intro hp
   obtain ⟨h1, h2⟩ := h hp
   have := Nat.mod_le ol.toNat (2 ^ pb)
-  refine ⟨by rw [contextAt_congr (by omega) hc]; exact h1, ?_⟩
+  refine ⟨by rw [contextAt_congr (by omega_arith) hc]; exact h1, ?_⟩
   rw [bytesAt_congr (n := (ol.setWidth pb).toNat) fun i hi =>
-    ho i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    ho i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h2
 
 end VG.Proof.Rc2

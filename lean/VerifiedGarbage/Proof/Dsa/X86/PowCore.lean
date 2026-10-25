@@ -30,7 +30,7 @@ theorem square_value {n m c X out : Nat} (hR : Nat.Coprime (2 ^ (64 * n)) m)
   have v := VG.Proof.Bignum.mont_cancel hR (o := out) (c := 2 ^ (64 * n + 2 * c)) (by
     rw [h, hX, ← Nat.mul_mod, ← Nat.pow_add, ← Nat.pow_add]
     congr 2
-    omega)
+    omega_arith)
   rwa [Nat.mod_eq_of_lt hlt] at v
 
 section
@@ -46,11 +46,11 @@ theorem squarings_ok {t : State} (hn : 2 ≤ n) (j : Nat) :
   | k + 1, S, hx => by
     refine WP.seq (WP.mono (squarings_ok hn j k S hx) fun u ⟨Su, xu, Vu⟩ => ?_)
     refine WP.mono (mulSt_ok (o := 4) (a := 4) (b := 4) Su hn (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by rw [xu]; exact Nat.mod_lt _ (by have := Su.ctx.gt_one; omega)))
+      (by decide) (by decide) (by decide) (by rw [xu]; exact Nat.mod_lt _ (by have := Su.ctx.gt_one; omega_arith)))
       fun w ⟨Sw, _, L, P, V, _⟩ => ⟨Sw, ?_, fun i hi5 hi k hk => ?_⟩
     · rw [square_value Su.ctx.coprime xu P L, show j + (k + 1) = (j + k) + 1 from rfl, Nat.pow_succ,
         Nat.mul_comm (2 ^ (j + k)) 2, Nat.mul_left_comm]
-    · rw [V i (by omega) hi (by omega) k hk, Vu i hi5 hi k hk]
+    · rw [V i (by omega_arith) hi (by omega_arith) k hk, Vu i hi5 hi k hk]
 
 theorem encode_ok {t : State} (S : St n m size base s₀ t) (hn : 2 ≤ n)
     (hr2 : wordsVal t.mem base (slot n 4) n = 2 ^ (128 * n) % m) :
@@ -63,7 +63,7 @@ theorem encode_ok {t : State} (S : St n m size base s₀ t) (hn : 2 ≤ n)
   have wv : ∀ {m₁ m₂ : Mem} {j : Nat}, (∀ k ≤ 2 * n, val32 m₂ base (slot n j) k = val32 m₁ base (slot n j) k) →
       wordsVal m₂ base (slot n j) n = wordsVal m₁ base (slot n j) n := fun H => by
     rw [wordsVal_eq_val32, wordsVal_eq_val32, H _ (Nat.le_refl _)]
-  have RR : 2 ^ (128 * n) = 2 ^ (64 * n) * 2 ^ (64 * n) := by rw [← Nat.pow_add]; congr 1; omega
+  have RR : 2 ^ (128 * n) = 2 ^ (64 * n) * 2 ^ (64 * n) := by rw [← Nat.pow_add]; congr 1; omega_arith
   unfold encode
   refine WP.seq (WP.mono (oneSt_ok S (i := 7) (by decide) (by decide)) fun s₁ ⟨S₁, i₁, O₁, V₁⟩ => ?_)
   have x₁ : wordsVal s₁.mem base (slot n 4) n = 2 ^ (128 * n) % m := by rw [wv (V₁ 4 (by decide) (by decide)), hr2]
@@ -76,7 +76,7 @@ theorem encode_ok {t : State} (S : St n m size base s₀ t) (hn : 2 ≤ n)
   have x₂ : wordsVal s₂.mem base (slot n 4) n = 2 ^ (128 * n) % m := by
     rw [wv (V₂ 4 (by decide) (by decide) (by decide)), x₁]
   refine WP.mono (mulSt_ok (o := 5) (a := 5) (b := 4) S₂ hn (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rw [x₂]; exact Nat.mod_lt _ (by omega)))
+    (by decide) (by decide) (by decide) (by rw [x₂]; exact Nat.mod_lt _ (by omega_arith)))
     fun u ⟨Su, iu, Lu, Pu, Vu, _⟩ => ⟨Su, by rw [iu, i₂, i₁], ?_, ?_, fun k hk => ?_⟩
   · rw [wv (Vu 6 (by decide) (by decide) (by decide)), y₂]
   · have b₂ : wordsVal s₂.mem base (slot n 5) n = wordsVal t.mem base (slot n 5) n := by
@@ -110,18 +110,18 @@ theorem core_ok {s : State} {base : Addr} {size n e m : Nat}
         wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
       OutsS base (s.gpr .esp) (coreRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
   have nw := hs.nowrap
-  have hnz : contextBytes n ≤ 2 ^ 64 := by omega
+  have hnz : contextBytes n ≤ 2 ^ 64 := by omega_arith
   have b8 := slot_bound (n := n) (i := 8) (by decide)
   simp only [stride] at b8
   unfold core setup
-  refine WP.seq (WP.seq (WP.mono (contextSeed_ok (bits := 65 * n) hs (by omega) (by omega) (by omega) hz hv hm1
+  refine WP.seq (WP.seq (WP.mono (contextSeed_ok (bits := 65 * n) hs (by omega_arith) (by omega_arith) (by omega_arith) hz hv hm1
     hodd) fun u ⟨Cu, _, Xu, Ou, Ku⟩ => ?_))
   have hset : ∀ r ∈ setupRanges n, ∃ c ∈ coreRanges n, c.1 ≤ r.1 ∧ r.1 + r.2 ≤ c.1 + c.2 := by
     intro r hr
     simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ⟨(0, 8), List.mem_cons_self .., by decide, by decide⟩
-    all_goals exact in_core (by decide) (by simp only [contextBytes, slot_lin] at b8 ⊢; omega)
+    all_goals exact in_core (by decide) (by simp only [contextBytes, slot_lin] at b8 ⊢; omega_arith)
   have Su : St n m size base s u := ⟨Cu, R, Ku, (OutsS.of_outs Ou).core hset⟩
   have keep₀ : ∀ i, 5 ≤ i → i < 9 → ∀ k ≤ 2 * n, val32 u.mem base (slot n i) k = val32 s.mem base (slot n i) k := by
     intro i hi5 hi k hk
@@ -132,12 +132,12 @@ theorem core_ok {s : State} {base : Addr} {size n e m : Nat}
     · simp only [setupRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
         implies_true, and_true]
       simp only [slot_lin] at *
-      omega
-    · omega
+      omega_arith
+    · omega_arith
   refine WP.mono (squarings_ok hn 0 6 Su (by
-    rw [Xu, Nat.pow_zero, Nat.mul_one, show 64 * n + n = 65 * n by omega])) fun w ⟨Sw, Xw, Vw⟩ => ?_
+    rw [Xu, Nat.pow_zero, Nat.mul_one, show 64 * n + n = 65 * n by omega_arith])) fun w ⟨Sw, Xw, Vw⟩ => ?_
   refine WP.seq (WP.mono (encode_ok Sw hn (by
-    rw [Xw, show 64 * n + n * 2 ^ (0 + 6) = 128 * n by rw [show (2 : Nat) ^ (0 + 6) = 64 from rfl]; omega]))
+    rw [Xw, show 64 * n + n * 2 ^ (0 + 6) = 128 * n by rw [show (2 : Nat) ^ (0 + 6) = 64 from rfl]; omega_arith]))
     fun v ⟨Sv, _, Yv, Bv, Ev⟩ => ?_)
   refine WP.seq (wp_movS rfl fun v₁ u₁ _ => WP.block_nil ?_)
   have k₁ : Keeps powerClob v v₁ := u₁.keeps.mono (by decide)
@@ -148,8 +148,8 @@ theorem core_ok {s : State} {base : Addr} {size n e m : Nat}
       keep₀ 5 (by decide) (by decide) _ (Nat.le_refl _)]
   have E₀ : val32 v₁.mem base (slot n 8) e = val32 s.mem base (slot n 8) e := by
     rw [u₁.mem, Ev e hen, Vw 8 (by decide) (by decide) e hen, keep₀ 8 (by decide) (by decide) e hen]
-  refine WP.seq (WP.mono (loopSt_ok S₁ hn he hen (by rw [u₁.mem]; exact Yv) B₀ (by omega) u₁.gpr) fun x I => ?_)
-  refine WP.mono (finish_ok I.st hn I.finished (Nat.mod_lt _ (by omega))) fun t ⟨St, V⟩ => ⟨?_, St.mem, St.keeps⟩
+  refine WP.seq (WP.mono (loopSt_ok S₁ hn he hen (by rw [u₁.mem]; exact Yv) B₀ (by omega_arith) u₁.gpr) fun x I => ?_)
+  refine WP.mono (finish_ok I.st hn I.finished (Nat.mod_lt _ (by omega_arith))) fun t ⟨St, V⟩ => ⟨?_, St.mem, St.keeps⟩
   rw [V, E₀]
 
 end

@@ -31,7 +31,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 theorem and_one (x : BitVec 64) : x &&& BitVec.setWidth 64 1#16 = BitVec.ofNat 64 (x.toNat % 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (BitVec.setWidth 64 1#16).toNat = 1 from rfl, Nat.and_one_is_mod, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show x.toNat % 2 < 2 ^ 64 by omega)]
+    Nat.mod_eq_of_lt (show x.toNat % 2 < 2 ^ 64 by omega_arith)]
 
 /-- The mask of an even word, from its low bit. -/
 theorem low_sub_one (x : BitVec 64) :
@@ -41,8 +41,8 @@ theorem low_sub_one (x : BitVec 64) :
 
 /-- A word minus its low bit. -/
 theorem sub_low (x : BitVec 64) : (x - (x &&& BitVec.setWidth 64 1#16)).toNat = x.toNat - x.toNat % 2 := by
-  rw [and_one, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [and_one, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- `Bw = w + ⌈e_len / 8⌉`, as `bw` computes it. -/
 theorem bw_val (w el : Nat) (hel : el < 2 ^ 32) :
@@ -66,7 +66,7 @@ theorem bw_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (h0 : s.gpr .x
   have hn := hs.nowrap
   WP.keep [.x3, .x14] (by
     brun [bw, h0, h12, hdr_enc (show Public.sElen < 32 by decide), hs.ld (d := 8 * Public.sElen) (by
-      simp only [Public.sElen, sFn]; omega), hel, bw_val w el hel']) (by decide) (by decide) (by decide +kernel)
+      simp only [Public.sElen, sFn]; omega_arith), hel, bw_val w el hel']) (by decide) (by decide) (by decide +kernel)
 
 /-- `skipBlk`. -/
 theorem skipBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
@@ -97,14 +97,14 @@ theorem skipBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat
     t.mem = (t₂.mem.writeW (off B (slot w aM)) (word t₂.mem B (slot w aM) -
         (word t₂.mem B (slot w aM) &&& BitVec.setWidth 64 1#16))).writeW
       (off B (8 * sC2)) (mask (decide ((word t₂.mem B (slot w aM)).toNat % 2 = 0)))) (by
-      brun [h16, h0₂, h12₂, hdr_enc (show sC2 < 32 by decide), hs₂.ld (d := slot w aM) (by omega),
-        hs₂.st (d := slot w aM) (by omega), hs₂.st (d := 8 * sC2) (by omega), low_sub_one]) (by decide) (by decide) (by decide +kernel)) fun t₃ ⟨⟨h9, h16₃, h12₃, h0₃, m₃⟩, k₃⟩ => ?_
+      brun [h16, h0₂, h12₂, hdr_enc (show sC2 < 32 by decide), hs₂.ld (d := slot w aM) (by omega_arith),
+        hs₂.st (d := slot w aM) (by omega_arith), hs₂.st (d := 8 * sC2) (by omega_arith), low_sub_one]) (by decide) (by decide) (by decide +kernel)) fun t₃ ⟨⟨h9, h16₃, h12₃, h0₃, m₃⟩, k₃⟩ => ?_
   have hel₃ : word t₃.mem B (8 * Public.sElen) = BitVec.ofNat 64 el := by
     have e1 : 8 * Public.sElen = 160 := rfl
     have e2 : 8 * sC2 = 240 := rfl
-    rw [m₃, (writeW_outside _ B _ (d := 8 * sC2) (by omega)).word (by omega) (by omega),
-      (writeW_outside _ B _ (d := slot w aM) (by omega)).word (by
-        have := hdr_lt_slot w aM (show Public.sElen < 32 by decide); omega) (by omega), m₂, m₁]
+    rw [m₃, (writeW_outside _ B _ (d := 8 * sC2) (by omega_arith)).word (by omega_arith) (by omega_arith),
+      (writeW_outside _ B _ (d := slot w aM) (by omega_arith)).word (by
+        have := hdr_lt_slot w aM (show Public.sElen < 32 by decide); omega_arith) (by omega_arith), m₂, m₁]
     exact hel
   refine WP.mono (bw_ok (h.scr.congr (k12.trans k₃).wr) h0₃ h256 hel₃ hel' h12₃) fun t ⟨⟨h14, mt, _⟩, k₄⟩ =>
     ⟨(k₄.gpr .x16 (by decide)).trans h16₃, (k₄.gpr .x9 (by decide)).trans h9, h14, (k₄.gpr .x0 (by decide)).trans h0₃,
@@ -117,7 +117,7 @@ theorem orLoop_ok {s : State} {B : Addr} {Z N e : Nat} (hs : Scr s B Z) (h16 : s
     WP isa orLoop s fun t =>
       (t.gpr .x9 = 0 ↔ wv s.mem B e N = 0) ∧ t.mem = s.mem ∧ Keep [.x3, .x4, .x9, .x14, .x16, .x17] s t := by
   unfold orLoop countLoop
-  refine WP.mono (wp_countdown (N := N) (by omega) (by omega)
+  refine WP.mono (wp_countdown (N := N) (by omega_arith) (by omega_arith)
     (fun j t => OrInv s B Z (fun j => True ∧ ∀ i < j, word s.mem B (e + 8 * i) = 0) j t ∧
       t.gpr .x16 = off B (e + 8 * j))
     (fun j hj t hI _ => orStep_ok he hj hI.1 hI.2)
@@ -143,17 +143,17 @@ theorem skipTest_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (h0 : s.gp
   have h0₁ : t₁.gpr .x0 = B := (k₁.gpr .x0 (by decide)).trans h0
   refine WP.mono (WP.keep [.x3, .x10] (Q := fun t => t.gpr .x10 = mask (decide z) ||| mask c ∧ t.mem = t₁.mem) (by
     brun [h0₁, h15, e, hdr_enc (show sC2 < 32 by decide), (hs.congr k₁.wr).ld (d := 8 * sC2) (by
-      simp only [sC2, sFn]; omega), m₁, hm]) (by decide) (by decide) (by decide +kernel))
+      simp only [sC2, sFn]; omega_arith), m₁, hm]) (by decide) (by decide) (by decide +kernel))
     fun t ⟨⟨h10, mt⟩, k₂⟩ => ⟨?_, mt.trans m₁, (k₁.trans k₂).mono (by decide)⟩
   rw [h10, mask_or_mask, mask_eq_zero_iff, Bool.or_eq_false_iff, decide_eq_false_iff_not]
 
 /-- `M` with its low bit cleared: `M - M mod 2`. -/
 theorem clearLow_wv (m : Mem) (B : Addr) {e n : Nat} (hn : 1 ≤ n) (hen : B.toNat + e + 8 * n ≤ 2 ^ 64) :
     wv (m.writeW (off B e) (word m B e - (word m B e &&& BitVec.setWidth 64 1#16))) B e n = wv m B e n - wv m B e n % 2 := by
-  have o := writeW_outside m B (word m B e - (word m B e &&& BitVec.setWidth 64 1#16)) (d := e) (by omega)
-  rw [wv_low hn, wv_low (m := m) hn, word_writeW_self, sub_low, o.wv (Or.inr (by omega)) (by omega)]
+  have o := writeW_outside m B (word m B e - (word m B e &&& BitVec.setWidth 64 1#16)) (d := e) (by omega_arith)
+  rw [wv_low hn, wv_low (m := m) hn, word_writeW_self, sub_low, o.wv (Or.inr (by omega_arith)) (by omega_arith)]
   have := (word m B e).isLt
-  omega
+  omega_arith
 
 /-- The test of `skip`: `x10 = 0` iff `M` is odd and above 1; then `M`'s
 array holds `m = M - 1`. -/
@@ -174,35 +174,35 @@ theorem skip_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
   have hM0 := hdr_lt_slot w aM (show sC2 < 32 by decide)
   have hw1 := h.w1
   have hw2 := h.w2
-  have sMM : slot w aM + 16 * (w + 2) ≤ Z := by rw [eM1] at sM; omega
+  have sMM : slot w aM + 16 * (w + 2) ≤ Z := by rw [eM1] at sM; omega_arith
   simp only [seqs]
-  refine WP.seq (WP.mono (skipBlk_ok h hel (by omega)) fun s₁ ⟨h16, h9, h14, h0, m₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (skipBlk_ok h hel (by omega_arith)) fun s₁ ⟨h16, h9, h14, h0, m₁, k₁⟩ => ?_)
   have hs₁ := h.scr.congr k₁.wr
   -- `m` in `M`'s arrays, and `M`'s parity in `sC2`.
   have o₂ := writeW_outside (s.mem.writeW (off B (slot w aM)) (word s.mem B (slot w aM) -
     (word s.mem B (slot w aM) &&& BitVec.setWidth 64 1#16))) B
-    (mask (decide ((word s.mem B (slot w aM)).toNat % 2 = 0))) (d := 8 * sC2) (by omega)
+    (mask (decide ((word s.mem B (slot w aM)).toNat % 2 = 0))) (d := 8 * sC2) (by omega_arith)
   have hm : wv s₁.mem B (slot w aM) (2 * (w + 2)) =
       wv s.mem B (slot w aM) (2 * (w + 2)) - wv s.mem B (slot w aM) (2 * (w + 2)) % 2 := by
-    rw [m₁, o₂.wv (Or.inr (by omega)) (by omega), clearLow_wv _ _ (by omega) (by omega)]
+    rw [m₁, o₂.wv (Or.inr (by omega_arith)) (by omega_arith), clearLow_wv _ _ (by omega_arith) (by omega_arith)]
   have hpar : (word s.mem B (slot w aM)).toNat % 2 = wv s.mem B (slot w aM) (2 * (w + 2)) % 2 := by
-    rw [wv_low (show 1 ≤ 2 * (w + 2) by omega)]; omega
+    rw [wv_low (show 1 ≤ 2 * (w + 2) by omega_arith)]; omega_arith
   have hc : word s₁.mem B (8 * sC2) = mask (decide (wv s.mem B (slot w aM) (2 * (w + 2)) % 2 = 0)) := by
     rw [m₁, word_writeW_self, hpar]
   -- `m = 0`.
-  refine WP.seq (WP.mono (orLoop_ok hs₁ h16 h14 h9 (by omega) (by omega) (by omega)) fun s₂ ⟨hz, m₂, k₂⟩ => ?_)
-  have hlt : wv s₁.mem B (slot w aM) (2 * (w + 2)) < 2 ^ (64 * (w + (el + 7) / 8)) := by rw [hm]; omega
-  rw [wv_low_of_lt (by omega) hlt, hm] at hz
+  refine WP.seq (WP.mono (orLoop_ok hs₁ h16 h14 h9 (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨hz, m₂, k₂⟩ => ?_)
+  have hlt : wv s₁.mem B (slot w aM) (2 * (w + 2)) < 2 ^ (64 * (w + (el + 7) / 8)) := by rw [hm]; omega_arith
+  rw [wv_low_of_lt (by omega_arith) hlt, hm] at hz
   refine WP.mono (skipTest_ok (hs₁.congr k₂.wr) ((k₂.gpr .x0 (by decide)).trans h0) h256 hz
     (c := decide (wv s.mem B (slot w aM) (2 * (w + 2)) % 2 = 0)) (by rw [m₂]; exact hc))
     fun t ⟨h10, mt, k₃⟩ => ⟨?_, by rw [mt, m₂, hm], ?_,
       (k₃.gpr .x0 (by decide)).trans ((k₂.gpr .x0 (by decide)).trans h0), ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   · rw [h10, decide_eq_false_iff_not]
-    omega
+    omega_arith
   · intro x hx
     have a := hx (slot w aM, 8) (by simp)
     have b := hx (8 * sC2, 8) (by simp)
     dsimp only at a b
-    rw [mt, m₂, m₁, o₂ x b, writeW_outside s.mem B _ (d := slot w aM) (by omega) x a]
+    rw [mt, m₂, m₁, o₂ x b, writeW_outside s.mem B _ (d := slot w aM) (by omega_arith) x a]
 
 end VG.Proof.Rsa.AArch64

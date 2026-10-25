@@ -53,14 +53,14 @@ theorem jfirst_ok (hL : JacWinLay K size) (hC : Law C) {base : Addr} {P : Point 
   rw [show K.first = [.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J - 1)))] ++
       ((K.tc.digit ++ K.select) ++ (K.tc.negY ++ copyPt K.M.n K.R K.E)) by
     simp only [JacWinCfg.first, List.append_assoc], WP.block_append_iff]
-  refine WP.mono (mov32Rbx_ok s (j := K.J - 1) (by omega)) fun s₁ ⟨b₁, k₁⟩ => ?_
+  refine WP.mono (mov32Rbx_ok s (j := K.J - 1) (by omega_arith)) fun s₁ ⟨b₁, k₁⟩ => ?_
   have hs₁ := hf.scr.of_keeps k₁ (by decide)
   have m₁ : s₁.mem = s.mem := k₁.2.1
   have F₁ := hf.next hL hs₁ ((Keeps.regs k₁).mono (sub_powClob (by decide))) (W := [])
     (by rw [m₁]; exact Unch.refl _ _ _) (by simp)
   have T₁ : JTblOk K C base P 16 s₁ := fun m h1 hm => (hT m h1 hm).congr fun c _ => by rw [m₁]
   rw [WP.block_append_iff]
-  refine WP.mono (jentry_ok hL hF (j := K.J - 1) (by omega) F₁ T₁ b₁) fun s₂ h₂ => ?_
+  refine WP.mono (jentry_ok hL hF (j := K.J - 1) (by omega_arith) F₁ T₁ b₁) fun s₂ h₂ => ?_
   rw [WP.block_append_iff]
   refine WP.mono h₂ fun s₃ E₃ => ?_
   -- `R = T`.
@@ -94,8 +94,8 @@ theorem jfirst_ok (hL : JacWinLay K size) (hC : Law C) {base : Addr} {P : Point 
   -- The point.
   have hk' : k + 16 * Window5.geom K.J < 32 ^ K.J := by rw [← offset_eq]; exact hkJ
   have hadd := Window5.win_add hC hP (k := k + 16 * Window5.geom K.J) (J := K.J) (j := K.J - 1)
-    (Nat.le_add_left _ _) (by omega)
-  rw [show K.J - 1 + 1 = K.J by omega, Window5.winE_top hk', Nat.mul_zero, Window5.mul_zero_pt,
+    (Nat.le_add_left _ _) (by omega_arith)
+  rw [show K.J - 1 + 1 = K.J by omega_arith, Window5.winE_top hk', Nat.mul_zero, Window5.mul_zero_pt,
     infinity_add'] at hadd
   have ent := E₃.ent
   have zer := E₃.zero
@@ -115,7 +115,7 @@ theorem jfirst_ok (hL : JacWinLay K size) (hC : Law C) {base : Addr} {P : Point 
     by_cases h0 : magH 16 (Window5.nib (k + 16 * Window5.geom K.J) (K.J - 1)) = 0
     · rw [Window5.winPt_zero h0]
       exact Or.inl ⟨rfl, by rw [← tz]; exact zer h0⟩
-    · have J := (ent (by omega)).jac
+    · have J := (ent (by omega_arith)).jac
       rw [tx, ty, tz] at J
       exact J
   · rw [k₄.gpr _ (by decide), E₃.keep.gpr _ (rbx_not_clob _), b₁]
@@ -143,12 +143,12 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     exact hC.one_ne_zero this.2.2
   rw [JacWinCfg.window]
   simp only [Code.inline]
-  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega) hs hM hF.toJacWinPt) fun s₁ ⟨F₁, T₁⟩ => ?_)
+  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt) fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ F₁ T₁) fun s₂ ⟨I₂, _⟩ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInv K C base size P s k 0 t)
     (Inv := fun j t => JInv K C base size P s k j t) (n := K.J - 1)
-    (fun j t h1 h2 hi => jstep_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hF h1 (by omega) hi)
-    (fun _ h => h) (by omega) I₂) fun s₃ I₃ => ?_)
+    (fun j t h1 h2 hi => jstep_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hF h1 (by omega_arith) hi)
+    (fun _ h => h) (by omega_arith) I₂) fun s₃ I₃ => ?_)
   obtain ⟨Q, -, hQe, R₃⟩ := I₃.st
   rw [Window5.winE_zero'] at hQe
   -- `Y = 1` where `Z = 0`.
@@ -163,7 +163,7 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
       else wordsVal s₃.mem base K.R.y K.M.n := ey₄'
   have O₄ : Outside base K.R.y (8 * K.M.n) s₃.mem s₄.mem := O₄'
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega
+  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
   have ex₄ : wordsVal s₄.mem base K.R.x K.M.n = wordsVal s₃.mem base K.R.x K.M.n :=
     O₄.wordsVal (hL.ap_oth (i := 0) (j := 1) (by decide) (by decide) (by decide)) (b64 _ (by jw_mem))
   have ez₄ : wordsVal s₄.mem base K.R.z K.M.n = wordsVal s₃.mem base K.R.z K.M.n :=

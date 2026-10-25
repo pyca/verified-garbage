@@ -90,7 +90,7 @@ theorem addr_bit (base : Addr) (i dst j : Nat) :
     base + BitVec.ofNat 64 i * BitVec.ofNat 64 8 + BitVec.ofNat 64 (dst + j) =
       off base (dst + (8 * i + j)) := by
   rw [← BitVec.ofNat_mul, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact congrArg (fun k => base + BitVec.ofNat 64 k) (by omega)
+  exact congrArg (fun k => base + BitVec.ofNat 64 k) (by omega_arith)
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     (((b.setWidth 64 >>> j) &&& BitVec.signExtend 64 (1 : BitVec 32)).setWidth 8 : BitVec 8) =
@@ -122,12 +122,12 @@ theorem bitJ_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {i
     refine ⟨⟨fun r hr => ?_, rfl, rfl⟩, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
-  · simp only [bitJ, show ¬j = 0 by omega, ite_false, List.nil_append, List.cons_append,
+  · simp only [bitJ, show ¬j = 0 by omega_arith, ite_false, List.nil_append, List.cons_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift, State.store8,
       ea_bitAt, hs.rdi, ht, addr_bit, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags,
       RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags, RegUpd.wr_setReg,
       RegUpd.wr_setFlags, RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_setFlags,
-      RegUpd.mem_arithFlags, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega⟩, ite_true, reduceCtorEq,
+      RegUpd.mem_arithFlags, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega_arith⟩, ite_true, reduceCtorEq,
       Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left', ha, bit_byte b j hj, and_self]
     refine ⟨⟨fun r hr => ?_, rfl, rfl⟩, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -145,25 +145,25 @@ theorem bitJs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (bitJs_ok hs ht ha hd k (by omega)) fun s₁ ⟨k₁, e₁, O₁⟩ => ?_
+    refine WP.mono (bitJs_ok hs ht ha hd k (by omega_arith)) fun s₁ ⟨k₁, e₁, O₁⟩ => ?_
     refine WP.mono (bitJ_ok (hs.of_keepRegs k₁ (by decide)) (i := i) (by rw [k₁.gpr _ (by decide), ht])
-      (b := b) (by rw [k₁.gpr _ (by decide), ha]) (dst := dst) (j := k) (by omega) (by omega))
+      (b := b) (by rw [k₁.gpr _ (by decide), ha]) (dst := dst) (j := k) (by omega_arith) (by omega_arith))
       fun s₂ ⟨k₂, m₂⟩ => ?_
     have O₂ : Outside base (dst + (8 * i + k)) 1 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW8_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW8_outside _ _ _ (by omega_arith)
     refine ⟨k₁.trans k₂, fun j hj => ?_,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂ _ (by rw [ofs_off0 base (d := dst + (8 * i + j)) (by omega)]; omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂ _ (by rw [ofs_off0 base (d := dst + (8 * i + j)) (by omega_arith)]; omega_arith), e₁ j h]
+    · obtain rfl : j = k := by omega_arith
       rw [m₂, writeW8_self]
 
 theorem cmp_eq {i N : Nat} (hi : i + 1 ≤ N) (hN : N < 2 ^ 31) :
     (BitVec.ofNat 64 (i + 1) - BitVec.signExtend 64 (BitVec.ofNat 32 N) == 0) = decide (i + 1 = N) := by
   have hse : BitVec.signExtend 64 (BitVec.ofNat 32 N) = BitVec.ofNat 64 N := by
     rw [BitVec.signExtend_eq_setWidth_of_msb_false (BitVec.msb_eq_false_iff_two_mul_lt.mpr (by
-        rw [BitVec.toNat_ofNat]; omega)),
-      BitVec.setWidth_ofNat_of_le_of_lt (by decide) (by omega)]
+        rw [BitVec.toNat_ofNat]; omega_arith)),
+      BitVec.setWidth_ofNat_of_le_of_lt (by decide) (by omega_arith)]
   rw [hse]
   by_cases h : i + 1 = N
   · rw [h, BitVec.sub_self, decide_eq_true rfl]; rfl
@@ -172,7 +172,7 @@ theorem cmp_eq {i N : Nat} (hi : i + 1 ≤ N) (hN : N < 2 ^ 31) :
     have := congrArg BitVec.toNat e
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this
     have h0 : (0 : BitVec 64).toNat = 0 := rfl
-    omega
+    omega_arith
 
 theorem inc_eq (i : Nat) :
     BitVec.ofNat 64 i + BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 (i + 1) := by
@@ -240,23 +240,23 @@ theorem bitsLoop_ok {s₀ : State} {base : Addr} {size src dst n : Nat} (hn : n 
     (8 * n - i) s ⟨i, rfl, hi, hb⟩
   rintro m s ⟨i, rfl, hi, hb⟩
   have hnw := hb.scr.nowrap
-  refine WP.mono (bitsBody_ok hb.scr hb.rbx hi (by omega) (by omega) (by omega))
+  refine WP.mono (bitsBody_ok hb.scr hb.rbx hi (by omega_arith) (by omega_arith) (by omega_arith))
     fun s' ⟨b', z', k', bits', O'⟩ => ?_
   have hbyte : s.mem (off base (src + i)) = s₀.mem (off base (src + i)) :=
-    hb.mem _ (by rw [ofs_off0 base (d := src + i) (by omega)]; omega)
+    hb.mem _ (by rw [ofs_off0 base (d := src + i) (by omega_arith)]; omega_arith)
   have inv : BInv base size src dst n s₀ s' (i + 1) := by
     refine ⟨hb.scr.of_keepRegs k' (by decide), b', hb.keep.trans k',
-      hb.mem.trans (O'.mono (by omega) (by omega)), fun t ht => ?_⟩
+      hb.mem.trans (O'.mono (by omega_arith) (by omega_arith)), fun t ht => ?_⟩
     rcases Nat.lt_or_ge t (8 * i) with h | h
-    · rw [O' _ (by rw [ofs_off0 base (d := dst + t) (by omega)]; omega), hb.bits t h]
-    · have e := bits' (t - 8 * i) (by omega)
-      rw [show 8 * i + (t - 8 * i) = t by omega, hbyte] at e
-      rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
+    · rw [O' _ (by rw [ofs_off0 base (d := dst + t) (by omega_arith)]; omega_arith), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_arith)
+      rw [show 8 * i + (t - 8 * i) = t by omega_arith, hbyte] at e
+      rw [e, show t / 8 = i by omega_arith, show t % 8 = t - 8 * i by omega_arith]
   simp only [eval, z', Option.map_some]
   rcases Nat.lt_or_ge (i + 1) (8 * n) with h | h
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬i + 1 = 8 * n), Bool.not_false],
-      8 * n - (i + 1), by omega, i + 1, rfl, h, inv⟩
-  · have h' : i + 1 = 8 * n := by omega
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬i + 1 = 8 * n), Bool.not_false],
+      8 * n - (i + 1), by omega_arith, i + 1, rfl, h, inv⟩
+  · have h' : i + 1 = 8 * n := by omega_arith
     exact .inl ⟨by simp only [h', decide_true, Bool.not_true], h' ▸ inv⟩
 
 /-- `bits src dst (8 n)`: byte `t` of the table at `dst` is bit `t` of the
@@ -275,12 +275,12 @@ theorem bits_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
       State.setReg32, Option.some.injEq, exists_eq_left']
     refine ⟨⟨hs.rdi, hs.wr, hs.nowrap⟩, rfl, ⟨fun r hr => ?_, rfl, rfl⟩, Outside.refl _ _ _ _,
-      fun t ht => absurd ht (by omega)⟩
+      fun t ht => absurd ht (by omega_arith)⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, hr.2.2, ite_false]) fun s₁ h₁ => ?_)
-  refine WP.mono (bitsLoop_ok hn hsrc hdst hsep 0 s₁ (by omega) h₁) fun s₂ h₂ => ⟨fun t ht => ?_, h₂.keep, h₂.mem⟩
-  rw [h₂.bits t (by omega), show t = 8 * (t / 8) + t % 8 from (Nat.div_add_mod t 8).symm,
-    testBit_byte s.mem base (a := src) (n := n) (by omega) (Nat.mod_lt _ (by decide))]
-  simp only [show (8 * (t / 8) + t % 8) / 8 = t / 8 by omega, show (8 * (t / 8) + t % 8) % 8 = t % 8 by omega]
+  refine WP.mono (bitsLoop_ok hn hsrc hdst hsep 0 s₁ (by omega_arith) h₁) fun s₂ h₂ => ⟨fun t ht => ?_, h₂.keep, h₂.mem⟩
+  rw [h₂.bits t (by omega_arith), show t = 8 * (t / 8) + t % 8 from (Nat.div_add_mod t 8).symm,
+    testBit_byte s.mem base (a := src) (n := n) (by omega_arith) (Nat.mod_lt _ (by decide))]
+  simp only [show (8 * (t / 8) + t % 8) / 8 = t / 8 by omega_arith, show (8 * (t / 8) + t % 8) % 8 = t % 8 by omega_arith]
 
 end VG.Proof.Weierstrass.X86_64

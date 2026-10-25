@@ -61,7 +61,7 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
         t₁.gpr .r3 = T ∧ t₁.gpr .r4 = p ∧ t₁.gpr .r5 = W ∧
         t₁.mem = t.mem.writeW p (t.mem.readW p 64 ^^^ t.mem.readW I 64))
       (by unfold before xorIv args; rrun [mov, H.r26, H.r27, r28, H.r30, pIn, pIn', iIn'])
-      (by simp [writesOnly, Code.allInstrs_eq, instrs, before, xorIv, args, mov, dstOf]) rfl)
+      (by rfl) rfl)
       fun t₁ ⟨⟨a3, a4, a5, m₁⟩, k₁⟩ => ?_
     apply WP.seq
     refine WP.mono (call_run .encrypt t₁ a3 a4 a5 (by rw [k₁.2.1, k₁.2.2, H.rd, H.wr]; exact covers hj)
@@ -77,7 +77,7 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
         t₃.gpr .r28 = p + 8#64 ∧ t₃.gpr .r29 = BitVec.ofNat 64 (n - j) - 1#64 ∧
         t₃.mem = t₂.mem.writeW I (t₂.mem.readW p 64))
       (by unfold after advance; rrun [h27, h28, h29, pIn₂, iIn₂])
-      (by simp [writesOnly, Code.allInstrs_eq, instrs, after, advance, dstOf]) rfl)
+      (by rfl) rfl)
       fun t₃ ⟨⟨a28, a29, m₃⟩, k₃⟩ => ?_
     -- the frame of the whole step
     have F : Frame [⟨p, 8⟩, ⟨I, 8⟩, ⟨W, 256⟩] t.mem t₃.mem := by
@@ -115,7 +115,7 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
     refine WP.mono (WP.keep [.r3, .r4, .r5, .r31] (c := .block (before .decrypt)) (Q := fun t₁ =>
         t₁.gpr .r3 = T ∧ t₁.gpr .r4 = p ∧ t₁.gpr .r5 = W ∧ t₁.gpr .r31 = t.mem.readW p 64 ∧ t₁.mem = t.mem)
       (by unfold before args; rrun [mov, H.r26, r28, H.r30, pIn'])
-      (by simp [writesOnly, Code.allInstrs_eq, instrs, before, args, mov, dstOf]) rfl)
+      (by rfl) rfl)
       fun t₁ ⟨⟨a3, a4, a5, a31, m₁⟩, k₁⟩ => ?_
     apply WP.seq
     refine WP.mono (call_run .decrypt t₁ a3 a4 a5 (by rw [k₁.2.1, k₁.2.2, H.rd, H.wr]; exact covers hj)
@@ -134,7 +134,7 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
         t₃.gpr .r28 = p + 8#64 ∧ t₃.gpr .r29 = BitVec.ofNat 64 (n - j) - 1#64 ∧
         t₃.mem = (t₂.mem.writeW p (t₂.mem.readW p 64 ^^^ t₂.mem.readW I 64)).writeW I (t.mem.readW p 64))
       (by unfold after xorIv advance; rrun [h27, h28, h29, h31, pIn₂, pW₂, iIn₂, iIn₂'])
-      (by simp [writesOnly, Code.allInstrs_eq, instrs, after, xorIv, advance, dstOf]) rfl)
+      (by rfl) rfl)
       fun t₃ ⟨⟨a28, a29, m₃⟩, k₃⟩ => ?_
     have F : Frame [⟨p, 8⟩, ⟨I, 8⟩, ⟨W, 256⟩] t.mem t₃.mem := by
       rw [← m₁]

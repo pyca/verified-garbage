@@ -52,23 +52,23 @@ theorem NafStable.keep {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Cur
   · have hv (x : Nat) (hx : x∈jacCoords (K.tblPt a)) :
         tmv C K.M.n base t x=tmv C K.M.n base s x := by
       unfold tmv
-      rw [hk.slot hL.lay hAcc hs (nafOther_slots K) (nafTblPt_mem K hL.n ha (by omega) x hx) ?_]
+      rw [hk.slot hL.lay hAcc hs (nafOther_slots K) (nafTblPt_mem K hL.n ha (by omega_arith) x hx) ?_]
       intro ho
       have sep := hL.tbl x (List.mem_append_right _ ho)
       simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx
-      omega
+      omega_arith
     rw [hv _ (by simp [jacCoords]),hv _ (by simp [jacCoords]),hv _ (by simp [jacCoords])]
     exact h.table a ha h8
-  · rw [hk.unch.byte (fun w hw => ?_) (by have := hL.bits; omega),h.bits i hi]
+  · rw [hk.unch.byte (fun w hw => ?_) (by have := hL.bits; omega_arith),h.bits i hi]
     simp only [progW,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at hw
     rcases hw with ⟨x,hx,rfl⟩ | rfl | rfl | rfl
     · have hb := hL.bits_w x (List.mem_append_left _ hx)
-      dsimp only; rw [hL.n]; omega
+      dsimp only; rw [hL.n]; omega_arith
     · have hb := hL.bits_tmp
-      dsimp only; rw [hL.n]; omega
-    · dsimp only; omega
+      dsimp only; rw [hL.n]; omega_arith
+    · dsimp only; omega_arith
     · have := hL.bits; have := hL.size_le
-      dsimp only [Mont.outW]; omega
+      dsimp only [Mont.outW]; omega_arith
 
 structure NafCore (K : WinCfg) (C : Curve) (base : Addr) (size : Nat)
     (P : Point C) (β : Nat → BitVec 8) (e : Nat) (s : State) : Prop where
@@ -151,7 +151,7 @@ theorem nafDoubleCore_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
     (iu.sub (fun _ hx => List.mem_append_right _ (List.mem_append_right _ hx))) ?_⟩
   simp only [Prod.mk.injEq] at hu
   rw [hu.1,hu.2.1,hu.2.2]
-  rw [hC.add_mul_mul hP,show e+e=2*e by omega] at jt
+  rw [hC.add_mul_mul hP,show e+e=2*e by omega_arith] at jt
   exact jt
 
 end VG.Proof.Weierstrass.X86
@@ -279,7 +279,7 @@ theorem nafSignedEntry_of_lookup {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg
       · exact List.mem_append_left _ (by simp [jacCoords])
       · exact List.mem_append_left _ (by simp [jacCoords])
       · exact List.mem_append_right _ hZero)
-      (by omega) (by omega) hz0 pw) fun t ⟨kt,it,jt⟩ => ?_
+      (by omega_arith) (by omega_arith) hz0 pw) fun t ⟨kt,it,jt⟩ => ?_
     have post : NafPointPost K.M base size wk C Sl V K.E (negPt P) w t :=
       ⟨kt.mono (by simp [jacCoords]),it.to_tmv,it.point_tmv
         (fun _ hx => List.mem_append_left _ hx) jt⟩
@@ -304,9 +304,9 @@ theorem nafLive_table (K : WinCfg) (hn : K.M.n=4) {a : Nat} (ha : 1≤a) (h8 : a
   apply List.mem_append_right
   simp only [jacCoords,WinCfg.tblPt,hn,List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl|rfl|rfl
-  · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by omega⟩
-  · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega),by omega⟩
-  · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega),by omega⟩
+  · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega_arith),by omega_arith⟩
+  · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega_arith),by omega_arith⟩
+  · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega_arith),by omega_arith⟩
 
 theorem NafCore.of_write {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
     {β : Nat → BitVec 8} {P : Point C} {s t : State} {W : List Nat}
@@ -332,9 +332,9 @@ theorem nafEntry_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve}
       InvJ C (tmv C K.M.n base t K.E.x) (tmv C K.M.n base t K.E.y) (tmv C K.M.n base t K.E.z)
         (if nafNegative b then negPt (mul (nafMagnitude b) P) else mul (nafMagnitude b) P) := by
   let a := (nafMagnitude b-1)/2+1
-  have ha : 1≤a := by dsimp [a]; omega
-  have ha8 : a≤8 := by dsimp [a]; omega
-  have he : 2*a-1=nafMagnitude b := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_arith
+  have ha8 : a≤8 := by dsimp [a]; omega_arith
+  have he : 2*a-1=nafMagnitude b := by dsimp [a]; omega_arith
   have hw : ∀ x∈jacCoords K.E,x∈winOther K := by
     intro x hx
     simp only [jacCoords,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
@@ -355,18 +355,18 @@ theorem nafEntry_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve}
     have hx := hL.tbl K.E.x (List.mem_append_right _ (hw _ (by simp [jacCoords])))
     have hz := hL.tbl K.E.z (List.mem_append_right _ (hw _ (by simp [jacCoords])))
     rw [hL.exz] at hz
-    omega
+    omega_arith
   refine WP.mono (nafSignedEntry_of_lookup hL.lay hAcc hm hL.exy hL.exz h.field h0 hz h0E h8
     (P := mul (nafMagnitude b) P) (fun u iu hu => ?_)) fun t ⟨kt,it,jt⟩ => ?_
   · have jp := h.stable.table a ha ha8
     rw [he] at jp
     exact nafPublicPoint_ok hL.lay hAcc hL.n hL.exy hL.exz iu hu hmag hmag15
-      (by have := hL.table_le; omega) hd (nafLive_table K hL.n ha ha8) sep jp
+      (by have := hL.table_le; omega_arith) hd (nafLive_table K hL.n ha ha8) sep jp
   · refine ⟨kt.mono hw,h.of_write hL hAcc hBitsWk kt hw hr
       (it.sub (fun _ hx => List.mem_append_right _ hx)),it,?_⟩
     by_cases hb : b.toNat<128
-    · simpa only [nafNegative,show ¬128≤b.toNat from by omega,decide_false,Bool.false_eq_true,ite_true,ite_false,hb] using jt
-    · simpa only [nafNegative,show 128≤b.toNat from by omega,decide_true,ite_false,ite_true,hb] using jt
+    · simpa only [nafNegative,show ¬128≤b.toNat from by omega_arith,decide_false,Bool.false_eq_true,ite_true,ite_false,hb] using jt
+    · simpa only [nafNegative,show 128≤b.toNat from by omega_arith,decide_true,ite_false,ite_true,hb] using jt
 
 end VG.Proof.Weierstrass.X86
 

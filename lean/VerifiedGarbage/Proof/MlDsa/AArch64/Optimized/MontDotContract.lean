@@ -55,14 +55,14 @@ theorem inv_step {s₀ s t : State} {v : Nat→Nat} {i : Nat}
   keep := (h.keep.trans hk).mono
   frame := by
     rw [hm,h.x0]
-    exact h.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact h.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   coeff k hk := by
-    rw [hm,h.x0,coeffAt_write16 _ _ (by omega) _ hk]
+    rw [hm,h.x0,coeffAt_write16 _ _ (by omega_arith) _ hk]
     by_cases he : 4*i≤k ∧ k<4*i+4
-    · rw [ite_eq_left he,hx (k-4*i) (by omega),ite_eq_left (by omega)]
-      exact congrArg v (by omega)
+    · rw [ite_eq_left he,hx (k-4*i) (by omega_arith),ite_eq_left (by omega_arith)]
+      exact congrArg v (by omega_arith)
     · rw [ite_eq_right he,h.coeff k hk]
-      have hh : (k<4*(i+1))=(k<4*i) := propext (by omega)
+      have hh : (k<4*(i+1))=(k<4*i) := propext (by omega_arith)
       simp only [hh]
 
 theorem pro_ok (s₀ : State) (v : Nat→Nat) :
@@ -124,7 +124,7 @@ theorem input_current {s₀ s : State} {v : Nat→Nat} {i n : Nat} (hi : i<64)
     bv_omega
   unfold dotInput inputWord
   rw [addr,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq]
-  exact coeffAt_frame h.frame (by intro r' hr';have hh:=List.mem_singleton.mp hr';subst r';exact hp.apart r hr j hj) (by change 4*i+e<256;omega)
+  exact coeffAt_frame h.frame (by intro r' hr';have hh:=List.mem_singleton.mp hr';subst r';exact hp.apart r hr j hj) (by change 4*i+e<256;omega_arith)
 
 theorem reads {s₀ s : State} {v : Nat→Nat} {i n : Nat} (hi : i<64)
     (hp : Pre n s₀) (h : Inv s₀ v i s) {r : Reg} (hr : r∈[Reg.x1,.x2]) {j : Nat}
@@ -139,7 +139,7 @@ theorem reads {s₀ s : State} {v : Nat→Nat} {i n : Nat} (hi : i<64)
       coeffAddr (s₀.gpr r+BitVec.ofNat 64 (1024*j)) (4*i) := by
     simp only [coeffAddr];bv_omega
   rw [addr]
-  exact VG.CallLay.inRegions_sub (off:=4*(4*i)) (l:=16) (hp.input r hr j hj) (by omega) (by omega)
+  exact VG.CallLay.inRegions_sub (off:=4*(4*i)) (l:=16) (hp.input r hr j hj) (by omega_arith) (by omega_arith)
 
 end VG.Proof.MlDsa.AArch64.Optimized.MontDot
 
@@ -164,9 +164,9 @@ theorem result_current {s₀ s : State} {v : Nat→Nat} {i n e : Nat}
   have ha (j : Nat) (hj : j<n) :=  input_current hi hp h (r:=Reg.x1) (by simp) (j:=j) hj he
   have hb (j : Nat) (hj : j<n) :=  input_current hi hp h (r:=Reg.x2) (by simp) (j:=j) hj he
   have halt : ∀j<n,(dotInput s .x1 0 j e).toNat<3*q := by
-    intro j hj;rw [ha j hj];exact hp.bound .x1 (by simp) j hj _ (by omega)
+    intro j hj;rw [ha j hj];exact hp.bound .x1 (by simp) j hj _ (by omega_arith)
   have hblt : ∀j<n,(dotInput s .x2 0 j e).toNat<3*q := by
-    intro j hj;rw [hb j hj];exact hp.bound .x2 (by simp) j hj _ (by omega)
+    intro j hj;rw [hb j hj];exact hp.bound .x2 (by simp) j hj _ (by omega_arith)
   rw [dotAccum,dotWord_nat _ _ hn halt hblt,dotNat_congr _ _ _ _ n ha hb]
   rfl
 
@@ -181,14 +181,14 @@ theorem run_ok {n : Nat} (hn : 0<n) (hn7 : n≤7) (s₀ : State) (hp : Pre n s�
   have ha : ∀j<n,∀e<4,(dotInput s .x1 0 j e).toNat<3*q := by
     intro j hj e he
     rw [input_current hi hp h (r:=Reg.x1) (by simp) (j:=j) hj he]
-    exact hp.bound .x1 (by simp) j hj _ (by omega)
+    exact hp.bound .x1 (by simp) j hj _ (by omega_arith)
   have hb : ∀j<n,∀e<4,(dotInput s .x2 0 j e).toNat<3*q := by
     intro j hj e he
     rw [input_current hi hp h (r:=Reg.x2) (by simp) (j:=j) hj he]
-    exact hp.bound .x2 (by simp) j hj _ (by omega)
+    exact hp.bound .x2 (by simp) j hj _ (by omega_arith)
   have hw : InRegions s.wr (s.gpr .x0) 16 := by
     rw [h.keep.wr,h.x0]
-    exact ⟨_,hp.output,Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_,hp.output,Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine WP.mono (body_ok hn hn7 h.consts hr ha hb hw) fun t ⟨x,hm,hx,hc,h0,h1,h2,h12,hk⟩=>?_
   refine ⟨inv_step hi h hm ?_ hc h0 h1 h2 hk,h12⟩
   intro e he
@@ -214,7 +214,7 @@ open VG.Proof.MlDsa.AArch64.Arith.Neon
   apply Int.ofNat_inj.mp
   rw [h,Int.natCast_emod]
   change (mont a:Int)%8380417=((mont a:Int)-8380417)%8380417
-  omega
+  omega_arith
 
 def value (s : State) (n : Nat) : Poly :=
   (dotNTT (fun j=>polyAt s.mem (s.gpr .x1+BitVec.ofNat 64 (1024*j)))
@@ -265,7 +265,7 @@ def contract (n : Nat) : Contract isa where
 
 theorem pre {n : Nat} (hn : n≤7) {s : State} (h : (montDotContract abi n).pre s) : Pre n s := by
   sig_pre [montDotContract,montDotSig,abi,argRegs,stackBelow] at h
-  have he : 256*n*4=1024*n := by omega
+  have he : 256*n*4=1024*n := by omega_arith
   rw [he] at h
   obtain ⟨hr,hw,ha,hb,_,_,_,hpa,hpb⟩ := h
   refine ⟨by rw [hw];simp [pR],?_,?_,?_⟩
@@ -275,13 +275,13 @@ theorem pre {n : Nat} (hn : n≤7) {s : State} (h : (montDotContract abi n).pre 
       rw [hr]
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr'
       rcases hr' with rfl|rfl <;> simp
-    · omega
-    · omega
+    · omega_arith
+    · omega_arith
   · intro r hr' j hj
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr'
     rcases hr' with rfl|rfl
-    · exact ha.symm.sub_left (Offset.sub_base _ (by omega))
-    · exact hb.symm.sub_left (Offset.sub_base _ (by omega))
+    · exact ha.symm.sub_left (Offset.sub_base _ (by omega_arith))
+    · exact hb.symm.sub_left (Offset.sub_base _ (by omega_arith))
   · intro r hr' j hj i hi
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr'
     rcases hr' with rfl|rfl
@@ -291,8 +291,8 @@ theorem pre {n : Nat} (hn : n≤7) {s : State} (h : (montDotContract abi n).pre 
 theorem correct {n : Nat} (hc : n=4∨n=5∨n=7) (s : State) (hp : (contract n).pre s) :
     ∃tr t,Exec isa (VG.Impl.MlDsa.AArch64.Optimized.MontDot.dot n) s tr t ∧
       abiPreserved s t ∧ (contract n).post s t := by
-  obtain ⟨tr,t,he,hi⟩ := run_ok (by omega) (by omega) s hp
-  refine ⟨tr,t,he,?_,output_ok (by omega) hp hi⟩
+  obtain ⟨tr,t,he,hi⟩ := run_ok (by omega_arith) (by omega_arith) s hp
+  refine ⟨tr,t,he,?_,output_ok (by omega_arith) hp hi⟩
   rcases hc with rfl|rfl|rfl
   all_goals exact VG.Proof.MlKem.AArch64.abi_of rfl (by decide +kernel) he (by decide +kernel)
 

@@ -77,13 +77,13 @@ theorem saves_mem (m : Mem) (base : Addr) (hn : base.toNat + size ≤ 2 ^ 64) (a
     word (((m.writeW (off base 0) a).writeW (off base 8) b).writeW (off base 16) c) base 8 = b ∧
     word (((m.writeW (off base 0) a).writeW (off base 8) b).writeW (off base 16) c) base 16 = c := by
   have := hn
-  have O₁ := writeW_outside m base (d := 0) a (by omega)
-  have O₂ := writeW_outside (m.writeW (off base 0) a) base (d := 8) b (by omega)
-  have O₃ := writeW_outside ((m.writeW (off base 0) a).writeW (off base 8) b) base (d := 16) c (by omega)
-  refine ⟨((O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))).trans
-    (O₃.mono (by omega) (by omega)), ?_, ?_, word_writeW_self _ _ _ _⟩
-  · rw [O₃.word (by omega) (by omega), O₂.word (by omega) (by omega), word_writeW_self]
-  · rw [O₃.word (by omega) (by omega), word_writeW_self]
+  have O₁ := writeW_outside m base (d := 0) a (by omega_arith)
+  have O₂ := writeW_outside (m.writeW (off base 0) a) base (d := 8) b (by omega_arith)
+  have O₃ := writeW_outside ((m.writeW (off base 0) a).writeW (off base 8) b) base (d := 16) c (by omega_arith)
+  refine ⟨((O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))).trans
+    (O₃.mono (by omega_arith) (by omega_arith)), ?_, ?_, word_writeW_self _ _ _ _⟩
+  · rw [O₃.word (by omega_arith) (by omega_arith), O₂.word (by omega_arith) (by omega_arith), word_writeW_self]
+  · rw [O₃.word (by omega_arith) (by omega_arith), word_writeW_self]
 
 /-! ## Reading `k`, `d` and the hash -/
 
@@ -104,14 +104,14 @@ theorem setupLoad_ok {c : Cfg} (hc : CfgOk c) {s t : State} {base : Addr} {i : N
   have := hc.len8
   have := hc.len_lo
   have hsub : Region.Sub ⟨base + BitVec.ofNat 64 (c.sl i), 8 * c.n⟩ ⟨base, size⟩ :=
-    Offset.sub_base base (by omega)
-  refine WP.mono (loadBytes_ok hw.ws hw.at3 hsrc.1 hsrc.2.1 hsrc.2.2 (by omega) (sl_al c i) (by omega)
-    (by omega) hc.len_hi (by omega) (by rw [hp]; exact hin) (by rw [hp]; exact hd.sub_right hsub))
+    Offset.sub_base base (by omega_arith)
+  refine WP.mono (loadBytes_ok hw.ws hw.at3 hsrc.1 hsrc.2.1 hsrc.2.2 (by omega_arith) (sl_al c i) (by omega_arith)
+    (by omega_arith) hc.len_hi (by omega_arith) (by rw [hp]; exact hin) (by rw [hp]; exact hd.sub_right hsub))
     fun t' ⟨e, k, O⟩ => ⟨?_, k, O⟩
   have hd' := hd.sub_right (Region.sub_prefix (base := base) (show 4096 ≤ size by decide))
   have hb : Spec.Ecdsa.bytesAt t.mem p c.C.len = Spec.Ecdsa.bytesAt s.mem p c.C.len :=
     List.map_congr_left fun j hj =>
-      keep_of_disjoint' ho hd' (by decide) (List.mem_range.mp hj) (by omega)
+      keep_of_disjoint' ho hd' (by decide) (List.mem_range.mp hj) (by omega_arith)
   rw [e, hp, hb]
 
 /-! ## The hash's shift -/
@@ -129,8 +129,8 @@ theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk 
   have h7 := hc.n10
   have hKl := sl_le c h7 (i := K) (by decide)
   have hEl := sl_le c h7 (i := E) (by decide)
-  have hKD : c.sl D = c.sl K + 8 * c.n := by rw [sl_eq, sl_eq]; simp only [D, K]; omega
-  have hKE : c.sl E = c.sl K + 16 * c.n := by rw [sl_eq, sl_eq]; simp only [E, K]; omega
+  have hKD : c.sl D = c.sl K + 8 * c.n := by rw [sl_eq, sl_eq]; simp only [D, K]; omega_arith
+  have hKE : c.sl E = c.sl K + 16 * c.n := by rw [sl_eq, sl_eq]; simp only [E, K]; omega_arith
   have nil : WP isa (.block ([] : List Instr)) t fun t' =>
       wordsVal t'.mem base (c.sl K) c.n = wordsVal t.mem base (c.sl K) c.n >>> 0 ∧
       wordsVal t'.mem base (c.sl D) c.n = wordsVal t.mem base (c.sl D) c.n >>> 0 ∧
@@ -145,19 +145,19 @@ theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk 
     · simp only [Cfg.shiftCode, h0, ite_true]
       rw [shAt_self, h0, shAt_D_K, shAt_D_E]; exact nil
     · simp only [Cfg.shiftCode, h0, ite_false]
-      refine WP.mono (shrWords_ok hw.ws hw.at3 (o := c.sl D) (by omega) (sl_al c D) (by omega) hc.sh)
-        fun t' ⟨e, k, O⟩ => ⟨?_, ?_, ?_, k, O.mono (by omega) (by omega)⟩
-      · rw [shAt_D_K, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
+      refine WP.mono (shrWords_ok hw.ws hw.at3 (o := c.sl D) (by omega_arith) (sl_al c D) (by omega_arith) hc.sh)
+        fun t' ⟨e, k, O⟩ => ⟨?_, ?_, ?_, k, O.mono (by omega_arith) (by omega_arith)⟩
+      · rw [shAt_D_K, Nat.shiftRight_zero]; exact O.wordsVal (by omega_arith) (by omega_arith)
       · rw [shAt_self]; exact e
-      · rw [shAt_D_E, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
+      · rw [shAt_D_E, Nat.shiftRight_zero]; exact O.wordsVal (by omega_arith) (by omega_arith)
   · by_cases h0 : c.sh = 0
     · simp only [Cfg.shiftCode, h0, ite_true]
       rw [shAt_self, h0, shAt_E_D, shAt_E_K]; exact nil
     · simp only [Cfg.shiftCode, h0, ite_false]
-      refine WP.mono (shrWords_ok hw.ws hw.at3 (o := c.sl E) (by omega) (sl_al c E) (by omega) hc.sh)
-        fun t' ⟨e, k, O⟩ => ⟨?_, ?_, ?_, k, O.mono (by omega) (by omega)⟩
-      · rw [shAt_E_K, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
-      · rw [shAt_E_D, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
+      refine WP.mono (shrWords_ok hw.ws hw.at3 (o := c.sl E) (by omega_arith) (sl_al c E) (by omega_arith) hc.sh)
+        fun t' ⟨e, k, O⟩ => ⟨?_, ?_, ?_, k, O.mono (by omega_arith) (by omega_arith)⟩
+      · rw [shAt_E_K, Nat.shiftRight_zero]; exact O.wordsVal (by omega_arith) (by omega_arith)
+      · rw [shAt_E_D, Nat.shiftRight_zero]; exact O.wordsVal (by omega_arith) (by omega_arith)
       · rw [shAt_self]; exact e
 
 /-! ## The constants -/
@@ -174,7 +174,7 @@ theorem setupConsts_ok {c : Cfg} (hc : CfgOk c) {base : Addr} : ∀ (l : List (N
     rw [List.flatMap_cons]
     have hi := hb (i, x) List.mem_cons_self
     have hl := sl_le c hc.n10 (i := i) hi.1
-    refine wp_append (WP.mono (setConst_ok hw.ws hw.at3 (o := c.sl i) (by omega) hi.2) fun t₁ ⟨O₁, e₁, k₁⟩ => ?_)
+    refine wp_append (WP.mono (setConst_ok hw.ws hw.at3 (o := c.sl i) (by omega_arith) hi.2) fun t₁ ⟨O₁, e₁, k₁⟩ => ?_)
     rw [← wordsVal_eq_val32] at e₁
     rw [List.map_cons, List.nodup_cons] at hnd
     refine WP.mono (setupConsts_ok hc l (hw.of_kp k₁) (fun ix h => hb ix (List.mem_cons_of_mem _ h)) hnd.2)
@@ -182,7 +182,7 @@ theorem setupConsts_ok {c : Cfg} (hc : CfgOk c) {base : Addr} : ∀ (l : List (N
         show Unch base ([(c.sl i, 8 * c.n)] ++ l.map fun ix => (c.sl ix.1, 8 * c.n)) t.mem t'.mem from
           O₁.unch.trans U'⟩
     rcases List.mem_cons.mp h with rfl | h
-    · refine (U'.wordsVal (fun w hw' => ?_) (by have := hw.nowrap; dsimp only; omega)).trans e₁
+    · refine (U'.wordsVal (fun w hw' => ?_) (by have := hw.nowrap; dsimp only; omega_arith)).trans e₁
       obtain ⟨jy, hjy, rfl⟩ := List.mem_map.mp hw'
       exact sl_apart c fun heq => hnd.1 (heq ▸ List.mem_map_of_mem hjy)
     · exact e' ix h
@@ -200,15 +200,15 @@ theorem consts_bounds {c : Cfg} (hc : CfgOk c) :
   · have := List.mem_map_of_mem (f := Prod.fst) h
     rw [consts_fst] at this
     simp only [List.mem_cons, List.not_mem_nil, or_false] at this
-    omega
-  · have hp0 : 0 < c.C.p := by have := hc.p_ge; omega
-    have hn0 : 0 < c.C.n := by have := hc.n_ge; omega
-    have hR : 1 < 2 ^ (64 * c.n) := Nat.one_lt_two_pow (by have := hc.n0; omega)
+    omega_arith
+  · have hp0 : 0 < c.C.p := by have := hc.p_ge; omega_arith
+    have hn0 : 0 < c.C.n := by have := hc.n_ge; omega_arith
+    have hR : 1 < 2 ^ (64 * c.n) := Nat.one_lt_two_pow (by have := hc.n0; omega_arith)
     have hm : ∀ x, c.mont x < 2 ^ (64 * c.n) := fun x =>
       Nat.lt_trans (Nat.mod_lt (x * c.R) hp0) hc.p_lt
     have hn : ∀ x, x % c.C.n < 2 ^ (64 * c.n) := fun x => Nat.lt_trans (Nat.mod_lt x hn0) hc.n_lt
-    have hp2 : c.C.p - 2 < 2 ^ (64 * c.n) := by have := hc.p_lt; omega
-    have hn2 : c.C.n - 2 < 2 ^ (64 * c.n) := by have := hc.n_lt; omega
+    have hp2 : c.C.p - 2 < 2 ^ (64 * c.n) := by have := hc.p_lt; omega_arith
+    have hn2 : c.C.n - 2 < 2 ^ (64 * c.n) := by have := hc.n_lt; omega_arith
     simp only [Cfg.consts, List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl
@@ -267,7 +267,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have hn := w₁.nowrap
   obtain ⟨O₁, sv₀, sv₈, sv₁₆⟩ := saves_mem s.mem (s.gpr A.sc) hn (s.gpr .r14) (s.gpr .r31) s.lr
   rw [← m₁] at O₁ sv₀ sv₈ sv₁₆
-  have O₁' : Outside (s.gpr A.sc) 0 4096 s.mem s₁.mem := O₁.mono (Nat.le_refl _) (by omega)
+  have O₁' : Outside (s.gpr A.sc) 0 4096 s.mem s₁.mem := O₁.mono (Nat.le_refl _) (by omega_arith)
   -- `k`
   refine wp_append (WP.mono (setupLoad_ok hc (s := s) w₁ (i := K) (by decide)
     (by simp [hk4.1, hk4.2.2.1, hk4.2.2.2.1]) (K₁.gpr _ (by simp [hk4.1, hk4.2.1, hk4.2.2.2.2])) hp.k_fit
@@ -275,7 +275,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have w₂ := w₁.of_kp k₂
   have K₂ : Kp [.r0, .r3, .r14, .r8, .r9] s s₂ := (K₁.mono (by decide)).trans (k₂.mono (by decide))
   have O₂' : Outside (s.gpr A.sc) 0 4096 s.mem s₂.mem :=
-    O₁'.trans (O₂.mono (Nat.zero_le _) (by have := sl_le c h7 (i := K) (by decide); omega))
+    O₁'.trans (O₂.mono (Nat.zero_le _) (by have := sl_le c h7 (i := K) (by decide); omega_arith))
   -- `d`
   refine wp_append (WP.mono (setupLoad_ok hc (s := s) w₂ (i := D) (by decide)
     (by simp [hd4.1, hd4.2.2.1, hd4.2.2.2.1]) (K₂.gpr _ (by simp [hd4.1, hd4.2.1, hd4.2.2.1, hd4.2.2.2.1, hd4.2.2.2.2]))
@@ -283,7 +283,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have w₃ := w₂.of_kp k₃
   have K₃ : Kp [.r0, .r3, .r14, .r8, .r9] s s₃ := K₂.trans (k₃.mono (by decide))
   have O₃' : Outside (s.gpr A.sc) 0 4096 s.mem s₃.mem :=
-    O₂'.trans (O₃.mono (Nat.zero_le _) (by have := sl_le c h7 (i := D) (by decide); omega))
+    O₂'.trans (O₃.mono (Nat.zero_le _) (by have := sl_le c h7 (i := D) (by decide); omega_arith))
   -- the hash
   refine wp_append (WP.mono (setupLoad_ok hc (s := s) w₃ (i := E) (by decide)
     (by simp [he4.1, he4.2.2.1, he4.2.2.2.1]) (K₃.gpr _ (by simp [he4.1, he4.2.1, he4.2.2.1, he4.2.2.2.1, he4.2.2.2.2]))
@@ -296,17 +296,17 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   refine wp_append (WP.mono (setupConsts_ok hc c.consts wS (fun ix h =>
     ⟨Nat.lt_trans (consts_bounds hc ix h).1 (by decide), (consts_bounds hc ix h).2⟩) (consts_nodup c)) fun s₇ ⟨e₇, k₇, U₇⟩ => ?_)
   have w₇ := wS.of_kp k₇
-  have hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega
+  have hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega_arith
   have O₇ : Outside (s.gpr A.sc) (c.sl 0) (8 * c.n * 17) sS.mem s₇.mem := U₇.outside fun w hw => by
     obtain ⟨ix, hix, rfl⟩ := List.mem_map.mp hw
     have := sl_lt c (consts_bounds hc ix hix).1
-    have : c.sl 0 ≤ c.sl ix.1 := by rw [hsl0, sl_eq]; omega
-    exact ⟨this, by rw [sl_eq c 17] at *; omega⟩
+    have : c.sl 0 ≤ c.sl ix.1 := by rw [hsl0, sl_eq]; omega_arith
+    exact ⟨this, by rw [sl_eq c 17] at *; omega_arith⟩
   -- the flag
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine WP.mono (flag_ok w₇.ws w₇.at3 (sl_al c FLAG) (by omega)) fun s' ⟨K', m'⟩ => ?_
+  refine WP.mono (flag_ok w₇.ws w₇.at3 (sl_al c FLAG) (by omega_arith)) fun s' ⟨K', m'⟩ => ?_
   have O' : Outside (s.gpr A.sc) (c.sl FLAG) 8 s₇.mem s'.mem := by
-    rw [m']; exact writeW_outside _ _ _ (by omega)
+    rw [m']; exact writeW_outside _ _ _ (by omega_arith)
   -- Everything after the saves writes only in `[64, 4096)`.
   have h17 := sl_le c h7 (i := 17) (by decide)
   have hK := sl_le c h7 (i := K) (by decide)
@@ -316,36 +316,36 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have hDK := sl_lt c (i := K) (j := D) (by decide)
   have hED := sl_lt c (i := D) (j := E) (by decide)
   have hFE := sl_lt c (i := E) (j := FLAG) (by decide)
-  have h0' : c.sl 0 + 8 * c.n * 17 = c.sl 17 := by rw [sl_eq, sl_eq]; omega
+  have h0' : c.sl 0 + 8 * c.n * 17 = c.sl 17 := by rw [sl_eq, sl_eq]; omega_arith
   have Ol : Outside (s.gpr A.sc) 64 (4096 - 64) s₁.mem s'.mem := by
-    exact (((((O₂.mono (by omega) (by omega)).trans (O₃.mono (by omega) (by omega))).trans
-      (O₄.mono (by omega) (by omega))).trans (OS.mono (by omega) (by omega))).trans
-      (O₇.mono (by omega) (by omega))).trans (O'.mono (by omega) (by omega))
+    exact (((((O₂.mono (by omega_arith) (by omega_arith)).trans (O₃.mono (by omega_arith) (by omega_arith))).trans
+      (O₄.mono (by omega_arith) (by omega_arith))).trans (OS.mono (by omega_arith) (by omega_arith))).trans
+      (O₇.mono (by omega_arith) (by omega_arith))).trans (O'.mono (by omega_arith) (by omega_arith))
   have K'' : Kp setupClob s s' := ((((K₃.mono (by decide)).trans (k₄.mono (by decide))).trans (kS.mono (by decide))).trans
     (k₇.mono (by decide))).trans (K'.mono (by decide))
-  refine ⟨w₇.of_kp K', K'', (O₁'.trans (Ol.mono (Nat.zero_le _) (by omega))).unch, fun rd hrd => ?_, ?_,
+  refine ⟨w₇.of_kp K', K'', (O₁'.trans (Ol.mono (Nat.zero_le _) (by omega_arith))).unch, fun rd hrd => ?_, ?_,
     ?_, ?_, ?_, ?_, fun ix hix => ?_, ?_⟩
   · have hlt := saved_lt rd hrd
-    rw [Ol.word (d := rd.2) (by omega) (by omega)]
+    rw [Ol.word (d := rd.2) (by omega_arith) (by omega_arith)]
     simp only [Cfg.saved, List.mem_cons, List.not_mem_nil, or_false] at hrd
     rcases hrd with rfl | rfl
     · exact sv₀
     · exact sv₈
-  · rw [Ol.word (d := Cfg.lrAt) (by simp only [Cfg.lrAt]; omega) (by simp only [Cfg.lrAt]; omega)]; exact sv₁₆
+  · rw [Ol.word (d := Cfg.lrAt) (by simp only [Cfg.lrAt]; omega_arith) (by simp only [Cfg.lrAt]; omega_arith)]; exact sv₁₆
   · rw [K'.g, k₇.g, kS.g, k₄.g, k₃.g, k₂.g, r14₁]
   · show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), O₇.wordsVal (by omega) (by omega), fK,
-      O₄.wordsVal (by omega) (by omega), O₃.wordsVal (by omega) (by omega), e₂]
+    rw [O'.wordsVal (by omega_arith) (by omega_arith), O₇.wordsVal (by omega_arith) (by omega_arith), fK,
+      O₄.wordsVal (by omega_arith) (by omega_arith), O₃.wordsVal (by omega_arith) (by omega_arith), e₂]
   · show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), O₇.wordsVal (by omega) (by omega), fD,
-      O₄.wordsVal (by omega) (by omega), e₃]
+    rw [O'.wordsVal (by omega_arith) (by omega_arith), O₇.wordsVal (by omega_arith) (by omega_arith), fD,
+      O₄.wordsVal (by omega_arith) (by omega_arith), e₃]
   · show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), O₇.wordsVal (by omega) (by omega), fE, e₄]
+    rw [O'.wordsVal (by omega_arith) (by omega_arith), O₇.wordsVal (by omega_arith) (by omega_arith), fE, e₄]
   · have := sl_lt c (consts_bounds hc ix hix).1
-    have := sl_lt c (i := ix.1) (j := FLAG) (by have := (consts_bounds hc ix hix).1; show ix.1 < 44; omega)
-    have := sl_le c h7 (i := ix.1) (by have := (consts_bounds hc ix hix).1; omega)
+    have := sl_lt c (i := ix.1) (j := FLAG) (by have := (consts_bounds hc ix hix).1; show ix.1 < 44; omega_arith)
+    have := sl_le c h7 (i := ix.1) (by have := (consts_bounds hc ix hix).1; omega_arith)
     show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), e₇ ix hix]
+    rw [O'.wordsVal (by omega_arith) (by omega_arith), e₇ ix hix]
   · rw [flagW, m', word_writeW_self]
 
 end VG.Proof.Ecdsa.PPC64LE

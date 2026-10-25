@@ -62,28 +62,28 @@ variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 /-! ## The length of the whole blocks -/
 
 theorem chainedLen_le (L : Nat) : Spec.Cmac.chainedLen 16 L ≤ L := by
-  simp only [Spec.Cmac.chainedLen]; omega
+  simp only [Spec.Cmac.chainedLen]; omega_arith
 
 theorem chainedLen_rest (L : Nat) : L - Spec.Cmac.chainedLen 16 L ≤ 16 := by
-  simp only [Spec.Cmac.chainedLen]; omega
+  simp only [Spec.Cmac.chainedLen]; omega_arith
 
 theorem chainedLen_div (L : Nat) : 16 * (Spec.Cmac.chainedLen 16 L / 16) = Spec.Cmac.chainedLen 16 L := by
-  simp only [Spec.Cmac.chainedLen]; omega
+  simp only [Spec.Cmac.chainedLen]; omega_arith
 
 theorem chainedLen_pos {L : Nat} (h : 0 < L) : Spec.Cmac.chainedLen 16 L = 16 * ((L - 1) / 16) := by
-  simp only [Spec.Cmac.chainedLen]; omega
+  simp only [Spec.Cmac.chainedLen]; omega_arith
 
 theorem lsr4 {c : Nat} (hc : c < 2 ^ 64) : BitVec.ofNat 64 c >>> 4 = BitVec.ofNat 64 (c / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc,
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 theorem ofNat_sub {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
-    Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show a - b < 2 ^ 64 by omega)]
-  omega
+    Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show a - b < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 /-- The other registers `encrypt` and `decrypt` keep: the descriptors, the
 number left, and the data and its length. -/
@@ -122,7 +122,7 @@ theorem sub_and15 (x : BitVec 64) : x - (x &&& 15) = BitVec.ofNat 64 (16 * (x.to
     rw [BitVec.toNat_and]; exact Nat.and_two_pow_sub_one_eq_mod x.toNat 4
   have := x.isLt
   rw [BitVec.toNat_sub, h, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem cmacPre_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) :
     WP isa (cmacPre stOff) s fun s' => Regs s₀ C D P W R L s' ∧ Hold s s' ∧
@@ -152,11 +152,11 @@ theorem cmacPre_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P 
         UArgs s' C (W + BitVec.ofNat 64 128) P (W + BitVec.ofNat 64 256) R (Spec.Cmac.chainedLen 16 L / 16) ∧
         s'.gpr .x28 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L) ∧
         s'.mem = Proof.Cmac.zero2 s.mem (W + BitVec.ofNat 64 128) := by
-    obtain ⟨s', run, g, x0, x1, x2, x3, x4, x5, sp, m, rd, wr⟩ := cmacArgs_ok hr₂ (by omega) x28₂
+    obtain ⟨s', run, g, x0, x1, x2, x3, x4, x5, sp, m, rd, wr⟩ := cmacArgs_ok hr₂ (by omega_arith) x28₂
     have hr' := hr₂.keep' (fun r hr => g r (dec_mem (by decide) hr)) sp rd wr
     refine WP.of_runBlock ⟨s', run, hr', Hold.of fun r hr'' h28 _ => by rw [g r hr'', k₂ r hr'' h28],
       h.uargs hr'.rd hr'.wr (by decide) (by rw [chainedLen_div]; exact h.srcData₀ (by decide) hcl)
-        (by rw [chainedLen_div]; omega) x0 x1 x2 x3 x4 x5, by rw [g _ (by decide), x28₂], by rw [m, m₂, m₁]⟩
+        (by rw [chainedLen_div]; omega_arith) x0 x1 x2 x3 x4 x5, by rw [g _ (by decide), x28₂], by rw [m, m₂, m₁]⟩
   have ev := eval_zero (s := s₁.write .x .x28 0) hlt hr₁.x23
   by_cases hL0 : L = 0
   · refine WP.seq (WP.ite true (by rw [ev]; simp [hL0]) (fun _ => WP.block_nil ?_) (fun h => by cases h))
@@ -174,9 +174,9 @@ theorem cmacPre_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P 
       rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         first | exact absurd rfl h28 | simp [gpr_write]
     · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, mz15]
-      rw [chainedLen_pos (by omega), g₁ _ (by decide), hr.x23, sub_and15]
+      rw [chainedLen_pos (by omega_arith), g₁ _ (by decide), hr.x23, sub_and15]
       have : (BitVec.ofNat 64 L - 1#64).toNat = L - 1 := by
-        rw [BitVec.toNat_sub, toNat_ofNat hlt]; simp; omega
+        rw [BitVec.toNat_sub, toNat_ofNat hlt]; simp; omega_arith
       rw [this]
 
 /-! ## Between the calls -/
@@ -214,7 +214,7 @@ theorem cmacOf_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R
     WP isa (cmacOf v.callee v.ctr.callee v.ctr.suffix stOff) s (CPost s₀ C D P W R L s) := by
   have hcl := chainedLen_le L
   have hrest := chainedLen_rest L
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
   refine WP.seq (WP.mono (cmacPre_wp h hr) fun s₁ ⟨hr₁, k₁, hu₁, x28₁, m₁⟩ => ?_)
   refine WP.seq (WP.mono (upd_call v _ hu₁) fun s₂ h₂ => ?_)
   have hr₂ := hr₁.keep h₂.saved h₂.sp h₂.rd h₂.wr
@@ -225,7 +225,7 @@ theorem cmacOf_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   refine WP.mono (finr_call v.ctr _ (h.fargs hr₃.rd hr₃.wr (by decide)
     (h.srcData (o := 128) (by decide) (show Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) ≤ L by
-      omega)) hrest x0₃ x1₃ x2₃ x3₃ x4₃ x5₃)) fun s₄ h₄ => ?_
+      omega_arith)) hrest x0₃ x1₃ x2₃ x3₃ x4₃ x5₃)) fun s₄ h₄ => ?_
   have f₂ : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩] s₁.mem s₂.mem := h₂.frame
   have f₄ : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩] s₃.mem s₄.mem := h₄.frame
   have f₁ : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩] s.mem s₁.mem := by
@@ -247,22 +247,22 @@ theorem cmacOf_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (h.c_w.sub_left (h.sC hd)).sub_right (h.sW (by decide))
-    · exact (h.c_w.sub_left (h.sC hd)).sub_right (h.sW (by decide))) (by omega)
+    · exact (h.c_w.sub_left (h.sC hd)).sub_right (h.sW (by decide))) (by omega_arith)
   have dP {d n : Nat} (hd : d + n ≤ L) := dRead (Q := P + BitVec.ofNat 64 d) (n := n) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (h.p_w.sub_left (h.sP hd)).sub_right (h.sW (by decide))
-    · exact (h.p_w.sub_left (h.sP hd)).sub_right (h.sW (by decide))) (by omega)
-  have sch := dC (d := 0) (n := 16 * (R + 1)) (by omega)
+    · exact (h.p_w.sub_left (h.sP hd)).sub_right (h.sW (by decide))) (by omega_arith)
+  have sch := dC (d := 0) (n := 16 * (R + 1)) (by omega_arith)
   have k1 := (dC (d := 240) (n := 16) (by decide)).2
   have k2 := (dC (d := 256) (n := 16) (by decide)).2
-  have pre := (dP (d := 0) (n := Spec.Cmac.chainedLen 16 L) (by omega)).1
-  have rest := (dP (d := Spec.Cmac.chainedLen 16 L) (n := L - Spec.Cmac.chainedLen 16 L) (by omega)).2
+  have pre := (dP (d := 0) (n := Spec.Cmac.chainedLen 16 L) (by omega_arith)).1
+  have rest := (dP (d := Spec.Cmac.chainedLen 16 L) (n := L - Spec.Cmac.chainedLen 16 L) (by omega_arith)).2
   rw [k0] at sch pre
   have hz : Spec.Aes.bytesAt s₁.mem (W + BitVec.ofNat 64 128) 16 = Spec.Cmac.zeros 16 := by
     rw [m₁, Proof.Cmac.zero2_bytes]
   have hS : (Spec.Aes.bytesAt s.mem P L).length = L := Proof.Cmac.bytesAt_length _ _ _
-  have hsplit : L = Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) := by omega
+  have hsplit : L = Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) := by omega_arith
   rw [h₄.out, mn, sch.2, k1, k2, rest, m₃, h₂.out, Proof.Cmac.Stream.blocksAt_eq, chainedLen_div, sch.1, hz, pre,
     Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.cmacWith_chained, hS]
   have tk : (Spec.Aes.bytesAt s.mem P L).take (Spec.Cmac.chainedLen 16 L) =
@@ -337,7 +337,7 @@ theorem cmacOf_rel (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀' : State} (h : E
     obtain ⟨s', run, g, x0, x1, x2, x3, x4, x5, sp, _, rd, wr⟩ := cmacMid_ok hσ hr.1 hcl hr.2
     have hr' := hr.1.keep' (fun r hr => g r (dec_mem (by decide) hr)) sp rd wr
     exact WP.of_runBlock ⟨s', run, hr', hσ.fargs hr'.rd hr'.wr (by decide)
-      (hσ.srcData (o := 128) (by decide) (by omega)) (chainedLen_rest L) x0 x1 x2 x3 x4 x5⟩
+      (hσ.srcData (o := 128) (by decide) (by omega_arith)) (chainedLen_rest L) x0 x1 x2 x3 x4 x5⟩
   have m := (RelCT.taint (A := taint) (P := fun a b => RX s₀ C D P W R L a ∧ RX s₀' C D P W R L b) _
     (fun a b hab => regs_agree28 hq hab.1 hab.2) hB).wp
     (F₁ := fun (s : State) => Regs s₀ C D P W R L s ∧

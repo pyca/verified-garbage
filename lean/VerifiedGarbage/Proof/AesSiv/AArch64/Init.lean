@@ -111,15 +111,15 @@ theorem IPre.half (hp : IPre s₀ Kp Ct S KL) : KL / 2 = 16 ∨ KL / 2 = 24 ∨ 
 
 theorem IPre.sS (_hp : IPre s₀ Kp Ct S KL) {d n : Nat} (h : d + n ≤ 2560) :
     Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 2560⟩ :=
-  Offset.sub_base S (by omega)
+  Offset.sub_base S (by omega_arith)
 
 theorem IPre.sC (_hp : IPre s₀ Kp Ct S KL) {d n : Nat} (h : d + n ≤ 512) :
     Region.Sub ⟨Ct + BitVec.ofNat 64 d, n⟩ ⟨Ct, 512⟩ :=
-  Offset.sub_base Ct (by omega)
+  Offset.sub_base Ct (by omega_arith)
 
 theorem IPre.sK (_hp : IPre s₀ Kp Ct S KL) {d n : Nat} (h : d + n ≤ KL) :
     Region.Sub ⟨Kp + BitVec.ofNat 64 d, n⟩ ⟨Kp, KL⟩ :=
-  Offset.sub_base Kp (by omega)
+  Offset.sub_base Kp (by omega_arith)
 
 /-- The arguments of a call of `vg_aes_expand_key_scratch` on half the key, from
 offset `a` (0 or `KL / 2`), into the context at offset `c`. -/
@@ -142,15 +142,15 @@ theorem IPre.eargs (hp : IPre s₀ Kp Ct S KL) {s : State} {a c : Nat}
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨⟨Kp, KL⟩, by simp, a, rfl, by simp; omega⟩
-    · exact ⟨⟨Ct, 512⟩, by simp, c, rfl, by simp; omega⟩
+    · exact ⟨⟨Kp, KL⟩, by simp, a, rfl, by simp; omega_arith⟩
+    · exact ⟨⟨Ct, 512⟩, by simp, c, rfl, by simp; omega_arith⟩
     · exact ⟨⟨S, 2560⟩, by simp, 0, by simp, by simp⟩
   writes := by
     rw [wr, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨⟨Ct, 512⟩, by simp, c, rfl, by simp; omega⟩
+    · exact ⟨⟨Ct, 512⟩, by simp, c, rfl, by simp; omega_arith⟩
     · exact ⟨⟨S, 2560⟩, by simp, 0, by simp, by simp⟩
 
 /-- The arguments of the call of `vg_cmac_aes_subkeys`. -/
@@ -164,11 +164,11 @@ theorem IPre.sargs (hp : IPre s₀ Kp Ct S KL) {s : State}
   x2 := x2
   x3 := x3
   rounds := hp.rounds
-  wk := Offset.base_disjoint Ct (by decide) (by have := hp.wC; omega)
+  wk := Offset.base_disjoint Ct (by decide) (by have := hp.wC; omega_arith)
   ws := (hp.c_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
   ks := (hp.c_s.sub_left (hp.sC (by decide))).sub_right (Region.sub_prefix (by decide))
-  wrapK := by rw [toNat_add_lt Ct hp.wC (by decide)]; have := hp.wC; omega
-  wrapS := by have := hp.wS; omega
+  wrapK := by rw [toNat_add_lt Ct hp.wC (by decide)]; have := hp.wC; omega_arith
+  wrapS := by have := hp.wS; omega_arith
   reads := by
     rw [rd, wr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -223,7 +223,7 @@ theorem initPre_wp {s₀ : State} {Kp Ct S : Addr} {KL : Nat} (hp : IPre s₀ Kp
     [mov .x19 .x0, .lsr .x .x20 .x1 1, mov .x21 .x2, mov .x22 .x3, mov .x1 .x20] from rfl]
   refine Spill.save_ok (fun p hp' => (initSaved_fits.1 p hp')) (fun p hp' => by
     have := initSaved_bound p hp'
-    rw [hp.x3, hp.wr]; exact ⟨⟨S, 2560⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩) ?_
+    rw [hp.x3, hp.wr]; exact ⟨⟨S, 2560⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) ?_
   refine WP.of_runBlock ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
       Size.bits, State.read, gpr_write, BitVec.setWidth_eq]
@@ -231,7 +231,7 @@ theorem initPre_wp {s₀ : State} {Kp Ct S : Addr} {KL : Nat} (hp : IPre s₀ Kp
   refine ⟨?_, by simp [gpr_write, hp.x0], by simp [gpr_write, hKL, half_bv hp.klen], by simp [gpr_write, hp.x2],
     by simp [gpr_write, hp.x3], fun r hr hn => ?_, rfl, by simp [mem_write, hp.x3], rfl, rfl⟩
   · rw [← k0 Kp, ← k0 Ct]
-    exact hp.eargs (a := 0) (c := 0) (by omega) (by decide) (by simp [gpr_write, hp.x0])
+    exact hp.eargs (a := 0) (c := 0) (by omega_arith) (by decide) (by simp [gpr_write, hp.x0])
       (by simp [gpr_write, hKL, half_bv hp.klen]) (by simp [gpr_write, hp.x2]) (by simp [gpr_write, hp.x3])
       rfl rfl
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -314,7 +314,7 @@ theorem initMid₂_wp {s₀ s : State} {Kp Ct S : Addr} {KL : Nat} (hp : IPre s�
     WP isa (.block initMid₂) s fun s' => IEk s₀ Kp Ct S KL s' ∧ s'.mem = s.mem := by
   obtain ⟨s', run, x0, x1, x2, x3, g, sp, m, rd, wr⟩ := initMid₂_ok h.x19 h.x20 h.x21 h.x22
   have h' := h.keep (fun r hr _ => g r hr) sp rd wr
-  exact WP.of_runBlock ⟨s', run, ⟨hp.eargs (by omega) (by decide) x0 x1 x2 x3 h'.rd h'.wr, h'⟩, m⟩
+  exact WP.of_runBlock ⟨s', run, ⟨hp.eargs (by omega_arith) (by decide) x0 x1 x2 x3 h'.rd h'.wr, h'⟩, m⟩
 
 /-! ## The whole function -/
 
@@ -352,25 +352,25 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact (hp.c_s.sub_left (Region.sub_prefix (by decide))).symm.sub_left sub
-    · exact Offset.disjoint_base S (by omega) (by omega)
+    · exact Offset.disjoint_base S (by omega_arith) (by omega_arith)
     · exact (hp.c_s.sub_left (hp.sC (by decide))).symm.sub_left sub
-    · exact Offset.disjoint_base S (by omega) (by omega)
+    · exact Offset.disjoint_base S (by omega_arith) (by omega_arith)
     · exact (hp.c_s.sub_left (hp.sC (by decide))).symm.sub_left sub
   have sv₁ : Spill.Saved S s₀.gpr initSaved s₁.mem := by
     rw [h₁.mem]; exact Spill.saveMem_saved initSaved_fits _ _ _
   have sv₆ : Spill.Saved S s₀.gpr initSaved s₆.mem := by
     have b := initSaved_bound
-    refine ((sv₁.frame f₂ fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega) r (by
+    refine ((sv₁.frame f₂ fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega_arith) r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)).frame
-      (m' := s₄.mem) (by rw [← m₃]; exact f₄) fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega) r (by
+      (m' := s₄.mem) (by rw [← m₃]; exact f₄) fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega_arith) r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)).frame
-      (by rw [← m₅]; exact f₆) fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega) r (by
+      (by rw [← m₅]; exact f₆) fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega_arith) r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)
   have inR : ∀ p ∈ initRestored, InRegions (s₆.rd ++ s₆.wr) (S + BitVec.ofNat 64 p.2) 8 := by
     intro p hp'
     have := initSaved_bound p (initRestored_sub p hp')
     rw [a₆.rd, a₆.wr, hp.wr]
-    exact ⟨⟨S, 2560⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨S, 2560⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine WP.mono (Spill.restore_wp a₆.x22 (fun p hp' => initSaved_fits.1 p (initRestored_sub p hp'))
     initRestored_restorable inR (fun p hp' => sv₆ p (initRestored_sub p hp'))) fun s₇ h₇ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [h₇.sp, a₆.sp]⟩, ?_⟩
@@ -399,42 +399,42 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
           Spec.Aes.bytesAt s₀.mem (Kp + BitVec.ofNat 64 a) (KL / 2) := by
       rw [m₅, Proof.Cmac.bytesAt_frame f₄ (fun r hr => dK ha r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp))
-          (by omega), m₃,
+          (by omega_arith), m₃,
         Proof.Cmac.bytesAt_frame f₂ (fun r hr => dK ha r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp))
-          (by omega),
+          (by omega_arith),
         Proof.Cmac.bytesAt_frame f₁ (fun r hr => dK ha r (by simp only [List.mem_singleton] at hr; subst hr; simp))
-          (by omega)]
+          (by omega_arith)]
     have key₁ : Spec.Aes.bytesAt s₁.mem Kp (KL / 2) = Spec.Aes.bytesAt s₀.mem Kp (KL / 2) := by
-      have := Proof.Cmac.bytesAt_frame f₁ (fun r hr => dK (a := 0) (n := KL / 2) (by omega) r
-        (by simp only [List.mem_singleton] at hr; subst hr; simp)) (by omega)
+      have := Proof.Cmac.bytesAt_frame f₁ (fun r hr => dK (a := 0) (n := KL / 2) (by omega_arith) r
+        (by simp only [List.mem_singleton] at hr; subst hr; simp)) (by omega_arith)
       rwa [k0] at this
-    have key₂ := key (a := KL / 2) (by omega)
+    have key₂ := key (a := KL / 2) (by omega_arith)
     have sch : Spec.Aes.bytesAt s₂.mem Ct (16 * (Spec.Aes.rounds (KL / 2 / 4) + 1)) =
         Spec.Aes.expandKey (Spec.Aes.bytesAt s₀.mem Kp (KL / 2)) := by
       rw [h₂.out, key₁]
-    have hRb : 16 * (Spec.Aes.rounds (KL / 2 / 4) + 1) ≤ 240 := by simp only [Spec.Aes.rounds]; omega
+    have hRb : 16 * (Spec.Aes.rounds (KL / 2 / 4) + 1) ≤ 240 := by simp only [Spec.Aes.rounds]; omega_arith
     refine Proof.AesSiv.keyRepr_of hp.klen ?_ ?_ ?_
     · rw [Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact Offset.base_disjoint Ct (by omega) (by omega)
-          · exact (hp.c_s.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by decide)))
-          (by omega), m₅,
+          · exact Offset.base_disjoint Ct (by omega_arith) (by omega_arith)
+          · exact (hp.c_s.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by decide)))
+          (by omega_arith), m₅,
         Proof.Cmac.bytesAt_frame f₄ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact Offset.base_disjoint Ct (by omega) (by omega)
-          · exact (hp.c_s.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by decide)))
-          (by omega), m₃, sch]
+          · exact Offset.base_disjoint Ct (by omega_arith) (by omega_arith)
+          · exact (hp.c_s.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by decide)))
+          (by omega_arith), m₃, sch]
     · rw [Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact Offset.disjoint Ct (by omega) (by omega) (by omega)
+          · exact Offset.disjoint Ct (by omega_arith) (by omega_arith) (by omega_arith)
           · exact (hp.c_s.sub_left (hp.sC (by decide))).sub_right (Region.sub_prefix (by decide))) (by decide),
         m₅, h₄.out, m₃,
         show 16 * (KL / 8 + 6 + 1) = 16 * (Spec.Aes.rounds (KL / 2 / 4) + 1) by
-          simp only [Spec.Aes.rounds]; omega, sch]
+          simp only [Spec.Aes.rounds]; omega_arith, sch]
     · rw [h₆.out, key₂]
 
 /-! ## Constant time -/

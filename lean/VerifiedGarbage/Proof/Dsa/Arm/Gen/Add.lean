@@ -48,7 +48,7 @@ theorem addStep_ok {s : State} {a : Addr} (ha : State.addr (s.gpr .r0 + BitVec.o
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     have := (s.mem a).isLt
-    rw [Nat.mod_eq_of_lt (by omega : (s.mem a).toNat < 2 ^ 32)]
+    rw [Nat.mod_eq_of_lt (by omega_arith : (s.mem a).toNat < 2 ^ 32)]
   refine wp_strb (a := a) (by decide) (by rw [u₂.other .r0 (by decide), u₁.other .r0 (by decide)]; exact ha)
     (by rw [u₂.wr, u₁.wr]; exact hw) fun s₃ u₃ => ?_
   refine wp_mov (op2_lsr (by decide)) fun s₄ u₄ => wp_dp (op2_imm (by decide)) fun s₅ u₅ => ?_
@@ -61,7 +61,7 @@ theorem addStep_ok {s : State} {a : Addr} (ha : State.addr (s.gpr .r0 + BitVec.o
   · rw [u₆.other .r1 (by decide), u₅.other .r1 (by decide), u₄.gpr, u₃.gpr, v]
     apply BitVec.eq_of_toNat_eq
     rw [toNat_shr, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_arith)]
   · rw [u₆.other .r0 (by decide), u₅.gpr, dpVal, u₄.other .r0 (by decide), u₃.gpr, u₂.other .r0 (by decide),
       u₁.other .r0 (by decide)]
   · rw [u₆.gpr, u₅.other .r2 (by decide), u₄.other .r2 (by decide), u₃.gpr, u₂.other .r2 (by decide),
@@ -94,7 +94,7 @@ theorem encode_step (m : Mem) (p : Addr) {n k : Nat} (hk : k < n) (c : Nat) :
   have e : (Spec.Rsa.bytesAt m p n).take (k + 1) = (Spec.Rsa.bytesAt m p n).take k ++ [m (p + BitVec.ofNat 64 k)] := by
     rw [List.take_add_one, List.getElem?_eq_getElem (by rw [bytesAt_length']; exact hk)]
     simp [Spec.Rsa.bytesAt]
-  have l : ((Spec.Rsa.bytesAt m p n).take k).length = k := by rw [List.length_take, bytesAt_length']; omega
+  have l : ((Spec.Rsa.bytesAt m p n).take k).length = k := by rw [List.length_take, bytesAt_length']; omega_arith
   have := VG.Proof.Dsa.Generation.seedAdd_snoc ((Spec.Rsa.bytesAt m p n).take k) (m (p + BitVec.ofNat 64 k)) c
   rw [l] at this
   rw [e, this]
@@ -104,7 +104,7 @@ theorem ofNat_sub_one {a : Nat} (h : 0 < a) (h2 : a < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h2]
   show (2 ^ 32 - 1 + a) % 2 ^ 32 = _
-  omega
+  omega_arith
 
 theorem bytesAt_cons (m : Mem) (p : Addr) (k i : Nat) :
     Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 k) (i + 1) =
@@ -115,7 +115,7 @@ theorem bytesAt_cons (m : Mem) (p : Addr) (k i : Nat) :
   refine List.map_congr_left fun j _ => ?_
   show m (p + BitVec.ofNat 64 k + BitVec.ofNat 64 (j + 1)) = m (p + BitVec.ofNat 64 (k + 1) + BitVec.ofNat 64 j)
   rw [BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
-  congr 3; omega
+  congr 3; omega_arith
 
 theorem addBody_ok {s₀ t : State} {base : BitVec 32} {n add i c : Nat} (hn256 : n < 256)
     (hfit : base.toNat + n ≤ 2 ^ 32)
@@ -124,23 +124,23 @@ theorem addBody_ok {s₀ t : State} {base : BitVec 32} {n add i c : Nat} (hn256 
     WP isa (.block addStep) t fun u =>
       AddInv s₀ base n add (i + 1) (((t.mem (State.addr base + BitVec.ofNat 64 (n - 1 - i))).toNat + c) / 256) u ∧
         u.z = decide (i + 1 = n) := by
-  have hj : n - 1 - i < n := by omega
+  have hj : n - 1 - i < n := by omega_arith
   have ea : State.addr (t.gpr .r0 + BitVec.ofNat 32 0) = State.addr base + BitVec.ofNat 64 (n - 1 - i) := by
-    rw [BitVec.add_zero, ← addr_add (show base.toNat + (n - 1 - i) < 2 ^ 32 by omega)]
+    rw [BitVec.add_zero, ← addr_add (show base.toNat + (n - 1 - i) < 2 ^ 32 by omega_arith)]
     congr 1
     have e := h.r0
-    rw [show n - 1 = (n - 1 - i) + i by omega, BitVec.ofNat_add, ← BitVec.add_assoc] at e
+    rw [show n - 1 = (n - 1 - i) + i by omega_arith, BitVec.ofNat_add, ← BitVec.add_assoc] at e
     have := congrArg (· - BitVec.ofNat 32 i) e
     simpa only [BitVec.add_sub_cancel] using this
   have hw1 : InRegions t.wr (State.addr base + BitVec.ofNat 64 (n - 1 - i)) 1 := by
     rw [h.rest.wr]
-    exact Covers.one hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+    exact Covers.one hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have bl := (t.mem (State.addr base + BitVec.ofNat 64 (n - 1 - i))).isLt
-  have c24 : c < 2 ^ 24 := by have := h.cle; omega
-  refine WP.mono (addStep_ok ea hw1 (by rw [h.r1, BitVec.toNat_ofNat]; omega)) ?_
+  have c24 : c < 2 ^ 24 := by have := h.cle; omega_arith
+  refine WP.mono (addStep_ok ea hw1 (by rw [h.r1, BitVec.toNat_ofNat]; omega_arith)) ?_
   rintro u ⟨mu, r1, r0, r2, z, Ru⟩
-  rw [h.r1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at mu r1
-  refine ⟨⟨by omega, ?_, r1, ?_, ?_, ?_, ?_, ?_, h.rest.trans Ru⟩, ?_⟩
+  rw [h.r1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at mu r1
+  refine ⟨⟨by omega_arith, ?_, r1, ?_, ?_, ?_, ?_, ?_, h.rest.trans Ru⟩, ?_⟩
   · rw [r0, ← h.r0]
     have : ∀ (x : BitVec 32) (y : Nat), x - 1 + BitVec.ofNat 32 (y + 1) = x + BitVec.ofNat 32 y := fun x y => by
       rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.add_assoc (x - 1), BitVec.add_comm (BitVec.ofNat 32 y),
@@ -148,27 +148,27 @@ theorem addBody_ok {s₀ t : State} {base : BitVec 32} {n add i c : Nat} (hn256 
       congr 1
       exact BitVec.sub_add_cancel x 1
     exact this _ _
-  · have := h.cle; rcases Nat.eq_zero_or_pos c with rfl | hc0 <;> omega
-  · rw [r2, h.r2, ofNat_sub_one (by omega) (by have := h.le; omega)]; congr 1
+  · have := h.cle; rcases Nat.eq_zero_or_pos c with rfl | hc0 <;> omega_arith
+  · rw [r2, h.r2, ofNat_sub_one (by omega_arith) (by have := h.le; omega_arith)]; congr 1
   · rw [mu]
-    exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+    exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   · intro j hj'
     rw [mu, VG.WriteBytes.writeW8_apply, ite_eq_right (fun e => by
-      have := Offset.add_ofNat_ne (State.addr base) (a := j) (b := n - 1 - i) (by omega) (by omega) (by omega)
+      have := Offset.add_ofNat_ne (State.addr base) (a := j) (b := n - 1 - i) (by omega_arith) (by omega_arith) (by omega_arith)
       exact this e)]
-    exact h.pre j (by omega)
-  · rw [h.eq, show n - i = (n - 1 - i) + 1 by omega, encode_step _ _ (by omega), ← h.pre (n - 1 - i) (by omega),
-      show n - (i + 1) = n - 1 - i by omega, bytesAt_cons, List.append_assoc, List.singleton_append]
+    exact h.pre j (by omega_arith)
+  · rw [h.eq, show n - i = (n - 1 - i) + 1 by omega_arith, encode_step _ _ (by omega_arith), ← h.pre (n - 1 - i) (by omega_arith),
+      show n - (i + 1) = n - 1 - i by omega_arith, bytesAt_cons, List.append_assoc, List.singleton_append]
     congr 2
     · rw [mu, VG.WriteBytes.writeW8_apply, ite_eq_left rfl]
     · refine List.map_congr_left fun k hk => ?_
       have hk := List.mem_range.mp hk
       rw [mu, VG.WriteBytes.writeW8_apply, ite_eq_right (fun e => by
         rw [Offset.add_add] at e
-        exact Offset.add_ofNat_ne (State.addr base) (a := n - 1 - i + 1 + k) (b := n - 1 - i) (by omega) (by omega)
-          (by omega) e)]
-  · rw [z, h.r2, ofNat_sub_one (by omega) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+        exact Offset.add_ofNat_ne (State.addr base) (a := n - 1 - i + 1 + k) (b := n - 1 - i) (by omega_arith) (by omega_arith)
+          (by omega_arith) e)]
+  · rw [z, h.r2, ofNat_sub_one (by omega_arith) (by omega_arith), ofNat_beq_zero (by omega_arith)]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_arith]
 
 /-- `addBE n`: the `n` big-endian bytes at `base`, `r0` at their last, plus `r1`. -/
 theorem addBE_ok {s : State} {base : BitVec 32} {n add : Nat} (hn : 0 < n) (hn256 : n < 256)
@@ -181,9 +181,9 @@ theorem addBE_ok {s : State} {base : BitVec 32} {n add : Nat} (hn : 0 < n) (hn25
   unfold addBE
   refine WP.seq (wp_mov (op2_imm (VG.Proof.Rsa.Arm.Keys.encodable_lt hn256)) fun s₁ u₁ => WP.block_nil ?_)
   let inv := fun k t => ∃ i c, i + k = n ∧ 0 < k ∧ AddInv s base n add i c t
-  refine WP.loop (M := isa) inv ?_ n s₁ ⟨0, add, by omega, hn, ?_⟩
+  refine WP.loop (M := isa) inv ?_ n s₁ ⟨0, add, by omega_arith, hn, ?_⟩
   · intro k t ⟨i, c, hik, hk, hi⟩
-    refine WP.mono (addBody_ok hn256 hfit hadd hw hi (by omega)) ?_
+    refine WP.mono (addBody_ok hn256 hfit hadd hw hi (by omega_arith)) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 1 = n
     · left
@@ -193,8 +193,8 @@ theorem addBE_ok {s : State} {base : BitVec 32} {n add : Nat} (hn : 0 < n) (hn25
       exact ⟨e.symm, hu.frame, hu.rest⟩
     · right
       refine ⟨by change some (!u.z) = some true; simp only [hz, he, decide_false, Bool.not_false],
-        k - 1, by omega, i + 1, _, by omega, by omega, hu⟩
-  · refine ⟨by omega, by rw [u₁.other _ (by decide), h0, BitVec.add_zero], by rw [u₁.other _ (by decide), h1],
+        k - 1, by omega_arith, i + 1, _, by omega_arith, by omega_arith, hu⟩
+  · refine ⟨by omega_arith, by rw [u₁.other _ (by decide), h0, BitVec.add_zero], by rw [u₁.other _ (by decide), h1],
       Nat.le_refl _, by rw [u₁.gpr]; rfl, by rw [u₁.mem]; exact Frame.refl _ _, fun j _ => by rw [u₁.mem], ?_,
       u₁.rest (by simp)⟩
     rw [Nat.sub_zero, List.take_of_length_le (by rw [bytesAt_length'])]

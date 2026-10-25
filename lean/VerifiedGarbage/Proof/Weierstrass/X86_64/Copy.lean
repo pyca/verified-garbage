@@ -38,19 +38,19 @@ theorem copy_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {o a : Na
       apply WP.of_runBlock
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
         State.load64, State.store64, ea_sc, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-        RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false, hs.rdi, ld_sc hs (d := a) (by omega),
-        st_sc hs (d := o) (by omega), Option.some.injEq, exists_eq_left']
+        RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false, hs.rdi, ld_sc hs (d := a) (by omega_arith),
+        st_sc hs (d := o) (by omega_arith), Option.some.injEq, exists_eq_left']
       refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl⟩⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨m₁, k₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
     have e₁ : wordsVal s₁.mem base (a + 8) n = wordsVal s.mem base (a + 8) n :=
-      O₁.wordsVal (by omega) (by omega)
-    refine WP.mono (copy_ok n hs₁ (o := o + 8) (a := a + 8) (by omega) (by omega) (by omega))
+      O₁.wordsVal (by omega_arith) (by omega_arith)
+    refine WP.mono (copy_ok n hs₁ (o := o + 8) (a := a + 8) (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega), O₁ x (by omega)]⟩
-    rw [wordsVal, O₂.word (by omega) (by omega), m₁, word_writeW_self, e₂, e₁, wordsVal]
+    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]⟩
+    rw [wordsVal, O₂.word (by omega_arith) (by omega_arith), m₁, word_writeW_self, e₂, e₁, wordsVal]
 
 /-- `[o] = [b]` if the mask `rcx` is all ones (`c`), `[a]` if it is zero; `o`
 at or below `a` and `b`, or apart from them. -/
@@ -75,22 +75,22 @@ theorem sel_ok {size : Nat} (c : Bool) : ∀ (n : Nat) {s : State} {base : Addr}
         Option.bind_some, State.load64, State.store64, ea_sc, RegUpd.gpr_setReg,
         RegUpd.gpr_arithFlags, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
         RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.mem_arithFlags, reduceCtorEq, ite_true,
-        ite_false, hs.rdi, hc, ld_sc hs (d := a) (by omega), ld_sc hs (d := b) (by omega),
-        st_sc hs (d := o) (by omega), Option.some.injEq, exists_eq_left', sel_word]
+        ite_false, hs.rdi, hc, ld_sc hs (d := a) (by omega_arith), ld_sc hs (d := b) (by omega_arith),
+        st_sc hs (d := o) (by omega_arith), Option.some.injEq, exists_eq_left', sel_word]
       refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl⟩⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]) fun s₁ ⟨m₁, k₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
     have ea : wordsVal s₁.mem base (a + 8) n = wordsVal s.mem base (a + 8) n :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_arith) (by omega_arith)
     have eb : wordsVal s₁.mem base (b + 8) n = wordsVal s.mem base (b + 8) n :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_arith) (by omega_arith)
     refine WP.mono (sel_ok c n hs₁ (o := o + 8) (a := a + 8) (b := b + 8)
-      (by rw [k₁.gpr _ (by decide), hc]) (by omega) (by omega) (by omega) (by omega) (by omega))
+      (by rw [k₁.gpr _ (by decide), hc]) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega), O₁ x (by omega)]⟩
-    rw [wordsVal, O₂.word (by omega) (by omega), m₁, word_writeW_self, e₂, ea, eb]
+    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]⟩
+    rw [wordsVal, O₂.word (by omega_arith) (by omega_arith), m₁, word_writeW_self, e₂, ea, eb]
     cases c <;> simp only [Bool.false_eq_true, ite_false, ite_true, wordsVal]
 
 /-- `o = b` if the mask `rcx` is all ones (`c`), `a` if it is zero, for points
@@ -195,7 +195,7 @@ theorem constSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (constSteps_ok hs k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (constSteps_ok hs k (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     refine WP.mono (show WP isa (.block (constStep o x k)) s₁ (fun s₂ =>
         s₂.mem = s₁.mem.writeW (off base (o + 8 * k)) (BitVec.ofNat 64 (x >>> (64 * k))) ∧
@@ -203,17 +203,17 @@ theorem constSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
       apply WP.of_runBlock
       simp only [constStep, runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_sc,
         RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false,
-        hs₁.rdi, st_sc hs₁ (d := o + 8 * k) (by omega), Option.some.injEq, exists_eq_left']
+        hs₁.rdi, st_sc hs₁ (d := o + 8 * k) (by omega_arith), Option.some.injEq, exists_eq_left']
       refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl⟩⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₂ ⟨m₂, k₂⟩ => ?_
     have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
     refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.word (by omega_arith) (by omega_arith), e₁ j h]
+    · obtain rfl : j = k := by omega_arith
       rw [m₂, word_writeW_self]
 
 /-- `[o] = x`. -/

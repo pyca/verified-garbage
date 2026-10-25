@@ -36,15 +36,15 @@ open VG.Proof.Sm4 (WordRel quads ofBlock outBlock keyInit rkOf readW64_bit getLs
 
 theorem rev64_bit (x : BitVec 64) {t j : Nat} (ht : t < 8) (hj : j < 8) :
     (rev64 x).getLsbD (8 * t + j) = x.getLsbD (8 * (7 - t) + j) := by
-  rw [VG.AArch64.getLsbD_rev64 _ (by omega)]
-  exact congrArg x.getLsbD (by omega)
+  rw [VG.AArch64.getLsbD_rev64 _ (by omega_arith)]
+  exact congrArg x.getLsbD (by omega_arith)
 
 /-- A byte of a word written. -/
 theorem writeW_byte (m : Mem) (a : Addr) (v : BitVec 64) {t j : Nat} (ht : t < 8) (hj : j < 8) :
     ((m.writeW a v) (a + BitVec.ofNat 64 t)).getLsbD j = v.getLsbD (8 * t + j) := by
   simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]
-  simp only [show t < 64 / 8 by omega, ↓reduceIte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
+  rw [Nat.mod_eq_of_lt (by omega_arith)]
+  simp only [show t < 64 / 8 by omega_arith, ↓reduceIte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
 
 /-- A byte outside a word written. -/
 theorem writeW_other (m : Mem) (a x : Addr) (v : BitVec 64) (h : ¬ (x - a).toNat < 8) :
@@ -76,10 +76,10 @@ theorem storeAt_ok (s : State) (r v : Reg) (n : Nat) (hn : n % 8 = 0 ∧ n < 327
 
 /-- A byte of the tail buffer's block `0`. -/
 theorem tail_byte (s : State) {h t j : Nat} (hh : h < 2) (ht : t < 8) (hj : j < 8) :
-    (slotW s (tailAt 0 h)).getLsbD (8 * t + j) = ((tailBlock s 0)[8 * h + t]'(by omega)).getLsbD j := by
+    (slotW s (tailAt 0 h)).getLsbD (8 * t + j) = ((tailBlock s 0)[8 * h + t]'(by omega_arith)).getLsbD j := by
   rw [slotW, readW64_bit _ _ ht hj]
   simp only [tailBlock, Spec.Sm4.blockAt, Vector.getElem_ofFn, wordAddr, addr_add, tailAt]
-  rw [show 8 * (tailSlot + 2 * 0 + h) + t = 8 * tailSlot + 16 * 0 + (8 * h + t) by omega]
+  rw [show 8 * (tailSlot + 2 * 0 + h) + t = 8 * tailSlot + 16 * 0 + (8 * h + t) by omega_arith]
 
 /-! ## The extraction -/
 
@@ -92,10 +92,10 @@ theorem extract_ok {s : State} {b S : Addr} {m : Nat} (hm : m < 8) (hb : s.gpr s
     (hsep : ∀ t < 2, Mem.Sep (wordAddr b (tailAt 0 t)) 8 (S + BitVec.ofNat 64 (16 * m)) 8) :
     ∃ s', runBlock isa extract s = some s' ∧
       (∀ t < 16, ∀ j < 8, (s'.mem (S + BitVec.ofNat 64 (16 * m + t))).getLsbD j =
-        ((tailBlock s 0)[15 - t]'(by omega)).getLsbD j) ∧
+        ((tailBlock s 0)[15 - t]'(by omega_arith)).getLsbD j) ∧
       Frame [⟨S + BitVec.ofNat 64 (16 * m), 16⟩] s.mem s'.mem ∧
       (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldMask_ok (r := t0) (k := tailAt 0 1) (by simp only [tailAt, tailSlot_eq]; omega)
+  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldMask_ok (r := t0) (k := tailAt 0 1) (by simp only [tailAt, tailSlot_eq]; omega_arith)
     (by rw [hb]; exact hT 1 (by decide)) rfl
   obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := bswapR_ok s₁ t0
   obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃⟩ := storeAt_ok s₂ .x1 t0 0 (by decide)
@@ -103,7 +103,7 @@ theorem extract_ok {s : State} {b S : Addr} {m : Nat} (hm : m < 8) (hb : s.gpr s
         have := hS 0 (by decide); simpa using this)
   have hb₃ : s₃.gpr sb = b := by rw [g₃, o₂ _ (by decide), o₁ _ (by decide), hb]
   obtain ⟨s₄, e₄, v₄, o₄, m₄, rd₄, wr₄⟩ := ldMask_ok (s := s₃) (r := t0) (k := tailAt 0 0)
-    (by simp only [tailAt, tailSlot_eq]; omega) (by rw [rd₃, wr₃, rd₂, wr₂, rd₁, wr₁, hb₃]; exact hT 0 (by decide)) rfl
+    (by simp only [tailAt, tailSlot_eq]; omega_arith) (by rw [rd₃, wr₃, rd₂, wr₂, rd₁, wr₁, hb₃]; exact hT 0 (by decide)) rfl
   obtain ⟨s₅, e₅, v₅, o₅, m₅, rd₅, wr₅⟩ := bswapR_ok s₄ t0
   obtain ⟨s₆, e₆, m₆, g₆, rd₆, wr₆⟩ := storeAt_ok s₅ .x1 t0 8 (by decide)
     (by rw [wr₅, wr₄, wr₃, wr₂, wr₁, o₅ _ (by decide), o₄ _ (by decide), g₃, o₂ _ (by decide), o₁ _ (by decide),
@@ -128,16 +128,16 @@ theorem extract_ok {s : State} {b S : Addr} {m : Nat} (hm : m < 8) (hb : s.gpr s
       runBlock_app, e₄, Option.bind_some, runBlock_app, e₅, Option.bind_some, e₆]
   · rw [hm6]
     by_cases h8 : t < 8
-    · rw [writeW_other _ _ _ _ (VG.Proof.Sm4.off_sub_not S (Or.inl (by omega)) (by omega) (by decide) (by omega)),
-        ← addr_add, writeW_byte _ _ _ h8 hj, rev64_bit _ h8 hj, tail_byte s (by decide) (by omega) hj]
-      simp only [show 8 * 1 + (7 - t) = 15 - t by omega]
+    · rw [writeW_other _ _ _ _ (VG.Proof.Sm4.off_sub_not S (Or.inl (by omega_arith)) (by omega_arith) (by decide) (by omega_arith)),
+        ← addr_add, writeW_byte _ _ _ h8 hj, rev64_bit _ h8 hj, tail_byte s (by decide) (by omega_arith) hj]
+      simp only [show 8 * 1 + (7 - t) = 15 - t by omega_arith]
     · rw [show S + BitVec.ofNat 64 (16 * m + t) = S + BitVec.ofNat 64 (16 * m + 8) + BitVec.ofNat 64 (t - 8) by
-          rw [addr_add, show 16 * m + 8 + (t - 8) = 16 * m + t by omega], writeW_byte _ _ _ (by omega) hj,
-        rev64_bit _ (by omega) hj, tail_byte s (by decide) (by omega) hj]
-      simp only [show 8 * 0 + (7 - (t - 8)) = 15 - t by omega]
+          rw [addr_add, show 16 * m + 8 + (t - 8) = 16 * m + t by omega_arith], writeW_byte _ _ _ (by omega_arith) hj,
+        rev64_bit _ (by omega_arith) hj, tail_byte s (by decide) (by omega_arith) hj]
+      simp only [show 8 * 0 + (7 - (t - 8)) = 15 - t by omega_arith]
   · rw [hm6]
-    exact (frame_writeW' _ (VG.Offset.sub S (by omega) (by omega))).trans
-      (frame_writeW' _ (VG.Offset.sub S (by omega) (by omega)))
+    exact (frame_writeW' _ (VG.Offset.sub S (by omega_arith) (by omega_arith))).trans
+      (frame_writeW' _ (VG.Offset.sub S (by omega_arith) (by omega_arith)))
   · rw [g₆, o₅ r hr, o₄ r hr, g₃, o₂ r hr, o₁ r hr]
 
 /-! ## The loop -/

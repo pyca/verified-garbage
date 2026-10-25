@@ -46,14 +46,14 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
         (if sw then word s.mem base (y + 8 * i) else word s.mem base (x + 8 * i))).writeW
         (off base (y + 8 * i)) (if sw then word s.mem base (x + 8 * i) else word s.mem base (y + 8 * i)) ∧
       Keeps [.x4, .x5, .x7] s t := by
-  have lx := hs.read (d := x + 8 * i) (n := 8) (by change x + 128 ≤ 3584 at hx; omega)
-  have ly := hs.read (d := y + 8 * i) (n := 8) (by change y + 128 ≤ 3584 at hy; omega)
-  have wx := hs.write (d := x + 8 * i) (n := 8) (by change x + 128 ≤ 3584 at hx; omega)
-  have wy := hs.write (d := y + 8 * i) (n := 8) (by change y + 128 ≤ 3584 at hy; omega)
+  have lx := hs.read (d := x + 8 * i) (n := 8) (by change x + 128 ≤ 3584 at hx; omega_arith)
+  have ly := hs.read (d := y + 8 * i) (n := 8) (by change y + 128 ≤ 3584 at hy; omega_arith)
+  have wx := hs.write (d := x + 8 * i) (n := 8) (by change x + 128 ≤ 3584 at hx; omega_arith)
+  have wy := hs.write (d := y + 8 * i) (n := 8) (by change y + 128 ≤ 3584 at hy; omega_arith)
   have xe : (x + 8 * i) % 8 = 0 ∧ x + 8 * i < 32768 := by
-    change x + 128 ≤ 3584 at hx; omega
+    change x + 128 ≤ 3584 at hx; omega_arith
   have ye : (y + 8 * i) % 8 = 0 ∧ y + 8 * i < 32768 := by
-    change y + 128 ≤ 3584 at hy; omega
+    change y + 128 ≤ 3584 at hy; omega_arith
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     State.read, State.load, State.store, RegUpd.gpr_write, RegUpd.mem_write,
@@ -76,19 +76,19 @@ theorem pair_write {m : Mem} {base : Addr} {x y n j : Nat} (hx : Slot x) (hy : S
   dsimp only
   constructor
   · simp only [limbs, word]
-    rw [Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)]
+    rw [Mem.readW_writeW_sep (Offset.sep base (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
     rw [show m.readW (off base (x + 8 * j)) 64 = word m base (x + 8 * j) from rfl]
     change (word (m.writeW (off base (x + 8 * n)) vx) base (x + 8 * j)).toNat = _
-    rw [word_write m base (by omega) (by omega)]
+    rw [word_write m base (by omega_arith) (by omega_arith)]
     split <;> rfl
   · change (word ((m.writeW (off base (x + 8 * n)) vx).writeW (off base (y + 8 * n)) vy)
       base (y + 8 * j)).toNat = _
-    rw [word_write (m.writeW (off base (x + 8 * n)) vx) base (by omega) (by omega)]
+    rw [word_write (m.writeW (off base (x + 8 * n)) vx) base (by omega_arith) (by omega_arith)]
     by_cases h : j = n
     · rw [ite_eq_left h, ite_eq_left h]
     · rw [ite_eq_right h, ite_eq_right h]
       apply congrArg BitVec.toNat
-      exact Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)
+      exact Mem.readW_writeW_sep (Offset.sep base (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 /-- Swap all eight limbs under the mask, preserving all other bytes. -/
 theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : Slot x) (hy : Slot y)
@@ -112,31 +112,31 @@ theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : S
     have tc := (tk.1 .x6 (by decide)).trans hc
     refine WP.mono (swapStep_ok (hs.of_keeps tk (by decide)) hx hy hx8 hy8 hn tc) fun u ⟨um, uk⟩ => ?_
     have ex : limbs t.mem base x n = limbs s.mem base x n :=
-      congrArg BitVec.toNat (tm.word (by omega) (by omega) (by omega))
+      congrArg BitVec.toNat (tm.word (by omega_arith) (by omega_arith) (by omega_arith))
     have ey : limbs t.mem base y n = limbs s.mem base y n :=
-      congrArg BitVec.toNat (tm.word (by omega) (by omega) (by omega))
+      congrArg BitVec.toNat (tm.word (by omega_arith) (by omega_arith) (by omega_arith))
     have pair := fun (j : Nat) (hj : j < 8) => pair_write (m := t.mem) (base := base) hx hy hxy hn hj
       (if sw then word t.mem base (y + 8 * n) else word t.mem base (x + 8 * n))
       (if sw then word t.mem base (x + 8 * n) else word t.mem base (y + 8 * n))
     refine ⟨?_, ?_, ?_, tk.trans uk⟩
     · intro j hj
-      rw [um, (pair j (by omega)).1]
+      rw [um, (pair j (by omega_arith)).1]
       by_cases h : j = n
       · rw [ite_eq_left h, h]
         cases sw <;> simp only [ite_true, Bool.false_eq_true, ite_false] <;> with_reducible assumption
-      · rw [ite_eq_right h]; exact tx j (by omega)
+      · rw [ite_eq_right h]; exact tx j (by omega_arith)
     · intro j hj
-      rw [um, (pair j (by omega)).2]
+      rw [um, (pair j (by omega_arith)).2]
       by_cases h : j = n
       · rw [ite_eq_left h, h]
         cases sw <;> simp only [ite_true, Bool.false_eq_true, ite_false] <;> with_reducible assumption
-      · rw [ite_eq_right h]; exact ty j (by omega)
-    · refine (tm.mono (by omega) (by omega)).trans ?_
+      · rw [ite_eq_right h]; exact ty j (by omega_arith)
+    · refine (tm.mono (by omega_arith) (by omega_arith)).trans ?_
       intro p hp hq
-      rw [um, writeW_outside _ _ _ (by omega : y + 8 * n + 8 ≤ 8192) p (by omega),
-        writeW_outside _ _ _ (by omega : x + 8 * n + 8 ≤ 8192) p (by omega)]
+      rw [um, writeW_outside _ _ _ (by omega_arith : y + 8 * n + 8 ≤ 8192) p (by omega_arith),
+        writeW_outside _ _ _ (by omega_arith : x + 8 * n + 8 ≤ 8192) p (by omega_arith)]
   refine WP.mono (wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
-    ⟨fun _ hi => by omega, fun _ hi => by omega, Outside2.refl _ _ _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tx, ty, tm, tk⟩ => ?_
+    ⟨fun _ hi => by omega_arith, fun _ hi => by omega_arith, Outside2.refl _ _ _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tx, ty, tm, tk⟩ => ?_
   exact ⟨tx, ty, tm.mono (by decide) (by decide), tk⟩
 
 end VG.Proof.Curve448.AArch64

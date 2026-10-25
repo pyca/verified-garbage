@@ -31,7 +31,7 @@ theorem pow64_succ (k : Nat) : 2 ^ (64 * (k + 1)) = 2 ^ 64 * 2 ^ (64 * k) := by
 theorem word_add_lt {x y X : Nat} (hx : x < 2 ^ 64) (hy : y < X) : x + 2 ^ 64 * y < 2 ^ 64 * X := by
   have : 2 ^ 64 * (y + 1) ≤ 2 ^ 64 * X := Nat.mul_le_mul_left _ hy
   rw [Nat.mul_succ] at this
-  omega
+  omega_arith
 
 /-- `p + d`. -/
 abbrev off (p : Addr) (d : Nat) : Addr := p + BitVec.ofNat 64 d
@@ -68,7 +68,7 @@ theorem Outside.trans {base : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : O
 
 theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside base o n m m')
     (h₁ : o' ≤ o) (h₂ : o + n ≤ o' + n') : Outside base o' n' m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_arith)
 
 theorem ofs_off (base : Addr) {d i : Nat} (h : d + i < 2 ^ 64) :
     ofs base (off base d + BitVec.ofNat 64 i) = d + i := by
@@ -78,7 +78,7 @@ theorem ofs_off (base : Addr) {d i : Nat} (h : d + i < 2 ^ 64) :
 /-- A word at an offset outside the bytes that changed. -/
 theorem Outside.word {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 8 ≤ o ∨ o + n ≤ d) (hd' : d + 8 ≤ 2 ^ 64) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_arith)]; omega_arith)).symm).symm
 
 theorem Outside.wordsVal {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
     {d k : Nat} (hd : d + 8 * k ≤ o ∨ o + n ≤ d) (hd' : d + 8 * k ≤ 2 ^ 64) :
@@ -87,16 +87,16 @@ theorem Outside.wordsVal {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside bas
   | zero => rfl
   | succ k ih =>
     simp only [VG.Proof.Mont.wordsVal]
-    rw [h.word (by omega) (by omega), ih (by omega) (by omega)]
+    rw [h.word (by omega_arith) (by omega_arith), ih (by omega_arith) (by omega_arith)]
 
 theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : d + 8 ≤ 2 ^ 64) :
     Outside base d 8 m (m.writeW (off base d) v) := by
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_arith)]
   simp only [ofs] at hx
-  omega
+  omega_arith
 
 theorem word_writeW_self (m : Mem) (base : Addr) (d : Nat) (v : BitVec 64) :
     word (m.writeW (off base d) v) base d = v := Mem.readW_writeW_self64 _ _ _
@@ -109,9 +109,9 @@ theorem writeW8_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 8) (h : d 
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_arith)]
   simp only [ofs] at hx
-  omega
+  omega_arith
 
 theorem writeW8_self (m : Mem) (a : Addr) (v : BitVec 8) : (m.writeW a v) a = v := by
   simp only [Mem.writeW, Mem.write, BitVec.sub_self, BitVec.toNat_zero,
@@ -247,28 +247,28 @@ theorem Lay.grid {M : Mod} {size d lo hi imo itmp : Nat} (hmo : M.mo = d + 8 * M
     rcases Nat.lt_or_gt_of_ne hij with h | h
     · have := Nat.mul_le_mul_left (8 * M.n) h
       rw [Nat.mul_succ] at this
-      omega
+      omega_arith
     · have := Nat.mul_le_mul_left (8 * M.n) h
       rw [Nat.mul_succ] at this
-      omega
+      omega_arith
   refine ⟨?_, ?_, ?_, ?_⟩
   · rintro x ⟨i, -, hi', rfl⟩
     have := Nat.mul_le_mul_left (8 * M.n) hi'
     rw [Nat.mul_succ] at this
-    omega
+    omega_arith
   · rintro x y ⟨i, -, -, rfl⟩ ⟨j, -, -, rfl⟩ hxy
     exact apart i j fun h => hxy (h ▸ rfl)
   · rintro x ⟨i, hi, -, rfl⟩
-    rw [hmo]; exact apart i imo (by omega)
+    rw [hmo]; exact apart i imo (by omega_arith)
   · rintro x ⟨i, hi, -, rfl⟩
-    rw [htmp]; exact apart i itmp (by omega)
+    rw [htmp]; exact apart i itmp (by omega_arith)
 
 /-- `t₀ + (t₀ m' mod 2⁶⁴) m ≡ 0 (mod 2⁶⁴)` when `m m' ≡ -1`. -/
 theorem mont_low (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 64 = 0) :
     (t0 + t0 * minv % 2 ^ 64 * m) % 2 ^ 64 = 0 := by
   rw [Nat.add_mod, Nat.mul_mod (t0 * minv % 2 ^ 64), Nat.mod_mod, ← Nat.mul_mod,
     ← Nat.add_mod, show t0 + t0 * minv * m = t0 * (m * minv + 1) by
-      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega,
+      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega_arith,
     Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]
 
 theorem wordsVal_succ_top (m : Mem) (base : Addr) (d k : Nat) :
@@ -277,8 +277,8 @@ theorem wordsVal_succ_top (m : Mem) (base : Addr) (d k : Nat) :
   | zero => simp [wordsVal]
   | succ k ih =>
     rw [wordsVal, ih (d + 8), wordsVal, pow64_succ, Nat.mul_add, Nat.mul_assoc,
-      show d + 8 + 8 * k = d + 8 * (k + 1) by omega]
-    omega
+      show d + 8 + 8 * k = d + 8 * (k + 1) by omega_arith]
+    omega_arith
 
 /-- What `csub` computes: the number `T + X top < 2m` below `m`, given its
 difference with `m`, `D + m = T + X b`, and the selection by the borrow. -/
@@ -287,19 +287,19 @@ theorem csub_arith {T D top X m : Nat} {b : Bool} (hX : m < X) (hD : D < X)
     (if top < b.toNat then T else D) = (T + X * top) % m := by
   have htop : top ≤ 1 := by
     rcases Nat.lt_or_ge top 2 with h | h
-    · omega
+    · omega_arith
     · have : X * 2 ≤ X * top := Nat.mul_le_mul_left _ h
-      omega
-  rcases (by omega : top = 0 ∨ top = 1) with rfl | rfl <;> cases b <;>
+      omega_arith
+  rcases (by omega_arith : top = 0 ∨ top = 1) with rfl | rfl <;> cases b <;>
     simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at he hV ⊢
   · simp only [Nat.lt_irrefl, ite_false]
-    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   · simp only [Nat.zero_lt_one, ite_true]
-    rw [Nat.mod_eq_of_lt (by omega)]
-  · omega
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
+  · omega_arith
   · simp only [Nat.lt_irrefl, ite_false]
-    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
-theorem m_pos {m B : Nat} (hB : B < m) : 0 < m := by omega
+theorem m_pos {m B : Nat} (hB : B < m) : 0 < m := by omega_arith
 
 end VG.Proof.Mont

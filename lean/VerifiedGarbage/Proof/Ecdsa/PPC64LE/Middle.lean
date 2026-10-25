@@ -82,7 +82,7 @@ theorem midOps_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ 
   obtain ⟨K₁, f₁, t₁, v₁⟩ := K₀.call h0 h7 (o := XM) (by decide) (by decide) (by decide) k₁ U₁
   -- `X = XM · 1`.
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 K₁.ws (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [v₁ (by decide) (by decide), hone]; omega)) fun s₂ ⟨k₂, U₂, lt₂, e₂⟩ => ?_)
+    (by decide) (by decide) (by rw [v₁ (by decide) (by decide), hone]; omega_arith)) fun s₂ ⟨k₂, U₂, lt₂, e₂⟩ => ?_)
   obtain ⟨K₂, f₂, t₂, v₂⟩ := K₁.call h0 h7 (o := X) (by decide) (by decide) (by decide) k₂ U₂
   have x₂ : Fin.ofNat c.C.p (sv c base s₂ X) =
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) := by
@@ -90,14 +90,14 @@ theorem midOps_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ 
   -- `RR = X mod n`.
   have z₂ : sv c base s₂ ZERO = 0 := by rw [v₂ (by decide) (by decide), v₁ (by decide) (by decide), hzero]
   refine WP.seq (WP.mono (slAdd_ok hc.fn hc.fnk hc.fnm h7 K₂.ws (o := RR) (a := X) (b := ZERO) (by decide)
-    (by decide) (by decide) (by rw [z₂]; omega)) fun s₃ ⟨k₃, U₃, e₃⟩ => ?_)
+    (by decide) (by decide) (by rw [z₂]; omega_arith)) fun s₃ ⟨k₃, U₃, e₃⟩ => ?_)
   obtain ⟨K₃, f₃, t₃, v₃⟩ := K₂.call h0 h7 (o := RR) (by decide) (by decide) (by decide) k₃ U₃
   have back₃ : ∀ {i}, i < 45 → i ∉ [XM, X, RR] → sv c base s₃ i = sv c base s i := fun hi hl => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
     rw [v₃ hi hl.2.2, v₂ hi hl.2.1, v₁ hi hl.1]
   -- `KM = K · R² mod n`.
   refine WP.seq (WP.mono (slMul_ok hc.fn hc.fnk hc.fnm h7 K₃.ws (o := KM) (a := K) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [back₃ (by decide) (by decide), hr2]; exact Nat.mod_lt _ (by omega)))
+    (by decide) (by decide) (by rw [back₃ (by decide) (by decide), hr2]; exact Nat.mod_lt _ (by omega_arith)))
     fun s₄ ⟨k₄, U₄, lt₄, e₄⟩ => h s₄ ?_)
   obtain ⟨K₄, f₄, t₄, v₄⟩ := K₃.call h0 h7 (o := KM) (by decide) (by decide) (by decide) k₄ U₄
   have X₄ : sv c base s₄ X = sv c base s₂ X := by rw [v₄ (by decide) (by decide), v₃ (by decide) (by decide)]
@@ -136,8 +136,8 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
   have hn := S.ws.nowrap
   have hsz : size = 8192 := rfl
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
-  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
-  have hl : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => by have := sl_le c h7 hi; omega
+  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
+  have hl : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => by have := sl_le c h7 hi; omega_arith
   have flagWs : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size := fun w hw => by
     rw [List.mem_singleton.mp hw]; exact hfl
   refine WP.seq ?_
@@ -170,7 +170,7 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
       show s₇.mem (off base (bitsAt c.n 2 + t)) = _
       rw [t₇ (j := 2) (by decide) t ht, Mp.tbl (j := 2) (by decide) t ht]
       exact S.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₈ ⟨k₈, U₈, lt₈, v₈⟩ => h s₈ ?_)
+    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega_arith)) fun s₈ ⟨k₈, U₈, lt₈, v₈⟩ => h s₈ ?_)
   rw [powWxN_eq] at U₈
   have K₈ := K₇.step h7 k₈ (hU := U₈) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
   have e₈ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv c base s₈ i = sv c base s₇ i := fun hi hr =>
@@ -207,9 +207,9 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
       have apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
           c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
         rcases apart_powWx h7 (i := FLAG) (by decide) (by decide) w hw with h | h
-        · exact Or.inl (by omega)
+        · exact Or.inl (by omega_arith)
         · exact Or.inr h
-      simp only [flagW]; exact U₈.word apF (by have := sl_le c h7 (i := FLAG) (by decide); omega)
+      simp only [flagW]; exact U₈.word apF (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)
     rw [fl₈, f₇, f₆, f₅, Mp.flag, S.flag, hMN, d₄, hMN₅, k₅', rr₆, m₈ (i := X) (by simp)]
   · refine v₈.trans ?_
     show toM c.C.n (2 ^ (64 * c.n)) (sv c base s₇ KM) ^ _ = _

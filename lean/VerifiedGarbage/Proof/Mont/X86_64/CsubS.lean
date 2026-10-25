@@ -120,7 +120,7 @@ theorem csubS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       Keeps (.rax :: .rcx :: .rdx :: .rbp :: top :: ts) s s' := by
   obtain ⟨t, ts', rfl⟩ : ∃ t ts', ts = t :: ts' := by
     cases ts with
-    | nil => simp at hlen; omega
+    | nil => simp at hlen; omega_arith
     | cons t ts' => exact ⟨t, ts', rfl⟩
   have hft := hf.tail
   have htop := hf.head
@@ -129,7 +129,7 @@ theorem csubS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       _ = 2 ^ 128 * 2 ^ 256 := Nat.pow_add 2 128 256
   rw [hW] at hV ⊢
   rw [csubS, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (chainSub_ok hs (b := M.mo) (by omega) hft) fun s₁ ⟨b₁, cf₁, e₁, k₁⟩ => ?_
+  refine WP.mono (chainSub_ok hs (b := M.mo) (by omega_arith) hft) fun s₁ ⟨b₁, cf₁, e₁, k₁⟩ => ?_
   rw [show ([.alu .sbb top (.imm 0), .alu .sbb .rax (.reg .rax)] : List Instr) ++
       (p384Mask ++ p384Add (t :: ts')) = [.alu .sbb top (.imm 0)] ++
       ([.alu .sbb .rax (.reg .rax)] ++ (p384Mask ++ p384Add (t :: ts'))) from rfl, WP.block_append_iff]
@@ -156,7 +156,7 @@ theorem csubS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     cases b₁ <;> cases B <;> cases c₅ <;>
       simp only [Bool.toNat_true, Bool.toNat_false, ite_true, ite_false, Bool.false_eq_true,
         decide_eq_true_eq, decide_eq_false_iff_not, Nat.not_lt] at hB e₁ e₅ ⊢ <;>
-      omega
+      omega_arith
   · exact (((k₁.mono (by sub_regs)).trans ((k₂.mono (by sub_regs)).trans (k₃.mono (by sub_regs)))).trans
       (k₄.mono (by sub_regs))).trans (k₅.mono (by sub_regs))
 
@@ -175,7 +175,7 @@ theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       Outside base M.tmp (8 * M.n) s.mem s'.mem := by
   unfold csub
   split
-  · exact WP.mono (csubC_ok hs hlen hn (by omega) hf hmo hm hV) fun s' ⟨e, k⟩ =>
+  · exact WP.mono (csubC_ok hs hlen hn (by omega_arith) hf hmo hm hV) fun s' ⟨e, k⟩ =>
       ⟨e, Keeps.regs k, fun x _ => by rw [k.2.1]⟩
   split
   · obtain ⟨hn6, hm6⟩ := hsp ‹_›

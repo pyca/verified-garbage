@@ -89,14 +89,14 @@ theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i
   · subst n
     refine WP.ite true (by simp [eval, hz]) (fun _ => WP.block_nil ?_) (by simp)
     simpa only [Nat.mul_zero, Nat.add_zero] using And.intro ht hst
-  · have hne : BitVec.ofNat 32 n ≠ (0 : BitVec 32) := by bv_omega
+  · have hne : BitVec.ofNat 32 n ≠ (0 : BitVec 32) := by bv_omega_arith
     refine WP.ite false (by simp only [eval, hz, beq_eq_false_iff_ne.mpr hne]) (by simp) (fun _ => ?_)
     refine WP.loop (M := isa) (fun rem t => ∃ j, j < n ∧ rem = n - j ∧
       Inv s₀ (i + w * j) t ∧ t.gpr .edx = BitVec.ofNat 32 (n-j) ∧
       t.gpr .esp = s.gpr .esp) ?_ n t ?_
     · intro rem u ⟨j, hj, hr, hu, hcu, hsu⟩
       refine WP.mono (hstep j u hj hu) fun v ⟨hv, hcv, hsv, hzv⟩ => ?_
-      have hpred : BitVec.ofNat 32 (n-j) - 1 = BitVec.ofNat 32 (n-(j+1)) := by bv_omega
+      have hpred : BitVec.ofNat 32 (n-j) - 1 = BitVec.ofNat 32 (n-(j+1)) := by bv_omega_arith
       rw [hcu, hpred] at hcv hzv
       by_cases hend : j + 1 = n
       · left
@@ -104,7 +104,7 @@ theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i
         rw [hend] at hv
         exact ⟨hv, hsv.trans hsu⟩
       · right
-        have hnz : BitVec.ofNat 32 (n-(j+1)) ≠ (0 : BitVec 32) := by bv_omega
+        have hnz : BitVec.ofNat 32 (n-(j+1)) ≠ (0 : BitVec 32) := by bv_omega_arith
         refine ⟨by simp only [eval, hzv, beq_eq_false_iff_ne.mpr hnz]; rfl, n-(j+1), by omega,
           j+1, by omega, rfl, hv, hcv, hsv.trans hsu⟩
     · exact ⟨0, by omega, by omega, by simpa using ht, by simpa using hct, hst⟩

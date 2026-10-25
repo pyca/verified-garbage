@@ -101,20 +101,20 @@ theorem Saved.dframe {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : DFr
 
 theorem LrSaved.dframe {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : DFrame base m m')
     (hs : LrSaved base g m) : LrSaved base g m' :=
-  (h.word (Or.inr (by simp only [LRS]; omega)) (Or.inl (by simp only [ACC, LRS]; omega))
-    (Or.inl (by simp only [CAN, LRS]; omega)) (by simp only [LRS]; omega)).trans hs
+  (h.word (Or.inr (by simp only [LRS]; omega_arith)) (Or.inl (by simp only [ACC, LRS]; omega_arith))
+    (Or.inl (by simp only [CAN, LRS]; omega_arith)) (by simp only [LRS]; omega_arith)).trans hs
 
 theorem SavedX.dframe {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : DFrame base m m') (hs : SavedX base g m) :
     SavedX base g m' := fun k hk =>
-  (h.word (Or.inr (by simp only [SAVE]; omega)) (Or.inl (by simp only [ACC, SAVE]; omega))
-    (Or.inl (by simp only [CAN, SAVE]; omega)) (by simp only [SAVE]; omega)).trans (hs k hk)
+  (h.word (Or.inr (by simp only [SAVE]; omega_arith)) (Or.inl (by simp only [ACC, SAVE]; omega_arith))
+    (Or.inl (by simp only [CAN, SAVE]; omega_arith)) (by simp only [SAVE]; omega_arith)).trans (hs k hk)
 
 theorem SavedV.dframe {base : Addr} {v : VReg → BitVec 128} {m m' : Mem} (h : DFrame base m m') (hs : SavedV base v m) :
     SavedV base v m' := by
   have hV : VSAVE = 4736 := rfl
   refine hs.frame fun d h1 h2 => ?_
-  have ho : ofs base (off base d) = d := ofs_off0' base (by omega)
-  exact h _ (by rw [ho]; omega) (by rw [ho]; simp only [ACC]; omega) (by rw [ho]; simp only [CAN]; omega)
+  have ho : ofs base (off base d) = d := ofs_off0' base (by omega_arith)
+  exact h _ (by rw [ho]; omega_arith) (by rw [ho]; simp only [ACC]; omega_arith) (by rw [ho]; simp only [CAN]; omega_arith)
 
 /-- The challenge's copy at `KB`. -/
 def KBytes (base : Addr) (m : Mem) (b : Nat → BitVec 8) : Prop := ∀ i < 57, m (off base (KB + i)) = b i
@@ -124,16 +124,16 @@ theorem KBytes.of_frame {base : Addr} {m m' : Mem} {b : Nat → BitVec 8} (h : K
   rw [hf i hi]; exact h i hi
 
 theorem kb_ofs (base : Addr) {i : Nat} (hi : i < 57) : ofs base (off base (KB + i)) = KB + i :=
-  ofs_off0' base (by simp only [KB]; omega)
+  ofs_off0' base (by simp only [KB]; omega_arith)
 
 theorem bits_ofs (base : Addr) {t : Nat} (ht : t < 456) : ofs base (off base (BITS + t)) = BITS + t :=
-  ofs_off0' base (by simp only [BITS]; omega)
+  ofs_off0' base (by simp only [BITS]; omega_arith)
 
 theorem Bits.dframe {base : Addr} {k : Nat} {m m' : Mem} (h : DFrame base m m') (hb : Bits 57 base k m) :
     Bits 57 base k m' := fun t ht => by
-  rw [h _ (by rw [bits_ofs base (by omega)]; simp only [BITS]; omega)
-    (by rw [bits_ofs base (by omega)]; simp only [BITS, ACC]; omega)
-    (by rw [bits_ofs base (by omega)]; simp only [BITS, CAN]; omega)]
+  rw [h _ (by rw [bits_ofs base (by omega_arith)]; simp only [BITS]; omega_arith)
+    (by rw [bits_ofs base (by omega_arith)]; simp only [BITS, ACC]; omega_arith)
+    (by rw [bits_ofs base (by omega_arith)]; simp only [BITS, CAN]; omega_arith)]
   exact hb t ht
 
 /-! ## The front -/
@@ -195,15 +195,15 @@ theorem prefix_ok {s s1 : State} {base : Addr}
   have hs2 := hs1.of_keeps k2 (by decide)
   refine WP.mono (save_ok hs2) fun t ⟨svx, o3, g3, rd3, wr3⟩ => ?_
   have o13 : Outside base SAVE 128 s1.mem t.mem :=
-    (o2.mono (by simp only [SAVE, KB]; omega) (by simp only [SAVE, KB]; omega)).trans
-      (o3.mono (Nat.le_refl _) (by omega))
+    (o2.mono (by simp only [SAVE, KB]; omega_arith) (by simp only [SAVE, KB]; omega_arith)).trans
+      (o3.mono (Nat.le_refl _) (by omega_arith))
   have keepSlot : ∀ i : Fin 22, E t.mem base i = E s1.mem base i := fun i =>
-    VG.Proof.X448.AArch64.Weak.E_outside o13 i (Or.inl (by have := i.isLt; simp only [slot, SAVE]; omega))
+    VG.Proof.X448.AArch64.Weak.E_outside o13 i (Or.inl (by have := i.isLt; simp only [slot, SAVE]; omega_arith))
   refine ⟨hs2.of_keeps (rs := []) ⟨fun r _ => congrFun g3 r, rd3, wr3⟩ (by decide), fun i j hj => ?_, ?_, ?_,
     lr1.outside o13 (Or.inr (by decide)), ?_, fun i hi => ?_, ?_, ?_, by rw [keepSlot]; exact z1, ?_,
     by rw [keepSlot]; exact d1⟩
-  · rw [o13.limbs (Or.inl (by have := i.isLt; simp only [slot, SAVE]; omega)) (by have := i.isLt; simp only [slot]; omega)
-      (by omega)]
+  · rw [o13.limbs (Or.inl (by have := i.isLt; simp only [slot, SAVE]; omega_arith)) (by have := i.isLt; simp only [slot]; omega_arith)
+      (by omega_arith)]
     exact b1 i j hj
   · exact (sv1.outside o13 (by decide))
   · intro k hk
@@ -213,7 +213,7 @@ theorem prefix_ok {s s1 : State} {base : Addr}
       have : saved k ∉ [Reg.x12, .x20, .x4] := by revert k; decide
       exact this)]
   · rw [congrFun g3 .x20, k2.1 _ (by decide)]; exact x20₁
-  · rw [o3 _ (Or.inr (by rw [kb_ofs base hi]; simp only [SAVE, KB]; omega))]
+  · rw [o3 _ (Or.inr (by rw [kb_ofs base hi]; simp only [SAVE, KB]; omega_arith))]
     rw [kb2 i hi, o1 _ (Or.inr (fch i hi))]
   · exact (k1.trans (k2.mono (by decide))).trans ⟨fun r _ => congrFun g3 r, rd3, wr3⟩ |>.mono (by decide)
   · exact o1.trans ((o13.mono (by decide) (by decide)) : Outside base 0 8192 s1.mem t.mem) |>.trans (Outside.refl _ _ _ _)
@@ -235,19 +235,19 @@ theorem entry_ok {s : State} {base : Addr} (hb3 : s.gpr .x3 = base) (hw : (⟨ba
   refine ⟨⟨E3.scr.of_keeps k4 (by decide), fun i j hj => ?_, E3.saved.outside o4 (by decide),
     E3.savedX.outside o4 (Or.inr (by decide)), E3.lrs.outside o4 (Or.inl (by decide)),
     by rw [congrFun g4]; exact E3.x20,
-    E3.kb.of_frame fun i hi => o4 _ (Or.inl (by rw [kb_ofs base hi]; simp only [KB]; omega)),
+    E3.kb.of_frame fun i hi => o4 _ (Or.inl (by rw [kb_ofs base hi]; simp only [KB]; omega_arith)),
     E3.regs.trans (k4.mono (by decide)), E3.mem.trans (o4.mono (by decide) (by decide)), ?_, ?_, ?_⟩,
     fun k hk => by rw [svv k hk, v3 _ (V_preserved k hk), v1 _ (V_preserved k hk)]⟩
-  · rw [o4.limbs (Or.inl (by have := i.isLt; simp only [slot]; omega)) (by have := i.isLt; simp only [slot]; omega)
-      (by omega)]
+  · rw [o4.limbs (Or.inl (by have := i.isLt; simp only [slot]; omega_arith)) (by have := i.isLt; simp only [slot]; omega_arith)
+      (by omega_arith)]
     exact E3.bnd i j hj
-  · rw [VG.Proof.X448.AArch64.Weak.E_outside o4 0 (Or.inl (by simp only [slot]; omega))]; exact E3.e0
+  · rw [VG.Proof.X448.AArch64.Weak.E_outside o4 0 (Or.inl (by simp only [slot]; omega_arith))]; exact E3.e0
   · simp only [VG.Proof.Ed448.pt]
-    rw [VG.Proof.X448.AArch64.Weak.E_outside o4 8 (Or.inl (by simp only [slot]; omega)),
-      VG.Proof.X448.AArch64.Weak.E_outside o4 9 (Or.inl (by simp only [slot]; omega)),
-      VG.Proof.X448.AArch64.Weak.E_outside o4 10 (Or.inl (by simp only [slot]; omega))]
+    rw [VG.Proof.X448.AArch64.Weak.E_outside o4 8 (Or.inl (by simp only [slot]; omega_arith)),
+      VG.Proof.X448.AArch64.Weak.E_outside o4 9 (Or.inl (by simp only [slot]; omega_arith)),
+      VG.Proof.X448.AArch64.Weak.E_outside o4 10 (Or.inl (by simp only [slot]; omega_arith))]
     exact E3.pB
-  · rw [VG.Proof.X448.AArch64.Weak.E_outside o4 11 (Or.inl (by simp only [slot]; omega))]; exact E3.d
+  · rw [VG.Proof.X448.AArch64.Weak.E_outside o4 11 (Or.inl (by simp only [slot]; omega_arith))]; exact E3.d
 
 theorem wfront_ok (hR : VG.Proof.Ed448.RecoverOk) {s : State} {base : Addr} (hb3 : s.gpr .x3 = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : base.toNat + 8192 ≤ 2 ^ 64)
@@ -266,48 +266,48 @@ theorem wfront_ok (hR : VG.Proof.Ed448.RecoverOk) {s : State} {base : Addr} (hb3
   have x0₄ : s4.gpr .x0 = s.gpr .x0 := E4.regs.1 _ (by decide)
   -- The bits of `S`.
   refine WP.seq (WP.mono (bitsAt_ok (so := 57) (d1 := 0) (d2 := BITS) hs4 x1₄ (by decide) (by decide) (by decide)
-    (by decide) (by decide) (fun q hq => by rw [rr4]; exact rsg _ (by omega))
-    (fun q hq => fsg _ (by omega))) fun s5 ⟨g5, rd5, wr5, o5, bits5⟩ => ?_)
+    (by decide) (by decide) (fun q hq => by rw [rr4]; exact rsg _ (by omega_arith))
+    (fun q hq => fsg _ (by omega_arith))) fun s5 ⟨g5, rd5, wr5, o5, bits5⟩ => ?_)
   have hs5 : Scr s5 base := ⟨(g5 _ (by decide)).trans hs4.x3, (g5 _ (by decide)).trans hs4.mask, wr5 ▸ hs4.wr, hn⟩
   have rr5 : s5.rd ++ s5.wr = s.rd ++ s.wr := by rw [rd5, wr5, rr4]
   have O5 : Outside base 0 8192 s.mem s5.mem := E4.mem.trans (o5.mono (by decide) (by decide))
   -- The check of `S`.
   refine WP.seq (WP.mono (sCheck_ok (p := s.gpr .x1) ((g5 _ (by decide)).trans x1₄)
-    (fun j hj => by rw [rr5]; exact rsg _ (by omega))) fun s6 ⟨⟨c0, hc0, x6'⟩, m6, k6⟩ => ?_)
-  rw [far_bytes O5 (fun i hi => by rw [Offset.add_add]; exact fsg _ (by omega))] at hc0
+    (fun j hj => by rw [rr5]; exact rsg _ (by omega_arith))) fun s6 ⟨⟨c0, hc0, x6'⟩, m6, k6⟩ => ?_)
+  rw [far_bytes O5 (fun i hi => by rw [Offset.add_add]; exact fsg _ (by omega_arith))] at hc0
   have hs6 : Scr s6 base := hs5.of_keeps k6 (by decide)
   have rr6 : s6.rd ++ s6.wr = s.rd ++ s.wr := by rw [k6.2.1, k6.2.2, rr5]
   have O6 : Outside base 0 8192 s.mem s6.mem := by rw [m6]; exact O5
   have b6 : VG.Proof.X448.AArch64.Fast.BEnv s6.mem base := VG.Proof.Ed448.AArch64.benv_of_weak fun i j hj => by
-    rw [m6, o5.limbs (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega)) (by have := i.isLt; simp only [slot]; omega)
-      (by omega)]
+    rw [m6, o5.limbs (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_arith)) (by have := i.isLt; simp only [slot]; omega_arith)
+      (by omega_arith)]
     exact E4.bnd i j hj
   have e6 : ∀ i : Fin 22, E s6.mem base i = E s4.mem base i := fun i => by
-    rw [m6]; exact VG.Proof.X448.AArch64.Weak.E_outside o5 i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
+    rw [m6]; exact VG.Proof.X448.AArch64.Weak.E_outside o5 i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_arith))
   -- `A` and `R`, decoded by one copy of `decode`.
   have x0₆ : s6.gpr .x0 = s.gpr .x0 := (k6.1 _ (by decide)).trans ((g5 _ (by decide)).trans x0₄)
   have x1₆ : s6.gpr .x1 = s.gpr .x1 := (k6.1 _ (by decide)).trans ((g5 _ (by decide)).trans x1₄)
   refine WP.mono (decodes_ok hR hs6 b6 (by rw [e6]; exact E4.d)
     (fun j hj => by rw [rr6, x0₆]; exact rpk _ hj) (fun j hj => by rw [x0₆]; exact fpk _ hj)
-    (fun j hj => by rw [rr6, x1₆]; exact rsg _ (by omega)) (fun j hj => by rw [x1₆]; exact fsg _ (by omega)))
+    (fun j hj => by rw [rr6, x1₆]; exact rsg _ (by omega_arith)) (fun j hj => by rw [x1₆]; exact fsg _ (by omega_arith)))
     fun t ⟨⟨cA, cR, hcA, hcR, xt⟩, nat, vt, _, hst, bt, gt, ft⟩ => ?_
-  simp only [x0₆, x1₆, far_bytes O6 fpk, far_bytes O6 (fun i (hi : i < 57) => fsg _ (by omega))] at hcA hcR nat vt
+  simp only [x0₆, x1₆, far_bytes O6 fpk, far_bytes O6 (fun i (hi : i < 57) => fsg _ (by omega_arith))] at hcA hcR nat vt
   have s4b : bytesAt s4.mem (s.gpr .x1 + BitVec.ofNat 64 57) 57 = bytesAt s.mem (s.gpr .x1 + BitVec.ofNat 64 57) 57 :=
-    far_bytes E4.mem (fun i hi => by rw [Offset.add_add]; exact fsg _ (by omega))
+    far_bytes E4.mem (fun i hi => by rw [Offset.add_add]; exact fsg _ (by omega_arith))
   have o45 : Outside base BITS 456 s4.mem s5.mem := o5
   refine ⟨hst, bt, ⟨c0, cA, cR, ?_, hc0, hcA, hcR⟩, fun a ha => nat a ha, vt, fun q hq => ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [xt, x6', g5 _ (by decide), E4.x20]
   · have hq' : q < 456 := hq
-    rw [ft _ (by rw [bits_ofs base hq']; simp only [BITS]; omega) (by rw [bits_ofs base hq']; simp only [BITS, ACC]; omega)
-      (by rw [bits_ofs base hq']; simp only [BITS, CAN]; omega), m6]
+    rw [ft _ (by rw [bits_ofs base hq']; simp only [BITS]; omega_arith) (by rw [bits_ofs base hq']; simp only [BITS, ACC]; omega_arith)
+      (by rw [bits_ofs base hq']; simp only [BITS, CAN]; omega_arith), m6]
     have := bits5 q hq'
     rw [Nat.zero_add, s4b] at this
     exact this
   · refine E4.kb.of_frame fun i hi => ?_
     have ho := kb_ofs base hi
-    rw [ft _ (by rw [ho]; simp only [KB]; omega) (by rw [ho]; simp only [KB, ACC]; omega)
-      (by rw [ho]; simp only [KB, CAN]; omega), m6, o45 _ (Or.inl (by rw [ho]; simp only [KB, BITS]; omega))]
+    rw [ft _ (by rw [ho]; simp only [KB]; omega_arith) (by rw [ho]; simp only [KB, ACC]; omega_arith)
+      (by rw [ho]; simp only [KB, CAN]; omega_arith), m6, o45 _ (Or.inl (by rw [ho]; simp only [KB, BITS]; omega_arith))]
   · exact Saved.dframe ft (by rw [m6]; exact E4.saved.outside o45 (by decide))
   · exact SavedX.dframe ft (by rw [m6]; exact E4.savedX.outside o45 (Or.inr (by decide)))
   · exact SavedV.dframe ft (by rw [m6]; exact sv4.outside o45 (Or.inl (by decide)))

@@ -45,11 +45,11 @@ theorem entrySave_eq : entrySave = saveK.map (fun p => Instr.str p.1 .r12 p.2) +
       .mov .r6 (.reg .r3)] : List Instr) := rfl
 
 theorem saveK_mem {i : Nat} (hi : i < 11) : (savedReg i, 20 + 4 * i) ∈ saveK := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem savedReg_ne {i : Nat} (hi : i < 11) : savedReg i ≠ .r12 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- `ldr r12, [sp, #oS]` and the registers saved. -/
@@ -60,11 +60,11 @@ theorem save_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {rest
     WP isa (.block (.ldrSp .r12 (4 * iS) :: (saveK.map (fun p => Instr.str p.1 .r12 p.2) ++ rest))) σ Q := by
   have fS := h.fS
   have fits := h.fits
-  have hz : 64 ≤ (stackArg σ (iS + 1)).toNat * 8 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) fits
-  refine wp_ldrSpA h.rdA h.sp (by have := h.hS; omega) h4 fun s1 u1 => ?_
-  refine save_slots_ok (lo := 20) (hi := 64) (by decide) (by rw [u1.gpr]; omega)
+  have hz : 64 ≤ (stackArg σ (iS + 1)).toNat * 8 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
+  refine wp_ldrSpA h.rdA h.sp (by have := h.hS; omega_arith) h4 fun s1 u1 => ?_
+  refine save_slots_ok (lo := 20) (hi := 64) (by decide) (by rw [u1.gpr]; omega_arith)
     (fun d h1 h2 => ⟨rS iS σ, by rw [u1.wr, h.wr]; simp, by
-      rw [u1.gpr]; exact Offset.contains_base _ (by omega) (by omega)⟩) ?_
+      rw [u1.gpr]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) ?_
   refine k _ ⟨h, u1.sp, u1.rd, u1.wr, ?_, fun i hi => ?_⟩ u1.gpr
     (fun r hr => u1.other r hr)
   · rw [u1.gpr]
@@ -72,7 +72,7 @@ theorem save_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {rest
     · rw [← u1.mem]
       exact saveMem_frame _ _ _ (by decide) _ (by decide)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by omega)
+      exact Region.sub_prefix (by omega_arith)
   · have sv := saveMem_saved (lo := 20) (hi := 64) (State.addr (s1.gpr .r12)) s1.gpr s1.mem saveK (by decide)
       _ (saveK_mem hi)
     simp only [u1.gpr] at sv

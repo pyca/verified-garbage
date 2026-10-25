@@ -43,12 +43,12 @@ theorem offIn_ok {s : State} {is : List Instr} {Q : State → Prop} {j t : Nat}
   refine kk u (u₁.keeps.trans K) (by rw [m, u₁.mem]) ?_
   rw [e, u₁.gpr, u₁.other _ (by decide), hedx]
   apply BitVec.eq_of_toNat_eq
-  have : j * t ≤ 44 * 2080 := Nat.mul_le_mul (by unfold nArr at hj; omega) ht
+  have : j * t ≤ 44 * 2080 := Nat.mul_le_mul (by unfold nArr at hj; omega_arith) ht
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, hdr]
-  rw [Nat.mod_eq_of_lt (a := t) (by omega), Nat.mod_eq_of_lt (a := j * t) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := t) (by omega_arith), Nat.mod_eq_of_lt (a := j * t) (by omega_arith)]
 
 theorem arr_width (n j : Nat) : arr (width n) j = hdr + j * (8 * n + 16) := by
-  simp only [arr, S, width]; congr 2; omega
+  simp only [arr, S, width]; congr 2; omega_arith
 
 theorem mulArgs_ok {f : State} {n : Nat} {o a b : Nat} {wsLen : BitVec 32}
     (hl : LenSrc narF f (8 * n + 8)) (hn : n ≤ 128)
@@ -60,10 +60,10 @@ theorem mulArgs_ok {f : State} {n : Nat} {o a b : Nat} {wsLen : BitVec 32}
       ∀ i < 9, g.mem.readW ((f.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i)) 32 =
         callArg (f.gpr .edi) wsLen n (arr (width n) mBase) sInv (arr (width n) mAcc) (arr (width n) o)
           (arr (width n) a) (arr (width n) b) i := by
-  have kn : kw (8 * n + 8) = 2 * n + 2 := by simp only [kw, Spec.Rsa.modulusWords]; omega
+  have kn : kw (8 * n + 8) = 2 * n + 2 := by simp only [kw, Spec.Rsa.modulusWords]; omega_arith
   generalize hP : (f.gpr .esp).setWidth 64 = P at hfr ⊢
   simp only [mulArgs, List.append_assoc, List.cons_append, List.nil_append]
-  refine bytesB_ok hl (by omega) fun s₁ K₁ m₁ e₁ => ?_
+  refine bytesB_ok hl (by omega_arith) fun s₁ K₁ m₁ e₁ => ?_
   rw [kn] at e₁
   have fr : ∀ t : State, t.gpr .esp = f.gpr .esp → t.wr = f.wr → ∀ k, k + 4 ≤ 36 →
       t.ea (at_ .esp k) = P + BitVec.ofNat 64 k ∧ InRegions t.wr (P + BitVec.ofNat 64 k) 4 :=
@@ -90,8 +90,8 @@ theorem mulArgs_ok {f : State} {n : Nat} {o a b : Nat} {wsLen : BitVec 32}
       u₂.other _ (by decide)]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, e₁, show (8 : BitVec 32).toNat = 8 from rfl, BitVec.toNat_ofNat]
-    omega
-  have hst : 8 * n + 16 ≤ 2080 := by omega
+    omega_arith
+  have hst : 8 * n + 16 ≤ 2080 := by omega_arith
   refine offIn_ok (j := mBase) edxS hst (by decide) fun s₈ K₈ m₈ e₈ => ?_
   have K₈' : Keeps [.eax, .edx] f s₈ :=
     ((K₆.trans (m₇.keeps _)).trans (u₇'.keeps.mono (by decide))).trans (K₈.mono (by decide))
@@ -124,13 +124,13 @@ theorem mulArgs_ok {f : State} {n : Nat} {o a b : Nat} {wsLen : BitVec 32}
   refine wp_storeS a₃₂ w₃₂ fun g mg => WP.block_nil ?_
   have edx₄ : s₄.gpr .edx = BitVec.ofNat 32 (8 * n + 8) := by
     rw [m₄.gpr, m₃.gpr, u₂.other _ (by decide)]
-    apply BitVec.eq_of_toNat_eq; rw [e₁, BitVec.toNat_ofNat]; omega
+    apply BitVec.eq_of_toNat_eq; rw [e₁, BitVec.toNat_ofNat]; omega_arith
   have eW : s₆.gpr .eax = BitVec.ofNat 32 n := by
     rw [u₆.gpr, u₅'.gpr, u₅.gpr, edx₄]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub,
       show (8 : BitVec 32).toNat = 8 from rfl]
-    omega
+    omega_arith
   have offs : ∀ j, hdr + j * (8 * n + 16) = arr (width n) j := fun j => (arr_width n j).symm
   have mem : g.mem = ((((((((f.mem.writeW (P + BitVec.ofNat 64 4) wsLen).writeW (P + BitVec.ofNat 64 0)
       (f.gpr .edi)).writeW (P + BitVec.ofNat 64 8) (BitVec.ofNat 32 n)).writeW
@@ -145,7 +145,7 @@ theorem mulArgs_ok {f : State} {n : Nat} {o a b : Nat} {wsLen : BitVec 32}
   refine ⟨K₁₈'.trans (mg.keeps _), ?_, ?_⟩
   · have fw : ∀ {m : Mem} (k : Nat) (v : BitVec 32), k + 4 ≤ 36 → Frame [⟨P, 36⟩] f.mem m →
         Frame [⟨P, 36⟩] f.mem (m.writeW (P + BitVec.ofNat 64 k) v) := fun k v hk F =>
-      F.writeW (List.mem_singleton_self _) v (Offset.contains_base _ hk (by omega))
+      F.writeW (List.mem_singleton_self _) v (Offset.contains_base _ hk (by omega_arith))
     rw [mem]
     exact fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <|
       fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <|
@@ -154,7 +154,7 @@ theorem mulArgs_ok {f : State} {n : Nat} {o a b : Nat} {wsLen : BitVec 32}
     rw [mem]
     rcases i with _ | _ | _ | _ | _ | _ | _ | _ | _ | i
     all_goals first
-      | omega
+      | omega_arith
       | simp (disch := decide) only [frame_other, Mem.readW_writeW_self32, callArg, Nat.mul_zero, Nat.reduceMul,
           Nat.reduceAdd, Nat.zero_add]
 

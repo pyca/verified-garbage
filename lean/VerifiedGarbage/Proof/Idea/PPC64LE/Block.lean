@@ -180,7 +180,7 @@ theorem storeWord_ok (r : Reg) (k : Nat) (hk : k < 4) (s : State) {a : Addr}
   refine WP.mono (WP.keep (c := .block (storeWord r k)) [.r11] (Q := fun t =>
       t.mem = (s.mem.write (a + BitVec.ofNat 64 (2 * k + 1)) 1 ((s.gpr r).setWidth 8)).write
         (a + BitVec.ofNat 64 (2 * k)) 1 ((s.gpr r >>> 8).setWidth 8)) ?_
-      (by simp [writesOnly, Code.allInstrs_eq, instrs, storeWord, dstOf]) rfl)
+      (by rfl) rfl)
     fun t ⟨h, hk⟩ => ⟨h, hk⟩
   unfold storeWord
   irun [ha, h0, h1, show 2 * k < 2 ^ 15 by omega,

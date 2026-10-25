@@ -31,22 +31,22 @@ def Extras (m : Mem) (c : Addr) (f : Nat → Spec.Cast5.Word) : Prop :=
 theorem Extras.write {m : Mem} {c : Addr} {f : Nat → Spec.Cast5.Word} (h : Extras m c f) {d w : Nat}
     (v : BitVec w) (hd : d + w / 8 ≤ extraOff) :
     Extras (m.writeW (c + BitVec.ofNat 64 d) v) c f := fun j hj => by
-  rw [Mem.readW_writeW_sep (Offset.sep c (by unfold extraOff at *; omega) (by unfold extraOff; omega)
-    (by unfold extraOff at *; omega)) (by decide)]
+  rw [Mem.readW_writeW_sep (Offset.sep c (by unfold extraOff at *; omega_arith) (by unfold extraOff; omega_arith)
+    (by unfold extraOff at *; omega_arith)) (by decide)]
   exact h j hj
 
 /-- `Extras` after a write elsewhere. -/
 theorem Extras.write_disj {m : Mem} {c : Addr} {f : Nat → Spec.Cast5.Word} (h : Extras m c f) {a : Addr}
     {w : Nat} (v : BitVec w) (hd : Region.Disjoint ⟨c, 64⟩ ⟨a, w / 8⟩) :
     Extras (m.writeW a v) c f := fun j hj => by
-  rw [Mem.readW_writeW_sep (hd.sep (Offset.contains_base c (by unfold extraOff; omega)
-    (by unfold extraOff; omega)) (Region.contains_self _ _)) (by decide)]
+  rw [Mem.readW_writeW_sep (hd.sep (Offset.contains_base c (by unfold extraOff; omega_arith)
+    (by unfold extraOff; omega_arith)) (Region.contains_self _ _)) (by decide)]
   exact h j hj
 
 /-- `Extras` after a frame apart from them. -/
 theorem Extras.frame {m m' : Mem} {c : Addr} {f : Nat → Spec.Cast5.Word} (h : Extras m c f) {B : Region}
     (hf : Frame [B] m m') (hd : Region.Disjoint ⟨c, 64⟩ B) : Extras m' c f := fun j hj => by
-  rw [hf.readW (r := ⟨c, 64⟩) (Offset.contains_base c (by unfold extraOff; omega) (by unfold extraOff; omega))
+  rw [hf.readW (r := ⟨c, 64⟩) (Offset.contains_base c (by unfold extraOff; omega_arith) (by unfold extraOff; omega_arith))
     (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hd) (by decide)]
   exact h j hj
 
@@ -86,7 +86,7 @@ theorem KS.tab {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws :
   have hheld : Held s.mem ((s.syms s5678Sym).setWidth 64) Impl.Cast5.s5678 := fun i hi => by
     rw [s5678_length] at hi
     rw [h.mem.fr.readW (r := ⟨(s.syms s5678Sym).setWidth 64, 4096⟩)
-      (Offset.contains_base _ (by omega) (by have := h.fitT; omega)) (fun r hr => ?_) (by decide)]
+      (Offset.contains_base _ (by omega_arith) (by have := h.fitT; omega_arith)) (fun r hr => ?_) (by decide)]
     · exact h.held i (by rw [s5678_length]; exact hi)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -203,7 +203,7 @@ theorem lineS_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws
       Extras u.mem (S.setWidth 64) f ∧ u.syms = s.syms ∧ Keep lineRegs s u := by
   have he := lineOk_extra hl
   have hx' : s.mem.readW (S.setWidth 64 + BitVec.ofNat 64 (extraOff + 4 * (8 - l.extra.1))) 32 =
-      sbox l.extra.1 (st.get l.extra.2) := by rw [hE _ (by omega), hx]
+      sbox l.extra.1 (st.get l.extra.2) := by rw [hE _ (by omega_arith), hx]
   refine WP.mono (line_ok s h.lpre l hl hx') fun u ⟨uax, ⟨m', w, hf, um⟩, urd, uwr, usy, uk⟩ => ?_
   have usp : u.gpr .esp = s.gpr .esp := uk.gpr .esp (by decide)
   have hE0 := (hE.frame hf (h.dS.sub_left (sub64 _))).write (d := 0) w (by decide)
@@ -223,12 +223,12 @@ theorem lineQ_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws
         Keep lineRegs s v := by
   refine WP.mono (lineS_ok h hE hl hx) fun u ⟨uax, hu, uE, usy, uk⟩ => ?_
   have := off_lt a
-  have hw : InRegions u.wr (addr S (off a + 4 * q)) 4 := slot_wr hu.fitS hu.wS (by omega)
+  have hw : InRegions u.wr (addr S (off a + 4 * q)) 4 := slot_wr hu.fitS hu.wS (by omega_arith)
   refine WP.mono (storeQuad_ok u hu.si a q uax hw) fun v ⟨vm, vg, vrd, vwr, vsy⟩ => ?_
   have k := KMem.quad hu.mem.kmem hu.dKS64 hu.len a hq (lineVal st l)
-  rw [← addr_off hu.fitS _ (by omega), ← vm] at k
+  rw [← addr_off hu.fitS _ (by omega_arith), ← vm] at k
   refine ⟨hu.update (vg _ (by decide)) (vg _ (by decide)) (hu.mem.ofKMem k) hu.len vrd vwr vsy,
-    by rw [vm, addr_off hu.fitS _ (by omega)]; exact uE.write _ (by unfold extraOff; omega), by rw [vsy, usy],
+    by rw [vm, addr_off hu.fitS _ (by omega_arith)]; exact uE.write _ (by unfold extraOff; omega_arith), by rw [vsy, usy],
     ⟨fun r hr => by rw [vg r (fun e => hr (e ▸ List.mem_cons_self)), uk.gpr r hr], by rw [vrd, uk.rd],
       by rw [vwr, uk.wr]⟩⟩
 
@@ -243,16 +243,16 @@ theorem lineK_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws
         Keep lineRegs s v := by
   refine WP.mono (lineS_ok h hE hl hx) fun u ⟨uax, hu, uE, usy, uk⟩ => ?_
   have hw : InRegions u.wr (addr E (4 * k)) 4 := by
-    rw [hadr]; exact CallLay.inRegions_sub hu.wK (by omega) (by decide)
+    rw [hadr]; exact CallLay.inRegions_sub hu.wK (by omega_arith) (by decide)
   refine WP.mono (storeKey_ok u (by rw [uk.gpr .edi (by decide), hdi]) k uax hw)
     fun v ⟨vm, vg, vrd, vwr, vsy⟩ => ?_
   rw [hadr] at vm
   have hd : Region.Disjoint ⟨S.setWidth 64, 64⟩ ⟨K + BitVec.ofNat 64 (4 * ws.length), 32 / 8⟩ :=
-    (hu.dKS64.sub_left (Offset.sub_base K (by omega))).symm
+    (hu.dKS64.sub_left (Offset.sub_base K (by omega_arith))).symm
   have km := KMem.key hu.mem.kmem hu.dKS64 hlen (lineVal st l)
   rw [← vm] at km
   refine ⟨hu.update (by rw [vg]) (by rw [vg]) (hu.mem.ofKMem km)
-      (by rw [List.length_append, List.length_singleton]; omega) vrd vwr vsy,
+      (by rw [List.length_append, List.length_singleton]; omega_arith) vrd vwr vsy,
     by rw [vm]; exact uE.write_disj _ hd, by rw [vsy, usy],
     ⟨fun r hr => by rw [vg, uk.gpr r hr], by rw [vrd, uk.rd], by rw [vwr, uk.wr]⟩⟩
 
@@ -306,9 +306,9 @@ theorem groupK_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {w
   obtain ⟨hok, hex, _⟩ := hg.1 k hk
   have he := lineOk_extra hok
   have hl : (ws ++ (keys4 ls st).take k).length = ws.length + k := by
-    rw [List.length_append, List.length_take, show (keys4 ls st).length = 4 from rfl, Nat.min_eq_left (by omega)]
+    rw [List.length_append, List.length_take, show (keys4 ls st).length = 4 from rfl, Nat.min_eq_left (by omega_arith)]
   refine WP.mono (lineK_ok hu uE hok ?_ (k := b + k) (by rw [uk.gpr .edi (by decide), hdi])
-      (by rw [hE _ (by omega), hl, hlen]; congr 2; omega) (by rw [hl]; omega))
+      (by rw [hE _ (by omega_arith), hl, hlen]; congr 2; omega_arith) (by rw [hl]; omega_arith))
     fun v hv => WP.mono hv fun w ⟨hw, wE, wsy, wk⟩ => ?_
   · rw [exVal_sbox _ _ he.1 he.2, hex]
   · rw [take_keys4 _ _ hk, ← List.append_assoc]

@@ -150,7 +150,7 @@ theorem drawRound_trace {w n c : Nat} {T : List Byte} (G : TapeGeo Ex args base 
   refine ite_fixed (b := !Spec.Ffdh.mrRound w (drawA w T c)) (fun _ h => h.2) (fun _ => ?_) fun _ => ?_
   · exact aRel (fun _ h => h.1.run) setSt2_check fun x ⟨⟨s₀, R, Pk⟩, _⟩ =>
       WP.mono (setSt_ok (Gs R) Pk.toMid (r := 2) (by decide)) fun u ⟨M, _⟩ => run_step R M.step
-  · obtain ⟨n₁, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  · obtain ⟨n₁, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_arith⟩
     exact aRel (fun _ h => h.1.run) passed_check fun x ⟨⟨s₀, R, Pk⟩, _⟩ =>
       WP.mono (passed_ok (Gs R) Pk.toMid Pk.cnt) fun u ⟨M, _⟩ => run_step R M.step
 
@@ -168,30 +168,30 @@ theorem draw_trace {w n c : Nat} {T : List Byte} (G : TapeGeo Ex args base bytes
   unfold draw
   refine RelCT.seq (aRel (F := fun v => DrawRun Ex base bytes len args sp w T n c v ∧
       v.cf = some (decide (T.length - c < o))) (fun _ h => h.run) drawHead_check fun x ⟨s₀, R, A⟩ =>
-    WP.mono (drawHead_ok (Gs R) (by have := bc_le A.step.inp.upper' .wide; omega) A hc) fun v ⟨A', e⟩ => ⟨⟨s₀, R, A'⟩, by rw [e, hoo]⟩)
+    WP.mono (drawHead_ok (Gs R) (by have := bc_le A.step.inp.upper' .wide; omega_arith) A hc) fun v ⟨A', e⟩ => ⟨⟨s₀, R, A'⟩, by rw [e, hoo]⟩)
     (RelCT.seq (Q := fun _ _ => True) (R := Both (Run Ex base bytes len args sp)) ?_
       (aEnd (fun _ h => h) drawFin_check))
   refine ite_fixed (b := decide (T.length - c < o)) (fun _ h => h.2) (fun _ => ?_) fun e => ?_
   · exact aRel (fun _ h => h.1.run) setSt3_check fun x ⟨⟨s₀, R, A⟩, _⟩ =>
       WP.mono (setSt_ok (Gs R) A.toMid (r := 3) (by decide)) fun u ⟨M, _⟩ => run_step R M.step
-  have co : c + o ≤ T.length := by simp at e; omega
+  have co : c + o ≤ T.length := by simp at e; omega_arith
   let Φ : State → Prop := fun u => PickRun Ex base bytes len args sp w T n c u ∧
     isa.eval .e u = some (!drawRange w T c)
   -- The witness's octets.
   refine RelCT.seq (relCT_both (F := fun v => Run Ex base bytes len args sp v ∧ w32 v.mem base kOff = k ∧
       sv v.mem base len .wide 13 < 2 ^ (32 * ((k - 1) / 32 + 1)) ∧
       WP isa (.seq (cut (.slot .wide 13) false) (.seq (Impl.Ffdh.X86.rangeMask 13) Impl.Ffdh.X86.testMask)) v Φ)
-    (drawLoad_trace (c := c) (o := o) (by omega) fun x ⟨⟨_, R, A⟩, _⟩ =>
+    (drawLoad_trace (c := c) (o := o) (by omega_arith) fun x ⟨⟨_, R, A⟩, _⟩ =>
       ⟨run_step R A.step, A.cur, by rw [A.oct, hoo]⟩) fun x ⟨⟨s₀, R, A⟩, _⟩ => ?_) ?_
   · have Gx : TapeGeo Ex args base bytes (x.gpr .esp) T.length := by rw [A.step.esp]; exact Gs R
     have l := VG.Proof.Bignum.os2ip_lt ((T.drop c).take o)
-    rw [List.length_take, List.length_drop, Nat.min_eq_left (by omega), VG.Proof.Bignum.pow256_eq] at l
+    rw [List.length_take, List.length_drop, Nat.min_eq_left (by omega_arith), VG.Proof.Bignum.pow256_eq] at l
     have W₁ : WP isa drawLoad x fun u => Run Ex base bytes len args sp u ∧ w32 u.mem base kOff = k ∧
         sv u.mem base len .wide 13 < 2 ^ (32 * ((k - 1) / 32 + 1)) :=
-      WP.mono (drawLoad_ok A.prep Gx A.tape A.cur (by rw [A.oct, hoo]) (by omega) co
-        (by have := bc_le A.step.inp.upper' .wide; omega)) fun u ⟨S, _, V, _, k₁⟩ =>
+      WP.mono (drawLoad_ok A.prep Gx A.tape A.cur (by rw [A.oct, hoo]) (by omega_arith) co
+        (by have := bc_le A.step.inp.upper' .wide; omega_arith)) fun u ⟨S, _, V, _, k₁⟩ =>
         ⟨run_step (run_step R A.step) S, by rw [k₁.word_eq, A.bits, hk],
-          by rw [V]; exact Nat.lt_of_lt_of_le l (Nat.pow_le_pow_right (by decide) (by omega))⟩
+          by rw [V]; exact Nat.lt_of_lt_of_le l (Nat.pow_le_pow_right (by decide) (by omega_arith))⟩
     have W₂ : WP isa drawLoad x fun u => WP isa (.seq (cut (.slot .wide 13) false)
         (.seq (Impl.Ffdh.X86.rangeMask 13) Impl.Ffdh.X86.testMask)) u Φ :=
       WP.mono (WP.seq_iff.mp (drawPick_ok (Gs R) hw3 hwl A (by rw [hoo]; exact co))) fun u h =>
@@ -200,8 +200,8 @@ theorem draw_trace {w n c : Nat} {T : List Byte} (G : TapeGeo Ex args base bytes
   -- Cut to the bits of `w − 1`.
   refine RelCT.seq (relCT_both (F := fun v => Run Ex base bytes len args sp v ∧
       WP isa (.seq (Impl.Ffdh.X86.rangeMask 13) Impl.Ffdh.X86.testMask) v Φ)
-    (cut_trace cutRest13_check (k := k) (by omega) fun _ h => ⟨h.1, h.2.1⟩) fun x ⟨R, hk', sm, hW⟩ =>
-      wp_and (WP.mono (cut_ok R.1 (j := 13) (by decide) false hk' (by omega) kw sm) fun u ⟨h, _, _, K⟩ =>
+    (cut_trace cutRest13_check (k := k) (by omega_arith) fun _ h => ⟨h.1, h.2.1⟩) fun x ⟨R, hk', sm, hW⟩ =>
+      wp_and (WP.mono (cut_ok R.1 (j := 13) (by decide) false hk' (by omega_arith) kw sm) fun u ⟨h, _, _, K⟩ =>
         ⟨h, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩) (WP.seq_iff.mp hW)) ?_
   -- Its range.
   refine RelCT.seq (aRel (F := fun v => Run Ex base bytes len args sp v ∧ WP isa Impl.Ffdh.X86.testMask v Φ)

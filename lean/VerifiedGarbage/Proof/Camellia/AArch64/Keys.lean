@@ -138,7 +138,7 @@ theorem keyOne_step {s : State} {b : Addr} {d e : Nat} (hd : d = 0 ∨ d = 8)
     (fun j hj => by simp [entryCfg] at hj)
   simp only [entryCfg] at hb₂ hso₂ f₂
   have hall₂ : ∀ r, (keyStore.all fun i => !clobbers i r) = true := fun r => by
-    simp [keyStore, clobbers, dstOf]
+    cases r <;> rfl
   have k₂ : ∀ r, s₂.gpr r = s₁.gpr r := fun r => o₂ r (hall₂ r)
   obtain ⟨s₃, e₃, kp₃, o₃, m₃, rd₃, wr₃⟩ := addKp_ok s₂ 64 (by decide)
   have he₂ : ∀ j < 8, entryW s₂.mem b e j = Qs s₁ j := fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => by

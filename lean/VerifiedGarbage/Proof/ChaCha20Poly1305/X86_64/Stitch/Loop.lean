@@ -86,15 +86,15 @@ theorem cntLoop_ok {r : Prog isa} {a : List Instr} (Inv : Nat → State → Prop
     WP isa (cntLoop r a) s fun s' => Inv c s' ∧ s'.gpr .rdi = 0 := by
   let J : Nat → State → Prop := fun n s =>
     ∃ i, n = c - i ∧ i < c ∧ Inv i s ∧ s.gpr .rdi = BitVec.ofNat 64 (c - i)
-  refine WP.loop (M := isa) J (fun n s ⟨i, hn, hi, hI, hd⟩ => ?_) c s ⟨0, by omega, hc, h0, by simpa using hr⟩
+  refine WP.loop (M := isa) J (fun n s ⟨i, hn, hi, hI, hd⟩ => ?_) c s ⟨0, by omega_arith, hc, h0, by simpa using hr⟩
   refine WP.seq (WP.mono (hstep i hi s hI) fun s₁ ⟨h₁, d₁⟩ => ?_)
   refine WP.mono (subRdi_ok s₁) fun s₂ ⟨d₂, g₂, x₂, y₂, m₂, rd₂, wr₂, z₂⟩ => ?_
   have I₂ := hkeep _ _ _ h₁ g₂ x₂ y₂ m₂ rd₂ wr₂
   have e : s₁.gpr .rdi - 1 = BitVec.ofNat 64 (c - (i + 1)) := by
-    rw [d₁, hd, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega),
+    rw [d₁, hd, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith),
       Nat.sub_add_eq]
   have ez : (BitVec.ofNat 64 (c - (i + 1)) == 0) = decide (c - (i + 1) = 0) := by
-    have hlt : c - (i + 1) < 2 ^ 64 := by omega
+    have hlt : c - (i + 1) < 2 ^ 64 := by omega_arith
     by_cases h : c - (i + 1) = 0
     · simp [h]
     · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
@@ -106,7 +106,7 @@ theorem cntLoop_ok {r : Prog isa} {a : List Instr} (Inv : Nat → State → Prop
   rw [e] at d₂
   by_cases hlast : i + 1 = c
   · refine .inl ⟨by simp [eval, z₂, hlast], hlast ▸ I₂, by rw [d₂, hlast, Nat.sub_self]; rfl⟩
-  · exact .inr ⟨by simp [eval, z₂]; omega, c - (i + 1), by omega, i + 1, rfl, by omega, I₂, d₂⟩
+  · exact .inr ⟨by simp [eval, z₂]; omega_arith, c - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, I₂, d₂⟩
 
 /-- `roundsL r4 r0 k`, for an invariant `I n j` after `n` rounds of which
 the first absorbed `j` blocks at `q`, that writes of `rsi`, `rdi` and the
@@ -132,15 +132,15 @@ theorem roundsL_ok {r4 r0 : Prog isa} {k : Nat} (I : Nat → Nat → State → P
   have rsi₁ : s₁.gpr .rsi = q := by rw [o₁.1 _ (by decide), hq]
   -- The rounds absorbing four blocks each.
   let A : Nat → State → Prop := fun n s => I n (4 * n) s ∧ s.gpr .rsi = q + BitVec.ofNat 64 (16 * (4 * n))
-  refine WP.seq (WP.mono (cntLoop_ok A h1 (by omega) (fun n hn s ⟨hA, hr⟩ => ?_)
+  refine WP.seq (WP.mono (cntLoop_ok A h1 (by omega_arith) (fun n hn s ⟨hA, hr⟩ => ?_)
     (fun n s s' ⟨hA, hr⟩ g x y m rd wr => ⟨hkeep _ _ _ _ hA (fun r h₁ _ => g r ‹_›) x y m rd wr,
       by rw [g _ (by decide), hr]⟩)
     ⟨only2 (.inr rfl) hI o₁, by rw [rsi₁]; simp⟩
-    (by rw [d₁]; apply BitVec.eq_of_toNat_eq; simp; omega)) fun s₂ ⟨⟨hA₂, hr₂⟩, d₂⟩ => ?_)
+    (by rw [d₁]; apply BitVec.eq_of_toNat_eq; simp; omega_arith)) fun s₂ ⟨⟨hA₂, hr₂⟩, d₂⟩ => ?_)
   · refine WP.seq (WP.mono (h4 n s hn hA hr) fun t ⟨ht, rt, dt⟩ => ?_)
     refine WP.mono (addImm_ok .rsi 64 t) fun t' ⟨r', o'⟩ => ⟨⟨only2 (.inl rfl) ht o', ?_⟩, ?_⟩
     · rw [r', rt, hr, show BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 64 by decide,
-        Offset.add_add, show 16 * (4 * n) + 64 = 16 * (4 * (n + 1)) by omega]
+        Offset.add_add, show 16 * (4 * n) + 64 = 16 * (4 * (n + 1)) by omega_arith]
     · rw [o'.1 _ (by decide), dt]
   -- Back at `q`, and the other rounds.
   refine WP.seq (WP.block_append (WP.mono (subImm_ok .rsi _ s₂) fun s₃ ⟨r₃, o₃⟩ =>
@@ -149,13 +149,13 @@ theorem roundsL_ok {r4 r0 : Prog isa} {k : Nat} (I : Nat → Nat → State → P
     rw [o₄.1 _ (by decide), r₃, hr₂, sk, hk4, BitVec.add_sub_cancel]
   have I₄ : I (k / 4) k s₄ := only2 (.inr rfl) (only2 (.inl rfl) (by have := hA₂; rwa [hk4] at this) o₃) o₄
   let B : Nat → State → Prop := fun n s => I (k / 4 + n) k s ∧ s.gpr .rsi = q
-  refine WP.seq (WP.mono (cntLoop_ok B (c := 10 - k / 4) (by omega) (by omega) (fun n hn s ⟨hB, hr⟩ => ?_)
+  refine WP.seq (WP.mono (cntLoop_ok B (c := 10 - k / 4) (by omega_arith) (by omega_arith) (fun n hn s ⟨hB, hr⟩ => ?_)
     (fun n s s' ⟨hB, hr⟩ g x y m rd wr => ⟨hkeep _ _ _ _ hB (fun r h₁ _ => g r ‹_›) x y m rd wr,
       by rw [g _ (by decide), hr]⟩)
-    ⟨I₄, rsi₄⟩ (by rw [d₄]; apply BitVec.eq_of_toNat_eq; simp; omega)) fun s₅ ⟨⟨hB₅, hr₅⟩, _⟩ => ?_)
-  · exact WP.seq (WP.mono (h0 (k / 4 + n) s (by omega) (by omega) hB hr) fun t ⟨ht, rt, dt⟩ =>
+    ⟨I₄, rsi₄⟩ (by rw [d₄]; apply BitVec.eq_of_toNat_eq; simp; omega_arith)) fun s₅ ⟨⟨hB₅, hr₅⟩, _⟩ => ?_)
+  · exact WP.seq (WP.mono (h0 (k / 4 + n) s (by omega_arith) (by omega_arith) hB hr) fun t ⟨ht, rt, dt⟩ =>
       WP.block_nil ⟨⟨ht, by rw [rt, hr]⟩, dt⟩)
-  rw [show k / 4 + (10 - k / 4) = 10 by omega] at hB₅
+  rw [show k / 4 + (10 - k / 4) = 10 by omega_arith] at hB₅
   refine WP.block_append (WP.mono (movReg_ok .rdi .rcx s₅) fun s₆ ⟨d₆, o₆⟩ =>
     WP.mono (subImm_ok .rdi 64 s₆) fun s₇ ⟨d₇, o₇⟩ => ⟨only2 (.inr rfl) (only2 (.inr rfl) hB₅ o₆) o₇,
       by rw [o₇.1 _ (by decide), o₆.1 _ (by decide), hr₅], ?_⟩)

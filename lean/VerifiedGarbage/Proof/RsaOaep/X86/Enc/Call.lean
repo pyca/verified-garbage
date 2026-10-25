@@ -47,9 +47,9 @@ abbrev A0 (P : EP) (σ s : State) (k : Nat) : Prop := E1 h g P σ s ∧ Slots h.
 theorem slots_next {D : Nat} {P : EP} {m : Mem} {i : Nat} (hs : Slots D P m i) (hi : i < 10) (v : BitVec 32)
     (hv : v = (outv P).getD i 0) : Slots D P (m.writeW ((P.lay D).fr (4 * i)) v) (i + 1) := by
   intro k hk
-  rcases (by omega : k = i ∨ k < i) with rfl | hki
+  rcases (by omega_arith : k = i ∨ k < i) with rfl | hki
   · rw [Mem.readW_writeW_self32, hv]
-  · rw [Lay.readW_fr_other _ _ _ (by omega) (by omega) (by omega)]
+  · rw [Lay.readW_fr_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     exact hs k hki
 
 /-- A word stored in the frame keeps `EM`. -/
@@ -63,7 +63,7 @@ theorem keepE1 {P : EP} {σ s t : State} (he : E1 h g P σ s) {i : Nat} {v : Bit
   refine ⟨⟨ct, hin, hf⟩, sbytes_keep (o := oEm) (n := P.K) (by rw [m]; exact slot_frame _ _ _ _) (fun r hr => ?_)
     (by oomega) hx⟩
   simp only [List.mem_singleton] at hr; subst hr
-  exact (hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes; omega)).symm
+  exact (hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes; omega_arith)).symm
 
 /-- `mov eax, [arg j]; mov [esp + 4 i], eax`: argument `j` to the call's argument `i`. -/
 theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h g P σ s i) (hi : i < 10)
@@ -75,7 +75,7 @@ theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h g P σ s i) (hi 
   have hg := he.1.2.1.geo
   simp only [copyArg, ld, st, List.cons_append, List.nil_append]
   refine hc.wp_arg hg (enc_arg hj) (by decide) (by decide) fun t1 c1 u1 =>
-    c1.wp_st hg (d := 4 * i) (by unfold frameBytes; omega) fun t2 c2 m2 => kk t2 ⟨?_, ?_⟩
+    c1.wp_st hg (d := 4 * i) (by unfold frameBytes; omega_arith) fun t2 c2 m2 => kk t2 ⟨?_, ?_⟩
   · exact keepE1 h g he hi c2 (by rw [m2.mem, u1.mem])
   · rw [m2.mem, u1.mem, u1.gpr]
     exact slots_next hs hi _ hv
@@ -91,7 +91,7 @@ theorem scrSlot {P : EP} {σ s : State} {i o : Nat} (ha : A0 h g P σ s i) (hi :
   simp only [atS, addi, st, List.cons_append, List.nil_append]
   refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => ?_
   refine ((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).wp_st hg (d := 4 * i)
-    (by unfold frameBytes; omega) fun t3 c3 m3 => kk t3 ⟨?_, ?_⟩
+    (by unfold frameBytes; omega_arith) fun t3 c3 m3 => kk t3 ⟨?_, ?_⟩
   · exact keepE1 h g he hi c3 (by rw [m3.mem, u2.mem, u1.mem])
   · rw [m3.mem, u2.mem, u1.mem, u2.gpr, u1.gpr, hc.ebp]
     exact slots_next hs hi _ hv
@@ -134,7 +134,7 @@ theorem pa_vp (P : EP) : VP (E1 h g P) (.block pubArgs) (V1 h g P) := by
       fun t12 c12 m12 => WP.block_nil ?_
   have v : t11.gpr .eax = BitVec.ofNat 32 (P.scl - 1024) := by
     rw [u11.gpr, u10.gpr]
-    exact Offset.ofNat_sub_ofNat (w := 32) (d := 1024) (by omega)
+    exact Offset.ofNat_sub_ofNat (w := 32) (d := 1024) (by omega_arith)
   have m : t12.mem = t9.mem.writeW ((P.lay h.H.D).fr (4 * 9)) (t11.gpr .eax) := by
     rw [m12.mem, u11.mem, u10.mem]
   have sl := slots_next s9 (by decide) _ (v.trans (by simp [outv, pubArgv]))
@@ -142,10 +142,10 @@ theorem pa_vp (P : EP) : VP (E1 h g P) (.block pubArgs) (V1 h g P) := by
   have hfit := ok.fit
   simp only [Lay.A, EP.argv, List.length_cons, List.length_nil, frameBytes] at hfit
   refine ⟨keepE1 h g e9 (i := 9) (by decide) c12 m, fun i hi' => ?_,
-    by rw [c12.st.sp]; have : 100 ≤ P.B.toNat := ok.BC; show 100 ≤ P.B.toNat; omega,
-    by rw [c12.st.sp]; show P.B.toNat + 40 ≤ _; omega, hi.kv, hi.rlK, hi.el1, hi.elK, hs1.1,
-    by have := hi.scl32; omega⟩
-  rw [c12.st.sp, hg.aFr ok (4 * i) (by unfold frameBytes; omega)]
+    by rw [c12.st.sp]; have : 100 ≤ P.B.toNat := ok.BC; show 100 ≤ P.B.toNat; omega_arith,
+    by rw [c12.st.sp]; show P.B.toNat + 40 ≤ _; omega_arith, hi.kv, hi.rlK, hi.el1, hi.elK, hs1.1,
+    by have := hi.scl32; omega_arith⟩
+  rw [c12.st.sp, hg.aFr ok (4 * i) (by unfold frameBytes; omega_arith)]
   exact sl i hi'
 
 /-! ## The call -/
@@ -161,18 +161,18 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.H.D P σ) :
     P.scr.toNat + P.scl * 8 ≤ 2 ^ 32 ∧ 1025 ≤ P.scl ∧ P.K ≤ 1024 := by
   have hf := hi.ok.fits P.SCR (by simp)
   simp only [BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega)] at hf
+  rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega_arith)] at hf
   have hs := hi.pubScr.2
   have hK := hi.k1024
   have e1 : (P.scr + BitVec.ofNat 32 oEm).setWidth 64 = P.scr.setWidth 64 + BitVec.ofNat 64 oEm :=
-    addr_eq (by unfold oEm; omega)
+    addr_eq (by unfold oEm; omega_arith)
   have e2 : (P.scr + BitVec.ofNat 32 oRsa).setWidth 64 = P.scr.setWidth 64 + BitVec.ofNat 64 oRsa :=
-    addr_eq (by unfold oRsa; omega)
+    addr_eq (by unfold oRsa; omega_arith)
   refine ⟨e1, e2, ?_, ?_, ?_, hf, hs, hK⟩
-  · rw [emR, e1]; exact Offset.sub_base _ (by unfold oEm; omega)
-  · rw [scrR, e2]; exact Offset.sub_base _ (by unfold oRsa; omega)
-  · rw [emR, scrR, e1, e2]; exact Offset.disjoint _ (by unfold oEm oRsa; omega) (by unfold oEm; omega)
-      (by unfold oRsa; omega)
+  · rw [emR, e1]; exact Offset.sub_base _ (by unfold oEm; omega_arith)
+  · rw [scrR, e2]; exact Offset.sub_base _ (by unfold oRsa; omega_arith)
+  · rw [emR, scrR, e1, e2]; exact Offset.disjoint _ (by unfold oEm oRsa; omega_arith) (by unfold oEm; omega_arith)
+      (by unfold oRsa; omega_arith)
 
 theorem eB_at {P : EP} {σ s : State} (hi : In h.H.D P σ) (hs : (P.lay h.H.D).St σ s) :
     Spec.Rsa.bytesAt s.mem (P.e.setWidth 64) P.el = P.eB := (hs.ro (R := P.E) (by simp)).trans hi.eB
@@ -183,7 +183,7 @@ theorem pw_at {P : EP} {σ s : State} (hi : In h.H.D P σ) (hs : (P.lay h.H.D).S
   have ok := hi.ok
   have hR : P.PRE ∈ (P.lay h.H.D).ro := by simp
   have hf : (P.pre.setWidth 64).toNat + P.rl * 8 ≤ 2 ^ 32 := ok.fits P.PRE (List.mem_append_left _ hR)
-  refine (Proof.RsaPkcs1Sig.wordsAt_frame' hs.frame (fun r hr => ?_) (by omega)).trans hi.pw
+  refine (Proof.RsaPkcs1Sig.wordsAt_frame' hs.frame (fun r hr => ?_) (by omega_arith)).trans hi.pw
   simp only [Lay.W, List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false,
     false_or] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -199,7 +199,7 @@ theorem callPw {P : EP} {σ s : State} (hi : In h.H.D P σ) (hs : (P.lay h.H.D).
   have hR : P.PRE ∈ (P.lay h.H.D).ro := by simp
   have hf : (P.pre.setWidth 64).toNat + P.rl * 8 ≤ 2 ^ 32 := ok.fits P.PRE (List.mem_append_left _ hR)
   refine (Proof.RsaPkcs1Sig.wordsAt_frame' (hs.callEntry_frame (by show 4 ≤ 100; decide)) (fun r hr => ?_)
-    (by omega)).trans (pw_at h hi hs)
+    (by omega_arith)).trans (pw_at h hi hs)
   simp only [List.mem_singleton] at hr; subst hr
   exact ((ok.stk P.PRE (List.mem_append_left _ hR)).sub_left Lay.low_stk).symm
 
@@ -208,7 +208,7 @@ theorem emB_length {P : EP} (hf : fits h P) (σ : State) : (emB h g P σ).length
   have hl := lhB_length h P σ
   simp only [emB, Proof.RsaOaep.emOf, List.length_cons, List.length_append, Proof.Mgf1.xorBytes_length,
     Proof.Mgf1.mgf1_length g.valid, hl, Spec.RsaOaep.zeros, List.length_replicate, seedB, RsaPkcs1Sig.bytesAt_len]
-  omega
+  omega_arith
 
 /-- The masked `EM`, as the call reads it. -/
 theorem em_bytes {P : EP} {σ s : State} (hr : E1 h g P σ s) :
@@ -220,7 +220,7 @@ theorem em_bytes {P : EP} {σ s : State} (hr : E1 h g P σ s) :
   rw [← hl]
   refine RsaPkcs1Sig.bytesAt_eq fun i hi' => ?_
   rw [hg.scrA (by oomega), sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact he i (by omega)
+  exact he i (by omega_arith)
 
 /-- The result: the encryption. -/
 theorem res_of {P : EP} {σ : State} (hi : In h.H.D P σ) (hf : fits h P) :
@@ -279,7 +279,7 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h g P) (.call c.name c.co
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact (ok.low_buf (R := P.OUT) (.inr (by simp))).sub_left low
       · exact ((ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right sS').sub_left low
-      · rw [args0]; exact ((Lay.fr_low (by omega) (by show (100 : Nat) ≤ 2 ^ 32; decide)).symm).sub_left low
+      · rw [args0]; exact ((Lay.fr_low (by omega_arith) (by show (100 : Nat) ≤ 2 ^ 32; decide)).symm).sub_left low
       · exact (ok.low_buf (R := P.PRE) (.inl (by simp))).sub_left low
       · exact (ok.low_buf (R := P.E) (.inl (by simp))).sub_left low
       · exact ((ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right sI).sub_left low
@@ -290,19 +290,19 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h g P) (.call c.name c.co
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact ok.fits _ (by simp)
       · show ((P.scr + BitVec.ofNat 32 oRsa).setWidth 64).toNat + (P.scl - 1024) * 8 ≤ 2 ^ 32
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (P.scr + BitVec.ofNat 32 oRsa).isLt; omega),
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (P.scr + BitVec.ofNat 32 oRsa).isLt; omega_arith),
           hg.scr_lt (Nat.le_refl _)]
-        unfold oRsa; omega
+        unfold oRsa; omega_arith
       · rw [hsp]
         show (P.B.setWidth 64).toNat + 40 ≤ 2 ^ 32
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := P.B.isLt; omega)]
-        omega
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := P.B.isLt; omega_arith)]
+        omega_arith
       · exact ok.fits _ (by simp)
       · exact ok.fits _ (by simp)
       · show ((P.scr + BitVec.ofNat 32 oEm).setWidth 64).toNat + P.K ≤ 2 ^ 32
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (P.scr + BitVec.ofNat 32 oEm).isLt; omega),
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (P.scr + BitVec.ofNat 32 oEm).isLt; omega_arith),
           hg.scr_lt (by decide)]
-        unfold oEm; omega
+        unfold oEm; omega_arith
   · -- What the callee is given is ours.
     obtain ⟨⟨⟨hc, hi, -⟩, -⟩, -⟩ := hr
     have ok := hi.ok
@@ -311,24 +311,24 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h g P) (.call c.name c.co
     have hro : ∀ R ∈ (P.lay h.H.D).ro, Covers [R] (s.rd ++ s.wr) := fun R hR =>
       Covers.of_mem fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs.inRo hR
     have inS : ∀ {o n : Nat}, o + n ≤ P.scl * 8 → Covers [⟨P.scr.setWidth 64 + BitVec.ofNat 64 o, n⟩] s.wr :=
-      fun hon => Covers.one ⟨P.SCR, hs.inRw (by simp), Offset.contains_base _ hon (by omega)⟩
+      fun hon => Covers.one ⟨P.SCR, hs.inRw (by simp), Offset.contains_base _ hon (by omega_arith)⟩
     have hA : Covers [⟨P.B.setWidth 64, 40⟩] s.wr := by
-      have := hs.inFr (d := 0) (n := 40) (by simp only [frameBytes]; omega)
+      have := hs.inFr (d := 0) (n := 40) (by simp only [frameBytes]; omega_arith)
       simp only [Lay.fr, BitVec.add_zero] at this
       exact Covers.one this
     have hO : Covers [P.OUT] s.wr := Covers.of_mem fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hs.inRw (by simp)
     have wr : Covers (pubWr P.B P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024)) s.wr :=
-      hO.cons ((show Covers [scrR P] s.wr by rw [scrR, e2]; exact inS (by unfold oRsa; omega)).cons
+      hO.cons ((show Covers [scrR P] s.wr by rw [scrR, e2]; exact inS (by unfold oRsa; omega_arith)).cons
         (hA.cons Covers.nil))
     refine ⟨Covers.append_left ?_ wr.right, wr⟩
     exact (hro P.PRE (by simp)).cons ((hro P.E (by simp)).cons
-      ((show Covers [emR P] s.wr by rw [emR, e1]; exact inS (by unfold oEm; omega)).right.cons Covers.nil))
+      ((show Covers [emR P] s.wr by rw [emR, e1]; exact inS (by unfold oEm; omega_arith)).right.cons Covers.nil))
   · rw [hr.1.1.1.st.sp]
     have : 100 ≤ P.B.toNat := hr.1.1.2.1.ok.BC
     have := c.stack
     show _ ≤ P.B.toNat
-    omega
+    omega_arith
   · refine pub_pub h₁.2 h₂.2 (by rw [h₁.1.1.1.st.sp, h₂.1.1.1.st.sp]) ?_ ?_ ?_ ?_ _ _
     · rw [pw_at h h₁.1.1.2.1 h₁.1.1.1.st, pw_at h h₂.1.1.2.1 h₂.1.1.1.st]
     · rw [eB_at h h₁.1.1.2.1 h₁.1.1.1.st, eB_at h h₂.1.1.2.1 h₂.1.1.1.st]
@@ -349,7 +349,7 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h g P) (.call c.name c.co
     obtain ⟨e1, e2, sI, sS', dIS, hfit, hs1, hK⟩ := call_geo h hi
     have low : Region.Sub (below (s.gpr .esp) (stackUse c.code + 4)) (P.lay h.H.D).LOW := by
       rw [hsp, ← ok.low_eq]
-      exact below_sub (by have := c.stack; show _ ≤ 100; omega) ok.BC
+      exact below_sub (by have := c.stack; show _ ≤ 100; omega_arith) ok.BC
     have args0 : (⟨P.B.setWidth 64, 40⟩ : Region) = ⟨(P.lay h.H.D).fr 0, 40⟩ := by simp
     have hw : ∀ r ∈ pubWr P.B P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024) ++
         [below (s.gpr .esp) (stackUse c.code + 4)], ∃ R ∈ (P.lay h.H.D).W, Region.Sub r R := fun r hr => by
@@ -358,7 +358,7 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h g P) (.call c.name c.co
       · exact ⟨P.OUT, by simp, fun _ h => h⟩
       · exact ⟨P.SCR, by simp, sS'⟩
       · refine ⟨(P.lay h.H.D).FR, by simp, ?_⟩
-        rw [args0]; exact Offset.sub_base _ (by simp only [frameBytes]; omega)
+        rw [args0]; exact Offset.sub_base _ (by simp only [frameBytes]; omega_arith)
       · exact ⟨(P.lay h.H.D).LOW, by simp, low⟩
     have st : (P.lay h.H.D).St σ s' := hs.write fr hw rd wr (cs .esp (by simp [calleeSaved]))
     refine ⟨⟨hi, st⟩, fun hp => ?_⟩
@@ -369,7 +369,7 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h g P) (.call c.name c.co
       (hs.callEntry_ro (by show 4 ≤ 100; decide) (R := P.E) (by simp)).trans hi.eB
     have eM : Spec.Rsa.bytesAt s.callEntry.mem ((P.scr + BitVec.ofNat 32 oEm).setWidth 64) P.K = emB h g P σ := by
       refine (Proof.RsaPkcs1Sig.bytesAt_frame (hs.callEntry_frame (by show 4 ≤ 100; decide)) (fun r hr => ?_)
-        (by omega)).trans (em_bytes h g ⟨⟨hc, hi, hf⟩, he⟩)
+        (by omega_arith)).trans (em_bytes h g ⟨⟨hc, hi, hf⟩, he⟩)
       simp only [List.mem_singleton] at hr; subst hr
       exact ((ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right sI).symm
     rw [eE, eM, res_of h g hi hf] at this

@@ -37,7 +37,7 @@ theorem topQ_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good
   have hn := hg.scr.nowrap
   refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.gpr .r13 = BitVec.ofNat 64 ((ql + 7) / 8) ∧ t'.mem = t.mem)
     (by xrun [Impl.Rsa.X86_64.CheckCrtKey.topQ, State.ea, hdr, hg.rdi, hdrOff,
-      hg.scr.ld (d := 8 * sQlen) (by have := hdr_lt_slot w 8 (show sQlen < 32 by decide); omega), hql,
+      hg.scr.ld (d := 8 * sQlen) (by have := hdr_lt_slot w 8 (show sQlen < 32 by decide); omega_arith), hql,
       shr3_w ql hq]) rfl) fun _ ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
 
 section
@@ -65,7 +65,7 @@ theorem top_lt {m : Mem} {p : Addr} {d n M : Nat} (h : wv m p d (1 + n) < 2 ^ (6
   rw [wv_add] at h
   rcases Nat.lt_or_ge (wv m p (d + 8 * 1) n) M with h' | h'
   · exact h'
-  · have := Nat.mul_le_mul_left (2 ^ (64 * 1)) h'; omega
+  · have := Nat.mul_le_mul_left (2 ^ (64 * 1)) h'; omega_arith
 
 /-- The words from `c` up of a number below `2^(64 c) M`. -/
 theorem top_lt' {m : Mem} {p : Addr} {d c n M : Nat} (h : wv m p d (c + n) < 2 ^ (64 * c) * M) :
@@ -73,10 +73,10 @@ theorem top_lt' {m : Mem} {p : Addr} {d c n M : Nat} (h : wv m p d (c + n) < 2 ^
   rw [wv_add] at h
   rcases Nat.lt_or_ge (wv m p (d + 8 * c) n) M with h' | h'
   · exact h'
-  · have := Nat.mul_le_mul_left (2 ^ (64 * c)) h'; omega
+  · have := Nat.mul_le_mul_left (2 ^ (64 * c)) h'; omega_arith
 
 theorem pow_len_le (L : Nat) : 256 ^ L ≤ 2 ^ (64 * ((L + 7) / 8)) := by
-  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega)
+  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
 
 /-- The checks modulo `X - 1`: `sMask` and'ed with the masks of `dX < M` and
 `R = 1`, for `M = X - 1` and `R = e dX mod M` (when `X > 0` and
@@ -103,16 +103,16 @@ theorem crtModChecks_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem 
   refine wsa (by simp [decM]) (by simp [loadNum]) (WP.mono (decK h₁) fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
   rw [v₁] at v₂
   refine wsa (by simp [loadNum]) (by simp [ltMask]) (WP.mono (loadK h₂ (j := aX) (by decide) (by decide)
-    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega) (by omega))
+    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega_arith) (by omega_arith))
     fun t₃ ⟨h₃, v₃, a₃⟩ => ?_)
   have M₃ : wv t₃.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := Arrays.wv_other a₃ (by decide) (by decide) hZ hn
   refine wsa (by simp [ltMask]) (by simp [mulE]) (WP.mono (ltK h₃ (a := aX) (b := aM) (by decide) (by decide))
     fun t₄ ⟨h₄, m₄, o₄⟩ => ?_)
   rw [v₃, M₃, Arrays.mask_eq a₃ hn hZ, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₄
   have M₄ : wv t₄.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
-    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega), M₃]
+    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega_arith), M₃]
   have X₄ : wv t₄.mem B (slot w aX) w = Spec.Rsa.os2ip dxb := by
-    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega), v₃]
+    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega_arith), v₃]
   refine wsa (by simp [mulE]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
     (WP.mono (mulEK h₄) fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
   rw [X₄] at v₅
@@ -120,20 +120,20 @@ theorem crtModChecks_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem 
     rw [Arrays.wv_other a₅ (by decide) (by decide) hZ hn, M₄]
   refine wsa (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (by simp [eqOne])
     (WP.mono (reduceTopK h₅ (sl := sXlen) (top := Impl.Rsa.X86_64.CheckCrtKey.topE) (L := xb.length) (c := 1)
-      (Nx := w + 2) hsXl nXl hxl hx1 hxk (fun t' _ _ => topE_ok t') (Nat.le_refl _) (by omega) (by omega))
+      (Nx := w + 2) hsXl nXl hxl hx1 hxk (fun t' _ _ => topE_ok t') (Nat.le_refl _) (by omega_arith) (by omega_arith))
     fun t₆ ⟨h₆, v₆, a₆⟩ => ?_)
   rw [M₅, v₅] at v₆
   refine WP.mono (eqOneK h₆) fun t₇ ⟨h₇, m₇, _⟩ => ⟨h₇, wv t₂.mem B (slot w aM) w, wv t₆.mem B (slot w aR) w,
-    fun hx => by have := v₂ hx; omega, fun hx hlt => ?_, ?_⟩
+    fun hx => by have := v₂ hx; omega_arith, fun hx hlt => ?_, ?_⟩
   · have eM := v₂ hx
     have hM : wv t₂.mem B (slot w aM) w < 2 ^ (64 * ((xb.length + 7) / 8)) := by
-      have := Proof.Rsa.lt_of_os2ip xb; have := pow_len_le xb.length; omega
-    refine v₆ hM (by omega) (top_lt ?_)
-    rw [show 1 + (w + 2 - 1) = w + 2 by omega, v₅]
+      have := Proof.Rsa.lt_of_os2ip xb; have := pow_len_le xb.length; omega_arith
+    refine v₆ hM (by omega_arith) (top_lt ?_)
+    rw [show 1 + (w + 2 - 1) = w + 2 by omega_arith, v₅]
     calc (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb
         ≤ (word s.mem B (8 * sEv)).toNat * wv t₂.mem B (slot w aM) w := Nat.mul_le_mul_left _ (Nat.le_of_lt hlt)
       _ < 2 ^ (64 * 1) * wv t₂.mem B (slot w aM) w := by
-          apply Nat.mul_lt_mul_of_pos_right (by omega) (by omega)
+          apply Nat.mul_lt_mul_of_pos_right (by omega_arith) (by omega_arith)
   · rw [m₇, Arrays.mask_eq a₆ hn hZ, Arrays.mask_eq a₅ hn hZ, m₄, mask_and']
 
 /-- `qInv < p` and `qInv q mod p = 1`. -/
@@ -160,12 +160,12 @@ theorem crtQInv_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem B (8 
     fun t₁ ⟨h₁, v₁, a₁⟩ => ?_)
   refine wsa (by simp [loadNum]) (by simp [ltMask]) (WP.mono (loadK h₁ (j := aX) (by decide) (by decide)
     (by decide) (show sQI < 32 by decide) (show sPlen < 32 by decide) (by decide) (by decide) hpqi
-    (by rw [hqil]; exact hpl) srQI (by omega) (by omega)) fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
+    (by rw [hqil]; exact hpl) srQI (by omega_arith) (by omega_arith)) fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
   rw [← Arrays.wv_other a₂ (by decide) (by decide) hZ hn] at v₁
   refine wsa (by simp [ltMask]) (by simp [loadNum]) (WP.mono (ltK h₂ (a := aX) (b := aM) (by decide) (by decide))
     fun t₃ ⟨h₃, m₃, o₃⟩ => ?_)
   rw [v₁, v₂, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₃
-  rw [← Outside.wv_arr o₃ (by decide) hZ hn (by omega)] at v₁ v₂
+  rw [← Outside.wv_arr o₃ (by decide) hZ hn (by omega_arith)] at v₁ v₂
   refine wsa (by simp [loadNum]) (by simp [mulXR]) (WP.mono (loadK h₃ (j := aR) (by decide) (by decide)
     (by decide) (show sQ < 32 by decide) (show sQlen < 32 by decide) (by decide) (by decide) hpq hql srQ hq1 hqk)
     fun t₄ ⟨h₄, v₄, a₄⟩ => ?_)
@@ -174,23 +174,23 @@ theorem crtQInv_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem B (8 
     (WP.mono (mulXRK h₄) fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
   rw [← Arrays.wv_other a₅ (by decide) (by decide) hZ hn] at v₁
   rw [v₂, v₄] at v₅
-  have hql' : qb.length < 2 ^ 32 := by omega
+  have hql' : qb.length < 2 ^ 32 := by omega_arith
   refine wsa (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (by simp [eqOne])
     (WP.mono (reduceTopK h₅ (sl := sPlen) (top := Impl.Rsa.X86_64.CheckCrtKey.topQ) (L := pb.length)
       (c := (qb.length + 7) / 8) (Nx := 2 * w + 2) (by decide) (by decide) hpl hp1 hpk
       (fun t' hg hh => topQ_ok hg hZ (by rw [hh _ (by decide), h₅.hdr _ (by decide) (by decide)]; exact hql) hql')
-      (by omega) (by omega) (by omega))
+      (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₆ ⟨h₆, v₆, a₆⟩ => ?_)
   rw [v₁, v₅] at v₆
   refine WP.mono (eqOneK h₆) fun t₇ ⟨h₇, m₇, _⟩ => ⟨h₇, wv t₆.mem B (slot w aR) w, fun hp hlt => ?_, ?_⟩
   · have hM : Spec.Rsa.os2ip pb < 2 ^ (64 * ((pb.length + 7) / 8)) := by
-      have := Proof.Rsa.lt_of_os2ip pb; have := pow_len_le pb.length; omega
+      have := Proof.Rsa.lt_of_os2ip pb; have := pow_len_le pb.length; omega_arith
     refine v₆ hM hp (top_lt' ?_)
-    rw [show (qb.length + 7) / 8 + (2 * w + 2 - (qb.length + 7) / 8) = 2 * w + 2 by omega, v₅]
+    rw [show (qb.length + 7) / 8 + (2 * w + 2 - (qb.length + 7) / 8) = 2 * w + 2 by omega_arith, v₅]
     have hq := Proof.Rsa.lt_of_os2ip qb
     have := pow_len_le qb.length
     calc Spec.Rsa.os2ip qib * Spec.Rsa.os2ip qb
-        ≤ Spec.Rsa.os2ip qib * 2 ^ (64 * ((qb.length + 7) / 8)) := Nat.mul_le_mul_left _ (by omega)
+        ≤ Spec.Rsa.os2ip qib * 2 ^ (64 * ((qb.length + 7) / 8)) := Nat.mul_le_mul_left _ (by omega_arith)
       _ < Spec.Rsa.os2ip pb * 2 ^ (64 * ((qb.length + 7) / 8)) :=
           Nat.mul_lt_mul_of_pos_right hlt (Nat.two_pow_pos _)
       _ = 2 ^ (64 * ((qb.length + 7) / 8)) * Spec.Rsa.os2ip pb := Nat.mul_comm _ _

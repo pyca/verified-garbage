@@ -21,14 +21,7 @@ theorem trialDigitHead_ok (s : State)
       (t.gpr .r0 = s.gpr .r0 - 1 ∧ t.gpr .r1 = s.gpr .r1 - 1 ∧
         t.gpr .r5 = (s.mem (State.addr (s.gpr .r0 - 1))).setWidth 32 ∧
         t.z = (s.gpr .r1 - 1 == 0) ∧ t.mem = s.mem) ∧ Rest [.r0, .r1, .r5] s t := by
-  refine withRest [.r0, .r1, .r5] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block trialDigitHead : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r5] ?_ (by rfl) (by rfl)
   unfold trialDigitHead
   ffrun [BitVec.add_zero, read]
 
@@ -38,14 +31,7 @@ theorem trialDigitHigh_ok (s : State)
       (t.gpr .r0 = s.gpr .r0 - 1 ∧ t.gpr .r1 = s.gpr .r1 - 1 ∧
         t.gpr .r5 = s.gpr .r5 ||| ((s.mem (State.addr (s.gpr .r0 - 1))).setWidth 32 <<< 8) ∧
         t.mem = s.mem) ∧ Rest [.r0, .r1, .r5, .r7] s t := by
-  refine withRest [.r0, .r1, .r5, .r7] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block trialDigitHigh : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r5, .r7] ?_ (by rfl) (by rfl)
   unfold trialDigitHigh
   ffrun [BitVec.add_zero, read]
 

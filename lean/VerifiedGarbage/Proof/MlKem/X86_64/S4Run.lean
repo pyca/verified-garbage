@@ -123,7 +123,7 @@ theorem cnt_bit {n : Nat} (hn : n ≤ 256) :
     have h0 : (0 : BitVec 32).toNat = 0 := rfl
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     rw [h0]
-    omega
+    omega_arith
 
 section
 variable {σ : State} (hp : PreW w16 σ)
@@ -133,15 +133,15 @@ include hp
 
 omit hp in
 theorem low_cnt : (lowR σ).Disjoint (cntR σ) :=
-  Offset.base_disjoint (scr σ) (by simp only [oSave, oCnt]; omega) (by simp only [oCnt]; omega)
+  Offset.base_disjoint (scr σ) (by simp only [oSave, oCnt]; omega_arith) (by simp only [oCnt]; omega_arith)
 
 omit hp in
 theorem sv_cnt : (⟨at' σ oSave, 40⟩ : Region).Disjoint (cntR σ) :=
-  Offset.disjoint (scr σ) (.inl (by simp only [oSave, oCnt]; omega)) (by simp only [oSave]; omega)
-    (by simp only [oCnt]; omega)
+  Offset.disjoint (scr σ) (.inl (by simp only [oSave, oCnt]; omega_arith)) (by simp only [oSave]; omega_arith)
+    (by simp only [oCnt]; omega_arith)
 
 theorem low_poly {K : Nat} (hK : K < 4) : (lowR σ).Disjoint (cRegion w16 (poly4W w16 (aP σ) K)) :=
-  Region.Disjoint.sub_right (Region.Disjoint.sub_left hp.a_scr.symm (Region.sub_prefix (by simp only [oSave]; omega)))
+  Region.Disjoint.sub_right (Region.Disjoint.sub_left hp.a_scr.symm (Region.sub_prefix (by simp only [oSave]; omega_arith)))
     (sub_poly hK)
 
 omit hp in
@@ -150,18 +150,18 @@ theorem sub_polyR {K : Nat} (hK : K < 4) : ∀ r ∈ [cRegion w16 (poly4W w16 (a
 
 omit hp in
 theorem sub_cntR : ∀ r ∈ [cntR σ], ∃ R ∈ [aRW w16 σ, scrR σ, stkR σ], Region.Sub r R :=
-  fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨scrR σ, by simp, sub_scr (by simp only [oCnt]; omega)⟩
+  fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨scrR σ, by simp, sub_scr (by simp only [oCnt]; omega_arith)⟩
 
 omit hp in
 theorem cnt_write {k : Nat} (hk : k < 4) {m : Mem} (v : BitVec 64) :
     Frame [cntR σ] m (m.writeW (at' σ (oCnt + 8 * k)) v) :=
   (Frame.refl _ _).writeW (List.mem_singleton_self _) v
-    (Offset.contains (scr σ) (by omega) (by omega) (by simp only [oCnt]; omega))
+    (Offset.contains (scr σ) (by omega_arith) (by omega_arith) (by simp only [oCnt]; omega_arith))
 
 /-- A count, apart from writes to a polynomial. -/
 theorem cnt_poly {K : Nat} (hK : K < 4) {m m' : Mem} (hf : Frame [cRegion w16 (poly4W w16 (aP σ) K)] m m') {k : Nat} (hk : k < 4) :
     m'.readW (at' σ (oCnt + 8 * k)) 64 = m.readW (at' σ (oCnt + 8 * k)) 64 := by
-  have hd := scr_poly hp hK (a := oCnt + 8 * k) (n := 8) (by simp only [oCnt]; omega)
+  have hd := scr_poly hp hK (a := oCnt + 8 * k) (n := 8) (by simp only [oCnt]; omega_arith)
   exact hf.readW (Region.contains_self _ _) (by simpa using hd) (by decide)
 
 omit hp in
@@ -179,14 +179,14 @@ theorem st_cnt {k : Nat} (hk : k < 4) {m m' : Mem} (hf : Frame [cntR σ] m m') {
     (h : Stored w16 m (poly4W w16 (aP σ) k) L) (hL : L.length ≤ 256) : Stored w16 m' (poly4W w16 (aP σ) k) L :=
   stored_apart hf (fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact (scr_poly hp hk (a := oCnt) (n := 32) (by simp only [oCnt]; omega)).symm) hL h
+    exact (scr_poly hp hk (a := oCnt) (n := 32) (by simp only [oCnt]; omega_arith)).symm) hL h
 
 /-- The end of a run on seed `K`: its count kept. -/
 theorem keepCnt_ok {s₀ : State} {K b t : Nat} (hK : K < 4) {s : State} (h : LAtW w16 σ s₀ K b t s) :
     WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s fun s' =>
       s'.mem = s.mem.writeW (at' σ (oCnt + 8 * K)) (BitVec.ofNat 64 (Lt σ K (b + t)).length) ∧ Keep [] s s' := by
   have hin : InRegions s.wr (scr σ + BitVec.ofNat 64 (oCnt + 8 * K)) 8 :=
-    in_scr hp h.lb.env.wr (by simp only [oCnt]; omega)
+    in_scr hp h.lb.env.wr (by simp only [oCnt]; omega_arith)
   exact WP.keep [] (Q := fun s' => s'.mem = s.mem.writeW (at' σ (oCnt + 8 * K)) (BitVec.ofNat 64 (Lt σ K (b + t)).length))
     (by xrun [h.lb.env.rbx, hin, h.rdi]) rfl
 
@@ -209,11 +209,11 @@ theorem env_regs {s₀ s : State} (e₀ : EnvW w16 σ s₀) (e : EnvW w16 σ s) 
 omit hp in
 /-- The static's address, after the squeezes. -/
 theorem p1_zero_ok {s : State} (h : SqTW w16 σ 0 3 s) : WP isa (.block tabAddr) s (P1W w16 σ 0) :=
-  WP.mono (tabT_ok h) fun _ ⟨h', ht, _⟩ => ⟨h', ht, fun _ hk => absurd hk (by omega), fun _ hk => absurd hk (by omega)⟩
+  WP.mono (tabT_ok h) fun _ ⟨h', ht, _⟩ => ⟨h', ht, fun _ hk => absurd hk (by omega_arith), fun _ hk => absurd hk (by omega_arith)⟩
 
 omit hp in
 theorem lb1 {K : Nat} (hK : K < 4) {s : State} (h : P1W w16 σ K s) : LBW w16 σ s K 0 s :=
-  ⟨h.sq.env, rfl, h.tab, fun p hp' _ => by simpa using h.sq.buf K hK p (by omega), Frame.refl _ _⟩
+  ⟨h.sq.env, rfl, h.tab, fun p hp' _ => by simpa using h.sq.buf K hK p (by omega_arith), Frame.refl _ _⟩
 
 /-- The count of seed `K` kept, after its first 168 iterations. -/
 theorem run1End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P1W w16 σ K s) (h₂ : LAtW w16 σ s K 0 168 s₂) :
@@ -226,7 +226,7 @@ theorem run1End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P1W w16 σ K s) 
   refine ⟨(h.sq.apart (by decide) h₂.lb.fr (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_poly hp hK)
       (fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact scr_poly hp hK (a := oSave) (n := 40) (by simp only [oSave]; omega)) (sub_polyR hK)
+        exact scr_poly hp hK (a := oSave) (n := 40) (by simp only [oSave]; omega_arith)) (sub_polyR hK)
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
       sub_cntR k.2.1 k.2.2 g₃,
@@ -234,12 +234,12 @@ theorem run1End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P1W w16 σ K s) 
   · rw [hm]
     by_cases e : k = K
     · subst e; rw [Mem.readW_writeW_self64]
-    · rw [rd64_off (by simp only [oCnt]; omega) (by simp only [oCnt]; omega) (by omega), cnt_poly hp hK h₂.lb.fr (by omega),
-        h.j k (by omega)]
-  · refine st_cnt hp (by omega) hf₃ ?_ (hL _ _)
+    · rw [rd64_off (by simp only [oCnt]; omega_arith) (by simp only [oCnt]; omega_arith) (by omega_arith), cnt_poly hp hK h₂.lb.fr (by omega_arith),
+        h.j k (by omega_arith)]
+  · refine st_cnt hp (by omega_arith) hf₃ ?_ (hL _ _)
     by_cases e : k = K
     · subst e; exact h₂.stored
-    · exact st_poly hK (by omega) e h₂.lb.fr (h.st k (by omega)) (hL _ _)
+    · exact st_poly hK (by omega_arith) e h₂.lb.fr (h.st k (by omega_arith)) (hL _ _)
 
 /-- The first 168 iterations on seed `K`, and its count kept. -/
 theorem run1_ok {K : Nat} (hK : K < 4) {s : State} (h : P1W w16 σ K s) : WP isa (run1 K w16) s (P1W w16 σ (K + 1)) := by
@@ -264,7 +264,7 @@ theorem cntFlags_ok {t : Nat} {s : State} (env : EnvW w16 σ s)
     WP isa (.block cntFlags) s fun s' =>
       (s'.gpr .r14 = (if allFull σ t then 1 else 0) ∧ s'.mem = s.mem) ∧ Keep [.rax, .r14] s s' := by
   have hin : ∀ k < 4, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oCnt + 8 * k)) 8 :=
-    fun k hk => in_scr' hp env.rd env.wr (by simp only [oCnt]; omega)
+    fun k hk => in_scr' hp env.rd env.wr (by simp only [oCnt]; omega_arith)
   have h0 := hin 0 (by decide); have h1 := hin 1 (by decide)
   have h2 := hin 2 (by decide); have h3 := hin 3 (by decide)
   have j0 := j 0 (by decide); have j1 := j 1 (by decide)
@@ -329,18 +329,18 @@ theorem reset_ok {s : State} (h : CheckedW w16 σ s) : WP isa (.block [.mov32 .r
   have hm₁ : s₁.mem = s₀.mem := hm.trans hm₀
   have hk₁ : Keep [.rax, .r14] s₀ s₁ := (hk₀.trans hk).mono (by simp)
   exact ⟨⟨h₀.sq.env.keep hm₁ hk₁ (by simp), hr, by rw [hm₁]; exact h₀.sq.rc, by rw [hm₁]; exact h₀.sq.lanes,
-    fun _ _ p hp' => absurd hp' (by omega)⟩, by rw [hm₁]; exact h₀.j,
+    fun _ _ p hp' => absurd hp' (by omega_arith)⟩, by rw [hm₁]; exact h₀.j,
     by rw [hm₁]; exact h₀.st⟩
 
 /-- The two more squeezes. -/
 theorem sqM_ok {fast : Bool} {s : State} (h : M2W w16 σ s) : WP isa (squeezes 0 2 fast) s (Q2W w16 σ) := by
   refine WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) h.sq) fun s₂ ⟨q₂, hf⟩ =>
     ⟨q₂, fun k hk => ?_, fun k hk => ?_⟩
-  · rw [ite_eq_right (by omega), hf.readW (Region.contains_self _ _) (fun r hr => by
+  · rw [ite_eq_right (by omega_arith), hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oCnt + 8 * k) (n := 8) (by simp only [oSave, oCnt]; omega)
-        (by simp only [oCnt]; omega)).symm) (by decide), h.j k hk]
-  · rw [ite_eq_right (by omega)]
+      exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oCnt + 8 * k) (n := 8) (by simp only [oSave, oCnt]; omega_arith)
+        (by simp only [oCnt]; omega_arith)).symm) (by decide), h.j k hk]
+  · rw [ite_eq_right (by omega_arith)]
     exact stored_apart hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact (low_poly hp hk).symm)
       (Lt_le σ k _) (h.st k hk)
 
@@ -352,7 +352,7 @@ theorem tab2_ok {s : State} (h : Q2W w16 σ s) : WP isa (.block tabAddr) s (P2W 
 omit hp in
 theorem lb2 {K : Nat} (hK : K < 4) {s : State} (h : P2W w16 σ K s) : LBW w16 σ s K 168 s :=
   ⟨h.sq.env, rfl, h.tab, fun p hp' hb => by
-    rw [h.sq.buf K hK p (by omega)], Frame.refl _ _⟩
+    rw [h.sq.buf K hK p (by omega_arith)], Frame.refl _ _⟩
 
 /-- The count of seed `K` kept, after its 112 more iterations. -/
 theorem run2End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P2W w16 σ K s) (h₂ : LAtW w16 σ s K 168 112 s₂) :
@@ -365,33 +365,33 @@ theorem run2End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P2W w16 σ K s) 
   refine ⟨(h.sq.apart (by decide) h₂.lb.fr (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_poly hp hK)
       (fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact scr_poly hp hK (a := oSave) (n := 40) (by simp only [oSave]; omega)) (sub_polyR hK)
+        exact scr_poly hp hK (a := oSave) (n := 40) (by simp only [oSave]; omega_arith)) (sub_polyR hK)
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
       sub_cntR k.2.1 k.2.2 g₃,
     h₂.lb.tab.of (k.gpr (by simp)) sy, fun k hk => ?_, fun k hk => ?_⟩
   · rw [hm]
     by_cases e : k = K
-    · subst e; rw [Mem.readW_writeW_self64, ite_eq_left (by omega)]
-    · rw [rd64_off (by simp only [oCnt]; omega) (by simp only [oCnt]; omega) (by omega), cnt_poly hp hK h₂.lb.fr hk,
+    · subst e; rw [Mem.readW_writeW_self64, ite_eq_left (by omega_arith)]
+    · rw [rd64_off (by simp only [oCnt]; omega_arith) (by simp only [oCnt]; omega_arith) (by omega_arith), cnt_poly hp hK h₂.lb.fr hk,
         h.j k hk]
       by_cases hk' : k < K
-      · rw [ite_eq_left hk', ite_eq_left (by omega)]
-      · rw [ite_eq_right hk', ite_eq_right (by omega)]
+      · rw [ite_eq_left hk', ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right hk', ite_eq_right (by omega_arith)]
   · refine st_cnt hp hk hf₃ ?_ (hL _ _)
     by_cases e : k = K
-    · subst e; rw [ite_eq_left (by omega)]; exact h₂.stored
+    · subst e; rw [ite_eq_left (by omega_arith)]; exact h₂.stored
     · have := st_poly hK hk e h₂.lb.fr (h.st k hk) (hL _ _)
       by_cases hk' : k < K
-      · rw [ite_eq_left hk'] at this; rwa [ite_eq_left (by omega)]
-      · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega)]
+      · rw [ite_eq_left hk'] at this; rwa [ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega_arith)]
 
 /-- 112 more iterations on seed `K`, and its count kept. -/
 theorem run2_ok {K : Nat} (hK : K < 4) {s : State} (h : P2W w16 σ K s) : WP isa (run2 K w16) s (P2W w16 σ (K + 1)) := by
   have hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length := by
-    rw [h.j K hK, ite_eq_right (by omega)]
+    rw [h.j K hK, ite_eq_right (by omega_arith)]
   have hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168) := by
-    have := h.st K hK; rwa [ite_eq_right (by omega)] at this
+    have := h.st K hK; rwa [ite_eq_right (by omega_arith)] at this
   unfold run2
   exact WP.seq (WP.mono (contSetup_ok hp hK (lb2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
     WP.seq (WP.mono (loop_ok hp hK (N := 14) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>

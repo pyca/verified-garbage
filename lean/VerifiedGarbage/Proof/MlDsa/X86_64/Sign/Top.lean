@@ -128,7 +128,7 @@ theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 �
     fun b hb => ?_, by rw [h.rsp]; exact hsp, hD⟩
   · intro b hb
     simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
-    rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega
+    rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
   · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb hb'
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> rcases hb' with rfl | rfl | rfl | rfl | rfl <;>
       simp only [wRegs, List.mem_cons, List.not_mem_nil, or_false, reduceCtorEq, or_self, ne_eq,
@@ -178,8 +178,8 @@ theorem readW_writeW_slot (m : Mem) (a : Addr) {x y : Nat} (v : BitVec 64) (hxy 
     (m.writeW (a + BitVec.ofNat 64 y) v).readW (a + BitVec.ofNat 64 x) 64 = m.readW (a + BitVec.ofNat 64 x) 64 := by
   refine Mem.readW_writeW_sep ?_ (by decide)
   rcases hxy with h | h
-  · exact (off_disj (base := a) h (by omega)).sep (Region.contains_self _ _) (Region.contains_self _ _)
-  · exact (off_disj (base := a) h (by omega)).symm.sep (Region.contains_self _ _) (Region.contains_self _ _)
+  · exact (off_disj (base := a) h (by omega_arith)).sep (Region.contains_self _ _) (Region.contains_self _ _)
+  · exact (off_disj (base := a) h (by omega_arith)).symm.sep (Region.contains_self _ _) (Region.contains_self _ _)
 
 /-- The six stores of `topPro`: each slot holds its register. -/
 theorem stores_read (m : Mem) (a : Addr) (v : Nat → BitVec 64) : ∀ k < 6,
@@ -187,9 +187,9 @@ theorem stores_read (m : Mem) (a : Addr) (v : Nat → BitVec 64) : ∀ k < 6,
       (a + BitVec.ofNat 64 856) (v 2)).writeW (a + BitVec.ofNat 64 864) (v 3)).writeW (a + BitVec.ofNat 64 872)
       (v 4)).writeW (a + BitVec.ofNat 64 880) (v 5)).readW (a + BitVec.ofNat 64 (oSV + 8 * k)) 64 = v k := by
   intro k hk
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    simp (disch := omega) only [oSV, Nat.reduceMul, Nat.reduceAdd, readW_writeW_slot, Mem.readW_writeW_self64]
+    simp (disch := omega_arith) only [oSV, Nat.reduceMul, Nat.reduceAdd, readW_writeW_slot, Mem.readW_writeW_self64]
 
 theorem pro_eq : pro = [.store (VG.Impl.MlKem.X86_64.at_ .r8 840) .rbx, .store (VG.Impl.MlKem.X86_64.at_ .r8 848) .rbp,
     .store (VG.Impl.MlKem.X86_64.at_ .r8 856) .r12, .store (VG.Impl.MlKem.X86_64.at_ .r8 864) .r13,
@@ -204,11 +204,11 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) (hs
   obtain ⟨_, hwr, _, _, _, _, _, _, _, _, _, _, _, r5, _, _, _, _, _, _, _, _, _, _, _⟩ := hp'
   have hS : ⟨σ.gpr .r8, scrLen p⟩ ∈ σ.wr := by rw [hwr]; simp
   have c : ∀ o, o + 8 ≤ 888 → (⟨σ.gpr .r8, scrLen p⟩ : Region).Contains (σ.gpr .r8 + BitVec.ofNat 64 o) 8 :=
-    fun o ho => contains_offset' (by have : 888 ≤ scrLen p := by unfold scrLen scratchWords; omega
-                                     omega) (by omega)
+    fun o ho => contains_offset' (by have : 888 ≤ scrLen p := by unfold scrLen scratchWords; omega_arith
+                                     omega_arith) (by omega_arith)
   have w : ∀ o, o + 8 ≤ 888 → InRegions σ.wr (σ.gpr .r8 + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
-  have w0 := w 840 (by omega); have w1 := w 848 (by omega); have w2 := w 856 (by omega)
-  have w3 := w 864 (by omega); have w4 := w 872 (by omega); have w5 := w 880 (by omega)
+  have w0 := w 840 (by omega_arith); have w1 := w 848 (by omega_arith); have w2 := w 856 (by omega_arith)
+  have w3 := w 864 (by omega_arith); have w4 := w 872 (by omega_arith); have w5 := w 880 (by omega_arith)
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun s =>
     s.mem = (((((σ.mem.writeW (σ.gpr .r8 + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
@@ -220,10 +220,10 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) (hs
     (by xrun [w0, w1, w2, w3, w4, w5]) (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, h13, h14, h15⟩, k⟩ => ?_
   have hf : Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem := by
     rw [hm]
-    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 848 (by omega))).writeW (List.mem_singleton_self _) _ (c 856 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 864 (by omega))).writeW (List.mem_singleton_self _) _ (c 872 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 880 (by omega)))
+    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 848 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 856 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 864 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 872 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 880 (by omega_arith)))
   have hret : s.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64 :=
     hf.readW (Region.contains_self _ _) (by simpa using r5) (by decide)
   have hsp : s.gpr .rsp = σ.gpr .rsp := k.gpr (by decide)
@@ -342,16 +342,16 @@ theorem seqR_ok {f : Nat → Prog isa} {I : Nat → State → Prop} :
   | 0, a, _, s, hs => WP.block_nil hs
   | n + 1, a, h, s, hs => by
     rw [seqR]
-    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁ => ?_)
-    rw [show a + (n + 1) = a + 1 + n by omega]
-    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega) (by omega)) s₁ h₁
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_arith) s hs) fun s₁ h₁ => ?_)
+    rw [show a + (n + 1) = a + 1 + n by omega_arith]
+    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega_arith) (by omega_arith)) s₁ h₁
 
 theorem seqR_tr {f : Nat → Prog isa} {R : Nat → State → State → Prop} :
     ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → RelCT isa (R k) (f k) (R (k + 1))) →
       RelCT isa (R a) (seqR f a n) (R (a + n))
   | 0, _, _ => nil_tr
   | n + 1, a, h => by
-    rw [seqR, show a + (n + 1) = a + 1 + n by omega]
-    exact RelCT.seq (h a (Nat.le_refl _) (by omega)) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega) (by omega))
+    rw [seqR, show a + (n + 1) = a + 1 + n by omega_arith]
+    exact RelCT.seq (h a (Nat.le_refl _) (by omega_arith)) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega_arith) (by omega_arith))
 
 end VG.Proof.MlDsa.X86_64.Sign

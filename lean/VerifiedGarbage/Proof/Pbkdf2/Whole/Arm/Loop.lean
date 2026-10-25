@@ -435,9 +435,9 @@ theorem tail_ok {k : Nat} (hk : k < nbk F s₀) {s : State} (h : Inv hF s₀ k s
     refine decide_eq_decide.2 ⟨fun h1 => ?_, fun h1 => ?_⟩
     · by_contra h2
       have := e1.1 (by omega_using [h2, hk])
-      omega
+      omega_arith
     · have : ¬ (k * F.H.D + F.H.D < ol s₀) := fun h' => absurd (e1.2 h') (by omega_using [h1])
-      omega
+      omega_arith
 
 /-! ## The loop and `pbkdf2` -/
 
@@ -465,7 +465,7 @@ theorem loop_ok {s : State} (h : Inv hF s₀ 0 s) (hz' : s.z = decide (ol s₀ =
     (fun h0 => WP.block_nil ?_) fun h0 => ?_
   · rw [e0.2 (of_decide_eq_true h0)]; exact h
   · have hpos : 0 < nbk F s₀ := by
-      have := of_decide_eq_false h0; have : nbk F s₀ ≠ 0 := fun e => this (e0.1 e); omega
+      have := of_decide_eq_false h0; have : nbk F s₀ ≠ 0 := fun e => this (e0.1 e); omega_arith
     exact count_loop hpos (Inv hF s₀) (fun k hk t ht => WP.mono (block_ok hp hz hk ht) fun t' ⟨i, z⟩ =>
       ⟨i, by rw [z]; exact decide_eq_decide.2 (by omega_using [hk])⟩) h
 
@@ -482,8 +482,8 @@ theorem correct : WP isa F.pbkdf2 s₀ fun s' => abiPreserved s₀ s' ∧
   refine WP.seq (WP.mono (loop_ok hp hz i₄ z₄) fun s₅ h₅ => ?_)
   have k₅ := h₅.kr
   have hr := hz.reach; have := end_le hz; have := layout (F := F)
-  refine WP.mono (restore_ok F.L k₅.r11 (by simp only [Fns.L]; omega) k₅.saved (by rw [k₅.wr]; exact sc_mem hp)
-    (show 8 * F.W + 36 ≤ F.L8 by omega) hp.nsc)
+  refine WP.mono (restore_ok F.L k₅.r11 (by simp only [Fns.L]; omega_arith) k₅.saved (by rw [k₅.wr]; exact sc_mem hp)
+    (show 8 * F.W + 36 ≤ F.L8 by omega_arith) hp.nsc)
     fun s' ⟨hm, _, _, hsp, hg⟩ => ⟨⟨fun r hr => hg r (Pbkdf2.Stream.Arm.preserved_saved r hr), by rw [hsp, k₅.sp]⟩, ?_⟩
   have ob := h₅.outB
   have e : dn F s₀ (nbk F s₀) = ol s₀ := Whole.done_nb hD.1

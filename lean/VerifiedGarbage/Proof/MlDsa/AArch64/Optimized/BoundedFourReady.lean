@@ -74,14 +74,14 @@ def TablePrefix (m : Mem) (p : Addr) (n : Nat) : Prop := ∀mask<n,
 theorem tableMemory_prefix (m : Mem) (p : Addr) {n : Nat} (hn : n≤16) :
     TablePrefix (tableMemory m p n) p n := by
   induction n with
-  | zero => intro mask hm; omega
+  | zero => intro mask hm; omega_arith
   | succ n ih =>
-    have hprev := ih (by omega)
+    have hprev := ih (by omega_arith)
     intro mask hm
     by_cases he : mask=n
-    · subst mask; exact initEntryMemory_read _ p (by omega)
-    · have hother := initEntryMemory_other (tableMemory m p n) p (by omega : n<16) (by omega : mask<16) he
-      have hp := hprev mask (by omega)
+    · subst mask; exact initEntryMemory_read _ p (by omega_arith)
+    · have hother := initEntryMemory_other (tableMemory m p n) p (by omega_arith : n<16) (by omega_arith : mask<16) he
+      have hp := hprev mask (by omega_arith)
       exact ⟨hother.1.trans hp.1,hother.2.trans hp.2⟩
 
 theorem TablePrefix.table {m : Mem} {p : Addr} (h : TablePrefix m p 16) : TableAt m (p+6000) := by
@@ -112,11 +112,11 @@ theorem tablePrefixCode_ok {n : Nat} (hn : n≤16)
     have he : tablePrefixCode (n+1)=tablePrefixCode n++entryInit true n := by
       simp only [tablePrefixCode,List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil]
     rw [he,List.append_assoc]
-    refine ih (by omega) (by intro mask hm; exact hw mask (by omega)) fun a ha hav ham => ?_
-    refine entryInit_ok (by omega) (by
+    refine ih (by omega_arith) (by intro mask hm; exact hw mask (by omega_arith)) fun a ha hav ham => ?_
+    refine entryInit_ok (by omega_arith) (by
       intro off hoff
       rw [ha.wr,ha.get .x19]
-      exact hw n (by omega) off hoff) fun t ht htv htm =>
+      exact hw n (by omega_arith) off hoff) fun t ht htv htm =>
         k t ((ha.trans ht).mono (by simp)) (htv.trans hav) ?_
     rw [htm,ham,ha.get .x19]
     rfl
@@ -154,16 +154,16 @@ theorem initEntryMemory_tableFrame (m : Mem) (p : Addr) {mask : Nat} (hm : mask<
     Frame [initTableRegion p] m (initEntryMemory m p mask) := by
   rw [initEntryMemory_eq m p hm]
   have h16 : (initTableRegion p).Contains (p+BitVec.ofNat 64 (6000+64*mask)) 16 :=
-    Offset.contains p (by omega) (by omega) (by decide)
+    Offset.contains p (by omega_arith) (by omega_arith) (by decide)
   have h32 : (initTableRegion p).Contains (p+BitVec.ofNat 64 (6000+64*mask+32)) 8 :=
-    Offset.contains p (by omega) (by omega) (by decide)
+    Offset.contains p (by omega_arith) (by omega_arith) (by decide)
   exact ((Frame.refl _ m).write (by simp) _ h16).writeW (by simp) _ h32
 
 theorem tableMemory_frame (m : Mem) (p : Addr) {n : Nat} (hn : n≤16) :
     Frame [initTableRegion p] m (tableMemory m p n) := by
   induction n with
   | zero => exact Frame.refl _ _
-  | succ n ih => exact (ih (by omega)).trans (initEntryMemory_tableFrame _ p (by omega))
+  | succ n ih => exact (ih (by omega_arith)).trans (initEntryMemory_tableFrame _ p (by omega_arith))
 
 /-- The selected fast initializer builds all sixteen entries, changes only x6,
 and confines writes to the 1024-byte table at scratch+6000. -/
@@ -179,7 +179,7 @@ theorem tableInit_ok {s : State} {rest : List Instr} {Q : State → Prop}
     apply hw
     refine ⟨initTableRegion (s.gpr .x19),by simp,?_⟩
     have ho : off=0 ∨ off=8 ∨ off=32 := by simpa using hoff
-    exact Offset.contains _ (by omega) (by omega) (by decide)) fun t ht hv hm => k t ht hv ?_ ?_
+    exact Offset.contains _ (by omega_arith) (by omega_arith) (by decide)) fun t ht hv hm => k t ht hv ?_ ?_
   · rw [hm]
     exact tableMemory_table _ _
   · rw [hm]
@@ -212,8 +212,8 @@ theorem absorbArgs_ok {p : Nat} (hp : p<2) {s : State} :
       t.gpr .x3=s.gpr .x20+BitVec.ofNat 64 (132*p) ∧
       t.gpr .x4=s.gpr .x20+BitVec.ofNat 64 (132*p+66) := by
   unfold absorbArgs
-  refine Proof.MlKem.AArch64.wp_addImm (by omega) fun a ha h2=>
-    Proof.MlKem.AArch64.wp_addImm (by omega) fun b hb h3=>
+  refine Proof.MlKem.AArch64.wp_addImm (by omega_arith) fun a ha h2=>
+    Proof.MlKem.AArch64.wp_addImm (by omega_arith) fun b hb h3=>
     Proof.MlKem.AArch64.wp_addImm (by decide) fun t ht h4=>Proof.MlKem.AArch64.wp_nil ?_
   refine ⟨((ha.trans hb).trans ht).mono (by decide),?_,?_,?_⟩
   · rw [ht.get .x2,hb.get .x2,h2]
@@ -222,7 +222,7 @@ theorem absorbArgs_ok {p : Nat} (hp : p<2) {s : State} :
 
 private theorem seed_sub {σ : State} {k : Nat} (hk : k<4) :
     Region.Sub (ResidentMask.seedR (seedP σ+BitVec.ofNat 64 (66*k)))
-      (samplerSeeds σ) := Offset.sub_base (seedP σ) (by omega)
+      (samplerSeeds σ) := Offset.sub_base (seedP σ) (by omega_arith)
 
 private theorem seed_eq {σ s : State} (hp : SamplerPre σ) (he : SamplerEnv σ s)
     {k : Nat} (hk : k<4) :
@@ -237,7 +237,7 @@ private theorem seed_eq {σ s : State} (hp : SamplerPre σ) (he : SamplerEnv σ 
 theorem zeroAll_ok {σ s : State} (hp : SamplerPre σ) (he : SamplerEnv σ s) :
     WP isa (.block Impl.MlDsa.AArch64.Sample.Rej4.zeroStates) s fun t => SamplerEnv σ t ∧
       ∀i<50,t.mem.read (wordAddr (scr σ) i) 16=0 := by
-  refine WP.mono (zeros_ok he.x19 (fun i hi => sampler_in_work hp he.wr (by omega))) fun t ⟨ht,hf,hz⟩ => ?_
+  refine WP.mono (zeros_ok he.x19 (fun i hi => sampler_in_work hp he.wr (by omega_arith))) fun t ⟨ht,hf,hz⟩ => ?_
   exact ⟨he.lowStep hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide))
     ht.rd ht.wr ht.sp (fun r _ => ht.gpr r (by simp)),hz⟩
 
@@ -246,7 +246,7 @@ theorem absorbPair_ok {σ s : State} (hp : SamplerPre σ) (he : SamplerEnv σ s)
     WP isa (.block (absorbPair p)) s fun t => SamplerEnv σ t ∧
       PairAt t.mem (stateP σ p) (samplerA σ (2*p)) (samplerA σ (2*p+1)) ∧
       Frame [pairR (stateP σ p)] s.mem t.mem := by
-  have hpn : p<2 := by omega
+  have hpn : p<2 := by omega_arith
   rw [absorbPair_eq,WP.block_append_iff]
   refine WP.mono (absorbArgs_ok hpn) fun s1 ⟨h1,e2,e3,e4⟩ => ?_
   have he1 : SamplerEnv σ s1 := he.lowStep (rs := []) (by rw [h1.mem]; exact Frame.refl _ _)
@@ -256,32 +256,32 @@ theorem absorbPair_ok {σ s : State} (hp : SamplerPre σ) (he : SamplerEnv σ s)
   let a := seedP σ+BitVec.ofNat 64 (66*(2*p))
   let b := seedP σ+BitVec.ofNat 64 (66*(2*p+1))
   have e2' : s1.gpr .x2 = stateP σ p := by rw [e2,he.x19]; rfl
-  have e3' : s1.gpr .x3 = a := by rw [e3,he.x20,show 132*p = 66*(2*p) by omega]
-  have e4' : s1.gpr .x4 = b := by rw [e4,he.x20,show 132*p+66 = 66*(2*p+1) by omega]
+  have e3' : s1.gpr .x3 = a := by rw [e3,he.x20,show 132*p = 66*(2*p) by omega_arith]
+  have e4' : s1.gpr .x4 = b := by rw [e4,he.x20,show 132*p+66 = 66*(2*p+1) by omega_arith]
   have seed_in (k : Nat) (hk : k < 4) (d n : Nat) (hd : d+n ≤ 66) :
       InRegions (s1.rd++s1.wr) ((seedP σ+BitVec.ofNat 64 (66*k))+BitVec.ofNat 64 d) n := by
     rw [Offset.add_add]
-    exact sampler_in_seed hp he1.rd (by omega)
+    exact sampler_in_seed hp he1.rd (by omega_arith)
   have hws : ∀ j < 25,InRegions s1.wr (wordAddr (stateP σ p) j) 16 := by
     intro j hj
     change InRegions s1.wr ((scr σ+BitVec.ofNat 64 (400*p))+BitVec.ofNat 64 (16*j)) 16
     rw [Offset.add_add]
-    exact sampler_in_work hp he1.wr (by omega)
+    exact sampler_in_work hp he1.wr (by omega_arith)
   have hps : Region.Sub (pairR (stateP σ p)) (scrR σ) :=
-    Offset.sub_base (scr σ) (by omega)
+    Offset.sub_base (scr σ) (by omega_arith)
   refine WP.mono (absorbBody_ok e2' e3' e4'
-    (fun j hj => seed_in (2*p) (by omega) (8*j) 8 (by omega))
-    (fun j hj => seed_in (2*p+1) (by omega) (8*j) 8 (by omega))
-    (seed_in (2*p) (by omega) 64 1 (by decide)) (seed_in (2*p) (by omega) 65 1 (by decide))
-    (seed_in (2*p+1) (by omega) 64 1 (by decide)) (seed_in (2*p+1) (by omega) 65 1 (by decide))
-    hws ((hp.seed_work.sub_left (seed_sub (by omega))).sub_right hps)
-    ((hp.seed_work.sub_left (seed_sub (by omega))).sub_right hps)
+    (fun j hj => seed_in (2*p) (by omega_arith) (8*j) 8 (by omega_arith))
+    (fun j hj => seed_in (2*p+1) (by omega_arith) (8*j) 8 (by omega_arith))
+    (seed_in (2*p) (by omega_arith) 64 1 (by decide)) (seed_in (2*p) (by omega_arith) 65 1 (by decide))
+    (seed_in (2*p+1) (by omega_arith) 64 1 (by decide)) (seed_in (2*p+1) (by omega_arith) 65 1 (by decide))
+    hws ((hp.seed_work.sub_left (seed_sub (by omega_arith))).sub_right hps)
+    ((hp.seed_work.sub_left (seed_sub (by omega_arith))).sub_right hps)
     (by intro i hi; rw [h1.mem]; exact hz i hi)) fun t ⟨h2,hf2,hp2⟩ => ?_
   refine ⟨he1.lowStep hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact pair_sub hpn)
     h2.rd h2.wr h2.sp (fun r hr => h2.gpr r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide)),?_,?_⟩
-  · rw [seedState_eq,seedState_eq,seed_eq hp he1 (by omega : 2*p < 4),seed_eq hp he1 (by omega : 2*p+1 < 4)] at hp2
+  · rw [seedState_eq,seedState_eq,seed_eq hp he1 (by omega_arith : 2*p < 4),seed_eq hp he1 (by omega_arith : 2*p+1 < 4)] at hp2
     simpa only [samplerA,samplerSeedAt,seedState_eq] using hp2
   · rw [← h1.mem]; exact hf2
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
@@ -308,7 +308,7 @@ theorem pairs_disjoint (σ : State) : (pairR (stateP σ 0)).Disjoint (pairR (sta
 theorem state_word (σ : State) (p i : Nat) : wordAddr (stateP σ p) i = wordAddr (scr σ) (25*p+i) := by
   change stateP σ p + BitVec.ofNat 64 (16*i) = scr σ + BitVec.ofNat 64 (16*(25*p+i))
   change (scr σ + BitVec.ofNat 64 (400*p)) + BitVec.ofNat 64 (16*i) = _
-  rw [Offset.add_add,show 400*p+16*i = 16*(25*p+i) by omega]
+  rw [Offset.add_add,show 400*p+16*i = 16*(25*p+i) by omega_arith]
 
 /-- Absorb all four seeds as two pairs of lanes, preserving the ABI save record. -/
 theorem initFour_ok {σ : State} (hp : SamplerPre σ) : WP isa (.block samplerInit) σ fun t => SamplerEnv σ t ∧
@@ -321,12 +321,12 @@ theorem initFour_ok {σ : State} (hp : SamplerPre σ) : WP isa (.block samplerIn
   refine WP.mono (zeroAll_ok hp he1) fun s2 ⟨he2,hz2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (absorbPair_ok (p := 0) hp he2 (by decide : 2*0+1 < 4) (fun i hi => by
-    rw [state_word,Nat.mul_zero,Nat.zero_add]; exact hz2 i (by omega))) fun s3 ⟨he3,hp3,hf3⟩ => ?_
+    rw [state_word,Nat.mul_zero,Nat.zero_add]; exact hz2 i (by omega_arith))) fun s3 ⟨he3,hp3,hf3⟩ => ?_
   have hz3 : ∀ i < 25,s3.mem.read (wordAddr (stateP σ 1) i) 16 = 0 := by
     intro i hi
     rw [hf3.read (pair_contains (stateP σ 1) hi) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (pairs_disjoint σ).symm) (by decide),state_word]
-    exact hz2 (25+i) (by omega)
+    exact hz2 (25+i) (by omega_arith)
   refine WP.mono (absorbPair_ok (p := 1) hp he3 (by decide : 2*1+1 < 4) hz3) fun t ⟨het,hpt,hft⟩ => ?_
   refine ⟨het,?_,hpt⟩
   intro i hi
@@ -362,13 +362,13 @@ theorem pairs_count_keep {σ s t : State} (hs : InitialPairs σ s)
   rw [hf.read (pair_contains (stateP σ p) hi) (fun r hr=>by
     rw [List.mem_singleton.mp hr]
     exact Offset.disjoint (scr σ) (d := 400*p) (e := 7904) (n := 400) (k := 32)
-      (by omega) (by omega) (by decide)) (by decide)]
+      (by omega_arith) (by omega_arith) (by decide)) (by decide)]
   exact hs.pair p hp i hi
 
 theorem initCounts_pairs {σ s : State} (hp : SamplerPre σ) (hs : InitialPairs σ s) :
     WP isa (.block Impl.MlDsa.AArch64.Optimized.BoundedFour.initCounts) s fun t=>
       InitialPairs σ t ∧∀i<4,t.mem.readW (countAt (scr σ) i) 64=256 := by
-  refine WP.mono (initCounts_ok hs.env.x19 (fun i hi=>sampler_in_work hp hs.env.wr (by omega)))
+  refine WP.mono (initCounts_ok hs.env.x19 (fun i hi=>sampler_in_work hp hs.env.wr (by omega_arith)))
     fun t ⟨⟨ht,hf,hc⟩,_⟩=>?_
   refine ⟨⟨?_,fun p hp=>pairs_count_keep hs hf hp⟩,hc⟩
   exact hs.env.lowStep hf (fun r hr=>by
@@ -394,7 +394,7 @@ theorem tableInit_ready {σ s : State} (hp : SamplerPre σ) (hs : InitialPairs �
       rw [hadd]
       rw [BitVec.toNat_add,show (6000#64).toNat=6000 from rfl]
       have hh:=Nat.mod_le ((a-(scr σ+6000#64)).toNat+6000) (2^64)
-      omega⟩
+      omega_arith⟩
   · rw [hs.env.x19] at hf htable
     refine ⟨⟨?_,?_⟩,?_,htable⟩
     · exact hs.env.lowStep hf (fun r hr=>by
@@ -407,13 +407,13 @@ theorem tableInit_ready {σ s : State} (hp : SamplerPre σ) (hs : InitialPairs �
       rw [hf.read (pair_contains (stateP σ p) hi) (fun r hr=>by
         rw [List.mem_singleton.mp hr]
         exact Offset.disjoint (scr σ) (d := 400*p) (e := 6000) (n := 400) (k := 1024)
-          (by omega) (by omega) (by decide)) (by decide)]
+          (by omega_arith) (by omega_arith) (by decide)) (by decide)]
       exact hs.pair p hp i hi
     · intro i hi
       rw [hf.readW (Region.contains_self (countAt (scr σ) i) 8) (fun r hr=>by
         rw [List.mem_singleton.mp hr]
         exact Offset.disjoint (scr σ) (d := 7904+8*i) (e := 6000) (n := 8) (k := 1024)
-          (by omega) (by omega) (by decide)) (by decide)]
+          (by omega_arith) (by omega_arith) (by decide)) (by decide)]
       exact hc i hi
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

@@ -61,7 +61,7 @@ def StepR (w : Nat) (r : Nat × Nat) : Prop :=
 
 theorem stepR_arr (w : Nat) {j : Nat} (hj : j < 8) (h0 : j ≠ aN) (h7 : j ≠ aOne) :
     StepR w (slot w j, 8 * (w + 2)) :=
-  ⟨by have := hdr_lt_slot w j (show 31 < 32 by decide); simp only; omega, slot_le hj, slot_sep (w := w) h0,
+  ⟨by have := hdr_lt_slot w j (show 31 < 32 by decide); simp only; omega_arith, slot_le hj, slot_sep (w := w) h0,
     slot_sep (w := w) h7⟩
 
 theorem PB.step {ep el : Nat} {a : PowPub} {mi : BitVec 64} {X : Nat} {s t : State} {rs : List (Nat × Nat)}
@@ -70,8 +70,8 @@ theorem PB.step {ep el : Nat} {a : PowPub} {mi : BitVec 64} {X : Nat} {s t : Sta
   obtain ⟨hc, hv, hX1, hodd, hwx, hwide, hw2, hw28, eb, hep, hel, hpe, hle, hl, hl1, hl2, hse⟩ := h
   have hGn := hc.good.scr.nowrap
   have hc' := hc.of_frm hf (fun r hr' => ⟨(hr r hr').1, (hr r hr').2.1⟩) hwr h0
-  obtain ⟨hb, hi⟩ := child_frm hc hwide hf (fun r hr' => by have := (hr r hr').2.1; omega)
-  exact ⟨hc', hv.of_frmA hGn (by omega) hf (fun r hr' => (hr r hr').2.2), hX1, hodd, hwx, hwide, hw2, hw28, eb,
+  obtain ⟨hb, hi⟩ := child_frm hc hwide hf (fun r hr' => by have := (hr r hr').2.1; omega_arith)
+  exact ⟨hc', hv.of_frmA hGn (by omega_arith) hf (fun r hr' => (hr r hr').2.2), hX1, hodd, hwx, hwide, hw2, hw28, eb,
     hep, hel, by rw [hb _ hep]; exact hpe, by rw [hb _ hel]; exact hle, hl, hl1, hl2, hse.congr hi hrd hwr⟩
 
 /-! ## The stages -/
@@ -135,8 +135,8 @@ theorem ps0_ps1 {bp bl ep el : Nat} (a : PowPub) (s : State) (h : PS0 bp bl ep e
   refine ⟨mi, X, hb.step f hr k.rd k.wr (k.gpr .x0 (by decide)), ?_⟩
   have e2 := f.wv_eq (d := slot a.x.w aR2) (k := a.x.w)
     (fun r hr => by
-      rw [List.mem_singleton.mp hr]; have := slot_sep (w := a.x.w) (show aR2 ≠ aXm by decide); simp only; omega)
-    (by have := slot_le (w := a.x.w) (show aR2 < 8 by decide); omega)
+      rw [List.mem_singleton.mp hr]; have := slot_sep (w := a.x.w) (show aR2 ≠ aXm by decide); simp only; omega_arith)
+    (by have := slot_le (w := a.x.w) (show aR2 < 8 by decide); omega_arith)
   exact ⟨by rw [e2]; exact hR.1, by rw [e2]; exact hR.2⟩
 
 theorem ps1_ps2 (M : Mont) {ep el : Nat} (a : PowPub) (s : State) (h : PS1 ep el a s) :
@@ -144,7 +144,7 @@ theorem ps1_ps2 (M : Mont) {ep el : Nat} (a : PowPub) (s : State) (h : PS1 ep el
   obtain ⟨mi, X, hb, hR⟩ := h
   obtain ⟨hw2, hw28, hGn⟩ := pb_consts hb
   have hv := hb.2.1
-  refine WP.mono (M.mm_ok hb.1.good (Nat.le_refl _) (by omega) (by omega) (o := aY) (a := aR2) (b := aOne)
+  refine WP.mono (M.mm_ok hb.1.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := aY) (a := aR2) (b := aOne)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hv.inv
     (by rw [hv.one, hv.n]; exact hb.2.2.1)) fun t ⟨_, hYl, hYv, ha, k⟩ => ?_
   simp only [hv.n, hv.one, Nat.mul_one] at hYl hYv
@@ -164,7 +164,7 @@ theorem ps2_ps3 (M : Mont) {ep el : Nat} (a : PowPub) (s : State) (h : PS2 ep el
   obtain ⟨mi, X, hb, hR, hYl, hYv⟩ := h
   obtain ⟨hw2, hw28, hGn⟩ := pb_consts hb
   have hv := hb.2.1
-  refine WP.mono (M.mm_ok hb.1.good (Nat.le_refl _) (by omega) (by omega) (o := aXm) (a := aXm) (b := aR2)
+  refine WP.mono (M.mm_ok hb.1.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := aXm) (a := aXm) (b := aR2)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hv.inv
     (by rw [hv.n]; exact hR.1)) fun t ⟨_, hXl, hXv, ha, k⟩ => ?_
   simp only [hv.n] at hXl hXv
@@ -186,16 +186,16 @@ theorem ps3_copy {ep el : Nat} (a : PowPub) (s : State) (h : PS3 ep el a s) :
     WP isa (seqs (copyArr aX aR2)) s (PS3 ep el a) := by
   obtain ⟨mi, X, x, hb, hR, hYl, hYv, hXl, hXv⟩ := h
   obtain ⟨hw2, hw28, hGn⟩ := pb_consts hb
-  refine WP.mono (copyArr_ok hb.1.good (Nat.le_refl _) (by omega) (by omega) (show aX < 8 by decide)
+  refine WP.mono (copyArr_ok hb.1.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (show aX < 8 by decide)
     (show aR2 < 8 by decide) (by decide)) fun t ⟨_, ho, k⟩ => ?_
   have f : Frm (off a.x.B a.x.o) [(slot a.x.w aX, 8 * (a.x.w + 2))] s.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot a.x.w aX) (n' := 8 * (a.x.w + 2)) (Nat.le_refl _) (by omega)) (by simp)
+    Frm.of_outside (ho.mono (o' := slot a.x.w aX) (n' := 8 * (a.x.w + 2)) (Nat.le_refl _) (by omega_arith)) (by simp)
   have hr : ∀ r ∈ [(slot a.x.w aX, 8 * (a.x.w + 2))], StepR a.x.w r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact stepR_arr _ (by decide) (by decide) (by decide)
   have e : ∀ {j}, j < 8 → j ≠ aX → wv t.mem (off a.x.B a.x.o) (slot a.x.w j) a.x.w =
       wv s.mem (off a.x.B a.x.o) (slot a.x.w j) a.x.w := fun hj hne =>
-    f.wv_eq (fun r hr' => by rw [List.mem_singleton.mp hr']; have := slot_sep (w := a.x.w) hne; simp only; omega)
-      (by have := slot_le (w := a.x.w) hj; omega)
+    f.wv_eq (fun r hr' => by rw [List.mem_singleton.mp hr']; have := slot_sep (w := a.x.w) hne; simp only; omega_arith)
+      (by have := slot_le (w := a.x.w) hj; omega_arith)
   exact ⟨mi, X, x, hb.step f hr k.rd k.wr (k.gpr .x0 (by decide)),
     ⟨by rw [e (by decide) (by decide)]; exact hR.1, by rw [e (by decide) (by decide)]; exact hR.2⟩,
     by rw [e (by decide) (by decide)]; exact hYl, by rw [e (by decide) (by decide)]; exact hYv,
@@ -206,12 +206,12 @@ theorem ps3_ps5 {ep el : Nat} (a : PowPub) (s : State) (h : PS3 ep el a s) :
   obtain ⟨mi, X, x, hb, hR, hYl, hYv, hXl, hXv⟩ := h
   obtain ⟨hw2, hw28, hGn⟩ := pb_consts hb
   obtain ⟨hc, hv, hX1, hodd, hwx, hwide, -, -, eb, hep, hel, hpe, hle, hl, hl1, hl2, hse⟩ := hb
-  refine WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega) (by omega) (show Crt.aXc < 8 by decide)
+  refine WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (show Crt.aXc < 8 by decide)
     (show aXm < 8 by decide) (by decide)) fun t ⟨hC, ho, k⟩ => ?_
   have eXc : Crt.aXc = aR2 := rfl
   rw [eXc] at hC ho
   have f : Frm (off a.x.B a.x.o) [(slot a.x.w aR2, 8 * (a.x.w + 2))] s.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot a.x.w aR2) (n' := 8 * (a.x.w + 2)) (Nat.le_refl _) (by omega)) (by simp)
+    Frm.of_outside (ho.mono (o' := slot a.x.w aR2) (n' := 8 * (a.x.w + 2)) (Nat.le_refl _) (by omega_arith)) (by simp)
   have hr : ∀ r ∈ [(slot a.x.w aR2, 8 * (a.x.w + 2))], StepR a.x.w r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact stepR_arr _ (by decide) (by decide) (by decide)
   have hb' := PB.step (ep := ep) (el := el) (a := a) (mi := mi) (X := X)
@@ -220,10 +220,10 @@ theorem ps3_ps5 {ep el : Nat} (a : PowPub) (s : State) (h : PS3 ep el a s) :
   obtain ⟨hc', hv', -, -, -, -, -, -, eb', hep', hel', hpe', hle', hl', hl1', hl2', hse'⟩ := hb'
   have e : ∀ {j}, j < 8 → j ≠ aR2 → wv t.mem (off a.x.B a.x.o) (slot a.x.w j) a.x.w =
       wv s.mem (off a.x.B a.x.o) (slot a.x.w j) a.x.w := fun hj hne =>
-    f.wv_eq (fun r hr' => by rw [List.mem_singleton.mp hr']; have := slot_sep (w := a.x.w) hne; simp only; omega)
-      (by have := slot_le (w := a.x.w) hj; omega)
-  refine ⟨⟨⟨mi, X, x, 1, eb', by rw [hwx]; exact hc', by dsimp only; omega, by dsimp only; omega,
-    by dsimp only; omega, by rw [hwx]; exact hv'.n,
+    f.wv_eq (fun r hr' => by rw [List.mem_singleton.mp hr']; have := slot_sep (w := a.x.w) hne; simp only; omega_arith)
+      (by have := slot_le (w := a.x.w) hj; omega_arith)
+  refine ⟨⟨⟨mi, X, x, 1, eb', by rw [hwx]; exact hc', by dsimp only; omega_arith, by dsimp only; omega_arith,
+    by dsimp only; omega_arith, by rw [hwx]; exact hv'.n,
     by rw [hwx]; exact hv'.inv, hodd, by rw [hwx, eXc, hC]; exact hXl, by rw [hwx, eXc, hC]; exact hXv,
     by rw [hwx, e (by decide) (by decide)]; exact hYl, by rw [hwx, e (by decide) (by decide), Nat.one_mul]; exact hYv,
     hep', hel', hpe', hle', hl', hl1', hl2', hse'⟩, by rw [hwx]; exact hwide⟩, hv'.one,
@@ -236,20 +236,20 @@ theorem ps5_ps6 (W : Window) (M : Mont) (S : Selector) {ep el : Nat} (a : PowPub
   dsimp only at *
   rw [hwxe] at hc hn hinv hxl hxc hyl hyc hwide hw2
   rw [hn] at hX1
-  refine WP.mono (expLoop_ok W M S (Q := False) (x := 0) hc hwide hw2 (Nat.le_refl _) (by omega) hn hinv hodd hxl
+  refine WP.mono (expLoop_ok W M S (Q := False) (x := 0) hc hwide hw2 (Nat.le_refl _) (by omega_arith) hn hinv hodd hxl
     False.elim hyl False.elim hsp hsl hep hel hL1 hL2 he) fun t ⟨hc', _, _, f, _⟩ => ?_
   have hGn := hc.good.scr.nowrap
   have hv : XVals s a.x.B a.x.o a.x.w mi X := ⟨hn, hinv, hone⟩
-  refine ⟨mi, X, hc', hv.of_frmA hGn (by omega) f (fun r hr => ?_), hX1, hw2, hw28⟩
+  refine ⟨mi, X, hc', hv.of_frmA hGn (by omega_arith) f (fun r hr => ?_), hX1, hw2, hw28⟩
   simp only [CrtWindowFive.crtExpRanges, crtWinRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   (unfold slot hdrBytes; simp only [aN, aOne, aAcc, aTmp, aY, Crt.aT, Crt.sExp, Crt.sExpLen, Crt.sI, Crt.sTab,
-    Crt.sV, Crt.sBit, Crt.sNib, Crt.sEnt, Crt.sJ, sFn, tabBytes32]; omega)
+    Crt.sV, Crt.sBit, Crt.sNib, Crt.sEnt, Crt.sJ, sFn, tabBytes32]; omega_arith)
 
 theorem ps6_ps6 (M : Mont) (a : PowPub) (s : State) (h : PS6 a s) : WP isa (M.mm aY aY aOne) s (PS6 a) := by
   obtain ⟨mi, X, hc, hv, hX1, hw2, hw28⟩ := h
   have hGn := hc.good.scr.nowrap
-  refine WP.mono (M.mm_ok hc.good (Nat.le_refl _) (by omega) (by omega) (o := aY) (a := aY) (b := aOne)
+  refine WP.mono (M.mm_ok hc.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := aY) (a := aY) (b := aOne)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hv.inv
     (by rw [hv.one, hv.n]; exact hX1)) fun t ⟨_, _, _, ha, k⟩ => ?_
   have f : Frm (off a.x.B a.x.o) [(slot a.x.w aAcc, 8 * (a.x.w + 2)), (slot a.x.w aTmp, 8 * (a.x.w + 2)),
@@ -259,7 +259,7 @@ theorem ps6_ps6 (M : Mont) (a : PowPub) (s : State) (h : PS6 a s) : WP isa (M.mm
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact stepR_arr _ (by decide) (by decide) (by decide)
   exact ⟨mi, X, hc.of_frm f (fun r hr' => ⟨(hr r hr').1, (hr r hr').2.1⟩) k.wr (k.gpr .x0 (by decide)),
-    hv.of_frmA hGn (by omega) f (fun r hr' => (hr r hr').2.2), hX1, hw2, hw28⟩
+    hv.of_frmA hGn (by omega_arith) f (fun r hr' => (hr r hr').2.2), hX1, hw2, hw28⟩
 
 /-! ## Constant time -/
 
@@ -287,8 +287,8 @@ theorem ps0_of {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {X : Nat} (
   have hw2 := hc.w2
   have hw28 := hc.w28
   exact ⟨⟨mi, X, ⟨hc.sub, hc.xv, hc.x1, hc.odd, rfl, hc.wide, hw2, hw28, eb, hep, hel, hpe, hle, rfl, he1, he2, hse⟩,
-    hc.r2l, hc.r2⟩, ⟨mi, bb, hc.sub, hw2, Nat.le_refl _, show w < 2 ^ 30 by omega, by decide, hbp, hbl, hpb, hlb, rfl, hsb, hb1,
-    by omega, hb2⟩⟩
+    hc.r2l, hc.r2⟩, ⟨mi, bb, hc.sub, hw2, Nat.le_refl _, show w < 2 ^ 30 by omega_arith, by decide, hbp, hbl, hpb, hlb, rfl, hsb, hb1,
+    by omega_arith, hb2⟩⟩
 
 /-- `pow` leaks the same in runs that agree on the public data, given that the
 taint analysis checks the copies' header loads. -/

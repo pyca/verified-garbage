@@ -76,18 +76,18 @@ theorem reduceByte_ok {s t : State} {B D : Addr} {Z w N c i : Nat} (hs : Scr s B
   · have g : ∀ r ∈ [Reg.r10, .r11], u.gpr r = s.gpr r := fun r hr => ku.gpr r (by revert r; decide)
     refine WP.seq (WP.mono (doubleBitMod_ok (hs.congr ku.wr) u8 u9 ((g .r10 (by simp)).trans h10) u5
       ((g .r11 (by simp)).trans h11) hw hw' hZ
-      (by rw [uv, (ou.val32 (by omega) (by omega)).trans hNd]; exact Nat.mod_lt _ hN))
+      (by rw [uv, (ou.val32 (by omega_arith) (by omega_arith)).trans hNd]; exact Nat.mod_lt _ hN))
       fun u₁ ⟨hv, a24', out₁, k'⟩ => ?_)
     refine WP.mono (subi_ok u₁ .r25 (by decide)) fun u₂ e => ?_
     subst e
-    have hN₁ : val32 u.mem B (slot w 0) (2 * w) = N := (ou.val32 (by omega) (by omega)).trans hNd
+    have hN₁ : val32 u.mem B (slot w 0) (2 * w) = N := (ou.val32 (by omega_arith) (by omega_arith)).trans hNd
     refine ⟨⟨⟨2 * c' + (u.gpr .r24 >>> 63).toNat, ?_, (ku.trans (k'.trans (Keep.write _ _ _))).mono,
       ou.trans out₁, by rw [mem_write, hv, hN₁, uv, mod_double_bit], ?_, ?_, ?_⟩, ?_, ?_⟩, ?_⟩
     · simp only [gpr_write, reduceCtorEq, ↓reduceIte]
       have e24 : (u.gpr .r24 >>> 63).toNat = if decide (2 ^ 63 ≤ (u.gpr .r24).toNat) then 1 else 0 := by
         rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
         have := (u.gpr .r24).isLt
-        split <;> simp_all <;> omega
+        split <;> simp_all <;> omega_arith
       rw [a24', Pub.r24_step, e24, show (2 : Nat) ^ (j + 1) = 2 ^ j * 2 from Nat.pow_succ 2 j, ← Nat.mul_assoc]
       have hlt := (u.gpr .r24).isLt
       generalize (u.gpr .r24).toNat = r at hc hlt ⊢
@@ -103,11 +103,11 @@ theorem reduceByte_ok {s t : State} {B D : Addr} {Z w N c i : Nat} (hs : Scr s B
     · simp only [gpr_write, reduceCtorEq, ↓reduceIte]; rw [k'.gpr .r31 (by decide)]; exact u31
     · simp only [gpr_write, ↓reduceIte]; rw [k'.gpr .r25 (by decide)]
   · rw [a24, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · have hc' : c' = 256 * c + b := by
       have := (u.gpr .r24).isLt
       rw [show (256 * c + b) * 2 ^ 56 * 2 ^ 8 = (256 * c + b) * 2 ^ 64 by rw [Nat.mul_assoc]] at hc
-      omega
+      omega_arith
     rw [← hc']; exact hu
 
 /-- `reduceScan`: the `L ≥ 1` bytes at `D` (`r30`, `r31`) scanned, most
@@ -124,12 +124,12 @@ theorem reduceScan_ok {s t : State} {B D : Addr} {Z w N L : Nat} (hs : Scr s B Z
   have e1 := e 1; have e4 := e 4
   let Inv : Nat → State → Prop := fun i u =>
     RInv s B w N (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D i)) u ∧ u.gpr .r30 = off D i
-  refine WP.mono (wp_countdown (cnt := .r31) (N := L) (by omega) (by omega) Inv
+  refine WP.mono (wp_countdown (cnt := .r31) (N := L) (by omega_arith) (by omega_arith) Inv
     (fun i hi u ⟨hu, u30⟩ _ => ?_) ⟨ht, h30⟩ h31) fun u h => h.1
   have hb : u.mem (off D i) = s.mem (off D i) := by
     refine hu.2.1 _ (Or.inr ?_)
     by_contra hc
-    exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega) rfl
+    exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega_arith) rfl
   refine WP.seq (WP.mono (reduceByte_ok hs hw hw' hZ h10 h11 hNd hN hu u30
     (by rw [hu.1.rd, hu.1.wr]; exact hrd i hi)) fun u₁ ⟨hu₁, a30, a31⟩ => ?_)
   refine WP.mono (subi_ok u₁ .r31 (by decide)) fun u₂ e => ?_
@@ -164,7 +164,7 @@ theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 
   unfold reduce
   refine WP.seq (WP.mono (Pub.base_ok (rd := .r14) (by decide) (by decide) h10 h29 1) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (zeroWords_ok (hs.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans h11) hw hw'
-    (by omega)) fun s₂ ⟨⟨_, hz, out₂⟩, k₂⟩ => ?_)
+    (by omega_arith)) fun s₂ ⟨⟨_, hz, out₂⟩, k₂⟩ => ?_)
   have k12 := k1.trans k₂
   rw [m1] at out₂
   refine WP.seq ?_
@@ -182,9 +182,9 @@ theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 
   have k15 := k14.trans k5
   have m25 : s₅.mem = s₂.mem := m5.trans (m4.trans m3)
   have o25 : Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem s₅.mem := by
-    rw [m25]; exact fun x hx => out₂ x (by simp only [Mont.ofs] at hx ⊢; omega)
+    rw [m25]; exact fun x hx => out₂ x (by simp only [Mont.ofs] at hx ⊢; omega_arith)
   have hNd : val32 s₅.mem B (slot w 0) (2 * w) = val32 s.mem B (slot w 0) (2 * w) :=
-    o25.val32 (by omega) (by omega)
+    o25.val32 (by omega_arith) (by omega_arith)
   have hrd5 : ∀ i < L, InRegions (s₅.rd ++ s₅.wr) (off D i) 1 := by
     rw [k15.rd, k15.wr]; exact hrd
   have hsep5 : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x := hsep
@@ -202,7 +202,7 @@ theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 
     show s₅.mem (off D i) = s.mem (off D i)
     refine o25 _ (Or.inr ?_)
     by_contra hc
-    exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega) rfl
+    exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega_arith) rfl
   rw [tv, hbytes]
 
 end VG.Proof.Bignum.PPC64LE.ModArith

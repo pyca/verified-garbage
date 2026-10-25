@@ -38,7 +38,7 @@ theorem countedDouble_parts_ok {n size m : Nat} {base : Addr} {s : State}
   have hL : MulLayD M size invO acc o a b :=
     context_lay h.size_le h.small (by decide) (by decide) (by decide)
   have hm : val32 s.mem base M.mo (words M) = m := h.modulus
-  have hm0 : 0 < m := by have := h.gt_one; omega
+  have hm0 : 0 < m := by have := h.gt_one; omega_arith
   have hA : val32 s.mem base a (words M) < m := hv
   have hB : val32 s.mem base b (words M) < m := hv
   suffices H : WP isa (countedDouble n) s fun t => Ws t base size ∧
@@ -46,11 +46,11 @@ theorem countedDouble_parts_ok {n size m : Nat} {base : Addr} {s : State}
     Outs base [(o, 4 * words M), (M.tmp, 4 * words M), (acc, 4 * (4 * words M + 2))] s.mem t.mem ∧
     Rest dclob s t ∧ t.gpr .r0 = s.gpr .r1 by
     simpa only [M, o, a, b, acc, contextMod, Impl.Mont.Arm.words,
-      show 4 * (2 * n) = 8 * n by omega,
-      show 4 * (4 * (2 * n) + 2) = 4 * (8 * n + 2) by omega] using H
+      show 4 * (2 * n) = 8 * n by omega_arith,
+      show 4 * (4 * (2 * n) + 2) = 4 * (8 * n + 2) by omega_arith] using H
   have hnw := hs.nowrap
   obtain ⟨W, hW⟩ : ∃ W, words M = W := ⟨_, rfl⟩
-  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega
+  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega_arith
   obtain ⟨acc_le, a_le, b_le, mo_le, tmp_le, o_le, inv_le, acc16, a16, b16, mo16, tmp16, o16, inv16, sa, sb, smo,
     sinv, stmp, so, tmo, ot⟩ := hL
   simp only [accLen, hD, hW] at acc_le a_le b_le mo_le tmp_le o_le acc16 a16 b16 mo16 tmp16 sa sb smo sinv stmp so tmo ot
@@ -120,13 +120,13 @@ theorem doubles_ok {n size m : Nat} {base : Addr} (k : Nat) {s : State}
       ⟨U.rest (by decide), by rw [U.mem]; exact Outs.refl _ _ _⟩,
       by rw [U.gpr, Nat.sub_zero, movw_ofNat hk]⟩
     refine WP.loop (M := isa) (fun r u => ∃ j, r = k - j ∧ j < k ∧ DoubleInv n m size k base s j u)
-      ?_ k t ⟨0, rfl, by omega, I0⟩
+      ?_ k t ⟨0, rfl, by omega_arith, I0⟩
     rintro r u ⟨j, rfl, hj, I⟩
     refine WP.seq (wp_mov (op2_reg _ _) fun u₀ U₀ => WP.block_nil ?_)
     have c₀ : Context n m base size u₀ := ⟨I.ctx.ws.of_upd U₀ (by decide), I.ctx.size_le,
       I.ctx.small, I.ctx.n0, by rw [U₀.mem]; exact I.ctx.modulus, I.ctx.gt_one,
       by rw [U₀.mem]; exact I.ctx.inverse⟩
-    have hm : 0 < m := by have := I.ctx.gt_one; omega
+    have hm : 0 < m := by have := I.ctx.gt_one; omega_arith
     refine WP.seq (WP.mono (countedDouble_ok c₀ (by rw [U₀.mem, I.val]; exact Nat.mod_lt _ hm))
       fun u₁ ⟨c₁, K₁, V₁, C₁⟩ => ?_)
     refine wp_subs (op2_imm (by decide)) fun u₂ U₂ Z₂ => WP.block_nil ?_
@@ -139,17 +139,17 @@ theorem doubles_ok {n size m : Nat} {base : Addr} (k : Nat) {s : State}
       · refine ⟨((I.keep.rest.trans (U₀.rest (by decide))).trans K₁.rest).trans (U₂.rest (by decide)), ?_⟩
         rw [U₂.mem]
         exact I.keep.mem.trans (by rw [← U₀.mem]; exact K₁.mem)
-      · rw [U₂.gpr, C₁, U₀.gpr, I.count, ofNat_sub_one (by omega) (by omega)]
+      · rw [U₂.gpr, C₁, U₀.gpr, I.count, ofNat_sub_one (by omega_arith) (by omega_arith)]
         congr 1
     have hz : u₂.z = decide (j + 1 = k) := by
-      rw [Z₂, C₁, U₀.gpr, I.count, ofNat_sub_one (by omega) (by omega),
-        VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+      rw [Z₂, C₁, U₀.gpr, I.count, ofNat_sub_one (by omega_arith) (by omega_arith),
+        VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_arith)]
       simp only [decide_eq_decide]
-      omega
+      omega_arith
     by_cases hj1 : j + 1 = k
     · exact .inl ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_true hj1]; rfl,
         I'.ctx, I'.keep, by rw [I'.val, hj1]⟩
     · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hj1]; rfl,
-        k - (j + 1), by omega, j + 1, rfl, by omega, I'⟩
+        k - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I'⟩
 
 end VG.Proof.Dsa.Arm

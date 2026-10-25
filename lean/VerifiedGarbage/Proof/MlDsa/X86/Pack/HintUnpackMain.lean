@@ -45,7 +45,7 @@ theorem q1_piece (i : Nat) : Piece Pre Pub (fun s₀ s => OM s₀ i (PS s₀ i) 
   refine Piece.taint [.esp] (fun s₀ s hp ⟨h, hi⟩ => ?_) (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_)
     (by native_taint_decide)
   · have a4 : addr (s.gpr .esp) 36 = argAddr s₀ 4 := argEa h.esp 4
-    have i4 := h.argIn hp (i := 4) (by omega)
+    have i4 := h.argIn hp (i := 4) (by omega_arith)
     have hb : WP isa (.block [.mov .edx (.mem (at_ .esp 36))]) s fun s' =>
         s'.gpr .edx = arg s₀ 0 + BitVec.ofNat 32 (ω s₀ + i) ∧ s'.mem = s.mem := by
       hrun [a4, i4, h.ptr]
@@ -63,7 +63,7 @@ theorem q2_piece (i : Nat) : Piece Pre Pub
   refine Piece.taint [.edx] (fun s₀ s hp ⟨⟨h, hi⟩, hd⟩ => ?_)
     (fun s₀ s₀' s s' _ _ hq ⟨_, hd⟩ ⟨_, hd'⟩ r hr => ?_) (by native_taint_decide)
   · have hf := hp.facts
-    have hy : ω s₀ + i < yL s₀ := by omega
+    have hy : ω s₀ + i < yL s₀ := by omega_arith
     have ea : addr (s.gpr .edx) 0 = rA s₀ + BitVec.ofNat 64 (ω s₀ + i) := by rw [hd]; exact yAddr hp hy
     have hin := h.inY hp hy
     have hv := h.ybyte hp hy
@@ -76,7 +76,7 @@ theorem q2_piece (i : Nat) : Piece Pre Pub
     refine (WP.keep [.ebx] hb (by decide)).mono fun s' ⟨⟨e, c, m⟩, k⟩ =>
       ⟨⟨⟨h.keep k (by simp) m, hi⟩, by rw [e, byte32]⟩, ?_⟩
     show s'.cf = _
-    rw [c, toNat_setWidth32_8, h.eax, toNat_ofNat32 (by omega)]
+    rw [c, toNat_setWidth32_8, h.eax, toNat_ofNat32 (by omega_arith)]
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [hd, hd', hq.a0, hq.eω]
@@ -101,8 +101,8 @@ theorem q3_piece (i : Nat) : Piece Pre Pub
   refine Piece.taint [.esp] (fun s₀ s hp ⟨⟨⟨⟨h, hi⟩, he⟩, _⟩, hb⟩ => ?_)
     (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨⟨h, _⟩, _⟩, _⟩, _⟩ ⟨⟨⟨⟨h', _⟩, _⟩, _⟩, _⟩ r hr => ?_) (by native_taint_decide)
   · have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa h.esp 2
-    have i2 := h.argIn hp (i := 2) (by omega)
-    have v2 := h.argw hp (i := 2) (by omega) (by omega) (by omega)
+    have i2 := h.argIn hp (i := 2) (by omega_arith)
+    have v2 := h.argw hp (i := 2) (by omega_arith) (by omega_arith) (by omega_arith)
     have hb' : WP isa (.block [.mov .edx (.mem (at_ .esp 28)), .alu .cmp .edx (.reg .ebx)]) s fun s' =>
         s'.cf = some (decide ((arg s₀ 2).toNat < (s.gpr .ebx).toNat)) ∧ s'.mem = s.mem := by
       hrun [a2, i2, v2]
@@ -110,7 +110,7 @@ theorem q3_piece (i : Nat) : Piece Pre Pub
     refine (WP.keep [.edx] hb' (by decide)).mono fun s' ⟨⟨c, m⟩, k⟩ =>
       ⟨⟨⟨⟨h.keep k (by simp) m, hi⟩, by rw [k.gpr (by decide), he]⟩, of_decide_eq_false hb⟩, ?_⟩
     show s'.cf = _
-    rw [c, he, toNat_ofNat32 (by omega)]
+    rw [c, he, toNat_ofNat32 (by omega_arith)]
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [h.esp, h'.esp, P0_esp, P0_esp, hq.e0]
@@ -136,7 +136,7 @@ theorem coefs_poly_piece (i : Nat) : Piece Pre Pub
       have h2 := of_decide_eq_false hb
       obtain ⟨e1, e2, -⟩ := PS_ok h1 h2
       have eG : G s₀ i 0 = PS s₀ i := by rw [e1]; rfl
-      exact ⟨h.toPtr, he, by rw [eG]; exact h.eax, by rw [eG]; exact h.sr, hi, e1, e2, by omega⟩)
+      exact ⟨h.toPtr, he, by rw [eG]; exact h.eax, by rw [eG]; exact h.sr, hi, e1, e2, by omega_arith⟩)
     fun s₀ s _ h => by
       obtain ⟨-, -, e3⟩ := PS_ok (s₀ := s₀) (i := i) (by rw [h.some]; exact Nat.not_lt.mpr h.fb)
         (Nat.not_lt.mpr h.bw)
@@ -150,15 +150,15 @@ theorem end_piece (i : Nat) : Piece Pre Pub (fun s₀ s => OM s₀ i (PS s₀ (i
   · have hf := hp.facts
     have a1 : addr (s.gpr .esp) 24 = argAddr s₀ 1 := argEa h.esp 1
     have a4 : addr (s.gpr .esp) 36 = argAddr s₀ 4 := argEa h.esp 4
-    have i1 := h.argIn hp (i := 1) (by omega)
-    have i4 := h.argIn hp (i := 4) (by omega)
-    have o1 := h.argOut hp (i := 1) (by omega)
-    have o4 := h.argOut hp (i := 4) (by omega)
+    have i1 := h.argIn hp (i := 1) (by omega_arith)
+    have i4 := h.argIn hp (i := 4) (by omega_arith)
+    have o1 := h.argOut hp (i := 1) (by omega_arith)
+    have o4 := h.argOut hp (i := 4) (by omega_arith)
     have s14 : Mem.Sep (argAddr s₀ 1) (32 / 8) (argAddr s₀ 4) (32 / 8) :=
-      (hp.slot_disj (i := 1) (j := 4) (by omega) (by omega) (by omega)).sep (Region.contains_self _ _)
+      (hp.slot_disj (i := 1) (j := 4) (by omega_arith) (by omega_arith) (by omega_arith)).sep (Region.contains_self _ _)
         (Region.contains_self _ _)
     have s41 : Mem.Sep (argAddr s₀ 4) (32 / 8) (argAddr s₀ 1) (32 / 8) :=
-      (hp.slot_disj (i := 4) (j := 1) (by omega) (by omega) (by omega)).sep (Region.contains_self _ _)
+      (hp.slot_disj (i := 4) (j := 1) (by omega_arith) (by omega_arith) (by omega_arith)).sep (Region.contains_self _ _)
         (Region.contains_self _ _)
     have r1 : ∀ v : BitVec 32, (s.mem.writeW (argAddr s₀ 4) v).readW (argAddr s₀ 1) 32 =
         BitVec.ofNat 32 (K s₀ - i) := fun v => by rw [Mem.readW_writeW_sep s14 (by decide), h.cnt]
@@ -170,11 +170,11 @@ theorem end_piece (i : Nat) : Piece Pre Pub (fun s₀ s => OM s₀ i (PS s₀ (i
     refine (WP.keep [.edx, .ecx] hb (by decide)).mono fun s' ⟨⟨e1, z, m⟩, k⟩ => ⟨⟨⟨h.toBase.keep k (by decide)
       (by rw [m]; exact (frame_slot (.inr rfl) _).trans (frame_slot (.inl rfl) _)),
       by rw [k.gpr (by decide), h.edi], by rw [k.gpr (by decide), h.esi], by rw [e1, h.ecx, add_1024']; congr 2,
-      ?_, ?_⟩, by rw [k.gpr (by decide), h.eax], ?_⟩, eval_ne_cnt hi (by omega) z⟩
+      ?_, ?_⟩, by rw [k.gpr (by decide), h.eax], ?_⟩, eval_ne_cnt hi (by omega_arith) z⟩
     · rw [m, Mem.readW_writeW_self32]; exact cnt_next hi
     · rw [m, Mem.readW_writeW_sep s41 (by decide), Mem.readW_writeW_self32, add_one']; rfl
     · rw [m]
-      exact h.sr.congr fun t ht => by rw [hp.coeff_frame (by omega) _ t ht, hp.coeff_frame (by omega) _ t ht]
+      exact h.sr.congr fun t ht => by rw [hp.coeff_frame (by omega_arith) _ t ht, hp.coeff_frame (by omega_arith) _ t ht]
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [h.esp, h'.esp, P0_esp, P0_esp, hq.e0]
@@ -192,7 +192,7 @@ theorem poly_piece (i : Nat) : Piece Pre Pub (fun s₀ s => OM s₀ i (PS s₀ i
 
 theorem polys_piece : Piece Pre Pub (fun s₀ s => OM s₀ 0 (PS s₀ 0) s) (fun s₀ s => OM s₀ (K s₀) (PS s₀ (K s₀)) s)
     (.loop (.seq hbuPoly (.block hbuPolyEnd)) .ne) :=
-  loopN (fun i s₀ s => OM s₀ i (PS s₀ i) s) K (fun s₀ hp => by have := hp.facts; omega)
+  loopN (fun i s₀ s => OM s₀ i (PS s₀ i) s) K (fun s₀ hp => by have := hp.facts; omega_arith)
     (fun _ _ _ _ hq => hq.eK) poly_piece
 
 end Up

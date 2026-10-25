@@ -30,7 +30,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
 
 local macro "apart" : tactic => `(tactic|
   plain_simp_names ((try simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
-                     InvCfg.sF, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sNF, InvCfg.sNG, InvCfg.sT, InvCfg.sU, InvCfg.sW]) <;> omega))
+                     InvCfg.sF, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sNF, InvCfg.sNG, InvCfg.sT, InvCfg.sU, InvCfg.sW]) <;> omega_arith))
 
 theorem fgUpdate_ok {P : InvCfg} {s : State} {base : Addr} {size p : Nat} {T : Divstep.MSt} {f g : Int}
     (hs : Scr s base size) (ht : P.tbl + 320 ≤ size) (hT : MatrixAt P base T s)

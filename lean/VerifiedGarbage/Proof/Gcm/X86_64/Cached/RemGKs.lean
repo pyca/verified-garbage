@@ -66,10 +66,10 @@ theorem remMaskG_ok (s : State) {r : Nat} (hr1 : 1 ≤ r) (hr : r < 16) (h9 : s.
     fun x l' => by rw [c, l₂, l], by rw [d, m₂, m], by rw [e, rd₂, rd], by rw [f, wr₂, wr]⟩
   all_goals rw [a]
   all_goals simp only [decide_eq_true_eq, decide_eq_false_iff_not] at h h'
-  · rw [show (r - 1) % 4 + 1 = 4 by omega]; decide
-  · rw [show (r - 1) % 4 + 1 = 2 by omega]; decide
-  · rw [show (r - 1) % 4 + 1 = 1 by omega]; decide
-  · rw [show (r - 1) % 4 + 1 = 3 by omega]; decide
+  · rw [show (r - 1) % 4 + 1 = 4 by omega_arith]; decide
+  · rw [show (r - 1) % 4 + 1 = 2 by omega_arith]; decide
+  · rw [show (r - 1) % 4 + 1 = 1 by omega_arith]; decide
+  · rw [show (r - 1) % 4 + 1 = 3 by omega_arith]; decide
 
 /-- The registers of a group of `k`. -/
 theorem aregs_take (k : Nat) : (aregs.take k).Nodup ∧ .xmm13 ∉ aregs.take k ∧ ∀ b ∈ aregs.take k, b ∈ aregs := by
@@ -105,23 +105,23 @@ theorem tailG_ok (src : Reg) (hsrc : src ≠ .r10) {k r : Nat} (hk4 : k ≤ 4) (
       (∀ x, x ∉ aregs → x ∉ ([.xmm13, .xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm2] : List XReg) →
         ∀ l < 4, t'.zlane x l = t.zlane x l) := by
   obtain ⟨hnd, h13, hin⟩ := aregs_take k
-  have hlen : (aregs.take k).length = k := by simp [aregs]; omega
-  have hk1 : 1 ≤ k := by omega
-  have hc : 4 * ((aregs.take k).length - 1) + ((r - 1) % 4 + 1) = r := by rw [hlen]; omega
-  have hc16 : 64 * ((aregs.take k).length - 1) + 16 * ((r - 1) % 4 + 1) = 16 * r := by rw [hlen]; omega
-  obtain ⟨mq, mb⟩ := maskG_ok ((r - 1) % 4 + 1) (by omega) (by omega)
-  refine WP.seq (WP.mono (remMaskG_ok t hr1 (by omega) h9) fun t₁ ⟨a₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_)
+  have hlen : (aregs.take k).length = k := by simp [aregs]; omega_arith
+  have hk1 : 1 ≤ k := by omega_arith
+  have hc : 4 * ((aregs.take k).length - 1) + ((r - 1) % 4 + 1) = r := by rw [hlen]; omega_arith
+  have hc16 : 64 * ((aregs.take k).length - 1) + 16 * ((r - 1) % 4 + 1) = 16 * r := by rw [hlen]; omega_arith
+  obtain ⟨mq, mb⟩ := maskG_ok ((r - 1) % 4 + 1) (by omega_arith) (by omega_arith)
+  refine WP.seq (WP.mono (remMaskG_ok t hr1 (by omega_arith) h9) fun t₁ ⟨a₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_)
   rw [WP.block_append_iff, WP.block_append_iff]
   have e0 : ∀ a : Addr, a + BitVec.ofNat 64 (64 * 0) = a := fun a => BitVec.add_zero a
   refine WP.mono (xorG_ok src (aregs.take k) 0 t₁ (c := (r - 1) % 4 + 1) (by
-      intro h; rw [h] at hlen; simp at hlen; omega) hnd h13 (by omega)
+      intro h; rw [h] at hlen; simp at hlen; omega_arith) hnd h13 (by omega_arith)
       (by rw [a₁]; exact mq) (by rw [a₁]; exact mb)
       (by rw [rd₁, wr₁, g₁ _ hsrc, hS, e0, hc16]; exact hinS)
       (by rw [wr₁, g₁ _ (by decide), hA, e0, hc16]; exact hinD)
       (fun n q' hq hn => by
         rw [g₁ _ hsrc, g₁ _ (by decide), hS, hA, Nat.mul_zero, Nat.zero_add, Nat.zero_add]
-        exact hsep n q' hq (by omega))
-      (by rw [hlen]; omega)) fun t₂ ⟨b₂, z₂, f₂, g₂, rd₂, wr₂, k₂⟩ => ?_
+        exact hsep n q' hq (by omega_arith))
+      (by rw [hlen]; omega_arith)) fun t₂ ⟨b₂, z₂, f₂, g₂, rd₂, wr₂, k₂⟩ => ?_
   rw [hc, g₁ _ (by decide), hA] at b₂ z₂
   rw [hc16, g₁ _ (by decide), hA, e0] at f₂
   rw [g₁ _ hsrc, hS] at b₂
@@ -144,7 +144,7 @@ theorem tailG_ok (src : Reg) (hsrc : src ≠ .r10) {k r : Nat} (hk4 : k ≤ 4) (
     rw [k₂ x hx h13' l hl, l₁]
   have nA : ∀ x, x ∉ aregs → x ∉ aregs.take k := fun x hx h => hx (List.mem_of_mem_take h)
   refine WP.mono (hashG_ok (aregs.take k) 0 t₂ (c := (r - 1) % 4 + 1) X' (fun n => if n < r then T₀ n else 0) y
-      (by intro h; rw [h] at hlen; simp at hlen; omega) hin (by omega) (by omega)
+      (by intro h; rw [h] at hlen; simp at hlen; omega_arith) hin (by omega_arith) (by omega_arith)
       (by rw [g₂, a₁]; exact mq) (by rw [g₂, a₁]; exact mb)
       (fun l hl => by rw [keep₂ _ (nA _ (by decide)) (by decide) l hl, h0 l hl])
       (fun l hl => by rw [keep₂ _ (nA _ (by decide)) (by decide) l hl, h2 l hl])
@@ -156,7 +156,7 @@ theorem tailG_ok (src : Reg) (hsrc : src ≠ .r10) {k r : Nat} (hk4 : k ≤ 4) (
       rw [f₃.zlane _ (by decide) l hl, keep₂ _ (nA _ (by decide)) (by decide) l hl, h1 l hl])
     fun t' ⟨y', y1', f'⟩ => ?_
   have acc : ∀ l < 4, prod (t₃.zproj l) = laneAccG (fun n => D n ^^^ K n) T y l r := fun l hl => by
-    rw [p₃ l hl, Nat.zero_add, laneAccG_pad X' T₀ y l r (4 * (aregs.take k).length) (by rw [hlen]; omega)]
+    rw [p₃ l hl, Nat.zero_add, laneAccG_pad X' T₀ y l r (4 * (aregs.take k).length) (by rw [hlen]; omega_arith)]
     exact laneAccG_congr y l r hX' hT₀
   refine ⟨fun n hn => ?_, ?_, ?_, y1', fun q hq => ?_, ?_, ?_, fun x hx hx' l hl => ?_⟩
   · rw [f'.mem, f₃.mem, ← z₂ n hn]; exact hX' n hn
@@ -222,7 +222,7 @@ theorem ksBatchG_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4) 
   have hnd' : (aregs.take k).Nodup := hnd.sublist (List.take_sublist _ _)
   have hx' : ∀ r ∈ aregs.take k, r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := fun r hr => hx r (List.mem_of_mem_take hr)
   have h13' : .xmm13 ∉ aregs.take k := fun h => h13 (List.mem_of_mem_take h)
-  have hlen : (aregs.take k).length = k := by simp [aregs]; omega
+  have hlen : (aregs.take k).length = k := by simp [aregs]; omega_arith
   refine WP.seq (WP.mono (WP.hkeep (ctrsZ_keeps _ _ _ _) (ctrsZ_ok .xmm14 .xmm0 .xmm15 (by decide) (by decide)
     (aregs.take k) s (cb s₀) c hnd' hx' hctr hmsk hinc)) fun s₁ ⟨⟨e₁, c₁, f₁⟩, hh₁⟩ => ?_)
   have hK₁ : Keys (nr s₀) (sch s₀) s₁ := ZFrame.of_keys hK f₁
@@ -243,10 +243,10 @@ theorem ksBatchG_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4) 
   -- The keystream blocks.
   have ks : ∀ n < r, XBinOp.eval .pshufb (s₂.zlane ((aregs.take k).getD (n / 4) .xmm0) (n % 4)) revMask =
       ciph s₀ (Nat.repeat inc32 (c + n) (cb s₀)) := fun n hn => by
-    have h : n / 4 < (aregs.take k).length := by rw [hlen]; omega
+    have h : n / 4 < (aregs.take k).length := by rw [hlen]; omega_arith
     rw [← List.getElem_eq_getD (h := h),
-      (aesWith_eq _ _ _ _ (by rw [e₂ _ (List.getElem_mem h) _ (by omega), e₁ _ h _ (by omega)])).symm,
-      show c + 4 * (n / 4) + n % 4 = c + n by omega]
+      (aesWith_eq _ _ _ _ (by rw [e₂ _ (List.getElem_mem h) _ (by omega_arith), e₁ _ h _ (by omega_arith)])).symm,
+      show c + 4 * (n / 4) + n % 4 = c + n by omega_arith]
   have hg₂ : s₂.gpr = s.gpr := by rw [f₂.gpr, f₁.gpr]
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   have hrd₂ : s₂.rd = s.rd := by rw [f₂.rd, f₁.rd]

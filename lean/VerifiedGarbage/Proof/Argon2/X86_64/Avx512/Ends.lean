@@ -48,10 +48,10 @@ theorem initChunk_ok {k : Nat} (hk : k < 16) {s : State} {p x y : Addr} (hs : Sc
         s.mem.readW (off x (64 * k + 8 * q)) 64 ^^^ s.mem.readW (off y (64 * k + 8 * q)) 64) ∧
       t.mem = s.mem.writeW (off p (64 * k)) v ∧ VKeep s t := by
   have lx : InRegions (s.rd ++ s.wr) (off x (64 * k)) 64 :=
-    ⟨_, hin.xread, Offset.contains_base x (by omega) (by omega)⟩
+    ⟨_, hin.xread, Offset.contains_base x (by omega_arith) (by omega_arith)⟩
   have ly : InRegions (s.rd ++ s.wr) (off y (64 * k)) 64 :=
-    ⟨_, hin.yread, Offset.contains_base y (by omega) (by omega)⟩
-  have w := hs.write (d := 64 * k) (n := 64) (by omega)
+    ⟨_, hin.yread, Offset.contains_base y (by omega_arith) (by omega_arith)⟩
+  have w := hs.write (d := 64 * k) (n := 64) (by omega_arith)
   apply WP.of_runBlock
   simp only [initChunk, z, runBlock_cons, runStep_some, runBlock_nil, exec, State.load512,
     State.store512_eq, ea_at, State.setZ_rd, State.setZ_wr, State.setZ_gpr, State.setZ_mem,
@@ -60,7 +60,7 @@ theorem initChunk_ok {k : Nat} (hk : k < 16) {s : State} {p x y : Addr} (hs : Sc
   refine ⟨_, fun q hq => ?_, rfl, ((((setZ_vkeep _ _ _ _ _ _).trans (setZ_vkeep _ _ _ _ _ _)).trans
     (zop_vkeep _ _)).trans (setMem_vkeep _ _))⟩
   have h2 : q % 2 < 2 := Nat.mod_lt _ (by decide)
-  simp (disch := omega) only [zmm_qz _ _ hq, qz_zbin _ _ _ _ _ _ hq, ZBinOp.sse, qword_pxor,
+  simp (disch := omega_arith) only [zmm_qz _ _ hq, qz_zbin _ _ _ _ _ _ hq, ZBinOp.sse, qword_pxor,
     qz_lane, qz_load, ↓reduceIte, reduceCtorEq, Offset.add_add]
 
 /-- The chunks `k < n` of R hold `r`. -/
@@ -73,14 +73,14 @@ theorem initialized_step {m : Mem} {p : Addr} {r : Block} {n : Nat} (hn : n < 16
     Initialized (m.writeW (off p (64 * n)) v) p r (n + 1) := by
   intro i hi
   have hi' := i.isLt
-  rw [read_write512 _ p (by omega) (by omega) (by omega) (by omega)]
+  rw [read_write512 _ p (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
   by_cases e : i.val / 8 = n
-  · have q := hv (i.val % 8) (Nat.mod_lt _ (by decide)) (by omega)
-    simp only [show 8 * n + i.val % 8 = i.val by omega] at q
-    rw [ifp (by omega), show (8 * i.val - 64 * n) / 8 = i.val % 8 by omega, q]
+  · have q := hv (i.val % 8) (Nat.mod_lt _ (by decide)) (by omega_arith)
+    simp only [show 8 * n + i.val % 8 = i.val by omega_arith] at q
+    rw [ifp (by omega_arith), show (8 * i.val - 64 * n) / 8 = i.val % 8 by omega_arith, q]
     rfl
-  · rw [ifn (by omega)]
-    exact h i (by omega)
+  · rw [ifn (by omega_arith)]
+    exact h i (by omega_arith)
 
 /-- Initialize the first `n` chunks of R, framing both input blocks. -/
 theorem init_prefix (n : Nat) (hn : n ≤ 16) {s : State} {p x y : Addr} (hs : Scratch s p)
@@ -89,30 +89,30 @@ theorem init_prefix (n : Nat) (hn : n ≤ 16) {s : State} {p x y : Addr} (hs : S
       Initialized t.mem p (xorBlock (blockAt s.mem x) (blockAt s.mem y)) n ∧
       Frame [⟨p, 4096⟩] s.mem t.mem ∧ VKeep s t := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun i hi => by omega, Frame.refl _ _, VKeep.refl s⟩
+  | zero => exact WP.block_nil ⟨fun i hi => by omega_arith, Frame.refl _ _, VKeep.refl s⟩
   | succ n ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro t ⟨ht, hf, hk⟩
-    refine (initChunk_ok (by omega) (hs.of_vkeep hk) (hin.of_vkeep hk)).mono ?_
+    refine (initChunk_ok (by omega_arith) (hs.of_vkeep hk) (hin.of_vkeep hk)).mono ?_
     rintro u ⟨v, hv, hmem, hk'⟩
     refine ⟨?_, ?_, hk.trans hk'⟩
     · rw [hmem]
-      refine initialized_step (by omega) ht fun q hq hi => ?_
-      rw [hv q hq, show 64 * n + 8 * q = 8 * (8 * n + q) by omega,
+      refine initialized_step (by omega_arith) ht fun q hq hi => ?_
+      rw [hv q hq, show 64 * n + 8 * q = 8 * (8 * n + q) by omega_arith,
         input_unchanged hf hin.xsep ⟨8 * n + q, hi⟩, input_unchanged hf hin.ysep ⟨8 * n + q, hi⟩]
       simp only [xorBlock, Vector.getElem_zipWith, blockAt, Vector.getElem_ofFn]
       rfl
     · rw [hmem]
-      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base p (by omega) (by omega))
+      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base p (by omega_arith) (by omega_arith))
 
 /-- R, initialized. -/
 theorem initialized_all {m : Mem} {p : Addr} {r : Block} (h : Initialized m p r 16) :
     blockAt m p = r := by
   apply Vector.ext; intro i hi
-  have := h ⟨i, hi⟩ (by simp only; omega)
+  have := h ⟨i, hi⟩ (by simp only; omega_arith)
   rw [← blockAt_get m p ⟨i, hi⟩] at this
   exact this
 
@@ -131,8 +131,8 @@ theorem qz_shuf (s : State) (d a b : XReg) (n : BitVec 8) {q : Nat} (hq : q < 8)
       (if q < 4 then qz s a else qz s b) (2 * sel4 n.toNat (q / 2) + q % 2) := by
   rw [qz_vshufi32x4 _ _ _ _ _ _ hq, ite_eq_left_of_eq_true _ _ (eq_true rfl)]
   by_cases h : q < 4
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), ite_eq_left_of_eq_true _ _ (eq_true h)]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h)]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), ite_eq_left_of_eq_true _ _ (eq_true h)]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false h)]
 
 def joinOps : List ZOp :=
   [.vshufi32x4 .xmm2 .xmm0 .xmm1 0x88, .vshufi32x4 .xmm3 .xmm0 .xmm1 0xdd,
@@ -152,7 +152,7 @@ theorem join_qz3 (s : State) {q : Nat} (hq : q < 8) :
   have hs8 := Proof.Poly1305.X86_64.Avx2.sel4_lt (0xdd : BitVec 8).toNat (q / 2)
   simp only [joinOps, zrun, qz_zbin _ _ _ _ _ _ hq, ZBinOp.sse, qword_pxor, qz_lane, reduceCtorEq,
     ↓reduceIte, qz_vshufi32x4 _ _ _ _ _ _ hq]
-  split <;> simp (disch := omega) only [qz_vshufi32x4, reduceCtorEq, ↓reduceIte]
+  split <;> simp (disch := omega_arith) only [qz_vshufi32x4, reduceCtorEq, ↓reduceIte]
 
 def finLoads (n k : Nat) : List Instr :=
   [.vmovdqu32Load .xmm0 (at_ .rcx (colOff (2 * n) k)),
@@ -169,15 +169,15 @@ theorem finishChunk_eq (n k : Nat) :
 
 theorem finLoads_ok {n k : Nat} (hn : n < 2) (hk : k < 4) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block (finLoads n k)) s fun t =>
-      (∀ e (he : e < 8), qz t .xmm0 e = (cv s.mem p)[cvIdx (2 * n) k e]'(by simp only [cvIdx]; omega)) ∧
-      (∀ e (he : e < 8), qz t .xmm1 e = (cv s.mem p)[cvIdx (2 * n + 1) k e]'(by simp only [cvIdx]; omega)) ∧
+      (∀ e (he : e < 8), qz t .xmm0 e = (cv s.mem p)[cvIdx (2 * n) k e]'(by simp only [cvIdx]; omega_arith)) ∧
+      (∀ e (he : e < 8), qz t .xmm1 e = (cv s.mem p)[cvIdx (2 * n + 1) k e]'(by simp only [cvIdx]; omega_arith)) ∧
       (∀ q < 8, qz t .xmm4 q = s.mem.readW (off p (8 * (32 * k + 8 * n + q))) 64) ∧
       (∀ q < 8, qz t .xmm5 q = s.mem.readW (off p (8 * (32 * k + 16 + 8 * n + q))) 64) ∧
       t.mem = s.mem ∧ VKeep s t := by
-  have r0 := colOff_read hs (c := 2 * n) (k := k) (by omega) hk
-  have r1 := colOff_read hs (c := 2 * n + 1) (k := k) (by omega) hk
-  have r4 := hs.read (d := 256 * k + 64 * n) (n := 64) (by omega)
-  have r5 := hs.read (d := 256 * k + 128 + 64 * n) (n := 64) (by omega)
+  have r0 := colOff_read hs (c := 2 * n) (k := k) (by omega_arith) hk
+  have r1 := colOff_read hs (c := 2 * n + 1) (k := k) (by omega_arith) hk
+  have r4 := hs.read (d := 256 * k + 64 * n) (n := 64) (by omega_arith)
+  have r5 := hs.read (d := 256 * k + 128 + 64 * n) (n := 64) (by omega_arith)
   apply WP.of_runBlock
   simp only [finLoads, runBlock_cons, runStep_some, runBlock_nil, exec, State.load512, ea_at,
     State.setZ_rd, State.setZ_wr, State.setZ_gpr, State.setZ_mem, hs.reg, r0, r1, r4, r5, ite_true,
@@ -186,13 +186,13 @@ theorem finLoads_ok {n k : Nat} (hn : n < 2) (hk : k < 4) {s : State} {p : Addr}
     (((setZ_vkeep _ _ _ _ _ _).trans (setZ_vkeep _ _ _ _ _ _)).trans (setZ_vkeep _ _ _ _ _ _)).trans
       (setZ_vkeep _ _ _ _ _ _)⟩
   · simp only [qz_load _ _ _ _ _ he, reduceCtorEq, ↓reduceIte]
-    exact cv_chunk _ _ (by omega) hk he
+    exact cv_chunk _ _ (by omega_arith) hk he
   · simp only [qz_load _ _ _ _ _ he, reduceCtorEq, ↓reduceIte]
-    exact cv_chunk _ _ (by omega) hk he
+    exact cv_chunk _ _ (by omega_arith) hk he
   · simp only [qz_load _ _ _ _ _ hq, reduceCtorEq, ↓reduceIte, Offset.add_add]
-    exact congrArg (Mem.readW _ · 64) (congrArg (off p) (by omega))
+    exact congrArg (Mem.readW _ · 64) (congrArg (off p) (by omega_arith))
   · simp only [qz_load _ _ _ _ _ hq, ↓reduceIte, Offset.add_add]
-    exact congrArg (Mem.readW _ · 64) (congrArg (off p) (by omega))
+    exact congrArg (Mem.readW _ · 64) (congrArg (off p) (by omega_arith))
 
 theorem finStores_ok {n k : Nat} (hn : n < 2) (hk : k < 4) {s : State} {out : Addr}
     (ho : s.gpr .rdx = out) (hw : (⟨out, 1024⟩ : Region) ∈ s.wr) :
@@ -200,9 +200,9 @@ theorem finStores_ok {n k : Nat} (hn : n < 2) (hk : k < 4) {s : State} {out : Ad
       t.mem = (s.mem.writeW (off out (256 * k + 64 * n)) (s.zmm .xmm2)).writeW
         (off out (256 * k + 128 + 64 * n)) (s.zmm .xmm3) ∧ VKeep s t := by
   have w1 : InRegions s.wr (off out (256 * k + 64 * n)) 64 :=
-    ⟨_, hw, Offset.contains_base out (by omega) (by omega)⟩
+    ⟨_, hw, Offset.contains_base out (by omega_arith) (by omega_arith)⟩
   have w2 : InRegions s.wr (off out (256 * k + 128 + 64 * n)) 64 :=
-    ⟨_, hw, Offset.contains_base out (by omega) (by omega)⟩
+    ⟨_, hw, Offset.contains_base out (by omega_arith) (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [finStores, runBlock_cons, runStep_some, runBlock_nil, exec, State.store512_eq, ea_at,
     State.setMem_wr, State.setMem_gpr, State.setMem_mem, State.setMem_zmm, ho, w1, w2, ite_true,
@@ -212,9 +212,9 @@ theorem finStores_ok {n k : Nat} (hn : n < 2) (hk : k < 4) {s : State} {out : Ad
 theorem finishChunk_ok {n k : Nat} (hn : n < 2) (hk : k < 4) {s : State} {p out : Addr}
     (hs : Scratch s p) (ho : s.gpr .rdx = out) (hw : (⟨out, 1024⟩ : Region) ∈ s.wr) :
     WP isa (.block (finishChunk n k)) s fun t => ∃ v w : BitVec 512,
-      (∀ q (hq : q < 8), v.extractLsb' (64 * q) 64 = (cv s.mem p)[32 * k + 8 * n + q]'(by omega) ^^^
+      (∀ q (hq : q < 8), v.extractLsb' (64 * q) 64 = (cv s.mem p)[32 * k + 8 * n + q]'(by omega_arith) ^^^
         s.mem.readW (off p (8 * (32 * k + 8 * n + q))) 64) ∧
-      (∀ q (hq : q < 8), w.extractLsb' (64 * q) 64 = (cv s.mem p)[32 * k + 16 + 8 * n + q]'(by omega) ^^^
+      (∀ q (hq : q < 8), w.extractLsb' (64 * q) 64 = (cv s.mem p)[32 * k + 16 + 8 * n + q]'(by omega_arith) ^^^
         s.mem.readW (off p (8 * (32 * k + 16 + 8 * n + q))) 64) ∧
       t.mem = (s.mem.writeW (off out (256 * k + 64 * n)) v).writeW (off out (256 * k + 128 + 64 * n)) w ∧
       VKeep s t := by
@@ -230,21 +230,21 @@ theorem finishChunk_ok {n k : Nat} (hn : n < 2) (hk : k < 4) {s : State} {p out 
     have hs8 := Proof.Poly1305.X86_64.Avx2.sel4_lt (0x88 : BitVec 8).toNat (q / 2)
     rw [zmm_qz _ _ hq, join_qz2 _ hq, h4 q hq]
     by_cases h2 : q / 2 < 2
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), h0 _ (by omega)]
-      rw [show q / 4 = 0 by omega, Nat.add_zero] at fq
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), h0 _ (by omega_arith)]
+      rw [show q / 4 = 0 by omega_arith, Nat.add_zero] at fq
       rw [cv_idx _ _ fq]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), h1 _ (by omega)]
-      rw [show q / 4 = 1 by omega] at fq
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), h1 _ (by omega_arith)]
+      rw [show q / 4 = 1 by omega_arith] at fq
       rw [cv_idx _ _ fq]
   · have fq := (finQ n hn k hk q hq).2
     have hs8 := Proof.Poly1305.X86_64.Avx2.sel4_lt (0xdd : BitVec 8).toNat (q / 2)
     rw [zmm_qz _ _ hq, join_qz3 _ hq, h5 q hq]
     by_cases h2 : q / 2 < 2
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), h0 _ (by omega)]
-      rw [show q / 4 = 0 by omega, Nat.add_zero] at fq
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), h0 _ (by omega_arith)]
+      rw [show q / 4 = 0 by omega_arith, Nat.add_zero] at fq
       rw [cv_idx _ _ fq]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), h1 _ (by omega)]
-      rw [show q / 4 = 1 by omega] at fq
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), h1 _ (by omega_arith)]
+      rw [show q / 4 = 1 by omega_arith] at fq
       rw [cv_idx _ _ fq]
 
 end VG.Proof.Argon2.X86_64.Avx512

@@ -85,12 +85,12 @@ structure Exit (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : S
 theorem Ctx.dBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn : n ≤ L.q) :
     Spec.Sha256.bytesAt t.mem L.d n = Spec.Sha256.bytesAt m₀ L.d n := by
   simp only [Spec.Sha256.bytesAt]
-  exact List.map_congr_left fun i hi => hc.d_byte hL (by have := List.mem_range.mp hi; omega)
+  exact List.map_congr_left fun i hi => hc.d_byte hL (by have := List.mem_range.mp hi; omega_arith)
 
 theorem Ctx.dgBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn : n ≤ P.I.hashLen) :
     Spec.Sha256.bytesAt t.mem L.dg n = Spec.Sha256.bytesAt m₀ L.dg n := by
   simp only [Spec.Sha256.bytesAt]
-  exact List.map_congr_left fun i hi => hc.dg_byte hL (by have := List.mem_range.mp hi; omega)
+  exact List.map_congr_left fun i hi => hc.dg_byte hL (by have := List.mem_range.mp hi; omega_arith)
 
 theorem hok_of (hk : CoreOk P L) : HOk P L :=
   ⟨by rw [hk.1], fun _ => by rw [P.len], hk.2.2.1⟩
@@ -146,27 +146,27 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
     rcases h with rfl | rfl | rfl | rfl | rfl | ⟨h, -⟩ | rfl
     · exact hL.gc.sub_left hD
     · exact hL.og.symm.sub_left hD
-    · exact (hL.kg.symm.sub_left hD).sub_right (Region.sub_prefix (by omega))
-    · exact (hL.stk_DG (by omega)).symm.sub_left hD
-    · exact (hL.stk_DG (by omega)).symm.sub_left hD
+    · exact (hL.kg.symm.sub_left hD).sub_right (Region.sub_prefix (by omega_arith))
+    · exact (hL.stk_DG (by omega_arith)).symm.sub_left hD
+    · exact (hL.stk_DG (by omega_arith)).symm.sub_left hD
     · rw [hw] at h; exact absurd h (by decide)
-    · exact (hL.stk_DG (by omega)).symm.sub_left hD
+    · exact (hL.stk_DG (by omega_arith)).symm.sub_left hD
   · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
     have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
     simp only [dgArg, hw, ite_true]
     rcases h with rfl | rfl | rfl | rfl | rfl | ⟨-, rfl⟩ | rfl
-    · exact hL.stk_SCR (by omega)
-    · exact hL.stk_OUT (by omega)
-    · exact Offset.disjoint_base _ (by omega) (by omega)
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    · exact hL.stk_SCR (by omega_arith)
+    · exact hL.stk_OUT (by omega_arith)
+    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem DgOk.frame {m m' : Mem} (h : DgOk P L m₀ m) {ws : List Region} (hf : Frame ws m m')
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨dgArg P L, P.Q⟩ r) : DgOk P L m₀ m' := by
   have hQ : P.Q ≤ 72 := by nums
-  unfold DgOk; rw [bytesAt_frame hf hd (by omega)]; exact h
+  unfold DgOk; rw [bytesAt_frame hf hd (by omega_arith)]; exact h
 
 theorem DgOk.frameOf (hL : L.Ok) (hk : CoreOk P L) {m m' : Mem} (h : DgOk P L m₀ m) {ws : List Region}
     (hf : Frame ws m m') (hd : ∀ r ∈ ws, DgApart P L r) : DgOk P L m₀ m' :=
@@ -177,13 +177,13 @@ theorem cnt_sub {T i : Nat} (hi : i < T) :
   apply BitVec.eq_of_toNat_eq
   have h1 : (1 : BitVec 64).toNat = 1 := rfl
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, h1]
-  omega
+  omega_arith
 
 theorem cnt_ne {T i : Nat} (hT : T < 2 ^ 32) : BitVec.ofNat 64 (T - (i + 1)) ≠ 0 ↔ i + 1 < T := by
   rw [Ne, ← BitVec.toNat_inj]
   have h0 : (0 : BitVec 64).toNat = 0 := rfl
   simp only [BitVec.toNat_ofNat, h0]
-  omega
+  omega_arith
 
 theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (Spec.Sha256.bytesAt m p n).length = n := by
   simp [Spec.Sha256.bytesAt]
@@ -235,7 +235,7 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
-      have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega
+      have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega_arith
     simp only [RfcHash.nb, CW, hw, Bool.false_eq_true, ite_false, kArg]
     have hc' : (cfgOf P).cand = (cfgOf P).hmacVR := by simp only [Cfg.cand, cfgOf, hw]; rfl
     rw [hc', genT_one]
@@ -250,12 +250,12 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     rw [genT_two]
     refine WP.mono (candW_ok hL hLe hw hc hS) fun u ⟨hcu, hf, hk', hv, hb⟩ => ⟨hcu, hf, hk', hv, ?_⟩
     obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
-    rw [hb, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega)
-      (by simp only [List.length_append, mac_length, List.length_nil]; omega), List.append_nil,
+    rw [hb, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega_arith)
+      (by simp only [List.length_append, mac_length, List.length_nil]; omega_arith), List.append_nil,
       ofBytes_toBytes _ _ (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (by
         have := ofBytes_lt ((P.mac (kOf P L t.mem) (vOf P L t.mem) ++
           P.mac (kOf P L t.mem) (P.mac (kOf P L t.mem) (vOf P L t.mem))).take P.Q)
-        rwa [List.length_take, Nat.min_eq_left (by simp only [List.length_append, mac_length]; omega)] at this)),
+        rwa [List.length_take, Nat.min_eq_left (by simp only [List.length_append, mac_length]; omega_arith)] at this)),
       show P.R.sh = 8 * P.R.E.C.len - _ from hl.2.2]
 
 /-! ## One candidate -/
@@ -373,7 +373,7 @@ theorem branch_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t
     refine WP.mono (stop_ok hL hc) fun u₅ ⟨hc₅, hm₅, hz₅, ha₅⟩ => ⟨hc₅, .inl ⟨by show u₅.zf.map _ = _; rw [hz₅]; rfl,
       ⟨hi.lt, hi.fails, ?_, hi.res.keep ha₅ (by rw [hm₅])⟩⟩⟩
     by_cases hs : sigI P L m₀ i = none
-    · exact .inr (by have := hi.lt; have : ¬ i + 1 < P.I.tries := fun h => hgo ⟨hs, h⟩; omega)
+    · exact .inr (by have := hi.lt; have : ¬ i + 1 < P.I.tries := fun h => hgo ⟨hs, h⟩; omega_arith)
     · exact .inl hs
 
 theorem tryOne_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {i : Nat}

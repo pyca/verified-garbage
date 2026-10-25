@@ -89,7 +89,7 @@ theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [s
   rw [wordAddr, addr_eq (by omega)] at hsep
   refine hsep ?_ (by rw [← hx, Mem.sub_ofNat_toNat _ (by omega)]; exact hi')
   generalize (s.gpr c.base).setWidth 64 = B at *
-  bv_omega
+  bv_omega_arith
 
 /-- The P-function's terms, as the selected outputs of the S-boxes. -/
 theorem xorBits_sel (W YL SR : Nat → BitVec 32) (hS : ∀ i < 8, W i = SR i) (hY : ∀ j < 8, W (8 + j) = YL j)

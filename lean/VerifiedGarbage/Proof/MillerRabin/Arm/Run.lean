@@ -32,9 +32,9 @@ theorem roundPre.xCovers (h : roundPre s) : Covers (xRegs s) (pcPushed s).wr := 
   · exact ⟨_, mS, 0, by rw [BitVec.add_zero]; rfl, Nat.le_of_eq (Nat.zero_add _)⟩
   · refine ⟨_, mS, kOff, ?_, ?_⟩
     · show State.addr ((s.gpr .r0) + BitVec.ofNat 32 kOff) = _
-      exact addr_add (by simp only [kOff]; omega)
+      exact addr_add (by simp only [kOff]; omega_arith)
     · show kOff + (8 * (s.gpr .r1).toNat - kOff) ≤ _
-      simp only [kOff]; omega
+      simp only [kOff]; omega_arith
 
 /-- The callee-saved registers' slots after the push. -/
 theorem roundPre.savedE (h : roundPre s) : Spill.Saved (pcPushed s).mem (State.addr (s.sp - 56)) s.gpr pcCalleeSaved :=
@@ -67,7 +67,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
     rw [e]
     exact h.savedE p hp
   have fit : (v.withRegions (pcPushed s).rd (pcPushed s).wr).sp.toNat + 56 ≤ 2 ^ 32 := by
-    show v.sp.toNat + 56 ≤ _; rw [vsp, spN]; have := s.sp.isLt; omega
+    show v.sp.toNat + 56 ≤ _; rw [vsp, spN]; have := s.sp.isLt; omega_arith
   have read : InRegions ((v.withRegions (pcPushed s).rd (pcPushed s).wr).rd ++
       (v.withRegions (pcPushed s).rd (pcPushed s).wr).wr)
       (State.addr (v.withRegions (pcPushed s).rd (pcPushed s).wr).sp) 56 := by
@@ -100,11 +100,11 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
     have fits := pre.fits
     have fit : ∀ j < 11, arrAt (mkP s).w j + 8 * (mkP s).w ≤ 8 * (mkP s).len := fun j hj => by
       have l := pre.len
-      have : j * (8 * ((mkP s).w + 2)) ≤ 27 * (8 * ((mkP s).w + 2)) := Nat.mul_le_mul_right _ (by omega)
-      have : 8 * (mkP s).w ≤ 8 * ((mkP s).w + 2) := by omega
+      have : j * (8 * ((mkP s).w + 2)) ≤ 27 * (8 * ((mkP s).w + 2)) := Nat.mul_le_mul_right _ (by omega_arith)
+      have : 8 * (mkP s).w ≤ 8 * ((mkP s).w + 2) := by omega_arith
       simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
       generalize 8 * ((mkP s).w + 2) = S at *
-      omega
+      omega_arith
     have nE : ∀ j < 11, numAt (bodyIn s).mem (State.addr (s.gpr .r0)) (mkP s).w j =
         numAt s.mem (State.addr (s.gpr .r0)) (mkP s).w j := fun j hj => numAt_congr eσ (fit j hj)
     rw [popped_gpr (by decide), ret, hr0]

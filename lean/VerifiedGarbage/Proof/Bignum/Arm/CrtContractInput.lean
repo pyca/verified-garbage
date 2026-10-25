@@ -54,7 +54,7 @@ theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).p
   have argRead (i : Nat) (hi : i < 14) :
       s.mem.readW (VG.Proof.Mont.off (State.addr s.sp) (4 * i)) 32 = stackArg s i := by
     unfold stackArg stackArgAddr VG.Proof.Mont.off
-    rw [addr_add (by omega : s.sp.toNat + 4 * i < 2 ^ 32)]
+    rw [addr_add (by omega_arith : s.sp.toNat + 4 * i < 2 ^ 32)]
   refine {
     workspace := ⟨?_, ?_⟩, lengthValid := valid,
     storageFits := (crt_layout_fits valid).trans (Nat.mul_le_mul_left 8 space),
@@ -66,7 +66,7 @@ theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).p
   · simpa only [crtCallGeometry, Nat.mul_comm] using wsFit
   · rw [wr]; simp [crtCallGeometry, State.addr, Nat.mul_comm]
   · intro i
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · refine ⟨nFit, ?_, rfl⟩
       change InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
       exact ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
@@ -89,7 +89,7 @@ theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).p
       change InRegions (s.rd ++ s.wr) (State.addr (stackArg s 10)) (stackArg s 3).toNat
       exact ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
   · intro i
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · change Region.Disjoint ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ ⟨State.addr (stackArg s 12), 8 * (stackArg s 13).toNat⟩
       simpa only [State.addr, Nat.mul_comm] using nWs
     · change Region.Disjoint ⟨State.addr (stackArg s 0), (s.gpr .r3).toNat⟩ ⟨State.addr (stackArg s 12), 8 * (stackArg s 13).toNat⟩
@@ -109,7 +109,7 @@ theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).p
   · simp [crtCallGeometry]
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
   · intro i
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega) with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only [crtCallGeometry, CrtGeometry.source]
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only [crtCallGeometry, CrtGeometry.source]
     · exact argRead 0 (by decide)
     · exact argRead 2 (by decide)
     · exact argRead 4 (by decide)
@@ -118,7 +118,7 @@ theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).p
     · exact argRead 10 (by decide)
 
   · intro i
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
     · change s.mem.readW (VG.Proof.Mont.off (State.addr s.sp) (4 * 1)) 32 = BitVec.ofNat 32 (s.gpr .r3).toNat
       rw [argRead 1 (by decide)]
       rw [← inputLen]
@@ -145,7 +145,7 @@ theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).p
   · simpa only [crtCallGeometry, State.addr, Nat.mul_comm] using wsArgs.symm
   · intro i
     rw [frame]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact stackN
     · exact stackInput
     · exact stackP

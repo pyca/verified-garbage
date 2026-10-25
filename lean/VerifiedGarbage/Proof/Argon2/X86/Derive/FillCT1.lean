@@ -78,7 +78,7 @@ theorem slots_of_words {s₀₁ s₀₂ s₁ s₂ : State} {ws : List Nat} {sl :
   intro x hx
   obtain ⟨h0, hj⟩ := hc x hx
   refine ⟨h0, fun k h₁ h₂ => hw _ ?_⟩
-  have := hj (k - x.2.1) (by omega)
+  have := hj (k - x.2.1) (by omega_arith)
   rwa [Nat.add_sub_cancel' h₁] at this
 
 /-- A relation proved for each pair of related states. -/
@@ -159,7 +159,7 @@ theorem ccall_rel {o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 16384) {F₁ F
   subst ha hb
   have fit : 4 * [Reg.edx, .ecx, .esi, .eax].length + 4 ≤ (a.gpr .esp).toNat := by
     have := T.hp₁.esp_lo
-    rw [i₁.esp, E_nat T.hp₁]; simp only [List.length_cons, List.length_nil]; omega
+    rw [i₁.esp, E_nat T.hp₁]; simp only [List.length_cons, List.length_nil]; omega_arith
   obtain ⟨q₁, q₂⟩ := HPrime.call_pub (by decide) fit hsp (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -201,7 +201,7 @@ theorem hcall_rel {r : Reg} (hr : r ≠ .esp) {F₁ F₂ : State → Prop}
   subst ha hb
   have fit : 4 * [Reg.edx, .ecx, .edi, .eax, r].length + 4 ≤ (a.gpr .esp).toNat := by
     have := T.hp₁.esp_lo
-    rw [i₁.esp, E_nat T.hp₁]; simp only [List.length_cons, List.length_nil]; omega
+    rw [i₁.esp, E_nat T.hp₁]; simp only [List.length_cons, List.length_nil]; omega_arith
   obtain ⟨q₁, q₂⟩ := HPrime.call_pub (by simp [Ne.symm hr]) fit hsp (fun q hq => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl | rfl
@@ -456,8 +456,8 @@ theorem cacheWord1_ok {s : State} {pass slice lane index ctr : Nat} (h : W s₀ 
     (Divide.Keep.of_upd u₃ (by simp))).of_keep (Divide.Keep.of_upd u₄ (by simp))).of_keep
     (Divide.Keep.of_upd u₅ (by simp)))
   have a₅ : s₅.gpr .eax = BitVec.ofNat 32 (8 * (index % 128)) := by
-    rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, h.pos.index, and127 (by omega), dbl32, dbl32, dbl32]
-    congr 1; omega
+    rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, h.pos.index, and127 (by omega_arith), dbl32, dbl32, dbl32]
+    congr 1; omega_arith
   refine wp_addm h₅.inv.ebp (h₅.inv.arg_in hp (i := 15) (by decide)) fun s₆ u₆ => WP.block_nil
     ⟨h₅.of_keep (Divide.Keep.of_upd u₆ (by simp)), ?_⟩
   rw [u₆.gpr, h₅.inv.arg hp (by decide), a₅, BitVec.add_comm]
@@ -533,13 +533,13 @@ theorem addressCache_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillSt
     (RelCT.nil fun _ _ _ => trivial) ?_)
     (fun s h => cacheFill_ok T.hp₁ h.1 hpass hl hs hi h.2.1 h.2.2)
     (fun s h => cacheFill_ok T.hp₂ h.1 hpass hl₂ hs hi₂ h.2.1 h.2.2)
-    ((T.cacheWord_rel (by omega)).mono (fun _ _ h => ⟨h.1.1.w, h.2.1.w⟩) fun _ _ h => h)
+    ((T.cacheWord_rel (by omega_arith)).mono (fun _ _ h => ⟨h.1.1.w, h.2.1.w⟩) fun _ _ h => h)
   refine RelCT.seqW (G₁ := W s₀₁ pass slice lane index (index / 128 + 1))
     (G₂ := W s₀₂ pass slice lane index (index / 128 + 1))
     (T.leafF [.eax] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.1.w, h.2.1.w⟩, by
       simp only [List.mem_singleton, forall_eq]; rw [h.1.2.1, h.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun s h => stctr_w T.hp₁ h.1.w h.2.1) (fun s h => stctr_w T.hp₂ h.1.w h.2.1) ?_
-  exact T.addressCalls_rel hpass (by omega) (by omega) (by omega)
+  exact T.addressCalls_rel hpass (by omega_arith) (by omega_arith) (by omega_arith)
 
 end Two
 

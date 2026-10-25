@@ -41,7 +41,7 @@ theorem absorbFirst_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s�
         by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.x22],
         by rw [u₃.gpr]; rfl, by rw [u₃.mem, u₂.mem, u₁.mem], by rw [u₃.rd, u₂.rd, u₁.rd],
         by rw [u₃.wr, u₂.wr, u₁.wr]⟩
-  refine WP.seq ((WP.kept core (by simp [mov, clobbers, dstOf, preserved])).mono
+  refine WP.seq ((WP.kept core (by rfl)).mono
     fun s₁ ⟨⟨h0, h1, h2, m₁, rd₁, wr₁⟩, g₁, sp₁⟩ => ?_)
   have k₁ : Kept [] s s₁ := Kept.of g₁ sp₁ rd₁ wr₁ (by rw [m₁]; exact Frame.refl _ _)
   have hs := srcD hp

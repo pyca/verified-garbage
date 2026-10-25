@@ -64,13 +64,13 @@ theorem setupKTail_ok {σ s : State} (h : Bs P σ s) (r8 : s.gpr .r8 = P.B) (r9 
       Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       show (7 : BitVec 32).toNat = 7 from rfl, show (2 : BitVec 32).toNat = 2 from rfl]
     simp only [RP.w, RP.w6]
-    omega
-  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by omega) h9 fun s5 h7 r5 m5 => ?_
+    omega_arith
+  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by omega_arith) h9 fun s5 h7 r5 m5 => ?_
   have r45 : Rest [.r9, .r7] s s5 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
     ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (r5.mono (by simp)))))
   have m45 : s5.mem = s.mem := m5.trans (u4.mem.trans (u3.mem.trans (u2.mem.trans u1.mem)))
   have ws5 : Ws s5 P.B P.Z P.w nArr :=
-    ⟨pre.fS, by rw [r45.wr]; exact h.rS_mem, sz.fits, by show 0 < 2 * P.w6 + 2; omega, by omega, h7,
+    ⟨pre.fS, by rw [r45.wr]; exact h.rS_mem, sz.fits, by show 0 < 2 * P.w6 + 2; omega_arith, by omega_arith, h7,
       by rw [r45.gpr _ (by decide), r8], by rw [r5.gpr _ (by decide), h9]⟩
   refine wp_strSlot ws5 (d := 16) (by decide) fun s6 u6 => ?_
   have ws6 := ws5.of_mupd u6
@@ -90,7 +90,7 @@ theorem setupKTail_ok {σ s : State} (h : Bs P σ s) (r8 : s.gpr .r8 = P.B) (r9 
       (by rw [rt.wr, u6.wr, r45.wr]), ws6.rest rt, ?_, ?_, ?_, by rw [u11.gpr], ot⟩
   · have := hx _ (List.mem_singleton_self _)
     simp only [Region.Contains] at this
-    simp only [ofs, hdr] at *; omega
+    simp only [ofs, hdr] at *; omega_arith
   · rw [mt, u6.mem, Mem.readW_writeW_self32, ws5.r9]
   · rw [u11.other _ (by decide), u10.other _ (by decide), u9.other _ (by decide), u8.other _ (by decide), u7.gpr,
       dpVal, u6.gpr, ws5.r8]
@@ -100,9 +100,9 @@ theorem setupKTail_ok {σ s : State} (h : Bs P σ s) (r8 : s.gpr .r8 = P.B) (r9 
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_mul, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     simp only [nArr, S]
-    rw [Nat.mod_eq_of_lt (a := 44) (by decide), Nat.mod_eq_of_lt (a := 4 * (P.w + 2)) (by omega),
-      Nat.mod_eq_of_lt (a := 44 * (4 * (P.w + 2))) (by omega), Nat.mod_eq_of_lt (a := 44 * (P.w + 2)) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := 44) (by decide), Nat.mod_eq_of_lt (a := 4 * (P.w + 2)) (by omega_arith),
+      Nat.mod_eq_of_lt (a := 44 * (4 * (P.w + 2))) (by omega_arith), Nat.mod_eq_of_lt (a := 44 * (P.w + 2)) (by omega_arith)]
+    omega_arith
 
 theorem zero_ls {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w nArr)
     (cnt : s.mem.readW (off (State.addr P.B) 16) 32 = BitVec.ofNat 32 P.w)
@@ -115,18 +115,18 @@ theorem zero_ls {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w nArr)
       show hdr + nArr * (4 * (P.w + 2)) = _; rw [Nat.mul_left_comm]
     rw [← e]; exact fits
   refine WP.mono (zero_ok s (base := P.B) (size := P.Z) (o := hdr) (n := nArr * (P.w + 2))
-    ⟨h.pre.fS, nfit, ⟨P.rS, h.rS_mem, Region.contains_self _ _⟩⟩ (Nat.mul_pos (by decide) (by omega)) p0 plr r3)
+    ⟨h.pre.fS, nfit, ⟨P.rS, h.rS_mem, Region.contains_self _ _⟩⟩ (Nat.mul_pos (by decide) (by omega_arith)) p0 plr r3)
     fun t inv => ?_
   refine ⟨h.of_frame (fun x hx => inv.outside x (.inr ?_)) inv.rest.sp inv.rest.rd inv.rest.wr,
     hw.rest inv.rest, ?_, fun j hj => ?_⟩
   · have := hx _ (List.mem_singleton_self _)
     simp only [Region.Contains] at this
-    simp only [ofs] at *; omega
+    simp only [ofs] at *; omega_arith
   · refine (BitVec.eq_of_toNat_eq ?_).trans cnt
-    exact inv.outside.w32 (d := 16) (by simp only [hdr]; omega) (by decide)
+    exact inv.outside.w32 (d := 16) (by simp only [hdr]; omega_arith) (by decide)
   · have := VG.Proof.Rsa.Arm.CrtValues.val32_zero_part inv.value (a := j * (P.w + 2)) (c := P.w + 2) (by
-      have := Nat.mul_le_mul_right (P.w + 2) (show j + 1 ≤ nArr by omega)
-      rw [Nat.succ_mul] at this; omega)
+      have := Nat.mul_le_mul_right (P.w + 2) (show j + 1 ≤ nArr by omega_arith)
+      rw [Nat.succ_mul] at this; omega_arith)
     simpa only [arr, S, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using this
 
 /-- `loadArg o j`: array `j` := the number whose pointer and length are the
@@ -146,10 +146,10 @@ theorem loadArg_vp {o j : Nat} {E : State → Prop} {A : State → Nat → Nat} 
     refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨e, h⟩ => ?_
     · rw [h₁.2.bs.sp, h₁.2.bs.pre.sp, h₂.2.bs.sp, h₂.2.bs.pre.sp]
     · obtain ⟨e1, e2, -⟩ := hin σ h.bs.pre
-      refine h.bs.ldrSp (o := o) (by omega) (by omega) ho4 fun s1 u1 => ?_
+      refine h.bs.ldrSp (o := o) (by omega_arith) (by omega_arith) ho4 fun s1 u1 => ?_
       have r1 := u1.rest (ws := [.r4]) (by simp)
       have b1 := h.bs.of_rest r1 u1.mem
-      refine b1.ldrSp (o := o + 4) (by omega) (by omega) (by omega) fun t u2 => WP.block_nil ?_
+      refine b1.ldrSp (o := o + 4) (by omega_arith) (by omega_arith) (by omega_arith) fun t u2 => WP.block_nil ?_
       have r2 := u2.rest (ws := [.r6]) (by simp)
       refine ⟨⟨e, ⟨b1.of_rest r2 u2.mem, (h.ws.rest r1).rest r2, by rw [u2.mem, u1.mem]; exact h.cnt,
         by rw [u2.mem, u1.mem]; exact h.full⟩⟩, by rw [u2.other .r4 (by simp), u1.gpr, e1], by rw [u2.gpr, e2]⟩

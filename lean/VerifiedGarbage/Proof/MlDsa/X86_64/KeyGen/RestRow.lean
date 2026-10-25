@@ -32,9 +32,9 @@ open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K)
 open VG.Spec.Sha3 (bytesAt)
 
 theorem idx_lt {p : Params} {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ * i + j < p.k * p.ℓ := by
-  have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k by omega)
+  have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k by omega_arith)
   rw [Nat.mul_succ, Nat.mul_comm p.ℓ p.k] at this
-  omega
+  omega_arith
 
 /-- In row `i`, with `f` holding what the row computed so far. -/
 def KRow (p : Params) (i : Nat) (f : (Nat → Poly) → (Nat → IPoly) → State → Prop) (σ s : State) : Prop :=
@@ -54,13 +54,13 @@ theorem KR.polyS {p : Params} {σ : State} {A : Nat → Poly} {S : Nat → IPoly
   have := h.s1 j hj; rwa [ifp hj] at this
 
 theorem tP_ok {p : Params} (hF : PFacts p) : PtrOk (tP p) :=
-  sc_ok _ (by have := hF.kl; have := hF.l; have := hF.k; simp only [oP]; omega)
+  sc_ok _ (by have := hF.kl; have := hF.l; have := hF.k; simp only [oP]; omega_arith)
 
 theorem tP1_ok {p : Params} (hF : PFacts p) : PtrOk (t1P p) :=
-  sc_ok _ (by have := hF.kl; have := hF.l; have := hF.k; simp only [oP]; omega)
+  sc_ok _ (by have := hF.kl; have := hF.l; have := hF.k; simp only [oP]; omega_arith)
 
 theorem tP0_ok {p : Params} (hF : PFacts p) : PtrOk (t0P p) :=
-  sc_ok _ (by have := hF.kl; have := hF.l; have := hF.k; simp only [oP]; omega)
+  sc_ok _ (by have := hF.kl; have := hF.l; have := hF.k; simp only [oP]; omega_arith)
 
 theorem modPm_t0 (t : Poly) :
     ((t.map fun c => ofInt (power2Round c).2).map fun c => Spec.MlDsa.modPm c.val Spec.MlDsa.q) =
@@ -68,7 +68,7 @@ theorem modPm_t0 (t : Poly) :
   rw [Vector.map_map]
   refine Vector.map_congr_left fun c _ => ?_
   have := Proof.MlDsa.KeyGen.power2Round_snd c
-  exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega) (by omega)
+  exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega_arith) (by omega_arith)
 
 theorem packIn_t0 {m : Mem} {q : Addr} {t : Poly} (h : PolyIs m q (t.map fun c => ofInt (power2Round c).2)) :
     PackIn m q 4095 4096 := by
@@ -76,8 +76,8 @@ theorem packIn_t0 {m : Mem} {q : Addr} {t : Poly} (h : PolyIs m q (t.map fun c =
   rw [coeff_val h hj]
   simp only [Vector.getElem_map]
   have := Proof.MlDsa.KeyGen.power2Round_snd (t[j]'hj)
-  rw [Proof.MlDsa.KeyGen.modPm_ofInt (by omega) (by omega)]
-  omega
+  rw [Proof.MlDsa.KeyGen.modPm_ofInt (by omega_arith) (by omega_arith)]
+  omega_arith
 
 /-! ## The checks of the writes of a row, once each -/
 
@@ -85,8 +85,8 @@ theorem packIn_t0 {m : Mem} {q : Addr} {t : Poly} (h : PolyIs m q (t.map fun c =
 theorem chk_poly {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) {j : Nat} (hj : j < 3) :
     KRChk p (p.ℓ + p.k) p.ℓ i [(sc (oP (p.k * p.ℓ + p.ℓ + p.k + j)), 1024)] := by
   have := hF.k; have := hF.l; have := hF.kl
-  exact KRChk.rbx hF (by omega) (by omega) (.inr (by simp only [VG.Impl.MlKem.X86_64.oSV, oP]; omega))
-    (.inr (by simp only [oP]; omega)) (by simp only [scrLen, Spec.MlDsa.scratchWords, oP]; omega)
+  exact KRChk.rbx hF (by omega_arith) (by omega_arith) (.inr (by simp only [VG.Impl.MlKem.X86_64.oSV, oP]; omega_arith))
+    (.inr (by simp only [oP]; omega_arith)) (by simp only [scrLen, Spec.MlDsa.scratchWords, oP]; omega_arith)
 
 theorem chk_t {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) : KRChk p (p.ℓ + p.k) p.ℓ i [(tP p, 1024)] := by
   have := chk_poly hF hi (j := 0) (by decide); rwa [Nat.add_zero] at this
@@ -94,9 +94,9 @@ theorem chk_t {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) : KRChk p (p
 theorem chk_inv {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [(tP p, 1024), (sc VG.Impl.MlKem.X86_64.oSS, 1024)] := by
   have := hF.k; have := hF.l; have := hF.kl
-  exact (chk_t hF hi).append (ws₁ := [_]) (KRChk.rbx (o := VG.Impl.MlKem.X86_64.oSS) (n := 1024) hF (by omega)
-    (by omega) (.inr (by decide)) (.inl (by decide))
-    (by simp only [scrLen, Spec.MlDsa.scratchWords, VG.Impl.MlKem.X86_64.oSS]; omega))
+  exact (chk_t hF hi).append (ws₁ := [_]) (KRChk.rbx (o := VG.Impl.MlKem.X86_64.oSS) (n := 1024) hF (by omega_arith)
+    (by omega_arith) (.inr (by decide)) (.inl (by decide))
+    (by simp only [scrLen, Spec.MlDsa.scratchWords, VG.Impl.MlKem.X86_64.oSS]; omega_arith))
 
 theorem chk_p2r {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [(t1P p, 1024), (t0P p, 1024)] :=
@@ -104,13 +104,13 @@ theorem chk_p2r {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
 
 theorem chk_sbp {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [((.r12, 32 + 320 * i), 320)] :=
-  KRChk.r12 hF (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.le_refl _) (by rw [hF.pk]; omega)
+  KRChk.r12 hF (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.le_refl _) (by rw [hF.pk]; omega_arith)
 
 theorem chk_bp {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [((.r13, oT0 p + 416 * i), 416)] := by
   have := hF.k; have := hF.l
-  refine KRChk.r13 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [oT0]; omega) (.inr (by simp only [oT0]; omega))
-    (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega)
+  refine KRChk.r13 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [oT0]; omega_arith) (.inr (by simp only [oT0]; omega_arith))
+    (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega_arith)
 
 section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) {i : Nat}
@@ -123,13 +123,13 @@ theorem mul_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
     WP isa (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
       KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => encode P.montgomery (dotK p A S i 1)) A S s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  have hx0 := idx_lt (j := 0) hi (by omega)
+  have hx0 := idx_lt (j := 0) hi (by omega_arith)
   rw [Nat.add_zero] at hx0
   have S₀ := h.kc.site hF hp
-  have hA := h.polyA hi (j := 0) (by omega)
+  have hA := h.polyA hi (j := 0) (by omega_arith)
   rw [Nat.add_zero] at hA
-  have hS := h.polyS (j := 0) (by omega)
-  refine WP.mono (mulAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega))
+  have hS := h.polyS (j := 0) (by omega_arith)
+  refine WP.mono (mulAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith))
     (by layd) (by layd) (by layd) hP.mul S₀ hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
@@ -147,7 +147,7 @@ theorem mulAdd_ok {j : Nat} (hj : j < p.ℓ) {A : Nat → Poly} {S : Nat → IPo
   have S₀ := h.kc.site hF hp
   have hA := h.polyA hi hj
   have hS := h.polyS hj
-  refine WP.mono (mulAddAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega))
+  refine WP.mono (mulAddAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith))
     (by layd) (by layd) (by layd) hP.mulAdd S₀ ht.1 hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
@@ -180,7 +180,7 @@ theorem addS2_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : Sta
   dsimp only [tIs] at ht
   have S₀ := h.kc.site hF hp
   have hS := h.s2 i hi
-  refine WP.mono (addAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd) hP.add S₀ ht.1 hS.1)
+  refine WP.mono (addAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (by layd) (by layd) hP.add S₀ ht.1 hS.1)
     fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
@@ -215,13 +215,13 @@ theorem sbp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
   have S₀ := h.kc.site hF hp
   have L := S₀.lay
   refine WP.mono (sbpAt_ok (by decide) (by decide) (tP1_ok hF)
-    ⟨by omega, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd) (by layd) hP.simpleBitPack S₀
+    ⟨by omega_arith, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd) (by layd) hP.simpleBitPack S₀
     fun j hj => ?_) fun s' ⟨hP', hx, hb⟩ => ?_
   · rw [show (coeffAt s.mem (pa s (t1P p)) j).toNat = (t1K p A S i)[j]'hj from by
       rw [← h1]; simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn]]
     simp only [Proof.MlDsa.KeyGen.t1K, Vector.getElem_map]
     have := Proof.MlDsa.KeyGen.power2Round_fst ((tK p A S i)[j]'hj)
-    omega
+    omega_arith
   · have hP'' : PPostB s s' [((.r12, 32 + 320 * i), 320)] := hP'.b
     refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_sbp hF hi),
       polyIs_frame' L hP'' (by layd) h0, ?_⟩
@@ -239,14 +239,14 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   have L := S₀.lay
   have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
   refine WP.mono (bpAt_ok (by decide) (by decide) (tP0_ok hF)
-    ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega,
+    ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega_arith,
       show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd)
     (by layd) hP.bitPack S₀ (packIn_t0 h0)) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [((.r13, oT0 p + 416 * i), 416)] := hP'.b
   have hk' := h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_bp hF hi)
   refine ⟨hk'.kc, hk'.r15, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
     fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_arith : i' < i ∨ i' = i) with hi' | rfl
   · exact hk'.rows i' hi'
   · refine ⟨by rw [L.keepBytes hP'' (by layd)]; exact h1, ?_⟩
     rw [hP''.pa (p := (.r13, oT0 p + 416 * i')) (show Reg.r13 ∈ bases by decide), hb, h0.2, modPm_t0]
@@ -260,7 +260,7 @@ theorem t1_bound {m : Mem} {q : Addr} {p : Params} {A : Nat → Poly} {S : Nat �
     rw [← h1]; simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn]]
   simp only [Proof.MlDsa.KeyGen.t1K, Vector.getElem_map]
   have := Proof.MlDsa.KeyGen.power2Round_fst ((Proof.MlDsa.KeyGen.tK p A S i)[j]'hj)
-  omega
+  omega_arith
 
 /-! ## The pieces of a row -/
 
@@ -275,17 +275,17 @@ include hP hF hi
 theorem mul_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i 1)))
     (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  have hx0 := idx_lt (j := 0) hi (by omega)
+  have hx0 := idx_lt (j := 0) hi (by omega_arith)
   rw [Nat.add_zero] at hx0
   refine ⟨fun _ _ hp ⟨A, S, R, h⟩ => WP.mono (mul_ok hP hF hp hi h) fun _ h => ⟨A, S, R, h⟩, ?_⟩
   refine rel_of (Q := fun x y => Two p x y ∧ (Reduced x.mem (pa x (aP (p.ℓ * i))) ∧ Reduced x.mem (pa x (sP p 0))) ∧
     (Reduced y.mem (pa y (aP (p.ℓ * i))) ∧ Reduced y.mem (pa y (sP p 0)))) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ => by
-      have a₁ := h₁.polyA hi (j := 0) (by omega); have a₂ := h₂.polyA hi (j := 0) (by omega)
+      have a₁ := h₁.polyA hi (j := 0) (by omega_arith); have a₂ := h₂.polyA hi (j := 0) (by omega_arith)
       rw [Nat.add_zero] at a₁ a₂
-      exact ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨a₁.1, (h₁.polyS (j := 0) (by omega)).1⟩,
-        ⟨a₂.1, (h₂.polyS (j := 0) (by omega)).1⟩⟩
-  exact mulAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd)
+      exact ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨a₁.1, (h₁.polyS (j := 0) (by omega_arith)).1⟩,
+        ⟨a₂.1, (h₂.polyS (j := 0) (by omega_arith)).1⟩⟩
+  exact mulAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith)) (by layd) (by layd)
     (by layd) hP.mul (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.rbx ∈ kgRegs by decide)
 
@@ -301,7 +301,7 @@ theorem mulAdd_piece {j : Nat} (hj : j < p.ℓ) :
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨t₁.1, (h₁.polyA hi hj).1, (h₁.polyS hj).1⟩,
         ⟨t₂.1, (h₂.polyA hi hj).1, (h₂.polyS hj).1⟩⟩
-  exact mulAddAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega)) (by layd)
+  exact mulAddAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith)) (by layd)
     (by layd) (by layd) hP.mulAdd (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.rbx ∈ kgRegs by decide)
 
@@ -322,7 +322,7 @@ theorem addS2_piece : Piece p (RowI p i (tIs p fun A S => nttInv (dotK p A S i p
     (Reduced y.mem (pa y (tP p)) ∧ Reduced y.mem (pa y (sP p (p.ℓ + i))))) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨t₁.1, (h₁.s2 i hi).1⟩, ⟨t₂.1, (h₂.s2 i hi).1⟩⟩
-  exact addAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd) hP.add
+  exact addAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (by layd) (by layd) hP.add
     (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
 
 /-- After `Power2Round`. -/
@@ -352,7 +352,7 @@ theorem sbp_piece : Piece p (RowI p i (p2rIs p i)) (RowI p i (sbpIs p i))
     (∀ j < 256, (coeffAt y.mem (pa y (t1P p)) j).toNat ≤ 1023)) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, t1_bound t₁.1, t1_bound t₂.1⟩
-  exact sbpAt_tr (by decide) (by decide) (tP1_ok hF) ⟨by omega, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩
+  exact sbpAt_tr (by decide) (by decide) (tP1_ok hF) ⟨by omega_arith, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩
     (by layd) (by layd) hP.simpleBitPack (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.r12 ∈ kgRegs by decide)
 
@@ -366,7 +366,7 @@ theorem bp_piece : Piece p (RowI p i (sbpIs p i)) (KRx p (p.ℓ + p.k) p.ℓ (i 
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, packIn_t0 t₁.1, packIn_t0 t₂.1⟩
   have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
   exact bpAt_tr (by decide) (by decide) (tP0_ok hF)
-    ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega,
+    ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega_arith,
       show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd)
     (by layd) hP.bitPack (show Reg.rbx ∈ kgRegs by decide) (show Reg.r13 ∈ kgRegs by decide)
 

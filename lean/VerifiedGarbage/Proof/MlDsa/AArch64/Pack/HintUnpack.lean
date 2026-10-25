@@ -42,7 +42,7 @@ open VG.Proof.MlKem (bytesAt_getD bytesAt_length)
 open VG.Proof.MlDsa.Pack
 
 theorem nz_byte (b : Byte) : (BitVec.ofNat 64 b.toNat != 0) = decide (b ≠ 0) := by
-  rw [ne_zero_iff, toNat_ofNat_lt (by have := b.isLt; omega)]
+  rw [ne_zero_iff, toNat_ofNat_lt (by have := b.isLt; omega_arith)]
   exact decide_eq_decide.mpr ⟨fun h e => h (by rw [e]; rfl), fun h e => h (BitVec.eq_of_toNat_eq e)⟩
 
 section
@@ -59,11 +59,11 @@ theorem trail_ok {idx : Nat} (hidx : idx ≤ uω s₀) {s : State} (hc : UCom s�
         | some _ => s'.gpr .x5 = BitVec.ofNat 64 (uω s₀)
         | none => s'.gpr .x5 = BitVec.ofNat 64 256) := by
   obtain ⟨hk4, hk8, hω80, hsum, hr4⟩ := up_facts hp
-  have hω2 : (s.gpr .x2).toNat = uω s₀ := by rw [hc.x2, toNat_ofNat_small (by omega)]
+  have hω2 : (s.gpr .x2).toNat = uω s₀ := by rw [hc.x2, toNat_ofNat_small (by omega_arith)]
   unfold hbuTrail
-  refine WP.seq (WP.mono (cmp_ok (r := .x2) s (by omega) (by rw [h5, toNat_ofNat_small (by omega)]; omega))
+  refine WP.seq (WP.mono (cmp_ok (r := .x2) s (by omega_arith) (by rw [h5, toNat_ofNat_small (by omega_arith)]; omega_arith))
     fun s₁ ⟨c₁, o₁⟩ => ?_)
-  rw [h5, hω2, toNat_ofNat_small (by omega)] at c₁
+  rw [h5, hω2, toNat_ofNat_small (by omega_arith)] at c₁
   have hc₁ : UCom s₀ s₁ := hc.of_only o₁
   refine WP.ite _ (eval_nonzero s₁ .x10) (fun hlt => ?_) (fun hge => ?_)
   · rw [c₁] at hlt
@@ -72,9 +72,9 @@ theorem trail_ok {idx : Nat} (hidx : idx ≤ uω s₀) {s : State} (hc : UCom s�
         optFold (huTrail (uY s₀)) (List.range' idx u) () = some () ∧ s'.gpr .x5 = BitVec.ofNat 64 (idx + u) ∧
         UCom s₀ s' ∧ s'.mem = s.mem)
       (fun m s' ⟨u, hm, hu, hF, h5', hc', hm'⟩ => ?_) _ s₁
-      ⟨0, rfl, by omega, rfl, by rw [o₁.get .x5, h5]; rfl, hc₁, o₁.mem⟩
+      ⟨0, rfl, by omega_arith, rfl, by rw [o₁.get .x5, h5]; rfl, hc₁, o₁.mem⟩
     unfold hbuTrailByte
-    refine WP.seq (WP.mono (yLoad_ok hp (r := .x10) (t := idx + u) (by omega) hc' h5') fun s₂ ⟨h10₂, o₂⟩ => ?_)
+    refine WP.seq (WP.mono (yLoad_ok hp (r := .x10) (t := idx + u) (by omega_arith) hc' h5') fun s₂ ⟨h10₂, o₂⟩ => ?_)
     have hc₂ : UCom s₀ s₂ := hc'.of_only o₂
     have hF1 : optFold (huTrail (uY s₀)) (List.range' idx (u + 1)) () = huTrail (uY s₀) () (idx + u) := by
       rw [optFold_range'_succ, hF]; rfl
@@ -83,12 +83,12 @@ theorem trail_ok {idx : Nat} (hidx : idx ≤ uω s₀) {s : State} (hc : UCom s�
       rw [h10₂, nz_byte] at hne
       have hne := of_decide_eq_true hne
       have hn : optFold (huTrail (uY s₀)) (List.range' idx (uω s₀ - idx)) () = none :=
-        optFold_range'_none _ _ (show u + 1 ≤ uω s₀ - idx by omega) (by rw [hF1, huTrail, ite_pos' hne])
+        optFold_range'_none _ _ (show u + 1 ≤ uω s₀ - idx by omega_arith) (by rw [hF1, huTrail, ite_pos' hne])
       refine WP.mono (fail_ok s₂) fun s₃ ⟨h5₃, o₃⟩ => ?_
-      refine WP.mono (cmp_ok (r := .x2) s₃ (by rw [o₃.get .x2, hc₂.x2, toNat_ofNat_small (by omega)]; omega)
+      refine WP.mono (cmp_ok (r := .x2) s₃ (by rw [o₃.get .x2, hc₂.x2, toNat_ofNat_small (by omega_arith)]; omega_arith)
         (by rw [h5₃, toNat_ofNat_small (a := 256) (by decide)]; decide)) fun s₄ ⟨c₄, o₄⟩ => .inl ⟨?_, ?_⟩
-      · rw [eval_nonzero, c₄, h5₃, o₃.get .x2, hc₂.x2, toNat_ofNat_small (a := 256) (by decide), toNat_ofNat_small (by omega)]
-        exact congrArg some (decide_eq_false (by omega))
+      · rw [eval_nonzero, c₄, h5₃, o₃.get .x2, hc₂.x2, toNat_ofNat_small (a := 256) (by decide), toNat_ofNat_small (by omega_arith)]
+        exact congrArg some (decide_eq_false (by omega_arith))
       · refine ⟨hc₂.of_only (o₃.trans o₄), by rw [o₄.mem, o₃.mem, o₂.mem, hm'], ?_⟩
         rw [hn]; rw [o₄.get .x5, h5₃]
     · -- A zero byte: next.
@@ -99,37 +99,37 @@ theorem trail_ok {idx : Nat} (hidx : idx ≤ uω s₀) {s : State} (hc : UCom s�
       refine wp_addImm (by decide) fun s₃ o₃ e₃ => wp_nil ?_
       have h5₃ : s₃.gpr .x5 = BitVec.ofNat 64 (idx + (u + 1)) := by
         rw [e₃, o₂.get .x5, h5', ofNat_succ64, Nat.add_assoc]
-      refine WP.mono (cmp_ok (r := .x2) s₃ (by rw [o₃.get .x2, hc₂.x2, toNat_ofNat_small (by omega)]; omega)
-        (by rw [h5₃, toNat_ofNat_small (by omega)]; omega)) fun s₄ ⟨c₄, o₄⟩ => ?_
+      refine WP.mono (cmp_ok (r := .x2) s₃ (by rw [o₃.get .x2, hc₂.x2, toNat_ofNat_small (by omega_arith)]; omega_arith)
+        (by rw [h5₃, toNat_ofNat_small (by omega_arith)]; omega_arith)) fun s₄ ⟨c₄, o₄⟩ => ?_
       have hc₄ : UCom s₀ s₄ := hc₂.of_only (o₃.trans o₄)
-      rw [h5₃, o₃.get .x2, hc₂.x2, toNat_ofNat_small (by omega), toNat_ofNat_small (by omega)] at c₄
+      rw [h5₃, o₃.get .x2, hc₂.x2, toNat_ofNat_small (by omega_arith), toNat_ofNat_small (by omega_arith)] at c₄
       have h5₄ : s₄.gpr .x5 = BitVec.ofNat 64 (idx + (u + 1)) := by rw [o₄.get .x5, h5₃]
       have hm₄ : s₄.mem = s.mem := by rw [o₄.mem, o₃.mem, o₂.mem, hm']
       by_cases e : idx + (u + 1) < uω s₀
-      · exact .inr ⟨by rw [eval_nonzero, c₄, decide_eq_true e], _, by omega, u + 1, rfl, e, hF2, h5₄, hc₄, hm₄⟩
+      · exact .inr ⟨by rw [eval_nonzero, c₄, decide_eq_true e], _, by omega_arith, u + 1, rfl, e, hF2, h5₄, hc₄, hm₄⟩
       · refine .inl ⟨by rw [eval_nonzero, c₄, decide_eq_false e], hc₄, hm₄, ?_⟩
-        rw [show uω s₀ - idx = u + 1 by omega, hF2]
-        rw [h5₄, show idx + (u + 1) = uω s₀ by omega]
+        rw [show uω s₀ - idx = u + 1 by omega_arith, hF2]
+        rw [h5₄, show idx + (u + 1) = uω s₀ by omega_arith]
   · -- `idx = ω`: nothing.
     rw [c₁] at hge
     have hge := of_decide_eq_false hge
     refine WP.block_nil ⟨hc₁, o₁.mem, ?_⟩
-    rw [show uω s₀ - idx = 0 by omega]
+    rw [show uω s₀ - idx = 0 by omega_arith]
     simp only [List.range'_zero, optFold]
-    rw [o₁.get .x5, h5, show idx = uω s₀ by omega]
+    rw [o₁.get .x5, h5, show idx = uω s₀ by omega_arith]
 
 include hp in
 theorem trail_fail {s : State} (hc : UCom s₀ s) (h5 : s.gpr .x5 = BitVec.ofNat 64 256) :
     WP isa hbuTrail s fun s' => UCom s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .x5 = BitVec.ofNat 64 256 := by
   obtain ⟨-, -, hω80, -, -⟩ := up_facts hp
   unfold hbuTrail
-  refine WP.seq (WP.mono (cmp_ok (r := .x2) s (by rw [hc.x2, toNat_ofNat_small (by omega)]; omega)
+  refine WP.seq (WP.mono (cmp_ok (r := .x2) s (by rw [hc.x2, toNat_ofNat_small (by omega_arith)]; omega_arith)
     (by rw [h5, toNat_ofNat_small (a := 256) (by decide)]; decide)) fun s₁ ⟨c₁, o₁⟩ => ?_)
-  rw [h5, hc.x2, toNat_ofNat_small (a := uω s₀) (by omega), toNat_ofNat_small (a := 256) (by decide)] at c₁
+  rw [h5, hc.x2, toNat_ofNat_small (a := uω s₀) (by omega_arith), toNat_ofNat_small (a := 256) (by decide)] at c₁
   refine WP.ite _ (eval_nonzero s₁ .x10) (fun h => ?_) fun _ => WP.block_nil ⟨hc.of_only o₁, o₁.mem, by
     rw [o₁.get .x5, h5]⟩
   rw [c₁] at h
-  exact absurd (of_decide_eq_true h) (by omega)
+  exact absurd (of_decide_eq_true h) (by omega_arith)
 
 /-! ## The return value -/
 
@@ -156,15 +156,15 @@ theorem hbuMain_ok {s : State} (hI : hbuInitPost s₀ s) :
   obtain ⟨hz, hf, h9, h3, h2, h12, hrd, hwr, hsp⟩ := hI
   have hl := (s₀.gpr .x1).isLt
   have e1 : uLen s₀ = (s₀.gpr .x1).toNat := rfl
-  have hx12 : (s₀.gpr .x4 >>> 8).toNat = uk s₀ := by rw [lsr8_toNat, hr4]; omega
+  have hx12 : (s₀.gpr .x4 >>> 8).toNat = uk s₀ := by rw [lsr8_toNat, hr4]; omega_arith
   have hx2 : s.gpr .x2 = BitVec.ofNat 64 (uω s₀) := by
     rw [h2]; apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub, hx12, toNat_ofNat_lt (by omega)]
-    omega
+    rw [BitVec.toNat_sub, hx12, toNat_ofNat_lt (by omega_arith)]
+    omega_arith
   unfold hbuMain
   refine WP.seq (wp_movz fun s₁ o₁ e₁ => wp_movz fun s₂ o₂ e₂ => wp_add fun s₃ o₃ e₃ => wp_nil ?_)
   have k₃ := (o₁.trans o₂).trans o₃
-  refine count_loop (n := uk s₀) (by omega) (OInv s₀) (fun i hi s hP => upoly_ok hp hi hP)
+  refine count_loop (n := uk s₀) (by omega_arith) (OInv s₀) (fun i hi s hP => upoly_ok hp hi hP)
     ⟨⟨by rw [k₃.get .x9, h9], by rw [k₃.get .x2, hx2], by rw [o₃.get .x15, e₂]; rfl, by rw [k₃.rd, hrd],
       by rw [k₃.wr, hwr], by rw [k₃.sp, hsp], by rw [k₃.mem]; exact hf⟩,
       by rw [k₃.get .x3, h3]; exact (ptr_zero _).symm,
@@ -194,17 +194,17 @@ theorem hbu_wp :
   rw [hintBitUnpack_eq]
   have hst := hI.st
   have hω2 : ∀ {s : State}, UCom s₀ s → (s.gpr .x2).toNat = uω s₀ := fun hc => by
-    rw [hc.x2, toNat_ofNat_small (by omega)]
+    rw [hc.x2, toNat_ofNat_small (by omega_arith)]
   cases hS : huS s₀ (uk s₀) with
   | none =>
     rw [hS] at hst
     rw [show optFold (huPoly (uω s₀) (bytesAt s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat).toArray)
       (List.range (uk s₀)) (Array.replicate (uk s₀) noHint, 0) = none from hS]
     refine WP.seq (WP.mono (trail_fail hp hI.com hst) fun s₃ ⟨hc₃, m₃, h5₃⟩ => ?_)
-    refine WP.mono (hbuRet_ok hc₃.x15 (by rw [hω2 hc₃]; omega) (by rw [h5₃, toNat_ofNat_small (a := 256) (by decide)]; decide))
+    refine WP.mono (hbuRet_ok hc₃.x15 (by rw [hω2 hc₃]; omega_arith) (by rw [h5₃, toNat_ofNat_small (a := 256) (by decide)]; decide))
       fun s₄ ⟨r₄, m₄⟩ => ?_
     show (s₄.gpr .x0).setWidth 32 = 0
-    rw [r₄, hω2 hc₃, h5₃, toNat_ofNat_small (a := 256) (by decide), ite_pos' (by omega)]
+    rw [r₄, hω2 hc₃, h5₃, toNat_ofNat_small (a := 256) (by decide), ite_pos' (by omega_arith)]
   | some st =>
     obtain ⟨hA, idx⟩ := st
     rw [hS] at hst
@@ -217,15 +217,15 @@ theorem hbu_wp :
     cases optFold (huTrail (uY s₀)) (List.range' idx (uω s₀ - idx)) () with
     | none =>
       intro h5₃
-      refine WP.mono (hbuRet_ok hc₃.x15 (by rw [hω2 hc₃]; omega) (by rw [h5₃, toNat_ofNat_small (a := 256) (by decide)]; decide))
+      refine WP.mono (hbuRet_ok hc₃.x15 (by rw [hω2 hc₃]; omega_arith) (by rw [h5₃, toNat_ofNat_small (a := 256) (by decide)]; decide))
         fun s₄ ⟨r₄, m₄⟩ => ?_
       show (s₄.gpr .x0).setWidth 32 = 0
-      rw [r₄, hω2 hc₃, h5₃, toNat_ofNat_small (a := 256) (by decide), ite_pos' (by omega)]
+      rw [r₄, hω2 hc₃, h5₃, toNat_ofNat_small (a := 256) (by decide), ite_pos' (by omega_arith)]
     | some _ =>
       intro h5₃
-      refine WP.mono (hbuRet_ok hc₃.x15 (by rw [hω2 hc₃]; omega) (by rw [h5₃, toNat_ofNat_small (by omega)]; omega))
+      refine WP.mono (hbuRet_ok hc₃.x15 (by rw [hω2 hc₃]; omega_arith) (by rw [h5₃, toNat_ofNat_small (by omega_arith)]; omega_arith))
         fun s₄ ⟨r₄, m₄⟩ => ⟨?_, by rw [m₄, m₃]; exact harr_hintIs hh⟩
-      rw [r₄, hω2 hc₃, h5₃, toNat_ofNat_small (by omega), ite_neg' (Nat.lt_irrefl _)]
+      rw [r₄, hω2 hc₃, h5₃, toNat_ofNat_small (by omega_arith), ite_neg' (Nat.lt_irrefl _)]
 
 end
 
@@ -273,7 +273,7 @@ theorem hintBitUnpack_ct :
           simp only [List.mem_singleton] at hr; subst hr
           simp only [uR, ← p3, ← p4] at hc'
           exact hx.2.2.1 a hc hc')]
-      have hlt : (a - x.gpr .x0).toNat < (x.gpr .x1).toNat := by simp only [Region.Contains] at hc; omega
+      have hlt : (a - x.gpr .x0).toNat < (x.gpr .x1).toNat := by simp only [Region.Contains] at hc; omega_arith
       have ea : a = x.gpr .x0 + BitVec.ofNat 64 (a - x.gpr .x0).toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
       have hb : bytesAt x.mem (x.gpr .x0) (x.gpr .x1).toNat = bytesAt y.mem (x.gpr .x0) (x.gpr .x1).toNat := by

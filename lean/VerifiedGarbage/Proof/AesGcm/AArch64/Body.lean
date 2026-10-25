@@ -221,7 +221,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
   have hc₃ : ciphOf s₃.mem Ctx R = ciphOf s.mem Ctx R := by
     rw [m₃]; exact ciph_frame f₂ (ctx_tFrame' L) h.rounds
   have hD₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := by
-    rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega)
+    rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega_arith)
   have F₅ : Frame (bodyFrame St W D n) s.mem s₅.mem := by
     rw [r₅.mem]
     exact (f₂.sub fun r hr => ⟨r, mem_bt hr, fun _ h => h⟩).trans
@@ -256,7 +256,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
       F₅.trans (h₆.frame.sub fun r hr => ⟨r, mem_ba hr, fun _ h => h⟩), fun ha hctr => ⟨?_, ?_, ?_⟩⟩
     · rw [ghashInput_xf, hlen, ← hO₅ hctr]; exact h₆.abs (hA₅ ha)
     · exact Ctr.frame h₆.frame (ctr_absFrame L) (hK₅ hctr)
-    · rw [bytesAt_frame h₆.frame (data_absFrame (.inr rfl) hA.data) (by omega), hO₅ hctr]
+    · rw [bytesAt_frame h₆.frame (data_absFrame (.inr rfl) hA.data) (by omega_arith), hO₅ hctr]
 
 /-- `decBody`: the data absorbed, and decrypted. -/
 theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
@@ -274,7 +274,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
   have hk₃ := hk₂.of_others r₃.others
   have m₃ : s₃.mem = s₂.mem := r₃.mem
   have hD₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := by
-    rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega)
+    rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega_arith)
   have hd₃ : DataW Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   -- After the text is absorbed.
   have mid : WP isa (textAbs v.callees) s₃ fun s₄ => Env Ctx St W SP s₄ ∧ Kept k s₄ ∧
@@ -318,7 +318,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
     rw [r₅.mem]; exact ciph_frame F₄ ctxF h.rounds
   have hD₅ : bytesAt s₅.mem D n = bytesAt s.mem D n := by
     rw [r₅.mem]
-    refine bytesAt_frame F₄ (fun r hr => ?_) (by omega)
+    refine bytesAt_frame F₄ (fun r hr => ?_) (by omega_arith)
     rcases List.mem_append.mp hr with hr | hr
     · exact data_tFrame h.data r hr
     · exact data_absFrame (.inr rfl) h.data.ok r hr

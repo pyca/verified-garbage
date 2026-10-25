@@ -62,7 +62,7 @@ theorem KArgs.rdisj {A : Nat → Addr} {ln : Nat → Nat} {nb nrd : Nat} {sp : A
     have hs' : o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁ := hs.resolve_left (fun h => h rfl)
     intro x h₁ h₂
     simp only [Region.Contains] at h₁ h₂
-    exact sep_off (A b₁) hs' (by omega) (by omega) x (Nat.lt_of_succ_le h₁) (Nat.lt_of_succ_le h₂)
+    exact sep_off (A b₁) hs' (by omega_arith) (by omega_arith) x (Nat.lt_of_succ_le h₁) (Nat.lt_of_succ_le h₂)
   · exact ((h.disj b₁ hb₁ b₂ hb₂ hb (hw.resolve_left hb)).sub_left (R.sub f₁)).sub_right (R.sub f₂)
 
 theorem KArgs.stkR {A : Nat → Addr} {ln : Nat → Nat} {nb nrd : Nat} {sp : Addr} (h : KArgs A ln nb nrd sp)
@@ -106,7 +106,7 @@ theorem KB.x27 {s₀ s : State} (h : KB P L s₀ s) : s.gpr .x27 = kA s₀ (L.sl
 theorem slotReg_mem : ∀ k < 4, slotReg k ∈ [Reg.x25, .x26, .x27, .x28] := by decide
 
 theorem slot_pres {k : Nat} (hk : k < 4) : slotReg k ∈ preserved ∧ slotReg k ≠ .x30 := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-- The saved registers are bytes `[SV, SV + 48)` of `scratch`. -/
 abbrev svR (P : KemLay) (L : Layout) (s₀ : State) : Region := R (kA s₀) L.sc (SV P) 48
@@ -117,7 +117,7 @@ theorem Saved.frame {s₀ : State} {m m' : Mem} (h : Saved P L s₀ m) {rs : Lis
   refine hf.readW (r := svR P L s₀) ?_ hd (by decide)
   rw [show kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k) = kA s₀ L.sc + BitVec.ofNat 64 (SV P) + BitVec.ofNat 64 (8 * k)
     by rw [ptr_add]]
-  exact contains_off (by omega) (by decide)
+  exact contains_off (by omega_arith) (by decide)
 
 /-- A region apart from the saved registers and from the buffers the function only reads. -/
 abbrev Safe (P : KemLay) (L : Layout) (s₀ : State) (r : Region) : Prop :=
@@ -141,7 +141,7 @@ theorem KB.frame {s₀ s s' : State} (h : KB P L s₀ s) {rs : List Region} {reg
     fun r hp ho => by rw [hk.get r (hr r (pres_keptK r hp ho)), h.cs r hp ho],
     h.sv.frame hf fun r hr => (hd r hr).1,
     fun b hb => by
-      rw [bytesAt_frame hf (fun r hr => (hd r hr).2 b hb) (by have := h.lens b (h.nrd hb); omega), h.ro b hb],
+      rw [bytesAt_frame hf (fun r hr => (hd r hr).2 b hb) (by have := h.lens b (h.nrd hb); omega_arith), h.ro b hb],
     h.lens, h.nrd, fun r hr => (hk.vcs r hr).trans (h.vcs r hr)⟩
 
 theorem KB.block {s₀ s s' : State} (h : KB P L s₀ s) {regs : List Reg} (hk : Keep regs s s')
@@ -157,7 +157,7 @@ theorem KB.call {s₀ s s' : State} (h : KB P L s₀ s) {rs : List Region} (hk :
     fun r hp ho => by rw [hk.cs r hp (fun e => ho (by rw [e]; decide)), h.cs r hp ho],
     h.sv.frame hk.frame fun r hr => (hd r hr).1,
     fun b hb => by
-      rw [bytesAt_frame hk.frame (fun r hr => (hd r hr).2 b hb) (by have := h.lens b (h.nrd hb); omega),
+      rw [bytesAt_frame hk.frame (fun r hr => (hd r hr).2 b hb) (by have := h.lens b (h.nrd hb); omega_arith),
         h.ro b hb],
     h.lens, h.nrd, fun r hr => (hk.vcs r hr).trans (h.vcs r hr)⟩
 
@@ -184,8 +184,8 @@ theorem safe_R {s₀ : State} (hp : Pre P L s₀) {b o l : Nat} (hb : L.nrd ≤ 
   ⟨hp.args.rdisj hp.scb hb.2 hp.sv f (.inr (.inl hp.scw)) (by
       rcases hs with hs | hs
       · exact .inl (Ne.symm hs)
-      · exact .inr (by omega)),
-    fun c hc => (hp.args.disj c (by omega) b hb.2 (by omega) (.inr hb.1)).sub_right (R.sub f)⟩
+      · exact .inr (by omega_arith)),
+    fun c hc => (hp.args.disj c (by omega_arith) b hb.2 (by omega_arith) (.inr hb.1)).sub_right (R.sub f)⟩
 
 theorem below_R {s₀ : State} (hp : Pre P L s₀) {b o l : Nat} (hb : b < L.nb) (f : o + l ≤ L.len b) :
     (R (kA s₀) b o l).Disjoint (below s₀.sp 16) := by
@@ -193,11 +193,11 @@ theorem below_R {s₀ : State} (hp : Pre P L s₀) {b o l : Nat} (hb : b < L.nb)
 
 theorem safe_below {s₀ : State} (hp : Pre P L s₀) : Safe P L s₀ (below s₀.sp 16) :=
   ⟨below_R hp hp.scb hp.sv, fun c hc => by
-    rw [below16]; exact (hp.args.stk c (by have := hp.scw; have := hp.scb; omega)).symm⟩
+    rw [below16]; exact (hp.args.stk c (by have := hp.scw; have := hp.scb; omega_arith)).symm⟩
 
 /-- A buffer of `scratch` below the saved registers is safe. -/
 theorem safe_scr {s₀ : State} (hp : Pre P L s₀) {o l : Nat} (h : o + l ≤ SV P) : Safe P L s₀ (R (kA s₀) L.sc o l) :=
-  safe_R hp ⟨hp.scw, hp.scb⟩ (hp.fs (by omega)) (.inr (.inr h))
+  safe_R hp ⟨hp.scw, hp.scb⟩ (hp.fs (by omega_arith)) (.inr (.inr h))
 
 theorem stk_R {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {b o l : Nat} (hb : b < L.nb)
     (f : o + l ≤ L.len b) : (stk s).Disjoint (R (kA s₀) b o l) := by
@@ -207,7 +207,7 @@ theorem stk_R {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {b o l : 
 theorem cov_w {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {b o l : Nat} (hb : L.nrd ≤ b ∧ b < L.nb)
     (f : o + l ≤ L.len b) : Covers [R (kA s₀) b o l] s.wr := by
   rw [h.wr, hp.wr]
-  exact R.cov (List.mem_map.mpr ⟨b, List.mem_range'_1.mpr ⟨hb.1, by omega⟩, rfl⟩) f
+  exact R.cov (List.mem_map.mpr ⟨b, List.mem_range'_1.mpr ⟨hb.1, by omega_arith⟩, rfl⟩) f
 
 /-- Regions a callee may read. -/
 theorem cov_r {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {b o l : Nat} (hb : b < L.nb)
@@ -216,7 +216,7 @@ theorem cov_r {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {b o l : 
   by_cases hr : b < L.nrd
   · exact R.cov (List.mem_append_left _ (hp.rd b hr)) f
   · exact R.cov (List.mem_append_right _
-      (List.mem_map.mpr ⟨b, List.mem_range'_1.mpr ⟨by omega, by omega⟩, rfl⟩)) f
+      (List.mem_map.mpr ⟨b, List.mem_range'_1.mpr ⟨by omega_arith, by omega_arith⟩, rfl⟩)) f
 
 /-- Scratch buffers. -/
 theorem cov_s {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {o l : Nat} (f : o + l ≤ SV P + 48) :
@@ -254,19 +254,19 @@ theorem pieceOk {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {w : Bo
   have eb : preg s ⟨slotReg k, o, l⟩ = R (kA s₀) (L.slot k) o l := by simp only [preg, h.ptr k hk]
   have e : ∀ o l, (⟨s.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) L.sc o l := fun o l => by
     rw [h.x28]
-  have ho : o < 65536 := by have := hp.args.len _ hb; omega
+  have ho : o < 65536 := by have := hp.args.len _ hb; omega_arith
   have fs : ∀ {o l : Nat}, o + l ≤ 840 → o + l ≤ L.len L.sc := fun h => hp.fs (by have := hp.wf; lom)
   refine ⟨slot_pres hk, ho, hl, ?_, ?_, ?_, ?_⟩
   · rw [eb, VG.Proof.MlKem.AArch64.STr, e]
     exact hp.args.rdisj hb hp.scb f (fs (by decide)) (.inr (.inr hp.scw)) (by
       rcases hs with hs | hs
       · exact .inl hs
-      · exact .inr (.inr (by simp only [KEM.ST]; omega)))
+      · exact .inr (.inr (by simp only [KEM.ST]; omega_arith)))
   · rw [eb, VG.Proof.MlKem.AArch64.WKr, e]
     exact hp.args.rdisj hb hp.scb f (fs (by decide)) (.inr (.inr hp.scw)) (by
       rcases hs with hs | hs
       · exact .inl hs
-      · exact .inr (.inr (by simp only [KEM.WK]; omega)))
+      · exact .inr (.inr (by simp only [KEM.WK]; omega_arith)))
   · rw [eb]; exact stk_R hp h hb f
   · rw [eb]
     cases w
@@ -308,7 +308,7 @@ theorem argReg_not (b : Nat) : argReg b ≠ .x24 ∧ argReg b ≠ .x25 ∧ argRe
 theorem cov_w₀ {s₀ : State} (hp : Pre P L s₀) {b o l : Nat} (hb : L.nrd ≤ b ∧ b < L.nb)
     (f : o + l ≤ L.len b) : Covers [R (kA s₀) b o l] s₀.wr := by
   rw [hp.wr]
-  exact R.cov (List.mem_map.mpr ⟨b, List.mem_range'_1.mpr ⟨hb.1, by omega⟩, rfl⟩) f
+  exact R.cov (List.mem_map.mpr ⟨b, List.mem_range'_1.mpr ⟨hb.1, by omega_arith⟩, rfl⟩) f
 
 /-- What the prologue leaves. -/
 structure AfterPro (P : KemLay) (L : Layout) (s₀ s : State) : Prop where
@@ -325,7 +325,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre P L s₀) :
   rw [KemLay.kemPrologue, List.append_assoc, WP.block_append_iff]
   have hin : ∀ k < kemOwn.length, InRegions s₀.wr (kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k)) 8 :=
     fun k hk => in_R (cov_w₀ hp ⟨hp.scw, hp.scb⟩ (o := SV P) (l := 48) hp.sv) (k := 8 * k)
-      (n := 8) (by simp only [kemOwn, List.length_cons, List.length_nil] at hk; omega) (by decide)
+      (n := 8) (by simp only [kemOwn, List.length_cons, List.length_nil] at hk; omega_arith) (by decide)
   have hsv : SV P + 8 * kemOwn.length ≤ 32768 := by simp only [kemOwn, List.length_cons, List.length_nil]; lom
   refine WP.mono (WP.preservedV (KeyGen.saves_ok (kA s₀ L.sc) (argReg L.sc) (SV P) kemOwn hsv (by lom) 6
     (by decide) rfl hin) (hc := rfl))
@@ -346,9 +346,9 @@ theorem prologue_ok {s₀ : State} (hp : Pre P L s₀) :
     exacts [this.1 e, this.2.1 e, this.2.2.1 e, this.2.2.2.1 e, this.2.2.2.2 e]
   have v₁ : ∀ b, s₁.gpr (argReg b) = kA s₀ b := fun b => by rw [g₁]; rfl
   refine ⟨⟨k₆.rd, k₆.wr, k₆.sp, fun k hk => ?_, fun r hr ho => k₆.get r (pres_pro r hr ho), fun k hk => ?_,
-    fun b hb => ?_, hp.args.len, (fun hb => by have := hp.scw; have := hp.scb; omega), k₆.vcs⟩, by rw [e₆]; rfl, k₆,
+    fun b hb => ?_, hp.args.len, (fun hb => by have := hp.scw; have := hp.scb; omega_arith), k₆.vcs⟩, by rw [e₆]; rfl, k₆,
     .inr (by rw [o₆.mem]; exact f₁)⟩
-  · rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  · rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
     · rw [h₆.get (slotReg 0) (by decide), h₅.get (slotReg 0) (by decide), h₄.get (slotReg 0) (by decide),
         h₃.get (slotReg 0) (by decide), e₂, v₁]
     · rw [h₆.get (slotReg 1) (by decide), h₅.get (slotReg 1) (by decide), h₄.get (slotReg 1) (by decide),
@@ -360,9 +360,9 @@ theorem prologue_ok {s₀ : State} (hp : Pre P L s₀) :
   · rw [o₆.mem]
     exact bytesAt_frame f₁ (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact (hp.args.disj b (by have := hp.scw; have := hp.scb; omega) L.sc hp.scb
-        (by have := hp.scw; omega) (.inr hp.scw)).sub_right (R.sub hp.sv)) (by
-          have := hp.args.len b (by have := hp.scw; have := hp.scb; omega); omega)
+      exact (hp.args.disj b (by have := hp.scw; have := hp.scb; omega_arith) L.sc hp.scb
+        (by have := hp.scw; omega_arith) (.inr hp.scw)).sub_right (R.sub hp.sv)) (by
+          have := hp.args.len b (by have := hp.scw; have := hp.scb; omega_arith); omega_arith)
 
 /-- Our caller's registers back, and the result. -/
 theorem epilogue_ok {s₀ : State} (hp : Pre P L s₀) {u : State} (hk : KB P L s₀ u) :
@@ -376,7 +376,7 @@ theorem epilogue_ok {s₀ : State} (hp : Pre P L s₀) {u : State} (hk : KB P L 
       InRegions (w.rd ++ w.wr) (kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k)) 8 ∧
       w.mem.readW (kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k)) 64 = s₀.gpr (kemOwn.getD k .x0) :=
     fun k hk' {w} ⟨hr, hw, hm, h28⟩ =>
-      ⟨by rw [h28], by rw [hr, hw]; exact in_R cv (by omega) (by decide), by rw [hm]; exact hk.sv k hk'⟩
+      ⟨by rw [h28], by rw [hr, hw]; exact in_R cv (by omega_arith) (by decide), by rw [hm]; exact hk.sv k hk'⟩
   have st : ∀ {w w' : State} {r : Reg}, Only [r] w w' → r ≠ .x28 →
       w.rd = u.rd ∧ w.wr = u.wr ∧ w.mem = u.mem ∧ w.gpr .x28 = kA s₀ L.sc →
       w'.rd = u.rd ∧ w'.wr = u.wr ∧ w'.mem = u.mem ∧ w'.gpr .x28 = kA s₀ L.sc :=

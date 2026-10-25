@@ -33,22 +33,22 @@ def steps (acc : Nat) (rb : Reg) (d k : Nat) : List Instr :=
     have eq : steps acc rb d (k + 1) = steps acc rb d k ++ step acc rb d k := by
       simp only [steps, List.range_succ, List.flatMap_append, List.flatMap_singleton]
     rw [eq]
-    refine VG.Proof.X25519.Arm.WP.append (steps_ok hs hp hd hrb ha hb sep x lo hi k (by omega))
+    refine VG.Proof.X25519.Arm.WP.append (steps_ok hs hp hd hrb ha hb sep x lo hi k (by omega_arith))
       fun u ⟨out, val, rest⟩ => ?_
     have hu := hs.of_rest rest (by decide)
     have pu : u.gpr rb = u.gpr .r12 + BitVec.ofNat 32 K := by
       rw [rest.gpr _ hrb, rest.gpr _ (by decide)]; exact hp
-    refine WP.mono (step_ok hu pu hd (by omega) (by omega) x
+    refine WP.mono (step_ok hu pu hd (by omega_arith) (by omega_arith) x
       (by rw [rest.gpr _ (by decide)]; exact lo)
       (by rw [rest.gpr _ (by decide)]; exact hi)) fun t ⟨mem, value, keep⟩ => ?_
-    have oldA := out.w32 (d := acc + 4 * k) (by omega) (by omega)
-    have oldB := out.w32 (d := src + 4 * k) (by omega) (by omega)
+    have oldA := out.w32 (d := acc + 4 * k) (by omega_arith) (by omega_arith)
+    have oldB := out.w32 (d := src + 4 * k) (by omega_arith) (by omega_arith)
     rw [oldA, oldB] at value
-    have wr := writeW32_outside u.mem base (d := acc + 4 * k) (t.gpr .r5) (by omega)
+    have wr := writeW32_outside u.mem base (d := acc + 4 * k) (t.gpr .r5) (by omega_arith)
     rw [← mem] at wr
-    have low := wr.val32 (d := acc) (k := k) (by omega) (by omega)
+    have low := wr.val32 (d := acc) (k := k) (by omega_arith) (by omega_arith)
     have top : w32 t.mem base (acc + 4 * k) = (t.gpr .r5).toNat := by rw [mem, w32_write_self]
-    refine ⟨(out.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_, rest.trans keep⟩
+    refine ⟨(out.mono (Nat.le_refl _) (by omega_arith)).trans (wr.mono (by omega_arith) (by omega_arith)), ?_, rest.trans keep⟩
     rw [val32_succ, val32_succ, val32_succ, low, top, pow32_succ]
     generalize 2 ^ (32 * k) = P at *
     grind
@@ -63,9 +63,9 @@ def steps (acc : Nat) (rb : Reg) (d k : Nat) : List Instr :=
       Rest [.r5, .r6] s t := by
   have hn := hs.nowrap
   simp only [carry, List.cons_append, List.nil_append]
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (hs.off_lt (by omega_arith)) (hs.ea (by omega_arith)) (hs.read (by omega_arith)) fun s1 u1 => ?_
   have hs1 := hs.of_rest (u1.rest (ws := [.r5, .r6]) (by simp)) (by decide)
-  refine wp_ldr (hs.off_lt (by omega)) (hs1.ea (by omega)) (hs1.read (by omega)) fun s2 u2 => ?_
+  refine wp_ldr (hs.off_lt (by omega_arith)) (hs1.ea (by omega_arith)) (hs1.read (by omega_arith)) fun s2 u2 => ?_
   have a5 : s2.gpr .r5 = s.mem.readW (off base (acc + 4 * n)) 32 := by rw [u2.other _ (by decide), u1.gpr]
   have a6 : s2.gpr .r6 = s.mem.readW (off base (acc + 4 * n + 4)) 32 := by rw [u2.gpr, u1.mem]
   have a3 : s2.gpr .r3 = s.gpr .r3 := by rw [u2.other _ (by decide), u1.other _ (by decide)]
@@ -75,21 +75,21 @@ def steps (acc : Nat) (rb : Reg) (d k : Nat) : List Instr :=
     fun s3 ⟨value, frame⟩ => ?_
   have k3 := k2.trans (frame_rest frame)
   have hs3 := hs.of_rest k3 (by decide)
-  refine wp_str (hs.off_lt (by omega)) (hs3.ea (by omega)) (hs3.write (by omega)) fun s4 u4 => ?_
+  refine wp_str (hs.off_lt (by omega_arith)) (hs3.ea (by omega_arith)) (hs3.write (by omega_arith)) fun s4 u4 => ?_
   have hs4 := hs3.of_rest (u4.rest []) (by decide)
-  refine wp_str (hs.off_lt (by omega)) (hs4.ea (by omega)) (hs4.write (by omega)) fun t u5 => WP.block_nil ?_
+  refine wp_str (hs.off_lt (by omega_arith)) (hs4.ea (by omega_arith)) (hs4.write (by omega_arith)) fun t u5 => WP.block_nil ?_
   have mem : t.mem = (s.mem.writeW (off base (acc + 4 * n)) (s3.gpr .r5)).writeW
       (off base (acc + 4 * n + 4)) (s3.gpr .r6) := by
     rw [u5.mem, u4.mem, u4.gpr, frame.mem, u2.mem, u1.mem]
-  have w1 := writeW32_outside s.mem base (d := acc + 4 * n) (s3.gpr .r5) (by omega)
+  have w1 := writeW32_outside s.mem base (d := acc + 4 * n) (s3.gpr .r5) (by omega_arith)
   have w2 := writeW32_outside (s.mem.writeW (off base (acc + 4 * n)) (s3.gpr .r5)) base
-    (d := acc + 4 * n + 4) (s3.gpr .r6) (by omega)
+    (d := acc + 4 * n + 4) (s3.gpr .r6) (by omega_arith)
   rw [← mem] at w2
   have outside : Outside base (acc + 4 * n) 8 s.mem t.mem :=
-    (w1.mono (by omega) (by omega)).trans (w2.mono (by omega) (by omega))
-  have low := outside.val32 (d := acc) (k := n) (by omega) (by omega)
+    (w1.mono (by omega_arith) (by omega_arith)).trans (w2.mono (by omega_arith) (by omega_arith))
+  have low := outside.val32 (d := acc) (k := n) (by omega_arith) (by omega_arith)
   have top0 : w32 t.mem base (acc + 4 * n) = (s3.gpr .r5).toNat := by
-    rw [mem, w32_write_ne hn (by omega) (by omega) (by omega), w32_write_self]
+    rw [mem, w32_write_ne hn (by omega_arith) (by omega_arith) (by omega_arith), w32_write_self]
   have top1 : w32 t.mem base (acc + 4 * n + 4) = (s3.gpr .r6).toNat := by rw [mem, w32_write_self]
   have vtop : (s3.gpr .r5).toNat + 2 ^ 32 * (s3.gpr .r6).toNat =
       val32 s.mem base (acc + 4 * n) 2 + (s.gpr .r3).toNat := by
@@ -129,9 +129,9 @@ abbrev rowClob : List Reg := [.r0, .r2, .r3, .r5, .r6, .r7, .r8]
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.gpr, VG.Proof.X25519.Arm.toNat_shr]
   change WP isa (.block (steps acc rb d n ++ carry acc n)) s4 _
   refine VG.Proof.X25519.Arm.WP.append (steps_ok (hs.of_rest k4 (by decide)) p4 hd
-    (fun h => hrb ((by decide : ∀ r ∈ stepClob, r ∈ rowClob) rb h)) (by omega) hb (by omega)
+    (fun h => hrb ((by decide : ∀ r ∈ stepClob, r ∈ rowClob) rb h)) (by omega_arith) hb (by omega_arith)
     (s.gpr .r2) lo hi n (Nat.le_refl _)) fun u ⟨outside, value, rest⟩ => ?_
-  have tops := outside.val32 (d := acc + 4 * n) (k := 2) (by omega) (by omega)
+  have tops := outside.val32 (d := acc + 4 * n) (k := 2) (by omega_arith) (by omega_arith)
   rw [u4.gpr, show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero, m4] at value
   have total : val32 u.mem base acc n + 2 ^ (32 * n) *
       (val32 u.mem base (acc + 4 * n) 2 + (u.gpr .r3).toNat) =
@@ -146,6 +146,6 @@ abbrev rowClob : List Reg := [.r0, .r2, .r3, .r5, .r6, .r7, .r8]
   refine WP.mono (carry_ok (hs.of_rest k (by decide)) ha topfit) fun t ⟨out, val, keep⟩ => ?_
   refine ⟨by rw [val]; exact total, ?_, k.trans (keep.mono (by simp))⟩
   rw [m4] at outside
-  exact (outside.mono (Nat.le_refl _) (by omega)).trans (out.mono (by omega) (by omega))
+  exact (outside.mono (Nat.le_refl _) (by omega_arith)).trans (out.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Mont.Arm.Packed

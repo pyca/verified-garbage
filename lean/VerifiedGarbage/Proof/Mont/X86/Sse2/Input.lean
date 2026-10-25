@@ -40,28 +40,28 @@ theorem Acc.dot {x0 x1 y0 y1 : BitVec 128} {P H n : Nat} (A : Acc x0 x1 P H n) {
   obtain ⟨e, l⟩ := dsum_split m W x y c
   have := A.le
   have := A.low
-  refine ⟨D, by omega, ?_⟩
-  rw [Nat.add_mul]; omega
+  refine ⟨D, by omega_arith, ?_⟩
+  rw [Nat.add_mul]; omega_arith
 
 theorem Acc.of_eq' {x0 x1 : BitVec 128} {P P' H n : Nat} (A : Acc x0 x1 P H n) (h : P = P') :
     Acc x0 x1 P' H n := h ▸ A
 
 theorem toNat_add_self (q : BitVec 64) (h : 2 * q.toNat < 2 ^ 64) : (q + q).toNat = 2 * q.toNat := by
-  rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]; omega
+  rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
 theorem Acc.double {x0 x1 : BitVec 128} {P H n : Nat} (A : Acc x0 x1 P H n) (hH : 2 * H < 2 ^ 64) :
     Acc (XBinOp.eval .paddq x0 x0) (XBinOp.eval .paddq x1 x1) (2 * P) (2 * H) (2 * n) := by
   have hh := A.sums.high
   have := A.le
   have := A.low
-  refine ⟨⟨?_, ?_⟩, by omega, ?_⟩
+  refine ⟨⟨?_, ?_⟩, by omega_arith, ?_⟩
   · rw [qword_paddq _ _ (by decide), qword_paddq _ _ (by decide),
       show qword x0 0 + qword x0 0 + (qword x0 1 + qword x0 1) = (qword x0 0 + qword x0 1) +
         (qword x0 0 + qword x0 1) by ac_rfl, A.sums.low, ← BitVec.ofNat_add, Nat.two_mul]
-  · rw [qword_paddq _ _ (by decide), qword_paddq _ _ (by decide), toNat_add_self _ (by omega),
-      toNat_add_self _ (by omega)]
-    omega
-  · rw [Nat.mul_assoc 2 n]; omega
+  · rw [qword_paddq _ _ (by decide), qword_paddq _ _ (by decide), toNat_add_self _ (by omega_arith),
+      toNat_add_self _ (by omega_arith)]
+    omega_arith
+  · rw [Nat.mul_assoc 2 n]; omega_arith
 
 theorem Acc.single {x0 x1 : BitVec 128} {P H n : Nat} (A : Acc x0 x1 P H n) {u v : BitVec 32}
     (hH : H + 2 ^ 32 < 2 ^ 64) :
@@ -72,8 +72,8 @@ theorem Acc.single {x0 x1 : BitVec 128} {P H n : Nat} (A : Acc x0 x1 P H n) {u v
   have hm := Nat.mod_lt (u.toNat * v.toNat) (show 0 < 2 ^ 32 by decide)
   have := A.le
   have := A.low
-  refine ⟨by simpa using hs, by omega, ?_⟩
-  rw [Nat.succ_mul]; omega
+  refine ⟨by simpa using hs, by omega_arith, ?_⟩
+  rw [Nat.succ_mul]; omega_arith
 
 /-- Two products by `pmuludq`, of doublewords 0 and 2. -/
 theorem Acc.mul {x0 x1 : BitVec 128} {P H n : Nat} (A : Acc x0 x1 P H n) (u v : BitVec 128)
@@ -83,16 +83,16 @@ theorem Acc.mul {x0 x1 : BitVec 128} {P H n : Nat} (A : Acc x0 x1 P H n) (u v : 
       (H + ((dword u 0).toNat * (dword v 0).toNat / 2 ^ 32 + (dword u 2).toNat * (dword v 2).toNat / 2 ^ 32))
       (n + 2) := by
   have q0 := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword u 0).toNat * (dword v 0).toNat) (y := 2 ^ 32)
-    (by decide) |>.2 (by have := word_mul_lt (dword u 0) (dword v 0); omega)
-  have hs := A.sums.addMul (u := u) (v := v) (by omega)
+    (by decide) |>.2 (by have := word_mul_lt (dword u 0) (dword v 0); omega_arith)
+  have hs := A.sums.addMul (u := u) (v := v) (by omega_arith)
   have d0 := Nat.div_add_mod ((dword u 0).toNat * (dword v 0).toNat) (2 ^ 32)
   have m0 := Nat.mod_lt ((dword u 0).toNat * (dword v 0).toNat) (show 0 < 2 ^ 32 by decide)
   have d2 := Nat.div_add_mod ((dword u 2).toNat * (dword v 2).toNat) (2 ^ 32)
   have m2 := Nat.mod_lt ((dword u 2).toNat * (dword v 2).toNat) (show 0 < 2 ^ 32 by decide)
   have := A.le
   have := A.low
-  refine ⟨hs.of_eq (by omega) (by omega), by omega, ?_⟩
-  rw [Nat.add_mul]; omega
+  refine ⟨hs.of_eq (by omega_arith) (by omega_arith), by omega_arith, ?_⟩
+  rw [Nat.add_mul]; omega_arith
 
 /-! ## The SSE instructions of the input -/
 
@@ -168,7 +168,7 @@ theorem dotAcc_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
       Keeps [.eax, .esi, .edi, .ebp] t u ∧ u.mem = t.mem ∧ u.mcdt = t.mcdt ∧
       u.xmm .xmm6 = t.xmm .xmm6 ∧ u.xmm .xmm7 = t.xmm .xmm7 := by
   have hN := C.hN
-  exact WP.mono (dot_ok ⟨xr, yr, hH, by omega, C.mcdt⟩ C.ws hx hy hbp A.sums)
+  exact WP.mono (dot_ok ⟨xr, yr, hH, by omega_arith, C.mcdt⟩ C.ws hx hy hbp A.sums)
     fun u D => ⟨A.dot D.sums, D.keep, D.mem, D.mcdt, D.x6, D.x7⟩
 
 /-- A pointer from a parameter. -/
@@ -204,11 +204,11 @@ theorem half_val {k : Nat} (hk : 4 * (k + 1) < 2 ^ 32) :
   have hv : v.toNat = (k + 1) / 2 := by
     simp only [v, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     rw [show (4 : BitVec 32).toNat = 4 from rfl]
-    rw [Nat.mod_eq_of_lt (a := 4 * k) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := 4 * k) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   apply ofNat_of_toNat
   simp only [BitVec.toNat_add, hv]
-  omega
+  omega_arith
 
 /-- The parameters' values: pointers into the working space and `4 N`. -/
 structure PVals (V : Nat → BitVec 32) (W : Addr) (N S mo inv o a b : Nat) : Prop where
@@ -235,7 +235,7 @@ theorem addRep_ok {s : State} {r : Reg} (hr : r ≠ .eax) {X V4 : Nat} (hx : s.g
   | succ j ih =>
     simp only [List.replicate_succ, List.cons_append]
     refine wp_addX rfl fun t u _ m x => ih (X := X + V4) (by rw [u.gpr, hx, ha, ofNat_add3])
-      (by rw [u.other _ (Ne.symm hr), ha]) fun t' e a K => k t' (by rw [e]; congr 1; rw [Nat.succ_mul]; omega) a
+      (by rw [u.other _ (Ne.symm hr), ha]) fun t' e a K => k t' (by rw [e]; congr 1; rw [Nat.succ_mul]; omega_arith) a
         ((Sk.of_upd [r] u m x (by simp)).trans K (by simp))
 
 /-- `ldW r d j`: `r = S + 24 + d + j (4 N)` and `eax = 4 N`. -/
@@ -249,7 +249,7 @@ theorem ldW_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S : N
   refine wp_movX (P.read pS (by decide)) fun t1 u1 m1 x1 => wp_addX rfl fun t2 u2 _ m2 x2 => ?_
   have K2 : Sk [r, .eax] s t2 := (Sk.of_upd [r, .eax] u1 m1 x1 (by simp)).trans (Sk.of_upd [r, .eax] u2 m2 x2 (by simp)) (by simp)
   have e2 : t2.gpr r = BitVec.ofNat 32 (W.toNat + (S + 24 + d)) := by
-    rw [u2.gpr, u1.gpr, pv_ofNat hS]; show _ + BitVec.ofNat 32 (24 + d) = _; rw [ofNat_add3]; congr 1; omega
+    rw [u2.gpr, u1.gpr, pv_ofNat hS]; show _ + BitVec.ofNat 32 (24 + d) = _; rw [ofNat_add3]; congr 1; omega_arith
   refine wp_movX (P.readSk K2 (i := pN4) (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨Ne.symm hsp, by decide⟩)) fun t3 u3 m3 x3 => ?_
   have K3 : Sk [r, .eax] s t3 := K2.trans (Sk.of_upd [r, .eax] u3 m3 x3 (by simp)) (by simp)
   have a3 : t3.gpr .eax = BitVec.ofNat 32 (4 * N) := by rw [u3.gpr]; exact ofNat_of_toNat hN
@@ -271,8 +271,8 @@ theorem dotRev_ok {s t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N 
       Keeps [.eax, .ebx, .esi, .edi, .ebp] s u ∧ u.mem = s.mem ∧ u.mcdt = s.mcdt ∧
       u.xmm .xmm6 = s.xmm .xmm6 ∧ u.xmm .xmm7 = s.xmm .xmm7 ∧ u.gpr .ebx = t.gpr .ebx := by
   have hN := C.hN
-  refine WP.mono (dotAcc_ok C hx hy hbp (by omega) (by omega) (by omega)
-    (Nat.lt_of_le_of_lt (Nat.add_le_add_left (Nat.mul_le_mul_right _ (by omega)) _) hH) A)
+  refine WP.mono (dotAcc_ok C hx hy hbp (by omega_arith) (by omega_arith) (by omega_arith)
+    (Nat.lt_of_le_of_lt (Nat.add_le_add_left (Nat.mul_le_mul_right _ (by omega_arith)) _) hH) A)
     fun u ⟨Au, Ku, mu, cu, u6, u7⟩ => ?_
   rw [K.mem, dsum_rev s.mem W xp y f he hek hi hf] at Au
   exact ⟨Au, (K.keep.mono (by decide)).trans (Ku.mono (by decide)), by rw [mu, K.mem], by rw [cu, K.mcdt],
@@ -289,7 +289,7 @@ structure InPost (s : State) (N P : Nat) (u : State) : Prop where
   x7 : u.xmm .xmm7 = s.xmm .xmm7
 
 theorem dhigh_le' (m : Mem) (W : Addr) (x y n : Nat) : dhigh m W x y n ≤ n * 2 ^ 32 :=
-  Nat.le_trans (dhigh_le m W x y n) (Nat.mul_le_mul_left _ (by omega))
+  Nat.le_trans (dhigh_le m W x y n) (Nat.mul_le_mul_left _ (by omega_arith))
 
 /-- The products of `A` and `B` while `k < N`. -/
 theorem mulLo_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S mo inv o a b : Nat}
@@ -311,19 +311,19 @@ theorem mulLo_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
     ((K2.trans K3).trans (Sk.of_upd [.eax, .ebx, .esi, .edi, .ebp] u4 m4 x4)).trans (Sk.of_upd [.eax, .ebx, .esi, .edi, .ebp] u5 m5 x5)
   have C5 := C.of_sk K5
   have esi5 : PtrAt t5 W .esi (S + 24 + 4 * N + 4 * (N - (k + 1))) := by
-    rw [ptr_iff, u5.other _ (by decide), u4.gpr, e3, K3.keep.1 _ (by decide), b2, sub_ofNat (by omega)]
-    congr 1; omega
+    rw [ptr_iff, u5.other _ (by decide), u4.gpr, e3, K3.keep.1 _ (by decide), b2, sub_ofNat (by omega_arith)]
+    congr 1; omega_arith
   have edi5 : PtrAt t5 W .edi (b + 4 * (k + 1 - (k + 1))) := by
     rw [Nat.sub_self, Nat.mul_zero, Nat.add_zero]; exact ptr_of_param u5.gpr PV.b
   have ebp5 : t5.gpr .ebp = BitVec.ofNat 32 (4 * (k + 1 - 0)) := by
     rw [u5.other _ (by decide), u4.other _ (by decide), K3.keep.1 _ (by decide), b2, Nat.sub_zero]
-  refine WP.mono (dotRev_ok (f := digits s.mem W a) (P := 0) (H := 0) (n0 := 0) C5 K5 esi5 edi5 ebp5 (by omega)
-    (by omega) (by omega) (fun i _ hi => RA i (by omega)) (.inr (by omega)) (.inr (by omega)) (by omega)
+  refine WP.mono (dotRev_ok (f := digits s.mem W a) (P := 0) (H := 0) (n0 := 0) C5 K5 esi5 edi5 ebp5 (by omega_arith)
+    (by omega_arith) (by omega_arith) (fun i _ hi => RA i (by omega_arith)) (.inr (by omega_arith)) (.inr (by omega_arith)) (by omega_arith)
     (by rw [K5.xmm]; exact A)) fun u ⟨Au, Ku, mu, cu, u6, u7, _⟩ => ⟨?_, Ku, mu, cu, u6, u7⟩
   have e := csum_product (digits s.mem W a) (digits s.mem W b) (N := N) (k := k)
-  rw [show k + 1 - N = 0 by omega, show min (k + 1) N = k + 1 by omega] at e
+  rw [show k + 1 - N = 0 by omega_arith, show min (k + 1) N = k + 1 by omega_arith] at e
   rw [Nat.zero_add, Nat.zero_add, e] at Au
-  exact ⟨_, _, Au, by omega, Nat.le_trans (dhigh_le' _ _ _ _ _) (Nat.mul_le_mul_right _ (by omega))⟩
+  exact ⟨_, _, Au, by omega_arith, Nat.le_trans (dhigh_le' _ _ _ _ _) (Nat.mul_le_mul_right _ (by omega_arith))⟩
 
 /-- `lenHigh`: `ebp = 4 (2 N - 1 - k)` and `eax = 4 N`. -/
 theorem lenHigh_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k : Nat} (C : ColEnv s W L V N k)
@@ -344,7 +344,7 @@ theorem lenHigh_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k
   simp (disch := decide) only [u5.gpr, u4.gpr, u4.other, u3.gpr, u3.other, u2.gpr, u2.other, a1, c1,
     ofNat_add3]
   show BitVec.ofNat 32 (4 * N + 4 * N) - BitVec.ofNat 32 4 - _ = _
-  rw [sub_ofNat (by omega), sub_ofNat (by omega)]; congr 1; omega
+  rw [sub_ofNat (by omega_arith), sub_ofNat (by omega_arith)]; congr 1; omega_arith
 
 /-- The products of `A` and `B` from `k = N` on. -/
 theorem mulHi_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S mo inv o a b : Nat}
@@ -368,22 +368,22 @@ theorem mulHi_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   have c2 : t2.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [K2.keep.1 _ (by decide), K1.keep.1 _ (by decide), C.ecx]
   have esi6 : PtrAt t6 W .esi (S + 24 + 4 * N + 4 * (N - N)) := by
     rw [ptr_iff]; simp (disch := decide) only [u6.other, u5.other, u4.other, u3.other, e2]
-    congr 1; omega
+    congr 1; omega_arith
   have edi6 : PtrAt t6 W .edi (b + 4 * (k + 1 - N)) := by
     rw [ptr_iff]; simp (disch := decide) only [u6.gpr, u5.gpr, u5.other, u4.gpr, u4.other, u3.gpr,
       u3.other, a2, c2, pv_ofNat PV.b]
     show BitVec.ofNat 32 _ + _ + BitVec.ofNat 32 4 - _ = _
-    rw [ofNat_add3, ofNat_add3, sub_ofNat (by omega)]; congr 1; omega
+    rw [ofNat_add3, ofNat_add3, sub_ofNat (by omega_arith)]; congr 1; omega_arith
   have ebp6 : t6.gpr .ebp = BitVec.ofNat 32 (4 * (N - (k + 1 - N))) := by
     simp (disch := decide) only [u6.other, u5.other, u4.other, u3.other]
-    rw [K2.keep.1 _ (by decide), b1]; congr 1; omega
-  refine WP.mono (dotRev_ok (f := digits s.mem W a) (P := 0) (H := 0) (n0 := 0) C6 K6 esi6 edi6 ebp6 (by omega)
-    (by omega) (by omega) (fun i _ hi => RA i (by omega)) (.inr (by omega)) (.inr (by omega)) (by omega)
+    rw [K2.keep.1 _ (by decide), b1]; congr 1; omega_arith
+  refine WP.mono (dotRev_ok (f := digits s.mem W a) (P := 0) (H := 0) (n0 := 0) C6 K6 esi6 edi6 ebp6 (by omega_arith)
+    (by omega_arith) (by omega_arith) (fun i _ hi => RA i (by omega_arith)) (.inr (by omega_arith)) (.inr (by omega_arith)) (by omega_arith)
     (by rw [K6.xmm]; exact A)) fun u ⟨Au, Ku, mu, cu, u6, u7, _⟩ => ⟨?_, Ku, mu, cu, u6, u7⟩
   have e := csum_product (digits s.mem W a) (digits s.mem W b) (N := N) (k := k)
-  rw [show min (k + 1) N = N by omega] at e
+  rw [show min (k + 1) N = N by omega_arith] at e
   rw [Nat.zero_add, Nat.zero_add, e] at Au
-  exact ⟨_, _, Au, by omega, Nat.le_trans (dhigh_le' _ _ _ _ _) (Nat.mul_le_mul_right _ (by omega))⟩
+  exact ⟨_, _, Au, by omega_arith, Nat.le_trans (dhigh_le' _ _ _ _ _) (Nat.mul_le_mul_right _ (by omega_arith))⟩
 
 /-- A square's sum doubled, then the diagonal's product: from the products
 above the diagonal, with `ebx = 4 ⌊(k + 1) / 2⌋`. -/
@@ -399,7 +399,7 @@ theorem sqTail_ok {u : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
   have hN := C.hN
   have hn := C.ws.nowrap
   refine WP.seq (WP.of_runBlock ⟨_, double_run u, ?_⟩)
-  have Ad := A'.double (by omega)
+  have Ad := A'.double (by omega_arith)
   let v := (u.setXmm .xmm0 (XBinOp.eval .paddq (u.xmm .xmm0) (u.xmm .xmm0))).setXmm .xmm1
     (XBinOp.eval .paddq (u.xmm .xmm1) (u.xmm .xmm1))
   have Cv : ColEnv v W L V N k := C.of_keeps (rs := []) ⟨fun _ _ => rfl, rfl, rfl⟩ rfl rfl
@@ -417,7 +417,7 @@ theorem sqTail_ok {u : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
   refine WP.seq (wp_movX rfl fun w1 y1 n1 z1 => wp_addX rfl fun w2 y2 _ n2 z2 =>
     wp_cmpX rfl fun w3 f3 _ zf3 n3 z3 => WP.block_nil ?_)
   have e2 : w2.gpr .eax = BitVec.ofNat 32 (8 * ((k + 1) / 2)) := by
-    rw [y2.gpr, y1.gpr, show v.gpr .ebx = u.gpr .ebx from rfl, bu, ← BitVec.ofNat_add]; congr 1; omega
+    rw [y2.gpr, y1.gpr, show v.gpr .ebx = u.gpr .ebx from rfl, bu, ← BitVec.ofNat_add]; congr 1; omega_arith
   have c2 : w2.gpr .ecx = BitVec.ofNat 32 (4 * k) := by
     rw [y2.other _ (by decide), y1.other _ (by decide)]; exact Cv.ecx
   have K3 : Sk [.eax, .esi] v w3 := ((Sk.of_upd [.eax, .esi] y1 n1 z1).trans (Sk.of_upd [.eax] y2 n2 z2)).trans
@@ -426,7 +426,7 @@ theorem sqTail_ok {u : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
   by_cases hev : k % 2 = 0
   · refine WP.ite true (by
         show w3.zf = some true
-        rw [zf3, e2, c2, sub_beq (by omega) (by omega), decide_eq_true (by omega)])
+        rw [zf3, e2, c2, sub_beq (by omega_arith) (by omega_arith), decide_eq_true (by omega_arith)])
       (fun _ => ?_) (fun h => absurd h (by decide))
     rw [List.cons_append, List.cons_append, List.cons_append]
     have C3 := Cv.of_sk K3
@@ -435,18 +435,18 @@ theorem sqTail_ok {u : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
     have p5 : PtrAt w5 (W := W) .esi (a + 4 * (k / 2)) := by
       have := (V pA).isLt
       rw [PtrAt, y5.gpr, y4.gpr, y4.other _ (by decide), f3.gpr, y2.other _ (by decide), y1.other _ (by decide),
-        show v.gpr .ebx = u.gpr .ebx from rfl, bu, BitVec.toNat_add, hA, toNat_ofNat_lt (by omega)]
-      omega
+        show v.gpr .ebx = u.gpr .ebx from rfl, bu, BitVec.toNat_add, hA, toNat_ofNat_lt (by omega_arith)]
+      omega_arith
     have hw5 := C.ws.of_keeps (Kvs.trans (K5.keep.mono (by decide)))
-    refine wp_movX (readSrc_ptr hw5 p5 (d := 0) (by omega)) fun w6 y6 n6 z6 => ?_
+    refine wp_movX (readSrc_ptr hw5 p5 (d := 0) (by omega_arith)) fun w6 y6 n6 z6 => ?_
     have K6 : Sk [.eax, .esi] v w6 := K5.trans (Sk.of_upd [.eax] y6 n6 z6)
     obtain ⟨w7, run, g7, m7, rd7, wr7, mc7, s6, s7, a0, a1⟩ := sq_run w6 (by rw [K6.mcdt]; exact Cv.mcdt)
-    have Af := Ad.single (u := w6.gpr .eax) (v := w6.gpr .eax) (by omega)
+    have Af := Ad.single (u := w6.gpr .eax) (v := w6.gpr .eax) (by omega_arith)
     rw [← K6.xmm, ← a0, ← a1] at Af
     have hq : (w6.gpr .eax).toNat * (w6.gpr .eax).toNat / 2 ^ 32 < 2 ^ 32 :=
-      (Nat.div_lt_iff_lt_mul (by decide)).2 (by have := word_mul_lt (w6.gpr .eax) (w6.gpr .eax); omega)
-    refine WP.of_runBlock ⟨w7, run, _, _, Af.of_eq' ?_, by omega, by omega, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [← hcross, ite_eq_left ⟨hev, by omega⟩, y6.gpr, K5.mem, vm]
+      (Nat.div_lt_iff_lt_mul (by decide)).2 (by have := word_mul_lt (w6.gpr .eax) (w6.gpr .eax); omega_arith)
+    refine WP.of_runBlock ⟨w7, run, _, _, Af.of_eq' ?_, by omega_arith, by omega_arith, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [← hcross, ite_eq_left ⟨hev, by omega_arith⟩, y6.gpr, K5.mem, vm]
       simp only [digits, w32, Nat.add_zero]
     · exact (Kvs.trans (K6.keep.mono (by decide))).trans ⟨fun r _ => by rw [g7], rd7, wr7⟩
     · rw [m7, K6.mem, vm]
@@ -455,13 +455,13 @@ theorem sqTail_ok {u : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k 
     · rw [s7, K6.xmm, x7v]
   · refine WP.ite false (by
         show w3.zf = some false
-        rw [zf3, e2, c2, sub_beq (by omega) (by omega), decide_eq_false (by omega)])
+        rw [zf3, e2, c2, sub_beq (by omega_arith) (by omega_arith), decide_eq_false (by omega_arith)])
       (fun h => absurd h (by decide)) (fun _ => WP.block_nil ?_)
     have Ao := Ad
     rw [← K3.xmm] at Ao
-    refine ⟨_, _, Ao.of_eq' ?_, by omega, by omega, Kvs.trans (K3.keep.mono (by decide)), by rw [K3.mem, vm],
+    refine ⟨_, _, Ao.of_eq' ?_, by omega_arith, by omega_arith, Kvs.trans (K3.keep.mono (by decide)), by rw [K3.mem, vm],
       by rw [K3.mcdt, vc], by rw [K3.xmm, x6v], by rw [K3.xmm, x7v]⟩
-    rw [← hcross, ite_eq_right (by omega), Nat.add_zero]
+    rw [← hcross, ite_eq_right (by omega_arith), Nat.add_zero]
 
 /-- A square's count of products above the diagonal: `ebp = 4 (e - (k + 1 - N))`
 for `ebx = 4 e`, `e = ⌊(k + 1) / 2⌋`. -/
@@ -478,7 +478,7 @@ theorem sqLen_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k :
   | false =>
     simp only [Bool.false_eq_true, ↓reduceIte, List.cons_append, List.nil_append]
     refine wp_movX rfl fun u1 v1 m1 x1 => h u1 ?_ (Sk.of_upd [.eax, .ebp] v1 m1 x1)
-    rw [v1.gpr, bx]; congr 1; have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega
+    rw [v1.gpr, bx]; congr 1; have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega_arith
   | true =>
     simp only [↓reduceIte, List.cons_append, List.nil_append]
     have hkN := hhi.mp rfl
@@ -490,7 +490,7 @@ theorem sqLen_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k :
     simp (disch := decide) only [v5.gpr, v4.gpr, v3.gpr, v3.other, v2.gpr, v2.other, v1.other, a1, bx,
       C.ecx, ofNat_add3]
     show BitVec.ofNat 32 _ - BitVec.ofNat 32 (4 * k) - BitVec.ofNat 32 4 = _
-    rw [sub_ofNat (by omega), sub_ofNat (by omega)]; congr 1; omega
+    rw [sub_ofNat (by omega_arith), sub_ofNat (by omega_arith)]; congr 1; omega_arith
 
 /-- A square's products: those above the diagonal, doubled, and the diagonal's. -/
 theorem sq_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S mo inv o a b : Nat}
@@ -509,7 +509,7 @@ theorem sq_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S mo
     (Sk.of_upd [.ebx] u5 m5 x5)
   have C5 := C.of_sk K5
   have b5 : t5.gpr .ebx = BitVec.ofNat 32 (4 * ((k + 1) / 2)) := by
-    rw [u5.gpr, u4.gpr, u3.gpr, u2.gpr, u1.gpr, C.ecx]; exact half_val (by omega)
+    rw [u5.gpr, u4.gpr, u3.gpr, u2.gpr, u1.gpr, C.ecx]; exact half_val (by omega_arith)
   refine sqLen_ok C5 hi hhi b5 fun t6 bp6 K6 => ?_
   have K6' := K5.trans (K6.mono [.eax, .ebx, .esi, .edi, .ebp])
   refine ldW_ok (C.prm.of_sk K6') PV.s PV.n4 (r := .esi) (by decide) (by decide) 0 2 fun t7 e7 a7 K7 => ?_
@@ -529,28 +529,28 @@ theorem sq_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S mo
     simp (disch := decide) only [u12.other, u11.other, u10.other, u9.other, u8.other, b7]
   have esi12 : PtrAt t12 W .esi (S + 24 + 4 * N + 4 * (N - (k + 1) / 2)) := by
     rw [ptr_iff]; simp (disch := decide) only [u12.other, u11.other, u10.other, u9.other, u8.gpr, e7, b7]
-    rw [sub_ofNat (by omega)]; congr 1; omega
+    rw [sub_ofNat (by omega_arith)]; congr 1; omega_arith
   have edi12 : PtrAt t12 W .edi (a + 4 * (k + 1 - (k + 1) / 2)) := by
     have := (V pA).isLt
     rw [ptr_iff]; simp (disch := decide) only [u12.gpr, u11.gpr, u11.other, u10.gpr, u10.other, u9.gpr, u9.other,
       u8.other, b7, c7, pv_ofNat PV.a]
     show BitVec.ofNat 32 _ + _ + BitVec.ofNat 32 4 - _ = _
-    rw [ofNat_add3, ofNat_add3, sub_ofNat (by omega)]; congr 1; omega
+    rw [ofNat_add3, ofNat_add3, sub_ofNat (by omega_arith)]; congr 1; omega_arith
   have ebp12 : t12.gpr .ebp = BitVec.ofNat 32 (4 * ((k + 1) / 2 - (k + 1 - N))) := by
     simp (disch := decide) only [u12.other, u11.other, u10.other, u9.other, u8.other]
     rw [K7.keep.1 _ (by decide), bp6]
   refine WP.seq (WP.mono (dotRev_ok (f := digits s.mem W a) (P := 0) (H := 0) (n0 := 0) C12 K12 esi12 edi12 ebp12
-    (by omega) (by omega) (by omega) (fun i _ hi => RA i (by omega)) (.inr (by omega)) (.inr (by omega))
-    (by omega) (by rw [K12.xmm]; exact A)) fun u ⟨Au, Ku, mu, cu, u6, u7, bxu⟩ => ?_)
+    (by omega_arith) (by omega_arith) (by omega_arith) (fun i _ hi => RA i (by omega_arith)) (.inr (by omega_arith)) (.inr (by omega_arith))
+    (by omega_arith) (by rw [K12.xmm]; exact A)) fun u ⟨Au, Ku, mu, cu, u6, u7, bxu⟩ => ?_)
   rw [Nat.zero_add, Nat.zero_add, Nat.zero_add, csum_cross _ hk] at Au
   have Cu := C.of_keeps (rs := [.eax, .ebx, .esi, .edi, .ebp]) Ku mu cu
   have bu : u.gpr .ebx = BitVec.ofNat 32 (4 * ((k + 1) / 2)) := by rw [bxu, b12]
   rw [← mu] at Au
   have hl := dhigh_le' u.mem W (S + 24 + 4 * N + 4 * (N - (k + 1) / 2)) (a + 4 * (k + 1 - (k + 1) / 2))
     ((k + 1) / 2 - (k + 1 - N))
-  refine WP.mono (sqTail_ok Cu PV.a ha bu (by omega) Au) fun w ⟨H', n', Aw, hn', hH', Kw, mw, cw, w6, w7⟩ => ?_
+  refine WP.mono (sqTail_ok Cu PV.a ha bu (by omega_arith) Au) fun w ⟨H', n', Aw, hn', hH', Kw, mw, cw, w6, w7⟩ => ?_
   rw [mu] at Aw
-  exact ⟨⟨H', n', Aw, by omega, by omega⟩, Ku.trans (Kw.mono (by decide)), by rw [mw, mu],
+  exact ⟨⟨H', n', Aw, by omega_arith, by omega_arith⟩, Ku.trans (Kw.mono (by decide)), by rw [mw, mu],
     by rw [cw, cu], by rw [w6, u6], by rw [w7, u7]⟩
 
 /-- The products of `A` and `B`: a square's if `A` is `B`. -/
@@ -563,7 +563,7 @@ theorem input_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N k S
   | true => rw [← hsq rfl]; exact sq_ok C PV hi hhi ha hs RA A
   | false =>
     cases hi with
-    | false => exact mulLo_ok C PV (by have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega) hb hs RA A
+    | false => exact mulLo_ok C PV (by have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega_arith) hb hs RA A
     | true => exact mulHi_ok C PV (hhi.mp rfl) hb hs RA A
 
 /-- What the products of the quotient digits and `M` leave. -/
@@ -602,23 +602,23 @@ theorem reduceHi_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N 
   have c2 : t2.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [K2.keep.1 _ (by decide), K1.keep.1 _ (by decide), C.ecx]
   have esi6 : PtrAt t6 W .esi (S + 24 + 4 * (N - N)) := by
     rw [ptr_iff]; simp (disch := decide) only [u6.other, u5.other, u4.other, u3.other, e2]
-    congr 1; omega
+    congr 1; omega_arith
   have edi6 : PtrAt t6 W .edi (mo + 4 * (k + 1 - N)) := by
     rw [ptr_iff]; simp (disch := decide) only [u6.gpr, u5.gpr, u5.other, u4.gpr, u4.other, u3.gpr,
       u3.other, a2, c2, pv_ofNat PV.mo]
     show BitVec.ofNat 32 _ + _ + BitVec.ofNat 32 4 - _ = _
-    rw [ofNat_add3, ofNat_add3, sub_ofNat (by omega)]; congr 1; omega
+    rw [ofNat_add3, ofNat_add3, sub_ofNat (by omega_arith)]; congr 1; omega_arith
   have ebp6 : t6.gpr .ebp = BitVec.ofNat 32 (4 * (N - (k + 1 - N))) := by
     simp (disch := decide) only [u6.other, u5.other, u4.other, u3.other]
-    rw [K2.keep.1 _ (by decide), b1]; congr 1; omega
-  refine WP.mono (dotRev_ok (xp := S + 24) (y := mo) (f := q) (P := P) (H := H) (n0 := n) C6 K6 esi6 edi6 ebp6 (by omega) (by omega) (by omega)
-    (fun i h1 h2 => RQ i h1 h2) (.inr (by omega)) (.inr (by omega)) hH
+    rw [K2.keep.1 _ (by decide), b1]; congr 1; omega_arith
+  refine WP.mono (dotRev_ok (xp := S + 24) (y := mo) (f := q) (P := P) (H := H) (n0 := n) C6 K6 esi6 edi6 ebp6 (by omega_arith) (by omega_arith) (by omega_arith)
+    (fun i h1 h2 => RQ i h1 h2) (.inr (by omega_arith)) (.inr (by omega_arith)) hH
     (by rw [K6.xmm]; exact A)) fun u ⟨Au, Ku, mu, cu, u6, u7, _⟩ => ⟨?_, Ku, mu, cu, u6, u7⟩
   have e := csum_reduce q (digits s.mem W mo) (N := N) (k := k)
-  rw [show min k N = N by omega] at e
+  rw [show min k N = N by omega_arith] at e
   rw [e] at Au
   have := dhigh_le' s.mem W (S + 24 + 4 * (N - N)) (mo + 4 * (k + 1 - N)) (N - (k + 1 - N))
-  exact ⟨_, _, Au, by omega, by omega⟩
+  exact ⟨_, _, Au, by omega_arith, by omega_arith⟩
 
 /-- The two latest digits in `xmm6` (doublewords 0 and 2) and `M_1`, `M_2` in
 `xmm7`, while `k < N`. -/
@@ -635,9 +635,9 @@ theorem csum_window (q g : Nat → Nat) {N k : Nat} (hk : k < N) (q1 q2 m1 m2 : 
   rw [← csum_reduce0 q g hk]
   subst hq1 hq2 hm1 hm2
   by_cases h2 : 2 ≤ k
-  · rw [csum_two q g h2, ite_eq_left (by omega), ite_eq_left h2, ite_eq_left (by omega)]; omega
+  · rw [csum_two q g h2, ite_eq_left (by omega_arith), ite_eq_left h2, ite_eq_left (by omega_arith)]; omega_arith
   · rw [ite_eq_right h2, Nat.zero_mul, Nat.add_zero]
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
     · simp [csum]
     · simp [csum]
 
@@ -661,16 +661,16 @@ theorem reduceLo_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N 
     Sk [.eax, .ebx, .esi, .edi, .ebp] s t) ?_ fun t3 ⟨b3, K3⟩ => ?_)
   · by_cases h2 : k < 2
     · refine WP.ite false (by
-          show t2.cf.map (!·) = _; rw [c2, e1, toNat_ofNat_lt (by omega), decide_eq_true (by show 4 * k < 8; omega)]
+          show t2.cf.map (!·) = _; rw [c2, e1, toNat_ofNat_lt (by omega_arith), decide_eq_true (by show 4 * k < 8; omega_arith)]
           rfl)
         (fun h => absurd h (by decide))
         (fun _ => wp_movX rfl fun t4 u4 m4 x4 => WP.block_nil ⟨?_, K2.trans (Sk.of_upd [.ebp] u4 m4 x4)⟩)
-      rw [u4.gpr, show k - 2 = 0 by omega]; rfl
+      rw [u4.gpr, show k - 2 = 0 by omega_arith]; rfl
     · refine WP.ite true (by
-          show t2.cf.map (!·) = _; rw [c2, e1, toNat_ofNat_lt (by omega), decide_eq_false (by show ¬ 4 * k < 8; omega)]
+          show t2.cf.map (!·) = _; rw [c2, e1, toNat_ofNat_lt (by omega_arith), decide_eq_false (by show ¬ 4 * k < 8; omega_arith)]
           rfl)
         (fun _ => WP.block_nil ⟨?_, K2⟩) (fun h => absurd h (by decide))
-      rw [u2.gpr, e1]; show _ - BitVec.ofNat 32 8 = _; rw [sub_ofNat (by omega)]; congr 1; omega
+      rw [u2.gpr, e1]; show _ - BitVec.ofNat 32 8 = _; rw [sub_ofNat (by omega_arith)]; congr 1; omega_arith
   refine WP.seq (ldW_ok (C.prm.of_sk K3) PV.s PV.n4 (r := .esi) (by decide) (by decide) 8 1 fun t4 e4 a4 K4 => ?_)
   have K4' := K3.trans (K4.mono [.eax, .ebx, .esi, .edi, .ebp])
   refine wp_subX rfl fun t5 u5 _ m5 x5 => wp_movX ((C.prm.of_sk K4').readSk (Sk.of_upd [.esi] u5 m5 x5)
@@ -681,7 +681,7 @@ theorem reduceLo_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N 
   have c4 : t4.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [K4.keep.1 _ (by decide), K3.keep.1 _ (by decide), C.ecx]
   have esi7 : PtrAt t7 W .esi (S + 32 + 4 * N - 4 * k) := by
     rw [ptr_iff]; simp (disch := decide) only [u7.other, u6.other, u5.gpr, e4, c4]
-    rw [sub_ofNat (by omega)]; congr 1; omega
+    rw [sub_ofNat (by omega_arith)]; congr 1; omega_arith
   have edi7 : PtrAt t7 W .edi (mo + 12) := by
     rw [ptr_iff, u7.gpr, u6.gpr, pv_ofNat PV.mo]; show _ + BitVec.ofNat 32 12 = _; rw [ofNat_add3]; congr 1
   have ebp7 : t7.gpr .ebp = BitVec.ofNat 32 (4 * (k - 2)) := by
@@ -693,35 +693,35 @@ theorem reduceLo_ok {s : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N 
       Keeps [.eax, .ebx, .esi, .edi, .ebp] s u ∧ u.mem = s.mem ∧ u.mcdt = s.mcdt ∧
       u.xmm .xmm6 = s.xmm .xmm6 ∧ u.xmm .xmm7 = s.xmm .xmm7 := by
     by_cases h2 : 2 ≤ k
-    · have e7 : S + 32 + 4 * N - 4 * k = S + 24 + 4 * (N - (k - 2)) := by omega
-      have f7 : mo + 4 * (k + 1 - (k - 2)) = mo + 12 := by omega
+    · have e7 : S + 32 + 4 * N - 4 * k = S + 24 + 4 * (N - (k - 2)) := by omega_arith
+      have f7 : mo + 4 * (k + 1 - (k - 2)) = mo + 12 := by omega_arith
       have esi7' : PtrAt t7 W .esi (S + 24 + 4 * (N - (k - 2))) := by rw [← e7]; exact esi7
       have edi7' : PtrAt t7 W .edi (mo + 4 * (k + 1 - (k - 2))) := by rw [f7]; exact edi7
       refine WP.mono (dotRev_ok (xp := S + 24) (y := mo) (f := q) (i0 := 0) (P := P) (H := H) (n0 := n) C7 K7
-        esi7' edi7' (by rw [ebp7, Nat.sub_zero]) (by omega) (by omega) (by omega)
-        (fun i _ h => RQ i (Nat.zero_le _) h) (.inr (by omega)) (.inr (by omega)) hH
+        esi7' edi7' (by rw [ebp7, Nat.sub_zero]) (by omega_arith) (by omega_arith) (by omega_arith)
+        (fun i _ h => RQ i (Nat.zero_le _) h) (.inr (by omega_arith)) (.inr (by omega_arith)) hH
         (by rw [K7.xmm]; exact A)) fun u ⟨Au, Ku, mu, cu, u6, u7, _⟩ => ⟨?_, Ku, mu, cu, u6, u7⟩
       rw [Nat.sub_zero, ← e7, f7] at Au; exact Au
     · refine WP.mono (dotAcc_ok (n := 0) (P := P) (H := H) (n0 := n) C7 esi7 edi7
-        (by rw [ebp7, show k - 2 = 0 by omega]) (.inl rfl) (.inl rfl)
+        (by rw [ebp7, show k - 2 = 0 by omega_arith]) (.inl rfl) (.inl rfl)
         (Nat.zero_le _) (Nat.lt_of_le_of_lt (Nat.add_le_add_left (Nat.mul_le_mul_right _
           (Nat.add_le_add_right (Nat.zero_le N) 4)) _) hH) (by rw [K7.xmm]; exact A)) fun u ⟨Au, Ku, mu, cu, u6, u7⟩ => ?_
-      rw [show k - 2 = 0 by omega]
+      rw [show k - 2 = 0 by omega_arith]
       refine ⟨by simpa only [dsum, dhigh, csum, rsum, NatSum.zero, Nat.add_zero] using Au, (K7.keep.mono (by decide)).trans (Ku.mono (by decide)), by rw [mu, K7.mem], by rw [cu, K7.mcdt],
         by rw [u6, K7.xmm], by rw [u7, K7.xmm]⟩
   refine WP.seq (WP.mono hdot fun u ⟨Au, Ku, mu, cu, u6, u7⟩ => ?_)
   obtain ⟨w, run, g, mw, rdw, wrw, mcw, w6, w7, a0, a1⟩ := window_run u (by rw [cu]; exact C.mcdt)
   have hl := dhigh_le' s.mem W (S + 32 + 4 * N - 4 * k) (mo + 12) (k - 2)
-  have Aw := Au.mul (u.xmm .xmm6) (u.xmm .xmm7) (by omega)
+  have Aw := Au.mul (u.xmm .xmm6) (u.xmm .xmm7) (by omega_arith)
   rw [← a0, ← a1, u6, u7, Nat.add_assoc,
     csum_window q (digits s.mem W mo) hkN _ _ _ _ Wd.q1 Wd.q2 (by rw [Wd.m1]) (by rw [Wd.m2])] at Aw
-  refine WP.of_runBlock ⟨w, run, ⟨_, _, Aw, by omega, ?_⟩, ⟨fun r hr => by rw [g]; exact Ku.1 r hr,
+  refine WP.of_runBlock ⟨w, run, ⟨_, _, Aw, by omega_arith, ?_⟩, ⟨fun r hr => by rw [g]; exact Ku.1 r hr,
     by rw [rdw]; exact Ku.2.1, by rw [wrw]; exact Ku.2.2⟩, by rw [mw, mu], by rw [mcw, cu], by rw [w6, u6],
     by rw [w7, u7]⟩
   have := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.xmm .xmm6) 0).toNat * (dword (s.xmm .xmm7) 0).toNat)
-    (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.xmm .xmm6) 0) (dword (s.xmm .xmm7) 0); omega)
+    (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.xmm .xmm6) 0) (dword (s.xmm .xmm7) 0); omega_arith)
   have := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.xmm .xmm6) 2).toNat * (dword (s.xmm .xmm7) 2).toNat)
-    (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.xmm .xmm6) 2) (dword (s.xmm .xmm7) 2); omega)
-  omega
+    (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.xmm .xmm6) 2) (dword (s.xmm .xmm7) 2); omega_arith)
+  omega_arith
 
 end VG.Proof.Mont.X86.Sse2

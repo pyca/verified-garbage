@@ -199,7 +199,7 @@ theorem addWords_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
   have enc : ∀ d, d + 8 ≤ workSize large → d < 4096 * Size.x.bytes := by
     intro d hd
     change d < 32768
-    omega
+    omega_arith
   apply WP.of_runBlock
   simp only [fieldAddWords, carryValue38, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, ld, exec, addr, State.load, read_x,
@@ -208,10 +208,10 @@ theorem addWords_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
     RegUpd.rd_addWithCarry, RegUpd.wr_addWithCarry, RegUpd.mem_addWithCarry,
     BitVec.setWidth_eq, hs.x0, hz, h38, Size.bytes,
     Nat.add_mod, ha, hb, Nat.reduceMod, Nat.zero_add,
-    enc a (by omega), enc b (by omega), enc (a + 8) (by omega), enc (b + 8) (by omega),
-    enc (a + 16) (by omega), enc (b + 16) (by omega), enc (a + 24) (by omega), enc (b + 24) (by omega),
-    w a (by omega), w b (by omega), w (a + 8) (by omega), w (b + 8) (by omega),
-    w (a + 16) (by omega), w (b + 16) (by omega), w (a + 24) (by omega), w (b + 24) (by omega),
+    enc a (by omega_arith), enc b (by omega_arith), enc (a + 8) (by omega_arith), enc (b + 8) (by omega_arith),
+    enc (a + 16) (by omega_arith), enc (b + 16) (by omega_arith), enc (a + 24) (by omega_arith), enc (b + 24) (by omega_arith),
+    w a (by omega_arith), w b (by omega_arith), w (a + 8) (by omega_arith), w (b + 8) (by omega_arith),
+    w (a + 16) (by omega_arith), w (b + 16) (by omega_arith), w (a + 24) (by omega_arith), w (b + 24) (by omega_arith),
     and_self, ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨carryOut (word s.mem base (a + 24)) (word s.mem base (b + 24))
@@ -251,7 +251,7 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   have hx : (s₁.gpr .x8).toNat < 2 ^ 58 := by
     rw [x1]
     have := Bool.toNat_le c
-    omega
+    omega_arith
   refine WP.mono (carry38_ok s₁ hz1 h381 hx) fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
   refine WP.mono (store4_ok hs₂ ho) fun s₃ heq => ?_
@@ -270,7 +270,7 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
   refine ⟨Op.of_store ho (k0'.trans (k1'.trans k2')) _ _ _ _, ?_⟩
   simp only [F]
-  rw [fe_st4 _ _ (by have := ho.2; omega), e2, x1]
+  rw [fe_st4 _ _ (by have := ho.2; omega_arith), e2, x1]
   rw [k0.mem] at e1
   have hm : toFe (val4 (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7) + 38 * c.toNat) =
       toFe (fe s.mem base a + fe s.mem base b) := by
@@ -299,7 +299,7 @@ theorem carry38Once_ok (s : State) (hz : s.gpr .x10 = 0) :
     dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
     have z : (0 : BitVec 64).toNat = 0 := rfl
     simp only [val4, Bool.toNat_false, Nat.add_zero, z] at e0 e1 e2 e3 ⊢
-    omega
+    omega_arith
   · reg_keeps
 
 /-- Addition modulo p with one fold of the carry, for operands that sum below
@@ -337,7 +337,7 @@ theorem add1_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     rcases hr with rfl | rfl | rfl | rfl <;> decide)
   refine ⟨Op.of_store ho (k0'.trans (k1'.trans k2')) _ _ _ _, ?_⟩
   simp only [F]
-  rw [fe_st4 _ _ (by have := ho.2; omega)]
+  rw [fe_st4 _ _ (by have := ho.2; omega_arith)]
   rw [k0.mem] at e1
   have hl := val4_lt (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7)
   have hl1 := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
@@ -347,7 +347,7 @@ theorem add1_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
       val4 (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7) + VG.Spec.X25519.P * (2 * c.toNat) := by
     simp only [VG.Spec.X25519.P]
     rw [x1] at e2
-    omega
+    omega_arith
   apply toFe_add
   rw [hsum, Nat.add_mul_mod_self_left]
 
@@ -365,7 +365,7 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64 Word64 VG.Proof.X25519
 theorem slot_rangeWith (o : Slot) : FieldRange (offset o) large := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
-  constructor <;> simp only [offset] <;> omega
+  constructor <;> simp only [offset] <;> omega_arith
 
 theorem slot_range (o : Slot) : FieldRange (offset o) := slot_rangeWith (large := true) o
 
@@ -373,7 +373,7 @@ theorem limbs_nat (x : Nat) (hx : x < 2 ^ 256) :
     val4 (BitVec.ofNat 64 x) (BitVec.ofNat 64 (x / 2 ^ 64))
       (BitVec.ofNat 64 (x / 2 ^ 128)) (BitVec.ofNat 64 (x / 2 ^ 192)) = x := by
   simp only [val4, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem constWords_ok (s : State) (v : Spec.X25519.Fe) :
     WP isa (.block (constWords v)) s fun t =>
@@ -392,7 +392,7 @@ theorem constWords_ok (s : State) (v : Spec.X25519.Fe) :
   refine ⟨?_, K⟩
   rw [k4.gpr .x4 (by decide), k3.gpr .x4 (by decide), k2.gpr .x4 (by decide), e1,
     k4.gpr .x5 (by decide), k3.gpr .x5 (by decide), e2, k4.gpr .x6 (by decide), e3, e4]
-  exact limbs_nat _ (by have := v.isLt; simp only [Spec.X25519.P] at this; omega)
+  exact limbs_nat _ (by have := v.isLt; simp only [Spec.X25519.P] at this; omega_arith)
 
 theorem constField_opB {s : State} {base : Addr} (hs : Scr s base large) (o : Slot) (v : Spec.X25519.Fe) :
     WP isa (.block (constField o v)) s fun t =>
@@ -403,7 +403,7 @@ theorem constField_opB {s : State} {base : Addr} (hs : Scr s base large) (o : Sl
   refine WP.mono (constWords_ok s v) fun t ⟨hv, hk⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) (slot_rangeWith (large := large) o)) fun u heq => ?_
   subst u
-  have hf := fe_st4 t.mem base (o := offset o) (by have := (slot_rangeWith (large := large) o).2; omega)
+  have hf := fe_st4 t.mem base (o := offset o) (by have := (slot_rangeWith (large := large) o).2; omega_arith)
     (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7)
   refine ⟨Op.of_store (slot_rangeWith (large := large) o) (hk.mono (by decide)) _ _ _ _, ?_, hf.trans hv⟩
   rw [F, hf, hv, toFe_self]
@@ -432,7 +432,7 @@ theorem copyField_opB {s : State} {base : Addr} (hs : Scr s base large) (o a : S
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) (slot_rangeWith (large := large) o)) fun u heq => ?_
   subst u
   refine ⟨Op.of_store (slot_rangeWith (large := large) o) (hk.mono (by decide)) _ _ _ _, ?_⟩
-  rw [fe_st4 _ _ (by have := (slot_rangeWith (large := large) o).2; omega), hv]
+  rw [fe_st4 _ _ (by have := (slot_rangeWith (large := large) o).2; omega_arith), hv]
 
 theorem copyField_op {s : State} {base : Addr} (hs : Scr s base large) (o a : Slot) :
     WP isa (.block (copyField o a)) s fun t =>
@@ -514,12 +514,12 @@ theorem env_update {base : Addr} {m m' : Mem} (o : Slot)
   · rw [Function.update_of_ne hi]
     simp only [env, F]
     have hne : i.val ≠ o.val := fun h => hi (Fin.ext h)
-    rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+    rw [h.fe (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)]
 
 theorem op_keep {base : Addr} {o : Slot} {s t : State} (h : Op base (offset o) s t) :
     Keep base s t :=
-  ⟨h.gpr, h.rd, h.wr, h.sp, h.mem.mono (by simp only [offset]; omega)
-    (by simp only [offset]; omega)⟩
+  ⟨h.gpr, h.rd, h.wr, h.sp, h.mem.mono (by simp only [offset]; omega_arith)
+    (by simp only [offset]; omega_arith)⟩
 
 /-- The slots `S` hold values below `2²⁵⁵ + 2¹³⁶`, as `fieldAdd1` and `fieldSub1` need. -/
 def Small (m : Mem) (base : Addr) (S : Slot → Bool) : Prop :=
@@ -538,7 +538,7 @@ theorem Small.update {base : Addr} {m m' : Mem} {S : Slot → Bool} {o : Slot} (
     exact hb hi
   · simp only [ho, ite_false] at hi
     have hne : i.val ≠ o.val := fun h => ho (Fin.ext h)
-    rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+    rw [h.fe (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)]
     exact hS i hi
 
 theorem Small.mono {base : Addr} {m : Mem} {S S' : Slot → Bool} (h : ∀ i, S i = true → S' i = true)
@@ -549,7 +549,7 @@ theorem Small.frame {base : Addr} {m m' : Mem} {S : Slot → Bool} {o n : Nat} (
     (ho : 64 + 32 * 22 ≤ o) (hS : Small m base S) : Small m' base S := by
   intro i hi
   have := i.isLt
-  rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+  rw [h.fe (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)]
   exact hS i hi
 
 def smallAfterOps (ops : List FieldOp) (S : Slot → Bool) : Slot → Bool :=
@@ -567,7 +567,7 @@ theorem fieldOpS_ok {s : State} {base : Addr} (hs : Scr s base large) (op : Fiel
       Small t.mem base (op.small S) ∧ Outside base (offset op.out) 32 s.mem t.mem := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
-  have hP : VG.Spec.X25519.P < 2 ^ 255 + 2 ^ 136 := by simp only [VG.Spec.X25519.P]; omega
+  have hP : VG.Spec.X25519.P < 2 ^ 255 + 2 ^ 136 := by simp only [VG.Spec.X25519.P]; omega_arith
   cases op with
   | copy o a =>
     refine WP.mono (copyField_opB hs o a) fun t ⟨h, e⟩ => ?_
@@ -580,11 +580,11 @@ theorem fieldOpS_ok {s : State} {base : Addr} (hs : Scr s base large) (op : Fiel
   | mul o a b =>
     refine WP.mono (mul_okB hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
       (slot_rangeWith (large := large) b)) fun t ⟨h, e, r⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem true fun _ => by omega, h.mem⟩
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem true fun _ => by omega_arith, h.mem⟩
   | sqr o a =>
     refine WP.mono (sqr_okB hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a))
       fun t ⟨h, e, r⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem true fun _ => by omega, h.mem⟩
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem true fun _ => by omega_arith, h.mem⟩
   | add o a b =>
     show WP isa (.block (if (C a && C b) = true then fieldAdd1 (offset o) (offset a) (offset b)
       else fieldAdd (offset o) (offset a) (offset b))) s _
@@ -594,7 +594,7 @@ theorem fieldOpS_ok {s : State} {base : Addr} (hs : Scr s base large) (op : Fiel
       have := hS a (hCS a hc.1)
       have := hS b (hCS b hc.2)
       refine WP.mono (add1_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
-        (slot_rangeWith (large := large) b) (by omega)) fun t ⟨h, e⟩ => ?_
+        (slot_rangeWith (large := large) b) (by omega_arith)) fun t ⟨h, e⟩ => ?_
       exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem false nofun, h.mem⟩
     · refine WP.mono (add_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
         (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
@@ -606,7 +606,7 @@ theorem fieldOpS_ok {s : State} {base : Addr} (hs : Scr s base large) (op : Fiel
     · next hc =>
       have := hS b (hCS b hc)
       refine WP.mono (sub1_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
-        (slot_rangeWith (large := large) b) (by omega)) fun t ⟨h, e⟩ => ?_
+        (slot_rangeWith (large := large) b) (by omega_arith)) fun t ⟨h, e⟩ => ?_
       exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem false nofun, h.mem⟩
     · refine WP.mono (sub_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
         (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
@@ -672,10 +672,10 @@ theorem sqrMulField_ok {s : State} {base : Addr} (hs : Scr s base large) (o a b 
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩
 
 def addResult (e : Env) (q : Nat) (hq : q + 3 < 22) : Spec.Ed25519.Point :=
-  let x := e ⟨q, by omega⟩
-  let y := e ⟨q + 1, by omega⟩
-  let z := e ⟨q + 2, by omega⟩
-  let t := e ⟨q + 3, by omega⟩
+  let x := e ⟨q, by omega_arith⟩
+  let y := e ⟨q + 1, by omega_arith⟩
+  let z := e ⟨q + 2, by omega_arith⟩
+  let t := e ⟨q + 3, by omega_arith⟩
   let a := (e 1 - e 0) * (y - x)
   let b := (e 1 + e 0) * (y + x)
   let c := (e 3 * e 16 + e 3 * e 16) * t
@@ -706,7 +706,7 @@ theorem doubleResult_eq (e : Env) (hd : e 16 = Spec.Ed25519.d) :
 
 theorem addResult_eq (e : Env) (q : Nat) (hq : q + 3 < 22) (hd : e 16 = Spec.Ed25519.d) :
     addResult e q hq = Spec.Ed25519.pointAdd (point e 0 1 2 3)
-      (point e ⟨q, by omega⟩ ⟨q + 1, by omega⟩ ⟨q + 2, by omega⟩ ⟨q + 3, hq⟩) := by
+      (point e ⟨q, by omega_arith⟩ ⟨q + 1, by omega_arith⟩ ⟨q + 2, by omega_arith⟩ ⟨q + 3, hq⟩) := by
   simp only [addResult, point, Spec.Ed25519.pointAdd, hd]
   congr 1 <;> grind
 

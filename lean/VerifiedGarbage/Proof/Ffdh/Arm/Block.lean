@@ -136,7 +136,17 @@ theorem withRest {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg)
   exact ⟨trace, t, run, done, fun r hr => VG.Arm.Exec.gpr (hc r hr) run (.inl noCalls),
     perms.1, perms.2.1, perms.2.2⟩
 
-theorem withAllRest {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
+/-- `withRest`, its side condition a closed check that every register the
+code writes is one of `rs`, proven by `rfl`: `simp` on `clobbers` would
+generate the equations of `dstOf`'s match. -/
+theorem withRest_all {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg)
+    (h : WP isa c s Q) (hc : (instrs c).all (fun i => (dsts i).all fun r => decide (r ∈ rs)) = true)
+    (noCalls : c.noCalls = true) :
+    WP isa c s fun t => Q t ∧ VG.Proof.X25519.Arm.Rest rs s t :=
+  withRest rs h (fun _ hr i hi =>
+    clobbers_eq_false_of_all (List.all_eq_true.mp hc i hi) (decide_eq_false hr)) noCalls
+
+theorem withAllRest{c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
     WP isa c s fun t => Q t ∧ VG.Proof.X25519.Arm.Rest VG.Proof.Bignum.Arm.roundClobbers s t := by
   obtain ⟨trace, t, run, done⟩ := h
   have perms := VG.Arm.Exec.rdwr run

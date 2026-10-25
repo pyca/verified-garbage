@@ -85,7 +85,7 @@ theorem ecb_agree (up : Bool) {s₁ s₂ : State} (h₁ : (ecbC up).pre s₁) (h
         List.Pairwise.nil]
       exact ⟨db, fun _ h => h.elim, trivial⟩
     · simp only [wr, List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only [State.addr, BitVec.toNat_setWidth] <;> omega
+      rintro r (rfl | rfl) <;> simp only [State.addr, BitVec.toNat_setWidth] <;> omega_arith
     · intro p hp'
       simp only [τE, List.mem_singleton] at hp'; subst hp'
       simp [VG.Arm.Taint.region, wr]
@@ -197,7 +197,7 @@ theorem expandKey_agree {s₁ s₂ : State} (h₁ : keyC.pre (stripConsts initCo
         List.Pairwise.nil]
       exact ⟨sb, fun _ h => h.elim, trivial⟩
     · simp only [wr, List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only [State.addr, BitVec.toNat_setWidth] <;> omega
+      rintro r (rfl | rfl) <;> simp only [State.addr, BitVec.toNat_setWidth] <;> omega_arith
     · intro p hp'
       simp only [τK, List.mem_cons, List.not_mem_nil, or_false] at hp'
       rcases hp' with rfl | rfl <;> simp [VG.Arm.Taint.region, wr]

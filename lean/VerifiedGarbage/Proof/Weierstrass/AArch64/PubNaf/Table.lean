@@ -30,11 +30,11 @@ theorem coord_words {m m' : Mem} {base : Addr} {dst src n c : Nat} (hc : c < 3)
   apply wordsVal_of_words₂
   intro i hi
   have he := h (n * c + i) (by
-    have : n * c + i < n * c + n := by omega
+    have : n * c + i < n * c + n := by omega_arith
     have : n * c + n ≤ 3 * n := by rw [← Nat.mul_succ, Nat.mul_comm 3]; exact Nat.mul_le_mul_left _ hc
-    omega)
-  rw [show dst + 8 * (n * c + i) = dst + 8 * n * c + 8 * i by rw [Nat.mul_add, Nat.mul_assoc]; omega,
-    show src + 8 * (n * c + i) = src + 8 * n * c + 8 * i by rw [Nat.mul_add, Nat.mul_assoc]; omega] at he
+    omega_arith)
+  rw [show dst + 8 * (n * c + i) = dst + 8 * n * c + 8 * i by rw [Nat.mul_add, Nat.mul_assoc]; omega_arith,
+    show src + 8 * (n * c + i) = src + 8 * n * c + 8 * i by rw [Nat.mul_add, Nat.mul_assoc]; omega_arith] at he
   exact he
 
 /-- What a copy of `3 n` words from `o` changes, as the three coordinates' slots. -/
@@ -44,7 +44,7 @@ theorem unch_of_outside {base : Addr} {m m' : Mem} {o n : Nat}
   intro x hx
   apply h x
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
-  omega
+  omega_arith
 
 /-- The bounds of entry `a`'s slots. -/
 theorem tbl_le {K : WinCfg} {size : Nat} (hL : WinLay K size) {i : Nat} (hi : i < 24) :
@@ -74,7 +74,7 @@ theorem store_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
   have rz := hW.lay.le K.R.z (winOther_mem hRz)
   have r8 := hL.al.sl K.R.x (winOther_mem hRx)
   have t8 := tbl8 hL.al
-  have hle := tbl_le hW (i := 3 * m + 2) (by omega)
+  have hle := tbl_le hW (i := 3 * m + 2) (by omega_arith)
   have rxz := hL.rxz
   have hst : stride K = 24 * K.M.n := rfl
   rw [rxz] at tz rz
@@ -82,7 +82,7 @@ theorem store_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
   have hm8 : 24 * K.M.n * m + 24 * K.M.n ≤ 24 * K.M.n * 8 := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hm
   refine WP.mono (stOff_ok hs h20 (o := K.tbl) (src := K.R.x) (n := 3 * K.M.n) t8
-    (by rw [hst]; omega) (by omega) r8 (by rw [hst]; omega) (3 * K.M.n) (Nat.le_refl _))
+    (by rw [hst]; omega_arith) (by omega_arith) r8 (by rw [hst]; omega_arith) (3 * K.M.n) (Nat.le_refl _))
     fun t ⟨e, k, O⟩ => ⟨fun c hc => ?_, k, ?_⟩
   · have := coord_words (n := K.M.n) hc (dst := stride K * m + K.tbl) (src := K.R.x) e
     rw [← this]
@@ -93,9 +93,9 @@ theorem store_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
     simp only [WinCfg.tblPt, Nat.add_sub_cancel, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rw [hst] at hw
     rcases hw with rfl | rfl | rfl
-    · exact Or.inl (by congr 1; omega)
-    · exact Or.inr (Or.inl (by congr 1; omega))
-    · exact Or.inr (Or.inr (by congr 1; omega))
+    · exact Or.inl (by congr 1; omega_arith)
+    · exact Or.inr (Or.inl (by congr 1; omega_arith))
+    · exact Or.inr (Or.inr (by congr 1; omega_arith))
 
 /-! ## The construction -/
 
@@ -122,7 +122,7 @@ theorem words_keep {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr} 
     (hW : ∀ y ∈ W, y ∈ winSlots K) {x : Nat} (hx : x ∈ winSlots K) (hxW : x ∉ W)
     (hn : base.toNat + size ≤ 2 ^ 64) :
     wordsVal m' base x K.M.n = wordsVal m base x K.M.n := by
-  refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hx; omega)
+  refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hx; omega_arith)
   simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with ⟨y, hy, rfl⟩ | rfl
   · exact hL.lay.apart x y hx (hW y hy) (fun e => hxW (e ▸ hy))
@@ -140,7 +140,7 @@ theorem entry_unch {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr} 
       ((K.tblPt j).z, 8 * K.M.n)] m m') (hn : base.toNat + size ≤ 2 ^ 64) {x : Nat}
     (hx : x ∈ winSlots K) (hxj : x ∉ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z]) :
     wordsVal m' base x K.M.n = wordsVal m base x K.M.n := by
-  refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hx; omega)
+  refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hx; omega_arith)
   have hy : w.1 ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z] ∧ w.2 = 8 * K.M.n := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;> simp
@@ -172,8 +172,8 @@ theorem tbl_not_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {a j : Nat} (
   obtain ⟨i', hi', e, hij, hij'⟩ := tblPt_mem K hj1 hj8 _ h'
   have : i ≠ i' := by
     intro hii; subst hii
-    have : a - 1 < j ∧ j - 1 < a := by omega
-    omega
+    have : a - 1 < j ∧ j - 1 < a := by omega_arith
+    omega_arith
   exact hL.tbl_ne₂ this e
 
 theorem add_self_mul {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P = true) :

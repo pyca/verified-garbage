@@ -34,9 +34,9 @@ theorem fastByte_word (w k j : Nat) :
   rw [BitVec.toNat_setWidth,fastWord_toNat,FastNaf.byte_toNat]
   have hb := fastMagnitude_bound w k j
   cases hn : FastNaf.negative w k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_arith
   · have hp := FastNaf.negative_magnitude_pos w k j hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 theorem fastStore_ok {s : State} {base : Addr} {size bits w k j : Nat}
     (hs : Scr s base size) (hb : bits+j<size)
@@ -45,7 +45,7 @@ theorem fastStore_ok {s : State} {base : Addr} {size bits w k j : Nat}
     WP isa (.block [.store8 (tbl bits) .rcx]) s fun t =>
       t.mem=s.mem.writeW (off base (bits+j)) (FastNaf.byte w k j) ∧ KeepRegs [] s t := by
   have hw : InRegions s.wr (off base (bits+j)) 1 :=
-    ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,hs.wr,hs.contains (by omega_arith) (by decide)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,State.store8,
     ea_tbl hs.rdi hc,hw,hd,fastByte_word,ite_true,Option.some.injEq,exists_eq_left']
@@ -68,10 +68,10 @@ theorem fastAdvance_ok (s : State) {j d : Nat} (hd : d=1 ∨ d=5 ∨ d=7 ∨ d=9
 private theorem cmp_sext {v : Nat} (hv : v<2^31) :
     (BitVec.ofNat 32 v).signExtend 64=BitVec.ofNat 64 v := by
   rw [BitVec.signExtend_eq_setWidth_of_msb_false (BitVec.msb_eq_false_iff_two_mul_lt.mpr (by
-      rw [BitVec.toNat_ofNat]; omega))]
+      rw [BitVec.toNat_ofNat]; omega_arith))]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : v<2^32),Nat.mod_eq_of_lt (by omega : v<2^64)]
+  rw [Nat.mod_eq_of_lt (by omega_arith : v<2^32),Nat.mod_eq_of_lt (by omega_arith : v<2^64)]
 
 theorem fastCompare_ok (s : State) {n j : Nat} (hn : 64*n+1<2^31) (hj : j<2^64)
     (hc : s.gpr .rbx=BitVec.ofNat 64 j) :
@@ -81,7 +81,7 @@ theorem fastCompare_ok (s : State) {n j : Nat} (hn : 64*n+1<2^31) (hj : j<2^64)
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,readSrc,
     Option.bind_some,RegUpd.cf_arithFlags,Option.some.injEq,exists_eq_left',cmp_sext hn]
   refine ⟨?_,fun _ _ => rfl,rfl,rfl,rfl⟩
-  simp only [hc,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hj,Nat.mod_eq_of_lt (show 64*n+1<2^64 by omega)]
+  simp only [hc,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hj,Nat.mod_eq_of_lt (show 64*n+1<2^64 by omega_arith)]
 
 private theorem clearWords_ok {s : State} {base : Addr} {size bits n : Nat}
     (hs : Scr s base size) (hb : bits+8*n≤size) :
@@ -94,13 +94,13 @@ theorem fastClear_ok {s : State} {base : Addr} {size n bits : Nat}
     WP isa (.block (setConst (8*n+1) bits 0)) s fun t =>
       (∀ i<64*n+8,t.mem (off base (bits+i))=0) ∧ KeepRegs [.rax] s t ∧
         Outside base bits (64*n+8) s.mem t.mem := by
-  refine WP.mono (clearWords_ok (n:=8*n+1) hs (by omega)) fun t ⟨ht,kt,ot⟩ => ⟨?_,kt,?_⟩
+  refine WP.mono (clearWords_ok (n:=8*n+1) hs (by omega_arith)) fun t ⟨ht,kt,ot⟩ => ⟨?_,kt,?_⟩
   · intro i hi
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    rw [testBit_byte t.mem base (n:=8*n+1) (by omega) hb,ht]
+    rw [testBit_byte t.mem base (n:=8*n+1) (by omega_arith) hb,ht]
     simp only [BitVec.ofNat_eq_ofNat,Nat.zero_testBit,BitVec.getLsbD_zero]
-  · rwa [show 8*(8*n+1)=64*n+8 by omega] at ot
+  · rwa [show 8*(8*n+1)=64*n+8 by omega_arith] at ot
 
 /-- `loads_ok` for any distinct registers but `rdi`: nine words load into `rbp`
 too, which `Fresh` excludes. -/
@@ -117,14 +117,14 @@ theorem loadsScalar_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Ad
     refine WP.mono (show WP isa (.block [.mov t (.mem (sc a))]) s
         (fun s₁ => s₁.gpr t=word s.mem base a ∧ Keeps [t] s s₁) by
       apply WP.of_runBlock
-      simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc_sc hs (d:=a) (by omega),
+      simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc_sc hs (d:=a) (by omega_arith),
         Option.map_some,RegUpd.gpr_setReg,ite_true,Option.some.injEq,exists_eq_left']
       refine ⟨trivial,fun r hr => ?_,rfl,rfl,rfl⟩
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       simp only [RegUpd.gpr_setReg,hr,ite_false]) fun s₁ ⟨e₁,k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons,List.not_mem_nil,or_false]; exact fun h => htd h.symm)
-    refine WP.mono (loadsScalar_ok ts hs₁ (a:=a+8) (by omega) (List.nodup_cons.mp hn).2
+    refine WP.mono (loadsScalar_ok ts hs₁ (a:=a+8) (by omega_arith) (List.nodup_cons.mp hn).2
       (fun h => hd (List.mem_cons_of_mem _ h))) fun s₂ ⟨e₂,k₂⟩ => ?_
     have ht' : s₂.gpr t=s₁.gpr t := k₂.1 t ht
     refine ⟨?_,(k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
@@ -157,7 +157,7 @@ theorem nafPrepInitN_ok {s : State} {base : Addr} {size n src : Nat} (hn : n=4 �
     · simp only [nafValN_four,nafVal5,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
       change _+2^256*0=wordsVal s.mem base src 4
       simp only [regsVal,List.length_cons,List.length_nil,Nat.reduceAdd] at va
-      omega
+      omega_arith
     · refine ⟨fun r hr => ?_,ka.2.2.1,ka.2.2.2⟩
       have h12 : r≠.r12 := fun h => hr (h ▸ (by decide))
       have hbx : r≠.rbx := fun h => hr (h ▸ (by decide))
@@ -174,7 +174,7 @@ theorem nafPrepInitN_ok {s : State} {base : Addr} {size n src : Nat} (hn : n=4 �
     · simp only [nafValN_six,nafVal7,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
       change _+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*0)))))=wordsVal s.mem base src 6
       simp only [regsVal,List.length_cons,List.length_nil,Nat.reduceAdd] at va
-      omega
+      omega_arith
     · refine ⟨fun r hr => ?_,ka.2.2.1,ka.2.2.2⟩
       have h14 : r≠.r14 := fun h => hr (h ▸ (by decide))
       have hbx : r≠.rbx := fun h => hr (h ▸ (by decide))
@@ -221,7 +221,7 @@ theorem fastPrepInit_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn 
   · rw [hv,va,FastNaf.residual_zero]
   · exact (kt.gpr .rbx (by decide)).trans ca
   · intro i hi
-    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega)
+    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega_arith)
   · rw [ma] at ot
     exact ot
 

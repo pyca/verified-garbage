@@ -123,19 +123,19 @@ theorem accB_eq (c c' : List Byte) : ∀ n, n ≤ c.length → n ≤ c'.length �
     accB c c' n = ((c.take n).zipWith (· ^^^ ·) (c'.take n)).foldl (· ||| ·) 0
   | 0, _, _ => by simp [accB]
   | n + 1, h₁, h₂ => by
-    rw [accB, accB_eq c c' n (by omega) (by omega), List.take_add_one, List.take_add_one,
-      List.getElem?_eq_getElem (by omega), List.getElem?_eq_getElem (by omega), Option.toList_some,
-      Option.toList_some, List.zipWith_append (by simp; omega), List.foldl_append]
+    rw [accB, accB_eq c c' n (by omega_arith) (by omega_arith), List.take_add_one, List.take_add_one,
+      List.getElem?_eq_getElem (by omega_arith), List.getElem?_eq_getElem (by omega_arith), Option.toList_some,
+      Option.toList_some, List.zipWith_append (by simp; omega_arith), List.foldl_append]
     simp only [List.zipWith_cons_cons, List.zipWith_nil_left, List.foldl_cons, List.foldl_nil,
-      List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show n < c.length by omega),
-      List.getElem?_eq_getElem (show n < c'.length by omega), Option.getD_some]
+      List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show n < c.length by omega_arith),
+      List.getElem?_eq_getElem (show n < c'.length by omega_arith), Option.getD_some]
 
 /-- `c` and `c'` of `n` bytes are equal exactly when `accB` of all their bytes is 0. -/
 theorem accB_zero {c c' : List Byte} {n : Nat} (h₁ : c.length = n) (h₂ : c'.length = n) :
     c = c' ↔ accB c c' n = 0 := by
-  rw [accB_eq c c' n (by omega) (by omega), List.take_of_length_le (by omega),
-    List.take_of_length_le (by omega)]
-  exact eq_iff_foldl_or_xor (by omega)
+  rw [accB_eq c c' n (by omega_arith) (by omega_arith), List.take_of_length_le (by omega_arith),
+    List.take_of_length_le (by omega_arith)]
+  exact eq_iff_foldl_or_xor (by omega_arith)
 
 /-- `c'`. -/
 abbrev bC (L : KemLay) : Buf := ⟨3, L.eC, L.p.ctLen⟩
@@ -167,18 +167,18 @@ theorem cmp_step [CmpOK L] {s₀ : State} (hp : TPre (Y L) s₀) {m : Mem} {k : 
   have f1 : (arg s₀ 1).toNat + L.p.ctLen ≤ 2 ^ 32 := hp.fit 1 (by rdecide)
   have f3 : (arg s₀ 3).toNat + L.scratch ≤ 2 ^ 32 := hp.fit 3 (by rdecide)
   have e₁ : u.ea (at_ .edi 0) = Buf.addr s₀ ⟨1, 0, L.p.ctLen⟩ + BitVec.ofNat 64 k := by
-    simp only [State.ea, at_, h.edi]; rw [ea_add (by omega), addr0]; rfl
+    simp only [State.ea, at_, h.edi]; rw [ea_add (by omega_arith), addr0]; rfl
   have e₂ : u.ea (at_ .ebp L.eC) = Buf.addr s₀ (bC L) + BitVec.ofNat 64 k := by
     simp only [State.ea, at_, h.ebp]
-    rw [ea_add (by omega), Buf.addr_eq hp (b := bC L) ok₂, BitVec.add_assoc,
+    rw [ea_add (by omega_arith), Buf.addr_eq hp (b := bC L) ok₂, BitVec.add_assoc,
       ← BitVec.ofNat_add, Nat.add_comm]
   have i₁ := Buf.inRegR (o := k) (n := 1) hp (b := ⟨1, 0, L.p.ctLen⟩) ok₁ h.ctx.rd h.ctx.wr
-    (show k + 1 ≤ L.p.ctLen by omega)
+    (show k + 1 ≤ L.p.ctLen by omega_arith)
   refine wp_movzx' (by rw [e₁]; exact i₁) fun u₁ o₁ v₁ => ?_
   have c₁ := h.ctx.only o₁ (by decide) (by decide)
   have e₂' : u₁.ea (at_ .ebp L.eC) = Buf.addr s₀ (bC L) + BitVec.ofNat 64 k := by
     rw [← e₂]; simp only [State.ea, at_, o₁.gpr .ebp (by decide)]
-  have i₂ := Buf.inRegR (o := k) (n := 1) hp (b := bC L) ok₂ c₁.rd c₁.wr (show k + 1 ≤ L.p.ctLen by omega)
+  have i₂ := Buf.inRegR (o := k) (n := 1) hp (b := bC L) ok₂ c₁.rd c₁.wr (show k + 1 ≤ L.p.ctLen by omega_arith)
   refine wp_movzx' (by rw [e₂']; exact i₂) fun u₂ o₂ v₂ => ?_
   refine wp_xorr fun u₃ o₃ v₃ => wp_orr fun u₄ o₄ v₄ => wp_addi fun u₅ o₅ v₅ => wp_addi fun u₆ o₆ v₆ =>
     wp_subi_last fun u₇ o₇ v₇ z₇ => ?_
@@ -251,7 +251,7 @@ theorem cmp_piece [CmpOK L] (hA : ∀ s₀ s, TPre (Y L) s₀ → A s₀ s → C
     rw [ite_eq_right e]
     have : ¬ ((accB (ct L s₀) (bytesAt s.mem (Buf.addr s₀ (bC L)) L.p.ctLen) L.p.ctLen).setWidth 32).toNat <
         (1 : BitVec 32).toNat := by
-      rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)]
       intro h'
       exact z (BitVec.eq_of_toNat_eq (by simp at h'; simp [h']))
     simp only [this, decide_false]
@@ -289,13 +289,13 @@ theorem sel_step [CmpOK L] {s₀ : State} (hp : TPre (Y L) s₀) {m : Mem} {M : 
       (Y L).ok b = true → o + k < L.scratch → u'.ea (at_ .edi o) = Buf.addr s₀ b + BitVec.ofNat 64 k :=
     fun u' o b e h₁ h₂ hok ho => by
       simp only [State.ea, at_, e]
-      rw [ea_add (by omega), Buf.addr_eq hp hok, h₁, h₂, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm]
-  have e₁ := ea u L.eKR (bK L) h.edi rfl rfl ok₁ (by omega)
-  have i₁ := Buf.inRegR (o := k) (n := 1) hp (b := bK L) ok₁ h.ctx.rd h.ctx.wr (show k + 1 ≤ 32 by omega)
+      rw [ea_add (by omega_arith), Buf.addr_eq hp hok, h₁, h₂, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm]
+  have e₁ := ea u L.eKR (bK L) h.edi rfl rfl ok₁ (by omega_arith)
+  have i₁ := Buf.inRegR (o := k) (n := 1) hp (b := bK L) ok₁ h.ctx.rd h.ctx.wr (show k + 1 ≤ 32 by omega_arith)
   refine wp_movzx' (by rw [e₁]; exact i₁) fun u₁ o₁ v₁ => ?_
   have c₁ := h.ctx.only o₁ (by decide) (by decide)
-  have e₂ := ea u₁ L.eH (bKB L) (by rw [o₁.gpr .edi (by decide), h.edi]) rfl rfl ok₂ (by omega)
-  have i₂ := Buf.inRegR (o := k) (n := 1) hp (b := bKB L) ok₂ c₁.rd c₁.wr (show k + 1 ≤ 32 by omega)
+  have e₂ := ea u₁ L.eH (bKB L) (by rw [o₁.gpr .edi (by decide), h.edi]) rfl rfl ok₂ (by omega_arith)
+  have i₂ := Buf.inRegR (o := k) (n := 1) hp (b := bKB L) ok₂ c₁.rd c₁.wr (show k + 1 ≤ 32 by omega_arith)
   refine wp_movzx' (by rw [e₂]; exact i₂) fun u₂ o₂ v₂ => ?_
   have c₂ := c₁.only o₂ (by decide) (by decide)
   refine wp_xorr fun u₃ o₃ v₃ => wp_andr fun u₄ o₄ v₄ => wp_xorr fun u₅ o₅ v₅ => ?_
@@ -304,12 +304,12 @@ theorem sel_step [CmpOK L] {s₀ : State} (hp : TPre (Y L) s₀) {m : Mem} {M : 
     rw [o₅.gpr .ebp (by decide), o₄.gpr .ebp (by decide), o₃.gpr .ebp (by decide), o₂.gpr .ebp (by decide),
       o₁.gpr .ebp (by decide), h.ebp]
   have e₃ : u₅.ea (at_ .ebp 0) = Buf.addr s₀ bKey + BitVec.ofNat 64 k := by
-    simp only [State.ea, at_, eb]; rw [ea_add (by omega), addr0]; rfl
-  have i₃ := Buf.inRegW (o := k) (n := 1) hp (b := bKey) (by rdecide) (by rdecide) c₅.wr (show k + 1 ≤ 32 by omega)
+    simp only [State.ea, at_, eb]; rw [ea_add (by omega_arith), addr0]; rfl
+  have i₃ := Buf.inRegW (o := k) (n := 1) hp (b := bKey) (by rdecide) (by rdecide) c₅.wr (show k + 1 ≤ 32 by omega_arith)
   refine wp_store8 (by rw [e₃]; exact i₃) (wp_addi fun u₆ o₆ v₆ => wp_addi fun u₇ o₇ v₇ =>
     wp_subi_last fun u₈ o₈ v₈ z₈ => ?_)
   obtain ⟨r, hr, hcr⟩ := Buf.contains hp (b := bKey) (by rdecide) (by rdecide) (o := k) (n := 1)
-    (show k + 1 ≤ 32 by omega)
+    (show k + 1 ≤ 32 by omega_arith)
   set u₅' : State := { u₅ with mem := u₅.mem.writeW (u₅.ea (at_ .ebp 0)) ((u₅.gpr Reg8.al.reg).setWidth 8) }
   have c₅' : Ctx (Y L) s₀ u₅' := ⟨c₅.esp, c₅.rd, c₅.wr, c₅.esi, by
     show Frame _ _ (u₅.mem.writeW _ _); rw [e₃]; exact c₅.frame.writeW hr _ hcr⟩
@@ -323,7 +323,7 @@ theorem sel_step [CmpOK L] {s₀ : State} (hp : TPre (Y L) s₀) {m : Mem} {M : 
     (h.fr.bytes (R := Buf.rgn s₀ b) (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
       exact Buf.disj hp hok (c := bKey) (by rdecide) (by simp [Lay.sep, hb, Y, Lay.awr])) (by
-        show b.len ≤ 2 ^ 64; have := Buf.fit hp hok; omega) hi)
+        show b.len ≤ 2 ^ 64; have := Buf.fit hp hok; omega_arith) hi)
   have x₁ : u.mem (Buf.addr s₀ (bK L) + BitVec.ofNat 64 k) = m (Buf.addr s₀ (bK L) + BitVec.ofNat 64 k) :=
     keepK (bK L) rfl ok₁ k hk
   have x₂ : u₁.mem (Buf.addr s₀ (bKB L) + BitVec.ofNat 64 k) = m (Buf.addr s₀ (bKB L) + BitVec.ofNat 64 k) := by
@@ -347,7 +347,7 @@ theorem sel_step [CmpOK L] {s₀ : State} (hp : TPre (Y L) s₀) {m : Mem} {M : 
   · rw [m₈]
     exact h.fr.writeW (List.mem_singleton_self _) _ (by
       show (⟨Buf.addr s₀ bKey, 32⟩ : Region).Contains _ (8 / 8)
-      simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+      simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
   · rw [o₈.gpr .edi (by decide), o₇.gpr .edi (by decide), v₆, show u₅'.gpr .edi = u₅.gpr .edi from rfl,
       o₅.gpr .edi (by decide), o₄.gpr .edi (by decide), o₃.gpr .edi (by decide), o₂.gpr .edi (by decide),
       o₁.gpr .edi (by decide), h.edi, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, add_ofNat_add]
@@ -360,8 +360,8 @@ theorem sel_step [CmpOK L] {s₀ : State} (hp : TPre (Y L) s₀) {m : Mem} {M : 
     · have ne : Buf.addr s₀ bKey + BitVec.ofNat 64 j ≠ Buf.addr s₀ bKey + BitVec.ofNat 64 k := fun e => by
         have := congrArg BitVec.toNat ((BitVec.add_right_inj _).mp e)
         simp only [BitVec.toNat_ofNat] at this
-        rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
-        omega
+        rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)] at this
+        omega_arith
       rw [ite_eq_right ne]
       exact h.out j hj
     · rw [ite_eq_left rfl, val]

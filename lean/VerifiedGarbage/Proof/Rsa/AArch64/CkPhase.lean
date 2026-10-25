@@ -32,11 +32,11 @@ open VG.Proof.MlKem.AArch64 (Keep)
 theorem topD_ok {B : Addr} {Z sl : Nat} {m₀ : Mem} {yl : Nat} (hsl : sl < 32)
     (hy : word m₀ B (8 * sl) = BitVec.ofNat 64 yl) (hyl : yl < 2 ^ 32) (hZ : 8 * 32 ≤ Z) :
     TopOk (topD sl) B Z m₀ ((yl + 7) / 8 + 1) := fun t hs h0 hh => by
-  have hl := hs.ld (d := 8 * sl) (by omega)
+  have hl := hs.ld (d := 8 * sl) (by omega_arith)
   refine WP.mono (WP.keep [.x13] (Q := fun t' => t'.gpr .x13 = BitVec.ofNat 64 ((yl + 7) / 8 + 1) ∧
     t'.mem = t.mem ∧ t'.c = t.c) ?_ (by rfl) (by rfl) (by rfl)) fun _ ⟨h, k⟩ => ⟨h, k.mono (by simp)⟩
   unfold topD
-  brun [hdr_enc hsl, h0, hl, hh sl hsl, hy, BitVec.ofNat_add_ofNat, shr_ofNat (show yl + 7 < 2 ^ 64 by omega)]
+  brun [hdr_enc hsl, h0, hl, hh sl hsl, hy, BitVec.ofNat_add_ofNat, shr_ofNat (show yl + 7 < 2 ^ 64 by omega_arith)]
   rfl
 
 theorem modChecks_eq (sX sXlen sDX sYlen : Nat) : modChecks sX sXlen sDX sYlen =
@@ -89,9 +89,9 @@ theorem phMod_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     rw [o₆ aOne (by decide) (by decide), o₅ aOne (by decide) (by decide), o₄ aOne (by decide),
       o₃ aOne (by decide) (by decide), o₂ aOne (by decide) (by decide), o₁ aOne (by decide) (by decide), hO]
   refine wp_seqs_append (by simp [CheckCrtKey.modOne, CheckCrtKey.reduceTop]) (by simp [loadA]) (WP.mono (ckModOneTop_ok h₆
-    (m₆.trans (m₅.trans m₄)) O₆ (topD_ok hsY (hY _ h₆) (by have := L.cap2; have := L.k2; omega)
-      h₆.ws.h256) (by omega)
-    (by have := L.cap1; unfold wW wk; omega)) fun s₇ ⟨h₇, ⟨r₁, hr₁, m₇⟩, o₇⟩ => ?_)
+    (m₆.trans (m₅.trans m₄)) O₆ (topD_ok hsY (hY _ h₆) (by have := L.cap2; have := L.k2; omega_arith)
+      h₆.ws.h256) (by omega_arith)
+    (by have := L.cap1; unfold wW wk; omega_arith)) fun s₇ ⟨h₇, ⟨r₁, hr₁, m₇⟩, o₇⟩ => ?_)
   have M₆ : I.av s₆.mem aM = I.av s₂.mem aM := by
     rw [o₆ aM (by decide) (by decide), o₅ aM (by decide) (by decide), o₄ aM (by decide), M₃]
   rw [v₆, M₆] at hr₁
@@ -109,7 +109,7 @@ theorem phMod_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     rw [o₉ aOne (by decide) (by decide), o₈ aOne (by decide) (by decide),
       o₇ aOne (by decide) (by decide) (by decide) (by decide), O₆]
   refine WP.mono (ckModOneTop_ok h₉ (m₉.trans (m₈.trans m₇)) O₉ (topE_ok _ _ _)
-    (by omega) (by unfold wW; omega)) fun t ⟨ht, ⟨r₂, hr₂, mt⟩, ot⟩ => ?_
+    (by omega_arith) (by unfold wW; omega_arith)) fun t ⟨ht, ⟨r₂, hr₂, mt⟩, ot⟩ => ?_
   have M₉ : I.av s₉.mem aM = I.av s₂.mem aM := by
     rw [o₉ aM (by decide) (by decide), o₈ aM (by decide) (by decide), o₇ aM (by decide) (by decide) (by decide)
       (by decide), M₆]
@@ -133,11 +133,11 @@ theorem phMod_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     cases decide (r₂ = 1) <;> cases decide (r₁ = 1) <;> cases decide (Spec.Rsa.os2ip dxb < I.av s₂.mem aM) <;>
       cases c <;> rfl
   · have hM : I.av s₂.mem aM = Spec.Rsa.os2ip xb - 1 := v₂ ho
-    have hM0 : 0 < I.av s₂.mem aM := by rw [hM]; omega
+    have hM0 : 0 < I.av s₂.mem aM := by rw [hM]; omega_arith
     have hdBound : I.D * I.E / 2 ^ (64 * ((yl + 7) / 8 + 1)) < I.av s₂.mem aM := by
       rw [hM, Nat.mul_comm I.D I.E]
       exact (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr
-        (by rw [Nat.mul_comm (Spec.Rsa.os2ip xb - 1)]; exact Proof.Rsa.fullExp_bound (x := Spec.Rsa.os2ip xb) (L := yl) he33 (by omega) (by rw [hpq]; exact hd) hy)
+        (by rw [Nat.mul_comm (Spec.Rsa.os2ip xb - 1)]; exact Proof.Rsa.fullExp_bound (x := Spec.Rsa.os2ip xb) (L := yl) he33 (by omega_arith) (by rw [hpq]; exact hd) hy)
     rw [hr₁ hdBound, hM]
     by_cases hlt : Spec.Rsa.os2ip dxb < Spec.Rsa.os2ip xb - 1
     · rw [hr₂ (by rw [hM]; exact Nat.lt_of_le_of_lt (mul_div_top_le (k := 1) (by simpa using hE64)) hlt),

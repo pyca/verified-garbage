@@ -30,13 +30,7 @@ theorem prepareArgs_store (s : State) {p : Inputs} {slots : List Nat} (slot : Na
   have readK := h.locals.read (d := 32) (by decide)
   have write8 := h.locals.space.write (off := 8) (by decide)
   have write12 := h.locals.space.write (off := 12) (by decide)
-  refine withRest [.r4, .r6, .r12] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs slot) : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r4, .r6, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.prepareArgs VG.Impl.Ffdh.Arm.Domain.st
   ffrun [slotBound, addr slot fit, addr 32 (by decide), addr 8 (by decide), addr 12 (by decide),
     src, count, readS, readK, write8, write12, BitVec.add_zero, off]

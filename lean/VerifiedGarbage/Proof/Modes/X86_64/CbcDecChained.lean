@@ -59,7 +59,7 @@ theorem blkShift_pow (hbw0 : 0 < c.bw) (hbw2 : c.bw ≤ 2) : 2 ^ c.blkShift = 8 
   unfold Core.blkShift
   split
   · rename_i h; rw [h]; decide
-  · have : c.bw = 2 := by omega
+  · have : c.bw = 2 := by omega_arith
     rw [this]; decide
 
 /-- The last block's address, `D + 8 bw (n - 1)`, to `rax`. -/
@@ -85,7 +85,7 @@ theorem lastAddr_ok (hbw0 : 0 < c.bw) (hbw2 : c.bw ≤ 2) {r : CtrRegs} (hdr : r
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_sub, show (1 : BitVec 32).signExtend 64 = 1 from rfl, hn,
       Nat.shiftLeft_eq, hp, BitVec.toNat_ofNat]
     rw [show (2 ^ 64 - (1 : BitVec 64).toNat + n) % 2 ^ 64 = n - 1 by
-      rw [show (1 : BitVec 64).toNat = 1 from rfl]; omega, Nat.mul_comm]
+      rw [show (1 : BitVec 64).toNat = 1 from rfl]; omega_arith, Nat.mul_comm]
 
 /-- `cbcLastToIv`: unless `n` is zero, the last of the `n` blocks at `D` to
 the IV at `P`, through `rax` and `rbx`. -/
@@ -98,7 +98,7 @@ theorem cbcLastToIv_wp (hbw0 : 0 < c.bw) (hbw2 : c.bw ≤ 2) {r : CtrRegs} (hr :
     WP isa (c.cbcLastToIv r) s fun s' => (∀ x, x ≠ .rax → x ≠ .rbx → s'.gpr x = s.gpr x) ∧
       Frame [⟨P, 8 * c.bw⟩] s.mem s'.mem ∧ bytesAt s'.mem P (8 * c.bw) = Spec.Cbc.next
         (bytesAt s.mem P (8 * c.bw)) (blocksOf (8 * c.bw) m₀ D n) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hL0 : 0 < 8 * c.bw := by omega
+  have hL0 : 0 < 8 * c.bw := by omega_arith
   have hLn : 8 * c.bw * n = 8 * (c.bw * n) := Nat.mul_assoc _ _ _
   obtain ⟨s₁, e₁, z₁, g₁, m₁, rd₁, wr₁⟩ := testSelf_ok s r.n
   have hz₁ : s₁.zf = some (decide (n = 0)) := by
@@ -113,7 +113,7 @@ theorem cbcLastToIv_wp (hbw0 : 0 < c.bw) (hbw2 : c.bw ≤ 2) {r : CtrRegs} (hr :
     subst hn0
     exact WP.block_nil ⟨fun x _ _ => by rw [g₁], by rw [m₁]; exact Frame.refl _ _, by rw [m₁]; rfl, rd₁, wr₁⟩
   have hn0 : n ≠ 0 := by simpa using h0
-  have hn1 : n - 1 < n := by omega
+  have hn1 : n - 1 < n := by omega_arith
   let A := D + BitVec.ofNat 64 (8 * c.bw * (n - 1))
   have subA : Region.Sub ⟨A, 8 * c.bw⟩ ⟨D, 8 * c.bw * n⟩ := VG.Offset.sub_base D (idx_lt hn1)
   obtain ⟨s₂, e₂, a₂, o₂, m₂, rd₂, wr₂⟩ := lastAddr_ok hbw0 hbw2 hr.data.2.1 s₁ (by rw [g₁, hD])
@@ -121,14 +121,14 @@ theorem cbcLastToIv_wp (hbw0 : 0 < c.bw) (hbw2 : c.bw ≤ 2) {r : CtrRegs} (hr :
   refine WP.block_append (WP.of_runBlock ⟨s₂, e₂, WP.mono (copyN_wp (k := c.bw) (t := .rbx) (rd := r.ctr)
     (rs := .rax) (od := 0) (os := 0) (P := P) (Q := D + BitVec.ofNat 64 (8 * c.bw * (n - 1)))
     ⟨by rw [o₂ _ hr.ctr.2.1, g₁, hP]; simp, by rw [a₂]; simp, Ne.symm hr.ctr.2.2, by decide,
-      fun w hw => by rw [wr₂, wr₁]; exact ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩,
+      fun w hw => by rw [wr₂, wr₁]; exact ⟨_, hwP, VG.Offset.contains_base P (by omega_arith) (by omega_arith)⟩,
       fun w hw => by
         rw [rd₂, wr₂, rd₁, wr₁]
         exact inRd ⟨_, hwD, by
           rw [addr_add]
           have := idx_lt (L := 8 * c.bw) hn1
-          exact VG.Offset.contains_base D (by omega) (by omega)⟩,
-      sPD.sub_right subA, by omega⟩) fun s' h' => ?_⟩)
+          exact VG.Offset.contains_base D (by omega_arith) (by omega_arith)⟩,
+      sPD.sub_right subA, by omega_arith⟩) fun s' h' => ?_⟩)
   have mem' : s'.mem = over s.mem P (8 * c.bw) fun i =>
       s.mem (D + BitVec.ofNat 64 (8 * c.bw * (n - 1)) + BitVec.ofNat 64 i) := by
     rw [h'.mem, m₂, m₁]
@@ -136,8 +136,8 @@ theorem cbcLastToIv_wp (hbw0 : 0 < c.bw) (hbw2 : c.bw ≤ 2) {r : CtrRegs} (hr :
     by rw [h'.rd, rd₂, rd₁], by rw [h'.wr, wr₂, wr₁]⟩
   rw [next_blocksOf _ _ _ _ hn0]
   refine bytesAt_of_getD (by simp [bytesAt]) fun u hu => ?_
-  rw [mem', over_at hu (by omega), bytesAt_getD _ _ hu, addr_add]
-  exact hm _ (by have := idx_lt (L := 8 * c.bw) hn1; omega)
+  rw [mem', over_at hu (by omega_arith), bytesAt_getD _ _ hu, addr_add]
+  exact hm _ (by have := idx_lt (L := 8 * c.bw) hn1; omega_arith)
 
 theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg ≠ r.n)
     {s₀ : State} {B P D : Addr} {n : Nat} {k : cs.Key} (hB : s₀.gpr r.scr = B) (hP : s₀.gpr r.ctr = P)

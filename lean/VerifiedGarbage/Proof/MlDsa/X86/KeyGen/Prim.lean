@@ -39,7 +39,7 @@ variable {Y : Lay} {lk : State → List Byte} {A B : State → State → Prop}
 /-- Closes the facts of a callee's precondition about its stack and regions,
 from those in the context. -/
 tactic_template "ent_pre" : tactic => `(tactic| (and_intros <;>
-  first | exact True.intro | with_reducible assumption | omega | rfl))
+  first | exact True.intro | with_reducible assumption | omega_arith | rfl))
 
 theorem sw_app (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := BitVec.setWidth_append_eq_right
 
@@ -89,7 +89,7 @@ theorem inPlace_piece {t : Poly → Poly} {nm : String} {c : Prog isa}
     sig_pre [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, aa, List.getElem_cons_zero, List.getElem_cons_succ,
       Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at *
-    exact ⟨by omega, by omega, rfl, d₁, f₁, w₁, f₂, w₂, x₁, f₃, w₃, x₂, f₄, w₄, r₁⟩
+    exact ⟨by omega_arith, by omega_arith, rfl, d₁, f₁, w₁, f₂, w₂, x₁, f₃, w₃, x₂, f₄, w₄, r₁⟩
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hF', hW']) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
@@ -445,7 +445,7 @@ theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rej
   obtain ⟨⟨⟨⟨⟨hD, hAw⟩, hW⟩, dDA⟩, dDW⟩, dAW⟩ := hk
   have hA₁ := (Lay.okW_iff.mp hAw).1
   have hW₁ := (Lay.okW_iff.mp hW).1
-  have hη' : η < 2 ^ 32 := by omega
+  have hη' : η < 2 ^ 32 := by omega_arith
   have eη : (BitVec.ofNat 32 η).toNat = η := toNat_ofNat32 hη'
   refine callPR_piece _ [⟨da, dO, 66⟩] [⟨aa, ao, 1024⟩, ⟨wa, wo, 2048⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hD, hA₁, hW₁, hη']) hN (by simp [hD]) (by simp [hAw, hW]) tt hA

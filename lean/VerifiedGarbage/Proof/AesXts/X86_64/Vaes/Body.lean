@@ -36,7 +36,7 @@ theorem constK_ok (s : State) : WP isa (.block constK) s fun s' =>
   simp only [constK, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, fun r h => by simp [State.setReg, State.setV, h], by simp [State.setReg, State.setV],
     by simp [State.setReg, State.setV], by simp [State.setReg, State.setV]⟩
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [State.lane, State.setV, State.setReg, qword] <;> rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> simp [State.lane, State.setV, State.setReg, qword] <;> rfl
 
 /-- `GInv` is kept by any change of registers it does not name. -/
 theorem GInv.congr {enc : Bool} {KP : State → Prop} {s₀ : State} (hst : Stable KP s₀) {b c : Nat} {s s' : State}
@@ -70,7 +70,7 @@ theorem cmp8_ok {enc : Bool} {KP : State → Prop} {s₀ : State} (hst : Stable 
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, e16, hr9,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨h.congr hst (fun _ _ _ => rfl) rfl rfl rfl, ?_⟩
-  simp only [arithFlags, State.setFlags, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N s₀ - c < 2 ^ 64 by omega),
+  simp only [arithFlags, State.setFlags, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N s₀ - c < 2 ^ 64 by omega_arith),
     show (8 : BitVec 64).toNat = 8 from rfl]
 
 /-- The tweak registers from the buffer: `TwR 0`. -/
@@ -82,13 +82,13 @@ theorem ldT_twr {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s�
   refine WP.mono (ldT_ok tws 0 s (by decide) fun k hk => inRegions_wr ⟨scrR s₀, by rw [hW]; simp, by
       rw [h.r8, ofInt_natCast]
       rw [show tws.length = 4 from rfl] at hk
-      exact Offset.contains_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega)⟩)
+      exact Offset.contains_base _ (by simp only [bufOff]; omega_arith) (by simp only [bufOff]; omega_arith)⟩)
     fun s' ⟨e, g, m, rd, wr, x⟩ => ?_
   refine ⟨h.congr hst (fun r _ _ => by rw [g]) m rd wr, ⟨fun k hk l hl => ?_, fun l hl => by
     rw [x _ (by decide) l hl]; exact hK l hl⟩⟩
   have hk4 : k < 4 := hk
-  rw [e k hk l hl, h.r8, show bufOff + 32 * (0 + k) + 16 * l = bufOff + 16 * (2 * k + l) by omega,
-    ← bytesAt_b16, h.buf _ (by omega)]
+  rw [e k hk l hl, h.r8, show bufOff + 32 * (0 + k) + 16 * l = bufOff + 16 * (2 * k + l) by omega_arith,
+    ← bytesAt_b16, h.buf _ (by omega_arith)]
 
 /-- The tweak registers back to the buffer: `GInv c c`. -/
 theorem stT_ginv {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s₀) (hst : Stable KP s₀) {c : Nat}
@@ -99,7 +99,7 @@ theorem stT_ginv {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s�
   refine WP.mono (stT_ok tws 0 s (fun k hk => ⟨scrR s₀, by rw [hW]; simp, by
       rw [h.r8, ofInt_natCast]
       rw [show tws.length = 4 from rfl] at hk
-      exact Offset.contains_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega)⟩) (by rw [h.r8]; simp only [bufOff]; have : tws.length = 4 := rfl; omega))
+      exact Offset.contains_base _ (by simp only [bufOff]; omega_arith) (by simp only [bufOff]; omega_arith)⟩) (by rw [h.r8]; simp only [bufOff]; have : tws.length = 4 := rfl; omega_arith))
     fun s' ⟨e, f, g, rd, wr, _⟩ => ?_
   rw [h.r8, Nat.mul_zero, Nat.add_zero, show 32 * tws.length = 128 from rfl] at f
   rw [h.r8] at e
@@ -118,10 +118,10 @@ theorem stT_ginv {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s�
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, fun _ h => h⟩),
     fun k hk => by rw [AesCbc.X86_64.bytesAt_frame fb (hbd k hk) (by decide), h.data k hk],
     fun j hj => by
-      have hk : j / 2 < tws.length := by have : tws.length = 4 := rfl; omega
-      rw [bytesAt_b16, slot, show bufOff + 16 * j = bufOff + 32 * (0 + j / 2) + 16 * (j % 2) by omega,
+      have hk : j / 2 < tws.length := by have : tws.length = 4 := rfl; omega_arith
+      rw [bytesAt_b16, slot, show bufOff + 16 * j = bufOff + 32 * (0 + j / 2) + 16 * (j % 2) by omega_arith,
         e _ hk _ (Nat.mod_lt _ (by decide)), ht.tw _ hk _ (Nat.mod_lt _ (by decide))]
-      congr 1; omega,
+      congr 1; omega_arith,
     by rw [g, h.rdx]⟩
 
 /-- The eight-block loop, if eight blocks are left. -/
@@ -147,8 +147,8 @@ theorem groups_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog is
       refine WP.mono (group_wp hp hst hf hc hI hT) fun t' ⟨⟨hI', hT'⟩, hcf'⟩ => ?_
       by_cases hlt : N s₀ - (c + 8) < 8
       · exact .inl ⟨by simp [eval, hcf', hlt], c + 8, hlt, hI', hT'⟩
-      · exact .inr ⟨by simp [eval, hcf', hlt], N s₀ - (c + 8), by omega, c + 8, rfl, by omega, hI', hT'⟩
-    refine WP.seq (WP.mono (WP.loop (M := isa) I hstep (N s₀) s₂ ⟨0, by simp, by omega, h₂, t₂⟩)
+      · exact .inr ⟨by simp [eval, hcf', hlt], N s₀ - (c + 8), by omega_arith, c + 8, rfl, by omega_arith, hI', hT'⟩
+    refine WP.seq (WP.mono (WP.loop (M := isa) I hstep (N s₀) s₂ ⟨0, by simp, by omega_arith, h₂, t₂⟩)
       fun s₃ ⟨c, hc, h₃, t₃⟩ => ?_)
     rw [WP.block_append_iff]
     refine WP.mono (stT_ginv hp hst h₃ t₃) fun s₄ h₄ => ?_

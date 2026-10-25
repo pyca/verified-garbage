@@ -82,7 +82,7 @@ theorem and_mask_iff (G : BitVec 64) {j : Nat} (hj : j < 64) :
 theorem shl_getLsbD (G : BitVec 64) {j : Nat} (hj : j ≤ 63) : (G <<< (63 - j)).getLsbD 63 = G.getLsbD j := by
   rw [BitVec.getLsbD_shiftLeft, Nat.sub_sub_self hj]
   simp only [show (63 : Nat) < 64 from by decide, decide_true, Bool.true_and,
-    show ¬ (63 : Nat) < 63 - j from by omega, decide_false, Bool.not_false]
+    show ¬ (63 : Nat) < 63 - j from by omega_arith, decide_false, Bool.not_false]
 
 theorem negE (E : BitVec 64) : -(E + 4) = -2 - E - 2 := by grind
 
@@ -97,8 +97,8 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
   obtain ⟨F, hF⟩ : ∃ F, s.gpr .x8 = F := ⟨_, rfl⟩
   obtain ⟨G, hG⟩ : ∃ G, s.gpr g = G := ⟨_, rfl⟩
   rw [hG] at hsh
-  have hbit := and_mask_iff G (j := j) (by omega)
-  have hsb := shl_getLsbD G (j := j) (by omega)
+  have hbit := and_mask_iff G (j := j) (by omega_arith)
+  have hsb := shl_getLsbD G (j := j) (by omega_arith)
   have hmsb : E.msb = decide (2 ^ 63 ≤ E.toNat) := BitVec.msb_eq_decide E
   have hlt := E.isLt
   have m2 : s.gpr .x12 + s.gpr .x12 = BitVec.ofNat 64 (2 ^ (j + 1)) := by
@@ -111,7 +111,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
     have hb : G.getLsbD j = false := by rw [← hsb, hz]; simp
     refine WP.mono (pstepCode_run s hg (odd := false) (neg := E.msb)
       (by rw [hm, hG, decide_eq_true (hbit.mpr hb)]; rfl) (by rw [hE])) fun s' ⟨e1, e8, et, e12, k⟩ => ?_
-    rw [ite_f (by rw [h0]; omega), ite_t hz]
+    rw [ite_f (by rw [h0]; omega_arith), ite_t hz]
     refine ⟨?_, by rw [e12, m2], k⟩
     simp only [e1, e8, et, Bool.false_and, Bool.false_eq_true, ↓reduceIte, hE, hF, hG]
   · have hz : ¬ G <<< (63 - j) = 0 := fun h => by rw [h] at h1; simp at h1
@@ -124,18 +124,18 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
     cases hn : E.msb
     · rw [hn] at hmsb
       have : ¬ 2 ^ 63 ≤ E.toNat := fun h => by rw [decide_eq_true h] at hmsb; exact absurd hmsb (by decide)
-      rw [ite_f (by rw [h1]; omega), ite_f hz]
+      rw [ite_f (by rw [h1]; omega_arith), ite_f hz]
       simp only [e1, e8, et, hn, Bool.and_false, Bool.false_eq_true, ↓reduceIte, hE, hF, hG]
     · rw [hn] at hmsb
       have : 2 ^ 63 ≤ E.toNat := of_decide_eq_true hmsb.symm
-      rw [ite_t (by rw [h1]; omega)]
+      rw [ite_t (by rw [h1]; omega_arith)]
       simp only [e1, e8, et, hn, Bool.and_self, ↓reduceIte, hE, hF, hG, negE]
 
 theorem gReg_cases (j : Nat) : gReg j = .x9 ∧ gReg (j + 1) = .x10 ∨ gReg j = .x10 ∧ gReg (j + 1) = .x9 := by
   unfold gReg
   rcases Nat.mod_two_eq_zero_or_one j with h | h
-  · left; exact ⟨ite_t h, ite_f (by omega)⟩
-  · right; exact ⟨ite_f (by omega), ite_t (by omega)⟩
+  · left; exact ⟨ite_t h, ite_f (by omega_arith)⟩
+  · right; exact ⟨ite_f (by omega_arith), ite_t (by omega_arith)⟩
 
 theorem gReg_mem (j : Nat) : gReg j ∈ pRegs := by
   rcases gReg_cases j with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> decide
@@ -151,10 +151,10 @@ theorem pstepsList_ok (s : State) {N : Nat} (hN : N ≤ 62) (hm : s.gpr .x12 = 1
   | 0, _ => WP.block_nil_iff.mpr ⟨rfl, by rw [hm]; rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (pstepsList_ok s hN hm hsh n (by omega)) fun s₁ ⟨e₁, m₁, k₁⟩ => ?_
-    have hs := hsh n (by omega)
+    refine WP.mono (pstepsList_ok s hN hm hsh n (by omega_arith)) fun s₁ ⟨e₁, m₁, k₁⟩ => ?_
+    have hs := hsh n (by omega_arith)
     rw [← e₁] at hs
-    refine WP.mono (pstepCode_ok s₁ (j := n) (by omega) (gReg_cases n) m₁ hs) fun s₂ ⟨e₂, m₂, k₂⟩ =>
+    refine WP.mono (pstepCode_ok s₁ (j := n) (by omega_arith) (gReg_cases n) m₁ hs) fun s₂ ⟨e₂, m₂, k₂⟩ =>
       ⟨by rw [e₂, Divstep.psteps, ← e₁], m₂, k₁.trans (k₂.mono ?_)⟩
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -168,7 +168,7 @@ theorem pstepsCode_ok (s : State) {n : Nat} (hn : n ≤ 15) (hm : s.gpr .x12 = 1
     WP isa (.block (pstepsCode n)) s fun s' =>
       (s'.gpr .x1, s'.gpr .x8, s'.gpr (gReg n)) = Divstep.psteps n (s.gpr .x1, s.gpr .x8, s.gpr .x9) ∧
       Keeps pRegs s s' :=
-  WP.mono (pstepsList_ok s (N := n) (by omega) hm hsh n le_rfl) fun _ ⟨e, _, k⟩ => ⟨e, k⟩
+  WP.mono (pstepsList_ok s (N := n) (by omega_arith) hm hsh n le_rfl) fun _ ⟨e, _, k⟩ => ⟨e, k⟩
 
 /-! ## A chunk's rows and matrix -/
 
@@ -315,7 +315,7 @@ theorem prow_mod {w : BitVec 64} {F : Int} {K n k : Nat} (hn : n ≤ 15) (hK : n
     (h : (w.toNat : Int) % 2 ^ K = F % 2 ^ K) :
     (((w.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ k) % 2 ^ n = F % 2 ^ n := by
   have d1 : (2 : Int) ^ n ∣ 2 ^ 15 := pow_dvd_pow 2 hn
-  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega)
+  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega_arith)
   have d3 : (2 : Int) ^ n ∣ 2 ^ K := pow_dvd_pow 2 hK
   rw [Int.natCast_mod, Nat.cast_pow, Nat.cast_ofNat, Int.add_emod, Int.emod_eq_zero_of_dvd d2, add_zero,
     Int.emod_emod_of_dvd _ d1, Int.emod_emod, ← Int.emod_emod_of_dvd _ d3, h, Int.emod_emod_of_dvd _ d3]
@@ -335,8 +335,8 @@ theorem pchunk_ok (s : State) {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ 
   have lo := Divstep.msteps_lo T.d T.f T.g n
   have hP := prow_mod (w := s.gpr .x2) hn.2 hK.1 (k := 31) (by norm_num) hI.f
   have hQ := prow_mod (w := s.gpr .x3) hn.2 hK.1 (k := 47) (by norm_num) hI.g
-  have hrel := Divstep.psteps_rel (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega) hf hd hP hQ n le_rfl
-  have hsh := fun k (hk : k < n) => Divstep.psteps_shl (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega)
+  have hrel := Divstep.psteps_rel (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega_arith) hf hd hP hQ n le_rfl
+  have hsh := fun k (hk : k < n) => Divstep.psteps_shl (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega_arith)
     hf hd hP hQ hk
   rw [Divstep.msteps_gen n T]
   simp only
@@ -385,7 +385,7 @@ theorem pchunk_ok (s : State) {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ 
       · simp only [Bool.false_eq_true, ↓reduceIte]
         have dl : ∀ r ∈ [Reg.x1, .x4, .x5, .x6, .x7, .x8, .x11, gReg n, gReg (n + 1)],
             r ∉ [Reg.x2, .x3, .x13, .x16] := by rw [hA, hB]; decide
-        refine WP.mono (plow_ok s₃ (n := n) (by omega) (by rw [hA, hB]; decide)) fun s₄ ⟨w2, w3, k₄⟩ =>
+        refine WP.mono (plow_ok s₃ (n := n) (by omega_arith) (by rw [hA, hB]; decide)) fun s₄ ⟨w2, w3, k₄⟩ =>
           ⟨fun r hr => k₄.gpr r (dl r hr), fun _ => ⟨?_, ?_⟩, k₄⟩
         · rw [w2, R₃ .x2 (by decide), R₃ .x3 (by decide), u₃, v₃]
           exact Divstep.low_upd hK.2 hK.1 hI.f hI.g hmat.1
@@ -445,7 +445,7 @@ theorem notD_ok (s : State) :
 
 theorem msteps_d15 {T : MSt} {k : Nat} (h : |T.d| + 2 * k ≤ 2 ^ 31) :
     |(msteps 15 T).d| + 2 * k ≤ 2 ^ 31 + 30 := by
-  have := Divstep.msteps_d T 15; push_cast at this; omega
+  have := Divstep.msteps_d T 15; push_cast at this; omega_arith
 
 /-- A batch's `59` divsteps in chunks, from `d` in `x1` and the low words of
 `f` and `g` in `x2`, `x3`: `d` and the matrix in `x1`, `x4`–`x7`. -/
@@ -464,7 +464,7 @@ theorem pwords_ok (s : State) {d f g : Int} (hd : |d| ≤ 2 ^ 30) (hf : f % 2 = 
   have dd : ∀ k, |(msteps k T0).d| ≤ 2 ^ 30 + 2 * k := fun k => by
     have := Divstep.msteps_d T0 k
     rw [show T0.d = d from rfl] at this
-    omega
+    omega_arith
   simp only [pwords, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (notD_ok s) fun s₁ ⟨b₁, k₁⟩ => ?_
@@ -473,26 +473,26 @@ theorem pwords_ok (s : State) {d f g : Int} (hd : |d| ≤ 2 ^ 30) (hf : f % 2 = 
       fun _ => ⟨rfl, rfl, rfl, rfl⟩, fun h => absurd h (by decide)⟩
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok s₁ (n := 15) (K := 64) (last := false) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ f0 (by rw [show T0.d = d from rfl]; push_cast; omega) c₁)
+    ⟨by decide, by decide⟩ f0 (by rw [show T0.d = d from rfl]; push_cast; omega_arith) c₁)
     fun s₂ ⟨d₂, u₂, v₂, q₂, r₂, w₂, k₂⟩ => ?_
   obtain ⟨f₂, g₂⟩ := w₂ rfl
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok s₂ (n := 15) (K := 49) (first := false) (last := false) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ (odd 15) (by have := dd 15; norm_num at this ⊢; omega)
+    ⟨by decide, by decide⟩ (odd 15) (by have := dd 15; norm_num at this ⊢; omega_arith)
     ⟨d₂, f₂, g₂, fun h => absurd h (by decide), fun _ => ⟨u₂, v₂, q₂, r₂⟩⟩)
     fun s₃ ⟨d₃, u₃, v₃, q₃, r₃, w₃, k₃⟩ => ?_
   obtain ⟨f₃, g₃⟩ := w₃ rfl
   rw [← Divstep.msteps_add] at d₃ u₃ v₃ q₃ r₃ f₃ g₃
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok s₃ (n := 15) (K := 34) (first := false) (last := false) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ (odd 30) (by have := dd 30; norm_num at this ⊢; omega)
+    ⟨by decide, by decide⟩ (odd 30) (by have := dd 30; norm_num at this ⊢; omega_arith)
     ⟨d₃, f₃, g₃, fun h => absurd h (by decide), fun _ => ⟨u₃, v₃, q₃, r₃⟩⟩)
     fun s₄ ⟨d₄, u₄, v₄, q₄, r₄, w₄, k₄⟩ => ?_
   obtain ⟨f₄, g₄⟩ := w₄ rfl
   rw [← Divstep.msteps_add] at d₄ u₄ v₄ q₄ r₄ f₄ g₄
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok s₄ (n := 14) (K := 19) (first := false) (last := true) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ (odd 45) (by have := dd 45; norm_num at this ⊢; omega)
+    ⟨by decide, by decide⟩ (odd 45) (by have := dd 45; norm_num at this ⊢; omega_arith)
     ⟨d₄, f₄, g₄, fun h => absurd h (by decide), fun _ => ⟨u₄, v₄, q₄, r₄⟩⟩)
     fun s₅ ⟨d₅, u₅, v₅, q₅, r₅, _, k₅⟩ => ?_
   rw [← Divstep.msteps_add] at d₅ u₅ v₅ q₅ r₅

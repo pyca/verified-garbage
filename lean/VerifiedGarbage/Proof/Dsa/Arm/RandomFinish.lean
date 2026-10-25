@@ -49,8 +49,8 @@ theorem zeroStep_ok {s₀ t₀ t : State} (A : RandomABI s₀) {k : Nat} (hk : k
       fun u => ZeroInv s₀ t₀ (k + 1) u ∧ u.z = decide ((s₀.gpr .r1).toNat - (k + 1) = 0) := by
   have hb := A.outBound
   have hw : InRegions t.wr (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 k) 1 :=
-    ⟨rOut s₀, by rw [I.ready.wr, A.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
-  refine wp_strb (by decide) (by rw [BitVec.add_zero, I.r1, VG.Arm.addr_add (by omega)]) hw fun u₁ m₁ =>
+    ⟨rOut s₀, by rw [I.ready.wr, A.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  refine wp_strb (by decide) (by rw [BitVec.add_zero, I.r1, VG.Arm.addr_add (by omega_arith)]) hw fun u₁ m₁ =>
     wp_inc fun u₂ v₂ => wp_dec fun u₃ v₃ z₃ => WP.block_nil ?_
   have hv : (t.gpr .r0).setWidth 8 = 0 := by rw [I.r0]; rfl
   rw [hv] at m₁
@@ -59,21 +59,21 @@ theorem zeroStep_ok {s₀ t₀ t : State} (A : RandomABI s₀) {k : Nat} (hk : k
     rw [v₃.mem, v₂.mem, m₁.mem]
   have fr : Frame [rOut s₀] t.mem u₃.mem := by
     rw [mem₃]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))
   refine ⟨⟨I.ready.congrW R fr (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [rWrites]),
     ?_, ?_, ?_, I.frame.trans fr, fun i hi => ?_, I.rest.trans R⟩, ?_⟩
   · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, I.r1, Offset.add_ofNat_add_one]
-  · rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr, I.r2, ofNat_sub_one (by omega)]; rfl
+  · rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr, I.r2, ofNat_sub_one (by omega_arith)]; rfl
   · rw [v₃.other _ (by decide), v₂.other _ (by decide), m₁.gpr, I.r0]
   · rw [mem₃]
     by_cases hik : i = k
     · subst hik; exact writeW8_self _ _ _
     · have ho : ofs (State.addr (s₀.gpr .r0)) (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 i) = i := by
-        rw [ofs, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        rw [ofs, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
       rw [show State.addr (s₀.gpr .r0) + BitVec.ofNat 64 k = off (State.addr (s₀.gpr .r0)) k from rfl,
-        writeW8_outside _ _ (d := k) _ (by omega) _ (by rw [ho]; omega)]
-      exact I.zero i (by omega)
-  · rw [z₃, v₂.other _ (by decide), m₁.gpr, I.r2, ofNat_sub_one (by omega), ofNat_beq_zero (by omega),
+        writeW8_outside _ _ (d := k) _ (by omega_arith) _ (by rw [ho]; omega_arith)]
+      exact I.zero i (by omega_arith)
+  · rw [z₃, v₂.other _ (by decide), m₁.gpr, I.r2, ofNat_sub_one (by omega_arith), ofNat_beq_zero (by omega_arith),
       Nat.sub_sub]
 
 theorem zeroOut_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) (sv : Saved s₀ t.mem) :
@@ -81,7 +81,7 @@ theorem zeroOut_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) (sv
       Spec.Rsa.bytesAt u.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =
         List.replicate (s₀.gpr .r1).toNat 0 ∧ Rest [.r0, .r1, .r2] t u := by
   have hL : 0 < (s₀.gpr .r1).toNat := by
-    have := A.outLength; have := A.lengths; unfold Spec.Dsa.lengthsValid at *; omega
+    have := A.outLength; have := A.lengths; unfold Spec.Dsa.lengthsValid at *; omega_arith
   unfold zeroOut
   refine WP.seq (wp_ld h (by decide) fun t₁ u₁ => wp_ld (h.upd u₁) (by decide) fun t₂ u₂ =>
     wp_mov (op2_imm (by decide)) fun t₃ u₃ => WP.block_nil ?_)
@@ -104,9 +104,9 @@ theorem zeroOut_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) (sv
     · intro i h₁ _
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
       simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁
-      exact J.zero i (by omega)
+      exact J.zero i (by omega_arith)
   · right
-    exact ⟨by rw [eval_ne, z, decide_eq_false he]; rfl, _, by omega, k + 1, rfl, by omega, J⟩
+    exact ⟨by rw [eval_ne, z, decide_eq_false he]; rfl, _, by omega_arith, k + 1, rfl, by omega_arith, J⟩
 
 /-- A write apart from the stack keeps the frame's slots. -/
 theorem apart_slot {s₀ : State} {m m' : Mem} {r : Region} (hf : Frame [r] m m') (hd : (rStack s₀).Disjoint r)
@@ -117,7 +117,7 @@ theorem apart_slot {s₀ : State} {m m' : Mem} {r : Region} (hf : Frame [r] m m'
     (fun r' hr' => by
       simp only [List.mem_singleton] at hr'; subst hr'
       refine hd.sub_left ?_
-      rw [rBase_off]; exact Offset.sub_base _ (by unfold frameBytes at hd'; omega)) (by decide)
+      rw [rBase_off]; exact Offset.sub_base _ (by unfold frameBytes at hd'; omega_arith)) (by decide)
 
 /-! ## The exit -/
 
@@ -152,8 +152,8 @@ theorem restore_eq : ((savedRegs.zipIdx.filter (·.1 != .r11)).map (fun (r, i) =
 
 theorem clearMem_frame (s₀ : State) (m : Mem) : ∀ k, k ≤ 8 → Frame [rStack s₀] m (clearMem m (rBase s₀) k)
   | 0, _ => Frame.refl _ _
-  | k + 1, hk => (clearMem_frame s₀ m k (by omega)).trans
-      (frame_store s₀ _ (d := oNonce + 4 * k) (by unfold oNonce frameBytes; omega) 0)
+  | k + 1, hk => (clearMem_frame s₀ m k (by omega_arith)).trans
+      (frame_store s₀ _ (d := oNonce + 4 * k) (by unfold oNonce frameBytes; omega_arith) 0)
 
 /-- The last block: clear the nonce, publish the consumption, restore the registers. -/
 abbrev finalList : List Instr :=
@@ -175,7 +175,7 @@ theorem finalBlock_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) 
   have sv₁ : Saved s₀ t₁.mem := sv.of_outs o₁ (by decide)
   have sl₁ : ∀ d, d + 4 ≤ oNonce → slot t₁.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
     outs_low o₁ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact Nat.le_refl _) hd
-      (by unfold oNonce at hd; omega)
+      (by unfold oNonce at hd; omega_arith)
   refine wp_ld h₁ (by decide) fun t₂ u₂ => wp_ld (h₁.upd u₂) (by decide) fun t₃ u₃ => ?_
   have h₃ := (h₁.upd u₂).upd u₃
   have r4₃ : t₃.gpr .r4 = s₀.gpr .r2 := by rw [u₃.other _ (by decide), u₂.gpr]; exact sv₁.2.2.2.1
@@ -186,7 +186,7 @@ theorem finalBlock_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) 
       have := Offset.contains_base (State.addr (s₀.gpr .r2)) (d := 0) (n := 4) (k := 8) (by decide) (by decide)
       rwa [BitVec.add_zero] at this⟩ fun t₄ m₄ => wp_mov (op2_imm (by decide)) fun t₅ u₅ => ?_
   refine wp_str (a := State.addr (s₀.gpr .r2) + BitVec.ofNat 64 4) (by decide)
-    (by rw [u₅.other _ (by decide), m₄.gpr, r4₃, VG.Arm.addr_add (by omega)])
+    (by rw [u₅.other _ (by decide), m₄.gpr, r4₃, VG.Arm.addr_add (by omega_arith)])
     ⟨_, by rw [u₅.wr, m₄.wr]; exact hU, Offset.contains_base _ (by decide) (by decide)⟩ fun t₆ m₆ => ?_
   have mem₆ : t₆.mem = (t₃.mem.writeW (off (State.addr (s₀.gpr .r2)) 0) used).writeW
       (off (State.addr (s₀.gpr .r2)) 4) (0 : BitVec 32) := by
@@ -272,14 +272,14 @@ theorem rfinish_ok {s₀ t : State} (A : RandomABI s₀) (F : RFin s₀ t) (hR :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact A.stackOut.symm
-      · exact A.outUsed) (by omega)
+      · exact A.outUsed) (by omega_arith)
   unfold finish
   rw [finishBlock_eq]
   refine WP.seq (wp_ld h (by decide) fun t₁ u₁ => wp_cmp (op2_imm (by decide)) fun t₂ f₂ z₂ => WP.block_nil ?_)
   have h₂ := (h.upd u₁).fupd f₂
   have m₂ : t₂.mem = t.mem := by rw [f₂.mem, u₁.mem]
   have R₂ : Rest [.r0] t t₂ := (u₁.rest (by decide)).trans (f₂.rest _)
-  rw [u₁.gpr, F.status, one_beq (by omega)] at z₂
+  rw [u₁.gpr, F.status, one_beq (by omega_arith)] at z₂
   have fin : ∀ v : State, RReady s₀ v → Rest [.r0, .r1, .r2] t v → Frame (rWrites s₀) t.mem v.mem →
       Saved s₀ v.mem → slot v.mem (rBase s₀) oUsed = BitVec.ofNat 32 (rResult s₀).used →
       slot v.mem (rBase s₀) oStatus = BitVec.ofNat 32 (rResult s₀).status →

@@ -56,13 +56,13 @@ theorem vfinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) := by
   have hF := sl_le c hc.n10 (i := FLAG) (by decide)
   rw [vfinish_eq, WP.block_append_iff]
-  refine WP.mono (raxFlag_ok hs (d := c.sl FLAG) (by have := hc.n0; omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (raxFlag_ok hs (d := c.sl FLAG) (by have := hc.n0; omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   refine WP.mono (Spill.restore_ok .rdi Cfg.saved g s₁ (by decide) (fun p hp => ?_)
     (by rw [hs₁.rdi, k₁.2.1]; exact hsv)) fun s₂ ⟨g₂, r₂, _, _, _⟩ => ⟨?_, g₂⟩
   · have := saved_lt p hp
     rw [hs₁.rdi]
-    exact ⟨_, List.mem_append_right _ hs₁.wr, hs₁.contains (by have : size = 8192 := rfl; omega) (by decide)⟩
+    exact ⟨_, List.mem_append_right _ hs₁.wr, hs₁.contains (by have : size = 8192 := rfl; omega_arith) (by decide)⟩
   · have hra : Reg.rax ∉ Cfg.saved.map Prod.fst := by decide
     rw [r₂ _ hra, e₁, hf, mask_bit]
 
@@ -105,7 +105,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   have hp3 := hc.p_ge
   have hn3 := hc.n_ge
   have F := hP.fixed
-  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   -- `Z^(p-2)`.
   refine WP.seq (WP.mono (pPow_ok hc hP.scr (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁)
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
@@ -125,7 +125,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide) (by decide)).trans F₁.one
   refine WP.seq (WP.mono (slMulPSFinish_ok h7 hs₂ M₂ (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+    (by decide) (by decide) (by decide) (by rw [one₂]; omega_arith)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have v₃ : ∀ {i}, i < 45 → i ≠ X → i ≠ TMP → sv c base s₃ i = sv c base s₂ i := fun hi h₁ h₂ =>
     sv_shared_keep (MP'_n c) rfl h7 hn k₃ hi h₁ h₂
@@ -144,7 +144,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
   refine WP.seq (WP.mono (mulNS_ok hc hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
-    (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega)) (by decide))
+    (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega_arith)) (by decide))
     fun s₄ ⟨hs₄, M₄, _, _, _, U₄, v₄, lt₄, e₄⟩ => ?_)
   have rm₄ : sv c base s₄ RM' = sv c base s RM' := by
     rw [v₄ (by decide) (by decide) (by decide), v₃ (by decide) (by decide) (by decide),
@@ -155,8 +155,8 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   have v₅ : ∀ {i}, i < 45 → i ≠ W → i ≠ TMP → sv c base s₅ i = sv c base s₄ i := fun hi h₁ h₂ =>
     sv_keep (MN'_n c) rfl h7 hn k₅ hi h₁ h₂
   have w₅ : sv c base s₅ W = 0 ↔ Fin.ofNat c.C.n (sv c base s₃ X) = Fin.ofNat c.C.n (sigR c s₀) := by
-    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega)
-    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega), rm₄, hP.rm,
+    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega_arith)
+    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega_arith), rm₄, hP.rm,
       toM_r2 hnR (by rw [e₄, r2₃])]
     constructor <;> intro h <;> grind
   -- The checks and the result.
@@ -193,14 +193,14 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       rcases List.mem_append.mp hw with hw | hw
       · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
         show 48 ≤ c.sl i
-        rw [sl_eq']; omega
+        rw [sl_eq']; omega_arith
       · rcases List.mem_append.mp hw with hw | hw
         · rw [List.mem_singleton.mp hw]
           show 48 ≤ c.sl FLAG
-          simp (disch := sl_ne) only [sl_eq]; omega
+          simp (disch := sl_ne) only [sl_eq]; omega_arith
         · rw [List.mem_singleton.mp hw]
           show 48 ≤ bitsAt c.n 3
-          rw [bitsAt_eq]; omega)
+          rw [bitsAt_eq]; omega_arith)
       U
   have z₆ : sv c base s₅ RZ = sv c base s RZ := by
     rw [v₅ (by decide) (by decide) (by decide), v₄ (by decide) (by decide) (by decide),

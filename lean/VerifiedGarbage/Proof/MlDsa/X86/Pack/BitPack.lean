@@ -47,11 +47,11 @@ theorem subModQ_toNat {b x : BitVec 32} (hb : b.toNat < q) (hx : x.toNat < q) :
   by_cases h : b.toNat < x.toNat
   · have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (b.toNat < x.toNat))) &&& qImm) = 8380417#32 := by
       rw [decide_eq_true h]; decide
-    rw [e, Nat.mod_eq_of_lt (by omega)]
+    rw [e, Nat.mod_eq_of_lt (by omega_arith)]
     bv_omega
   · have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (b.toNat < x.toNat))) &&& qImm) = 0#32 := by
       rw [decide_eq_false h]; decide
-    rw [e, show (b.toNat + 8380417 - x.toNat) % 8380417 = b.toNat - x.toNat by omega]
+    rw [e, show (b.toNat + 8380417 - x.toNat) % 8380417 = b.toNat - x.toNat by omega_arith]
     bv_omega
 
 /-- The value `bpLd B` loads of a word. -/
@@ -74,14 +74,14 @@ theorem bitPack_vals {m : Mem} {f : Addr} (hr : Reduced m f) {b : Nat} (hb : b �
     (hle : ∀ i < n, modPm (coeffAt m f i).toNat q ≤ b) :
     ((polyAt m f).map fun c => modPm c.val q).toList.map (fun wi => ((b : Int) - wi).toNat) =
       vals (bpVal b) m f := by
-  have hbq : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; have : q = 8380417 := rfl; omega
+  have hbq : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; have : q = 8380417 := rfl; omega_arith
   rw [Vector.toList_map, polyAt, toList_ofFn (fun i => Fin.ofNat q (coeffAt m f i).toNat), List.map_map,
     List.map_map]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   have hx := hr i hi
   simp only [Function.comp_apply, Fin.val_ofNat, Nat.mod_eq_of_lt hx]
-  rw [bpVal, subModQ_toNat (by omega) hx, hbq, sub_modPm hx hb (hle i hi)]
+  rw [bpVal, subModQ_toNat (by omega_arith) hx, hbq, sub_modPm hx hb (hle i hi)]
 
 section
 variable (s₀ : State)
@@ -128,7 +128,7 @@ theorem branch {d c nb B : Nat} (hs : Shape d c nb) (hB : B ≤ 2 ^ 19) {X : Sta
     (ht₂ : (VG.X86.taint.check (τr loopRegs) (.block (packBody (bpLd B) d c nb)) h₂).isSome = true) :
     Piece Pre Pub (fun s₀ s => Start fP oP s₀ s ∧ X s₀) Fin (packLoop (bpLd B) d c nb) := by
   have hq : q = 8380417 := rfl
-  have hBq : (BitVec.ofNat 32 B).toNat = B := by rw [BitVec.toNat_ofNat]; omega
+  have hBq : (BitVec.ofNat 32 B).toNat = B := by rw [BitVec.toNat_ofNat]; omega_arith
   have hlen : ∀ s₀, Pre s₀ → X s₀ → (arg s₀ 4).toNat = 32 * d := fun s₀ h₀ hx => by
     rw [h₀.len_eq, (hX s₀ h₀ hx).1, (hX s₀ h₀ hx).2]
   refine (packLoop_piece (bpLd_ok B) hs fP oP (X := X) (fun s₀ h₀ hx => ?_)
@@ -142,14 +142,14 @@ theorem branch {d c nb B : Nat} (hs : Shape d c nb) (hB : B ≤ 2 ^ 19) {X : Sta
     obtain ⟨b₁, b₂⟩ := h₀.bnd i hi
     rw [e₁] at b₂
     have hxq := h₀.red i hi
-    rw [hp.coeff_keep rfl hi, bpVal, subModQ_toNat (by omega) hxq, hBq, ← sub_modPm hxq (by omega) b₂, ← e₂]
+    rw [hp.coeff_keep rfl hi, bpVal, subModQ_toNat (by omega_arith) hxq, hBq, ← sub_modPm hxq (by omega_arith) b₂, ← e₂]
     exact lt_bitlen (sub_modPm_le b₁ b₂)
   · have hp := h₀.lay
     obtain ⟨e₁, e₂⟩ := hX s₀ h₀ hx
     have ho : outR oP oL s₀ = ⟨oA oP s₀, 32 * d⟩ := by simp only [outR, oL, hlen s₀ h₀ hx]
     refine ⟨⟨by rw [ho]; exact he.frame, he.esp, he.rd, he.wr⟩, ?_⟩
     rw [hlen s₀ h₀ hx, hb, packed, bitPack_eq, e₁, e₂,
-      bitPack_vals h₀.red (by omega) (fun i hi => by rw [← e₁]; exact (h₀.bnd i hi).2)]
+      bitPack_vals h₀.red (by omega_arith) (fun i hi => by rw [← e₁]; exact (h₀.bnd i hi).2)]
     refine congrArg (fun L => bitsToBytes (fieldBits d L)) (List.map_congr_left fun i hi => ?_)
     rw [hp.coeff_keep rfl (List.mem_range.mp hi)]
 
@@ -178,20 +178,20 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
   refine Piece.seq (ldArgs_piece (k := 5) (by decide) (by decide) (by decide) (fun _ h => h.lay)
     (fun _ _ _ _ hq => hq.1) (by native_taint_decide)) ?_
   refine sel_piece (arg · 2) (by decide) hw (by native_taint_decide)
-    (branch sh3 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 2) (by decide) e fun _ _ => by omega)
+    (branch sh3 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 2) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine sel_piece (arg · 2) (by decide) hw (by native_taint_decide)
-    (branch sh4 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4) (by decide) e fun _ _ => by omega)
+    (branch sh4 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine sel_piece (arg · 2) (by decide) hw (by native_taint_decide)
-    (branch sh13 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4095) (by decide) e fun _ _ => by omega)
+    (branch sh13 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4095) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine sel_piece (arg · 2) (by decide) hw (by native_taint_decide)
-    (branch sh18 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 131071) (by decide) e fun _ _ => by omega)
+    (branch sh18 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 131071) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine (branch sh20 (B := 524288) (by decide) (fun s₀ h₀ ⟨⟨⟨⟨_, e₂⟩, e₄⟩, e₄₀⟩, e₁₃⟩ =>
-      pick h₀ (A := 524287) (by decide) (by have := mem_bitPackParams h₀.ab; simp only [aN, bN] at this; omega)
-        fun _ _ => by omega)
+      pick h₀ (A := 524287) (by decide) (by have := mem_bitPackParams h₀.ab; simp only [aN, bN] at this; omega_arith)
+        fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)).mono (fun _ _ _ ⟨⟨h, _⟩, hx⟩ => ⟨h, hx⟩) fun _ _ _ h => h
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')

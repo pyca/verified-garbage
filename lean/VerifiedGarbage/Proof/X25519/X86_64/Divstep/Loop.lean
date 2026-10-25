@@ -36,7 +36,7 @@ theorem cntLoop_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State �
   · refine Or.inl ⟨?_, hQ s' (by rw [hj] at hi'; exact hi')⟩
     show s'.zf.map (!·) = some false
     rw [hz, hj]; rfl
-  · refine Or.inr ⟨?_, j - 1, by omega, by omega, by omega, hi'⟩
+  · refine Or.inr ⟨?_, j - 1, by omega_arith, by omega_arith, by omega_arith, hi'⟩
     show s'.zf.map (!·) = some true
     rw [hz]; simp [hj]
 
@@ -45,8 +45,8 @@ theorem ofNat_sub_one {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64) :
     BitVec.ofNat 64 j - BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 (j - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1
-    by decide, Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)]
-  omega
+    by decide, Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega_arith : j - 1 < 2 ^ 64)]
+  omega_arith
 
 theorem ofNat_eq_zero {j : Nat} (hj' : j < 2 ^ 64) : (BitVec.ofNat 64 j == 0) = decide (j = 0) := by
   by_cases h : j = 0
@@ -91,11 +91,11 @@ theorem dstart_ok {s : State} {base : Addr} (hs : Scr s base) :
     RegUpd.gpr_setReg_self]
   simp only [dsD, dsF, dsG, dsT]
   refine ⟨?_, ?_, ?_, ?_, ⟨fun r hr => ?_, rfl, rfl⟩⟩
-  · simp (disch := omega) only [dword_writeW_ne]
-  · simp (disch := omega) only [dword_writeW_ne, dword_writeW_self]
-  · simp (disch := omega) only [dword_writeW_ne, dword_writeW_self]
+  · simp (disch := omega_arith) only [dword_writeW_ne]
+  · simp (disch := omega_arith) only [dword_writeW_ne, dword_writeW_self]
+  · simp (disch := omega_arith) only [dword_writeW_ne, dword_writeW_self]
   · intro x hx
-    rw [writeW_outside _ _ _ (by omega) x (by omega), writeW_outside _ _ _ (by omega) x (by omega)]
+    rw [writeW_outside _ _ _ (by omega_arith) x (by omega_arith), writeW_outside _ _ _ (by omega_arith) x (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2, ↓reduceIte]
 
@@ -112,25 +112,25 @@ theorem dstore_ok {s : State} {base : Addr} (hs : Scr s base) :
     inW hs (show dsR + 8 ≤ 4096 by decide), sm1, xor_ones, RegUpd.gpr_setReg_self]
   simp only [dsD, dsU, dsV, dsQ, dsR]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr hr' => by simp only [hr, hr', ↓reduceIte]⟩
-  · rw [dword_writeW_ne _ _ _ (by omega) (by omega) (by omega), dword_writeW_ne _ _ _ (by omega) (by omega) (by omega),
-      dword_writeW_ne _ _ _ (by omega) (by omega) (by omega), dword_writeW_ne _ _ _ (by omega) (by omega) (by omega),
+  · rw [dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
       dword_writeW_self]
-  · rw [dword_writeW_ne _ _ _ (by omega) (by omega) (by omega), dword_writeW_ne _ _ _ (by omega) (by omega) (by omega),
-      dword_writeW_ne _ _ _ (by omega) (by omega) (by omega), dword_writeW_self]
-  · rw [dword_writeW_ne _ _ _ (by omega) (by omega) (by omega), dword_writeW_ne _ _ _ (by omega) (by omega) (by omega),
+  · rw [dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), dword_writeW_self]
+  · rw [dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
       dword_writeW_self]
-  · rw [dword_writeW_ne _ _ _ (by omega) (by omega) (by omega), dword_writeW_self]
+  · rw [dword_writeW_ne _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), dword_writeW_self]
   · rw [dword_writeW_self]
   · intro x hx
-    rw [writeW_outside _ _ _ (by omega) x (by omega), writeW_outside _ _ _ (by omega) x (by omega),
-      writeW_outside _ _ _ (by omega) x (by omega), writeW_outside _ _ _ (by omega) x (by omega),
-      writeW_outside _ _ _ (by omega) x (by omega)]
+    rw [writeW_outside _ _ _ (by omega_arith) x (by omega_arith), writeW_outside _ _ _ (by omega_arith) x (by omega_arith),
+      writeW_outside _ _ _ (by omega_arith) x (by omega_arith), writeW_outside _ _ _ (by omega_arith) x (by omega_arith),
+      writeW_outside _ _ _ (by omega_arith) x (by omega_arith)]
 
 theorem ofNat_fe (m : Mem) (base : Addr) (o : Nat) : BitVec.ofNat 64 (fe m base o) = word m base o := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat]
   simp only [fe, val4]
-  omega
+  omega_arith
 
 /-- The words of a batch's packed divsteps from `d` and the low words of `f`, `g` in memory. -/
 def pkW (m : Mem) (base : Addr) : PkSt := pkBatchV (word m base dsD) (word m base dsF) (word m base dsG)
@@ -199,7 +199,7 @@ theorem dsteps_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine ⟨eD.trans (by rw [cE]), eU.trans cU, eV.trans cV, eQ.trans cQ, eR.trans cR, ?_, eb.trans r14,
     fun r hr => ?_, ?_, ?_⟩
   · have Ow : ∀ {o n : Nat} {m m' : Mem}, Outside base o n m m' → dsD ≤ o → o + n ≤ dsD + 64 →
-        Outside base dsD 64 m m' := fun h h1 h2 x hx => h x (by omega)
+        Outside base dsD 64 m m' := fun h h1 h2 x hx => h x (by omega_arith)
     exact (Ow O1 (by decide) (by decide)).trans <| (Ow O2 (by decide) (by decide)).trans <|
       (Ow O3 (by decide) (by decide)).trans <| (Ow O4 (by decide) (by decide)).trans <|
       (Ow O5 (by decide) (by decide)).trans (Ow O (by decide) (by decide))

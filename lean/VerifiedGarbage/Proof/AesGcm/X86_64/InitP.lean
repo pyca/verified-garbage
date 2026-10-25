@@ -106,7 +106,7 @@ theorem powStart_ok {t : State} (pC : Covers [⟨Ctx, 1024⟩] t.wr) (h13 : t.gp
   have w₁ := in_off pC (show 256 + 8 ≤ 1024 by decide) (by decide)
   have w₂ := in_off pC (show 264 + 8 ≤ 1024 by decide) (by decide)
   have sep : Mem.Sep (Ctx + BitVec.ofNat 64 248) (64 / 8) (Ctx + BitVec.ofNat 64 256) (64 / 8) :=
-    Offset.sep _ (.inl (by decide)) (by have := L.cw; omega) (by have := L.cw; omega)
+    Offset.sep _ (.inl (by decide)) (by have := L.cw; omega_arith) (by have := L.cw; omega_arith)
   obtain ⟨t', run, hm, h13', h15', hbp, hsp', hrd, hwr⟩ : ∃ t', runBlock isa
       (([.mov .rax (.mem (at_ .r13 240)), .store (at_ .r13 256) .rax,
         .mov .rax (.mem (at_ .r13 248)), .store (at_ .r13 264) .rax] : List Instr) ++ ptr .rbp .r13 272) t = some t' ∧
@@ -126,7 +126,7 @@ theorem powStart_ok {t : State} (pC : Covers [⟨Ctx, 1024⟩] t.wr) (h13 : t.gp
   · rw [hm]
     exact (Cmac.frame_store2 _ _ _).sub fun r hr => ⟨_, List.mem_cons_self .., by
       simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
-  · have hk0 : k = 0 := by omega
+  · have hk0 : k = 0 := by omega_arith
     subst hk0
     show blockAt t'.mem (Ctx + BitVec.ofNat 64 256) = hpow _ 1
     have e : Ctx + BitVec.ofNat 64 248 = Ctx + BitVec.ofNat 64 240 + BitVec.ofNat 64 8 :=
@@ -165,11 +165,11 @@ theorem powArgs_ok {j : Nat} (hj : j < 47) {t : State} (h13 : t.gpr .r13 = Ctx) 
   have cw := L.cw
   generalize hY : Ctx + BitVec.ofNat 64 (272 + 16 * j) = Y at hbp ⊢
   have w₁ : InRegions t.wr (Y + BitVec.ofNat 64 0) 8 := by
-    rw [← hY, add_ofNat_assoc]; exact in_off pC' (by omega) (by decide)
+    rw [← hY, add_ofNat_assoc]; exact in_off pC' (by omega_arith) (by decide)
   have w₂ : InRegions t.wr (Y + BitVec.ofNat 64 8) 8 := by
-    rw [← hY, add_ofNat_assoc]; exact in_off pC' (by omega) (by decide)
+    rw [← hY, add_ofNat_assoc]; exact in_off pC' (by omega_arith) (by decide)
   have eD : Y - BitVec.ofNat 64 16 = Ctx + BitVec.ofNat 64 (256 + 16 * j) := by
-    rw [← hY, Offset.add_ofNat_sub _ (by omega)]; congr 2; omega
+    rw [← hY, Offset.add_ofNat_sub _ (by omega_arith)]; congr 2; omega_arith
   obtain ⟨t₁, run₁, hm₁, hdi, hsi, hdx, hcx, hr8, hcs, hrd₁, hwr₁⟩ : ∃ t₁, runBlock isa
       (([.mov32 .rax (imm 0), .store (at_ .rbp 0) .rax, .store (at_ .rbp 8) .rax] : List Instr) ++
         ptr .rdi .r13 240 ++ ([.mov .rsi (.reg .rbp), .mov .rdx (.reg .rbp), .alu .sub .rdx (imm 16),
@@ -194,18 +194,18 @@ theorem powArgs_ok {j : Nat} (hj : j < 47) {t : State} (h13 : t.gpr .r13 = Ctx) 
   have hsp₁ : t₁.gpr .rsp = SP := by rw [hcs .rsp (by decide), hsp]
   have pC₁ : Covers [⟨Ctx, 1024⟩] t₁.wr := by rw [hwr₁]; exact pC'
   have pW₁ : Covers [⟨W, 2560⟩] t₁.wr := by rw [hwr₁]; exact pW'
-  have sY : Region.Sub ⟨Y, 16⟩ ⟨Ctx, 1024⟩ := by rw [← hY]; exact Offset.sub_base _ (by omega)
+  have sY : Region.Sub ⟨Y, 16⟩ ⟨Ctx, 1024⟩ := by rw [← hY]; exact Offset.sub_base _ (by omega_arith)
   have sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
   have dY : ∀ {d : Nat}, d + 16 ≤ 272 + 16 * j → (⟨Ctx + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint ⟨Y, 16⟩ :=
-    fun hd => by rw [← hY]; exact Offset.disjoint _ (.inl hd) (by omega) (by omega)
-  have cY : Covers [⟨Y, 16⟩] t₁.wr := by rw [← hY]; exact covers_off pC₁ (by omega) (by decide)
-  · refine ⟨hdi, hsi, hdx, hcx, hr8, by decide, dY (by omega),
-      (L.cs.sub_left (Offset.sub_base _ (by decide))).sub_right sS, (dY (by omega)).symm,
-      (L.cs.sub_left sY).sub_right sS, (L.cs.sub_left (Offset.sub_base _ (by omega))).sub_right sS,
+    fun hd => by rw [← hY]; exact Offset.disjoint _ (.inl hd) (by omega_arith) (by omega_arith)
+  have cY : Covers [⟨Y, 16⟩] t₁.wr := by rw [← hY]; exact covers_off pC₁ (by omega_arith) (by decide)
+  · refine ⟨hdi, hsi, hdx, hcx, hr8, by decide, dY (by omega_arith),
+      (L.cs.sub_left (Offset.sub_base _ (by decide))).sub_right sS, (dY (by omega_arith)).symm,
+      (L.cs.sub_left sY).sub_right sS, (L.cs.sub_left (Offset.sub_base _ (by omega_arith))).sub_right sS,
       by rw [hsp₁]; exact L.kc.sub_right (Offset.sub_base _ (by decide)), by rw [hsp₁]; exact L.kc.sub_right sY,
-      by rw [hsp₁]; exact L.kc.sub_right (Offset.sub_base _ (by omega)), by rw [hsp₁]; exact L.ks.sub_right sS, ?_, ?_⟩
+      by rw [hsp₁]; exact L.kc.sub_right (Offset.sub_base _ (by omega_arith)), by rw [hsp₁]; exact L.ks.sub_right sS, ?_, ?_⟩
     · exact covers_cons (covers_left (covers_off pC₁ (by decide) (by decide))) (covers_cons
-        (covers_left (covers_off pC₁ (n := 16 * 1) (by omega) (by decide))) (covers_cons (covers_left cY)
+        (covers_left (covers_off pC₁ (n := 16 * 1) (by omega_arith) (by decide))) (covers_cons (covers_left cY)
         (covers_left (covers_off pW₁ (by decide) (by decide)))))
     · exact covers_cons cY (covers_off pW₁ (by decide) (by decide))
 
@@ -220,10 +220,10 @@ theorem powStep_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW 
   have hbp := h.rbp
   generalize hY : Ctx + BitVec.ofNat 64 (272 + 16 * j) = Y at gc hm₁ hbp
   have hsp₁ : t₁.gpr .rsp = SP := by rw [hcs .rsp (by decide), h.rsp]
-  have sY' : Region.Sub ⟨Y, 16⟩ ⟨Ctx + BitVec.ofNat 64 256, 768⟩ := by rw [← hY]; exact Offset.sub _ (by omega) (by omega)
+  have sY' : Region.Sub ⟨Y, 16⟩ ⟨Ctx + BitVec.ofNat 64 256, 768⟩ := by rw [← hY]; exact Offset.sub _ (by omega_arith) (by omega_arith)
   have sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
   have dY : ∀ {d : Nat}, d + 16 ≤ 272 + 16 * j → (⟨Ctx + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint ⟨Y, 16⟩ :=
-    fun hd => by rw [← hY]; exact Offset.disjoint _ (.inl hd) (by omega) (by omega)
+    fun hd => by rw [← hY]; exact Offset.disjoint _ (.inl hd) (by omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (gh_call v.gh gc) fun t₂ g => ?_)
   have hbp₂ : t₂.gpr .rbp = Y := by rw [g.saved .rbp (by decide), hcs .rbp (by decide), hbp]
   obtain ⟨t₃, run₃, hbp₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ t₃, runBlock isa [.alu .add .rbp (imm 16)] t₂ = some t₃ ∧
@@ -243,7 +243,7 @@ theorem powStep_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW 
     have := g.frame; rw [hsp₁] at this; exact this
   have hH₁ : blockAt t₁.mem (Ctx + BitVec.ofNat 64 240) = blockAt m₅ (Ctx + BitVec.ofNat 64 240) := by
     rw [blockAt_frame f₁ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega)]
+      simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega_arith)]
     exact blockAt_frame h.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -254,7 +254,7 @@ theorem powStep_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW 
   have hD₁ : blockAt t₁.mem (Ctx + BitVec.ofNat 64 (256 + 16 * j)) =
       hpow (blockAt m₅ (Ctx + BitVec.ofNat 64 240)) (j + 1) := by
     rw [blockAt_frame f₁ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega)]
+      simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega_arith)]
     exact h.pows j (Nat.le_refl _)
   have out := g.out
   rw [hH₁, hY₁, blocksAt_one, hD₁] at out
@@ -273,16 +273,16 @@ theorem powStep_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW 
   · rw [hm₃]
     rcases Nat.lt_or_ge k (j + 1) with hk' | hk'
     · rw [blockAt_frame f₂ (fun r hr => ?_), blockAt_frame f₁ (fun r hr => ?_)]
-      · exact h.pows k (by omega)
-      · simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega)
+      · exact h.pows k (by omega_arith)
+      · simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega_arith)
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
-        · exact dY (by omega)
-        · exact (L.cs.sub_left (Offset.sub_base _ (by omega))).sub_right sS
-        · exact (L.kc.sub_right (Offset.sub_base _ (by omega))).symm
-    · have hk1 : k = j + 1 := by omega
+        · exact dY (by omega_arith)
+        · exact (L.cs.sub_left (Offset.sub_base _ (by omega_arith))).sub_right sS
+        · exact (L.kc.sub_right (Offset.sub_base _ (by omega_arith))).symm
+    · have hk1 : k = j + 1 := by omega_arith
       subst hk1
-      have e : Ctx + BitVec.ofNat 64 (256 + 16 * (j + 1)) = Y := by rw [← hY]; congr 2; omega
+      have e : Ctx + BitVec.ofNat 64 (256 + 16 * (j + 1)) = Y := by rw [← hY]; congr 2; omega_arith
       rw [e, out]
       exact congrArg (mul · _) BitVec.zero_xor
 
@@ -299,7 +299,7 @@ theorem pow_zf (Ctx : Addr) {k : Nat} (hk : k ≤ 47) :
     have e3 : BitVec.ofNat 64 (272 + 16 * k) = BitVec.ofNat 64 1024 :=
       (BitVec.add_right_inj Ctx).mp (by simpa using e2)
     have := congrArg BitVec.toNat e3
-    simp at this; omega
+    simp at this; omega_arith
 
 omit L in
 /-- The loop's test: `rbp` against the end of the table, `r13 + 1024`. -/
@@ -340,14 +340,14 @@ theorem powLoop_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW 
     (fun m t ⟨j, hj, hm, ht⟩ => ?_) 47 t ⟨0, by decide, rfl, h⟩
   subst hm
   refine WP.seq (WP.mono (powStep_ok v L pC pW hj ht) fun t₁ h₁ => ?_)
-  refine WP.mono (powEnd_ok (k := j + 1) (by omega) h₁) fun t₂ ⟨h₂, he⟩ => ?_
+  refine WP.mono (powEnd_ok (k := j + 1) (by omega_arith) h₁) fun t₂ ⟨h₂, he⟩ => ?_
   rw [he]
   by_cases hl : j + 1 = 47
   · left
     rw [hl] at h₂
     exact ⟨by simp [hl], h₂⟩
   · right
-    exact ⟨by simp [hl], 47 - (j + 1), by omega, j + 1, by omega, rfl, h₂⟩
+    exact ⟨by simp [hl], 47 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, h₂⟩
 
 end
 
@@ -358,7 +358,7 @@ theorem keyRepr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   have hR : 16 * (Spec.Aes.rounds (key.length / 4) + 1) ≤ 240 := by
     rcases hl with h | h | h <;> rw [h] <;> decide
   refine ⟨?_, ?_⟩
-  · rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega))) (by omega)]
+  · rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega_arith))) (by omega_arith)]
     exact h.1
   · have e : blockAt m' (p + BitVec.ofNat 64 240) = blockAt m (p + BitVec.ofNat 64 240) :=
       blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by decide))
@@ -401,18 +401,18 @@ theorem initP_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initPrecomputedX86
     intro d hd r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ (.inl hd) (by omega) (by decide)
-    · exact (L.cs.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by decide))
-    · exact (L.kc.sub_right (Offset.sub_base _ (by omega))).symm
+    · exact Offset.disjoint _ (.inl hd) (by omega_arith) (by decide)
+    · exact (L.cs.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by decide))
+    · exact (L.kc.sub_right (Offset.sub_base _ (by omega_arith))).symm
   have hH : Spec.Gcm.ctxH t'.mem (s.gpr .rdx) = blockAt s₅.mem (s.gpr .rdx + BitVec.ofNat 64 240) :=
     blockAt_frame I'.frame (dC (by decide))
   refine ⟨keyRepr_frame I'.frame (by rw [length_bytesAt]; exact hl) (fun r hr => ?_) D.key,
     fun k hk => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.base_disjoint _ (by decide) (by have := L.cw; omega)
+    · exact Offset.base_disjoint _ (by decide) (by have := L.cw; omega_arith)
     · exact (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
     · exact (L.kc.sub_right (Region.sub_prefix (by decide))).symm
-  · rw [hH]; exact I'.pows k (by omega)
+  · rw [hH]; exact I'.pows k (by omega_arith)
 
 end VG.Proof.AesGcm.X86_64

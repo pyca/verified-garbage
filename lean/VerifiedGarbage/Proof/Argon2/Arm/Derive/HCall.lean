@@ -51,8 +51,8 @@ theorem loc_call : (locR s₀).Disjoint (callR s₀) := by
   have := hp.sp_lo
   have := E_hi hp
   show Region.Disjoint _ ⟨State.addr (E s₀) - BitVec.ofNat 64 40, 40⟩
-  rw [← addr_sub' (by omega)]
-  exact disj32 (.inr (by rw [sub_toNat' (by omega)]; omega)) (by omega) (by rw [sub_toNat' (by omega)]; omega)
+  rw [← addr_sub' (by omega_arith)]
+  exact disj32 (.inr (by rw [sub_toNat' (by omega_arith)]; omega_arith)) (by omega_arith) (by rw [sub_toNat' (by omega_arith)]; omega_arith)
 
 theorem loc_sub_stk : Region.Sub (locR s₀) (stkR0 s₀) := by
   simpa using frame_stk hp (d := 0) (n := 144) (by decide)
@@ -84,7 +84,7 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
   have hhi := E_hi hp
   have hs := hp.scr_fits
   have sp := h.sp
-  have hn : 4 * hregs.length ≤ s.sp.toNat := by simp only [List.length_cons, List.length_nil]; rw [sp]; omega
+  have hn : 4 * hregs.length ≤ s.sp.toNat := by simp only [List.length_cons, List.length_nil]; rw [sp]; omega_arith
   have a0 : ∀ {rd wr}, stackArg ((pushed hregs s).callEntry.withRegions rd wr) 0 = scrP s₀ := by
     intro rd wr; rw [pushed_arg hn (by decide)]; exact hdx
   have eA : ∀ {rd wr}, stackArgAddr ((pushed hregs s).callEntry.withRegions rd wr) 0 =
@@ -144,21 +144,21 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
   have cA : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 (4 * hregs.length), 4⟩ (callR s₀) := by
     rw [sp]
     show Region.Sub ⟨State.addr (E s₀) - BitVec.ofNat 64 8, 4⟩ ⟨State.addr (E s₀) - BitVec.ofNat 64 40, 40⟩
-    have t8 : (E s₀ - BitVec.ofNat 32 8).toNat = (E s₀).toNat - 8 := sub_toNat' (by omega)
-    have t40 : (E s₀ - BitVec.ofNat 32 40).toNat = (E s₀).toNat - 40 := sub_toNat' (by omega)
-    rw [← addr_sub' (x := E s₀) (k := 8) (by omega), ← addr_sub' (x := E s₀) (k := 40) (by omega)]
-    exact sub32 (by rw [t8, t40]; omega) (by rw [t8, t40]; omega)
+    have t8 : (E s₀ - BitVec.ofNat 32 8).toNat = (E s₀).toNat - 8 := sub_toNat' (by omega_arith)
+    have t40 : (E s₀ - BitVec.ofNat 32 40).toNat = (E s₀).toNat - 40 := sub_toNat' (by omega_arith)
+    rw [← addr_sub' (x := E s₀) (k := 8) (by omega_arith), ← addr_sub' (x := E s₀) (k := 40) (by omega_arith)]
+    exact sub32 (by rw [t8, t40]; omega_arith) (by rw [t8, t40]; omega_arith)
   have cS : Region.Sub (stkR (E s₀ - BitVec.ofNat 32 8) 32) (callR s₀) :=
-    stkR_inner (sp := E s₀) (a := 32) (k := 8) (b := 40) (by omega) (by omega)
+    stkR_inner (sp := E s₀) (a := 32) (k := 8) (b := 40) (by omega_arith) (by omega_arith)
   have cS' : Region.Sub (stkR (s.sp - BitVec.ofNat 32 8) 32) (callR s₀) := by rw [sp]; exact cS
   refine ⟨?_, ?_, ?_⟩
   · simp only [HPrime.hPrimeArm, State.withRegions_rd, State.withRegions_wr, a0, eA, eSp,
       g .r0 (by decide), g .r1 (by decide), g .r2 (by decide), g .r3 (by decide)]
     refine ⟨trivial, trivial, I_scr, O_scr, O_call.symm.sub_left cA, S_call.symm.sub_left cA,
-      I_call.symm.sub_left cS', O_call.symm.sub_left cS', S_call.symm.sub_left cS', hinfit, houtfit, by omega,
+      I_call.symm.sub_left cS', O_call.symm.sub_left cS', S_call.symm.sub_left cS', hinfit, houtfit, by omega_arith,
       ?_, ?_, hL⟩
-    · rw [sub_toNat' (by omega), sp]; omega
-    · rw [sub_toNat' (by omega), sp]; omega
+    · rw [sub_toNat' (by omega_arith), sp]; omega_arith
+    · rw [sub_toNat' (by omega_arith), sp]; omega_arith
   · intro a n ⟨q, hq, hc⟩
     rw [pushed_rd, pushed_wr]
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -168,7 +168,7 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
     · refine InRegions_append_cons.mpr (.inl ?_)
       rw [addr_sub' hn]
       simp only [Region.Contains, List.length_cons, List.length_nil] at hc ⊢
-      omega
+      omega_arith
     · obtain ⟨q', hq', hc'⟩ := cO a n ⟨_, List.mem_singleton_self _, hc⟩
       exact InRegions_append_cons.mpr (.inr ⟨q', List.mem_append_right _ hq', hc'⟩)
     · exact InRegions_append_cons.mpr (.inr ⟨_, List.mem_append_right _ scrW, hc⟩)
@@ -198,7 +198,7 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
   have hE := E_nat hp
   have hlo := hp.sp_lo
   have sp := h.sp
-  have hn : 4 * hregs.length ≤ s.sp.toNat := by simp only [List.length_cons, List.length_nil]; rw [sp]; omega
+  have hn : 4 * hregs.length ≤ s.sp.toNat := by simp only [List.length_cons, List.length_nil]; rw [sp]; omega_arith
   obtain ⟨RI, hRI, oI, bI, lI⟩ := hin
   obtain ⟨RO, hRO, oO, bO, lO⟩ := hout
   have sI : Region.Sub ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ RI := by
@@ -213,7 +213,7 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
   obtain ⟨pre, cv, cw⟩ := hcall_pre hp h hdx ⟨RI, hRI, oI, bI, lI⟩ hinfit ⟨RO, hRO, oO, bO, lO⟩ houtfit hL
   unfold Impl.Argon2.Arm.Derive.hPrimeCall
   refine frameCall_ok (rs := hregs) (t := .r12) (by decide) (by decide) (by decide) (k := HPrime.hPrimeArm)
-    HPrime.hPrime_verified.1 (K := 40) (by rw [hPrime_stack]; decide) (by rw [sp]; omega) pre cv cw
+    HPrime.hPrime_verified.1 (K := 40) (by rw [hPrime_stack]; decide) (by rw [sp]; omega_arith) pre cv cw
     fun t af post => ?_
   simp only [HPrime.hPrimeArm, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide),
@@ -224,7 +224,7 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
     bytes_keep (VG.Proof.Argon2.Arm.pushed_stk hn)
     (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
-      exact I_call.sub_right (by rw [sp]; exact stkR_sub (by decide) (by omega)))
+      exact I_call.sub_right (by rw [sp]; exact stkR_sub (by decide) (by omega_arith)))
     (Nat.le_of_lt (Nat.lt_trans (s.gpr .r1).isLt (by decide)))
   rw [bk] at post
   have f₁ : Frame [⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩, scrR s₀, callR s₀] s.mem

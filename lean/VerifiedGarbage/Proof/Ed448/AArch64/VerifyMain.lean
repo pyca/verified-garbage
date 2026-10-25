@@ -69,11 +69,11 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   rw [hbase] at hdk hds hdc hn hw htb
   have hws : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
   have rpk : ∀ i < 57, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 i) 1 :=
-    fun i h => ⟨⟨s.gpr .x0, 57⟩, by rw [hr]; simp, Offset.contains_base _ (d := i) (n := 1) (k := 57) h (by omega)⟩
+    fun i h => ⟨⟨s.gpr .x0, 57⟩, by rw [hr]; simp, Offset.contains_base _ (d := i) (n := 1) (k := 57) h (by omega_arith)⟩
   have rsg : ∀ i < 114, InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 i) 1 :=
-    fun i h => ⟨⟨s.gpr .x1, 114⟩, by rw [hr]; simp, Offset.contains_base _ (d := i) (n := 1) (k := 114) h (by omega)⟩
+    fun i h => ⟨⟨s.gpr .x1, 114⟩, by rw [hr]; simp, Offset.contains_base _ (d := i) (n := 1) (k := 114) h (by omega_arith)⟩
   have rch : ∀ i < 57, InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 i) 1 :=
-    fun i h => ⟨⟨s.gpr .x2, 57⟩, by rw [hr]; simp, Offset.contains_base _ (d := i) (n := 1) (k := 57) h (by omega)⟩
+    fun i h => ⟨⟨s.gpr .x2, 57⟩, by rw [hr]; simp, Offset.contains_base _ (d := i) (n := 1) (k := 57) h (by omega_arith)⟩
   have fpk : ∀ i < 57, 8192 ≤ ofs base (s.gpr .x0 + BitVec.ofNat 64 i) := fun i hi => far hdk hi (by decide)
   have fsg : ∀ i < 114, 8192 ≤ ofs base (s.gpr .x1 + BitVec.ofNat 64 i) := fun i hi => far hds hi (by decide)
   have fch : ∀ i < 57, 8192 ≤ ofs base (s.gpr .x2 + BitVec.ofNat 64 i) := fun i hi => far hdc hi (by decide)
@@ -97,8 +97,8 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   have tb3 : VG.Proof.X448.AArch64.Base.TblAt s3 base (s3.syms Impl.X448.AArch64.Base.combSym) := by
     rw [sy3, sy2, sy1]
     refine htb.of_far (by rw [T.rd, T.wr, I.rd, I.wr, F.rd, F.wr]) fun x hx => ?_
-    rw [T.mem x (Or.inr (by omega)) (Or.inr (by simp only [ACC]; omega)) (Or.inr (by simp only [TAB]; omega)),
-      I.mem x (Or.inr (by omega)) (Or.inr (by simp only [RX]; omega)) (Or.inr (by simp only [TAB]; omega)),
+    rw [T.mem x (Or.inr (by omega_arith)) (Or.inr (by simp only [ACC]; omega_arith)) (Or.inr (by simp only [TAB]; omega_arith)),
+      I.mem x (Or.inr (by omega_arith)) (Or.inr (by simp only [RX]; omega_arith)) (Or.inr (by simp only [TAB]; omega_arith)),
       F.mem x (Or.inr hx)]
   -- `[S]B`.
   refine WP.seq (WP.mono (sBase_ok T.scr T.env T.zero hSlt B3 tb3)
@@ -108,12 +108,12 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   have lN : ∀ i : VG.Proof.X448.AArch64.Weak.Index, ∀ j < 8,
       limbs sN.mem base (slot i.val) j = limbs s4.mem base (slot i.val) j := fun i j hj => by
     have := i.isLt
-    exact oN.limbs (by simp only [slot, BITS]; omega) (by simp only [slot]; omega) (by omega)
+    exact oN.limbs (by simp only [slot, BITS]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)
   have eN : ∀ i : VG.Proof.X448.AArch64.Weak.Index, EV sN.mem base i = EV s4.mem base i := fun i =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (lN i))
   have eK : ∀ k < 57, sN.mem (off base (KB + k)) = s4.mem (off base (KB + k)) := fun k hk => by
-    have ho : ofs base (off base (KB + k)) = KB + k := ofs_off0' base (by simp only [KB]; omega)
-    exact oN _ (Or.inl (by rw [ho]; simp only [KB, BITS]; omega))
+    have ho : ofs base (off base (KB + k)) = KB + k := ofs_off0' base (by simp only [KB]; omega_arith)
+    exact oN _ (Or.inl (by rw [ho]; simp only [KB, BITS]; omega_arith))
   have NN' : ∀ i < 57, NibsAt base (fun i => sN.mem (off base (KB + i))) sN.mem i := fun i hi => by
     obtain ⟨a, b⟩ := NN i hi
     simp only [NibsAt] at a b ⊢

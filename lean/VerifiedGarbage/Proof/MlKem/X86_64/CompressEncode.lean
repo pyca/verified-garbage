@@ -102,9 +102,9 @@ theorem step {grp : List Instr}
     WP isa (.block (grp ++ ceTail c b)) s fun s' => Inv s₀ d c b M (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) := by
   have hci : c * i + c ≤ 256 := by
-    have := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega); rw [Nat.mul_succ] at this; omega
+    have := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega_arith); rw [Nat.mul_succ] at this; omega_arith
   have hbi : b * i + b ≤ 32 * d := by
-    have := Nat.mul_le_mul_left b (show i + 1 ≤ 256 / c by omega); rw [Nat.mul_succ] at this; omega
+    have := Nat.mul_le_mul_left b (show i + 1 ≤ 256 / c by omega_arith); rw [Nat.mul_succ] at this; omega_arith
   have hrd : s.rd ++ s.wr = [pR (fP s₀), ⟨oP s₀, 32 * d⟩] := by
     rw [hI.rd, hI.wr, hp.1, hp.2.1, lenEq hp hdd]; rfl
   have hwr : s.wr = [⟨oP s₀, 32 * d⟩] := by rw [hI.wr, hp.2.1, lenEq hp hdd]
@@ -114,27 +114,27 @@ theorem step {grp : List Instr}
     have := hp.2.2.1; rw [lenEq hp hdd] at this; exact this
   rw [WP.block_append_iff]
   refine WP.mono (hgrp i hi s ⟨fun j hj => ?_, fun j hj => ?_, fun k hk => ?_, ?_⟩) fun s₁ ⟨w₁, k₁⟩ => ?_
-  · rw [ha j hj, hrd]; exact ⟨_, by simp, coeff_contains _ (show c * i + j < 256 by omega)⟩
+  · rw [ha j hj, hrd]; exact ⟨_, by simp, coeff_contains _ (show c * i + j < 256 by omega_arith)⟩
   · have hr : Reduced s₀.mem (fP s₀) := hp.2.2.2.2.2.2.2
-    have hk : c * i + j < 256 := by omega
+    have hk : c * i + j < 256 := by omega_arith
     rw [ha j hj, ← coeffAt_eq, coeff hp hdd hI.frame hk]
     have harg := (hcomp (F s₀)[c * i + j]!).1
     rw [polyAt_val hr hk] at harg
     rw [ceV_toNat hd11.2 (by rw [hI.r9]; exact harg), hI.r9, (hcomp _).2, polyAt_val hr hk]
   · rw [hwr, hI.r8, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact ⟨_, List.mem_singleton_self _, contains_offset' (by omega) (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, contains_offset' (by omega_arith) (by omega_arith)⟩
   · rw [hI.rdi, hI.r8]
-    exact (hdj.sub_left (sub_offset' (by rw [Nat.mul_assoc]; omega) (by decide))).sub_right
-      (sub_offset' (by omega) (by omega))
-  refine WP.mono (tail_ok c b (by omega) (by omega) s₁) fun s₂ ⟨⟨di₂, r8₂, cx₂, z₂, m₂⟩, k₂⟩ => ⟨?_, ?_, ?_⟩
+    exact (hdj.sub_left (sub_offset' (by rw [Nat.mul_assoc]; omega_arith) (by decide))).sub_right
+      (sub_offset' (by omega_arith) (by omega_arith))
+  refine WP.mono (tail_ok c b (by omega_arith) (by omega_arith) s₁) fun s₂ ⟨⟨di₂, r8₂, cx₂, z₂, m₂⟩, k₂⟩ => ⟨?_, ?_, ?_⟩
   rotate_left
   · rw [cx₂, k₁.gpr (by decide)]
   · rw [z₂, k₁.gpr (by decide)]
   have hw : Written s.mem s₂.mem (oP s₀ + BitVec.ofNat 64 (b * i)) b
       fun k => (compressEncode d (F s₀))[b * i + k]! := by
     rw [m₂, ← hI.r8]; exact w₁
-  obtain ⟨hf', hd'⟩ := Written.step hI.frame hI.done hw hbi (by omega)
-  refine ⟨?_, ?_, ?_, ?_, ?_, hf', fun k hk => hd' k (by rw [Nat.mul_succ] at hk; omega)⟩
+  obtain ⟨hf', hd'⟩ := Written.step hI.frame hI.done hw hbi (by omega_arith)
+  refine ⟨?_, ?_, ?_, ?_, ?_, hf', fun k hk => hd' k (by rw [Nat.mul_succ] at hk; omega_arith)⟩
   · rw [di₂, k₁.gpr (by decide), hI.rdi]; exact ptr_step _ i (4 * c)
   · rw [r8₂, k₁.gpr (by decide), hI.r8]; exact ptr_step _ i b
   · rw [k₂.gpr (by decide), k₁.gpr (by decide), hI.r9]
@@ -152,18 +152,18 @@ theorem loop_ok {grp : List Instr}
       bytesAt s'.mem (oP s₀) (32 * d) = compressEncode d (F s₀) ∧ Frame [⟨oP s₀, 32 * d⟩] s₀.mem s'.mem := by
   refine WP.seq (WP.mono (WP.keep [.r9] (Q := fun s' => s'.gpr .r9 = BitVec.ofNat 64 M ∧ s'.mem = s.mem)
     (by xrun [sx_ofNat hM]) (by rfl)) fun s₁ ⟨⟨h9, m₁⟩, k₁⟩ => ?_)
-  have hN : 0 < 256 / c ∧ 256 / c ≤ 256 := ⟨Nat.div_pos (by omega) hc0, Nat.div_le_self _ _⟩
+  have hN : 0 < 256 / c ∧ 256 / c ≤ 256 := ⟨Nat.div_pos (by omega_arith) hc0, Nat.div_le_self _ _⟩
   refine WP.mono (wp_counted (N := 256 / c) (v := BitVec.ofNat 32 (256 / c))
-    (by rw [BitVec.toNat_ofNat]; omega) (by omega) (Inv s₀ d c b M)
-    (fun s₂ m₂ k₂ => ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega)⟩)
+    (by rw [BitVec.toNat_ofNat]; omega_arith) (by omega_arith) (Inv s₀ d c b M)
+    (fun s₂ m₂ k₂ => ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega_arith)⟩)
     fun i hi s hI => step hp hd11 hc0 hc8 hb hbN hcN hdd hcomp hgrp hi hI) fun s' hI => ⟨?_, hI.frame⟩
   · rw [k₂.gpr (by decide), k₁.gpr (by decide), hdi]; simp
   · rw [k₂.gpr (by decide), k₁.gpr (by decide), h8]; simp
-  · rw [k₂.gpr (by decide), h9, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [k₂.gpr (by decide), h9, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   · rw [k₂.2.1, k₁.2.1, hrd]
   · rw [k₂.2.2, k₁.2.2, hwr]
   · rw [m₂, m₁, hm]; exact Frame.refl _ _
-  · exact bytesAt_eq! (compressEncode_length _ _) fun k hk => hI.done k (by omega)
+  · exact bytesAt_eq! (compressEncode_length _ _) fun k hk => hI.done k (by omega_arith)
 
 end
 
@@ -173,20 +173,20 @@ theorem grp_ok {r d c b : Nat} (hr : r < 2 ^ 31) (hd11 : 1 ≤ d ∧ d ≤ 11) (
     (F : Poly) {i : Nat} (hci : c * i + c ≤ 256) (hbi : b * i + b ≤ 32 * d) {s : State} (h : GrpIn r d c b F i s) :
     WP isa (.block (ceAcc r d 0 c ++ ceSt 0 b)) s (GrpOut d b F i s) := by
   rw [WP.block_append_iff]
-  refine WP.mono (ceAcc_ok (o := 0) (c := c) hr hd11.1 hd11.2 (by omega) s
+  refine WP.mono (ceAcc_ok (o := 0) (c := c) hr hd11.1 hd11.2 (by omega_arith) s
     (fun j hj => by rw [Nat.zero_add]; exact h.rd j hj) (fun j => compress d F[c * i + (0 + j)]!)
     (fun j hj => by rw [Nat.zero_add]; exact h.v j hj) (fun _ _ => compress_lt d _)) fun s₁ ⟨r₁, m₁, k₁⟩ => ?_
-  refine WP.mono (ceSt_ok (k0 := 0) (nb := b) (by omega) s₁ (fun k hk => by
+  refine WP.mono (ceSt_ok (k0 := 0) (nb := b) (by omega_arith) s₁ (fun k hk => by
       rw [k₁.2.2, k₁.gpr (by decide), Nat.zero_add]; exact h.wr k hk)) fun s₂ ⟨w₂, k₂⟩ =>
     ⟨?_, (k₁.trans k₂).mono (by decide)⟩
   rw [k₁.gpr (by decide), add_ofNat_zero, m₁, r₁] at w₂
   refine w₂.congr fun k hk => ?_
-  rw [Spec.MlKem.compressEncode, byteEncode_group (c := c) (by omega) hdc (map_toList_lt _ (compress_lt d)) hk
-    (by omega), take_drop_eq _ 0 (by rw [map_toList_length]; omega)]
+  rw [Spec.MlKem.compressEncode, byteEncode_group (c := c) (by omega_arith) hdc (map_toList_lt _ (compress_lt d)) hk
+    (by omega_arith), take_drop_eq _ 0 (by rw [map_toList_length]; omega_arith)]
   congr 3
   apply List.map_congr_left
   intro j hj
-  rw [map_toList_getD _ _ (show c * i + j < 256 by have := List.mem_range.mp hj; omega), Nat.zero_add]
+  rw [map_toList_getD _ _ (show c * i + j < 256 by have := List.mem_range.mp hj; omega_arith), Nat.zero_add]
 
 end CE
 
@@ -228,11 +228,11 @@ theorem ce_wp {s₀ : State} (hp : compressEncodeK.pre s₀) :
     intro d c b hd hdc hb hc0 hc hbN hcN hdd s h1 h2 h3 h4 h5
     have hd11 : 1 ≤ d ∧ d ≤ 11 := by rcases mem_compressWidths hd with rfl | rfl | rfl <;> decide
     rw [hdd]
-    exact CE.loop_ok hp hd11 hc0 hc (by omega) hbN hcN hdd (M := ceMul d) (r := 262080)
+    exact CE.loop_ok hp hd11 hc0 hc (by omega_arith) hbN hcN hdd (M := ceMul d) (r := 262080)
       (fun x => ⟨compress_arg_lt hd x, compress_eq hd x⟩)
-      (fun i hi s hs => CE.grp_ok (by decide) hd11 hdc (by omega) _
-        (by have := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega); rw [Nat.mul_succ] at this; omega)
-        (by have := Nat.mul_le_mul_left b (show i + 1 ≤ 256 / c by omega); rw [Nat.mul_succ] at this; omega) hs)
+      (fun i hi s hs => CE.grp_ok (by decide) hd11 hdc (by omega_arith) _
+        (by have := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega_arith); rw [Nat.mul_succ] at this; omega_arith)
+        (by have := Nat.mul_le_mul_left b (show i + 1 ≤ 256 / c by omega_arith); rw [Nat.mul_succ] at this; omega_arith) hs)
       (by rw [ceMul]; split <;> [decide; split <;> decide]) h1 h2 h3 h4 h5
   refine WP.ite (M := isa) _ (show isa.eval .e s₁ = _ from z₁) (fun h => ?_) (fun h => ?_)
   · rw [sub_beq_zero32, decide_eq_true_eq] at h

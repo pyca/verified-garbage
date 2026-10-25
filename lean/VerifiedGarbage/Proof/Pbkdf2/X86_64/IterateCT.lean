@@ -100,9 +100,9 @@ theorem load_st (hR : H.Reloc) {o : Nat} (ho : o + P.N ≤ 2 * (P.N + P.B)) {s :
   have := hz.NL
   rw [← List.append_nil (loadKey P o)]
   exact load_ok hz hp hR h.toRegs ho fun s' g rd wr f _ => WP.block_nil
-    ⟨h.toRegs.write (fun r hr _ _ _ _ _ => g r hr) rd wr (frame_scr (a := P.so + 48) (by omega) f),
+    ⟨h.toRegs.write (fun r hr _ _ _ _ _ => g r hr) rd wr (frame_scr (a := P.so + 48) (by omega_arith) f),
       (g _ (by decide)).trans h.r14,
-      (Memory.frame_bytesAt f (fun r hr => blk_disj hz hp (by omega) r (by simp at hr; simp [hr])) (by omega)).trans
+      (Memory.frame_bytesAt f (fun r hr => blk_disj hz hp (by omega_arith) r (by simp at hr; simp [hr])) (by omega_arith)).trans
         h.pad⟩
 
 theorem cmp_st {name : String} {code : Prog isa} (hf : CalleeOk H code) {s : State} (h : St P D W H s₀ v s) :
@@ -110,14 +110,14 @@ theorem cmp_st {name : String} {code : Prog isa} (hf : CalleeOk H code) {s : Sta
   have := so_le hz; have := N_le hz; have := B_le hz; have := hz.fits; have := hz.DN; have := hz.pad
   have := hz.NL
   exact cmp_ok hz hp hf h.toRegs fun s' h' r14 f _ =>
-    ⟨h', r14.trans h.r14, (Memory.frame_bytesAt f (blk_disj hz hp (by omega)) (by omega)).trans h.pad⟩
+    ⟨h', r14.trans h.r14, (Memory.frame_bytesAt f (blk_disj hz hp (by omega_arith)) (by omega_arith)).trans h.pad⟩
 
 theorem mid_st (hs : Shape H) (hR : H.Reloc) {s : State} (h : St P D W H s₀ v s) :
     WP isa (.block (Impl.Pbkdf2.X86_64.digest P D ++ loadKey P (P.N + P.B))) s (St P D W H s₀ v) := by
   have := so_le hz; have := N_le hz; have := B_le hz; have := hz.fits; have := hz.NL
   refine digest_ok hz hp hs h.toRegs h.pad fun s' g rd wr f _ p => ?_
-  exact load_st hz hp hR (by omega)
-    ⟨h.toRegs.write (fun r hr _ _ _ _ _ => g r hr) rd wr (frame_scr (a := P.so + 48 + P.N) (by omega) f),
+  exact load_st hz hp hR (by omega_arith)
+    ⟨h.toRegs.write (fun r hr _ _ _ _ _ => g r hr) rd wr (frame_scr (a := P.so + 48 + P.N) (by omega_arith) f),
       (g _ (by decide)).trans h.r14, p⟩
 
 /-! ## Two runs -/
@@ -161,7 +161,7 @@ theorem body_rel (hs : Shape H) (hR : H.Reloc) {name : String} {code : Prog isa}
       fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧ St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s' :=
     ((RelCT.taint (A := taint) (Taint.ofRegs regsS) (fun _ _ h =>
       Taint.agree_ofRegs (St.agree hq (St.of_inv h.1) (St.of_inv h.2))) hl).wp
-      fun _ _ h => ⟨load_st hz hp hR (by omega) (St.of_inv h.1), load_st hz hp' hR (by omega) (St.of_inv h.2)⟩).mono
+      fun _ _ h => ⟨load_st hz hp hR (by omega_arith) (St.of_inv h.1), load_st hz hp' hR (by omega_arith) (St.of_inv h.2)⟩).mono
       (fun _ _ h => h) fun _ _ h => h.2
   have dl : RelCT isa (fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧
         St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s')
@@ -191,7 +191,7 @@ theorem loop_rel (hs : Shape H) (hR : H.Reloc) {name : String} {code : Prog isa}
       have hc'' : some (m != 0) = some true := z.symm.trans hc'
       cases m with
       | zero => cases hc''
-      | succ m => exact ⟨m, by omega, i, i'⟩) n
+      | succ m => exact ⟨m, by omega_arith, i, i'⟩) n
 
 theorem iterate_rel {S : StreamingHash} {iv : H.HV} (ho : HashOk P D W S H iv) {name : String}
     {code : Prog isa} (hf : CalleeOk H code) (hc : Checks P D) :

@@ -49,7 +49,7 @@ theorem witness_arm {c x w : Nat} (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * 
         !decide (x < 2) && decide (x < c - 1)) := by
   unfold Spec.RsaKeyGen.witness
   simp only [hb, Nat.mod_eq_of_lt hx]
-  by_cases h1 : x < 2 <;> by_cases h2 : x < c - 1 <;> simp [h1, h2] <;> omega
+  by_cases h1 : x < 2 <;> by_cases h2 : x < c - 1 <;> simp [h1, h2] <;> omega_arith
 
 section
 variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
@@ -180,7 +180,7 @@ theorem witnessFix_vp {k : Nat} :
     (St.phiOpM (i := fun P => P.W - 3) (f := fun x => (x <<< 1) >>> 1)
       (g := fun σ => (xw P σ k ||| 2) % 2 ^ (32 * (P.W - 3) + 31))
       (by rw [← clrTopBit_eq]; exact clrTopBitXf_taint) (by simp) (by decide) (by decide)
-      (fun σ _ pre => by have := pre.wge; omega)
+      (fun σ _ pre => by have := pre.wge; omega_arith)
       (fun u R k' => wp_mov (op2_lsl (by decide)) fun u1 v1 => wp_mov (op2_lsr (by decide)) fun u2 v2 =>
         WP.block_nil (k' u2 ⟨by rw [v2.gpr, v1.gpr], fun r hr => by rw [v2.other r hr, v1.other r hr],
           v2.mem.trans v1.mem, v2.rd.trans v1.rd, v2.wr.trans v1.wr, v2.sp.trans v1.sp⟩))
@@ -188,9 +188,9 @@ theorem witnessFix_vp {k : Nat} :
   · have wE := pre.W_eq; have lE := pre.L_eq; have w4 := pre.w4
     simp (config := {decide := true}) only [upd, ↓reduceIte]
     refine clrTop_val ?_
-    rw [show 32 * (P.W - 3) + 32 = 8 * P.L by omega]
+    rw [show 32 * (P.W - 3) + 32 = 8 * P.L by omega_arith]
     exact Nat.or_lt_two_pow (xw_lt P σ k) (Nat.lt_of_lt_of_le (show 2 < 2 ^ 2 by decide)
-      (Nat.pow_le_pow_right (by decide) (show 2 ≤ 8 * P.L by omega)))
+      (Nat.pow_le_pow_right (by decide) (show 2 ≤ 8 * P.L by omega_arith)))
   refine (St.pselM selX_taint (by decide) (by simp) (by simp) (by decide) (by decide) (by simp)
     (fun σ _ => ?_) (by decide)).mono (fun _ _ h => h) fun σ s ⟨h, m⟩ =>
       ⟨h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d hd => ⟨by revert hd; revert d; decide, ?_⟩), m⟩
@@ -199,23 +199,23 @@ theorem witnessFix_vp {k : Nat} :
   · have pre := h.2.1.pre
     have lE := pre.L_eq; have w4 := pre.w4; have wE := pre.W_eq
     have sh : VG.Proof.RsaKeyGen.PrimeShape (64 * P.w) (cv P σ) := by
-      have := cv_shape (σ := σ) pre; rwa [show 8 * P.L = 64 * P.w by omega] at this
-    have hb := (VG.Proof.RsaKeyGen.cand_bits (by omega) sh).2.1
+      have := cv_shape (σ := σ) pre; rwa [show 8 * P.L = 64 * P.w by omega_arith] at this
+    have hb := (VG.Proof.RsaKeyGen.cand_bits (by omega_arith) sh).2.1
     have hx : xw P σ k < 2 ^ (64 * P.w) := by
-      have := xw_lt P σ k; rwa [show 8 * P.L = 64 * P.w by omega] at this
+      have := xw_lt P σ k; rwa [show 8 * P.L = 64 * P.w by omega_arith] at this
     have ew : wf P σ k = Spec.RsaKeyGen.witness (cv P σ - 1) (xw P σ k) := rfl
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp (config := {decide := true}) only [upd, ↓reduceIte, AW]
-    rw [ew, witness_arm hb hx, show 32 * (P.W - 3) + 31 = 64 * P.w - 1 by omega]
+    rw [ew, witness_arm hb hx, show 32 * (P.W - 3) + 31 = 64 * P.w - 1 by omega_arith]
     cases (!decide (xw P σ k < 2) && decide (xw P σ k < cv P σ - 1)) <;> rfl
   · have pre := h.2.1.pre
     have lE := pre.L_eq; have w4 := pre.w4
     have sh : VG.Proof.RsaKeyGen.PrimeShape (64 * P.w) (cv P σ) := by
-      have := cv_shape (σ := σ) pre; rwa [show 8 * P.L = 64 * P.w by omega] at this
-    have hb := (VG.Proof.RsaKeyGen.cand_bits (by omega) sh).2.1
+      have := cv_shape (σ := σ) pre; rwa [show 8 * P.L = 64 * P.w by omega_arith] at this
+    have hb := (VG.Proof.RsaKeyGen.cand_bits (by omega_arith) sh).2.1
     have hx : xw P σ k < 2 ^ (64 * P.w) := by
-      have := xw_lt P σ k; rwa [show 8 * P.L = 64 * P.w by omega] at this
+      have := xw_lt P σ k; rwa [show 8 * P.L = 64 * P.w by omega_arith] at this
     have ew : wf P σ k = Spec.RsaKeyGen.witness (cv P σ - 1) (xw P σ k) := rfl
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;>

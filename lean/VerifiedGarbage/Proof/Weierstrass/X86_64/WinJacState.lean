@@ -65,21 +65,21 @@ theorem jgWord_unch (hL : JacWinLay K size) {base : Addr} {W : List (Nat × Nat)
     (hU : Unch base W m m') (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 85)
     (hW : ∀ w ∈ W, jg K i + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ jg K i) :
     wordsVal m' base (jg K i) K.M.n = wordsVal m base (jg K i) K.M.n :=
-  hU.wordsVal hW (by have := hL.le (jg_mem (K := K) hi); omega)
+  hU.wordsVal hW (by have := hL.le (jg_mem (K := K) hi); omega_arith)
 
 theorem JTblOk.unch (hL : JacWinLay K size) {C : Curve} {base : Addr} {P : Point C} {M : Nat}
     {s s' : State} (hT : JTblOk K C base P M s) {W : List (Nat × Nat)} (hU : Unch base W s.mem s'.mem)
     (hn : base.toNat + size ≤ 2 ^ 64) (hM : M ≤ 16)
     (hW : ∀ w ∈ W, ∀ i < 5 * M, jg K i + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ jg K i) :
     JTblOk K C base P M s' := fun m h1 hm =>
-  (hT m h1 hm).congr fun c hc => jgWord_unch hL hU hn (by omega) fun w hw => hW w hw _ (by omega)
+  (hT m h1 hm).congr fun c hc => jgWord_unch hL hU hn (by omega_arith) fun w hw => hW w hw _ (by omega_arith)
 
 theorem JPt.unchT (hL : JacWinLay K size) {C : Curve} {base : Addr} {Q : Point C} {s s' : State}
     (hT : JPt C K.M.n base s (TS K) Q) {W : List (Nat × Nat)} (hU : Unch base W s.mem s'.mem)
     (hn : base.toNat + size ≤ 2 ^ 64)
     (hW : ∀ w ∈ W, ∀ c < 5, jg K (80 + c) + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ jg K (80 + c)) :
     JPt C K.M.n base s' (TS K) Q :=
-  hT.congr fun c hc => jgWord_unch hL hU hn (by omega) fun w hw => hW w hw c hc
+  hT.congr fun c hc => jgWord_unch hL hU hn (by omega_arith) fun w hw => hW w hw c hc
 
 /-- The loop writes nothing of the table. -/
 theorem loopW_apart (hL : JacWinLay K size) {i : Nat} (hi : i < 80) :
@@ -88,9 +88,9 @@ theorem loopW_apart (hL : JacWinLay K size) {i : Nat} (hi : i < 80) :
   simp only [jwLoopW, List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with ⟨y, hy, rfl⟩ | rfl
   · rcases hy with hy | ⟨c, hc, rfl⟩
-    · exact (hL.jg_apart (List.mem_append_right _ hy) (by omega)).symm
-    · exact jg_apart K (by have := List.mem_range.mp hc; omega)
-  · exact hL.lay.tmp _ (jg_mem (by omega))
+    · exact (hL.jg_apart (List.mem_append_right _ hy) (by omega_arith)).symm
+    · exact jg_apart K (by have := List.mem_range.mp hc; omega_arith)
+  · exact hL.lay.tmp _ (jg_mem (by omega_arith))
 
 /-- What the method reads and never writes, but the table of bits: zero and
 `P` (affine: `Z` is Montgomery's one). -/
@@ -154,18 +154,18 @@ theorem outside_grid5 {base : Addr} {m m' : Mem} {b : Nat}
   unfold jg
   dsimp only at e0 e1 e2 e3 e4
   simp only [Nat.mul_add, Nat.add_zero] at e0 e1 e2 e3 e4
-  omega
+  omega_arith
 
 theorem grid5_jwW {b : Nat} (hb : b + 5 ≤ 85) :
     ∀ w ∈ (List.range 5).map (fun c => (jg K (b + c), 8 * K.M.n)), w ∈ jwW K := by
   intro w hw
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
-  exact mem_jwW_ws (jg_ws (by have := List.mem_range.mp hc; omega))
+  exact mem_jwW_ws (jg_ws (by have := List.mem_range.mp hc; omega_arith))
 
 theorem JFrame.ro (hL : JacWinLay K size) {C : Curve} {base : Addr} {s₀ s : State}
     (h : JFrame K C base size s₀ s) {x : Nat} (hx : x ∈ jwRo K) :
     wordsVal s.mem base x K.M.n = wordsVal s₀.mem base x K.M.n :=
-  h.unch.wordsVal (hL.ro_w hx) (by have := hL.le (ro_mem hx); have := h.scr.nowrap; omega)
+  h.unch.wordsVal (hL.ro_w hx) (by have := hL.le (ro_mem hx); have := h.scr.nowrap; omega_arith)
 
 theorem JFrame.ro_tmv (hL : JacWinLay K size) {C : Curve} {base : Addr} {s₀ s : State}
     (h : JFrame K C base size s₀ s) {x : Nat} (hx : x ∈ jwRo K) :
@@ -248,8 +248,8 @@ theorem cmpRbxJ_ok (s : State) {j i : Nat} (hi : i < 2 ^ 31) (hj : j < 2 ^ 63)
       t.zf = some (decide (j = i)) ∧ Keeps [] s t := by
   have hse : BitVec.signExtend 64 (BitVec.ofNat 32 i) = BitVec.ofNat 64 i := by
     rw [BitVec.signExtend_eq_setWidth_of_msb_false (BitVec.msb_eq_false_iff_two_mul_lt.mpr (by
-        rw [BitVec.toNat_ofNat]; omega)),
-      BitVec.setWidth_ofNat_of_le_of_lt (by decide) (by omega)]
+        rw [BitVec.toNat_ofNat]; omega_arith)),
+      BitVec.setWidth_ofNat_of_le_of_lt (by decide) (by omega_arith)]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some,
     Option.some.injEq, exists_eq_left', hb, hse]
@@ -257,10 +257,10 @@ theorem cmpRbxJ_ok (s : State) {j i : Nat} (hi : i < 2 ^ 31) (hj : j < 2 ^ 63)
   show some (_ == 0) = _
   congr 1
   rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← BitVec.toNat_inj]
-  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega)]
+  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega_arith)]
   change _ = 0 ↔ _
-  omega
+  omega_arith
 
 /-- `rbx = j + c`. -/
 theorem addRbx_ok (s : State) {j c : Nat} (hc : c < 2 ^ 31) (hb : s.gpr .rbx = BitVec.ofNat 64 j) :

@@ -53,7 +53,7 @@ structure Lay (dn : Nat) (E : Impl.Ecdsa.AArch64.Cfg) where
   ew : e = extra wide hHigh
 
 theorem Lay.he {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : L.e ≤ 144 := by
-  rw [L.ew, extra]; split <;> (try split) <;> omega
+  rw [L.ew, extra]; split <;> (try split) <;> omega_arith
 
 namespace Lay
 
@@ -121,7 +121,7 @@ theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨
 /-- A region of the frame. -/
 theorem within_fr (B : Addr) {d n x : Nat} (h₁ : 16 ≤ d) (h₂ : d + n ≤ 240 + x) :
     Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 16, 224 + x⟩ :=
-  ⟨d - 16, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega⟩
+  ⟨d - 16, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega_arith⟩
 
 theorem covers_of {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Within r R) : Covers rs rs' :=
   Covers.of_sub fun r hr => by
@@ -176,42 +176,42 @@ theorem stk_DG (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 256 + L.e) :
 /-- The 16 bytes the calls use, apart from `scratch`. -/
 theorem low_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 16⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
+  (h.kc.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Offset.sub_base _ h₂)
 
 /-- The frame's pointers are apart from every safe region. -/
 theorem ptrs_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 200, 40⟩ r := by
   have := h.nB
   rcases hs with hs | hs | hs | hs
-  · exact (h.stk_OUT (by omega)).sub_right hs
-  · exact (h.stk_SCR (by omega)).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
+  · exact (h.stk_OUT (by omega_arith)).sub_right hs
+  · exact (h.stk_SCR (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
 
 /-- Our return address is apart from every safe region. -/
 theorem lr_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 (240 + L.e), 16⟩ r := by
   have := h.nB
   rcases hs with hs | hs | hs | hs
-  · exact (h.stk_OUT (by omega)).sub_right hs
-  · exact (h.stk_SCR (by omega)).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
+  · exact (h.stk_OUT (by omega_arith)).sub_right hs
+  · exact (h.stk_SCR (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
 
 /-- The buffers that are only read are apart from every safe region. -/
 theorem d_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.D.Disjoint r := by
   rcases hs with hs | hs | hs | hs
   · exact h.od.symm.sub_right hs
   · exact h.dc.sub_right hs
-  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
-  · exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
+  · exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
   rcases hs with hs | hs | hs | hs
   · exact h.og.symm.sub_right hs
   · exact h.gc.sub_right hs
-  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
-  · exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
+  · exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 end Lay.Ok
 
@@ -239,8 +239,8 @@ theorem Safe.sub_frame {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {r
   rcases h with h | h | h | h
   · exact ⟨_, by simp, h⟩
   · exact ⟨_, by simp, h⟩
-  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega) a (h a ha)⟩
-  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base (p := L.B) (d := 240) (n := L.e) (by omega) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega_arith) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base (p := L.B) (d := 240) (n := L.e) (by omega_arith) a (h a ha)⟩
 
 namespace Ctx
 
@@ -257,14 +257,14 @@ theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr
   have keep : ∀ d, 200 ≤ d → d + 8 ≤ 240 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 200, 40⟩)
-      (Offset.contains _ h₁ (by omega) (by omega)) (fun r hr => hL.ptrs_safe (hs r hr)) (by decide)
+      (Offset.contains _ h₁ (by omega_arith) (by omega_arith)) (fun r hr => hL.ptrs_safe (hs r hr)) (by decide)
   have keepLr : t'.mem.readW (L.B + BitVec.ofNat 64 (240 + L.e)) 64 =
       t.mem.readW (L.B + BitVec.ofNat 64 (240 + L.e)) 64 :=
     hf.readW (r := ⟨L.B + BitVec.ofNat 64 (240 + L.e), 16⟩)
-      (Offset.contains _ (Nat.le_refl _) (by omega) (by omega)) (fun r hr => hL.lr_safe (hs r hr)) (by decide)
+      (Offset.contains _ (Nat.le_refl _) (by omega_arith) (by omega_arith)) (fun r hr => hL.lr_safe (hs r hr)) (by decide)
   exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr hr' => (hcs r hr hr').trans (hc.cs r hr hr'),
-    (keep 200 (by omega) (by omega)).trans hc.pScr, (keep 208 (by omega) (by omega)).trans hc.pDg,
-    (keep 216 (by omega) (by omega)).trans hc.pD, (keep 224 (by omega) (by omega)).trans hc.pOut,
+    (keep 200 (by omega_arith) (by omega_arith)).trans hc.pScr, (keep 208 (by omega_arith) (by omega_arith)).trans hc.pDg,
+    (keep 216 (by omega_arith) (by omega_arith)).trans hc.pD, (keep 224 (by omega_arith) (by omega_arith)).trans hc.pOut,
     keepLr.trans hc.lr,
     hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), by rw [hsy]; exact hc.sy, hc.held⟩
 
@@ -283,7 +283,7 @@ theorem d_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.q) :
     rcases hr with rfl | rfl | rfl
     · exact hL.od.symm
     · exact hL.dc
-    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega) hi
+    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega_arith) hi
 
 /-- A byte of `digest`, as on entry. -/
 theorem dg_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < dn) :
@@ -294,31 +294,31 @@ theorem dg_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < dn) :
     rcases hr with rfl | rfl | rfl
     · exact hL.og.symm
     · exact hL.gc
-    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega) hi
+    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega_arith) hi
 
 theorem inFr (hc : Ctx L g m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 240 + L.e) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := L.he; omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by have := L.he; omega_arith)⟩
 
 theorem inFrW (hc : Ctx L g m₀ t) {d n : Nat} (h₁ : 16 ≤ d) (h₂ : d + n ≤ 240 + L.e) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := L.he; omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by have := L.he; omega_arith)⟩
 
 theorem inScr (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions (t.rd ++ t.wr) (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inScrW (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions t.wr (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inD (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ L.q) (ho : o ≤ 64) :
     InRegions (t.rd ++ t.wr) (L.d + BitVec.ofNat 64 o) n :=
-  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inDg (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ dn) (ho : o ≤ 64) :
     InRegions (t.rd ++ t.wr) (L.dg + BitVec.ofNat 64 o) n :=
-  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 /-- Regions within the buffers and the frame are permitted. -/
 theorem covers (hc : Ctx L g m₀ t) {rs : List Region}
@@ -360,7 +360,7 @@ theorem lay_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {w
   have nB : (lay I.hashLen I.ecdsa.curve.len E wide hHigh s).B.toNat + (256 + extra wide hHigh) ≤ 2 ^ 64 := by
     simp only [lay]
     rw [Offset.toNat_sub_ofNat s.sp (256 + extra wide hHigh)]
-    omega
+    omega_arith
   exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, hdw _ (List.mem_cons_self ..),
     hdw _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),
     hdw _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))), nT⟩
@@ -411,22 +411,22 @@ theorem four_ok (B : Addr) (m : Mem) (a b c d : BitVec 64) :
       m'.readW (B + BitVec.ofNat 64 200) 64 = d := by
   have sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 256 → y + 8 ≤ 256 →
       Mem.Sep (B + BitVec.ofNat 64 x) (64 / 8) (B + BitVec.ofNat 64 y) (64 / 8) :=
-    fun x y h h₁ h₂ => Offset.sep B h (by omega) (by omega)
+    fun x y h h₁ h₂ => Offset.sep B h (by omega_arith) (by omega_arith)
   have ct : ∀ x, 200 ≤ x → x + 8 ≤ 232 →
       (⟨B + BitVec.ofNat 64 200, 32⟩ : Region).Contains (B + BitVec.ofNat 64 x) (64 / 8) :=
-    fun x h₁ h₂ => Offset.contains B h₁ (by omega) (by omega)
-  refine ⟨((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (ct 224 (by omega) (by omega))).writeW
-    (List.mem_singleton_self _) _ (ct 216 (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-    (ct 208 (by omega) (by omega))).writeW (List.mem_singleton_self _) _ (ct 200 (by omega) (by omega)),
+    fun x h₁ h₂ => Offset.contains B h₁ (by omega_arith) (by omega_arith)
+  refine ⟨((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (ct 224 (by omega_arith) (by omega_arith))).writeW
+    (List.mem_singleton_self _) _ (ct 216 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+    (ct 208 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _ (ct 200 (by omega_arith) (by omega_arith)),
     ?_, ?_, ?_, ?_⟩
-  · rw [Mem.readW_writeW_sep (sep 224 200 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 224 208 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 224 216 (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (sep 224 200 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 224 208 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 224 216 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [Mem.readW_writeW_sep (sep 216 200 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 216 208 (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (sep 216 200 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 216 208 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [Mem.readW_writeW_sep (sep 208 200 (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (sep 208 200 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
   · rw [Mem.readW_writeW_self64]
 
@@ -440,11 +440,11 @@ theorem entry_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} 
   have hw : ∀ d, 16 ≤ d → d + 8 ≤ 240 →
       InRegions (entered wide hHigh s).wr ((lay I.hashLen I.ecdsa.curve.len E wide hHigh s).B + BitVec.ofNat 64 d) 8 :=
     fun d h₁ h₂ => ⟨(lay I.hashLen I.ecdsa.curve.len E wide hHigh s).FR,
-      by rw [entered_wr I.hashLen I.ecdsa.curve.len E wide hHigh]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
-  have w200 := hw 200 (by omega) (by omega)
-  have w208 := hw 208 (by omega) (by omega)
-  have w216 := hw 216 (by omega) (by omega)
-  have w224 := hw 224 (by omega) (by omega)
+      by rw [entered_wr I.hashLen I.ecdsa.curve.len E wide hHigh]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
+  have w200 := hw 200 (by omega_arith) (by omega_arith)
+  have w208 := hw 208 (by omega_arith) (by omega_arith)
+  have w216 := hw 216 (by omega_arith) (by omega_arith)
+  have w224 := hw 224 (by omega_arith) (by omega_arith)
   apply WP.of_runBlock
   simp only [Impl.Ecdsa.Rfc6979.AArch64.Cfg.saveArgs, Impl.Ecdsa.Rfc6979.AArch64.fOut,
     Impl.Ecdsa.Rfc6979.AArch64.fD, Impl.Ecdsa.Rfc6979.AArch64.fDigest, Impl.Ecdsa.Rfc6979.AArch64.fScratch,
@@ -467,11 +467,11 @@ theorem entry_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} 
     rw [RegUpd.gpr_write_of_ne _ _ _ (by intro e; subst e; simp [preserved] at hr), entered_gpr]
   · rw [f.readW (Region.contains_self _ _) (fun R hR => by
       simp only [List.mem_singleton] at hR; subst hR
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide)]
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
     exact Mem.readW_writeW_self64 _ _ _
   · refine Frame.trans (Frame.writeW (Frame.refl _ _) (r := (lay I.hashLen I.ecdsa.curve.len E wide hHigh s).STK) (by simp) _
-      (Offset.contains_base _ (by omega) (by omega))) (Frame.sub f fun r hr => ?_)
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))) (Frame.sub f fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨(lay I.hashLen I.ecdsa.curve.len E wide hHigh s).STK, by simp, Offset.sub_base _ (by omega)⟩
+    exact ⟨(lay I.hashLen I.ecdsa.curve.len E wide hHigh s).STK, by simp, Offset.sub_base _ (by omega_arith)⟩
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

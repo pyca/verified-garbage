@@ -47,7 +47,7 @@ theorem PrfBufs.frame {m m' mR : Mem} {B₀ R : Addr} {N₀ n : Nat} (h : PrfBuf
   have hc : (bufR B₀).Contains (outAddr (bufAt B₀ k) i) 8 := by
     show (bufR B₀).Contains (B₀ + BitVec.ofNat 64 (168 * k) + BitVec.ofNat 64 (8 * i)) 8
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact Offset.contains_base B₀ (by omega) (by omega)
+    exact Offset.contains_base B₀ (by omega_arith) (by omega_arith)
   rw [hf.readW hc hd (by decide)]
   exact h k hk i hi
 
@@ -82,7 +82,7 @@ theorem SqLayP.frame {p st R B₀ : Addr} {s t : State} (h : SqLayP p st R B₀ 
   exacts [h.scratch, h.state, h.sp, h.fP, h.fS, h.rin, h.fR, h.bout, h.fF]
 
 theorem buf_sub (B₀ : Addr) {k : Nat} (hk : k < 3) : Region.Sub (rateR (bufAt B₀ k)) (bufR B₀) :=
-  Offset.sub_base B₀ (by omega)
+  Offset.sub_base B₀ (by omega_arith)
 
 theorem SqLayP.slotLay {p st R B₀ : Addr} {s : State} (h : SqLayP p st R B₀ s) {k : Nat} (hk : k < 3) :
     SlotLay p (blockAt (p + 400) k) (blockAt (p + 904) k) st R (bufAt B₀ k) s := by
@@ -94,30 +94,30 @@ theorem SqLayP.slotLay {p st R B₀ : Addr} {s : State} (h : SqLayP p st R B₀ 
   have bs := buf_sub B₀ hk
   rw [ea, eb]
   refine ⟨?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, h.sp,
-    Offset.disjoint p (by omega) (by omega) (by omega),
-    Offset.base_disjoint p (by omega) (by omega), Offset.base_disjoint p (by omega) (by omega),
+    Offset.disjoint p (by omega_arith) (by omega_arith) (by omega_arith),
+    Offset.base_disjoint p (by omega_arith) (by omega_arith), Offset.base_disjoint p (by omega_arith) (by omega_arith),
     (h.dSP.sub_right subP).symm, Offset.base_disjoint p (e := 1536) (n := 136) (by decide) (by decide),
-    h.dSP.sub_right (sub (o := 1536) (n := 136) (by decide)), h.dSP.sub_right (sub (by omega)),
-    h.dSP.sub_right (sub (by omega)), h.fP.sub_right subP, h.fS,
+    h.dSP.sub_right (sub (o := 1536) (n := 136) (by decide)), h.dSP.sub_right (sub (by omega_arith)),
+    h.dSP.sub_right (sub (by omega_arith)), h.fP.sub_right subP, h.fS,
     h.fP.sub_right (sub (o := 1536) (n := 136) (by decide)), h.rin, h.dSR,
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact ⟨_, List.mem_singleton_self _, 168 * k, rfl, by simp only [rateR, bufR]; omega⟩).trans h.bout,
-    h.dSF.sub_right bs, (h.dPF.sub_left (sub (by omega))).sub_right bs,
-    (h.dPF.sub_left (sub (by omega))).sub_right bs, (h.dPF.sub_left subP).sub_right bs⟩
+      exact ⟨_, List.mem_singleton_self _, 168 * k, rfl, by simp only [rateR, bufR]; omega_arith⟩).trans h.bout,
+    h.dSF.sub_right bs, (h.dPF.sub_left (sub (by omega_arith))).sub_right bs,
+    (h.dPF.sub_left (sub (by omega_arith))).sub_right bs, (h.dPF.sub_left subP).sub_right bs⟩
   · refine Covers.cons ?_ (Covers.cons (Hybrid.covers_mono h.state (by simp)) (Covers.cons ?_ Covers.nil))
     · simpa only [BitVec.add_zero, pairR] using cov_scratch (o := 0) (n := 400) h.scratch (by decide)
     · exact cov_scratch (o := 1536) (n := 136) h.scratch (by decide)
-  · exact Covers.right (cov_scratch h.scratch (o := 16 * i) (n := 16) (by omega)) _ _
+  · exact Covers.right (cov_scratch h.scratch (o := 16 * i) (n := 16) (by omega_arith)) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega)
-  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega)
+  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega_arith)
+  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega_arith)
 
 theorem rate128_frame {m m' : Mem} {p : Addr} {A : Spec.Sha3.State} {rs : List Region}
     (h : Rate128 m p A) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (rateR p).Disjoint r) : Rate128 m' p A :=
   fun i hi => by
     show m'.readW (p + BitVec.ofNat 64 (8 * i)) 64 = _
-    rw [hf.readW (r := rateR p) (Offset.contains_base p (by omega) (by omega)) hd (by decide)]
+    rw [hf.readW (r := rateR p) (Offset.contains_base p (by omega_arith) (by omega_arith)) hd (by decide)]
     exact h i hi
 
 theorem seedState_frame {m m' : Mem} {R : Addr} {N : Nat} {rs : List Region} (hf : Frame rs m m')
@@ -125,7 +125,7 @@ theorem seedState_frame {m m' : Mem} {R : Addr} {N : Nat} {rs : List Region} (hf
   apply Vector.ext; intro i hi
   simp only [Noise.seedState, Vector.getElem_ofFn]
   split
-  · rw [hf.readW (r := ⟨R, 32⟩) (Offset.contains_base R (by omega) (by omega)) hd (by decide)]
+  · rw [hf.readW (r := ⟨R, 32⟩) (Offset.contains_base R (by omega_arith) (by omega_arith)) hd (by decide)]
   · rfl
 
 /-- `Hybrid.extend_blocks3`, with the writes `Bs` too. -/
@@ -139,22 +139,22 @@ theorem extend_blocksP {m m' : Mem} {p a b st sp : Addr} {A : Spec.Sha3.State} {
   intro j hj
   by_cases he : j = k
   · subst j; exact new
-  · have hjk : j < k := by omega
+  · have hjk : j < k := by omega_arith
     intro i hi
     have hc : (rateR21 (blockAt a j)).Contains (outAddr (blockAt a j) i) 8 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [hf.readW hc (by
         intro r hr
         rcases List.mem_append.mp hr with hr | hr
         · simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-          · exact (hpa.sub_right (block_sub a (by omega))).symm
-          · exact Offset.disjoint a (Or.inl (by omega)) (by omega) (by omega)
-          · exact (hab.sub_left (block_sub a (by omega))).sub_right (block_sub b hk)
-          · exact (hwa.sub_right (block_sub a (by omega))).symm
-          · exact (hsa.sub_right (block_sub a (by omega))).symm
-          · exact (hfa.sub_right (block_sub a (by omega))).symm
-        · exact (hBa r hr).sub_left (block_sub a (by omega))) (by decide)]
+          · exact (hpa.sub_right (block_sub a (by omega_arith))).symm
+          · exact Offset.disjoint a (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+          · exact (hab.sub_left (block_sub a (by omega_arith))).sub_right (block_sub b hk)
+          · exact (hwa.sub_right (block_sub a (by omega_arith))).symm
+          · exact (hsa.sub_right (block_sub a (by omega_arith))).symm
+          · exact (hfa.sub_right (block_sub a (by omega_arith))).symm
+        · exact (hBa r hr).sub_left (block_sub a (by omega_arith))) (by decide)]
     exact old j hjk i hi
 
 /-- After `k` of the three main squeezes, the first `m` computing PRF outputs from `N₀`. -/
@@ -220,9 +220,9 @@ theorem pstep_ok (sd bt : Nat) {initial s : State} {p st R B₀ : Addr}
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     · exact (hl.dPF.sub_left (Region.sub_prefix (by decide : 400 ≤ 2048))).symm
     · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 400) k, 168⟩
-      rw [blockAt_eq]; exact (hl.dPF.sub_left (sub (by omega))).symm
+      rw [blockAt_eq]; exact (hl.dPF.sub_left (sub (by omega_arith))).symm
     · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 904) k, 168⟩
-      rw [blockAt_eq]; exact (hl.dPF.sub_left (sub (by omega))).symm
+      rw [blockAt_eq]; exact (hl.dPF.sub_left (sub (by omega_arith))).symm
     · exact (hl.dPF.sub_left (sub (o := 1536) (n := 136) (by decide))).symm
     · exact hl.dSF.symm
     · exact hl.fF.symm
@@ -261,9 +261,9 @@ theorem pstep_ok (sd bt : Nat) {initial s : State} {p st R B₀ : Addr}
       (kt.get .x19).trans h.ptr, ?_, ?_, h.frame.trans fsub, ?_, ?_, fun j hj => ?_⟩
     · simpa only [iterF_succ] using pt
     · rw [t20]; show (p + 400 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 400 + BitVec.ofNat 64 (168 * (k + 1))
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega_arith]
     · rw [t21]; show (p + 904 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 904 + BitVec.ofNat 64 (168 * (k + 1))
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega_arith]
     · exact extend_blocksP hk h.oa (by simpa only [iterF_succ] using at') ft
         (Offset.base_disjoint p (by decide) (by decide)) (Offset.disjoint p (by decide) (by decide) (by decide))
         (Offset.disjoint p (by decide) (by decide) (by decide)) (hl.dSP.sub_right (sub (by decide)))
@@ -277,25 +277,25 @@ theorem pstep_ok (sd bt : Nat) {initial s : State} {p st R B₀ : Addr}
       rcases hr with (h | h | h | h | h | h) | h <;> simp [h]
     · by_cases hjk : j < min k m
       · refine rate128_frame (h.prf j hjk) ft fun r hr => ?_
-        have hj3 : j < 3 := by omega
+        have hj3 : j < 3 := by omega_arith
         rcases List.mem_append.mp hr with hr | hr
         · exact (dBW r hr).sub_left (buf_sub B₀ hj3)
         · rw [hBs r hr]
-          exact Offset.disjoint B₀ (by omega) (by omega) (by omega)
-      · have hjk' : j = k := by omega
+          exact Offset.disjoint B₀ (by omega_arith) (by omega_arith) (by omega_arith)
+      · have hjk' : j = k := by omega_arith
         subst hjk'
-        exact rt (by omega)
+        exact rt (by omega_arith)
   unfold Impl.MlKem.AArch64.Kem16P.stepP
   split
   · rename_i hkm
     have hbk : Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + k) < 65536 := by
-      simp only [Impl.MlKem.AArch64.Kem16P.bufOff] at hbo ⊢; omega
+      simp only [Impl.MlKem.AArch64.Kem16P.bufOff] at hbo ⊢; omega_arith
     have hBk : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + k)) = bufAt B₀ k := by
       rw [← hB, bufAt, BitVec.add_assoc, ← BitVec.ofNat_add]
       simp only [Impl.MlKem.AArch64.Kem16P.bufOff]
       rw [show bt + 168 * N₀ + 168 * k = bt + 168 * (N₀ + k) by
         rw [Nat.mul_add, Nat.add_assoc]]
-    refine WP.mono (slotPrf_ok sd bt (N := N₀ + k) (by omega) hbk h.ptr h.pa h.pb
+    refine WP.mono (slotPrf_ok sd bt (N := N₀ + k) (by omega_arith) hbk h.ptr h.pa h.pb
       (by rw [h.keep.get .x28, h28]) hR hsd hsd' hBk h.pair (hls.slotLay hk))
       fun t ⟨kt, ft, pt, at', bt, t20, t21, rt⟩ =>
         next [rateR (bufAt B₀ k)] (fun r hr => List.mem_singleton.mp hr) kt ft pt at' bt t20 t21 fun _ => ?_
@@ -363,7 +363,7 @@ theorem startP_ok (L : Impl.MlKem.AArch64.KemLay) (sd bt : Nat) {s : State}
   have sub : ∀ {o n : Nat}, o + n ≤ 2048 → Region.Sub ⟨p + BitVec.ofNat 64 o, n⟩ ⟨p, 2048⟩ :=
     fun h => Offset.sub_base p h
   refine WP.seq (WP.mono (Paired.init_ok hss hsb h8b hp ha hin
-    (fun j hj => iw (by omega)) (fun j hj => iw (by omega))
+    (fun j hj => iw (by omega_arith)) (fun j hj => iw (by omega_arith))
     (hsep.sub_right (Offset.sub_base p (by decide)))
     (hsep.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
     (Offset.disjoint_base p (by decide) (by decide))) fun u ⟨ku, fu, sv, h19, h20, h21, h22, pair⟩ => ?_)

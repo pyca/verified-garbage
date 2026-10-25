@@ -96,40 +96,40 @@ theorem cachedFieldStore_ok {s : State} {base : Addr} (hs : Scratch s base) {o :
     fun u ⟨hm, hg, hrd, hwr⟩ => ?_
   refine ⟨?_, ⟨fun r hr => (congrFun hg r).trans (hk.1 r hr), hrd.trans hk.2.2.1,
     hwr.trans hk.2.2.2, ?_⟩⟩
-  · rw [F, hm, fe_st4 _ _ (by omega), hv, Proof.X25519.toFe_self]
-  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · rw [F, hm, fe_st4 _ _ (by omega_arith), hv, Proof.X25519.toFe_self]
+  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega_arith) _ _ _ _
 
 theorem cachedPointStore_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (q : Spec.Ed25519.Point) (dst : Nat) (ho : o + dst + 128 ≤ 8192) :
     WP isa (.block (cachedPointStore q dst)) s fun t =>
       tablePoint t.mem base (o + dst) = q ∧ TableKeep base (o + dst) 128 s t := by
   rw [cachedPointStore, WP.block_append_iff]
-  refine WP.mono (cachedFieldStore_ok hs hp q.X dst (by omega)) fun a ⟨ax, ka⟩ => ?_
+  refine WP.mono (cachedFieldStore_ok hs hp q.X dst (by omega_arith)) fun a ⟨ax, ka⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (cachedFieldStore_ok (ka.scratch hs) ((ka.gpr _ (by decide)).trans hp) q.Y (dst + 32)
-    (by omega)) fun b ⟨by_, kb⟩ => ?_
+    (by omega_arith)) fun b ⟨by_, kb⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (cachedFieldStore_ok (kb.scratch (ka.scratch hs))
     ((kb.gpr _ (by decide)).trans ((ka.gpr _ (by decide)).trans hp)) q.Z (dst + 64)
-    (by omega)) fun c ⟨cz, kc⟩ => ?_
+    (by omega_arith)) fun c ⟨cz, kc⟩ => ?_
   refine WP.mono (cachedFieldStore_ok (kc.scratch (kb.scratch (ka.scratch hs)))
     ((kc.gpr _ (by decide)).trans ((kb.gpr _ (by decide)).trans ((ka.gpr _ (by decide)).trans hp)))
-    q.T (dst + 96) (by omega)) fun t ⟨tt, kt⟩ => ?_
-  refine ⟨?_, ((ka.mono (by omega) (by omega)).trans (kb.mono (by omega) (by omega))).trans
-    ((kc.mono (by omega) (by omega)).trans (kt.mono (by omega) (by omega)))⟩
+    q.T (dst + 96) (by omega_arith)) fun t ⟨tt, kt⟩ => ?_
+  refine ⟨?_, ((ka.mono (by omega_arith) (by omega_arith)).trans (kb.mono (by omega_arith) (by omega_arith))).trans
+    ((kc.mono (by omega_arith) (by omega_arith)).trans (kt.mono (by omega_arith) (by omega_arith)))⟩
   have ex : F t.mem base (o + dst) = q.X := by
-    rw [Outside_F (d := o + dst) kt.mem (by omega) (Or.inl (by omega)),
-      Outside_F (d := o + dst) kc.mem (by omega) (Or.inl (by omega)),
-      Outside_F (d := o + dst) kb.mem (by omega) (Or.inl (by omega)), ax]
+    rw [Outside_F (d := o + dst) kt.mem (by omega_arith) (Or.inl (by omega_arith)),
+      Outside_F (d := o + dst) kc.mem (by omega_arith) (Or.inl (by omega_arith)),
+      Outside_F (d := o + dst) kb.mem (by omega_arith) (Or.inl (by omega_arith)), ax]
   have ey : F t.mem base (o + dst + 32) = q.Y := by
-    rw [show o + dst + 32 = o + (dst + 32) by omega,
-      Outside_F (d := o + (dst + 32)) kt.mem (by omega) (Or.inl (by omega)),
-      Outside_F (d := o + (dst + 32)) kc.mem (by omega) (Or.inl (by omega)), by_]
+    rw [show o + dst + 32 = o + (dst + 32) by omega_arith,
+      Outside_F (d := o + (dst + 32)) kt.mem (by omega_arith) (Or.inl (by omega_arith)),
+      Outside_F (d := o + (dst + 32)) kc.mem (by omega_arith) (Or.inl (by omega_arith)), by_]
   have ez : F t.mem base (o + dst + 64) = q.Z := by
-    rw [show o + dst + 64 = o + (dst + 64) by omega,
-      Outside_F (d := o + (dst + 64)) kt.mem (by omega) (Or.inl (by omega)), cz]
+    rw [show o + dst + 64 = o + (dst + 64) by omega_arith,
+      Outside_F (d := o + (dst + 64)) kt.mem (by omega_arith) (Or.inl (by omega_arith)), cz]
   have et : F t.mem base (o + dst + 96) = q.T := by
-    rw [show o + dst + 96 = o + (dst + 96) by omega, tt]
+    rw [show o + dst + 96 = o + (dst + 96) by omega_arith, tt]
   simp only [tablePoint, ex, ey, ez, et]
 
 end VG.Proof.Ed25519.X86_64

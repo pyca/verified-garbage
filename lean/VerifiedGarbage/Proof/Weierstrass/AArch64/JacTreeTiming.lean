@@ -73,7 +73,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
     have hx := hL.tbl K.R.x (by simp [winOther])
     have hz := hL.tbl K.R.z (by simp [winOther])
     rw [hL.rxz] at hz
-    omega
+    omega_arith
   rw [List.append_assoc,List.append_assoc,← hL.n]
   apply RelCT.block_append
   apply RelCT.seq (copyPoint_relCT hL.lay hAl rs rp hc.copyInit)
@@ -130,7 +130,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
     have hx := hL.tbl K.E.x (by simp [winOther])
     have hz := hL.tbl K.E.z (by simp [winOther])
     rw [hL.exz] at hz
-    omega
+    omega_arith
   rw [Jacobian.jacTreeFetch]
   apply RelCT.block_append
   have head := keepsField_relCT (M:=K.M) (base:=base) (size:=size) (m:=C.p)
@@ -163,14 +163,14 @@ structure JacTreeChecks (K : WinCfg) : Prop where
     intro x hx; apply List.mem_append_left
     simp only [rcbW,rcbR,winRo,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
   have pv := jacTreeLive_read K m
-  have vtab := jacTreeLive_table K (a:=(m+1)/2) (m:=m) (by omega) (by omega)
+  have vtab := jacTreeLive_table K (a:=(m+1)/2) (m:=m) (by omega_arith) (by omega_arith)
   intro s t ts tt s' t' ⟨hp,ps,pt⟩ es et
   cases es with
   | seq qs bs =>
     cases et with
     | seq qt bt =>
-      obtain ⟨_,_,xs,cs,ks⟩ := jacTreeParity_ok (by omega) ps
-      obtain ⟨_,_,xt,ct,kt⟩ := jacTreeParity_ok (by omega) pt
+      obtain ⟨_,_,xs,cs,ks⟩ := jacTreeParity_ok (by omega_arith) ps
+      obtain ⟨_,_,xt,ct,kt⟩ := jacTreeParity_ok (by omega_arith) pt
       obtain ⟨_,rfl⟩ := Exec.det qs xs
       obtain ⟨_,rfl⟩ := Exec.det qt xt
       have pair : FieldPair K.M base size C.p (·∈jacWinSlots K) (jacTreeLive K m) E _ _ :=
@@ -188,8 +188,8 @@ structure JacTreeChecks (K : WinCfg) : Prop where
           (fun u v => ∃ E', FieldPair K.M base size C.p (·∈jacWinSlots K)
             ([K.E.x,K.E.y,K.E.z,K.D.x,K.D.y,K.D.z]++jacTreeLive K m) E' u v) := by
         intro ho
-        have cc : 16-m=15-2*((m+1)/2-1) := by omega
-        have fetch := jacTreeFetch_relCT (base:=base) hL hAl ht (by omega) (by omega) hc (E:=E) vtab
+        have cc : 16-m=15-2*((m+1)/2-1) := by omega_arith
+        have fetch := jacTreeFetch_relCT (base:=base) hL hAl ht (by omega_arith) (by omega_arith) hc (E:=E) vtab
         apply RelCT.seq (fetch.mono (fun _ _ h => by simpa only [cc] using h) (fun _ _ h => h))
         apply RelCT.exists_
         intro e
@@ -211,9 +211,9 @@ structure JacTreeChecks (K : WinCfg) : Prop where
         intro u v ⟨e,hp⟩
         refine ⟨e,hp.sub ?_⟩
         intro x hx
-        have ex := jacTreeLive_ED K (m:=m) (by omega) K.E.x (by simp)
-        have ey := jacTreeLive_ED K (m:=m) (by omega) K.E.y (by simp)
-        have ez := jacTreeLive_ED K (m:=m) (by omega) K.E.z (by simp)
+        have ex := jacTreeLive_ED K (m:=m) (by omega_arith) K.E.x (by simp)
+        have ey := jacTreeLive_ED K (m:=m) (by omega_arith) K.E.y (by simp)
+        have ez := jacTreeLive_ED K (m:=m) (by omega_arith) K.E.z (by simp)
         simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
       cases bs with
       | iteT hs bs =>
@@ -259,7 +259,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
     have hx := hL.tbl K.R.x (by simp [winOther])
     have hz := hL.tbl K.R.z (by simp [winOther])
     rw [hL.rxz] at hz
-    omega
+    omega_arith
   unfold TreePair
   apply RelCT.exists_
   intro E
@@ -286,7 +286,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
   have st := jacStore_relCT (base:=base) (a:=m+1) (E:=copyPointEnv e K.R K.D)
     (V:=[K.R.x,K.R.y,K.R.z]++([K.E.x,K.E.y,K.E.z,K.D.x,K.D.y,K.D.z]++jacTreeLive K m))
     hL.lay hL.n hL.rxy hL.rxz (hAl.sl _ (rs _ (by simp [jacCoords])))
-    (jacTblPt_mem K (by omega) (by omega)) (fun _ hx => List.mem_append_left _ hx)
+    (jacTblPt_mem K (by omega_arith) (by omega_arith)) (fun _ hx => List.mem_append_left _ hx)
     (by simpa only [Nat.add_sub_cancel] using sep) hc.store
   have sk := relCT_keepControls (a:=BitVec.ofNat 64 (16-m)) (b:=off base (K.tbl+96*m)) st
     (fun r hr => tableStore_preserves K (by
@@ -341,12 +341,12 @@ theorem jacTree_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     intro j
     by_cases hj : 1≤j
     · by_cases hj15 : j≤15
-      · refine (jacTree_step_relCT hL hJ hAl hm ht hOne (m:=16-j) (by omega) (by omega) hc hcopy).mono
+      · refine (jacTree_step_relCT hL hJ hAl hm ht hOne (m:=16-j) (by omega_arith) (by omega_arith) hc hcopy).mono
           (P':=I j) (fun _ _ h => h.2.2) ?_
         intro s t hp
         have hp' := hp
         obtain ⟨e,p,s19,t19,s20,t20⟩ := hp
-        have cn : 16-(16-j+1)=j-1 := by omega
+        have cn : 16-(16-j+1)=j-1 := by omega_arith
         rw [cn] at s19 t19
         refine ⟨by simp only [eval,State.read,s19,t19],fun he => ?_,fun he => ?_⟩
         · have hz : j-1=0 := by
@@ -355,19 +355,19 @@ theorem jacTree_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
               rw [bne_iff_ne]
               intro hh
               have hh' := congrArg BitVec.toNat hh
-              simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : j-1<2^64)] at hh'
+              simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_arith : j-1<2^64)] at hh'
               exact hn hh'
             have htrue : eval (.nonzero .x .x19) s=some true := by
               change some (s.read .x .x19 != 0)=some true
               rw [read_x,s19,hb]
             rw [htrue] at he; cases he
-          have hx : 16-j+1=16 := by omega
+          have hx : 16-j+1=16 := by omega_arith
           rw [hx,jacTreeLive_full] at p
           exact ⟨e,p⟩
         · have hz : j-1≠0 := by
             intro hz; simp only [eval,State.read,s19,hz] at he; cases he
-          refine ⟨j-1,by omega,by omega,by omega,?_⟩
-          have hx : 16-j+1=16-(j-1) := by omega
+          refine ⟨j-1,by omega_arith,by omega_arith,by omega_arith,?_⟩
+          have hx : 16-j+1=16-(j-1) := by omega_arith
           exact hx ▸ hp'
       · exact RelCT.of_false (fun _ _ h => hj15 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)

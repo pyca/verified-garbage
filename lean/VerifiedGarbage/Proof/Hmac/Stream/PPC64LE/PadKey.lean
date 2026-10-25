@@ -31,7 +31,7 @@ open Spec.Sha256 (bytesAt)
 def K0 (K : List Byte) (B : Nat) : List Byte := K ++ List.replicate (B - K.length) 0
 
 theorem K0_length {K : List Byte} {B : Nat} (h : K.length ≤ B) : (K0 K B).length = B := by
-  simp [K0]; omega
+  simp [K0]; omega_arith
 
 theorem wp_xor {is : List Instr} {s : State} {Q : State → Prop} {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n ^^^ s.gpr m) → WP isa (.block is) s' Q) :
@@ -105,7 +105,7 @@ theorem blk_succ (c : Nat) {j : Nat} (hj : j < (K0 K H.B).length) :
 
 theorem blk_length (hy : Hyp H s₀ dst kl K) {j : Nat} (hj : j ≤ H.B) : (blk K H.B c j).length = j := by
   rw [List.length_map, List.length_take, K0_length (by rw [hy.K_length]; exact hy.kl_le)]
-  omega
+  omega_arith
 
 theorem K0_getD_lt {j : Nat} (hj : j < K.length) : (K0 K H.B).getD j 0 = K.getD j 0 := by
   simp [K0, List.getD_eq_getElem?_getD, List.getElem?_append_left hj]
@@ -120,7 +120,7 @@ theorem Inv.write (hy : Hyp H s₀ dst kl K) {j : Nat} (hj : j < H.B) {m : Mem}
     m.writeW (bp (H := H) s₀ dst + BitVec.ofNat 64 j) ((K0 K H.B).getD j 0 ^^^ BitVec.ofNat 8 c) =
       writeBytes s₀.mem (bp (H := H) s₀ dst) (blk K H.B c (j + 1)) := by
   have e := writeBytes_snoc s₀.mem (bp (H := H) s₀ dst) (blk K H.B c j)
-    ((K0 K H.B).getD j 0 ^^^ BitVec.ofNat 8 c) (by rw [blk_length hy (Nat.le_of_lt hj)]; have := hy.B; omega)
+    ((K0 K H.B).getD j 0 ^^^ BitVec.ofNat 8 c) (by rw [blk_length hy (Nat.le_of_lt hj)]; have := hy.B; omega_arith)
   rw [blk_length hy (Nat.le_of_lt hj)] at e
   rw [hm, blk_succ c (by rw [K0_length (by rw [hy.K_length]; exact hy.kl_le)]; exact hj), e]
 
@@ -128,7 +128,7 @@ theorem writeBytes_out {m : Mem} {q a : Addr} {xs : List Byte} {n : Nat}
     (h : ¬ (⟨q, n⟩ : Region).Contains a 1) (hl : xs.length ≤ n) : writeBytes m q xs a = m a := by
   simp only [writeBytes, Region.Contains] at h ⊢
   split
-  · omega
+  · omega_arith
   · rfl
 
 /-- Key byte `j`, while the block is written. -/
@@ -138,8 +138,8 @@ theorem key_byte (hy : Hyp H s₀ dst kl K) {j j' : Nat} (hj : j < kl) (hj' : j'
   have hl := hy.K_length
   have := hy.B
   have := hy.kl_le
-  rw [hm, writeBytes_out (n := H.B) (hy.disj _ (contains_offset (by omega) (by omega)))
-      (by rw [blk_length hy hj']; exact hj'), K0_getD_lt (by omega), ← hy.key]
+  rw [hm, writeBytes_out (n := H.B) (hy.disj _ (contains_offset (by omega_arith) (by omega_arith)))
+      (by rw [blk_length hy hj']; exact hj'), K0_getD_lt (by omega_arith), ← hy.key]
   simp [bytesAt, List.getD_eq_getElem?_getD, hj]
 
 /-! ## The loops -/
@@ -181,7 +181,7 @@ theorem key_step (hy : Hyp H s₀ dst kl K) {j : Nat} (hj : j < kl) {s : State}
       rw [u₇.other r c, u₆.other r e, u₅.other r b, u₄.gpr, u₃.other r d, u₂.other r a, u₁.other r a]
   have v : (s₃.gpr .r8).setWidth 8 = (K0 K H.B).getD j 0 ^^^ BitVec.ofNat 8 c := by
     rw [u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₁.other _ (by decide), h.r12, xor_byte,
-      key_byte hy hj (by omega) h.mem]
+      key_byte hy hj (by omega_arith) h.mem]
   refine ⟨⟨fun r a b c d e f => (k r a b c d f).trans (h.keep r a b c d e f),
     by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd],
     by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr],
@@ -194,8 +194,8 @@ theorem key_step (hy : Hyp H s₀ dst kl K) {j : Nat} (hj : j < kl) {s : State}
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr, u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide), h.r9, BitVec.ofNat_add, BitVec.add_assoc]
   · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), h.r10, show kl - (j + 1) = kl - j - 1 by omega,
-      ← sub_ofNat (a := kl - j) (b := 1) (by omega)]
+      u₂.other _ (by decide), u₁.other _ (by decide), h.r10, show kl - (j + 1) = kl - j - 1 by omega_arith,
+      ← sub_ofNat (a := kl - j) (b := 1) (by omega_arith)]
 
 theorem pad_step (hy : Hyp H s₀ dst kl K) {j : Nat} (hj : kl ≤ j) (hj' : j < H.B) {s : State}
     (h : PInv (H := H) s₀ dst c K j s) :
@@ -220,7 +220,7 @@ theorem pad_step (hy : Hyp H s₀ dst kl K) {j : Nat} (hj : kl ≤ j) (hj' : j <
   · rw [u₄.mem, u₃.mem, u₂.mem, v, u₁.mem]
     exact Inv.write hy hj' h.mem
   · rw [u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.r10,
-      show H.B - (j + 1) = H.B - j - 1 by omega, ← sub_ofNat (a := H.B - j) (b := 1) (by omega)]
+      show H.B - (j + 1) = H.B - j - 1 by omega_arith, ← sub_ofNat (a := H.B - j) (b := 1) (by omega_arith)]
 
 theorem key_loop_ok (hy : Hyp H s₀ dst kl K) {s : State} (h : KInv (H := H) s₀ dst c kl K 0 s)
     (hk : 0 < kl) : WP isa (H.keyLoop dst) s (Inv (H := H) s₀ dst c K kl) := by
@@ -233,12 +233,12 @@ theorem key_loop_ok (hy : Hyp H s₀ dst kl K) {s : State} (h : KInv (H := H) s�
   refine WP.mono (key_step hy hj hb) fun s' hb' => ?_
   have hz : isa.eval (.nonzero .d .r10) s' = some (decide (kl - (j + 1) ≠ 0)) := by
     show VG.PPC64LE.eval (.nonzero .d .r10) s' = _
-    rw [eval_nonzero, hb'.r10, bne, ofNat_beq_zero (by omega)]
+    rw [eval_nonzero, hb'.r10, bne, ofNat_beq_zero (by omega_arith)]
     simp
   by_cases hl : kl - (j + 1) = 0
   · refine .inl ⟨by rw [hz, decide_eq_false fun h => h hl], ?_⟩
-    rw [show kl = j + 1 by omega]; exact hb'.toInv
-  · exact .inr ⟨by rw [hz, decide_eq_true hl], _, by omega, j + 1, rfl, by omega, hb'⟩
+    rw [show kl = j + 1 by omega_arith]; exact hb'.toInv
+  · exact .inr ⟨by rw [hz, decide_eq_true hl], _, by omega_arith, j + 1, rfl, by omega_arith, hb'⟩
 
 theorem pad_loop_ok (hy : Hyp H s₀ dst kl K) {s : State} (h : PInv (H := H) s₀ dst c K kl s)
     (hk : kl < H.B) : WP isa (H.padLoop dst) s (Inv (H := H) s₀ dst c K H.B) := by
@@ -250,12 +250,12 @@ theorem pad_loop_ok (hy : Hyp H s₀ dst kl K) {s : State} (h : PInv (H := H) s�
   refine WP.mono (pad_step hy hj hj' hb) fun s' hb' => ?_
   have hz : isa.eval (.nonzero .d .r10) s' = some (decide (H.B - (j + 1) ≠ 0)) := by
     show VG.PPC64LE.eval (.nonzero .d .r10) s' = _
-    rw [eval_nonzero, hb'.r10, bne, ofNat_beq_zero (by omega)]
+    rw [eval_nonzero, hb'.r10, bne, ofNat_beq_zero (by omega_arith)]
     simp
   by_cases hl : H.B - (j + 1) = 0
   · refine .inl ⟨by rw [hz, decide_eq_false fun h => h hl], ?_⟩
-    rw [show H.B = j + 1 by omega]; exact hb'.toInv
-  · exact .inr ⟨by rw [hz, decide_eq_true hl], _, by omega, j + 1, rfl, by omega, by omega, hb'⟩
+    rw [show H.B = j + 1 by omega_arith]; exact hb'.toInv
+  · exact .inr ⟨by rw [hz, decide_eq_true hl], _, by omega_arith, j + 1, rfl, by omega_arith, by omega_arith, hb'⟩
 
 /-- The whole block is `K₀ ⊕ c`. -/
 theorem blk_full (hy : Hyp H s₀ dst kl K) :
@@ -286,12 +286,12 @@ theorem padKey_ok (hy : Hyp H s₀ dst kl K) (hc : c < 2 ^ 15) {Q : State → Pr
   -- The key loop.
   refine WP.seq (WP.mono (Q := Inv (H := H) s₀ dst c K kl) ?_ fun s₅ h₅ => ?_)
   · have hz : eval (.zero .d .r10) s₄ = some (decide (kl = 0)) := by
-      rw [eval_zero, h10, ofNat_beq_zero (by omega)]
+      rw [eval_zero, h10, ofNat_beq_zero (by omega_arith)]
     refine WP.ite (decide (kl = 0)) hz (fun hb => ?_) (fun hb => ?_)
     · simp only [decide_eq_true_eq] at hb; subst hb
       exact WP.block_nil hI
     · simp only [decide_eq_false_iff_not] at hb
-      exact key_loop_ok hy ⟨hI, by rw [h9, BitVec.add_zero], by rw [h10, Nat.sub_zero]⟩ (by omega)
+      exact key_loop_ok hy ⟨hI, by rw [h9, BitVec.add_zero], by rw [h10, Nat.sub_zero]⟩ (by omega_arith)
   -- The pad loop.
   refine WP.seq (wp_li hy.B fun s₆ u₆ => wp_sub fun s₇ u₇ => WP.block_nil ?_)
   have hI₇ : Inv (H := H) s₀ dst c K kl s₇ :=
@@ -301,13 +301,13 @@ theorem padKey_ok (hy : Hyp H s₀ dst kl K) (hc : c < 2 ^ 15) {Q : State → Pr
       by rw [u₇.other _ (by decide), u₆.other _ (by decide), h₅.r25],
       by rw [u₇.mem, u₆.mem, h₅.mem]⟩
   have h10' : s₇.gpr .r10 = BitVec.ofNat 64 (H.B - kl) := by
-    rw [u₇.gpr, u₆.gpr, u₆.other _ (by decide), h₅.r25, sub_ofNat (by omega)]
+    rw [u₇.gpr, u₆.gpr, u₆.other _ (by decide), h₅.r25, sub_ofNat (by omega_arith)]
   have hz : eval (.zero .d .r10) s₇ = some (decide (H.B - kl = 0)) := by
-    rw [eval_zero, h10', ofNat_beq_zero (by omega)]
+    rw [eval_zero, h10', ofNat_beq_zero (by omega_arith)]
   refine WP.ite (decide (H.B - kl = 0)) hz (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
-    exact WP.block_nil (hQ _ (by rw [show H.B = kl by omega]; exact hI₇))
+    exact WP.block_nil (hQ _ (by rw [show H.B = kl by omega_arith]; exact hI₇))
   · simp only [decide_eq_false_iff_not] at hb
-    exact WP.mono (pad_loop_ok hy ⟨hI₇, h10'⟩ (by omega)) hQ
+    exact WP.mono (pad_loop_ok hy ⟨hI₇, h10'⟩ (by omega_arith)) hQ
 
 end VG.Proof.Hmac.Stream.PPC64LE.PadKey

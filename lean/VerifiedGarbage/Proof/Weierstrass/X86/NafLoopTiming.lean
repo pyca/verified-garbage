@@ -167,11 +167,11 @@ theorem nafEntry_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
     have hx := hL.tbl K.E.x (List.mem_append_right _ (hw _ (by simp [jacCoords])))
     have hz := hL.tbl K.E.z (List.mem_append_right _ (hw _ (by simp [jacCoords])))
     rw [hL.exz] at hz
-    omega
+    omega_arith
   exact nafSigned_relCT hL.lay hW hm (by simp [nafLive,nafTableLive,winRo]) hc
     (nafPublic_relCT hL.lay hW hL.n hL.exy hL.exz hmag hmag15
-      (by have := hL.table_le; omega) hd
-      (nafLive_table K hL.n (by omega) (by omega)) sep hc.lookup) hd
+      (by have := hL.table_le; omega_arith) hd
+      (nafLive_table K hL.n (by omega_arith) (by omega_arith)) sep hc.lookup) hd
 
 end VG.Proof.Weierstrass.X86
 
@@ -211,7 +211,7 @@ theorem nafDigit_fields_relCT {F : Spec.Weierstrass.Mont.Modulus}
       rcases hr with rfl|rfl
       · exact hp.pub.edi
       · exact hp.count₁.trans hp.count₂.symm))
-    (fun _ hi ct hb => WP.mono (nafRead_ok hi.scr (by have:=hL.bits; omega) ct hb)
+    (fun _ hi ct hb => WP.mono (nafRead_ok hi.scr (by have:=hL.bits; omega_arith) ct hb)
       (fun _ ⟨eb,zf,hk⟩ => ⟨(hk.1 _ (by decide)).trans ct,⟨eb,zf⟩,hk⟩))
   rw [Naf.digit]
   apply RelCT.seq rd
@@ -229,7 +229,7 @@ theorem nafDigit_fields_relCT {F : Spec.Weierstrass.Mont.Modulus}
     have hn := of_decide_eq_false (Option.some.inj (ps.2.symm.trans he))
     have hm0 : Naf5.magnitude k j≠0 := fun hz => hn ((Naf5.byte_zero_iff k j).mpr hz)
     have entry := nafEntry_relCT (base:=base) (E:=E) (counter:=BitVec.ofNat 32 j) hL hW hm
-      (b:=Naf5.byte k j) (by rw [nafMagnitude_byte]; omega)
+      (b:=Naf5.byte k j) (by rw [nafMagnitude_byte]; omega_arith)
       (by rw [nafMagnitude_byte]; exact Naf5.magnitude_le k j) hc.entry
     have add := RelCT.exists_ (fun E' => nafAdd_relCT (base:=base) (E:=E')
       (counter:=BitVec.ofNat 32 j) hL hJ hW hm hOne hc.add hc.copy)
@@ -354,15 +354,15 @@ theorem nafStep_relCT {F : Spec.Weierstrass.Mont.Modulus}
   have dec := nafRun_keeps_relCT (K:=K) (C:=C) (base:=base) (size:=size) (P:=P)
     (β:=Naf5.byte k) (e:=Naf5.residual k (j+1)) (counter:=BitVec.ofNat 32 (j+1))
     (counter':=BitVec.ofNat 32 j) (Post:=fun _ => True) (ws:=[.esi]) (by decide) hc.dec
-    (fun _ ct => wp_decCounter (by omega) ct (fun _ cn kn mn => WP.block_nil
+    (fun _ ct => wp_decCounter (by omega_arith) ct (fun _ cn kn mn => WP.block_nil
       ⟨by simpa only [Nat.add_sub_cancel] using cn,trivial,kn.1,mn,kn.2⟩))
   rw [Naf.windowStep]
   apply RelCT.seq (dec.mono (fun _ _ h => h) (fun _ _ h => h.1))
   apply RelCT.assoc
   apply RelCT.seq (nafDoubleCore_relCT hL hJ hW hBitsWk hm hC ha hP hc.double hc.digit.copy)
-  apply RelCT.seq (nafDigit_relCT hL hJ hW hBitsWk hm hC ha hOne (by omega) hP hc.digit)
+  apply RelCT.seq (nafDigit_relCT hL hJ hW hBitsWk hm hC ha hOne (by omega_arith) hP hc.digit)
   exact nafRun_keeps_relCT (ws:=[]) (by simp) hc.test (fun _ ct =>
-    wp_testCounter (by omega) ct (fun _ ft zt => WP.block_nil
+    wp_testCounter (by omega_arith) ct (fun _ ft zt => WP.block_nil
       ⟨(congrFun ft.gpr .esi).trans ct,zt,(fun r _ => congrFun ft.gpr r),ft.mem,ft.rd,ft.wr⟩))
 
 end VG.Proof.Weierstrass.X86
@@ -395,7 +395,7 @@ theorem nafLoop_relCT {F : Spec.Weierstrass.Mont.Modulus}
     intro j
     by_cases hj : 1≤j
     · by_cases hj256 : j≤256
-      · refine (nafStep_relCT hL hJ hW hBitsWk hm hC ha hOne (j:=j-1) (by omega) hP hc).mono
+      · refine (nafStep_relCT hL hJ hW hBitsWk hm hC ha hOne (j:=j-1) (by omega_arith) hP hc).mono
           (P':=I j) (fun _ _ h => by simpa only [Nat.sub_add_cancel hj] using h.2.2) ?_
         intro s t ⟨hp,cs,ct⟩
         have es : eval .ne s=some (!decide (j-1=0)) := by simp only [eval,cs,Option.map_some]
@@ -409,7 +409,7 @@ theorem nafLoop_relCT {F : Spec.Weierstrass.Mont.Modulus}
         · have hz : j-1≠0 := by
             have := Option.some.inj (es.symm.trans he)
             simpa using this
-          exact ⟨j-1,by omega,by omega,by omega,hp⟩
+          exact ⟨j-1,by omega_arith,by omega_arith,by omega_arith,hp⟩
       · exact RelCT.of_false (fun _ _ h => hj256 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   exact (RelCT.loop I step 256).mono (fun _ _ h => ⟨by decide,by decide,h⟩) (fun _ _ h => h)

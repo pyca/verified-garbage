@@ -46,7 +46,7 @@ include hp
 theorem e16_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem m) {e : Nat}
     (he : e < k) :
     PolyIsW 16 m (eP s₀ + BitVec.ofNat 64 (512 * e)) (polyAtW 16 s₀.mem (eP s₀ + BitVec.ofNat 64 (512 * e))) := by
-  have hs : Region.Sub ⟨eP s₀ + BitVec.ofNat 64 (512 * e), 512⟩ ⟨eP s₀, 512 * k⟩ := Offset.sub_base _ (by omega)
+  have hs : Region.Sub ⟨eP s₀ + BitVec.ofNat 64 (512 * e), 512⟩ ⟨eP s₀, 512 * k⟩ := Offset.sub_base _ (by omega_arith)
   refine polyIsW16_frame hf (fun r hr' => ?_) ⟨?_, rfl⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
@@ -54,13 +54,13 @@ theorem e16_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP 
     · exact ((dSE hp).sub_right hs).symm
     · exact (dEC hp).sub_left hs
   · have := (redE hp) e he
-    rwa [show 32 * 16 * e = 512 * e by omega] at this
+    rwa [show 32 * 16 * e = 512 * e by omega_arith] at this
 
 theorem a16_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem m) {e : Nat}
     (he : e < k * k) :
     PolyIsW 16 m (aP s₀ + BitVec.ofNat 64 (512 * e)) (polyAtW 16 s₀.mem (aP s₀ + BitVec.ofNat 64 (512 * e))) := by
   have hs : Region.Sub ⟨aP s₀ + BitVec.ofNat 64 (512 * e), 512⟩ ⟨aP s₀, 512 * (k * k)⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   refine polyIsW16_frame hf (fun r hr' => ?_) ⟨?_, rfl⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
@@ -68,7 +68,7 @@ theorem a16_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP 
     · exact ((dSA hp).sub_right hs).symm
     · exact (dAC hp).sub_left hs
   · have := (redA hp) e he
-    rwa [show 32 * 16 * e = 512 * e by omega] at this
+    rwa [show 32 * 16 * e = 512 * e by omega_arith] at this
 
 end
 
@@ -105,10 +105,10 @@ theorem nttStep16_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ (ev16 
     exact ⟨trivial, trivial, vc0_dis (dSC hp) hj, vc0_dis (dSC hp) hj, (rS hp).sub_right (sub_v _ hj),
       (rC hp).sub_right (sub_c0 _), hS.1⟩
   · rw [k1.2.1, k1.2.2, hsr, hsw]
-    exact (cov_one (by simp) (in_vec _ (by omega) hj)).cons ((cov_one (by simp) (in_vec _ (by omega) hj)).cons
+    exact (cov_one (by simp) (in_vec _ (by omega_arith) hj)).cons ((cov_one (by simp) (in_vec _ (by omega_arith) hj)).cons
       ((cov_one (by simp) (in_c0 _)).cons Covers.nil))
   · rw [k1.2.2, hsw]
-    exact (cov_one (by simp) (in_vec _ (by omega) hj)).cons ((cov_one (by simp) (in_c0 _)).cons Covers.nil)
+    exact (cov_one (by simp) (in_vec _ (by omega_arith) hj)).cons ((cov_one (by simp) (in_c0 _)).cons Covers.nil)
   simp only [nttOK, State.withRegions_gpr, State.withRegions_mem, h1di, h1r10, hm1, hS.2] at hpost2
   rw [← vecAt_map_get _ _ hj] at hpost2
   rw [hm1] at hf2
@@ -121,7 +121,7 @@ theorem nttStep16_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ (ev16 
       rcases hr with rfl | rfl
       exacts [dChi (dSC hp) hj, hi_dis_c0 _]) (by rw [hrd2, k1.2.1]) (by rw [hwr2, k1.2.2]) g2
   have hE := e16_frame hp hb2.frame hj
-  have hsub : Region.Sub (sR (eP s₀ + BitVec.ofNat 64 (512 * j))) ⟨eP s₀, 512 * k⟩ := Offset.sub_base _ (by omega)
+  have hsub : Region.Sub (sR (eP s₀ + BitVec.ofNat 64 (512 * j))) ⟨eP s₀, 512 * k⟩ := Offset.sub_base _ (by omega_arith)
   -- `NTT(e[j])` to `t[j]`
   refine WP.seq (WP.mono (Q := fun (s3 : State) => s3.gpr .rdi = eP s₀ + BitVec.ofNat 64 (512 * j) ∧
       s3.gpr .rsi = cP s₀ ∧ s3.gpr .r10 = tP s₀ + BitVec.ofNat 64 (1024 * j) ∧ s3.mem = s2.mem ∧
@@ -142,10 +142,10 @@ theorem nttStep16_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ (ev16 
       (rT hp).sub_right (sub_v _ hj), (rC hp).sub_right (sub_c0 _), hE.1⟩
   · rw [hsr2, hsw2]
     exact (cov_one (by simp) (show Region.Contains ⟨eP s₀, 512 * k⟩ (eP s₀ + BitVec.ofNat 64 (512 * j)) 512 from
-      Offset.contains_base _ (by omega) (by omega))).cons ((cov_one (by simp) (in_vec _ (by omega) hj)).cons
+      Offset.contains_base _ (by omega_arith) (by omega_arith))).cons ((cov_one (by simp) (in_vec _ (by omega_arith) hj)).cons
       ((cov_one (by simp) (in_c0 _)).cons Covers.nil))
   · rw [hsw2]
-    exact (cov_one (by simp) (in_vec _ (by omega) hj)).cons ((cov_one (by simp) (in_c0 _)).cons Covers.nil)
+    exact (cov_one (by simp) (in_vec _ (by omega_arith) hj)).cons ((cov_one (by simp) (in_c0 _)).cons Covers.nil)
   simp only [nttO16K, State.withRegions_gpr, State.withRegions_mem, h3di, h3r10, hm3, hE.2] at hpost4
   rw [← EncMulY.vecAtW16_map_get _ _ hj] at hpost4
   rw [hm3] at hf4
@@ -164,7 +164,7 @@ theorem nttStep16_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ (ev16 
       (pR (sP s₀ + BitVec.ofNat 64 (1024 * j'))).Disjoint r := fun hj' hne r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [vv_dis _ (by omega) hj' hj hne, vc0_dis (dSC hp) hj']
+    exacts [vv_dis _ (by omega_arith) hj' hj hne, vc0_dis (dSC hp) hj']
   have fS4 : ∀ {j'}, j' < k → ∀ r ∈ [pR (tP s₀ + BitVec.ofNat 64 (1024 * j)), pR (cP s₀)],
       (pR (sP s₀ + BitVec.ofNat 64 (1024 * j'))).Disjoint r := fun hj' r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -179,7 +179,7 @@ theorem nttStep16_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ (ev16 
       (pR (tP s₀ + BitVec.ofNat 64 (1024 * j'))).Disjoint r := fun hj' hne r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [vv_dis _ (by omega) hj' hj hne, vc0_dis (dTC hp) hj']
+    exacts [vv_dis _ (by omega_arith) hj' hj hne, vc0_dis (dTC hp) hj']
   -- the next `j`
   vrunm [g4 .r12 (by decide), g4 .r15 (by decide), g4 .rbp (by decide), g4 .r14 (by decide), hI.r12, hI.r15,
     hI.rbp, sx1024, sx512]
@@ -199,16 +199,16 @@ theorem nttStep16_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ (ev16 
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]
     rw [g4 .r13 (by decide), hI.r13]
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    refine polyIs_frame hf4 (fS4 (by omega)) ?_
+    refine polyIs_frame hf4 (fS4 (by omega_arith)) ?_
     by_cases h : j' = j
     · subst h; exact hpost2
-    · exact polyIs_frame hf2 (fS2 (by omega) h) (hI.sdone j' (by omega))
+    · exact polyIs_frame hf2 (fS2 (by omega_arith) h) (hI.sdone j' (by omega_arith))
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    exact polyIs_frame hf4 (fS4 hj2) (polyIs_frame hf2 (fS2 hj2 (by omega)) (hI.srest j' (by omega) hj2))
+    exact polyIs_frame hf4 (fS4 hj2) (polyIs_frame hf2 (fS2 hj2 (by omega_arith)) (hI.srest j' (by omega_arith) hj2))
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
     by_cases h : j' = j
     · subst h; exact hpost4
-    · exact polyIs_frame hf4 (fT4 (by omega) h) (polyIs_frame hf2 (fT2 (by omega)) (hI.tdone j' (by omega)))
+    · exact polyIs_frame hf4 (fT4 (by omega_arith) h) (polyIs_frame hf2 (fT2 (by omega_arith)) (hI.tdone j' (by omega_arith)))
 
 end
 
@@ -226,7 +226,7 @@ theorem row16_ok (hk : k ≤ 4) (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {
   have hsw : s.wr = [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] := by rw [hI.wr, hp.2.1]
   have hkk : k * k ≤ 64 := Nat.le_trans (Nat.mul_le_mul hk hk) (by decide)
   have hrow : ∀ j < k, k * i + j < k * k := fun j hj => by
-    have := Nat.mul_le_mul_left k (show i + 1 ≤ k by omega); rw [Nat.mul_succ] at this; omega
+    have := Nat.mul_le_mul_left k (show i + 1 ≤ k by omega_arith); rw [Nat.mul_succ] at this; omega_arith
   have ea : ∀ j, aP s₀ + BitVec.ofNat 64 (512 * (k * i)) + BitVec.ofNat 64 (512 * j) =
       aP s₀ + BitVec.ofNat 64 (512 * (k * i + j)) := fun j => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_add]
@@ -241,7 +241,7 @@ theorem row16_ok (hk : k ≤ 4) (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {
   have hT := hI.trest i (Nat.le_refl _) hi
   have hx : RowY.CtxG (FRep.u16 512) k (aP s₀ + BitVec.ofNat 64 (512 * (k * i))) (sP s₀)
       (tP s₀ + BitVec.ofNat 64 (1024 * i)) (cP s₀) (rowW k s₀ i) (sv k s₀) s1.mem s1.rd s1.wr :=
-    { k1 := by omega
+    { k1 := by omega_arith
       k4 := hk
       fl := by rw [vecAtW_length]
       gl := by rw [List.length_map, vecAt_length]
@@ -252,17 +252,17 @@ theorem row16_ok (hk : k ≤ 4) (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {
       dF := fun j hj => by
         rw [ea]
         exact ((dTA hp).sub_left (sub_v _ hi)).sub_right
-          (Offset.sub_base (n := 512) (k := 512 * (k * k)) _ (by have := hrow j hj; omega))
+          (Offset.sub_base (n := 512) (k := 512 * (k * k)) _ (by have := hrow j hj; omega_arith))
       dG := fun j hj => vr_dis (dTS hp) hi hj
       dT := vc_dis (dTC hp) hi (by decide)
       inF := fun j hj => by
         rw [ea, k1.2.1, k1.2.2, hsr]
         exact ⟨⟨aP s₀, 512 * (k * k)⟩, by simp,
-          Offset.contains_base (n := 512) _ (by have := hrow j hj; omega) (by have := hrow j hj; omega)⟩
+          Offset.contains_base (n := 512) _ (by have := hrow j hj; omega_arith) (by have := hrow j hj; omega_arith)⟩
       inG := fun j hj => by
-        rw [k1.2.1, k1.2.2, hsw]; exact ⟨_, by simp, in_vec _ (by omega) hj⟩
+        rw [k1.2.1, k1.2.2, hsw]; exact ⟨_, by simp, in_vec _ (by omega_arith) hj⟩
       inTab := by rw [k1.2.1, k1.2.2, hsw]; exact ⟨_, by simp, in_c (by decide)⟩
-      inT := by rw [k1.2.2, hsw]; exact ⟨_, by simp, in_vec _ (by omega) hi⟩
+      inT := by rw [k1.2.2, hsw]; exact ⟨_, by simp, in_vec _ (by omega_arith) hi⟩
       tab := by rw [hm1]; exact hI.tab
       red := by rw [hm1]; exact hT.1 }
   refine WP.seq (WP.mono (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8]
@@ -279,7 +279,7 @@ theorem row16_ok (hk : k ≤ 4) (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {
       simp only [List.mem_singleton] at hr; subst hr; exact .inl (sub_v _ hi))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dChi (dTC hp) hi)
     (by rw [hrd2, k1.2.1]) (by rw [hwr2, k1.2.2]) cs
-  have hk31 : 512 * k < 2 ^ 31 := by omega
+  have hk31 : 512 * k < 2 ^ 31 := by omega_arith
   have fo : ∀ r ∈ [pR (tP s₀ + BitVec.ofNat 64 (1024 * i))], (tabR (cP s₀)).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (vc_dis (dTC hp) hi (by decide)).symm
@@ -310,22 +310,22 @@ theorem row16_ok (hk : k ≤ 4) (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {
     by_cases h : i' = i
     · subst h; exact hR4
     · exact polyIs_frame hf2 (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact vv_dis _ (by omega) (by omega) hi h)
-        (hI.tdone i' (by omega))
+        simp only [List.mem_singleton] at hr; subst hr; exact vv_dis _ (by omega_arith) (by omega_arith) hi h)
+        (hI.tdone i' (by omega_arith))
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
     exact polyIs_frame hf2 (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact vv_dis _ (by omega) h2 hi (by omega))
-      (hI.trest i' (by omega) h2)
+      simp only [List.mem_singleton] at hr; subst hr; exact vv_dis _ (by omega_arith) h2 hi (by omega_arith))
+      (hI.trest i' (by omega_arith) h2)
 
 /-- `keygenMul16Y k` meets `kgMulK16 k`. -/
 theorem wp_all16 (hk3 : k = 3 ∨ k = 4)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
       (innerG KpkeMul.nttK16 (KpkeMul.rowKRs rowY16 k 512) Bodies.avx2 k) = true) :
     WP isa (keygenMul16Y k) s₀ fun s' => gprPreserved s₀ s' ∧ (kgMulK16 k).post s₀ s' :=
-  wp_allg hp (by omega) BodiesOk.avx2 (by omega) (se := 512) (ra := 512) (rA := rowW k s₀) (vecAtW_length _ _ _ _)
-    (fun _ hj _ hI => nttStep16_ok hp (by omega) hj hI) (by simp [matAtW])
+  wp_allg hp (by omega_arith) BodiesOk.avx2 (by omega_arith) (se := 512) (ra := 512) (rA := rowW k s₀) (vecAtW_length _ _ _ _)
+    (fun _ hj _ hI => nttStep16_ok hp (by omega_arith) hj hI) (by simp [matAtW])
     (fun i hi => by simp [matAtW, List.getD_eq_getElem?_getD, List.getElem?_range hi])
-    (fun _ hi _ hR => row16_ok hp (by omega) hk3 hi hR) hwo
+    (fun _ hi _ hR => row16_ok hp (by omega_arith) hk3 hi hR) hwo
 
 end
 

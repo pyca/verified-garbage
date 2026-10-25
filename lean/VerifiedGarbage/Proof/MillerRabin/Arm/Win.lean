@@ -54,22 +54,22 @@ theorem wst_lt (h : In P σ) (j : Nat) : (wst P σ j).1 < cOf P σ.mem := by
   have := h.c3
   cases j with
   | zero => exact tv_lt h 0
-  | succ j => exact mm_lt (by omega)
+  | succ j => exact mm_lt (by omega_arith)
 
 /-- The digit at the top of the shifted word is the window's. -/
 theorem digit_sv (h : In P σ) {m r : Nat} (hm1 : 1 ≤ m) (hm : m ≤ 2 * P.w) (hr1 : 1 ≤ r) (hr : r ≤ 8) :
     digitOf (svOf P σ m r) = eOf P σ / 16 ^ (16 * P.w - 1 - (16 * P.w - (8 * (m - 1) + r))) % 16 := by
   have lt : ew P σ (m - 1) < 2 ^ 32 := (σ.mem.readW _ 32).isLt
-  have e := shl_shr28 (BitVec.ofNat 32 (ew P σ (m - 1))) (t := 8 - r) (by omega)
+  have e := shl_shr28 (BitVec.ofNat 32 (ew P σ (m - 1))) (t := 8 - r) (by omega_arith)
   rw [ofNat_toNat32 lt] at e
   have e2 : (BitVec.ofNat 32 (ew P σ (m - 1)) <<< (4 * (8 - r)) >>> 28).toNat = digitOf (svOf P σ m r) := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  rw [← e2, e, h.ew_val (by omega), show 28 - 4 * (8 - r) = 4 * (r - 1) by omega, digit_word _ _ _ (by omega),
-    show 16 * P.w - 1 - (16 * P.w - (8 * (m - 1) + r)) = 8 * (m - 1) + (r - 1) by omega]
+  rw [← e2, e, h.ew_val (by omega_arith), show 28 - 4 * (8 - r) = 4 * (r - 1) by omega_arith, digit_word _ _ _ (by omega_arith),
+    show 16 * P.w - 1 - (16 * P.w - (8 * (m - 1) + r)) = 8 * (m - 1) + (r - 1) by omega_arith]
 
 theorem svOf_next {m n : Nat} (hn : n < 8) :
     (BitVec.ofNat 32 (svOf P σ m (n + 1)) <<< 4).toNat = svOf P σ m n := by
-  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, shl4_succ32, show 8 - (n + 1) + 1 = 8 - n by omega]
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, shl4_succ32, show 8 - (n + 1) + 1 = 8 - n by omega_arith]
 
 theorem svOf_lt (m r : Nat) : svOf P σ m r < 2 ^ 32 := BitVec.isLt _
 
@@ -136,7 +136,7 @@ theorem A4w_Y : A4w P m n σ aY = (st4 P m n σ).1 := by
 theorem A4w_X : A4w P m n σ aX = tv P σ (dgw P m n σ) := by
   unfold A4w A3w; rw [upd_ne _ _ (by decide), upd_self]
 theorem dgw_lt : dgw P m n σ < 16 := by
-  have := svOf_lt (P := P) (σ := σ) m (n + 1); unfold dgw digitOf; omega
+  have := svOf_lt (P := P) (σ := σ) m (n + 1); unfold dgw digitOf; omega_arith
 
 theorem V2w_sV : V2w P m n σ sV = svOf P σ m (n + 1) := by
   unfold V2w V0w; simp only [upd, show sV ≠ sQ by decide, show sV ≠ sF by decide, show sV ≠ sR by decide, ↓reduceIte]
@@ -157,7 +157,7 @@ theorem V7w_sK : V7w P m n σ sK = 8 * (m - 1) + (n + 1) := by
 theorem wst_next (h : In P σ) (hm1 : 1 ≤ m) (hm : m ≤ 2 * P.w) (hn : n + 1 ≤ 8) :
     wst P σ (jw P m n + 1) = (Y5w P m n σ, if dgw P m n σ = 0 then (st4 P m n σ).2 else
       (decide (Y5w P m n σ = tv P σ 0) || decide (Y5w P m n σ = mOf P σ))) := by
-  have hd := digit_sv h hm1 hm (by omega) hn
+  have hd := digit_sv h hm1 hm (by omega_arith) hn
   show mwin _ _ _ _ (eOf P σ / 16 ^ (16 * P.w - 1 - jw P m n) % 16) (wst P σ (jw P m n)) = _
   rw [← hd]
   rfl
@@ -205,7 +205,7 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
       have dl : dgw P m n σ < 16 := dgw_lt
       congr 1
       unfold A2w
-      rw [upd_ne _ _ (by simp only [aT0, aY]; omega), AW_tab (i := aT0 + dgw P m n σ) (by
+      rw [upd_ne _ _ (by simp only [aT0, aY]; omega_arith), AW_tab (i := aT0 + dgw P m n σ) (by
         have : ∀ k < 16, aT0 + k ∈ Lt := by decide
         exact this _ dl), Nat.add_sub_cancel_left]
     · exact h.mono (fun i hi => ⟨(by decide : ∀ i ∈ aY :: Lt, i ∈ aY :: LW.tail) i hi, rfl⟩)
@@ -243,10 +243,10 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
     (e1 := fun σ => decide (Y5w P m n σ = tv P σ 0)) (e2 := fun σ => decide (Y5w P m n σ = mOf P σ))
     (fb := fun σ => (st4 P m n σ).2) (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun σ _ => V7w_sV) (fun σ _ => svOf_lt m (n + 1)) (fun σ _ => V7w_sE1) (fun σ _ => V7w_sE2)
-    (fun σ _ => V7w_sF) (fun σ _ => V7w_sK) (by omega)).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
+    (fun σ _ => V7w_sF) (fun σ _ => V7w_sK) (by omega_arith)).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
   have pre : In P σ := h.1
   have wn := wst_next pre hm1 hm hn
-  have j1 : jw P m n + 1 = 16 * P.w - (8 * (m - 1) + n) := by have := pre.w4; simp only [jw]; omega
+  have j1 : jw P m n + 1 = 16 * P.w - (8 * (m - 1) + n) := by have := pre.w4; simp only [jw]; omega_arith
   rw [j1] at wn
   have hA : ∀ i ∈ LW, A5w P m n σ i = AW P (16 * P.w - (8 * (m - 1) + n)) σ i := fun i hi => by
     rcases List.mem_cons.mp hi with rfl | hi
@@ -259,30 +259,30 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
       (wst P σ (16 * P.w - (8 * (m - 1) + n))).2.toNat := by rw [wn]
   have hL : ∀ i ∈ LW, i ∈ aY :: aM1 :: Lt := by decide
   have stI : 0 < n → WI P m n σ s := fun hn0 => by
-    refine ⟨hm1, hm, by omega, h.mono (fun i hi => ⟨hL i hi, hA i hi⟩) (fun d hd => ⟨?_, ?_⟩)⟩
+    refine ⟨hm1, hm, by omega_arith, h.mono (fun i hi => ⟨hL i hi, hA i hi⟩) (fun d hd => ⟨?_, ?_⟩)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; rcases hd with rfl | rfl | rfl <;> simp
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl | rfl
-      · simp only [upd, show sV ≠ sK by decide, ↓reduceIte]; exact svOf_next (by omega)
+      · simp only [upd, show sV ≠ sK by decide, ↓reduceIte]; exact svOf_next (by omega_arith)
       · rw [upd_self, upd_ne _ _ (by decide : sK ≠ sV), upd_self]
       · simp only [upd, show sF ≠ sK by decide, show sF ≠ sV by decide, ↓reduceIte]; exact hF
   have stO : n = 0 → WO P (m - 1) σ s := fun hn0 => by
     subst hn0
-    refine ⟨by omega, h.mono (fun i hi => ⟨hL i hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)⟩
-    · rw [hA i hi, show 16 * P.w - (8 * (m - 1) + 0) = 16 * P.w - 8 * (m - 1) by omega]
+    refine ⟨by omega_arith, h.mono (fun i hi => ⟨hL i hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)⟩
+    · rw [hA i hi, show 16 * P.w - (8 * (m - 1) + 0) = 16 * P.w - 8 * (m - 1) by omega_arith]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; rcases hd with rfl | rfl <;> simp
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl
       · simp only [upd_self, Nat.add_zero]
       · simp only [upd, show sF ≠ sK by decide, show sF ≠ sV by decide, ↓reduceIte]
-        rw [hF, show 16 * P.w - (8 * (m - 1) + 0) = 16 * P.w - 8 * (m - 1) by omega]
+        rw [hF, show 16 * P.w - (8 * (m - 1) + 0) = 16 * P.w - 8 * (m - 1) by omega_arith]
   refine ⟨?_, stO, stI⟩
   show some (!s.z) = _
   rw [z]
   by_cases h0 : n = 0
   · subst h0; simp
-  · have : (8 * (m - 1) + n) % 8 = n := by omega
-    rw [this]; simp [h0]; omega
+  · have : (8 * (m - 1) + n) % 8 = n := by omega_arith
+    rw [this]; simp [h0]; omega_arith
 
 end VG.Proof.MillerRabin.Arm
 
@@ -304,32 +304,32 @@ theorem word_step {P : MP} (n : Nat) (fios : Bool := false) :
     (fun σ s h => h.2) (fun _ _ h => h)
   simp only [Impl.MillerRabin.Arm.word, seqs]
   refine VP.seq (St.pwordK (K := 8 * (n + 1)) (by decide) (fun σ _ => by
-    rw [upd_self])) (VP.seq (St.pwordLd (m := n + 1) (fun σ e => e) (by omega) hc) ?_)
+    rw [upd_self])) (VP.seq (St.pwordLd (m := n + 1) (fun σ e => e) (by omega_arith) hc) ?_)
   refine VP.seq ((VP.loop (I := fun k => WI P (n + 1) k) (fun k => win_step (fios := fios) k) 7).mono (fun σ s h => ?_)
     (fun _ _ h => h)) ?_
-  · refine ⟨by omega, hc, by decide, ?_⟩
+  · refine ⟨by omega_arith, hc, by decide, ?_⟩
     refine h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)
-    · rw [show 16 * P.w - (8 * (n + 1 - 1) + 8) = 16 * P.w - 8 * (n + 1) by omega]
+    · rw [show 16 * P.w - (8 * (n + 1 - 1) + 8) = 16 * P.w - 8 * (n + 1) by omega_arith]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; rcases hd with rfl | rfl | rfl <;> simp
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl | rfl
       · rw [upd_self, upd_self, svOf_eight, Nat.add_sub_cancel]
-      · rw [upd_ne _ _ (by decide), upd_self, upd_ne _ _ (by decide), upd_self]; omega
+      · rw [upd_ne _ _ (by decide), upd_self, upd_ne _ _ (by decide), upd_self]; omega_arith
       · simp only [upd, show sF ≠ sV by decide, show sF ≠ sK by decide, ↓reduceIte]
-        rw [show 16 * P.w - (8 * (n + 1 - 1) + (7 + 1)) = 16 * P.w - 8 * (n + 1) by omega]
+        rw [show 16 * P.w - (8 * (n + 1 - 1) + (7 + 1)) = 16 * P.w - 8 * (n + 1) by omega_arith]
   · refine VP.mono (F := St P (In P) (AW P (16 * P.w - 8 * n)) LW
       (fun σ => upd (upd (fun _ => 0) sF (wst P σ (16 * P.w - 8 * n)).2.toNat) sK (8 * n)) [sK, sF]) ?_
       (fun σ s h => by rw [Nat.add_sub_cancel] at h; exact h.2) (fun _ _ h => h)
-    refine (St.pwordEnd (K := 8 * n) (by decide) (fun σ _ => upd_self _ _ _) (by omega)).mono (fun _ _ h => h)
-      fun σ s ⟨h, z⟩ => ⟨?_, fun h0 => ⟨by omega, h0 ▸ h⟩, fun _ => ⟨by omega, h⟩⟩
+    refine (St.pwordEnd (K := 8 * n) (by decide) (fun σ _ => upd_self _ _ _) (by omega_arith)).mono (fun _ _ h => h)
+      fun σ s ⟨h, z⟩ => ⟨?_, fun h0 => ⟨by omega_arith, h0 ▸ h⟩, fun _ => ⟨by omega_arith, h⟩⟩
     show some (!s.z) = _
     rw [z]
-    by_cases h0 : n = 0 <;> simp [h0] <;> omega
+    by_cases h0 : n = 0 <;> simp [h0] <;> omega_arith
 
 /-- The words. -/
 theorem words_loop {P : MP} (fios : Bool := false) : VP (WO P (2 * P.w)) (.loop (word (fios := fios)) .ne) (WO P 0) := by
-  refine VP.of_imp (p := 1 ≤ P.w) (fun σ s h => by have := (h.2.1 : In P σ).w4; omega) fun w1 => ?_
+  refine VP.of_imp (p := 1 ≤ P.w) (fun σ s h => by have := (h.2.1 : In P σ).w4; omega_arith) fun w1 => ?_
   have := VP.loop (I := fun k => WO P k) (fun k => word_step (fios := fios) k) (2 * P.w - 1)
-  rwa [show 2 * P.w - 1 + 1 = 2 * P.w by omega] at this
+  rwa [show 2 * P.w - 1 + 1 = 2 * P.w by omega_arith] at this
 
 end VG.Proof.MillerRabin.Arm

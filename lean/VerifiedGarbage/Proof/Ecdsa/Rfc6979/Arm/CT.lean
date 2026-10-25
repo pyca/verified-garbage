@@ -211,7 +211,7 @@ theorem fHo_q (P : RfcHash) (hw : P.R.wide = false) : (cfgOf P).fHo = if P.Q = 6
     simp only [RfcHash.hB, hh, ite_true, show P.Q = 64 from hq]
   · have hq := hF.2 h8
     simp only [h8, decide_false] at hh
-    simp only [RfcHash.hB, hh, Bool.false_eq_true, ite_false, show P.Q ≠ 64 by omega]
+    simp only [RfcHash.hB, hh, Bool.false_eq_true, ite_false, show P.Q ≠ 64 by omega_arith]
 
 theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide (cfgOf P).fHo := by
   obtain ⟨i, vu, vf, ku, kf⟩ := hmacBlks P.hDB
@@ -221,7 +221,7 @@ theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide (cfgOf P).fHo
       TaintOk (Cfg.msg P.k P.Q P.F.H.D 0 true P.R.wide (cfgOf P).fHo) ∧
       TaintOk (Cfg.msg P.k P.Q P.F.H.D 1 true P.R.wide (cfgOf P).fHo) from
     ⟨i, vu, vf, ku, kf, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
-  have hk (hw : P.R.wide = false) : P.k = P.Q / 4 := by have := (P.sizesA hw).1; omega
+  have hk (hw : P.R.wide = false) : P.k = P.Q / 4 := by have := (P.sizesA hw).1; omega_arith
   cases hw : P.R.wide
   · have hQD := (P.sizesA hw).2.2
     rw [fHo_q P hw]
@@ -229,7 +229,7 @@ theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide (cfgOf P).fHo
       rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       simp only [hk hw, hQ, h, h', Nat.reduceEqDiff, ite_true, ite_false] <;>
       first
-      | (exfalso; rw [hQ, h] at hQD; omega)
+      | (exfalso; rw [hQ, h] at hQD; omega_arith)
       | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
           ⟨_, by taint_decide⟩⟩
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
@@ -337,7 +337,7 @@ theorem updS_ct {dataA : List Instr} {dv : Lay P.I.hashLen → BitVec 32} {len :
       (.frame (.push [.r1, .r7, .r10, .r12]) (.call P.F.H.updN P.F.H.updC) (.pop .r1 16)))
       (Two P (Upt P dv len)) :=
   two_wp ((two_wp (Ψ := UA P dv len) (two_blk t₂) fun L g m₀ _ hL _ hc _ =>
-      WP.mono (updArgs_ok hc (hdA L g m₀ hL) (B := P.F.H.B) (by anums) (len := len) (by omega))
+      WP.mono (updArgs_ok hc (hdA L g m₀ hL) (B := P.F.H.B) (by anums) (len := len) (by omega_arith))
         fun _ ⟨c, _, a⟩ => ⟨c, a.1, a.2.1, a.2.2.1, a.2.2.2.1, a.2.2.2.2.1, a.2.2.2.2.2.1⟩).seq (hupd_ct hd hlen))
     fun L g m₀ _ hL _ _ ⟨t, hi⟩ => WP.mono (upd_step hL hi (hdA L g m₀ hL) (hd L hL) hlen)
       fun _ h => ⟨h.ctx, t, h⟩
@@ -372,7 +372,7 @@ theorem hmacK_ct {Φ : Pred P} {len : Nat} (hlen : len ≤ 256)
     (t₂ : TaintOk (Cfg.hmacArgs₂ P.F.H.B (scrAt .r1 sMsg) len)) (t₃ : TaintOk (Cfg.hmacArgs₃ P.F.H.B len fK)) :
     RelCT isa (Two P Φ) ((cfgOf P).hmac (scrAt .r1 sMsg) len fK) fun _ _ => True :=
   hmac_ct (dv := fun L => L.scr + BitVec.ofNat 32 2256) (dst := 0) (fun _ _ _ _ => dataM)
-    (fun _ _ => .inr ⟨2256, rfl, by omega, by omega⟩) hlen (by anums) (by decide) t₂ t₃
+    (fun _ _ => .inr ⟨2256, rfl, by omega_arith, by omega_arith⟩) hlen (by anums) (by decide) t₂ t₃
 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
 theorem rekey_gen_ct {Φ : Pred P} {b : Nat} (hb : b < 2) {full wd : Bool} (hwd : wd = (full && P.R.wide))
@@ -393,17 +393,17 @@ theorem rekey_gen_ct {Φ : Pred P} {b : Nat} (hb : b < 2) {full wd : Bool} (hwd 
         rw [hho hf]
         simp only [RfcHash.k] at this hk' hb₂ ⊢
         generalize P.hB = hb at hb₁ hb₂ ⊢
-        exact ⟨by omega, by omega, by omega⟩)
+        exact ⟨by omega_arith, by omega_arith, by omega_arith⟩)
       (fun hf hwt => by
         have hW : P.R.wide = true := by rw [hwd, hf] at hwt; exact hwt
-        have := P.sizesW hW; exact ⟨by omega, by omega, by rw [P.len]⟩))
+        have := P.sizesW hW; exact ⟨by omega_arith, by omega_arith, by rw [P.len]⟩))
       fun _ h => ⟨h.1, trivial⟩).seq ?_
   exact (two_wp (Ψ := fun _ _ _ _ => True) (hmacK_ct hlen' t₂ t₃) fun _ _ _ _ hL _ hc _ =>
     WP.mono (hmacK_ok (P := P) hL hc hlen') fun _ h => ⟨h.1, trivial⟩).seq hmacV_ct
 
 theorem rekeyFull_ct {Φ : Pred P} (b : Nat) (hb : b < 2) :
     RelCT isa (Two P Φ) ((cfgOf P).rekeyFull b) fun _ _ => True := by
-  obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
+  obtain rfl | rfl : b = 0 ∨ b = 1 := by omega_arith
   · exact rekey_gen_ct (full := true) hb rfl (ho := (cfgOf P).fHo) (fun _ => fHo_eq P)
       (len := P.F.H.D + 2 * P.Q + 1) rfl (blks P).msg₀f (blks P).kUpdF (blks P).kFinF
   · exact rekey_gen_ct (full := true) hb rfl (ho := (cfgOf P).fHo) (fun _ => fHo_eq P)
@@ -433,9 +433,9 @@ theorem cand_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).cand fun _ _ => T
       have nB := hL.nB
       simp only [Cfg.keepV, e₃]
       exact WP.mono (copyF_ok hL hc (src := .r8) (S := L.fp) hc.r8 (by decide) (so := 64) (d := 288)
-        (K := 64 / 4) (by omega) (by omega) (by omega) (by omega)
-        (fun j hj => by rw [fpd hL]; exact hc.inFr (by omega) (by omega))
-        (by rw [fpd hL]; exact Offset.disjoint _ (by omega) (by omega) (by omega))) fun _ h => ⟨h.1, trivial⟩
+        (K := 64 / 4) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+        (fun j hj => by rw [fpd hL]; exact hc.inFr (by omega_arith) (by omega_arith))
+        (by rw [fpd hL]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))) fun _ h => ⟨h.1, trivial⟩
     refine (two_wp (Ψ := fun _ _ _ _ => True) hmacV_ct fun _ _ _ _ hL _ hc _ =>
       WP.mono (hmacV_ok hL hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
     exact two_blk W.top
@@ -455,7 +455,7 @@ theorem core_ct {i : Nat} :
       simp only [coreK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
         Pbkdf2.Stream.Arm.ce0, Pbkdf2.Stream.Arm.ce1, Pbkdf2.Stream.Arm.ce2, Pbkdf2.Stream.Arm.ce3, pushed_gpr,
         pushed_sp, a₁.r0, a₁.r1, a₁.r2, a₁.r3, a₂.r0, a₂.r1, a₂.r2, a₂.r3,
-        Proof.Pbkdf2.Whole.Arm.p2_arg0 (s := s₁) (by omega), Proof.Pbkdf2.Whole.Arm.p2_arg0 (s := s₂) (by omega),
+        Proof.Pbkdf2.Whole.Arm.p2_arg0 (s := s₁) (by omega_arith), Proof.Pbkdf2.Whole.Arm.p2_arg0 (s := s₂) (by omega_arith),
         a₁.r12,a₂.r12,sp_two c₁ c₂,true_and]
       intro c hc
       have hmem : c∈e.1.cs := hk.2.1.2.2 ▸ hc
@@ -503,7 +503,7 @@ theorem tryOne_ct {i : Nat} :
   -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
   have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
       LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
-    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega_arith), hI.lt⟩
     rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
     rcases hE.last with h | h
     · exact h hgo.1
@@ -517,7 +517,7 @@ theorem tryOne_ct {i : Nat} :
 /-! ## The loop -/
 
 theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
-  ⟨by omega, by omega⟩
+  ⟨by omega_arith, by omega_arith⟩
 
 theorem loop_ct :
     RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
@@ -553,9 +553,9 @@ theorem rest_ct :
     RelCT isa (Two P fun L _ m₀ t => QB P L m₀ t) (.seq ((cfgOf P).rekeyFull 0) (.seq ((cfgOf P).rekeyFull 1)
       (.seq (.block (cfgOf P).initCnt) (.seq (.loop (cfgOf P).tryOne .ne) (.block (Cfg.wipe (cfgOf P).wide (cfgOf P).hHigh))))))
       fun _ _ => True := by
-  refine (two_wp (Ψ := fun L _ m₀ t => QC P L m₀ t) (rekeyFull_ct 0 (by omega)) fun _ _ _ _ hL hk hc h =>
+  refine (two_wp (Ψ := fun L _ m₀ t => QC P L m₀ t) (rekeyFull_ct 0 (by omega_arith)) fun _ _ _ _ hL hk hc h =>
     stageC_ok (P := P) hL hk hc h).seq ?_
-  refine (two_wp (Ψ := fun L _ m₀ t => QD P L m₀ t) (rekeyFull_ct 1 (by omega)) fun _ _ _ _ hL hk hc h =>
+  refine (two_wp (Ψ := fun L _ m₀ t => QD P L m₀ t) (rekeyFull_ct 1 (by omega_arith)) fun _ _ _ _ hL hk hc h =>
     stageD_ok (P := P) hL hk hc h).seq ?_
   refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (two_blk (initCnt_blk _))
     fun _ _ _ _ _ _ hc h => stageE_ok (P := P) hc h).seq ?_

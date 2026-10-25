@@ -36,7 +36,7 @@ theorem bytes_wo (m : Mem) (base : Addr) {d a n : Nat} (v : BitVec 64) (h : d + 
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact writeW_outside m base v (by omega) _ (by rw [ofs_off base (by omega)]; omega)
+  exact writeW_outside m base v (by omega_arith) _ (by rw [ofs_off base (by omega_arith)]; omega_arith)
 
 theorem words_wo (m : Mem) (base : Addr) {d a n : Nat} (v : BitVec 64) (h : d + 8 ≤ a ∨ a + 8 * n ≤ d)
     (ha : a + 8 * n ≤ 4096) (hd : d + 8 ≤ 4096) :
@@ -46,7 +46,7 @@ theorem words_wo (m : Mem) (base : Addr) {d a n : Nat} (v : BitVec 64) (h : d + 
   have hi := List.mem_range.mp hi
   show (m.writeW (off base d) v).readW (off (off base a) (8 * i)) 64 = m.readW (off (off base a) (8 * i)) 64
   rw [off_off]
-  exact (writeW_outside m base v (by omega)).word (by omega) (by omega)
+  exact (writeW_outside m base v (by omega_arith)).word (by omega_arith) (by omega_arith)
 
 theorem bytes_wo0 (m : Mem) (base : Addr) {a n : Nat} (v : BitVec 64) (h : 8 ≤ a) (ha : a + n ≤ 4096) :
     Spec.Rsa.bytesAt (m.writeW base v) (off base a) n = Spec.Rsa.bytesAt m (off base a) n := by
@@ -99,7 +99,7 @@ theorem check_ok (pc : Prog isa) (P : PublicImpl) (pcName pdName : String)
   have hw : ∀ {d : Nat}, d < 4 → word t₃.mem (fb s) (8 * d) =
       [off (fb s) oM, s.gpr .rcx, stackArg s 12, stackArg s 13].getD d 0 := fun {d} hd => by
     rw [hm₃]
-    rcases (show d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 by omega_arith) with rfl | rfl | rfl | rfl
     · simp (disch := decide) only [word_wo, word_self0, Nat.mul_zero]
       rfl
     · simp (disch := decide) only [word_wo, word_writeW_self, Nat.mul_one]; rfl
@@ -126,12 +126,12 @@ theorem check_ok (pc : Prog isa) (P : PublicImpl) (pcName pdName : String)
     have hmb : Spec.Rsa.bytesAt t₃.mem (off (fb s) oM) (s.gpr .rcx).toNat =
         Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat := by
       rw [hm₃]
-      simp (disch := first | decide | (simp only [oM, oR3, oR1]; omega)) only [bytes_wo, bytes_wo0]
-      rw [hM₂, hm₁, bytes_wo _ _ _ (.inl (by decide)) (by unfold oM; omega) (by decide)]
+      simp (disch := first | decide | (simp only [oM, oR3, oR1]; omega_arith)) only [bytes_wo, bytes_wo0]
+      rw [hM₂, hm₁, bytes_wo _ _ _ (.inl (by decide)) (by unfold oM; omega_arith) (by decide)]
     have hpre : Spec.Rsa.wordsAt t₃.mem (off (fb s) oPre) (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat) =
         Spec.Rsa.wordsAt t₂.mem (off (fb s) oPre) (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat) := by
       rw [hm₃]
-      simp (disch := first | decide | (simp only [oPre, oR3]; omega)) only [words_wo, words_wo0]
+      simp (disch := first | decide | (simp only [oPre, oR3]; omega_arith)) only [words_wo, words_wo0]
     rw [hr1, hr3] at hax hout
     rw [hM₄, hmb] at hout
     simp only [hmb] at hpd

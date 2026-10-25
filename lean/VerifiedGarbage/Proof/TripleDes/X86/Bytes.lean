@@ -23,9 +23,9 @@ theorem decodeBlock_readW (m : Mem) (p : Addr) :
   intro i hi
   have ranges : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨
       (24 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 40) ∨ (40 ≤ i ∧ i < 48) ∨
-      (48 ≤ i ∧ i < 56) ∨ 56 ≤ i := by omega
+      (48 ≤ i ∧ i < 56) ∨ 56 ≤ i := by omega_arith
   rcases ranges with h | h | h | h | h | h | h | h <;>
-    simp (disch := omega) only [BitVec.getLsbD_append, ↓ite_eq_left, ↓ite_eq_right,
+    simp (disch := omega_arith) only [BitVec.getLsbD_append, ↓ite_eq_left, ↓ite_eq_right,
       Nat.sub_sub] <;> rfl
 
 theorem packed28 (c d : BitVec 28) :
@@ -47,7 +47,7 @@ theorem blockAt_writeW (m : Mem) (p : Addr) (x : BitVec 64) :
   apply Vector.ext
   intro i hi
   simp only [blockAt, encodeBlock, Vector.getElem_ofFn, Mem.writeW, Mem.write,
-    Mem.sub_ofNat_toNat p (by omega : i < 2 ^ 64), BitVec.setWidth_eq,
+    Mem.sub_ofNat_toNat p (by omega_arith : i < 2 ^ 64), BitVec.setWidth_eq,
     hi, ite_true]
   exact byteRev64_byte x i hi
 
@@ -56,10 +56,10 @@ theorem bswapPair (l r : BitVec 32) : bswap r ++ bswap l = byteRev64 (l ++ r) :=
   intro i hi
   have ranges : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨
       (24 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 40) ∨ (40 ≤ i ∧ i < 48) ∨
-      (48 ≤ i ∧ i < 56) ∨ 56 ≤ i := by omega
+      (48 ≤ i ∧ i < 56) ∨ 56 ≤ i := by omega_arith
   rcases ranges with h | h | h | h | h | h | h | h <;>
-    simp (disch := omega) only [bswap, byteRev64, BitVec.getLsbD_append,
+    simp (disch := omega_arith) only [bswap, byteRev64, BitVec.getLsbD_append,
       BitVec.getLsbD_extractLsb', ite_eq_left, ite_eq_right, Nat.sub_sub] <;>
-    congr 2 <;> omega
+    congr 2 <;> omega_arith
 
 end VG.Proof.TripleDes.X86

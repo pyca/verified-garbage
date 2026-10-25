@@ -54,7 +54,7 @@ theorem eqStore_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {i : Nat}
   refine WP.mono (WP.keep [.rax, .rbp] (Q := fun u => u.mem = s.mem.writeW (off B (8 * i))
       (mask (decide (s.gpr .rbp = 0)))) (by
     unfold eqStore
-    xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.st (d := 8 * i) (by omega), decide_lt_one', sbb_mask]) rfl)
+    xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.st (d := 8 * i) (by omega_arith), decide_lt_one', sbb_mask]) rfl)
     fun u ⟨a, b⟩ => ⟨a, b⟩
 
 /-- `sqNext`: `k += 1` in `sC1`, against `64 Bw`. -/
@@ -70,11 +70,11 @@ theorem sqNext_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el k : Na
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun u => u.gpr .rdx = BitVec.ofNat 64 (k + 1) ∧
       u.mem = s.mem.writeW (off B (8 * sC1)) (BitVec.ofNat 64 (k + 1))) (by
-    xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.ld (d := 8 * sC1) (by simp only [sC1, sCnt, sFn]; omega),
-      h.scr.st (d := 8 * sC1) (by simp only [sC1, sCnt, sFn]; omega), hc1, ofNat_add_one]) rfl)
+    xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.ld (d := 8 * sC1) (by simp only [sC1, sCnt, sFn]; omega_arith),
+      h.scr.st (d := 8 * sC1) (by simp only [sC1, sCnt, sFn]; omega_arith), hc1, ofNat_add_one]) rfl)
     fun u₁ ⟨⟨hdx, m₁⟩, k₁⟩ => WP.block_append_iff.mpr ?_
   have hf₁ : Frm B (rg w [] [sC1]) s.mem u₁.mem := by
-    rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC1, sCnt, sFn]; omega)) _ _
+    rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC1, sCnt, sFn]; omega_arith)) _ _
       (List.mem_singleton_self _)
   have hw₁ : Ws u₁ B Z w := h.congrG hf₁ (by decide) k₁ (by decide)
   refine WP.mono (bw_ok hw₁ (by rw [hf₁.rg_word (by decide) (by decide)]; exact hel) hel')
@@ -83,8 +83,8 @@ theorem sqNext_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el k : Na
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun u => u.zf = some (decide (k + 1 = 64 * (w + (el + 7) / 8))) ∧
       u.mem = u₂.mem) (by
     simp only [List.replicate, List.cons_append, List.nil_append]
-    xrun [hax, hdx₂, ofNat_dbl, dbl6, ofNat_sub_beq (show k + 1 < 2 ^ 64 by omega)
-      (show 64 * (w + (el + 7) / 8) < 2 ^ 64 by omega)]) rfl)
+    xrun [hax, hdx₂, ofNat_dbl, dbl6, ofNat_sub_beq (show k + 1 < 2 ^ 64 by omega_arith)
+      (show 64 * (w + (el + 7) / 8) < 2 ^ 64 by omega_arith)]) rfl)
     fun u ⟨⟨hz, mu⟩, k₃⟩ => ⟨hz, by rw [mu, m₂, m₁], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-! ## The squaring's arithmetic -/
@@ -104,10 +104,10 @@ theorem sqMasks_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k t : Na
           (off B (8 * sC3)) (mask (ok || ((!done && decide (k < t)) && e1))) ∧
       Keep [.rax, .rcx, .rdx, .r15, .rbp] s u := by
   have h256 := h.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => h.scr.ld (by omega)
-  have hs : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi => h.scr.st (by omega)
-  have ek : (BitVec.ofNat 64 k).toNat = k := by rw [BitVec.toNat_ofNat]; omega
-  have et : (BitVec.ofNat 64 t).toNat = t := by rw [BitVec.toNat_ofNat]; omega
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => h.scr.ld (by omega_arith)
+  have hs : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi => h.scr.st (by omega_arith)
+  have ek : (BitVec.ofNat 64 k).toNat = k := by rw [BitVec.toNat_ofNat]; omega_arith
+  have et : (BitVec.ofNat 64 t).toNat = t := by rw [BitVec.toNat_ofNat]; omega_arith
   have ekt : decide (BitVec.ofNat 64 k + 1 ^^^ BitVec.ofNat 64 t = 0) = decide (k + 1 = t) := by
     rw [ofNat_add_one]
     apply Bool.eq_iff_iff.mpr
@@ -115,11 +115,11 @@ theorem sqMasks_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k t : Na
     constructor
     · intro e
       have := congrArg BitVec.toNat (BitVec.xor_eq_zero_iff.mp e)
-      rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this; omega
+      rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this; omega_arith
     · intro e; rw [e]; exact BitVec.xor_self
   have hr3 : ∀ v, (s.mem.writeW (off B (8 * sC2)) v).readW (off B (8 * sC3)) 64 = mask ok := fun v => by
-    have := (writeW_outside s.mem B v (d := 8 * sC2) (by simp only [sC2, sFn]; omega)).word
-      (d := 8 * sC3) (Or.inr (by simp only [sC2, sC3, sFn]; omega)) (by simp only [sC3, sFn]; omega)
+    have := (writeW_outside s.mem B v (d := 8 * sC2) (by simp only [sC2, sFn]; omega_arith)).word
+      (d := 8 * sC3) (Or.inr (by simp only [sC2, sC3, sFn]; omega_arith)) (by simp only [sC3, sFn]; omega_arith)
     rw [hc3] at this
     exact this
   refine WP.mono (WP.keep [.rax, .rcx, .rdx, .r15, .rbp] (Q := fun u =>

@@ -154,21 +154,21 @@ theorem stp_crFrame {k7 k8 : BitVec 32} {s : State} {D : BitVec 32} {n : Nat} (h
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (hd.ok.st.sub_right (Lay.stSub (by omega))).symm
-  · exact Lay.st_st (.inl h1) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (L.stk_st (by omega)).symm
+  · exact (hd.ok.st.sub_right (Lay.stSub (by omega_arith))).symm
+  · exact Lay.st_st (.inl h1) (by omega_arith) (by decide)
+  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+  · exact (L.stk_st (by omega_arith)).symm
 
 theorem stp_taFrame {d k : Nat} (hd : d + k ≤ 16 ∨ 48 ≤ d ∧ d + k ≤ 80) :
     ∀ r ∈ taFrame st w sp, (⟨State.addr st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (L.stk_st (by omega)).symm
+  · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
+  · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
+  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+  · exact (L.stk_st (by omega_arith)).symm
 
 theorem stp_saved {d k : Nat} (h1 : d + k ≤ 80) :
     ∀ r ∈ [savedR w], (⟨State.addr st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
@@ -299,7 +299,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
       exact hc₀.congr (blockAt_frame f₂ (stp_saved L (by decide))) (blockAt_frame f₂ (stp_saved L (by decide)))
   have dat₂ : bytesAt s₂.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat =
       bytesAt s₀.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat :=
-    bytesAt_frame f₂ (data_saved hd₂.ok) (by have := hd₂.ok.lt; omega)
+    bytesAt_frame f₂ (data_saved hd₂.ok) (by have := hd₂.ok.lt; omega_arith)
   have out₃ : Ctr s₀.mem (State.addr (s₀.gpr .r2) + BitVec.ofNat 64 48)
       (State.addr (s₀.gpr .r2) + BitVec.ofNat 64 64) (ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) (scR s₀)) icb ct.length →
       bytesAt s₃.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat =
@@ -312,16 +312,16 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
     rw [hc] at this
     exact this.congr (blockAt_frame ta.frame (stp_taFrame L (.inr ⟨by decide, by decide⟩)))
       (blockAt_frame ta.frame (stp_taFrame L (.inr ⟨by decide, by decide⟩)))
-  · rw [hm, bytesAt_frame ta.frame (data_taFrame hd₃) (by have := hd₃.lt; omega)]
+  · rw [hm, bytesAt_frame ta.frame (data_taFrame hd₃) (by have := hd₃.lt; omega_arith)]
     exact out₃ hc₀
   · rw [hm]
     have hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
     have hab₃ : Absorbed s₃.mem (State.addr (s₀.gpr .r2) + BitVec.ofNat 64 16)
         (State.addr (s₀.gpr .r2) + BitVec.ofNat 64 32) (ctxH s₀.mem (State.addr (s₀.gpr .r0))) (ghashInput a ct) :=
       (hab.congr (blockAt_frame f₂ (stp_saved L (by decide)))
-        (bytesAt_frame f₂ (stp_saved L (by omega)) (by omega))).congr
+        (bytesAt_frame f₂ (stp_saved L (by omega_arith)) (by omega_arith))).congr
         (blockAt_frame co.frame (stp_crFrame L hd₂ (by decide)))
-        (bytesAt_frame co.frame (stp_crFrame L hd₂ (by omega)) (by omega))
+        (bytesAt_frame co.frame (stp_crFrame L hd₂ (by omega_arith)) (by omega_arith))
     have := ta.abs hab₃
     rw [out₃ hc₀] at this
     exact this
@@ -373,10 +373,10 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
         (blockAt_frame f₃ (stp_taFrame L (.inr ⟨by decide, by decide⟩)))
   have dat₁ : bytesAt s₁.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat =
       bytesAt s₀.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat :=
-    bytesAt_frame h1.frame (data_saved hd₁) (by have := hd₁.lt; omega)
+    bytesAt_frame h1.frame (data_saved hd₁) (by have := hd₁.lt; omega_arith)
   have dat₃ : bytesAt s₃.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat =
       bytesAt s₀.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat := by
-    rw [bytesAt_frame f₃ (data_taFrame hd₁) (by have := hd₁.lt; omega), dat₁]
+    rw [bytesAt_frame f₃ (data_taFrame hd₁) (by have := hd₁.lt; omega_arith), dat₁]
   refine ⟨fun hc₀ => ?_, fun hc₀ => ?_, fun hc₀ hab => ?_, ?_⟩
   · rw [hm]
     have := co.ctr (ctr₃ hc₀)
@@ -385,13 +385,13 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   · rw [hm]
     have hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
     have hab₂ := ta.abs ((hab.congr (blockAt_frame h1.frame (stp_saved L (by decide)))
-        (bytesAt_frame h1.frame (stp_saved L (by omega)) (by omega))))
+        (bytesAt_frame h1.frame (stp_saved L (by omega_arith)) (by omega_arith))))
     rw [dat₁] at hab₂
     rw [← hK₃.mem] at hab₂
     have hb' := Nat.mod_lt (ghashInput a (ct ++ bytesAt s₀.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat)).length
       (show 16 > 0 by decide)
     exact hab₂.congr (blockAt_frame co.frame (stp_crFrame L hd₃ (by decide)))
-      (bytesAt_frame co.frame (stp_crFrame L hd₃ (by omega)) (by omega))
+      (bytesAt_frame co.frame (stp_crFrame L hd₃ (by omega_arith)) (by omega_arith))
   · rw [hm, blockAt_frame co.frame (by simpa using stp_crFrame L hd₃ (d := 0) (k := 16) (by decide)),
       blockAt_frame f₃ (by simpa using stp_taFrame L (d := 0) (k := 16) (.inl (by decide))),
       blockAt_frame h1.frame (by simpa using stp_saved L (d := 0) (k := 16) (by decide))]

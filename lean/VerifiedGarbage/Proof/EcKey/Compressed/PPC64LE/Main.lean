@@ -56,16 +56,16 @@ theorem CPre.setup {s : State} (hp : CPre c s) : SetupPre c args (s.write .r12 (
   have hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
   have hr5 : (s.write .r12 (s.gpr .r4)).gpr .r5 = s.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
-  have hlen : c.C.len ≤ 1 + 2 * c.C.len := by omega
+  have hlen : c.C.len ≤ 1 + 2 * c.C.len := by omega_arith
   have hin : ∀ e, e + 8 ≤ c.C.len → InRegions ((s.write .r12 (s.gpr .r4)).rd ++ (s.write .r12 (s.gpr .r4)).wr)
       ((s.write .r12 (s.gpr .r4)).gpr .r12 + BitVec.ofNat 64 e) 8 := fun e he => by
     rw [hr12, write_rd, write_wr]
-    exact inRegions_words (len := 1 + 2 * c.C.len) (by rw [hp.rd]; simp) (by have := hp.pk_fit; omega) e (by omega)
+    exact inRegions_words (len := 1 + 2 * c.C.len) (by rw [hp.rd]; simp) (by have := hp.pk_fit; omega_arith) e (by omega_arith)
   have hd : Region.Disjoint ⟨(s.write .r12 (s.gpr .r4)).gpr .r12, c.C.len⟩
       ⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ := by
     rw [hr12, hr5]; exact hp.pk_sc.sub_left (Region.sub_prefix hlen)
   have hf : ((s.write .r12 (s.gpr .r4)).gpr .r12).toNat + c.C.len ≤ 2 ^ 64 := by
-    rw [hr12]; have := hp.pk_fit; omega
+    rw [hr12]; have := hp.pk_fit; omega_arith
   have hwr : (⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ : Region) ∈ (s.write .r12 (s.gpr .r4)).wr := by
     rw [hr5, write_wr, hp.wr]; simp
   have hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
@@ -127,16 +127,16 @@ theorem compress_ok (hc : CfgOk c) {s₀ : State} (hp : CPre c s₀) :
     (hW := (fixedOk_slW (by decide)).append fixedOk_flag)
     (hWs := le_append (fun w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have := sl_le c h7 (hl₃ i hi); dsimp only; omega)
+      have := sl_le c h7 (hl₃ i hi); dsimp only; omega_arith)
       (fun w hw => by
-        rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega))
+        rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega_arith))
   have hq0 : s₂.mem (s₀.gpr .r4) = s₀.mem (s₀.gpr .r4) := by
-    have := keep_of_disjoint' W₂ hpsc (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₂ hpsc (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   have x₃' : sv c base s₃ E = keyX c s₀ := by
-    rw [x₃, bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [x₃, bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have y₃' : sv c base s₃ QY = keyY c s₀ := by
-    rw [y₃, bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [y₃, bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have hf₃ : flagW c base s₃ = mask64 ((s₀.mem (s₀.gpr .r4) = 4 ∧ sv c base s₃ E < c.C.p) ∧
       sv c base s₃ QY < c.C.p) := by
     rw [f₃, hq0, S₂.flag, BitVec.allOnes_and, mask64_and, mask64_and]
@@ -180,7 +180,7 @@ theorem compress_key (c : Cfg) (s : State) :
     Spec.EcKey.compressPublicKey c.C (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) =
       if KeyOk c s then some (BitVec.ofNat 8 (2 + keyY c s % 2) :: toBytes c.C.len (keyX c s)) else none := by
   have hlen : (Spec.Ecdsa.bytesAt s.mem (s.gpr .r4) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_arith
   have hhead : (Spec.Ecdsa.bytesAt s.mem (s.gpr .r4) (1 + 2 * c.C.len)).head? = some (s.mem (s.gpr .r4)) := by
     rw [peer_bytes]; rfl
   have hx : ofBytes (((Spec.Ecdsa.bytesAt s.mem (s.gpr .r4) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
@@ -190,25 +190,25 @@ theorem compress_key (c : Cfg) (s : State) :
       keyY c s := by
     rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _)]
   change Spec.EcKey.compressPublicKey c.C (Spec.Ecdsa.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) = _
-  rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega, compress_eq hlen hhead hx hy]
+  rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith, compress_eq hlen hhead hx hy]
 
 theorem compress_correct (c : Cfg) (hc : CfgOk c) (s : State) (hs : (compressContract c.C).pre s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.compress c) s t s' ∧
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   have hp : CPre c s :=
-    ⟨by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega],
-      by rw [hwr, show c.C.len + 1 = 1 + c.C.len by omega],
-      by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega] using hpw,
-      by simpa only [show c.C.len + 1 = 1 + c.C.len by omega] using how,
-      by omega, by omega, hwfit⟩
+    ⟨by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
+      by rw [hwr, show c.C.len + 1 = 1 + c.C.len by omega_arith],
+      by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using hpw,
+      by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using how,
+      by omega_arith, by omega_arith, hwfit⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := compress_ok hc hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
   show (match Spec.EcKey.compressPublicKey c.C (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) with
     | some bs => _ | none => _)
   rw [compress_key]
   change Spec.EcKey.bytesAt s'.mem (s.gpr .r3) (1 + c.C.len) = _ at bytes
-  rw [show 1 + c.C.len = c.C.len + 1 by omega] at bytes
+  rw [show 1 + c.C.len = c.C.len + 1 by omega_arith] at bytes
   by_cases hk : KeyOk c s
   · rw [ite_eq_left hk] at bytes ret ⊢
     exact ⟨ret, bytes⟩

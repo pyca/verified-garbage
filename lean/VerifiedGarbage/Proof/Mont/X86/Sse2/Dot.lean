@@ -39,7 +39,7 @@ theorem dprod_lt (m : Mem) (W : Addr) (x y j : Nat) : dprod m W x y j < 2 ^ 64 :
   simpa [dprod, w32] using this
 
 theorem dprod_div_lt (m : Mem) (W : Addr) (x y j : Nat) : dprod m W x y j / 2 ^ 32 < 2 ^ 32 :=
-  (Nat.div_lt_iff_lt_mul (by decide)).2 (by have := dprod_lt m W x y j; omega)
+  (Nat.div_lt_iff_lt_mul (by decide)).2 (by have := dprod_lt m W x y j; omega_arith)
 
 theorem dhigh_le (m : Mem) (W : Addr) (x y n : Nat) : dhigh m W x y n ≤ n * (2 ^ 32 - 1) := by
   induction n with
@@ -47,7 +47,7 @@ theorem dhigh_le (m : Mem) (W : Addr) (x y n : Nat) : dhigh m W x y n ≤ n * (2
   | succ n ih =>
     have := dprod_div_lt m W x y n
     simp only [dhigh, rsum, Nat.zero_add] at ih ⊢
-    rw [Nat.succ_mul]; omega
+    rw [Nat.succ_mul]; omega_arith
 
 theorem dsum_succ (m : Mem) (W : Addr) (x y n : Nat) :
     dsum m W x y (n + 1) = dsum m W x y n + dprod m W x y n := by
@@ -71,12 +71,12 @@ theorem pw_d0 (m : Mem) (W : Addr) (x y j : Nat) :
 theorem pw_d (m : Mem) (W : Addr) (x y j d k : Nat) (hk : 4 * k = 4 * j + d) :
     pw m (off W (x + 4 * j + d)) (off W (y + 4 * j + d)) = dprod m W x y k := by
   simp only [pw, dprod, w32]
-  rw [show x + 4 * j + d = x + 4 * k by omega, show y + 4 * j + d = y + 4 * k by omega]
+  rw [show x + 4 * j + d = x + 4 * k by omega_arith, show y + 4 * j + d = y + 4 * k by omega_arith]
 
 theorem pw_dd (m : Mem) (W : Addr) (x y j d e k : Nat) (hk : 4 * k = 4 * j + d + e) :
     pw m (off W (x + 4 * j + d + e)) (off W (y + 4 * j + d + e)) = dprod m W x y k := by
   simp only [pw, dprod, w32]
-  rw [show x + 4 * j + d + e = x + 4 * k by omega, show y + 4 * j + d + e = y + 4 * k by omega]
+  rw [show x + 4 * j + d + e = x + 4 * k by omega_arith, show y + 4 * j + d + e = y + 4 * k by omega_arith]
 
 /-! ## Scalar instructions, keeping `mcdt` and the XMM registers -/
 
@@ -179,13 +179,13 @@ theorem dsum_add (m : Mem) (W : Addr) (x y j i : Nat) :
     dsum m W x y (j + i) = dsum m W x y j + rsum (dprod m W x y) j i := by
   induction i with
   | zero => rfl
-  | succ i ih => rw [← Nat.add_assoc, dsum_succ, ih]; simp only [rsum]; omega
+  | succ i ih => rw [← Nat.add_assoc, dsum_succ, ih]; simp only [rsum]; omega_arith
 
 theorem dhigh_add (m : Mem) (W : Addr) (x y j i : Nat) :
     dhigh m W x y (j + i) = dhigh m W x y j + rsum (fun k => dprod m W x y k / 2 ^ 32) j i := by
   induction i with
   | zero => rfl
-  | succ i ih => rw [← Nat.add_assoc, dhigh_succ, ih]; simp only [rsum]; omega
+  | succ i ih => rw [← Nat.add_assoc, dhigh_succ, ih]; simp only [rsum]; omega_arith
 
 /-- The invariant after `i` more products, from the sums they add. -/
 theorem DotI.step {s0 t u : State} {W : Addr} {L x y n S H j : Nat} (I : DotI s0 W L x y n S H j t) (i : Nat)
@@ -201,12 +201,12 @@ theorem DotI.step {s0 t u : State} {W : Addr} {L x y n S H j : Nat} (I : DotI s0
   have hn := I.ws.nowrap
   refine ⟨hi, ws, ?_, ?_, ?_, ?_, ⟨fun r hr => ?_, by rw [rd, I.keep.2.1], by rw [wr, I.keep.2.2]⟩,
     by rw [mem, I.mem], by rw [mcdt, I.mcdt], by rw [x6, I.x6], by rw [x7, I.x7]⟩
-  · rw [PtrAt, esi, ptr_add I.esi, toNat_ofNat_lt (by omega)]; omega
-  · rw [PtrAt, edi, ptr_add I.edi, toNat_ofNat_lt (by omega)]; omega
-  · rw [cnt, I.cnt, sub_ofNat (by omega)]; congr 1; omega
+  · rw [PtrAt, esi, ptr_add I.esi, toNat_ofNat_lt (by omega_arith)]; omega_arith
+  · rw [PtrAt, edi, ptr_add I.edi, toNat_ofNat_lt (by omega_arith)]; omega_arith
+  · rw [cnt, I.cnt, sub_ofNat (by omega_arith)]; congr 1; omega_arith
   · refine sums.of_eq ?_ ?_
-    · rw [dsum_add]; omega
-    · rw [dhigh_add]; omega
+    · rw [dsum_add]; omega_arith
+    · rw [dhigh_add]; omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [keep r hr.1 hr.2.1 hr.2.2.1 hr.2.2.2]; exact I.keep.1 r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2])
 
@@ -228,54 +228,54 @@ theorem quad_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L
     (I : DotI s0 W L x y n S H j t) (hj : j + 5 ≤ n) :
     WP isa (.block quadBody) t fun u =>
       DotI s0 W L x y n S H (j + 4) u ∧ u.cf = some (decide (4 * (n - (j + 4)) < 20)) := by
-  have xr := E.xr.resolve_left (by omega)
-  have yr := E.yr.resolve_left (by omega)
+  have xr := E.xr.resolve_left (by omega_arith)
+  have yr := E.yr.resolve_left (by omega_arith)
   have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
-  have ex0 := ea_w I.ws I.esi (d := 0) (by omega)
-  have ey0 := ea_w I.ws I.edi (d := 0) (by omega)
-  have ex4 := ea_w I.ws I.esi (d := 4) (by omega)
-  have ey4 := ea_w I.ws I.edi (d := 4) (by omega)
+  have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
+  have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
+  have ex4 := ea_w I.ws I.esi (d := 4) (by omega_arith)
+  have ey4 := ea_w I.ws I.edi (d := 4) (by omega_arith)
   rw [quadBody]
   obtain ⟨t1, run1, o1, a1, b1⟩ := quadMul_run t hm
-    (by rw [ex0]; exact ws_read I.ws (by omega)) (by rw [ey0]; exact ws_read I.ws (by omega))
-    (by rw [ex4]; exact ws_read I.ws (by omega)) (by rw [ey4]; exact ws_read I.ws (by omega))
+    (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
+    (by rw [ex4]; exact ws_read I.ws (by omega_arith)) (by rw [ey4]; exact ws_read I.ws (by omega_arith))
   refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
   refine wp_advCmp fun u esi edi ebp oth cf mem rd wr mcdt xmm => ?_
   have hl := dhigh_le s0.mem W x y j
   have hH := E.hH
-  have s1 := quad_sums I.sums (by omega) a1 b1
+  have s1 := quad_sums I.sums (by omega_arith) a1 b1
   rw [ex0, ey0, ex4, ey4, Nat.add_zero, Nat.add_zero, off_8, off_8, off_8, off_8, I.mem, pw_d0,
-    pw_d _ _ _ _ _ 8 (j + 2) (by omega), pw_d _ _ _ _ _ 4 (j + 1) (by omega),
-    pw_dd _ _ _ _ _ 4 8 (j + 3) (by omega)] at s1
-  have I' := I.step 4 (by omega) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
-    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_four, rsum_four]; refine s1.of_eq ?_ ?_ <;> omega)
+    pw_d _ _ _ _ _ 8 (j + 2) (by omega_arith), pw_d _ _ _ _ _ 4 (j + 1) (by omega_arith),
+    pw_dd _ _ _ _ _ 4 8 (j + 3) (by omega_arith)] at s1
+  have I' := I.step 4 (by omega_arith) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
+    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_four, rsum_four]; refine s1.of_eq ?_ ?_ <;> omega_arith)
     (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o1.gpr]) (by rw [rd, o1.rd]) (by rw [wr, o1.wr])
     (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6]) (by rw [xmm, o1.x7])
   refine ⟨I', ?_⟩
-  rw [cf, ← ebp, I'.cnt, toNat_ofNat_lt (by have := E.hn; omega)]; rfl
+  rw [cf, ← ebp, I'.cnt, toNat_ofNat_lt (by have := E.hn; omega_arith)]; rfl
 
 /-- The last four products. -/
 theorem quadLast_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
     (I : DotI s0 W L x y n S H j t) (hj : j + 4 ≤ n) :
     WP isa (.block quadLast) t (DotI s0 W L x y n S H (j + 4)) := by
-  have xr := E.xr.resolve_left (by omega)
-  have yr := E.yr.resolve_left (by omega)
+  have xr := E.xr.resolve_left (by omega_arith)
+  have yr := E.yr.resolve_left (by omega_arith)
   have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
-  have ex0 := ea_w I.ws I.esi (d := 0) (by omega)
-  have ey0 := ea_w I.ws I.edi (d := 0) (by omega)
+  have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
+  have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
   rw [quadLast]
   obtain ⟨t1, run1, o1, a1, b1⟩ := quadLastMul_run t hm
-    (by rw [ex0]; exact ws_read I.ws (by omega)) (by rw [ey0]; exact ws_read I.ws (by omega))
+    (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
   refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
   refine wp_adv fun u esi edi ebp oth mem rd wr mcdt xmm => ?_
   have hl := dhigh_le s0.mem W x y j
   have hH := E.hH
-  have s1 := quadLast_sums I.sums (by omega) a1 b1
+  have s1 := quadLast_sums I.sums (by omega_arith) a1 b1
   rw [ex0, ey0, Nat.add_zero, Nat.add_zero, off_8, off_8, off_4, off_4, off_12, off_12, I.mem, pw_d0,
-    pw_d _ _ _ _ _ 8 (j + 2) (by omega), pw_d _ _ _ _ _ 4 (j + 1) (by omega),
-    pw_d _ _ _ _ _ 12 (j + 3) (by omega)] at s1
-  exact I.step 4 (by omega) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
-    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_four, rsum_four]; refine s1.of_eq ?_ ?_ <;> omega)
+    pw_d _ _ _ _ _ 8 (j + 2) (by omega_arith), pw_d _ _ _ _ _ 4 (j + 1) (by omega_arith),
+    pw_d _ _ _ _ _ 12 (j + 3) (by omega_arith)] at s1
+  exact I.step 4 (by omega_arith) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
+    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_four, rsum_four]; refine s1.of_eq ?_ ?_ <;> omega_arith)
     (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o1.gpr]) (by rw [rd, o1.rd]) (by rw [wr, o1.wr])
     (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6]) (by rw [xmm, o1.x7])
 
@@ -283,23 +283,23 @@ theorem quadLast_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv 
 theorem twin_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
     (I : DotI s0 W L x y n S H j t) (hj : j + 2 ≤ n) :
     WP isa (.block pair) t (DotI s0 W L x y n S H (j + 2)) := by
-  have xr := E.xr.resolve_left (by omega)
-  have yr := E.yr.resolve_left (by omega)
+  have xr := E.xr.resolve_left (by omega_arith)
+  have yr := E.yr.resolve_left (by omega_arith)
   have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
-  have ex0 := ea_w I.ws I.esi (d := 0) (by omega)
-  have ey0 := ea_w I.ws I.edi (d := 0) (by omega)
+  have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
+  have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
   rw [pair]
   obtain ⟨t1, run1, o1, a1, b1⟩ := pairMul_run t hm
-    (by rw [ex0]; exact ws_read I.ws (by omega)) (by rw [ey0]; exact ws_read I.ws (by omega))
+    (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
   refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
   refine wp_adv fun u esi edi ebp oth mem rd wr mcdt xmm => ?_
   have hl := dhigh_le s0.mem W x y j
   have hH := E.hH
-  have s1 := pair_sums I.sums (by omega) a1 b1
+  have s1 := pair_sums I.sums (by omega_arith) a1 b1
   rw [ex0, ey0, Nat.add_zero, Nat.add_zero, off_4, off_4, I.mem, pw_d0,
-    pw_d _ _ _ _ _ 4 (j + 1) (by omega)] at s1
-  exact I.step 2 (by omega) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
-    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_two, rsum_two]; refine s1.of_eq ?_ ?_ <;> omega)
+    pw_d _ _ _ _ _ 4 (j + 1) (by omega_arith)] at s1
+  exact I.step 2 (by omega_arith) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
+    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_two, rsum_two]; refine s1.of_eq ?_ ?_ <;> omega_arith)
     (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o1.gpr]) (by rw [rd, o1.rd]) (by rw [wr, o1.wr])
     (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6]) (by rw [xmm, o1.x7])
 
@@ -316,17 +316,17 @@ structure DotPost (s0 : State) (W : Addr) (x y n S H : Nat) (u : State) : Prop w
 theorem one_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
     (I : DotI s0 W L x y n S H j t) (hj : j + 1 = n) :
     WP isa (.block single) t (DotPost s0 W x y n S H) := by
-  have xr := E.xr.resolve_left (by omega)
-  have yr := E.yr.resolve_left (by omega)
+  have xr := E.xr.resolve_left (by omega_arith)
+  have yr := E.yr.resolve_left (by omega_arith)
   have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
-  have ex0 := ea_w I.ws I.esi (d := 0) (by omega)
-  have ey0 := ea_w I.ws I.edi (d := 0) (by omega)
+  have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
+  have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
   obtain ⟨u, run, mu, rdu, wru, mcu, gu, u6, u7, a, b⟩ :=
-    single_run t hm (by rw [ex0]; exact ws_read I.ws (by omega)) (by rw [ey0]; exact ws_read I.ws (by omega))
+    single_run t hm (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
   refine WP.of_runBlock ⟨u, run, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   · have hl := dhigh_le s0.mem W x y j
     have hH := E.hH
-    have s1 := single_sums I.sums (by omega) a b
+    have s1 := single_sums I.sums (by omega_arith) a b
     rw [ex0, ey0, I.mem] at s1
     refine s1.of_eq ?_ ?_
     · rw [← hj, dsum_succ, ← Nat.add_assoc]; simp only [dprod, w32, Nat.add_zero]
@@ -367,7 +367,7 @@ theorem wp_cmpCnt {s0 t : State} {W : Addr} {L x y n S H j : Nat} (I : DotI s0 W
     WP isa (.block (.alu .cmp .ebp (.imm (BitVec.ofNat 32 c)) :: rest)) t Q :=
   wp_cmpX rfl fun u f c1 _ m1 x1 => k u (I.of_same f.gpr f.mem f.rd f.wr m1 x1) (by
     show u.cf.map _ = _
-    rw [c1, I.cnt, toNat_ofNat_lt (by omega), toNat_ofNat_lt hc]; rfl)
+    rw [c1, I.cnt, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt hc]; rfl)
 
 theorem eval_b_of_ae {u : State} {b : Bool} (h : isa.eval .ae u = some (!b)) : isa.eval .b u = some b := by
   change u.cf.map (!·) = some (!b) at h
@@ -383,19 +383,19 @@ theorem quads_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 
       fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 5 := by
   have hi := I.hi
   by_cases h5 : n < j + 5
-  · exact WP.ite false (by rw [hc, decide_eq_true (by omega)]; rfl)
+  · exact WP.ite false (by rw [hc, decide_eq_true (by omega_arith)]; rfl)
       (fun h => absurd h (by decide)) fun _ => WP.block_nil ⟨j, I, h5⟩
-  refine WP.ite true (by rw [hc, decide_eq_false (by omega)]; rfl) (fun _ => ?_)
+  refine WP.ite true (by rw [hc, decide_eq_false (by omega_arith)]; rfl) (fun _ => ?_)
     (fun h => absurd h (by decide))
   refine WP.loop (M := isa) (fun m u => ∃ j, m = n - j ∧ j + 5 ≤ n ∧ DotI s0 W L x y n S H j u) ?_ (n - j) t
-    ⟨j, rfl, by omega, I⟩
+    ⟨j, rfl, by omega_arith, I⟩
   rintro m u ⟨j, rfl, hj, J⟩
   refine WP.mono (quad_ok E J hj) fun v ⟨J', cv⟩ => ?_
   have hv : isa.eval .ae v = some (!decide (4 * (n - (j + 4)) < 20)) := by
     show v.cf.map _ = _; rw [cv]; rfl
   by_cases h : n < j + 4 + 5
-  · exact .inl ⟨by rw [hv, decide_eq_true (by omega)]; rfl, j + 4, J', h⟩
-  · exact .inr ⟨by rw [hv, decide_eq_false (by omega)]; rfl, n - (j + 4), by omega, j + 4, rfl, by omega, J'⟩
+  · exact .inl ⟨by rw [hv, decide_eq_true (by omega_arith)]; rfl, j + 4, J', h⟩
+  · exact .inr ⟨by rw [hv, decide_eq_false (by omega_arith)]; rfl, n - (j + 4), by omega_arith, j + 4, rfl, by omega_arith, J'⟩
 
 /-- `dot`: the products `X_j Y_j`, `j < n`, added to the sums, for
 `esi = W + x`, `edi = W + y` and `ebp = 4 n`. -/
@@ -413,25 +413,25 @@ theorem dot_ok {s0 : State} {W : Addr} {L x y n S H : Nat} (E : DotEnv s0 L x y 
   refine WP.seq (WP.mono (Q := fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 4) ?_
     fun t4 ⟨j, I4, h4⟩ => ?_)
   · by_cases h4 : n < j + 4
-    · exact WP.ite true (by rw [eval_b_of_ae c3, decide_eq_true (by omega)])
+    · exact WP.ite true (by rw [eval_b_of_ae c3, decide_eq_true (by omega_arith)])
         (fun _ => WP.block_nil ⟨j, I3, h4⟩) (fun h => absurd h (by decide))
-    · exact WP.ite false (by rw [eval_b_of_ae c3, decide_eq_false (by omega)]) (fun h => absurd h (by decide))
-        (fun _ => WP.mono (quadLast_ok E I3 (by omega)) fun u J => ⟨j + 4, J, by have := I3.hi; omega⟩)
+    · exact WP.ite false (by rw [eval_b_of_ae c3, decide_eq_false (by omega_arith)]) (fun h => absurd h (by decide))
+        (fun _ => WP.mono (quadLast_ok E I3 (by omega_arith)) fun u J => ⟨j + 4, J, by have := I3.hi; omega_arith⟩)
   refine WP.seq (wp_cmpCnt I4 hn (c := 8) (by decide) fun t5 I5 c5 => WP.block_nil ?_)
   refine WP.seq (WP.mono (Q := fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 2) ?_ fun t6 ⟨j, I6, h6⟩ => ?_)
   · by_cases h2 : n < j + 2
-    · exact WP.ite false (by rw [c5, decide_eq_true (by omega)]; rfl) (fun h => absurd h (by decide))
+    · exact WP.ite false (by rw [c5, decide_eq_true (by omega_arith)]; rfl) (fun h => absurd h (by decide))
         fun _ => WP.block_nil ⟨j, I5, h2⟩
-    · exact WP.ite true (by rw [c5, decide_eq_false (by omega)]; rfl)
-        (fun _ => WP.mono (twin_ok E I5 (by omega)) fun u J => ⟨j + 2, J, by have := I5.hi; omega⟩)
+    · exact WP.ite true (by rw [c5, decide_eq_false (by omega_arith)]; rfl)
+        (fun _ => WP.mono (twin_ok E I5 (by omega_arith)) fun u J => ⟨j + 2, J, by have := I5.hi; omega_arith⟩)
         (fun h => absurd h (by decide))
   refine WP.seq (wp_cmpCnt I6 hn (c := 4) (by decide) fun t7 I7 c7 => WP.block_nil ?_)
   have := I7.hi
   by_cases h1 : n = j
   · subst h1
-    exact WP.ite false (by rw [c7, decide_eq_true (by omega)]; rfl) (fun h => absurd h (by decide))
+    exact WP.ite false (by rw [c7, decide_eq_true (by omega_arith)]; rfl) (fun h => absurd h (by decide))
       fun _ => WP.block_nil I7.done
-  · exact WP.ite true (by rw [c7, decide_eq_false (by omega)]; rfl) (fun _ => one_ok E I7 (by omega))
+  · exact WP.ite true (by rw [c7, decide_eq_false (by omega_arith)]; rfl) (fun _ => one_ok E I7 (by omega_arith))
       (fun h => absurd h (by decide))
 
 end VG.Proof.Mont.X86.Sse2

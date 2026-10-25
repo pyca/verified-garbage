@@ -215,21 +215,21 @@ theorem head_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL
   simp only [stepHead, mask, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_subi (by decide) (by decide) fun s1 u1 => ?_
   have e12 : s1.gpr .r12 = BitVec.ofNat 64 (n - 1) := by
-    rw [u1.gpr, hcur.r12, ofNat_sub_one hn (by omega)]
+    rw [u1.gpr, hcur.r12, ofNat_sub_one hn (by omega_arith)]
   refine wp_add fun s2 u2 => ?_
   refine wp_lbz (a := b + BitVec.ofNat 64 (n - 1 + BITS)) (by decide) (by decide)
     (by rw [u2.gpr, e12, u1.other _ (by decide), hc.r6, Offset.add_add])
-    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hc.inR (by omega)) fun s3 u3 => ?_
+    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hc.inR (by omega_arith)) fun s3 u3 => ?_
   have e4 : s3.gpr .r4 = BitVec.ofNat 64 (bit k (n - 1)) := by
-    rw [u3.gpr, u2.mem, u1.mem, hcur.stp.frame _ fun r hr => ?_, Nat.add_comm, hbits _ (by omega)]
-    · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [u3.gpr, u2.mem, u1.mem, hcur.stp.frame _ fun r hr => ?_, Nat.add_comm, hbits _ (by omega_arith)]
+    · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     · rw [List.mem_singleton.mp hr]
-      exact fun h => Offset.disjoint_base b (d := n - 1 + BITS) (n := 1) (k := ACC + 64) (by omega)
-        (by omega) _ (Region.contains_self _ _) h
+      exact fun h => Offset.disjoint_base b (d := n - 1 + BITS) (n := 1) (k := ACC + 64) (by omega_arith)
+        (by omega_arith) _ (Region.contains_self _ _) h
   refine wp_xor fun s4 u4 => ?_
   have e0 : s4.gpr .r0 = BitVec.ofNat 64 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
     rw [u4.gpr, e4, u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide), hcur.r0,
-      ofNat_xor (by omega) (by omega)]
+      ofNat_xor (by omega_arith) (by omega_arith)]
   refine wp_li (by decide) fun s5 u5 => wp_sub fun s6 u6 => ?_
   have e11 : s6.gpr .r11 = 0 - BitVec.ofNat 64 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
     rw [u6.gpr, u5.gpr, u5.other _ (by decide), e0]; rfl
@@ -266,12 +266,12 @@ theorem step_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL
   refine WP.seq (WP.mono (head_ok hbits hn hn' h) fun s1 h1 =>
     ops_ok ladOps LQ _ s1 ladOps_ok h1 fun s2 h2 => ?_)
   refine WP.block_nil ⟨⟨h2.ctx, h2.stp, ?_, h2.r12, ?_⟩, ?_⟩
-  · rw [h2.r0, ladderAfter_step k x1 (show n - 1 < 255 by omega), Nat.sub_add_cancel hn,
+  · rw [h2.r0, ladderAfter_step k x1 (show n - 1 < 255 by omega_arith), Nat.sub_add_cancel hn,
       ladderStep_eq]
   · refine (h2.slots.mono (by decide)).congr fun q hq => ?_
-    rw [ladderAfter_step k x1 (show n - 1 < 255 by omega), Nat.sub_add_cancel hn]
+    rw [ladderAfter_step k x1 (show n - 1 < 255 by omega_arith), Nat.sub_add_cancel hn]
     exact ladOps_vals k x1 _ (n - 1) q hq
-  · rw [h2.r12, ofNat_ne_zero (by omega)]
+  · rw [h2.r12, ofNat_ne_zero (by omega_arith)]
 
 /-- The ladder, from the state with the bits of the scalar in `BITS` and the
 initial elements in `LQ`. -/
@@ -296,6 +296,6 @@ theorem ladder_ok {b : Addr} {k : Nat} {x1 : Fe} {s : State} (hc : Ctx b s) (hbi
   refine WP.mono (step_ok hbits2 h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
-  · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega, by omega, by omega, hl'⟩
+  · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega_arith, by omega_arith, by omega_arith, hl'⟩
 
 end VG.Proof.X25519.PPC64LE

@@ -45,13 +45,13 @@ theorem blocks_of_lt {bs : List Byte} (h : bs.length < 16) : blocks bs = [] := b
 
 theorem blocks_cons {bs : List Byte} (h : 16 ≤ bs.length) :
     blocks bs = ofBytes (bs.take 16) :: blocks (bs.drop 16) := by
-  obtain ⟨n, hn⟩ : ∃ n, bs.length / 16 = n + 1 := ⟨bs.length / 16 - 1, by omega⟩
-  have hn' : (bs.drop 16).length / 16 = n := by simp only [List.length_drop]; omega
+  obtain ⟨n, hn⟩ : ∃ n, bs.length / 16 = n + 1 := ⟨bs.length / 16 - 1, by omega_arith⟩
+  have hn' : (bs.drop 16).length / 16 = n := by simp only [List.length_drop]; omega_arith
   simp only [blocks, hn, hn', List.range_succ_eq_map, List.map_cons, List.map_map]
   refine congrArg _ (List.map_congr_left fun i _ => ?_)
   simp only [Function.comp, List.drop_drop]
   congr 3
-  omega
+  omega_arith
 
 theorem blocks_append_aux (ys : List Byte) (n : Nat) :
     ∀ xs : List Byte, xs.length = 16 * n → blocks (xs ++ ys) = blocks xs ++ blocks ys := by
@@ -59,17 +59,17 @@ theorem blocks_append_aux (ys : List Byte) (n : Nat) :
   | zero => intro xs hx; rw [List.eq_nil_of_length_eq_zero hx]; rfl
   | succ n ih =>
     intro xs hx
-    rw [blocks_cons (bs := xs ++ ys) (by simp; omega), blocks_cons (bs := xs) (by omega),
-      List.take_append_of_le_length (by omega), List.drop_append_of_le_length (by omega),
-      ih _ (by simp; omega), List.cons_append]
+    rw [blocks_cons (bs := xs ++ ys) (by simp; omega_arith), blocks_cons (bs := xs) (by omega_arith),
+      List.take_append_of_le_length (by omega_arith), List.drop_append_of_le_length (by omega_arith),
+      ih _ (by simp; omega_arith), List.cons_append]
 
 theorem blocks_append {xs ys : List Byte} (hx : xs.length % 16 = 0) :
     blocks (xs ++ ys) = blocks xs ++ blocks ys :=
-  blocks_append_aux ys (xs.length / 16) xs (by omega)
+  blocks_append_aux ys (xs.length / 16) xs (by omega_arith)
 
 theorem blocks_single {bs : List Byte} (h : bs.length = 16) : blocks bs = [ofBytes bs] := by
-  rw [blocks_cons (by omega), List.take_of_length_le (by omega),
-    blocks_of_lt (by simp; omega)]
+  rw [blocks_cons (by omega_arith), List.take_of_length_le (by omega_arith),
+    blocks_of_lt (by simp; omega_arith)]
 
 theorem blocks_nil : blocks [] = [] := rfl
 
@@ -80,7 +80,7 @@ theorem blocksAt_eq (m : Mem) (p : Addr) (n : Nat) : blocksAt m p n = blocks (by
   have hi := List.mem_range.mp hi
   simp only [blockAt]
   congr 1
-  apply List.ext_getElem (by simp [bytesAt]; omega)
+  apply List.ext_getElem (by simp [bytesAt]; omega_arith)
   intro j h₁ h₂
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop]
@@ -100,18 +100,18 @@ def Absorbed (m : Mem) (y b : Addr) (h : Block) (x : List Byte) : Prop :=
 
 theorem take_whole_append {x d : List Byte} (hx : x.length % 16 = 0) :
     (x ++ d).take (whole (x ++ d).length) = x ++ d.take (whole d.length) := by
-  rw [List.take_append, List.take_of_length_le (by simp only [whole, List.length_append]; omega)]
+  rw [List.take_append, List.take_of_length_le (by simp only [whole, List.length_append]; omega_arith)]
   congr 2
-  simp only [whole, List.length_append]; omega
+  simp only [whole, List.length_append]; omega_arith
 
 theorem drop_whole_append {x d : List Byte} (hx : x.length % 16 = 0) :
     (x ++ d).drop (whole (x ++ d).length) = d.drop (whole d.length) := by
   rw [List.drop_append, List.drop_of_length_le (show x.length ≤ _ by
-    simp only [whole, List.length_append]; omega), List.nil_append]
+    simp only [whole, List.length_append]; omega_arith), List.nil_append]
   congr 1
-  simp only [whole, List.length_append]; omega
+  simp only [whole, List.length_append]; omega_arith
 
-theorem whole_of_mod {n : Nat} (h : n % 16 = 0) : whole n = n := by simp only [whole]; omega
+theorem whole_of_mod {n : Nat} (h : n % 16 = 0) : whole n = n := by simp only [whole]; omega_arith
 
 /-- Nothing absorbed: a zero accumulator. -/
 theorem absorbed_nil {m : Mem} {y b : Addr} (h : Block) (hy : blockAt m y = 0) :
@@ -131,7 +131,7 @@ theorem absorb_whole {m m' : Mem} {y b : Addr} {h : Block} {x d : List Byte} (hx
   · rw [hy, hx.1, take_whole_append hx0, whole_of_mod hd, List.take_of_length_le (Nat.le_refl _),
       List.take_of_length_le (by rw [whole_of_mod hx0]), blocks_append hx0]
     exact (ghashFrom_append _ _ _ _).symm
-  · have hl : (x ++ d).length % 16 = 0 := by simp only [List.length_append]; omega
+  · have hl : (x ++ d).length % 16 = 0 := by simp only [List.length_append]; omega_arith
     rw [hl, List.drop_of_length_le (by rw [whole_of_mod hl])]; rfl
 
 /-- The last bytes (less than a block) buffered, after a whole number of
@@ -151,10 +151,10 @@ theorem absorb_fill {m m' : Mem} {y b : Addr} {h : Block} {x d : List Byte} (hx 
     (hfit : x.length % 16 + d.length < 16) (hy : blockAt m' y = blockAt m y)
     (hb : bytesAt m' b (x.length % 16 + d.length) = bytesAt m b (x.length % 16) ++ d) :
     Absorbed m' y b h (x ++ d) := by
-  have hl : (x ++ d).length / 16 = x.length / 16 := by simp only [List.length_append]; omega
-  have hm : (x ++ d).length % 16 = x.length % 16 + d.length := by simp only [List.length_append]; omega
+  have hl : (x ++ d).length / 16 = x.length / 16 := by simp only [List.length_append]; omega_arith
+  have hm : (x ++ d).length % 16 = x.length % 16 + d.length := by simp only [List.length_append]; omega_arith
   have hw : whole (x ++ d).length = whole x.length := by simp only [whole, hl]
-  have hle : whole x.length ≤ x.length := by simp only [whole]; omega
+  have hle : whole x.length ≤ x.length := by simp only [whole]; omega_arith
   refine ⟨?_, ?_⟩
   · rw [hy, hx.1, hw, List.take_append_of_le_length hle]
   · rw [hm, hb, hx.2, hw, List.drop_append_of_le_length hle]
@@ -164,24 +164,24 @@ which is absorbed. -/
 theorem absorb_complete {m m' : Mem} {y b : Addr} {h : Block} {x d : List Byte} (hx : Absorbed m y b h x)
     (hfit : x.length % 16 + d.length = 16) {B : List Byte} (hB : B = x.drop (whole x.length) ++ d)
     (hy : blockAt m' y = ghashFrom h (blockAt m y) [ofBytes B]) : Absorbed m' y b h (x ++ d) := by
-  have hle : whole x.length ≤ x.length := by simp only [whole]; omega
-  have hl : (x ++ d).length % 16 = 0 := by simp only [List.length_append]; omega
+  have hle : whole x.length ≤ x.length := by simp only [whole]; omega_arith
+  have hl : (x ++ d).length % 16 = 0 := by simp only [List.length_append]; omega_arith
   have hw : whole (x ++ d).length = whole x.length + 16 := by
-    rw [whole_of_mod hl]; simp only [List.length_append, whole]; omega
-  have hBl : B.length = 16 := by rw [hB]; simp only [List.length_append, List.length_drop, whole]; omega
+    rw [whole_of_mod hl]; simp only [List.length_append, whole]; omega_arith
+  have hBl : B.length = 16 := by rw [hB]; simp only [List.length_append, List.length_drop, whole]; omega_arith
   refine ⟨?_, ?_⟩
   · have hsplit : (x ++ d).take (whole (x ++ d).length) =
         x.take (whole x.length) ++ (x.drop (whole x.length) ++ d) := by
-      rw [List.take_of_length_le (by rw [hw]; simp only [List.length_append, whole]; omega),
+      rw [List.take_of_length_le (by rw [hw]; simp only [List.length_append, whole]; omega_arith),
         ← List.append_assoc, List.take_append_drop]
     have hlen : (x.take (whole x.length)).length % 16 = 0 := by
-      rw [List.length_take, Nat.min_eq_left hle]; simp only [whole]; omega
+      rw [List.length_take, Nat.min_eq_left hle]; simp only [whole]; omega_arith
     rw [hy, hx.1, hsplit, blocks_append hlen, ← hB, blocks_single hBl]
     exact (ghashFrom_append _ _ _ _).symm
-  · rw [hl, List.drop_of_length_le (by rw [hw]; simp only [List.length_append, whole]; omega)]
+  · rw [hl, List.drop_of_length_le (by rw [hw]; simp only [List.length_append, whole]; omega_arith)]
     rfl
 
-theorem padLen_lt (n : Nat) : padLen n < 16 := by simp only [padLen]; omega
+theorem padLen_lt (n : Nat) : padLen n < 16 := by simp only [padLen]; omega_arith
 
 theorem length_zeros (n : Nat) : (zeros n).length = n := by simp [zeros]
 
@@ -191,11 +191,11 @@ theorem absorb_pad {m m' : Mem} {y b : Addr} {h : Block} {x : List Byte} (hx : A
     (hB : B = bytesAt m b (x.length % 16) ++ zeros (16 - x.length % 16))
     (hy : blockAt m' y = ghashFrom h (blockAt m y) [ofBytes B]) :
     Absorbed m' y b h (x ++ zeros (padLen x.length)) := by
-  have hp : padLen x.length = 16 - x.length % 16 := by simp only [padLen]; omega
-  refine absorb_complete hx (by rw [length_zeros, hp]; omega) ?_ hy
+  have hp : padLen x.length = 16 - x.length % 16 := by simp only [padLen]; omega_arith
+  refine absorb_complete hx (by rw [length_zeros, hp]; omega_arith) ?_ hy
   rw [hB, hx.2, hp]
 
 /-- With nothing buffered, there is no padding. -/
-theorem padLen_of_mod {n : Nat} (h : n % 16 = 0) : padLen n = 0 := by simp only [padLen]; omega
+theorem padLen_of_mod {n : Nat} (h : n % 16 = 0) : padLen n = 0 := by simp only [padLen]; omega_arith
 
 end VG.Proof.Gcm

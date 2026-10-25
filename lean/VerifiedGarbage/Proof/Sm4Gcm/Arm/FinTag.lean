@@ -67,8 +67,8 @@ theorem finTag_ok {na : Nat} (hna : 2 ≤ na) {s₀ s : State} {o : Nat} (ho : o
     (ha : a.length % 16 = k8.toNat % 16) (hP : (arg s₀ 1 ++ arg s₀ 0).toNat = ct.length) :
     WP isa (finTag o) s (FinOut c st w sp k7 k8 na s₀ o H a ct s.mem) := by
   have hlt := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
-  obtain ⟨i2, v2⟩ := hk.at hf hin 0 (by omega) (show 4 * 0 = 0 from rfl)
-  obtain ⟨i3, v3⟩ := hk.at hf hin 1 (by omega) (show 4 * 1 = 4 from rfl)
+  obtain ⟨i2, v2⟩ := hk.at hf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
+  obtain ⟨i3, v3⟩ := hk.at hf hin 1 (by omega_arith) (show 4 * 1 = 4 from rfl)
   obtain ⟨s₁, run₁, hz₁, hg₁, hK₁⟩ : ∃ s₁, runBlock isa tlenZero s = some s₁ ∧
       s₁.z = decide (ct.length = 0) ∧ (∀ r, r ≠ .r0 → r ≠ .r1 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
     refine ⟨_, by simp only [tlenZero]; arun [i2, v2, i3, v3], ?_, ?_, ?_⟩
@@ -92,11 +92,11 @@ theorem finTag_ok {na : Nat} (hna : 2 ≤ na) {s₀ s : State} {o : Nat} (ho : o
       · intro r hr; simp [gpr_setReg, hr]
       · exact ⟨rfl, rfl, rfl, rfl⟩
     · have hc : ct ≠ [] := fun e => by subst e; simp at hf₁
-      obtain ⟨i2', v2'⟩ := hk₁.at hf hin 0 (by omega) (show 4 * 0 = 0 from rfl)
+      obtain ⟨i2', v2'⟩ := hk₁.at hf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
       refine WP.of_runBlock ⟨_, by arun [i2', v2'], ?_, ?_, ?_⟩
       · simp only [gpr_setReg, ite_true, v2', Proof.Gcm.ghashInput_of_ne hc, List.length_append,
           Proof.Gcm.length_zeros, lowTo_mod16 hP]
-        have := Proof.Gcm.length_pad_mod a.length; omega
+        have := Proof.Gcm.length_pad_mod a.length; omega_arith
       · intro r hr; simp [gpr_setReg, hr]
       · exact ⟨rfl, rfl, rfl, rfl⟩
   refine WP.seq (WP.mono mid fun s₂ ⟨h6₂, hg₂, hK₂⟩ => ?_)
@@ -123,8 +123,8 @@ theorem finTag_ok {na : Nat} (hna : 2 ≤ na) {s₀ s : State} {o : Nat} (ho : o
   -- the lengths
   have w0 := hfl.env.r8
   have w1 := hfl.env.r7
-  obtain ⟨j2, w2⟩ := hk₄.at hf hin 0 (by omega) (show 4 * 0 = 0 from rfl)
-  obtain ⟨j3, w3⟩ := hk₄.at hf hin 1 (by omega) (show 4 * 1 = 4 from rfl)
+  obtain ⟨j2, w2⟩ := hk₄.at hf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
+  obtain ⟨j3, w3⟩ := hk₄.at hf hin 1 (by omega_arith) (show 4 * 1 = 4 from rfl)
   obtain ⟨s₅, run₅, h4₅, h5₅, h6₅, h7₅, hg₅, hK₅⟩ : ∃ s₅, runBlock isa [.mov .r4 (.reg .r8), .mov .r5 (.reg .r7),
       .ldrSp .r6 0, .ldrSp .r7 4] s₄ = some s₅ ∧ s₅.gpr .r4 = k8 ∧ s₅.gpr .r5 = k7 ∧ s₅.gpr .r6 = arg s₀ 0 ∧
       s₅.gpr .r7 = arg s₀ 1 ∧ (∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → s₅.gpr r = s₄.gpr r) ∧ Keeps s₄ s₅ := by

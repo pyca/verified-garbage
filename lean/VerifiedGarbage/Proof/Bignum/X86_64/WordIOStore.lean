@@ -39,17 +39,17 @@ theorem store_step {s t : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
     intro b hb
     apply h.frame
     intro z hz he
-    have hsep' := hsep (k-1-z) (by omega)
-    rw [← he,ofs_off B (by omega)] at hsep'
-    omega
+    have hsep' := hsep (k-1-z) (by omega_arith)
+    rw [← he,ofs_off B (by omega_arith)] at hsep'
+    omega_arith
   have hread : InRegions (t.rd ++ t.wr) (off B (ed+8*j)) 8 := by
-    rw [h.rd,h.wr]; exact hs.ld (by omega)
+    rw [h.rd,h.wr]; exact hs.ld (by omega_arith)
   have hwrite : InRegions t.wr (out+BitVec.ofNat 64 (k-8*(j+1))) 8 := by
-    rw [h.wr]; exact VG.CallLay.inRegions_sub hout (by omega) (by omega)
+    rw [h.wr]; exact VG.CallLay.inRegions_sub hout (by omega_arith) (by omega_arith)
   have hptr : out+BitVec.ofNat 64 (k-8*j)-8 = out+BitVec.ofNat 64 (k-8*(j+1)) := by
     rw [BitVec.sub_eq_iff_eq_add,BitVec.add_assoc,
       show (8:BitVec 64)=BitVec.ofNat 64 8 from rfl,BitVec.ofNat_add_ofNat]
-    congr 2; omega
+    congr 2; omega_arith
   have hadd : BitVec.ofNat 64 (8*j)+8 = BitVec.ofNat 64 (8*(j+1)) := by
     rw [show (8:BitVec 64)=BitVec.ofNat 64 8 from rfl,BitVec.ofNat_add_ofNat]; congr 1
   have haddr : off B ed+BitVec.ofNat 64 (8*j)=off B (ed+8*j) := by
@@ -60,10 +60,10 @@ theorem store_step {s t : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
     constructor
     · intro he
       have := congrArg BitVec.toNat he
-      simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 8*(j+1)<2^64 by omega),
-        Nat.mod_eq_of_lt (show k<2^64 by omega)] at this
-      omega
-    · intro he; congr 1; omega
+      simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 8*(j+1)<2^64 by omega_arith),
+        Nat.mod_eq_of_lt (show k<2^64 by omega_arith)] at this
+      omega_arith
+    · intro he; congr 1; omega_arith
   refine WP.mono (WP.keep [.rax,.rdx,.r14] (Q := fun u =>
     u.mem=t.mem.writeW (out+BitVec.ofNat 64 (k-8*(j+1))) (bswap64 (BitVec.ofNat 64 (Y/256^(8*j)))) ∧
     u.gpr .rdx=BitVec.ofNat 64 (8*(j+1)) ∧ u.gpr .r14=out+BitVec.ofNat 64 (k-8*(j+1)) ∧
@@ -73,24 +73,24 @@ theorem store_step {s t : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
       hwd,masked_digit _ _ _ _ hj c,hptr,hwrite,hadd,sub_beq_zero,hz]
     rfl
   · refine ⟨hzf,ku.2.2.trans h.wr,ku.2.1.trans h.rd,(h.keep.trans ku).mono (by decide),hdx,h14,
-      (fun hbad => by omega),?_,?_⟩
+      (fun hbad => by omega_arith),?_,?_⟩
     · intro z hzz
       rw [hm]
       have hd : ((out+BitVec.ofNat 64 (k-1-z))-(out+BitVec.ofNat 64 (k-8*(j+1)))).toNat =
-          k-1-z-(k-8*(j+1)) := VG.Offset.sub_toNat out (by omega) (by omega)
+          k-1-z-(k-8*(j+1)) := VG.Offset.sub_toNat out (by omega_arith) (by omega_arith)
       change (if ((out+BitVec.ofNat 64 (k-1-z))-(out+BitVec.ofNat 64 (k-8*(j+1)))).toNat<8 then
         (bswap64 (BitVec.ofNat 64 (Y/256^(8*j)))).extractLsb'
           (8*((out+BitVec.ofNat 64 (k-1-z))-(out+BitVec.ofNat 64 (k-8*(j+1)))).toNat) 8
         else t.mem (out+BitVec.ofNat 64 (k-1-z))) = _
       rw [hd]
       by_cases hzold : z<8*j
-      · rw [ite_eq_right (by omega)]; exact h.bytes z hzold
-      · rw [ite_eq_left (by omega),bswap_byte _ (by omega),extract_nat _ (by omega),Nat.div_div_eq_div_mul,
+      · rw [ite_eq_right (by omega_arith)]; exact h.bytes z hzold
+      · rw [ite_eq_left (by omega_arith),bswap_byte _ (by omega_arith),extract_nat _ (by omega_arith),Nat.div_div_eq_div_mul,
           ← Nat.pow_add]
-        congr 3; omega
+        congr 3; omega_arith
     · intro x hx
       rw [hm]
-      apply Eq.trans (Mem.write_apply ?_) (h.frame x (fun z hz => hx z (by omega)))
+      apply Eq.trans (Mem.write_apply ?_) (h.frame x (fun z hz => hx z (by omega_arith)))
       intro hin
       let b := (x-(out+BitVec.ofNat 64 (k-8*(j+1)))).toNat
       have hb : b<8 := hin
@@ -99,9 +99,9 @@ theorem store_step {s t : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
         change x = (out+BitVec.ofNat 64 (k-8*(j+1)))+BitVec.ofNat 64 b
         simp only [b,BitVec.ofNat_toNat,BitVec.setWidth_eq]
         rw [BitVec.add_comm (out+BitVec.ofNat 64 (k-8*(j+1))) _,BitVec.sub_add_cancel]
-      apply hx (8*(j+1)-1-b) (by omega)
+      apply hx (8*(j+1)-1-b) (by omega_arith)
       rw [he]
-      congr 2; omega
+      congr 2; omega_arith
 
 theorem storeWords_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
     (hs : Scr s B Z) (hbx : s.gpr .rbx = off B ed) (hsi : s.gpr .rsi = out)
@@ -116,7 +116,7 @@ theorem storeWords_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
   unfold storeWords
   refine WP.seq (WP.mono (WP.keep [.r14,.rdx] (Q := fun t => t.gpr .r14=out+BitVec.ofNat 64 k ∧
     t.gpr .rdx=0 ∧ t.mem=s.mem) (by xrun [hsi,hcx]) rfl) fun a ⟨⟨h14,hdx,hm⟩,ka⟩ => ?_)
-  refine wp_upto (a := 0) (N := w) (by omega)
+  refine wp_upto (a := 0) (N := w) (by omega_arith)
     (fun j t => SInv s out k (if c then wv s.mem B ed w else 0) (8*j) t) ?_ ?_ ?_
   · intro j _ hj t h
     exact store_step hs hbx hcx h15 hk hk' hed hout hsep hj h
@@ -126,12 +126,12 @@ theorem storeWords_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
       intro i hi _
       have hik : i<k := by simpa using hi
       simp only [List.getElem_map,List.getElem_range,Spec.Rsa.i2osp]
-      have hb := h.bytes (k-1-i) (by omega)
-      rwa [show k-1-(k-1-i)=i by omega] at hb
+      have hb := h.bytes (k-1-i) (by omega_arith)
+      rwa [show k-1-(k-1-i)=i by omega_arith] at hb
     · intro x hx
-      exact h.frame x (fun i hi => hx _ (by omega))
+      exact h.frame x (fun i hi => hx _ (by omega_arith))
   · exact ⟨ka.2.2,ka.2.1,ka.mono (by decide),hdx,by simpa using h14,
-      (fun hbad => by omega),(fun i hi => by omega),fun x _ => by rw [hm]⟩
+      (fun hbad => by omega_arith),(fun i hi => by omega_arith),fun x _ => by rw [hm]⟩
 
 theorem store_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
     (hs : Scr s B Z) (hbx : s.gpr .rbx = off B ed) (hsi : s.gpr .rsi = out)
@@ -147,14 +147,14 @@ theorem store_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
   refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun a => a.zf=some (decide (k%8=0)) ∧ a.mem=s.mem)
     (by
       xrun [lengthTest,hcx,sx7,sx0]
-      simp only [sub_beq_zero,and7_eq k (by omega)]) rfl) fun a ⟨⟨hz,hm⟩,ka⟩ => ?_)
+      simp only [sub_beq_zero,and7_eq k (by omega_arith)]) rfl) fun a ⟨⟨hz,hm⟩,ka⟩ => ?_)
   have hr : InRegions a.wr out k := by rw [ka.2.2]; exact hout
   refine WP.ite (decide (k%8=0)) (by simp [eval,hz]) ?_ ?_
   · intro h8
     have h8 := of_decide_eq_true h8
     refine WP.mono (storeWords_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hbx)
       ((ka.gpr (by decide)).trans hsi) ((ka.gpr (by decide)).trans hcx)
-      ((ka.gpr (by decide)).trans h15) (by omega) (by omega) hk' hed hr hsep)
+      ((ka.gpr (by decide)).trans h15) (by omega_arith) (by omega_arith) hk' hed hr hsep)
       fun t ⟨hv,ho,hw',hr',kt⟩ => ⟨by simpa only [hm] using hv,
         fun x hx => (ho x hx).trans (congrFun hm x),hw'.trans ka.2.2,hr'.trans ka.2.1,
         (ka.trans kt).mono (by decide)⟩
@@ -162,7 +162,7 @@ theorem store_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
     refine WP.mono (storeBE_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hbx)
       ((ka.gpr (by decide)).trans hsi) ((ka.gpr (by decide)).trans hcx)
       ((ka.gpr (by decide)).trans h15) hk1 hk' hw hed
-      (fun i hi => VG.CallLay.inRegions_sub hr (by omega) (by omega)) hsep)
+      (fun i hi => VG.CallLay.inRegions_sub hr (by omega_arith) (by omega_arith)) hsep)
       fun t ⟨hv,ho,hw',hr',kt⟩ => ⟨by simpa only [hm] using hv,
         fun x hx => (ho x hx).trans (congrFun hm x),hw'.trans ka.2.2,hr'.trans ka.2.1,
         (ka.trans kt).mono (by decide)⟩

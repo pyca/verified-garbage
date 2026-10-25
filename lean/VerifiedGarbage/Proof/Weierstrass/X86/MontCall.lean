@@ -56,7 +56,7 @@ theorem zone_ofs (hs : Scr s base 8192) {x : Addr} (hx : (below (s.gpr .esp) 20)
   simp only [ofs]
   have e : ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
     rw [BitVec.toNat_setWidth, sub_toNat h20]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
   generalize ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64) = z at hx e
   bv_omega
 
@@ -67,8 +67,8 @@ theorem frame_val32 (hs : Scr s base 8192) {m m' : Mem} (hF : Frame [below (s.gp
   refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => hF _ fun r hr hc => ?_)
   rw [List.mem_singleton.mp hr] at hc
   have := zone_ofs hs hc
-  rw [ofs_off base (by omega)] at this
-  omega
+  rw [ofs_off base (by omega_arith)] at this
+  omega_arith
 
 /-- A call of `body`, which from the working space at `edi` and the offsets
 `o`, `a` and `b` as its arguments changes only `[o]` and its own working
@@ -102,18 +102,18 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
   have ecx₃ : s₃.gpr .ecx = BitVec.ofNat 32 a := by rw [u₃.other _ (by decide), u₂.gpr]
   have edx₃ : s₃.gpr .edx = BitVec.ofNat 32 o := u₃.gpr
   have hfit : 4 * [Reg.eax, .ecx, .edx, .edi].length + 4 ≤ (s₃.gpr .esp).toNat := by
-    rw [esp₃]; simp only [List.length_cons, List.length_nil]; omega
+    rw [esp₃]; simp only [List.length_cons, List.length_nil]; omega_arith
   -- The callee's view.
   let t := ((pushed [Reg.eax, .ecx, .edx, .edi] s₃).callEntry).withRegions
     [below (s₃.gpr .esp) 16] [⟨base, 8192⟩]
-  have targ : ∀ i (hi : i < 4), arg t i = s₃.gpr ([Reg.eax, .ecx, .edx, .edi][3 - i]'(by simp; omega)) :=
+  have targ : ∀ i (hi : i < 4), arg t i = s₃.gpr ([Reg.eax, .ecx, .edx, .edi][3 - i]'(by simp; omega_arith)) :=
     fun i hi => callEntry_arg hfit (by decide) (by simpa using hi)
   have a0 : arg t 0 = s.gpr .edi := by rw [targ 0 (by decide)]; exact edi₃
   have hlt : ∀ x, x < 4096 → (BitVec.ofNat 32 x).toNat = x := fun x hx => by
-    rw [BitVec.toNat_ofNat]; omega
-  have a1 : (arg t 1).toNat = o := by rw [targ 1 (by decide)]; show (s₃.gpr .edx).toNat = o; rw [edx₃, hlt o (by omega)]
-  have a2 : (arg t 2).toNat = a := by rw [targ 2 (by decide)]; show (s₃.gpr .ecx).toNat = a; rw [ecx₃, hlt a (by omega)]
-  have a3 : (arg t 3).toNat = b := by rw [targ 3 (by decide)]; show (s₃.gpr .eax).toNat = b; rw [eax₃, hlt b (by omega)]
+    rw [BitVec.toNat_ofNat]; omega_arith
+  have a1 : (arg t 1).toNat = o := by rw [targ 1 (by decide)]; show (s₃.gpr .edx).toNat = o; rw [edx₃, hlt o (by omega_arith)]
+  have a2 : (arg t 2).toNat = a := by rw [targ 2 (by decide)]; show (s₃.gpr .ecx).toNat = a; rw [ecx₃, hlt a (by omega_arith)]
+  have a3 : (arg t 3).toNat = b := by rw [targ 3 (by decide)]; show (s₃.gpr .eax).toNat = b; rw [eax₃, hlt b (by omega_arith)]
   have hws : wsOf t = base := by show (arg t 0).setWidth 64 = base; rw [a0]; exact hs.edi
   have hwsN : (arg t 0).toNat = base.toNat := by rw [a0]; exact hs.edi_toNat
   have espT : (t.gpr .esp).toNat = (s.gpr .esp).toNat - 20 := by
@@ -121,10 +121,10 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
     rw [callEntry_espNat hfit, esp₃]; rfl
   have argA : argAddr t 0 = (s₃.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := callEntry_argAddr0 _ _
   have argN : (argAddr t 0).toNat = (s.gpr .esp).toNat - 16 := by
-    rw [argA, esp₃, BitVec.toNat_setWidth, sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [argA, esp₃, BitVec.toNat_setWidth, sub_toNat (by omega_arith)]
+    exact Nat.mod_eq_of_lt (by omega_arith)
   have retN : ((t.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
-    rw [BitVec.toNat_setWidth, espT]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, espT]; exact Nat.mod_eq_of_lt (by omega_arith)
   have fr : Frame [below (s.gpr .esp) 20] s.mem t.mem := by
     have := callEntry_frame hfit (rs := [Reg.eax, .ecx, .edx, .edi]) (by decide)
     rw [m₃, esp₃] at this
@@ -132,11 +132,11 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
   have hpre : Pre k t := by
     have hwsT : (wsOf t).toNat = base.toNat := by rw [hws]
     refine ⟨by show [below (s₃.gpr .esp) 16] = [(⟨argAddr t 0, 16⟩ : Region)]; rw [argA],
-      by show [(⟨base, 8192⟩ : Region)] = _; rw [hws], by rw [hwsN]; exact hn, by rw [espT]; omega,
-      Region.disjoint_of_le (by simp only; rw [argN, hwsT]; omega) (by simp only; rw [argN]; omega)
-        (by simp only; rw [hwsT]; omega),
-      Region.disjoint_of_le (by simp only; rw [retN, hwsT]; omega) (by simp only; rw [retN]; omega)
-        (by simp only; rw [hwsT]; omega),
+      by show [(⟨base, 8192⟩ : Region)] = _; rw [hws], by rw [hwsN]; exact hn, by rw [espT]; omega_arith,
+      Region.disjoint_of_le (by simp only; rw [argN, hwsT]; omega_arith) (by simp only; rw [argN]; omega_arith)
+        (by simp only; rw [hwsT]; omega_arith),
+      Region.disjoint_of_le (by simp only; rw [retN, hwsT]; omega_arith) (by simp only; rw [retN]; omega_arith)
+        (by simp only; rw [hwsT]; omega_arith),
       hk0, hk9, by rw [a1]; exact ho, by rw [a2]; exact ha, by rw [a3]; exact hb⟩
   let K : Contract isa :=
     { pre := fun u => Pre k u ∧ wsOf u = base ∧ (arg u 1).toNat = o ∧ (arg u 2).toNat = a ∧
@@ -164,7 +164,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
       have h2 := hx outW (by simp)
       have h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
-      omega
+      omega_arith
     · rw [← m₂, O₂ x fun r hr => ?_]
       · exact fr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hzx
       simp only [outs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -198,12 +198,12 @@ theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
         val32 m base a (2 * S.k) * val32 m base b (2 * S.k) % S.m)
     fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V₁, V₂⟩ => ?_
   · refine WP.mono (mulFn_ok hF.mul hp (by
-      rw [hws, h3, frame_val32 hs hfr (by omega), ← wordsVal_eq_val32]; exact hB))
+      rw [hws, h3, frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))
       fun t' ⟨A, O, L, C⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1] at L
     rw [hws, h1, h2, h3] at C
     exact ⟨L, C⟩
-  · rw [frame_val32 hs hm (by omega), frame_val32 hs hm (by omega)] at V₂
+  · rw [frame_val32 hs hm (by omega_arith), frame_val32 hs hm (by omega_arith)] at V₂
     refine ⟨K, ?_, ?_⟩
     · rw [wordsVal_eq_val32]; exact V₁
     · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V₂
@@ -219,12 +219,12 @@ theorem addCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
     (V := fun m m' => val32 m' base o (2 * S.k) = (val32 m base a (2 * S.k) + val32 m base b (2 * S.k)) % S.m)
     fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
   · refine WP.mono (addFn_ok hF.mul hp (by
-      rw [hws, h2, h3, frame_val32 hs hfr (by omega), frame_val32 hs hfr (by omega), ← wordsVal_eq_val32,
+      rw [hws, h2, h3, frame_val32 hs hfr (by omega_arith), frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32,
         ← wordsVal_eq_val32]; exact hAB))
       fun t' ⟨A, O, L⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1, h2, h3] at L
     exact L
-  · rw [frame_val32 hs hm (by omega), frame_val32 hs hm (by omega)] at V
+  · rw [frame_val32 hs hm (by omega_arith), frame_val32 hs hm (by omega_arith)] at V
     refine ⟨K, ?_⟩
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V
 
@@ -240,12 +240,12 @@ theorem subCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
       (val32 m base a (2 * S.k) + S.m - val32 m base b (2 * S.k)) % S.m)
     fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
   · refine WP.mono (subFn_ok hF.mul hp
-      (by rw [hws, h2, frame_val32 hs hfr (by omega), ← wordsVal_eq_val32]; exact hA)
-      (by rw [hws, h3, frame_val32 hs hfr (by omega), ← wordsVal_eq_val32]; exact hB))
+      (by rw [hws, h2, frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hA)
+      (by rw [hws, h3, frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))
       fun t' ⟨A, O, L⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1, h2, h3] at L
     exact L
-  · rw [frame_val32 hs hm (by omega), frame_val32 hs hm (by omega)] at V
+  · rw [frame_val32 hs hm (by omega_arith), frame_val32 hs hm (by omega_arith)] at V
     refine ⟨K, ?_⟩
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V
 

@@ -57,7 +57,7 @@ theorem sub1and511 (x : BitVec 64) (h : 1 ≤ x.toNat) :
   have hx := x.isLt
   have hs : (x - BitVec.ofNat 64 1).toNat = x.toNat - 1 := by
     rw [BitVec.toNat_sub, show (BitVec.ofNat 64 1).toNat = 1 from rfl,
-      show 2 ^ 64 - 1 + x.toNat = (x.toNat - 1) + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+      show 2 ^ 64 - 1 + x.toNat = (x.toNat - 1) + 2 ^ 64 by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
   rw [BitVec.toNat_and, hs, show (BitVec.ofNat 64 511).toNat = 2 ^ 9 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
 
 /-- Past `fold` bytes, those with 65 to 192 bytes after the whole chunks,
@@ -90,7 +90,7 @@ theorem sub64_lt128 (x : BitVec 64) :
     (x - BitVec.ofNat 64 64).toNat < 128 ↔ 64 ≤ x.toNat ∧ x.toNat < 192 := by
   have hx := x.isLt
   rw [BitVec.toNat_sub, show (BitVec.ofNat 64 64).toNat = 64 from rfl]
-  omega
+  omega_arith
 
 /-- `prologueX`'s second test (`fTest`): `CF` set if `rax` is from 64 to 191. -/
 theorem fTest_ok (s : State) :
@@ -127,16 +127,16 @@ theorem xTestV_ok (s : State) :
     .alu .cmp .r13 (.imm (BitVec.ofNat 32 513)), .cmov .b .rax (.reg .r10), .alu .cmp .rax (.imm (BitVec.ofNat 32 192))]
     from rfl]
   by_cases h : (s.gpr .r13).toNat < 513
-  · have hc : ¬ XLen (s.gpr .r13).toNat := fun ⟨h1, _⟩ => by omega
+  · have hc : ¬ XLen (s.gpr .r13).toNat := fun ⟨h1, _⟩ => by omega_arith
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x1, x511, x513, x192,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, h, hc,
       readSrc32, State.setReg32, decide_true, decide_false, Option.some.injEq, exists_eq_left', ↓reduceIte,
       reduceCtorEq, e192, e513]
-    exact ⟨by decide, fun h' => absurd h' (by omega), fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl,
+    exact ⟨by decide, fun h' => absurd h' (by omega_arith), fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl,
       rfl⟩
-  · have hm := sub1and511 (s.gpr .r13) (by omega)
+  · have hm := sub1and511 (s.gpr .r13) (by omega_arith)
     have hc : XLen (s.gpr .r13).toNat ↔ ((s.gpr .r13).toNat - 1) % 512 < 192 :=
-      ⟨fun h => h.2, fun h' => ⟨by omega, h'⟩⟩
+      ⟨fun h => h.2, fun h' => ⟨by omega_arith, h'⟩⟩
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x1, x511, x513, x192,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, h, hc,
       readSrc32, State.setReg32, decide_false, Bool.false_eq_true, Option.some.injEq, exists_eq_left',
@@ -174,9 +174,9 @@ theorem xCtr_eq (x : BitVec 64) : xCtr x = BitVec.ofNat 32 (1 + 8 * (x.toNat / 5
   simp only [xCtr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight,
     BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   rw [show (2 : Nat) ^ 9 = 512 from rfl, show (2 : Nat) ^ 3 = 8 from rfl, show (1 : BitVec 64).toNat = 1 from rfl,
-    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 + 1 < 2 ^ 64 by omega)]
-  omega
+    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 + 1 < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 /-- Read back a stored quadword. -/
 local macro "zread" : tactic => `(tactic|
@@ -191,12 +191,12 @@ theorem incsC_mem (m : Mem) (buf : Addr) (v : BitVec 32) :
     rw [ite_eq_left rfl, show 4 * (56 + 4) = 240 from rfl, Mem.readW_writeW_self32, BitVec.ofNat_toNat,
       BitVec.setWidth_eq]
   · rw [ite_eq_right h4, Mem.readW_writeW_sep (Offset.sep buf (d := 4 * (56 + p)) (n := 4) (e := 240) (k := 4)
-      (by omega) (by lit_omega) (by lit_omega)) (by decide)]
+      (by omega_arith) (by lit_omega) (by lit_omega)) (by decide)]
     have E := VG.X86_64.readW_extract (storeAll buf tzPairs m)
-      (buf + BitVec.ofNat 64 (8 * ((56 + p) / 2))) (w := 64) (k := 4 * ((56 + p) % 2)) (n := 4) (by omega)
-    rw [VG.Proof.ChaCha20.X86_64.Avx2.add_ofNat, show 8 * ((56 + p) / 2) + 4 * ((56 + p) % 2) = 4 * (56 + p) by omega] at E
+      (buf + BitVec.ofNat 64 (8 * ((56 + p) / 2))) (w := 64) (k := 4 * ((56 + p) % 2)) (n := 4) (by omega_arith)
+    rw [VG.Proof.ChaCha20.X86_64.Avx2.add_ofNat, show 8 * ((56 + p) / 2) + 4 * ((56 + p) % 2) = 4 * (56 + p) by omega_arith] at E
     rw [← E]
-    rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3 ∨ p = 5 ∨ p = 6 ∨ p = 7) with
+    rcases (by omega_arith : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3 ∨ p = 5 ∨ p = 6 ∨ p = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       (simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd]; zread; decide)
 
@@ -210,7 +210,7 @@ theorem storeAll_frameLo {buf : Addr} {d : Nat} (hd : d ≤ 320) (ps : List (Nat
   | cons p ps ih =>
     rw [storeAll, List.foldl_cons, ← storeAll]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base buf (hps p (List.mem_cons_self ..)) (by have := hps p (List.mem_cons_self ..); omega))).trans
+      (Offset.contains_base buf (hps p (List.mem_cons_self ..)) (by have := hps p (List.mem_cons_self ..); omega_arith))).trans
       (ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) _)
 
 theorem constPairs_lo : ∀ p ∈ constPairs, p.1 + 8 ≤ 224 := by decide
@@ -343,11 +343,11 @@ theorem xCtrQ_eq (x : BitVec 64) {k : Nat} (hk : k < 3) :
   simp only [xCtrQ, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight,
     BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   rw [show (2 : Nat) ^ 9 = 512 from rfl, show (2 : Nat) ^ 3 = 8 from rfl, show (1 : BitVec 64).toNat = 1 from rfl,
-    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 + 1 < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 + 1 + k < 2 ^ 64 by omega)]
-  omega
+    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 + 1 < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show x.toNat / 512 * 8 + 1 + k < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 /-- The counters of the blocks of the last bytes, stored as doublewords. -/
 theorem cStore4_ok {buf : Addr} {s : State} (hrcx : s.gpr .rcx = buf) (hb : bufR buf ∈ s.wr) :
@@ -414,10 +414,10 @@ local macro "zread4" : tactic => `(tactic|
 theorem tz4_zero (m : Mem) (buf : Addr) {d : Nat} (h₁ : 224 ≤ d) (h₂ : d < 288) (h₄ : d % 4 = 0) :
     (storeAll buf tz4Pairs m).readW (buf + BitVec.ofNat 64 d) 32 = 0 := by
   have E := VG.X86_64.readW_extract (storeAll buf tz4Pairs m) (buf + BitVec.ofNat 64 (8 * (d / 8)))
-    (w := 64) (k := d % 8) (n := 4) (by omega)
-  rw [VG.Proof.ChaCha20.X86_64.Avx2.add_ofNat, show 8 * (d / 8) + d % 8 = d by omega] at E
+    (w := 64) (k := d % 8) (n := 4) (by omega_arith)
+  rw [VG.Proof.ChaCha20.X86_64.Avx2.add_ofNat, show 8 * (d / 8) + d % 8 = d by omega_arith] at E
   rw [← E]
-  rcases (by omega : d = 224 ∨ d = 228 ∨ d = 232 ∨ d = 236 ∨ d = 240 ∨ d = 244 ∨ d = 248 ∨ d = 252 ∨
+  rcases (by omega_arith : d = 224 ∨ d = 228 ∨ d = 232 ∨ d = 236 ∨ d = 240 ∨ d = 244 ∨ d = 248 ∨ d = 252 ∨
     d = 256 ∨ d = 260 ∨ d = 264 ∨ d = 268 ∨ d = 272 ∨ d = 276 ∨ d = 280 ∨ d = 284) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     (simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul]; zread4; decide)
@@ -438,9 +438,9 @@ theorem incsC4_pre (m : Mem) (buf : Addr) (x : BitVec 64) :
       Mem.Sep (buf + BitVec.ofNat 64 d) 4 (buf + BitVec.ofNat 64 e) 4 :=
     fun h a b => Offset.sep buf h (by lit_omega) (by lit_omega)
   intro k hk p hp
-  rw [show 4 * (56 + 8 * k + p) = 224 + 4 * (8 * k + p) by omega]
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;>
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3 ∨ p = 4 ∨ p = 5 ∨ p = 6 ∨ p = 7) with
+  rw [show 4 * (56 + 8 * k + p) = 224 + 4 * (8 * k + p) by omega_arith]
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;>
+  rcases (by omega_arith : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3 ∨ p = 4 ∨ p = 5 ∨ p = 6 ∨ p = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceMod, Nat.reduceDiv, ite_true, ite_false,
     VG.Proof.ChaCha20.X86_64.Avx2Tail.cOf4, reduceCtorEq, Nat.add_zero]
@@ -518,12 +518,12 @@ def TailKs (s₀ : State) (m : Mem) : Prop :=
     m (off (cx s₀) (736 + k)) = (keystream (initState (K s₀) 1 (N s₀)) (L s₀)).getD (512 * (L s₀ / 512) + k) 0
 
 theorem TailKs.of_xlen {s₀ : State} {m : Mem} (h : ¬ XLen (L s₀)) : TailKs s₀ m :=
-  fun h₁ h₂ h₃ => absurd ⟨by omega, by omega⟩ h
+  fun h₁ h₂ h₃ => absurd ⟨by omega_arith, by omega_arith⟩ h
 
 theorem TailKs.frame {s₀ : State} {m m' : Mem} {rs : List Region} (h : TailKs s₀ m) (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (sub s₀ 736 192).Disjoint r) : TailKs s₀ m' := fun h₁ h₂ h₃ k hk => by
   rw [← h h₁ h₂ h₃ k hk]
-  exact hf _ fun r hr hc => hd r hr _ (contains_sub s₀ (k := 736) (n := 192) (by omega) (by omega) (by lit_omega)) hc
+  exact hf _ fun r hr hc => hd r hr _ (contains_sub s₀ (k := 736) (n := 192) (by omega_arith) (by omega_arith) (by lit_omega)) hc
 
 theorem ctr_toNat (S : CState) {v : BitVec 32} {n : Nat} (h : v = BitVec.ofNat 32 n) : ctr S v.toNat = ctr S n := by
   simp only [ctr, BitVec.ofNat_toNat, BitVec.setWidth_eq, h]
@@ -538,7 +538,7 @@ theorem XPass.ok {pass : Nat} (h : XPass pass) : PassOk 448 pass := .inl h
 /-- Past `fold` bytes, the call would have computed only the one-time key's
 block. -/
 theorem mOf_gt {pass L : Nat} (h : XPass pass) (hl : 449 ≤ L) : mOf 448 pass L = 0 := by
-  subst h; simp only [mOf, splitOf]; rw [ite_eq_right (by omega)]; simp
+  subst h; simp only [mOf, splitOf]; rw [ite_eq_right (by omega_arith)]; simp
 
 /-- With `twoKs` or `fourKs`, the call would have computed only the one-time
 key's block. -/
@@ -566,8 +566,8 @@ theorem twoKsB_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     intro r hr
     simp only [w, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨608, by rw [eS], by show 608 + 64 ≤ 1696; omega⟩
-    · exact ⟨672, by rw [eB], by show 672 + 320 ≤ 1696; omega⟩)
+    · exact ⟨608, by rw [eS], by show 608 + 64 ≤ 1696; omega_arith⟩
+    · exact ⟨672, by rw [eB], by show 672 + 320 ≤ 1696; omega_arith⟩)
   have hn : (twoKsB v.callee.vl).noCalls = true := by cases v.callee.vl <;> decide +kernel
   refine regionModel.wp_narrow (r := []) (w := w)
     (twoKsBN_ok v.callee.vl (s := s.withRegions [] w) (c := cx s₀) h.r15 (by rw [State.withRegions_gpr, h.rdi, eS]) rfl)
@@ -587,8 +587,8 @@ theorem twoKsB_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     intro k n h₁ h₂ r hr
     simp only [w, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · rw [eS]; exact sub_disj s₀ (b := 608) (m := 64) (by omega) (by omega) (by lit_omega)
-    · rw [eB]; exact sub_disj s₀ (b := 672) (m := 320) (by omega) (by omega) (by lit_omega)
+    · rw [eS]; exact sub_disj s₀ (b := 608) (m := 64) (by omega_arith) (by omega_arith) (by lit_omega)
+    · rw [eB]; exact sub_disj s₀ (b := 672) (m := 320) (by omega_arith) (by omega_arith) (by lit_omega)
   have S₀ : stateAt (s.withRegions [] w).mem (stA (cx s₀ + BitVec.ofNat 64 544)) = initState (K s₀) 0 (N s₀) := by
     rw [State.withRegions_mem, eS, h.st']
   have r13 : (s.withRegions [] w).gpr .r13 = s₀.gpr .r9 := by rw [State.withRegions_gpr, h.r13]
@@ -599,19 +599,19 @@ theorem twoKsB_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rbx],
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rbp],
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rsp],
-    by rw [rd'', h.rd], by rw [wr'', h.wr], h.saved.frame f'' (dw (by omega) (by lit_omega)),
+    by rw [rd'', h.rd], by rw [wr'', h.wr], h.saved.frame f'' (dw (by omega_arith) (by lit_omega)),
     h.fine.trans (f''.sub fun r hr => ?_),
-    by rw [stateAt_frame f'' (dw (k := 64) (n := 64) (by omega) (by lit_omega)), h.st], fun k hk => ?_,
+    by rw [stateAt_frame f'' (dw (k := 64) (n := 64) (by omega_arith) (by lit_omega)), h.st], fun k hk => ?_,
     fun hps => absurd (hpass.symm.trans hps) (by decide)⟩,
     fun h₁ h₂ h₃ k hk => ?_⟩
   · simp only [w, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨workR s₀, by simp, by rw [eS]; exact sub_sub s₀ (by omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨workR s₀, by simp, by rw [eB]; exact sub_sub s₀ (by omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, by simp, by rw [eS]; exact sub_sub s₀ (by omega_arith) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, by simp, by rw [eB]; exact sub_sub s₀ (by omega_arith) (by lit_omega) (by lit_omega)⟩
   · rw [hm0] at hk ⊢
-    have := ks' k (by omega)
-    rw [S₀, show k / 64 = 0 by omega, show k % 64 = k by omega] at this
-    rw [← eA, this, VG.Proof.ChaCha20.keystream_getD _ hk, show k / 64 = 0 by omega, show k % 64 = k by omega]
+    have := ks' k (by omega_arith)
+    rw [S₀, show k / 64 = 0 by omega_arith, show k % 64 = k by omega_arith] at this
+    rw [← eA, this, VG.Proof.ChaCha20.keystream_getD _ hk, show k / 64 = 0 by omega_arith, show k % 64 = k by omega_arith]
     simp only [cOf, ite_true, VG.Proof.ChaCha20.ctr_zero]
   · have h1 : XLen1 (L s₀) := by
       rcases Nat.lt_or_ge ((L s₀ - 1) % 512) 64 with h' | h'
@@ -620,8 +620,8 @@ theorem twoKsB_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     have := ks' (64 + k) (by omega_using [hk, h1, h₂])
     rw [S₀, show (64 + k) / 64 = 1 by omega_using [hk, h1, h₂], show (64 + k) % 64 = k by omega_using [hk, h1, h₂],
       r13] at this
-    rw [show 736 + k = 672 + (64 + k) by omega, ← eA, this,
-      VG.Proof.ChaCha20.keystream_getD _ (by omega : 512 * (L s₀ / 512) + k < L s₀),
+    rw [show 736 + k = 672 + (64 + k) by omega_arith, ← eA, this,
+      VG.Proof.ChaCha20.keystream_getD _ (by omega_arith : 512 * (L s₀ / 512) + k < L s₀),
       show (512 * (L s₀ / 512) + k) / 64 = 8 * (L s₀ / 512) by omega,
       show (512 * (L s₀ / 512) + k) % 64 = k by omega, ← initState_ctr]
     simp only [cOf, show (1 : Nat) ≠ 0 by decide, ite_false]
@@ -668,8 +668,8 @@ theorem fourKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     intro r hr
     simp only [w, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨608, by rw [eS], by show 608 + 64 ≤ 1696; omega⟩
-    · exact ⟨672, by rw [eB], by show 672 + 320 ≤ 1696; omega⟩)
+    · exact ⟨608, by rw [eS], by show 608 + 64 ≤ 1696; omega_arith⟩
+    · exact ⟨672, by rw [eB], by show 672 + 320 ≤ 1696; omega_arith⟩)
   have hn : (fourKs v.callee.vl).noCalls = true := by cases v.callee.vl <;> decide +kernel
   refine regionModel.wp_narrow (r := []) (w := w)
     (fourKsN_ok v.callee.vl (s := s.withRegions [] w) (c := cx s₀) h.r15 (by rw [State.withRegions_gpr, h.rdi, eS]) rfl)
@@ -690,8 +690,8 @@ theorem fourKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     intro k n h₁ h₂ r hr
     simp only [w, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · rw [eS]; exact sub_disj s₀ (b := 608) (m := 64) (by omega) (by omega) (by lit_omega)
-    · rw [eB]; exact sub_disj s₀ (b := 672) (m := 320) (by omega) (by omega) (by lit_omega)
+    · rw [eS]; exact sub_disj s₀ (b := 608) (m := 64) (by omega_arith) (by omega_arith) (by lit_omega)
+    · rw [eB]; exact sub_disj s₀ (b := 672) (m := 320) (by omega_arith) (by omega_arith) (by lit_omega)
   have S₀ : stateAt (s.withRegions [] w).mem (stA (cx s₀ + BitVec.ofNat 64 544)) = initState (K s₀) 0 (N s₀) := by
     rw [State.withRegions_mem, eS, h.st']
   have r13 : (s.withRegions [] w).gpr .r13 = s₀.gpr .r9 := by rw [State.withRegions_gpr, h.r13]
@@ -702,30 +702,30 @@ theorem fourKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rbx],
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rbp],
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rsp],
-    by rw [rd'', h.rd], by rw [wr'', h.wr], h.saved.frame f'' (dw (by omega) (by lit_omega)),
+    by rw [rd'', h.rd], by rw [wr'', h.wr], h.saved.frame f'' (dw (by omega_arith) (by lit_omega)),
     h.fine.trans (f''.sub fun r hr => ?_),
-    by rw [stateAt_frame f'' (dw (k := 64) (n := 64) (by omega) (by lit_omega)), h.st], fun k hk => ?_,
+    by rw [stateAt_frame f'' (dw (k := 64) (n := 64) (by omega_arith) (by lit_omega)), h.st], fun k hk => ?_,
     fun hps => absurd (hpass.symm.trans hps) (by decide)⟩,
     fun h₁ h₂ h₃ k hk => ?_⟩
   · simp only [w, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨workR s₀, by simp, by rw [eS]; exact sub_sub s₀ (by omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨workR s₀, by simp, by rw [eB]; exact sub_sub s₀ (by omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, by simp, by rw [eS]; exact sub_sub s₀ (by omega_arith) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, by simp, by rw [eB]; exact sub_sub s₀ (by omega_arith) (by lit_omega) (by lit_omega)⟩
   · rw [hm0] at hk ⊢
-    have := ks' k (by omega)
-    rw [S₀, show k / 64 = 0 by omega, show k % 64 = k by omega] at this
-    rw [← eA, this, VG.Proof.ChaCha20.keystream_getD _ hk, show k / 64 = 0 by omega, show k % 64 = k by omega]
+    have := ks' k (by omega_arith)
+    rw [S₀, show k / 64 = 0 by omega_arith, show k % 64 = k by omega_arith] at this
+    rw [← eA, this, VG.Proof.ChaCha20.keystream_getD _ hk, show k / 64 = 0 by omega_arith, show k % 64 = k by omega_arith]
     simp only [VG.Proof.ChaCha20.X86_64.Avx2Tail.cOf4, ite_true, VG.Proof.ChaCha20.ctr_zero]
   · have := ks' (64 + k) (by omega_using [hk, h₃])
     have hq : (1 + 8 * ((s₀.gpr .r9).toNat / 512)) + (1 + k / 64) - 1 = 1 + (8 * (L s₀ / 512) + k / 64) := by
-      show _ = 1 + (8 * ((s₀.gpr .r9).toNat / 512) + k / 64); omega
+      show _ = 1 + (8 * ((s₀.gpr .r9).toNat / 512) + k / 64); omega_arith
     rw [S₀, show (64 + k) / 64 = 1 + k / 64 by omega_using [hk, h₃],
       show (64 + k) % 64 = k % 64 by omega_using [hk, h₃], r13, VG.Proof.ChaCha20.X86_64.Avx2Tail.cOf4,
-      ite_eq_right (by omega : ¬ 1 + k / 64 = 0), hq] at this
-    rw [show 736 + k = 672 + (64 + k) by omega, ← eA, this,
-      VG.Proof.ChaCha20.keystream_getD _ (by omega : 512 * (L s₀ / 512) + k < L s₀),
-      show (512 * (L s₀ / 512) + k) / 64 = 8 * (L s₀ / 512) + k / 64 by omega,
-      show (512 * (L s₀ / 512) + k) % 64 = k % 64 by omega, ← initState_ctr]
+      ite_eq_right (by omega_arith : ¬ 1 + k / 64 = 0), hq] at this
+    rw [show 736 + k = 672 + (64 + k) by omega_arith, ← eA, this,
+      VG.Proof.ChaCha20.keystream_getD _ (by omega_arith : 512 * (L s₀ / 512) + k < L s₀),
+      show (512 * (L s₀ / 512) + k) / 64 = 8 * (L s₀ / 512) + k / 64 by omega_arith,
+      show (512 * (L s₀ / 512) + k) % 64 = k % 64 by omega_arith, ← initState_ctr]
 
 /-- `prologueX`'s choice and the keystream: `twoKs`, `fourKs` or the call of
 `vg_chacha20_xor`. -/
@@ -817,7 +817,7 @@ theorem prologueX_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {
   refine WP.mono (prologueBF_ok v.fold_le hp a₂) fun s₃ ⟨p₃, f₃⟩ => ⟨p₃, t₂.frame f₃ fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact sub_disj s₀ (by omega) (by lit_omega) (by lit_omega)
+  · exact sub_disj s₀ (by omega_arith) (by lit_omega) (by lit_omega)
   · exact (hp.stk_sub (by lit_omega)).symm
 
 theorem prologueX_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass) :

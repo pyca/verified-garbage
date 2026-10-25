@@ -241,7 +241,7 @@ theorem loop_ok {base : Addr} {F : Nat → Fe C} {s : State}
     · rw [h]; rfl
     · rw [decide_eq_true h,bne_iff_ne,ne_eq]
       intro he
-      have hh : BitVec.ofNat 64 (8-n) = (8 : BitVec 64) := by bv_omega
+      have hh : BitVec.ofNat 64 (8-n) = (8 : BitVec 64) := by bv_omega_arith
       have he' := congrArg BitVec.toNat hh
       simp only [BitVec.toNat_ofNat,show (8 : BitVec 64).toNat=8 from rfl,
         Nat.mod_eq_of_lt (show 8-n<2^64 by omega)] at he'

@@ -20,8 +20,8 @@ theorem pack4Vector_byte (e o : BitVec 128) {i : Nat} (hi : i < 16) :
 
 theorem packed4_byte (s : State) {i : Nat} (hi : i < 8) :
     vbyte (packed4 s) i = vbyte (gathered s) (2*i) ||| (vbyte (gathered s) (2*i+1) <<< 4) := by
-  rw [packed4, pack4Vector_byte _ _ (by omega), uzp1_byte _ _ (by omega),
-    uzp2_byte _ _ (by omega), ite_eq_left hi, ite_eq_left hi]
+  rw [packed4, pack4Vector_byte _ _ (by omega_arith), uzp1_byte _ _ (by omega_arith),
+    uzp2_byte _ _ (by omega_arith), ite_eq_left hi, ite_eq_left hi]
 
 private theorem narrowByte (b : BitVec 8) : (b.setWidth 128).setWidth 8 = b := by
   rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
@@ -31,7 +31,7 @@ theorem zip1_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte (VPermOp.eval .zip1 .b16 x y) i = if i % 2 = 0 then vbyte x (i/2) else vbyte y (i/2) := by
   simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_map, List.length_range,
     vbyte_ofVBytes _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [List.range, List.range.loop, List.map_cons, List.map_nil, List.flatMap_cons,
       List.flatMap_nil, List.cons_append, List.nil_append, List.getD_cons_zero, List.getD_cons_succ,
@@ -45,17 +45,17 @@ theorem vword_bytes (x : BitVec 128) (j : Nat) :
   simp only [vword, vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hb, decide_true, Bool.true_and]
   by_cases h0 : b < 8
   · simp only [h0, ite_true, decide_true, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_arith
   by_cases h1 : b < 16
-  · simp only [h0, ite_false, show b-8<8 by omega, ite_true, decide_true, Bool.true_and]
-    congr 1; omega
+  · simp only [h0, ite_false, show b-8<8 by omega_arith, ite_true, decide_true, Bool.true_and]
+    congr 1; omega_arith
   by_cases h2 : b < 24
-  · simp only [h0, ite_false, show ¬ b-8<8 by omega, show b-8-8<8 by omega,
+  · simp only [h0, ite_false, show ¬ b-8<8 by omega_arith, show b-8-8<8 by omega_arith,
       ite_true, decide_true, Bool.true_and]
-    congr 1 <;> omega
-  · simp only [h0, ite_false, show ¬ b-8<8 by omega, show ¬ b-8-8<8 by omega,
-      show b-8-8-8<8 by omega, decide_true, Bool.true_and]
-    congr 1; omega
+    congr 1 <;> omega_arith
+  · simp only [h0, ite_false, show ¬ b-8<8 by omega_arith, show ¬ b-8-8<8 by omega_arith,
+      show b-8-8-8<8 by omega_arith, decide_true, Bool.true_and]
+    congr 1; omega_arith
 
 theorem wordShift_word (n : Nat) (x : BitVec 128) {j : Nat} (hj : j < 4) :
     vword (wordShift n x) j = vword x j <<< n := by
@@ -71,14 +71,14 @@ theorem zipZero_word (x : BitVec 128) {j : Nat} (hj : j < 4) :
     vword (VPermOp.eval .zip1 .b16 x 0) j =
       (0 : BitVec 8) ++ vbyte x (2*j+1) ++ (0 : BitVec 8) ++ vbyte x (2*j) := by
   rw [vword_bytes]
-  rw [zip1_byte _ _ (by omega), zip1_byte _ _ (by omega),
-    zip1_byte _ _ (by omega), zip1_byte _ _ (by omega)]
-  have h0 : (4*j)%2=0 := by omega
-  have h1 : (4*j+1)%2=1 := by omega
-  have h2 : (4*j+2)%2=0 := by omega
-  have h3 : (4*j+3)%2=1 := by omega
+  rw [zip1_byte _ _ (by omega_arith), zip1_byte _ _ (by omega_arith),
+    zip1_byte _ _ (by omega_arith), zip1_byte _ _ (by omega_arith)]
+  have h0 : (4*j)%2=0 := by omega_arith
+  have h1 : (4*j+1)%2=1 := by omega_arith
+  have h2 : (4*j+2)%2=0 := by omega_arith
+  have h3 : (4*j+3)%2=1 := by omega_arith
   simp only [h0,h1,h2,h3, show ¬ (1:Nat)=0 by decide, ite_true, ite_false,
-    show (4*j+2)/2=2*j+1 by omega, show (4*j)/2=2*j by omega]
+    show (4*j+2)/2=2*j+1 by omega_arith, show (4*j)/2=2*j by omega_arith]
   simp [vbyte]
 
 def mask24 : BitVec 128 := ofVDwords 0xffff0504ffff0100 0xffff0d0cffff0908
@@ -87,78 +87,78 @@ def mask29 : BitVec 128 := ofVDwords 0x0908060504020100 0xffffffff0e0d0c0a
 
 theorem mask24_index {i : Nat} (hi : i < 16) :
     (vbyte mask24 i).toNat = (if i%4<2 then 4*(i/4)+i%4 else 255) := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem mask25_index {i : Nat} (hi : i < 16) :
     (vbyte mask25 i).toNat = (if i%4<2 then 4*(i/4)+i%4+2 else 255) := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem mask29_index {i : Nat} (hi : i < 16) :
     (vbyte mask29 i).toNat = (if i<12 then 4*(i/3)+i%3 else 255) := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem compact_byte (x : BitVec 128) {i : Nat} (hi : i < 12) :
     vbyte (tableBytes x mask29) i = vbyte x (4*(i/3)+i%3) := by
-  rw [tableBytes_byte _ _ (by omega), mask29_index (by omega), ite_eq_left hi,
-    ite_eq_left (by omega)]
+  rw [tableBytes_byte _ _ (by omega_arith), mask29_index (by omega_arith), ite_eq_left hi,
+    ite_eq_left (by omega_arith)]
 
 theorem table24_word (x : BitVec 128) {j : Nat} (hj : j < 4) :
     vword (tableBytes x mask24) j =
       (0 : BitVec 16) ++ (vword x j).extractLsb' 0 16 := by
   rw [vword_bytes]
-  rw [tableBytes_byte _ _ (by omega), tableBytes_byte _ _ (by omega),
-    tableBytes_byte _ _ (by omega), tableBytes_byte _ _ (by omega)]
-  rw [mask24_index (by omega), mask24_index (by omega),
-    mask24_index (by omega), mask24_index (by omega)]
-  have hm0 : (4*j)%4=0 := by omega
-  have hm1 : (4*j+1)%4=1 := by omega
-  have hm2 : (4*j+2)%4=2 := by omega
-  have hm3 : (4*j+3)%4=3 := by omega
+  rw [tableBytes_byte _ _ (by omega_arith), tableBytes_byte _ _ (by omega_arith),
+    tableBytes_byte _ _ (by omega_arith), tableBytes_byte _ _ (by omega_arith)]
+  rw [mask24_index (by omega_arith), mask24_index (by omega_arith),
+    mask24_index (by omega_arith), mask24_index (by omega_arith)]
+  have hm0 : (4*j)%4=0 := by omega_arith
+  have hm1 : (4*j+1)%4=1 := by omega_arith
+  have hm2 : (4*j+2)%4=2 := by omega_arith
+  have hm3 : (4*j+3)%4=3 := by omega_arith
   simp only [hm0,hm1,hm2,hm3, Nat.reduceLT, ite_true, ite_false]
-  rw [ite_eq_left (by omega), ite_eq_left (by omega)]
-  rw [show 4*((4*j+1)/4)+1=4*j+1 by omega, show 4*(4*j/4)+0=4*j by omega]
+  rw [ite_eq_left (by omega_arith), ite_eq_left (by omega_arith)]
+  rw [show 4*((4*j+1)/4)+1=4*j+1 by omega_arith, show 4*(4*j/4)+0=4*j by omega_arith]
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb',
     vword, vbyte]
   by_cases h0 : b<8
-  · simp only [h0, ite_true, show b<16 by omega, decide_true, Bool.true_and, Nat.zero_add, show b<32 by omega]
-    congr 1 <;> omega
+  · simp only [h0, ite_true, show b<16 by omega_arith, decide_true, Bool.true_and, Nat.zero_add, show b<32 by omega_arith]
+    congr 1 <;> omega_arith
   by_cases h1 : b<16
-  · simp only [h0, ite_false, show b-8<8 by omega, ite_true, h1, decide_true, Bool.true_and,
-      Nat.zero_add, show b<32 by omega]
-    congr 1 <;> omega
-  · simp only [h0, ite_false, show ¬b-8<8 by omega, h1, decide_false, Bool.false_and]
+  · simp only [h0, ite_false, show b-8<8 by omega_arith, ite_true, h1, decide_true, Bool.true_and,
+      Nat.zero_add, show b<32 by omega_arith]
+    congr 1 <;> omega_arith
+  · simp only [h0, ite_false, show ¬b-8<8 by omega_arith, h1, decide_false, Bool.false_and]
     simp
 theorem table25_word (x : BitVec 128) {j : Nat} (hj : j < 4) :
     vword (tableBytes x mask25) j =
       (0 : BitVec 16) ++ (vword x j).extractLsb' 16 16 := by
   rw [vword_bytes]
-  rw [tableBytes_byte _ _ (by omega), tableBytes_byte _ _ (by omega),
-    tableBytes_byte _ _ (by omega), tableBytes_byte _ _ (by omega)]
-  rw [mask25_index (by omega), mask25_index (by omega),
-    mask25_index (by omega), mask25_index (by omega)]
-  have hm0 : (4*j)%4=0 := by omega
-  have hm1 : (4*j+1)%4=1 := by omega
-  have hm2 : (4*j+2)%4=2 := by omega
-  have hm3 : (4*j+3)%4=3 := by omega
+  rw [tableBytes_byte _ _ (by omega_arith), tableBytes_byte _ _ (by omega_arith),
+    tableBytes_byte _ _ (by omega_arith), tableBytes_byte _ _ (by omega_arith)]
+  rw [mask25_index (by omega_arith), mask25_index (by omega_arith),
+    mask25_index (by omega_arith), mask25_index (by omega_arith)]
+  have hm0 : (4*j)%4=0 := by omega_arith
+  have hm1 : (4*j+1)%4=1 := by omega_arith
+  have hm2 : (4*j+2)%4=2 := by omega_arith
+  have hm3 : (4*j+3)%4=3 := by omega_arith
   simp only [hm0,hm1,hm2,hm3, Nat.reduceLT, ite_true, ite_false]
-  rw [ite_eq_left (by omega), ite_eq_left (by omega)]
-  rw [show 4*((4*j+1)/4)+1+2=4*j+3 by omega, show 4*(4*j/4)+0+2=4*j+2 by omega]
+  rw [ite_eq_left (by omega_arith), ite_eq_left (by omega_arith)]
+  rw [show 4*((4*j+1)/4)+1+2=4*j+3 by omega_arith, show 4*(4*j/4)+0+2=4*j+2 by omega_arith]
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb',
     vword, vbyte]
   by_cases h0 : b<8
-  · simp only [h0, ite_true, show b<16 by omega, show 16+b<32 by omega, decide_true, Bool.true_and]
-    congr 1 <;> omega
+  · simp only [h0, ite_true, show b<16 by omega_arith, show 16+b<32 by omega_arith, decide_true, Bool.true_and]
+    congr 1 <;> omega_arith
   by_cases h1 : b<16
-  · simp only [h0, ite_false, show b-8<8 by omega, ite_true, h1, show 16+b<32 by omega, decide_true, Bool.true_and]
-    congr 1 <;> omega
-  · simp only [h0, ite_false, show ¬b-8<8 by omega, h1, decide_false, Bool.false_and]
+  · simp only [h0, ite_false, show b-8<8 by omega_arith, ite_true, h1, show 16+b<32 by omega_arith, decide_true, Bool.true_and]
+    congr 1 <;> omega_arith
+  · simp only [h0, ite_false, show ¬b-8<8 by omega_arith, h1, decide_false, Bool.false_and]
     simp
 
 theorem vbyte_lowWord (x : BitVec 128) (i : Nat) :
@@ -166,8 +166,8 @@ theorem vbyte_lowWord (x : BitVec 128) (i : Nat) :
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   simp only [vbyte, vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth,
-    hb, show b<32 by omega, decide_true, Bool.true_and]
-  congr 1; omega
+    hb, show b<32 by omega_arith, decide_true, Bool.true_and]
+  congr 1; omega_arith
 
 /-- Gathered byte indices agree with the four-register lane layout of loadFour_ok. -/
 theorem gathered_byte (s : State) {i : Nat} (hi : i<16) :
@@ -175,18 +175,18 @@ theorem gathered_byte (s : State) {i : Nat} (hi : i<16) :
       (vword (s.v ([.v0,.v1,.v2,.v3] : List VReg)[i/4]!) (i%4)).setWidth 8 := by
   rw [gathered, gatherSixteen_byte _ _ _ _ hi]
   by_cases h4 : i<4
-  · rw [ite_eq_left h4, vbyte_lowWord, show i/4=0 by omega, show i%4=i by omega]
+  · rw [ite_eq_left h4, vbyte_lowWord, show i/4=0 by omega_arith, show i%4=i by omega_arith]
     rfl
   by_cases h8 : i<8
   · rw [ite_eq_right h4, ite_eq_left h8, vbyte_lowWord,
-      show i/4=1 by omega, show i%4=i-4 by omega]
+      show i/4=1 by omega_arith, show i%4=i-4 by omega_arith]
     rfl
   by_cases h12 : i<12
   · rw [ite_eq_right h4, ite_eq_right h8, ite_eq_left h12, vbyte_lowWord,
-      show i/4=2 by omega, show i%4=i-8 by omega]
+      show i/4=2 by omega_arith, show i%4=i-8 by omega_arith]
     rfl
   · rw [ite_eq_right h4, ite_eq_right h8, ite_eq_right h12, vbyte_lowWord,
-      show i/4=3 by omega, show i%4=i-12 by omega]
+      show i/4=3 by omega_arith, show i%4=i-12 by omega_arith]
     rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

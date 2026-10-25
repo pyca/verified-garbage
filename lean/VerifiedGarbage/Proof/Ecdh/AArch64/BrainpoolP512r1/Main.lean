@@ -41,13 +41,13 @@ theorem exchange_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C
     refine ⟨by rw [k₁.wr, hp.wr, x4₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [x4₁]; exact hp.sc_fit⟩
     · rw [x3₁, hrd₁, hp.rd]
-      exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
+      exact ⟨_, by simp, Offset.contains_base _ he (by omega_arith)⟩
     · rw [x1₁, hrd₁, hp.rd]
-      exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
+      exact ⟨_, by simp, Offset.contains_base _ he (by omega_arith)⟩
     · rw [x2₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .x2, 1 + 2 * brainpoolp512r1.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨s₀.gpr .x2, 1 + 2 * brainpoolp512r1.C.len⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [x1₁, x4₁]; exact hp.d_sc
-    · rw [x2₁, x4₁]; exact hp.peer_sc.sub_left (Offset.sub_base _ (by omega))
+    · rw [x2₁, x4₁]; exact hp.peer_sc.sub_left (Offset.sub_base _ (by omega_arith))
     · rw [x3₁, x4₁]; exact hp.d_sc
   refine WP.seq (WP.mono (stage₁ hc (.inl rfl) hsp (rest := .block []) (Q := St₁ brainpoolp512r1 none s₁ (s₁.gpr .x4))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
@@ -67,7 +67,7 @@ theorem exchange_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C
   have W₂ : Outside (s₀.gpr .x3) 0 size s₀.mem s₂.mem := fun x hx =>
     (S₂.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact hx).trans (congrFun k₁.mem x)
   have hq0 : s₂.mem (s₀.gpr .x2) = s₀.mem (s₀.gpr .x2) := by
-    have := keep_of_disjoint' W₂ hp.peer_sc (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₂ hp.peer_sc (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
   have hf₃ : word s₃.mem (s₀.gpr .x3) (brainpoolp512r1.sl FLAG) = mask (s₀.mem (s₀.gpr .x2) = 4) := by
@@ -106,15 +106,15 @@ theorem exchange_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C
       DZ, TMP] → i ∉ [ACC, TMP] →
       sv brainpoolp512r1 (s₀.gpr .x3) s₅ i = sv brainpoolp512r1 (s₀.gpr .x3) s₄ i :=
     fun hi h₁ h₂ => sv_unch L.unch h7 hn hi
-      (apart_append (aq hi h₁ (by constructor <;> omega)) (apart_chainWc hc hi h₂))
+      (apart_append (aq hi h₁ (by constructor <;> omega_arith)) (apart_chainWc hc hi h₂))
   have hflag₅ := f₄
   have hf₅ : word s₅.mem (s₀.gpr .x3) (brainpoolp512r1.sl FLAG) = word s₄.mem (s₀.gpr .x3) (brainpoolp512r1.sl FLAG) := by
     have hF := sl_le brainpoolp512r1 h7 (i := FLAG) (by decide)
-    refine L.unch.word (fun w hw => ?_) (by omega)
+    refine L.unch.word (fun w hw => ?_) (by omega_arith)
     have ha := apart_append (aq (i := FLAG) (by decide) (by decide) (by decide))
       (apart_chainWc hc (i := FLAG) (by decide) (by decide)) w hw
     rcases ha with ha | ha
-    · exact .inl (by omega)
+    · exact .inl (by omega_arith)
     · exact .inr ha
   rw [← hf₅] at hflag₅
   have hx20₅ : s₅.gpr .x20 = s₀.gpr .x0 := by
@@ -128,7 +128,7 @@ theorem exchange_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C
     rw [saved r hr, k₁.gpr r (hsv r hr)]
   -- The specification.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * brainpoolp512r1.C.len)).length = 2 * brainpoolp512r1.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_arith
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * brainpoolp512r1.C.len)).head? = some (s₀.mem (s₀.gpr .x2)) := by
     rw [peer_bytes]; rfl
   have hxs : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * brainpoolp512r1.C.len)).drop 1).take brainpoolp512r1.C.len) =
@@ -139,7 +139,7 @@ theorem exchange_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C
   have hys : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * brainpoolp512r1.C.len)).drop (brainpoolp512r1.C.len + 1)) =
       sv brainpoolp512r1 (s₀.gpr .x3) s₃ QY := by
     rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
-      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have hP' : ∀ h : Ecdh.Valid brainpoolp512r1.C (s₀.mem (s₀.gpr .x2)) (sv brainpoolp512r1 (s₀.gpr .x3) s₃ E) (sv brainpoolp512r1 (s₀.gpr .x3) s₃ QY),
       peerPt brainpoolp512r1 (s₀.mem (s₀.gpr .x2) = 4) (sv brainpoolp512r1 (s₀.gpr .x3) s₃ E) (sv brainpoolp512r1 (s₀.gpr .x3) s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by

@@ -79,7 +79,7 @@ theorem rej_piece {F : List Byte → Bool} {nm : String} {c : Prog isa} (hv : Ve
     sig_pre [rejK, withRet, rejNTTContract, rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, eA, eSp]
-    exact ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    exact ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hD hR' dDR, Buf.disj hp hD hC' dDC, rD₁, Buf.disj hp hR' hC' dRC, rR₁, rC₁,
       rD₂, rR₂, rC₂, rA₂, rD₃, rR₃, rC₃, rA₃, Buf.fit hp hD, Buf.fit hp hR', Buf.fit hp hC'⟩
   · have e₁ : D.ptr s₀ = D.ptr s₀' := hq.t.ptr hD
@@ -119,7 +119,7 @@ theorem rej_piece {F : List Byte → Bool} {nm : String} {c : Prog isa} (hv : Ve
     subst he
     simp only [arg_withRegions, a0, a1, m₂, sw32, g₂] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post.2.2 post.1 post.2.1
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post.2.2 post.1 post.2.1
 
 /-- `a ←` a polynomial of `ExpandMask`, from the 66 bytes `seed`. -/
 theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (expandMaskContract X86.abi 56))
@@ -171,7 +171,7 @@ theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (exp
     sig_pre [expandMaskContract, expandMaskSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp, g1l]
-    exact ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    exact ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hD hR' dDR, Buf.disj hp hD hC' dDC, rD₁, Buf.disj hp hR' hC' dRC, rR₁, rC₁,
       rD₂, rR₂, rC₂, rA₂, rD₃, rR₃, rC₃, rA₃, Buf.fit hp hD, Buf.fit hp hR', Buf.fit hp hC', hg1⟩
   · have e₁ : D.ptr s₀ = D.ptr s₀' := hq.t.ptr hD
@@ -208,7 +208,7 @@ theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (exp
     subst he
     simp only [arg_withRegions, a0, a1, a2, m₂, g1l] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `c ← SampleInBall(c̃)`, returning 1 or 0 in `eax`, with the `len` bytes `c̃`. -/
 theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa} (hv : Verified X86.target c (ballK F))
@@ -265,7 +265,7 @@ theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa}
     sig_pre [ballK, withRet, sampleInBallContract, sampleInBallSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp, ll, tl]
-    exact ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    exact ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hD hR' dDR, Buf.disj hp hD hC' dDC, rD₁, Buf.disj hp hR' hC' dRC, rR₁, rC₁,
       rD₂, rR₂, rC₂, rA₂, rD₃, rR₃, rC₃, rA₃, Buf.fit hp hD, Buf.fit hp hR', Buf.fit hp hC', hlt⟩
   · have e₁ : D.ptr s₀ = D.ptr s₀' := hq.t.ptr hD
@@ -312,6 +312,6 @@ theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa}
     subst he
     simp only [arg_withRegions, a0, a1, a2, a3, m₂, sw32, g₂, ll, tl] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post.2.2 post.1 post.2.1
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post.2.2 post.1 post.2.1
 
 end VG.Proof.MlDsa.X86.Sign

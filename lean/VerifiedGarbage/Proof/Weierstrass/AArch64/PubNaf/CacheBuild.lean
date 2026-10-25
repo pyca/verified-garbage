@@ -51,8 +51,8 @@ theorem tbl_away {K : WinCfg} {size m : Nat} (hL : WinLay K size) (hC : CacheLay
   · exact ht i hi
   · left
     have := hC.slots _ hs
-    have : cacheAt K 1 ≤ cacheAt K (m + 1) := by rw [cacheAt_eq K (m + 1)]; omega
-    omega
+    have : cacheAt K 1 ≤ cacheAt K (m + 1) := by rw [cacheAt_eq K (m + 1)]; omega_arith
+    omega_arith
 
 theorem OddTbl.away {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat} (hL : WinLay K size)
     (hC : CacheLay K size) {P : Point C} {s s' : State} (hT : OddTbl K C base P 8 s)
@@ -127,7 +127,7 @@ theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Na
   -- The copies into the cache.
   have hca := cacheAt_eq K a
   have ht := hC.top
-  have hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ 8 by omega)
+  have hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ 8 by omega_arith)
   rw [Nat.mul_add, Nat.mul_one] at hm8
   have lo0 := hC.slots _ (winOther_mem t0s)
   have lo1 := hC.slots _ (winOther_mem t1s)
@@ -138,21 +138,21 @@ theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Na
   have alc : cacheAt K a % 8 = 0 := by
     have e16 : 16 * K.M.n * (a - 1) = 8 * (2 * K.M.n * (a - 1)) := by
       rw [← Nat.mul_assoc, ← Nat.mul_assoc]
-    rw [hca, e16]; have := hC.al; omega
+    rw [hca, e16]; have := hC.al; omega_arith
   have sc₂ : Scr u₂ base size := I₂.scr
   rw [WP.block_append_iff]
-  refine WP.mono (copy_ok K.M.n sc₂ (o := cacheAt K a) (a := K.S.t0) (by omega) le0 alc al0
-    (Or.inr (by omega))) fun u₃ ⟨w₃, k₃, O₃⟩ => ?_
+  refine WP.mono (copy_ok K.M.n sc₂ (o := cacheAt K a) (a := K.S.t0) (by omega_arith) le0 alc al0
+    (Or.inr (by omega_arith))) fun u₃ ⟨w₃, k₃, O₃⟩ => ?_
   have sc₃ := sc₂.of_keepRegs k₃ (by decide)
-  refine WP.mono (copy_ok K.M.n sc₃ (o := cacheAt K a + 8 * K.M.n) (a := K.S.t1) (by omega) le1
-    (by omega) al1 (Or.inr (by omega))) fun v ⟨w₄, k₄, O₄⟩ => ?_
+  refine WP.mono (copy_ok K.M.n sc₃ (o := cacheAt K a + 8 * K.M.n) (a := K.S.t1) (by omega_arith) le1
+    (by omega_arith) al1 (Or.inr (by omega_arith))) fun v ⟨w₄, k₄, O₄⟩ => ?_
   have sc₄ := sc₃.of_keepRegs k₄ (by decide)
   have U₃ := O₃.unch
   have U₄ := O₄.unch
   have t1₃ : wordsVal u₃.mem base K.S.t1 K.M.n = wordsVal u₂.mem base K.S.t1 K.M.n :=
-    U₃.wordsVal (fun w hw => by simp at hw; subst hw; omega) (by omega)
+    U₃.wordsVal (fun w hw => by simp at hw; subst hw; omega_arith) (by omega_arith)
   have c0₄ : wordsVal v.mem base (cacheAt K a) K.M.n = wordsVal u₃.mem base (cacheAt K a) K.M.n :=
-    U₄.wordsVal (fun w hw => by simp at hw; subst hw; omega) (by omega)
+    U₄.wordsVal (fun w hw => by simp at hw; subst hw; omega_arith) (by omega_arith)
   -- The frame.
   have Uall : Unch base ([(cacheAt K a, 16 * K.M.n)] ++ loopW K) u.mem v.mem := by
     have h12 : Unch base (loopW K) u.mem u₂.mem := by
@@ -170,7 +170,7 @@ theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Na
     · exact ⟨w, List.mem_append_right _ hw, Nat.le_refl _, Nat.le_refl _⟩
     · refine ⟨(cacheAt K a, 16 * K.M.n), List.mem_append_left _ (List.mem_singleton_self _), ?_⟩
       simp only [List.mem_append, List.mem_singleton] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith
   have hk : KeepRegs (nafClob K.M.n) u v := by
     have kc : ∀ r ∈ [Reg.x1], r ∈ nafClob K.M.n := fun r hr => nafClob_mem (by
       simp only [List.mem_singleton] at hr; subst hr; simp)
@@ -178,7 +178,7 @@ theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Na
       ((k₂.mono clob_nafClob).trans ((k₃.mono kc).trans (k₄.mono kc))))
   have hM₄ : ModOkA K.M size C.p v.mem base := hM.unch Uall (fun w hw => by
     rcases List.mem_append.mp hw with hw | hw
-    · simp at hw; subst hw; have := hC.mo; exact Or.inl (by simp only; omega)
+    · simp at hw; subst hw; have := hC.mo; exact Or.inl (by simp only; omega_arith)
     · exact winW_mo hW hM w (loopW_sub K w hw)) hn
   refine ⟨sc₄, hk, Uall, hM₄, ?_, ?_, ?_, ?_⟩
   · rw [c0₄, w₃]; exact l0
@@ -193,27 +193,27 @@ theorem cacheTo_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Naf
     ∀ m ≤ 8, WP isa (cacheTo K m) s fun t =>
       Scr t base size ∧ KeepRegs (nafClob K.M.n) s t ∧ Unch base (cacheW K ++ loopW K) s.mem t.mem ∧
       ModOkA K.M size C.p t.mem base ∧ OddTbl K C base P 8 t ∧ CacheUpTo K C base m t
-  | 0, _ => WP.block_nil ⟨hs, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, hT, fun _ h1 h0 => by omega⟩
+  | 0, _ => WP.block_nil ⟨hs, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, hT, fun _ h1 h0 => by omega_arith⟩
   | m + 1, hm => by
     have hW := hL.win
     have hC := hL.cache
     have hn := hs.nowrap
     rw [cacheTo]
-    refine WP.seq (WP.mono (cacheTo_ok hL hp hs hM hT m (by omega))
+    refine WP.seq (WP.mono (cacheTo_ok hL hp hs hM hT m (by omega_arith))
       fun t ⟨st, kt, Ut, Mt, Tt, Ct⟩ => ?_)
-    refine WP.mono (cacheOne_ok hL hp st Mt Tt (a := m + 1) (by omega) hm)
+    refine WP.mono (cacheOne_ok hL hp st Mt Tt (a := m + 1) (by omega_arith) hm)
       fun v ⟨sv, kv, Uv, Mv, l0, l1, e0, e1⟩ => ?_
     have hA : Away K m ([(cacheAt K (m + 1), 16 * K.M.n)] ++ loopW K) :=
       away_append (fun w hw => by simp at hw; subst hw; exact Or.inr (Nat.le_refl _))
         (away_loopW hW hC m)
     have Tv := OddTbl.away hW hC Tt Uv hA hn
     have tz : tmv C K.M.n base v (K.tblPt (m + 1)).z = tmv C K.M.n base t (K.tblPt (m + 1)).z := by
-      obtain ⟨i, hi, ez, -, -⟩ := tblPt_mem K (m := m + 1) (by omega) hm (K.tblPt (m + 1)).z (by simp)
+      obtain ⟨i, hi, ez, -, -⟩ := tblPt_mem K (m := m + 1) (by omega_arith) hm (K.tblPt (m + 1)).z (by simp)
       show toM _ _ _ = toM _ _ _; rw [ez, tbl_away hW hC Uv hA hn hi]
     refine ⟨sv, kt.trans kv, ?_, Mv, Tv, fun a h1 ha => ?_⟩
     · refine (Ut.trans Uv).cover fun w hw => ?_
       have hca := cacheAt_eq K (m + 1)
-      have hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show m + 1 - 1 + 1 ≤ 8 by omega)
+      have hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show m + 1 - 1 + 1 ≤ 8 by omega_arith)
       rw [Nat.mul_add, Nat.mul_one] at hm8
       have hc : (cacheAt K 1, 128 * K.M.n) ∈ cacheW K ++ loopW K :=
         List.mem_append_left _ (List.mem_singleton_self _)
@@ -222,11 +222,11 @@ theorem cacheTo_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Naf
       · exact ⟨_, hc, Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨w, List.mem_append_right _ hw, Nat.le_refl _, Nat.le_refl _⟩
       · refine ⟨_, hc, ?_⟩
-        simp only; omega
+        simp only; omega_arith
       · exact ⟨w, List.mem_append_right _ hw, Nat.le_refl _, Nat.le_refl _⟩
     · rcases Nat.lt_or_ge a (m + 1) with ha' | ha'
-      · exact CacheUpTo.unch hW hC (by omega) Ct Uv hA hn a h1 (by omega)
-      · obtain rfl : a = m + 1 := by omega
+      · exact CacheUpTo.unch hW hC (by omega_arith) Ct Uv hA hn a h1 (by omega_arith)
+      · obtain rfl : a = m + 1 := by omega_arith
         exact ⟨l0, l1, by rw [tz]; exact e0, by rw [tz]; exact e1⟩
 
 end VG.Proof.Weierstrass.AArch64.PubNaf

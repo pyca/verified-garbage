@@ -109,7 +109,7 @@ theorem absorbHead_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) :
   let J : State → Prop := fun s => ∃ V H x m₀ k, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     x.length % 16 = q ∧ HeadMid V sp yo H x D n m₀ k s
   refine CT.seq (J := J) ?_ (fun s ⟨V, H, x, h29, h30, h31, hx, hs⟩ =>
-    WP.mono (headPre_ok (L.v h29 h30 h31) hyo hs hn (by omega)) fun s' ⟨k, hm⟩ =>
+    WP.mono (headPre_ok (L.v h29 h30 h31) hyo hs hn (by omega_arith)) fun s' ⟨k, hm⟩ =>
       ⟨V, H, x, s.mem, k, h29, h30, h31, hx, hm⟩) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r26, .r30]) headPre
         h).isSome = true := ⟨_, by taint_decide⟩
@@ -125,14 +125,14 @@ theorem absorbHead_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) :
       have := eval_sub16 hm.r6 hm.k16; rw [hm.kmin, hx] at this; exact this) (fun _ => ?_) (fun _ => CT.skip)
     refine (ghash1_ct L hyo (.inl ⟨rfl, rfl⟩) (P := st + BitVec.ofNat 64 32) ?_ ?_).mono
       fun s ⟨V, _, _, _, _, h29, h30, h31, _, hm⟩ => ⟨⟨V, h29, h30, h31, hm.env⟩, by rw [hm.env.r30, h30], ?_⟩
-    · exact Lay.st_st (.inl (by omega)) (by omega) (by decide)
+    · exact Lay.st_st (.inl (by omega_arith)) (by omega_arith) (by decide)
     · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
     · rw [← h30]; exact covers_left (hm.env.perm.stC (by decide))
 
 theorem absorbFill_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q < 16) :
     CT (AbsI c st w sp yo D n q) (absorbFill yo) :=
   CT.ite (decide (q = 0)) (fun s ⟨_, _, x, _, _, _, hx, hs⟩ => by
-      have := eval_zero hs.r26 (by omega); rw [hx] at this; exact this)
+      have := eval_zero hs.r26 (by omega_arith); rw [hx] at this; exact this)
     (fun _ => CT.skip) fun hb => absorbHead_ct L hyo hn (by simpa using hb)
 
 omit L in
@@ -143,7 +143,7 @@ theorem wholeArgs_ok {V : Reg → BitVec 64} {s : State} (he : Env V sp s) :
         s₂.gpr .r4 = V .r30 + BitVec.ofNat 64 yo ∧ s₂.gpr .r7 = V .r31 + BitVec.ofNat 64 512 ∧
         (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r7 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂) := by
   have h29 := he.r29; have h30 := he.r30; have h31 := he.r31
-  have hyo' : yo < 2 ^ 15 := by omega
+  have hyo' : yo < 2 ^ 15 := by omega_arith
   crun [scrO, h29, h30, h31, hyo']
   exact ⟨fun r a b d => by simp [a, b, d], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
@@ -166,7 +166,7 @@ theorem absorbWhole_ct {D : Addr} {n q j : Nat} : CT (MidI c st w sp yo D n q j)
       (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
       (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr, hs.data.of_eq hk₁.rd hk₁.wr, hs.le, h5, h6⟩
   · refine CT.ite (decide (nb = 0)) (fun s ⟨_, _, _, _, _, hd, _, _, h6⟩ => eval_zero h6 (by
-      have := hd.lt; omega)) (fun _ => CT.skip) fun hb => ?_
+      have := hd.lt; omega_arith)) (fun _ => CT.skip) fun hb => ?_
     have h0 : nb ≠ 0 := by simpa using hb
     let J₂ : State → Prop := fun s => ∃ V, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ Env V sp s ∧
       DataOk (V .r30) (V .r31) s D n ∧ j ≤ n ∧
@@ -187,12 +187,12 @@ theorem absorbWhole_ct {D : Addr} {n q j : Nat} : CT (MidI c st w sp yo D n q j)
         by rw [hg₂ _ (by decide) (by decide) (by decide), h6], h7⟩
     · refine CT.gh fun s₁ s₂ ⟨V₁, a₁, b₁, c₁, he₁, hd₁, hj₁, a3, a4, a5, a6, a7⟩
         ⟨V₂, a₂, b₂, c₂, he₂, hd₂, hj₂, b3, b4, b5, b6, b7⟩ => ?_
-      have hdj₁ := hd₁.sub (j := j) (k := 16 * nb) (by omega) (by omega)
-      have hdj₂ := hd₂.sub (j := j) (k := 16 * nb) (by omega) (by omega)
-      have g₁ := ghCall_mk (L.v a₁ b₁ c₁) hyo he₁ a3 a4 a5 a6 a7 (by have := hd₁.lt; omega)
-        (hdj₁.st.sub_right (Lay.stSub (by omega))).symm (hdj₁.w.sub_right (Lay.wSub (by decide))) hdj₁.rd
-      have g₂ := ghCall_mk (L.v a₂ b₂ c₂) hyo he₂ b3 b4 b5 b6 b7 (by have := hd₂.lt; omega)
-        (hdj₂.st.sub_right (Lay.stSub (by omega))).symm (hdj₂.w.sub_right (Lay.wSub (by decide))) hdj₂.rd
+      have hdj₁ := hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
+      have hdj₂ := hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
+      have g₁ := ghCall_mk (L.v a₁ b₁ c₁) hyo he₁ a3 a4 a5 a6 a7 (by have := hd₁.lt; omega_arith)
+        (hdj₁.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj₁.w.sub_right (Lay.wSub (by decide))) hdj₁.rd
+      have g₂ := ghCall_mk (L.v a₂ b₂ c₂) hyo he₂ b3 b4 b5 b6 b7 (by have := hd₂.lt; omega_arith)
+        (hdj₂.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj₂.w.sub_right (Lay.wSub (by decide))) hdj₂.rd
       rw [a₁, b₁, c₁] at g₁
       rw [a₂, b₂, c₂] at g₂
       exact ⟨_, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
@@ -224,7 +224,7 @@ theorem absorb_ct {D : Addr} {n q : Nat} (hq : q < 16) : CT (AbsI c st w sp yo D
 
 /-- `ghash1 yo .r31 96`, of `T`. -/
 theorem ghT_ct : CT (GhIn c st w sp .r31 96 (w + BitVec.ofNat 64 96)) (ghash1 yo .r31 tO) :=
-  ghash1_ct L hyo (.inr ⟨rfl, rfl⟩) (L.st_w (by omega) (.inr ⟨by decide, by decide⟩))
+  ghash1_ct L hyo (.inr ⟨rfl, rfl⟩) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
     (Lay.w_w (.inl (by decide)) (by decide) (by decide))
 
 omit L hyo in
@@ -236,7 +236,7 @@ theorem ghIn_T {s : State} (he : EnvC c st w sp s) : GhIn c st w sp .r31 96 (w +
 /-- Before `flush yo`: `q` buffered bytes. -/
 theorem flush_ct {q : Nat} (hq : q < 16) :
     CT (fun s => EnvC c st w sp s ∧ s.gpr .r26 = BitVec.ofNat 64 q) (flush yo) := by
-  refine CT.ite (decide (q = 0)) (fun s ⟨_, h26⟩ => eval_zero h26 (by omega)) (fun _ => CT.skip) fun hb => ?_
+  refine CT.ite (decide (q = 0)) (fun s ⟨_, h26⟩ => eval_zero h26 (by omega_arith)) (fun _ => CT.skip) fun hb => ?_
   have h0 : q ≠ 0 := by simpa using hb
   refine CT.seq (J := GhIn c st w sp .r31 96 (w + BitVec.ofNat 64 96)) ?_ (fun s ⟨⟨V, h29, h30, h31, he⟩, h26⟩ =>
     WP.mono (flushCopy_ok (L.v h29 h30 h31) hyo (H := blockAt s.mem (V .r29 + BitVec.ofNat 64 240))

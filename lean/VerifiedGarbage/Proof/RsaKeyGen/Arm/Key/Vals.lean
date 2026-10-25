@@ -66,7 +66,7 @@ variable {P : KP} {σ : State}
 theorem In.e_lt (pre : In P σ) : P.e < 2 ^ 64 := by
   have := VG.Proof.Rsa.Arm.Recover.bytes_lt σ.mem (State.addr P.eP) P.el
   rw [pre.eB] at this
-  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := pre.el2; omega))
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := pre.el2; omega_arith))
 
 theorem P0_lt (P : KP) (σ : State) : P0 P σ < 2 ^ (8 * P.K) := VG.Proof.Rsa.Arm.Recover.bytes_lt _ _ _
 theorem Q0_lt (P : KP) (σ : State) : Q0 P σ < 2 ^ (8 * P.K) := VG.Proof.Rsa.Arm.Recover.bytes_lt _ _ _
@@ -78,17 +78,17 @@ theorem qv_lt (P : KP) (σ : State) : qv P σ < 2 ^ (8 * P.K) := by
   unfold qv; split <;> [exact P0_lt P σ; exact Q0_lt P σ]
 
 theorem pm_lt (P : KP) (σ : State) : pm P σ < 2 ^ (8 * P.K) := by
-  have := pv_lt P σ; unfold pm; omega
+  have := pv_lt P σ; unfold pm; omega_arith
 
 theorem qm_lt (P : KP) (σ : State) : qm P σ < 2 ^ (8 * P.K) := by
-  have := qv_lt P σ; unfold qm; omega
+  have := qv_lt P σ; unfold qm; omega_arith
 
 /-- The bounds of the working space's numbers. -/
 theorem In.k16 (pre : In P σ) : 16 * P.K + 64 < 32 * P.W - 1 := by
-  have := pre.k1; simp only [KP.W]; omega
+  have := pre.k1; simp only [KP.W]; omega_arith
 
 theorem phi_lt (P : KP) (σ : State) : pm P σ * qm P σ < 2 ^ (16 * P.K) := by
-  rw [show 16 * P.K = 8 * P.K + 8 * P.K by omega, Nat.pow_add]
+  rw [show 16 * P.K = 8 * P.K + 8 * P.K by omega_arith, Nat.pow_add]
   exact Nat.mul_lt_mul'' (pm_lt P σ) (qm_lt P σ)
 
 /-- The halving keeps the numbers below their bounds. -/
@@ -110,9 +110,9 @@ theorem hv_le (P : KP) (σ : State) :
 /-- The halving's `u` and `v` are below `2^(32 W)`. -/
 theorem hv_lt (P : KP) (σ : State) : (hv P σ).1 < 2 ^ (32 * P.W) ∧ (hv P σ).2.1 < 2 ^ (32 * P.W) := by
   have hle := hv_le P σ
-  have := Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * P.K ≤ 32 * P.W by simp only [KP.W]; omega)
+  have := Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * P.K ≤ 32 * P.W by simp only [KP.W]; omega_arith)
   have := pm_lt P σ; have := qm_lt P σ
-  omega
+  omega_arith
 
 /-- `lv = lcm(pm, qm)`. -/
 theorem lv_eq (P : KP) (σ : State) : lv P σ = Nat.lcm (pm P σ) (qm P σ) := by
@@ -129,24 +129,24 @@ theorem lv_eq (P : KP) (σ : State) : lv P σ = Nat.lcm (pm P σ) (qm P σ) := b
   by_cases hv0 : v % 2 = 0
   · simp only [hv0, ↓reduceIte] at hodd ⊢
     by_cases hu : u < 2
-    · rw [ite_eq_left hu, ite_eq_left (show u ≤ 1 by omega)]
-    · rw [ite_eq_right hu, ite_eq_right (show ¬ u ≤ 1 by omega)]
-      exact (ivr_spec (hodd (by omega)) (by omega) lt.2 lt.1).1
+    · rw [ite_eq_left hu, ite_eq_left (show u ≤ 1 by omega_arith)]
+    · rw [ite_eq_right hu, ite_eq_right (show ¬ u ≤ 1 by omega_arith)]
+      exact (ivr_spec (hodd (by omega_arith)) (by omega_arith) lt.2 lt.1).1
   · simp only [hv0, ↓reduceIte] at hodd ⊢
     by_cases hu : v < 2
-    · rw [ite_eq_left hu, ite_eq_left (show v ≤ 1 by omega)]
-    · rw [ite_eq_right hu, ite_eq_right (show ¬ v ≤ 1 by omega)]
-      exact (ivr_spec (hodd (by omega)) (by omega) lt.1 lt.2).1
+    · rw [ite_eq_left hu, ite_eq_left (show v ≤ 1 by omega_arith)]
+    · rw [ite_eq_right hu, ite_eq_right (show ¬ v ≤ 1 by omega_arith)]
+      exact (ivr_spec (hodd (by omega_arith)) (by omega_arith) lt.1 lt.2).1
 
 theorem lv_lt (P : KP) (σ : State) : lv P σ < 2 ^ (16 * P.K) := by
   have := (hv_le P σ).2.2
   have := phi_lt P σ
   have : lv P σ ≤ (hv P σ).2.2 := Nat.div_le_self _ _
-  omega
+  omega_arith
 
 theorem sub32_le {W a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ (32 * W)) : sub32 W a b = a - b := by
   unfold sub32
-  rw [show a + 2 ^ (32 * W) - b = (a - b) + 2 ^ (32 * W) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  rw [show a + 2 ^ (32 * W) - b = (a - b) + 2 ^ (32 * W) by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- `d` and its flag are the inverse of the specification. -/
 theorem dv_spec (pre : In P σ) :
@@ -155,8 +155,8 @@ theorem dv_spec (pre : In P σ) :
   have he := pre.e_lt
   have hl := lv_lt P σ
   have k16 := pre.k16
-  have p16 : 2 ^ (16 * P.K) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by omega)
-  have p64 : 2 ^ 64 ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by omega)
+  have p16 : 2 ^ (16 * P.K) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  have p64 : 2 ^ 64 ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by omega_arith)
   unfold okv dv
   by_cases e0 : P.e = 0
   · simp only [e0, ↓reduceIte]
@@ -168,34 +168,34 @@ theorem dv_spec (pre : In P σ) :
   simp only [e0, e1, ↓reduceIte]
   by_cases eo : P.e % 2 = 1
   · simp only [eo, ↓reduceIte]
-    obtain ⟨g, dvd, xlt⟩ := ivr_spec (W := P.W) (a := lv P σ) eo (by omega) (by omega) (by omega)
+    obtain ⟨g, dvd, xlt⟩ := ivr_spec (W := P.W) (a := lv P σ) eo (by omega_arith) (by omega_arith) (by omega_arith)
     generalize ivr P.W (lv P σ) P.e = r at g dvd xlt ⊢
     refine ⟨fun h => ?_, fun h => ?_⟩
     · simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not, decide_eq_true_eq] at h
       obtain ⟨h2, g1⟩ := h
       rw [g1] at dvd
       rw [g] at g1
-      obtain ⟨-, inv⟩ := inverse_odd_exact (e := P.e) (L := lv P σ) (by omega) (by omega)
+      obtain ⟨-, inv⟩ := inverse_odd_exact (e := P.e) (L := lv P σ) (by omega_arith) (by omega_arith)
         (by exact_mod_cast dvd) xlt
-      rw [inv, sub32_le (by omega) (by omega), Nat.mod_eq_of_lt (a := P.e - r.2.2.2) (by omega)]
+      rw [inv, sub32_le (by omega_arith) (by omega_arith), Nat.mod_eq_of_lt (a := P.e - r.2.2.2) (by omega_arith)]
       congr 2
-      have : (P.e - r.2.2.2) * lv P σ < 2 ^ 64 * 2 ^ (16 * P.K) := Nat.mul_lt_mul'' (by omega) hl
+      have : (P.e - r.2.2.2) * lv P σ < 2 ^ 64 * 2 ^ (16 * P.K) := Nat.mul_lt_mul'' (by omega_arith) hl
       have : 2 ^ 64 * 2 ^ (16 * P.K) * 2 ≤ 2 ^ (32 * P.W - 1) := by
-        rw [← Nat.pow_add, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega)
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mul_comm]
-      omega
+        rw [← Nat.pow_add, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+      rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mul_comm]
+      omega_arith
     · simp only [Bool.and_eq_false_iff, Bool.not_eq_false', decide_eq_true_eq, decide_eq_false_iff_not] at h
-      refine inverse_odd_none' (by omega) fun ⟨h2, h1⟩ => ?_
+      refine inverse_odd_none' (by omega_arith) fun ⟨h2, h1⟩ => ?_
       rcases h with h | h
-      · omega
+      · omega_arith
       · exact h (by rw [g]; exact h1)
   · simp only [eo, ↓reduceIte]
-    have heven : P.e % 2 = 0 := by omega
+    have heven : P.e % 2 = 0 := by omega_arith
     have mo : mE P σ % 2 = 1 ∧ 1 < mE P σ ∧ mE P σ < 2 ^ (32 * P.W) := by
       unfold mE; split
-      · rename_i h; exact ⟨h.1, by omega, by omega⟩
-      · exact ⟨rfl, by decide, by omega⟩
-    obtain ⟨g, dvd, xlt⟩ := ivr_spec (W := P.W) (a := P.e) mo.1 mo.2.1 (by omega) mo.2.2
+      · rename_i h; exact ⟨h.1, by omega_arith, by omega_arith⟩
+      · exact ⟨rfl, by decide, by omega_arith⟩
+    obtain ⟨g, dvd, xlt⟩ := ivr_spec (W := P.W) (a := P.e) mo.1 mo.2.1 (by omega_arith) mo.2.2
     generalize ivr P.W P.e (mE P σ) = r at g dvd xlt ⊢
     refine ⟨fun h => ?_, fun h => ?_⟩
     · simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not, decide_eq_true_eq] at h
@@ -203,12 +203,12 @@ theorem dv_spec (pre : In P σ) :
       have hm : mE P σ = lv P σ := by unfold mE; rw [ite_eq_left ⟨ho, h3⟩]
       rw [hm] at g dvd xlt
       rw [g1] at dvd
-      exact VG.Proof.Rsa.inverse_eq (by omega) xlt (by exact_mod_cast dvd)
+      exact VG.Proof.Rsa.inverse_eq (by omega_arith) xlt (by exact_mod_cast dvd)
     · simp only [Bool.and_eq_false_iff, Bool.not_eq_false', decide_eq_true_eq, decide_eq_false_iff_not] at h
       refine inverse_even_none' heven fun ⟨ho, h3, h1⟩ => ?_
-      have hm : mE P σ = lv P σ := by unfold mE; rw [ite_eq_left ⟨ho, by omega⟩]
+      have hm : mE P σ = lv P σ := by unfold mE; rw [ite_eq_left ⟨ho, by omega_arith⟩]
       rcases h with (h | h) | h
-      · omega
+      · omega_arith
       · exact h ho
       · rw [hm] at g; exact h (by rw [g]; exact h1)
 

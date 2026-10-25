@@ -103,24 +103,24 @@ theorem scan_step {n : Nat} {f : Nat → Byte} {j : Nat} (hj : j < n) (b : Byte)
   have hlt := lzS_le n f
   rcases Nat.lt_trichotomy (lzS n f) j with hl | hl | hl
   · have h8 : r8 = 0 := by simp only [r8, nfS, ite_eq_left hl, az]
-    simp only [h8, az, oz, pzS, vzS, nfS, ite_eq_left hl, ite_eq_left (by omega : lzS n f < j + 1), za]
+    simp only [h8, az, oz, pzS, vzS, nfS, ite_eq_left hl, ite_eq_left (by omega_arith : lzS n f < j + 1), za]
     exact ⟨trivial, trivial, trivial⟩
   · have hne : b ≠ 0 := by
-      rw [hb, ← hl, ← sL_getD (n := n) (f := f) (by omega)]
-      exact RsaPss.getD_lz_ne (by rw [sL_length]; show lzS n f < n; omega)
+      rw [hb, ← hl, ← sL_getD (n := n) (f := f) (by omega_arith)]
+      exact RsaPss.getD_lz_ne (by rw [sL_length]; show lzS n f < n; omega_arith)
     have h3 : r3 = 0 := by simp only [r3, hne, ite_false]
     have h8 : r8 = BitVec.allOnes 32 := by
-      simp only [r8, h3, nfS, ite_eq_right (show ¬ lzS n f < j by omega)]; decide
-    simp only [h8, h3, BitVec.and_allOnes, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega),
-      ite_eq_left (show lzS n f < j + 1 by omega)]
+      simp only [r8, h3, nfS, ite_eq_right (show ¬ lzS n f < j by omega_arith)]; decide
+    simp only [h8, h3, BitVec.and_allOnes, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega_arith),
+      ite_eq_left (show lzS n f < j + 1 by omega_arith)]
     have sz : (0 : Byte).setWidth 32 = 0 := rfl
     refine ⟨by rw [hl, BitVec.zero_or], by rw [hl, hb, sz, zo], by decide⟩
   · have hz : b = 0 := by rw [hb, ← sL_getD (n := n) (f := f) hj]; exact RsaPss.getD_lt_lz hl
     have h3 : r3 = 1 := by simp only [r3, hz, ite_true]
     have h8 : r8 = 0 := by
       simp only [r8, h3]; rw [show (1 : BitVec 32) - 1 = 0 by decide, za]
-    simp only [h8, h3, az, oz, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega),
-      ite_eq_right (show ¬ lzS n f < j + 1 by omega)]
+    simp only [h8, h3, az, oz, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega_arith),
+      ite_eq_right (show ¬ lzS n f < j + 1 by omega_arith)]
     exact ⟨trivial, trivial, by decide⟩
 
 variable {L : Lay} {scr : BitVec 32}
@@ -135,8 +135,8 @@ theorem scan_vp (hg : Geo L scr) {o n : Nat} (ho : o + n ≤ oRsa) (hn : 0 < n) 
   have fit := hg.fit
   let I : Nat → State → State → Prop := fun k σ s => k ≤ n ∧ Ctx L scr σ s ∧ X σ s.mem ∧
     SC scr o n (f σ) (n - k) s
-  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, hs⟩ => ⟨by omega, hc, hx,
-    by rw [show n - (n - 1 + 1) = 0 by omega]; exact hs⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, hs⟩ => ⟨by omega_arith, hc, hx,
+    by rw [show n - (n - 1 + 1) = 0 by omega_arith]; exact hs⟩) fun _ _ h => h
   refine VP.taint _ scanBody_cert (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hk, hc, hx, hs⟩ => ?_
   · obtain ⟨-, -, -, p₁⟩ := h₁
     obtain ⟨-, -, -, p₂⟩ := h₂
@@ -146,11 +146,11 @@ theorem scan_vp (hg : Geo L scr) {o n : Nat} (ho : o + n ≤ oRsa) (hn : 0 < n) 
     · rw [p₁.r1, p₂.r1]
     · rw [p₁.lr, p₂.lr]
   generalize hj : n - (k + 1) = j at hs
-  have hjn : j < n := by omega
-  have ad : State.addr (scr + BitVec.ofNat 32 (o + j)) = sa scr (o + j) := hg.addr (by omega)
-  have rd : InRegions (s.rd ++ s.wr) (sa scr (o + j)) 1 := hg.rd hc.st (by omega)
+  have hjn : j < n := by omega_arith
+  have ad : State.addr (scr + BitVec.ofNat 32 (o + j)) = sa scr (o + j) := hg.addr (by omega_arith)
+  have rd : InRegions (s.rd ++ s.wr) (sa scr (o + j)) 1 := hg.rd hc.st (by omega_arith)
   have lr1 : BitVec.ofNat 32 (n - j) - 1 = BitVec.ofNat 32 (n - (j + 1)) := by
-    rw [show n - j = (n - (j + 1)) + 1 by omega]; exact sub_one_ofNat (by omega)
+    rw [show n - j = (n - (j + 1)) + 1 by omega_arith]; exact sub_one_ofNat (by omega_arith)
   have hw : WP isa (.block scanBody) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
       t.gpr .r0 = scr + BitVec.ofNat 32 (o + (j + 1)) ∧ t.gpr .r1 = BitVec.ofNat 32 (j + 1) ∧
       t.gpr .lr = BitVec.ofNat 32 (n - (j + 1)) ∧
@@ -164,16 +164,16 @@ theorem scan_vp (hg : Geo L scr) {o n : Nat} (ho : o + n ≤ oRsa) (hn : 0 < n) 
     refine ⟨?_, ?_, ?_⟩
     · rw [BitVec.add_assoc, VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, Nat.add_assoc]
     · exact VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32 _
-    · rw [VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+    · rw [VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_arith)]
   refine WP.mono hw fun t ⟨m, rd', wr, sp, r0, r1, lr, r4, r5, r6, r7, z⟩ => ?_
   have st := scan_step hjn _ rfl (f := f σ)
   have hc' : Ctx L scr σ t := hc.regs rd' wr sp m
   have hx' : X σ t.mem := m ▸ hx
   have sk : SC scr o n (f σ) (j + 1) t :=
     ⟨r0, r1, lr, by rw [r4]; exact st.1, by rw [r5]; exact st.2.1, by rw [r6]; exact st.2.2, r7⟩
-  refine ⟨by rw [VG.Proof.X25519.Arm.eval_ne, z, show n - (j + 1) = k by omega]; cases k <;> simp,
-    fun h0 => ⟨hc', hx', by obtain rfl : n = j + 1 := (by omega); exact sk⟩,
-    fun hpos => ⟨by omega, hc', hx', by rw [show n - k = j + 1 by omega]; exact sk⟩⟩
+  refine ⟨by rw [VG.Proof.X25519.Arm.eval_ne, z, show n - (j + 1) = k by omega_arith]; cases k <;> simp,
+    fun h0 => ⟨hc', hx', by obtain rfl : n = j + 1 := (by omega_arith); exact sk⟩,
+    fun hpos => ⟨by omega_arith, hc', hx', by rw [show n - k = j + 1 by omega_arith]; exact sk⟩⟩
 
 end Scan
 
@@ -229,8 +229,8 @@ theorem tscan_vp (P : EP) :
   refine VP.seq (G := fun σ s => Ctx P.lay P.scr σ s ∧ X σ s.mem ∧
       SC P.scr (oEm + 1 + 2 * h.H.D) (tN h P) (T h g P σ) 0 s)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hy, ha⟩ => ?_)
-    (VP.seq (scan_vp hg (o := oEm + 1 + 2 * h.H.D) (n := tN h P) (by oomega) (by omega) (f := T h g P) (X := X)
-      fun σ m hx i hi => by rw [show oEm + 1 + 2 * h.H.D + i = 1 + 2 * h.H.D + i by oomega]; exact hx.1.2 _ (by omega))
+    (VP.seq (scan_vp hg (o := oEm + 1 + 2 * h.H.D) (n := tN h P) (by oomega) (by omega_arith) (f := T h g P) (X := X)
+      fun σ m hx i hi => by rw [show oEm + 1 + 2 * h.H.D + i = 1 + 2 * h.H.D + i by oomega]; exact hx.1.2 _ (by omega_arith))
       ?_)
   · have hi := hy.1.1.1
     obtain ⟨a4, r4, v4⟩ := argAt hi hc.st (j := 4) (by decide)
@@ -240,8 +240,8 @@ theorem tscan_vp (P : EP) :
         t.gpr .lr = BitVec.ofNat 32 (tN h P) ∧ t.gpr .r4 = 0 ∧ t.gpr .r5 = 0 ∧ t.gpr .r6 = BitVec.allOnes 32 ∧
         t.gpr .r7 = 0 := by
       prun [scanSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a4, r4, v4, arg_lt,
-        movw_val (show oEm + 1 + 2 * h.H.D < 2 ^ 16 by oomega), movw_val (show 2 * h.H.D + 1 < 2 ^ 16 by omega),
-        movw_val (show 0 < 2 ^ 16 by decide), Offset.ofNat_sub_ofNat (show 2 * h.H.D + 1 ≤ P.K by omega), dpVal]
+        movw_val (show oEm + 1 + 2 * h.H.D < 2 ^ 16 by oomega), movw_val (show 2 * h.H.D + 1 < 2 ^ 16 by omega_arith),
+        movw_val (show 0 < 2 ^ 16 by decide), Offset.ofNat_sub_ofNat (show 2 * h.H.D + 1 ≤ P.K by omega_arith), dpVal]
       decide
     refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr, r4', r5, r6, r7⟩ =>
       ⟨hc.regs rd wr sp m, m ▸ ⟨hy, ha⟩, ⟨by rw [r0]; rfl, r1, by rw [lr, Nat.sub_zero], ?_, ?_, ?_, r7⟩⟩
@@ -272,7 +272,7 @@ theorem tscan_vp (P : EP) :
         nfS (tN h P) (T h g P σ) (tN h P) >>> 31) = 0 ↔
         lzS (tN h P) (T h g P σ) < tN h P ∧ T h g P σ (lzS (tN h P) (T h g P σ)) = 1) := ex
   refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, ⟨⟨hy.1.1.keep h fr fun r hr => ?_,
-    hy.1.2.1.keep h fr (dS _ _ (by oomega)), ?_⟩, em_keep fr (dS _ _ (by oomega)) (by omega) hy.2⟩,
+    hy.1.2.1.keep h fr (dS _ _ (by oomega)), ?_⟩, em_keep fr (dS _ _ (by oomega)) (by omega_arith) hy.2⟩,
     ⟨_, by rw [m, slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32], ?_, ?_⟩,
     by rw [m, Mem.readW_writeW_self32]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -283,7 +283,7 @@ theorem tscan_vp (P : EP) :
     rcases hr with rfl | rfl <;> exact slotSep (by decide) (by decide) (by decide)
   · rw [← hy.1.2.2]
     exact em_keep (n := 1) fr (dS _ _ (by oomega)) (by decide)
-      (f := fun _ => s.mem (sa P.scr 0)) (fun i hi => by rw [show i = 0 by omega]) 0 (by decide)
+      (f := fun _ => s.mem (sa P.scr 0)) (fun i hi => by rw [show i = 0 by omega_arith]) 0 (by decide)
   · rw [BitVec.toNat_or]; exact Nat.or_lt_two_pow (n := 8) hab hx.1
   · rw [or_eq_zero32, hae, hx.2]
 

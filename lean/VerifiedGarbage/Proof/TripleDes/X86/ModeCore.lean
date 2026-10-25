@@ -58,21 +58,21 @@ theorem copyCode_wp {k : Nat} : ∀ (W : Nat) {s : State} {P B : BitVec 32}, s.g
       s'.wr = s.wr → WP isa (.block is) s' Q) →
     WP isa (.block (copyCode k W ++ is)) s Q
   | 0, s, _, _, _, _, _, _, _, _, _, _, _, k' => by
-    simpa [copyCode] using k' s (fun i hi => by omega) (Frame.refl _ _) (fun _ _ => rfl) rfl rfl
+    simpa [copyCode] using k' s (fun i hi => by omega_arith) (Frame.refl _ _) (fun _ _ => rfl) rfl rfl
   | W + 1, s, P, B, hc, hd, hP, hB, hr, hw, hdis, is, Q, k' => by
     rw [copyCode_succ, List.append_assoc]
     have hdis' : Region.Disjoint ⟨P.setWidth 64, 4 * W⟩ ⟨slotA B k, 4 * W⟩ :=
-      (hdis.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by omega))
-    refine copyCode_wp W hc hd (by omega) (by omega) (fun w hw' => hr w (by omega)) (fun w hw' => hw w (by omega))
+      (hdis.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith))
+    refine copyCode_wp W hc hd (by omega_arith) (by omega_arith) (fun w hw' => hr w (by omega_arith)) (fun w hw' => hw w (by omega_arith))
       hdis' fun s₁ m₁ f₁ g₁ rd₁ wr₁ => ?_
     simp only [List.cons_append]
-    have hin : InRegions (s₁.rd ++ s₁.wr) (addr P (4 * W)) 4 := by rw [rd₁, wr₁]; exact hr W (by omega)
+    have hin : InRegions (s₁.rd ++ s₁.wr) (addr P (4 * W)) 4 := by rw [rd₁, wr₁]; exact hr W (by omega_arith)
     refine wp_ldm (by rw [g₁ _ (by decide)]; exact hc) hin fun s₂ u₂ => ?_
     refine wp_stm (B := B) (by rw [u₂.other _ (by decide), g₁ _ (by decide)]; exact hd)
-      (by rw [u₂.wr, wr₁]; exact hw W (by omega)) fun s₃ u₃ => ?_
-    have eP : addr P (4 * W) = P.setWidth 64 + BitVec.ofNat 64 (4 * W) := addr_eq (by omega)
+      (by rw [u₂.wr, wr₁]; exact hw W (by omega_arith)) fun s₃ u₃ => ?_
+    have eP : addr P (4 * W) = P.setWidth 64 + BitVec.ofNat 64 (4 * W) := addr_eq (by omega_arith)
     have eB : addr B (4 * (k + W)) = slotA B k + BitVec.ofNat 64 (4 * W) := by
-      rw [addr_eq (by omega), VG.Offset.add_add, Nat.mul_add]
+      rw [addr_eq (by omega_arith), VG.Offset.add_add, Nat.mul_add]
     have m₃ : s₃.mem = s₁.mem.writeW (slotA B k + BitVec.ofNat 64 (4 * W))
         (s₁.mem.readW (P.setWidth 64 + BitVec.ofNat 64 (4 * W)) 32) := by
       rw [u₃.mem, u₂.mem, u₂.gpr, eP, eB]
@@ -82,26 +82,26 @@ theorem copyCode_wp {k : Nat} : ∀ (W : Nat) {s : State} {P B : BitVec 32}, s.g
       rw [VG.Offset.add_add]
       exact f₁.bytes (R := ⟨P.setWidth 64, 4 * (W + 1)⟩) (fun r hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
-        exact hdis.sub_right (Region.sub_prefix (by omega))) (by show 4 * (W + 1) ≤ 2 ^ 64; omega)
-        (by show 4 * W + t < 4 * (W + 1); omega)
+        exact hdis.sub_right (Region.sub_prefix (by omega_arith))) (by show 4 * (W + 1) ≤ 2 ^ 64; omega_arith)
+        (by show 4 * W + t < 4 * (W + 1); omega_arith)
     refine k' s₃ (fun i hi => ?_) ?_ (fun r hr' => by rw [u₃.gpr, u₂.other r hr', g₁ r hr'])
       (by rw [u₃.rd, u₂.rd, rd₁]) (by rw [u₃.wr, u₂.wr, wr₁])
     · rw [m₃, write4_apply]
       by_cases h : i < 4 * W
       · rw [ite_eq_right (fun h' => ?_), m₁ i h]
-        have := (VG.Offset.lt_iff (slotA B k + BitVec.ofNat 64 i) (slotA B k) (d := 4 * W) (n := 4) (by omega)).mp h'
-        rw [VG.Proof.Modes.X86.sub_self_add _ (by omega)] at this
-        omega
+        have := (VG.Offset.lt_iff (slotA B k + BitVec.ofNat 64 i) (slotA B k) (d := 4 * W) (n := 4) (by omega_arith)).mp h'
+        rw [VG.Proof.Modes.X86.sub_self_add _ (by omega_arith)] at this
+        omega_arith
       · have e : slotA B k + BitVec.ofNat 64 i = slotA B k + BitVec.ofNat 64 (4 * W) + BitVec.ofNat 64 (i - 4 * W) := by
-          rw [VG.Offset.add_add (slotA B k) (4 * W) (i - 4 * W), Nat.add_sub_cancel' (by omega)]
-        rw [e, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-          ite_eq_left (by omega), ← Mem.readW_byte _ _ (by omega), src₁ _ (by omega), VG.Offset.add_add,
-          Nat.add_sub_cancel' (by omega)]
+          rw [VG.Offset.add_add (slotA B k) (4 * W) (i - 4 * W), Nat.add_sub_cancel' (by omega_arith)]
+        rw [e, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
+          ite_eq_left (by omega_arith), ← Mem.readW_byte _ _ (by omega_arith), src₁ _ (by omega_arith), VG.Offset.add_add,
+          Nat.add_sub_cancel' (by omega_arith)]
     · rw [m₃]
       have hc4 : (⟨slotA B k, 4 * (W + 1)⟩ : Region).Contains (slotA B k + BitVec.ofNat 64 (4 * W)) (32 / 8) :=
-        VG.Offset.contains_base _ (by omega) (by omega)
+        VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
       exact (f₁.sub fun r hr' => ⟨⟨slotA B k, 4 * (W + 1)⟩, List.mem_singleton_self _, by
-        simp only [List.mem_singleton] at hr'; subst hr'; exact Region.sub_prefix (by omega)⟩).writeW
+        simp only [List.mem_singleton] at hr'; subst hr'; exact Region.sub_prefix (by omega_arith)⟩).writeW
         (List.mem_singleton_self _) _ hc4
 
 /-! ## The key -/
@@ -141,9 +141,9 @@ theorem ready_frame {d : Direction} {s s' : State} {B : BitVec 32} {k : Spec.Tri
   rw [scheduleAt_eq_of_frame _ hf fun r hr => ?_]
   · exact hk
   rcases hd r hr with h' | h'
-  · exact h'.sub_left (VG.Offset.sub_base _ (by simp only [dirCore, schedSlot, bufSlot]; omega))
-  · exact (VG.Offset.disjoint _ (.inr (by simp only [dirCore, schedSlot, bufSlot]; omega)) (by simp only [schedSlot]; omega)
-      (by simp only [dirCore, bufSlot]; omega)).sub_right h'
+  · exact h'.sub_left (VG.Offset.sub_base _ (by simp only [dirCore, schedSlot, bufSlot]; omega_arith))
+  · exact (VG.Offset.disjoint _ (.inr (by simp only [dirCore, schedSlot, bufSlot]; omega_arith)) (by simp only [schedSlot]; omega_arith)
+      (by simp only [dirCore, bufSlot]; omega_arith)).sub_right h'
 
 theorem prepare_wp (d : Direction) {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.TripleDes.Schedule}
     (hB : s.gpr sb = B) (hs : ScrIn s B (dirCore d).total)
@@ -161,34 +161,34 @@ theorem prepare_wp (d : Direction) {s : State} {B : BitVec 32} {rs : List Region
   rw [hcopy, ← List.append_nil (copyCode schedSlot 96), List.singleton_append]
   refine wp_ldm (B := s.gpr .esp) rfl hin fun s₁ u₁ => ?_
   rw [show s.mem.readW (addr (s.gpr .esp) (4 + 4 * 0)) 32 = p from hp] at u₁
-  have hp64 : ∀ w < 96, addr p (4 * w) = p.setWidth 64 + BitVec.ofNat 64 (4 * w) := fun w hw => addr_eq (by omega)
-  refine copyCode_wp (P := p) (B := B) 96 u₁.gpr (by rw [u₁.other _ (by decide)]; exact hB) (by omega) (by simp only [schedSlot]; omega)
+  have hp64 : ∀ w < 96, addr p (4 * w) = p.setWidth 64 + BitVec.ofNat 64 (4 * w) := fun w hw => addr_eq (by omega_arith)
+  refine copyCode_wp (P := p) (B := B) 96 u₁.gpr (by rw [u₁.other _ (by decide)]; exact hB) (by omega_arith) (by simp only [schedSlot]; omega_arith)
     (fun w hw => ?_) (fun w hw => ?_) ?_ fun s₂ m₂ f₂ g₂ rd₂ wr₂ => WP.block_nil ?_
-  · rw [u₁.rd, u₁.wr, hp64 w hw]; exact ⟨_, hsch, VG.Offset.contains_base _ (by omega) (by omega)⟩
-  · rw [u₁.wr, addr_eq (by simp only [schedSlot]; omega)]
+  · rw [u₁.rd, u₁.wr, hp64 w hw]; exact ⟨_, hsch, VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  · rw [u₁.wr, addr_eq (by simp only [schedSlot]; omega_arith)]
     have hc : (⟨B.setWidth 64, 4 * 236⟩ : Region).Contains
         (B.setWidth 64 + BitVec.ofNat 64 (4 * (schedSlot + w))) 4 :=
-      VG.Offset.contains_base _ (by simp only [schedSlot]; omega) (by simp only [schedSlot]; omega)
+      VG.Offset.contains_base _ (by simp only [schedSlot]; omega_arith) (by simp only [schedSlot]; omega_arith)
     have hw' := hs.wr
     rw [dirCore_total] at hw'
     exact ⟨_, hw', hc⟩
-  · exact hsep.sub_right (VG.Offset.sub_base _ (by simp only [schedSlot]; omega))
+  · exact hsep.sub_right (VG.Offset.sub_base _ (by simp only [schedSlot]; omega_arith))
   have esp₂ : s₂.gpr .esp = s.gpr .esp := by rw [g₂ _ (by decide), u₁.other _ (by decide)]
   refine ⟨⟨?_, ?_, hfB⟩, by rw [g₂ _ (by decide), u₁.other _ (by decide)]; exact hB, esp₂,
     ?_, by rw [rd₂, u₁.rd], by rw [wr₂, u₁.wr]⟩
   · rw [scheduleAt_copy (p := p.setWidth 64) fun i hi => ?_]
-    rw [m₂ i (by omega), u₁.mem]
+    rw [m₂ i (by omega_arith), u₁.mem]
   · rw [esp₂]; have := hsdis _ hR; rw [dirCore_total] at this; exact this
   · rw [← u₁.mem]
     exact f₂.sub fun r hr => ⟨_, List.mem_cons_self, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega)⟩
+      exact VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega_arith)⟩
 
 theorem addr32_add {B : BitVec 32} {d : Nat} (h : B.toNat + d < 2 ^ 32) :
     addr32 (B + BitVec.ofNat 32 d) = B.setWidth 64 + BitVec.ofNat 64 d := addr_eq h
 
 theorem toNat_add {B : BitVec 32} {d : Nat} (h : B.toNat + d < 2 ^ 32) : (B + BitVec.ofNat 32 d).toNat = B.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : d < 2 ^ 32), Nat.mod_eq_of_lt h]
 
 /-- The direction's cipher on the 8 bytes at `p` is the block function's result on the block there. -/
 theorem dirCipher_bytes (d : Direction) (k : Spec.TripleDes.Schedule) (m : Mem) (p : Addr) :
@@ -263,7 +263,7 @@ theorem cryptCall_ok (d : Direction) (s : State) (hp : CallPre s) : WP isa (cryp
       hp.keyFit, hp.dataFit, hp.bufFit, ?_⟩
     rw [sub_toNat hp.stackLo]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   · intro a n ⟨r, hr, hc⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -303,12 +303,12 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
   have hst' : 16 ≤ (s.gpr .esp).toNat := hst
   have hB' : s.gpr .edi = B := hB
   have slotIn : ∀ o, o + 4 ≤ 4 * 236 → (⟨B.setWidth 64, 4 * 236⟩ : Region).Contains (addr B o) 4 := fun o h => by
-    rw [addr_eq (by omega)]; exact VG.Offset.contains_base _ (by omega) (by omega)
+    rw [addr_eq (by omega_arith)]; exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
   show WP isa (.seq (.block cryptSetup) (.seq (cryptCall d) (.block cryptDone))) s _
   refine WP.seq ?_
-  refine wp_ldm (b := .edi) (o := 4 * dSlot) hB' ⟨_, List.mem_append_right _ hw, slotIn _ (by simp only [dSlot, schedSlot]; omega)⟩
+  refine wp_ldm (b := .edi) (o := 4 * dSlot) hB' ⟨_, List.mem_append_right _ hw, slotIn _ (by simp only [dSlot, schedSlot]; omega_arith)⟩
     fun s₁ u₁ => wp_ldm (b := .edi) (o := 4 * nSlot) ((u₁.other _ (by decide)).trans hB')
-      (by rw [u₁.rd, u₁.wr]; exact ⟨_, List.mem_append_right _ hw, slotIn _ (by simp only [nSlot, schedSlot]; omega)⟩)
+      (by rw [u₁.rd, u₁.wr]; exact ⟨_, List.mem_append_right _ hw, slotIn _ (by simp only [nSlot, schedSlot]; omega_arith)⟩)
     fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_addi fun s₅ u₅ => wp_mov fun s₆ u₆ =>
       wp_addi fun s₇ u₇ => WP.block_nil ?_
   have edi₇ : s₇.gpr .edi = B := by
@@ -335,8 +335,8 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
   have m₇ : s₇.mem = s.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   have rd₇ : s₇.rd = s.rd := by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   have wr₇ : s₇.wr = s.wr := by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have aK : addr32 (s₇.gpr .edx) = B.setWidth 64 + BitVec.ofNat 64 520 := by rw [edx₇]; exact addr32_add (by omega)
-  have aD : addr32 (s₇.gpr .ecx) = B.setWidth 64 + BitVec.ofNat 64 512 := by rw [ecx₇]; exact addr32_add (by omega)
+  have aK : addr32 (s₇.gpr .edx) = B.setWidth 64 + BitVec.ofNat 64 520 := by rw [edx₇]; exact addr32_add (by omega_arith)
+  have aD : addr32 (s₇.gpr .ecx) = B.setWidth 64 + BitVec.ofNat 64 512 := by rw [ecx₇]; exact addr32_add (by omega_arith)
   have aW : addr32 (s₇.gpr .eax) = B.setWidth 64 := by rw [eax₇]; rfl
   have scrSub : ∀ (off n : Nat), off + n ≤ 4 * 236 → ∃ r' ∈ s₇.wr, ∃ o,
       (B.setWidth 64 + BitVec.ofNat 64 off) = r'.base + BitVec.ofNat 64 o ∧ o + n ≤ r'.len :=
@@ -347,22 +347,22 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
       ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · rw [aK]; exact scrSub 520 384 (by omega)
-      · rw [aD]; exact scrSub 512 8 (by omega)
-      · rw [aW, e0]; exact scrSub 0 512 (by omega)
+      · rw [aK]; exact scrSub 520 384 (by omega_arith)
+      · rw [aD]; exact scrSub 512 8 (by omega_arith)
+      · rw [aW, e0]; exact scrSub 0 512 (by omega_arith)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · rw [aD]; exact scrSub 512 8 (by omega)
-      · rw [aW, e0]; exact scrSub 0 512 (by omega)
-    · rw [aK, aW]; exact VG.Offset.disjoint_base _ (by omega) (by omega)
-    · rw [aD, aW]; exact VG.Offset.disjoint_base _ (by omega) (by omega)
-    · rw [edx₇, toNat_add (by omega)]; omega
-    · rw [ecx₇, toNat_add (by omega)]; omega
-    · rw [eax₇]; omega
+      · rw [aD]; exact scrSub 512 8 (by omega_arith)
+      · rw [aW, e0]; exact scrSub 0 512 (by omega_arith)
+    · rw [aK, aW]; exact VG.Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · rw [aD, aW]; exact VG.Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · rw [edx₇, toNat_add (by omega_arith)]; omega_arith
+    · rw [ecx₇, toNat_add (by omega_arith)]; omega_arith
+    · rw [eax₇]; omega_arith
     · rw [esp₇]; exact hst'
-    · rw [esp₇, aK]; exact hstk.sub_right (VG.Offset.sub_base _ (by omega))
-    · rw [esp₇, aD]; exact hstk.sub_right (VG.Offset.sub_base _ (by omega))
-    · rw [esp₇, aW]; exact hstk.sub_right (Region.sub_prefix (by omega))
+    · rw [esp₇, aK]; exact hstk.sub_right (VG.Offset.sub_base _ (by omega_arith))
+    · rw [esp₇, aD]; exact hstk.sub_right (VG.Offset.sub_base _ (by omega_arith))
+    · rw [esp₇, aW]; exact hstk.sub_right (Region.sub_prefix (by omega_arith))
   refine WP.seq (WP.mono (cryptCall_ok d s₇ hpre) fun s' hc => ?_)
   have hfr := hc.mem
   rw [aD, aW, esp₇, m₇] at hfr
@@ -372,20 +372,20 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
   have outSlot : ∀ o, 520 + 384 ≤ o → o + 4 ≤ 4 * 236 →
       ∀ r ∈ [(⟨B.setWidth 64 + BitVec.ofNat 64 512, 8⟩ : Region), ⟨B.setWidth 64, 512⟩, below (s.gpr .esp) 16],
         Region.Disjoint ⟨addr B o, 4⟩ r := fun o h₁ h₂ r hr => by
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_arith)]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact VG.Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-    · exact VG.Offset.disjoint_base _ (by omega) (by omega)
-    · exact (hstk.sub_right (VG.Offset.sub_base _ (by omega))).symm
+    · exact VG.Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+    · exact VG.Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · exact (hstk.sub_right (VG.Offset.sub_base _ (by omega_arith))).symm
   have keepD : s'.mem.readW (addr B (4 * dSlot)) 32 = s.mem.readW (addr B (4 * dSlot)) 32 :=
-    hfr.readW (Region.contains_self _ _) (outSlot _ (by simp only [dSlot, schedSlot]; omega)
-      (by simp only [dSlot, schedSlot]; omega)) (by decide)
+    hfr.readW (Region.contains_self _ _) (outSlot _ (by simp only [dSlot, schedSlot]; omega_arith)
+      (by simp only [dSlot, schedSlot]; omega_arith)) (by decide)
   have keepN : s'.mem.readW (addr B (4 * nSlot)) 32 = s.mem.readW (addr B (4 * nSlot)) 32 :=
-    hfr.readW (Region.contains_self _ _) (outSlot _ (by simp only [nSlot, schedSlot]; omega)
-      (by simp only [nSlot, schedSlot]; omega)) (by decide)
-  have inD : InRegions s.wr (addr B (4 * dSlot)) 4 := ⟨_, hw, slotIn _ (by simp only [dSlot, schedSlot]; omega)⟩
-  have inN : InRegions s.wr (addr B (4 * nSlot)) 4 := ⟨_, hw, slotIn _ (by simp only [nSlot, schedSlot]; omega)⟩
+    hfr.readW (Region.contains_self _ _) (outSlot _ (by simp only [nSlot, schedSlot]; omega_arith)
+      (by simp only [nSlot, schedSlot]; omega_arith)) (by decide)
+  have inD : InRegions s.wr (addr B (4 * dSlot)) 4 := ⟨_, hw, slotIn _ (by simp only [dSlot, schedSlot]; omega_arith)⟩
+  have inN : InRegions s.wr (addr B (4 * nSlot)) 4 := ⟨_, hw, slotIn _ (by simp only [nSlot, schedSlot]; omega_arith)⟩
   refine wp_stm (b := .edi) (B := B) (o := 4 * dSlot) sb' (wr' ▸ inD) fun s₈ u₈ => ?_
   refine wp_stm (b := .edi) (B := B) (o := 4 * nSlot) ((congrFun u₈.gpr _).trans sb')
     ((u₈.wr.trans wr') ▸ inN) fun s₉ u₉ => WP.block_nil ?_
@@ -397,9 +397,9 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
       Region.Disjoint ⟨slotA B schedSlot, 384⟩ r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact VG.Offset.disjoint _ (.inr (by simp only [schedSlot]; omega)) (by simp only [schedSlot]; omega) (by omega)
-    · exact VG.Offset.disjoint_base _ (by simp only [schedSlot]; omega) (by simp only [schedSlot]; omega)
-    · exact (hstk.sub_right (VG.Offset.sub_base _ (by simp only [schedSlot]; omega))).symm
+    · exact VG.Offset.disjoint _ (.inr (by simp only [schedSlot]; omega_arith)) (by simp only [schedSlot]; omega_arith) (by omega_arith)
+    · exact VG.Offset.disjoint_base _ (by simp only [schedSlot]; omega_arith) (by simp only [schedSlot]; omega_arith)
+    · exact (hstk.sub_right (VG.Offset.sub_base _ (by simp only [schedSlot]; omega_arith))).symm
   refine ⟨by rw [g₉]; exact sb', by rw [g₉]; exact esp', ⟨?_, by rw [g₉, esp']; exact hstk, hfB⟩, ?_, fun j hj => ?_,
     by rw [u₉.rd, u₈.rd, hc.rd, rd₇], by rw [u₉.wr, u₈.wr, wr']⟩
   · rw [m₉, scheduleAt_eq_of_frame _ hfr copyOut]; exact hk
@@ -407,10 +407,10 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
     refine hfr.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨_, List.mem_cons_self, VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega)⟩
-    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore, schedSlot]; omega)⟩
+    · exact ⟨_, List.mem_cons_self, VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega_arith)⟩
+    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore, schedSlot]; omega_arith)⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
-  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega
+  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_arith
     subst hj0
     have eB : blkAddr (dirCore d) B 0 = B.setWidth 64 + BitVec.ofNat 64 512 := by
       simp [blkAddr, slotA, dirCore, bufSlot]
@@ -429,8 +429,8 @@ def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
   KeyArgs := KeyArgs
   Ready := Ready
   cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher]
-  layout := ⟨by simp only [dirCore]; decide, .inl rfl, by simp only [dirCore, schedSlot, bufSlot]; omega,
-    by simp only [dirCore]; omega⟩
+  layout := ⟨by simp only [dirCore]; decide, .inl rfl, by simp only [dirCore, schedSlot, bufSlot]; omega_arith,
+    by simp only [dirCore]; omega_arith⟩
   keyArgs_congr h e r w _ f := keyArgs_congr h e r w f
   ready_frame h hesp _ _ _ hf _ hd := ready_frame h hesp hf hd
   prepare_wp := prepare_wp d

@@ -143,7 +143,7 @@ theorem finMid_keepsV : H.finMid.all keepsV = true := by
     · exact hw
     · exact Pbkdf2.AArch64.padLen_keepsV hH.shape
   simp only [Hash.finMid, List.all_append, copyW_keepsV, hsel, Bool.and_true, Bool.true_and]
-  simp [Impl.MdStream.AArch64.mov, keepsV, vdstOf]
+  rfl
 
 include hH in
 theorem cmp_keepsV : (instrs (Impl.MdStream.AArch64.compressAt H.compN H.compC)).all keepsV = true := by
@@ -159,8 +159,7 @@ theorem finOut_keepsV : H.finOut.all keepsV = true := by
   by_cases hDN : H.D < H.P.N <;>
   simp only [Hash.finOut, hDN, ↓reduceIte, List.all_append, List.all_cons, ho, copyW_keepsV, Bool.and_true,
     Bool.true_and] <;>
-  simp [Impl.Pbkdf2.Md.AArch64.Stream.restore,
-    Impl.Pbkdf2.Md.AArch64.Stream.saved, Impl.MdStream.AArch64.mov, keepsV, vdstOf]
+  rfl
 
 include hH in
 /-- HMAC's `init` writes no SIMD register but in the functions it calls,
@@ -182,9 +181,7 @@ theorem hmacInit_keepsV : H.hmacInit.allInstrs keepsV = true := by
   simp only [Hash.hmacInit, Hash.initKeys, Hash.keyLoop, Impl.Pbkdf2.Md.AArch64.Stream.callInit,
     Impl.MdStream.AArch64.compressAt, Impl.MdStream.AArch64.compressWith, Hash.stream, instrs,
     List.all_append, hi, hc, h1, h2, Bool.and_true, Bool.true_and]
-  simp [Hash.initPrologue, Hash.initOuter, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.save,
-    Impl.Pbkdf2.Md.AArch64.Stream.saved, Impl.Pbkdf2.Md.AArch64.Stream.restore, Impl.MdStream.AArch64.mov,
-    keepsV, vdstOf]
+  rfl
 
 include hH in
 /-- HMAC's `finalize` writes no SIMD register but in the functions it calls,

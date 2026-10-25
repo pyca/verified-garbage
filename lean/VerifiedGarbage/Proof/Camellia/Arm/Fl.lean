@@ -31,15 +31,15 @@ theorem slot_in {s : State} (hok : Ok layerCfg s) {k : Nat} (hk : k < keySlot) :
 
 theorem exec_ldS {s : State} (hok : Ok layerCfg s) {r : Reg} {k : Nat} (hk : k < keySlot) :
     exec (ldS r k) s = some (s.setReg r (slotW s k)) :=
-  exec_ldr (by simp [keySlot] at hk; omega) (slot_in hok hk)
+  exec_ldr (by simp [keySlot] at hk; omega_arith) (slot_in hok hk)
 
 theorem exec_stS {s : State} (hok : Ok layerCfg s) {r : Reg} {k : Nat} (hk : k < keySlot) :
     exec (stS k r) s = some { s with mem := s.mem.writeW (wordAddr (s.gpr sb) k) (s.gpr r) } :=
-  exec_str (by simp [keySlot] at hk; omega) (hok.slotIn k hk)
+  exec_str (by simp [keySlot] at hk; omega_arith) (hok.slotIn k hk)
 
 theorem exec_ldK {s : State} (hok : Ok layerCfg s) {r : Reg} {w : Nat} (hw : w < 32) :
     exec (.ldr r kp (4 * w)) s = some (s.setReg r (keyW s w)) :=
-  exec_ldr (by omega) (hok.extIn w hw)
+  exec_ldr (by omega_arith) (hok.extIn w hw)
 
 theorem exec_dp_reg {s : State} {op : DpOp} {d n m : Reg} :
     exec (.dp op d n (.reg m)) s = some (s.setReg d (match op with
@@ -105,7 +105,7 @@ theorem slot_writeW {s : State} (hok : Ok layerCfg s) {k k' : Nat} (hk : k < key
     (s.mem.writeW (wordAddr (s.gpr sb) k) v).readW (wordAddr (s.gpr sb) k') 32 = slotW s k' := by
   have := hok.slots
   simp only [layerCfg, keySlot] at this hk hk'
-  exact Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hne) (by decide)
+  exact Mem.readW_writeW_sep (slot_sep _ (by omega_arith) (by omega_arith) hne) (by decide)
 
 theorem slot_writeW_self {s : State} (k : Nat) (v : BitVec 32) :
     (s.mem.writeW (wordAddr (s.gpr sb) k) v).readW (wordAddr (s.gpr sb) k) 32 = v :=
@@ -179,7 +179,7 @@ theorem flRotStep_ok {s : State} (hok : Ok layerCfg s) {d off j : Nat}
   have hi : (j + 7) % 8 < 8 := Nat.mod_lt _ (by decide)
   obtain ⟨n0, n1, -, -⟩ := q_ne _
   simp only [flRotStep, andR]
-  rw [run_ldK hok (by omega)]
+  rw [run_ldK hok (by omega_arith)]
   generalize e₁ : s.setReg t0 (keyW s (off + (j + 7) % 8)) = s₁
   have k₁ : Keeps s s₁ t0 := e₁ ▸ keeps_setReg _ _ (by decide) (by decide)
   have v₁ : s₁.gpr t0 = keyW s (off + (j + 7) % 8) := e₁ ▸ RegUpd.gpr_setReg_self _ _ _
@@ -242,7 +242,7 @@ theorem flOrStep_ok {s : State} (hok : Ok layerCfg s) {d off j : Nat} (hj : j < 
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   obtain ⟨n0, n1, nsb, nkp⟩ := q_ne _
   simp only [flOrStep, eorR]
-  rw [run_ldK hok (by omega)]
+  rw [run_ldK hok (by omega_arith)]
   generalize e₁ : s.setReg t0 (keyW s (off + 8 + j)) = s₁
   have k₁ : Keeps s s₁ t0 := e₁ ▸ keeps_setReg _ _ (by decide) (by decide)
   have v₁ : s₁.gpr t0 = keyW s (off + 8 + j) := e₁ ▸ RegUpd.gpr_setReg_self _ _ _
@@ -282,27 +282,27 @@ theorem flRot_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 �
         else slotW s k) ∧
       (∀ w < 32, keyW s' w = keyW s w) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       Frame [slotRegion layerCfg s] s.mem s'.mem
-  | 0, _ => ⟨s, runBlock_nil, hok, fun _ _ _ => rfl, fun k _ => by simp only [show ¬ (d + 8 ≤ k ∧ k < d + 8 + 0) by omega, ↓reduceIte],
+  | 0, _ => ⟨s, runBlock_nil, hok, fun _ _ _ => rfl, fun k _ => by simp only [show ¬ (d + 8 ≤ k ∧ k < d + 8 + 0) by omega_arith, ↓reduceIte],
       fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
-    obtain ⟨s₁, h₁, ok₁, g₁, m₁, k₁, rd₁, wr₁, sp₁, f₁⟩ := flRot_ok hok hd hw n (by omega)
+    obtain ⟨s₁, h₁, ok₁, g₁, m₁, k₁, rd₁, wr₁, sp₁, f₁⟩ := flRot_ok hok hd hw n (by omega_arith)
     obtain ⟨s₂, h₂, ok₂, g₂, m₂, k₂, rd₂, wr₂, sp₂, f₂⟩ := flRotStep_ok ok₁ (d := d) (off := off) (j := n)
-      (by omega) hw
+      (by omega_arith) hw
     have hq : ∀ i, s₁.gpr (q i) = s.gpr (q i) := fun i => g₁ _ (q_ne i).1 (q_ne i).2.1
     refine ⟨s₂, by rw [runBlock_range_succ, h₁, Option.bind_some, h₂], ok₂, fun r h1 h2 => (g₂ r h1 h2).trans (g₁ r h1 h2),
       fun k hk => ?_, fun w hw' => (k₂ w hw').trans (k₁ w hw'), rd₂.trans rd₁, wr₂.trans wr₁, sp₂.trans sp₁, ?_⟩
     · rw [m₂ k hk]
       have hrv : rotV (fun i => s₁.gpr (q i)) (fun i => keyW s₁ (off + i)) n =
           rotV (fun i => s.gpr (q i)) (fun i => keyW s (off + i)) n := by
-        simp only [rotV, hq, k₁ _ (show off + (n + 7) % 8 < 32 by omega)]
+        simp only [rotV, hq, k₁ _ (show off + (n + 7) % 8 < 32 by omega_arith)]
       split
       · rename_i h; subst h
-        rw [m₁ _ hk, iteNeg (by omega), hrv, itePos (by omega), show d + 8 + n - (d + 8) = n by omega]
+        rw [m₁ _ hk, iteNeg (by omega_arith), hrv, itePos (by omega_arith), show d + 8 + n - (d + 8) = n by omega_arith]
       · rename_i h
         rw [m₁ _ hk]
         by_cases h' : d + 8 ≤ k ∧ k < d + 8 + n
-        · rw [itePos h', itePos (by omega)]
-        · rw [iteNeg h', iteNeg (by omega)]
+        · rw [itePos h', itePos (by omega_arith)]
+        · rw [iteNeg h', iteNeg (by omega_arith)]
     · have e : slotRegion layerCfg s₁ = slotRegion layerCfg s := by
         simp only [slotRegion, layerCfg, g₁ sb (by decide) (by decide)]
       exact f₁.trans (e ▸ f₂)
@@ -315,12 +315,12 @@ theorem flOr_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤
         else s.gpr (q j)) ∧
       (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
-  | 0, _ => ⟨s, runBlock_nil, hok, fun j _ => by simp only [show ¬ j < 0 by omega, ↓reduceIte],
+  | 0, _ => ⟨s, runBlock_nil, hok, fun j _ => by simp only [show ¬ j < 0 by omega_arith, ↓reduceIte],
       fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | n + 1, hn => by
-    obtain ⟨s₁, h₁, ok₁, g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := flOr_ok hok hd hw n (by omega)
+    obtain ⟨s₁, h₁, ok₁, g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := flOr_ok hok hd hw n (by omega_arith)
     obtain ⟨s₂, h₂, ok₂, v₂, o₂, m₂, rd₂, wr₂, sp₂⟩ := flOrStep_ok ok₁ (d := d) (off := off) (j := n)
-      (by omega) (by omega) hw
+      (by omega_arith) (by omega_arith) hw
     refine ⟨s₂, by rw [runBlock_range_succ, h₁, Option.bind_some, h₂], ok₂, fun j hj => ?_,
       fun r hr => ?_, m₂.trans m₁, rd₂.trans rd₁, wr₂.trans wr₁, sp₂.trans sp₁⟩
     · have hs : slotW s₁ (d + 8 + n) = slotW s (d + 8 + n) := by
@@ -329,11 +329,11 @@ theorem flOr_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤
         simp only [keyW, m₁, (o₁ kp (by decide))]
       by_cases hjn : j = n
       · subst hjn
-        rw [v₂, g₁ j hj, iteNeg (by omega), itePos (by omega), hs, hkw]
-      · rw [o₂ _ (q_ne j).1 (q_ne j).2.1 (fun h => hjn (q_inj j hj n (by omega) h)), g₁ j hj]
+        rw [v₂, g₁ j hj, iteNeg (by omega_arith), itePos (by omega_arith), hs, hkw]
+      · rw [o₂ _ (q_ne j).1 (q_ne j).2.1 (fun h => hjn (q_inj j hj n (by omega_arith) h)), g₁ j hj]
         by_cases hjn' : j < n
-        · rw [itePos hjn', itePos (by omega)]
-        · rw [iteNeg hjn', iteNeg (by omega)]
+        · rw [itePos hjn', itePos (by omega_arith)]
+        · rw [iteNeg hjn', iteNeg (by omega_arith)]
     · have h1 : r ≠ t0 := fun h => hr (h ▸ by decide)
       have h2 : r ≠ t1 := fun h => hr (h ▸ by decide)
       have h3 : r ≠ q n := fun h => hr (h ▸ q_mem n)
@@ -349,21 +349,21 @@ theorem loadL_ok {s : State} (hok : Ok layerCfg s) {d : Nat} (hd : d + 8 ≤ key
       (∀ j < 8, s'.gpr (q j) = if j < n then slotW s (d + j) else s.gpr (q j)) ∧
       (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
-  | 0, _ => ⟨s, runBlock_nil, hok, fun j _ => by simp only [show ¬ j < 0 by omega, ↓reduceIte],
+  | 0, _ => ⟨s, runBlock_nil, hok, fun j _ => by simp only [show ¬ j < 0 by omega_arith, ↓reduceIte],
       fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | n + 1, hn => by
-    obtain ⟨s₁, h₁, ok₁, g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := loadL_ok hok hd n (by omega)
+    obtain ⟨s₁, h₁, ok₁, g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := loadL_ok hok hd n (by omega_arith)
     obtain ⟨-, -, nsb, nkp⟩ := q_ne n
     have k₂ := keeps_setReg s₁ (slotW s₁ (d + n)) nsb nkp
     have hs : slotW s₁ (d + n) = slotW s (d + n) := by simp only [slotW, m₁, o₁ sb (by decide)]
-    refine ⟨_, by rw [runBlock_map_succ, h₁, Option.bind_some, run_ldS ok₁ (by omega), runBlock_nil],
+    refine ⟨_, by rw [runBlock_map_succ, h₁, Option.bind_some, run_ldS ok₁ (by omega_arith), runBlock_nil],
       k₂.ok ok₁, fun j hj => ?_, fun r hr => ?_, m₁, rd₁, wr₁, sp₁⟩
     · by_cases hjn : j = n
-      · subst hjn; rw [RegUpd.gpr_setReg_self, hs, itePos (by omega)]
-      · rw [k₂.gpr _ (fun h => hjn (q_inj j hj n (by omega) h)), g₁ j hj]
+      · subst hjn; rw [RegUpd.gpr_setReg_self, hs, itePos (by omega_arith)]
+      · rw [k₂.gpr _ (fun h => hjn (q_inj j hj n (by omega_arith) h)), g₁ j hj]
         by_cases hjn' : j < n
-        · rw [itePos hjn', itePos (by omega)]
-        · rw [iteNeg hjn', iteNeg (by omega)]
+        · rw [itePos hjn', itePos (by omega_arith)]
+        · rw [iteNeg hjn', iteNeg (by omega_arith)]
     · rw [k₂.gpr _ (fun h => hr (by rw [h]; exact q_mem n)), o₁ r hr]
 
 theorem storeL_ok {s : State} (hok : Ok layerCfg s) {d : Nat} (hd : d + 8 ≤ keySlot) : ∀ n ≤ 8,
@@ -371,36 +371,36 @@ theorem storeL_ok {s : State} (hok : Ok layerCfg s) {d : Nat} (hd : d + 8 ≤ ke
       (∀ k < keySlot, slotW s' k = if d ≤ k ∧ k < d + n then s.gpr (q (k - d)) else slotW s k) ∧
       (∀ w < 32, keyW s' w = keyW s w) ∧ (∀ r, s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [slotRegion layerCfg s] s.mem s'.mem
-  | 0, _ => ⟨s, runBlock_nil, hok, fun k _ => by simp only [show ¬ (d ≤ k ∧ k < d + 0) by omega, ↓reduceIte],
+  | 0, _ => ⟨s, runBlock_nil, hok, fun k _ => by simp only [show ¬ (d ≤ k ∧ k < d + 0) by omega_arith, ↓reduceIte],
       fun _ _ => rfl, fun _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
-    obtain ⟨s₁, h₁, ok₁, m₁, k₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := storeL_ok hok hd n (by omega)
+    obtain ⟨s₁, h₁, ok₁, m₁, k₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := storeL_ok hok hd n (by omega_arith)
     have b₁ : s₁.gpr sb = s.gpr sb := g₁ sb
     refine ⟨{ s₁ with mem := s₁.mem.writeW (wordAddr (s₁.gpr sb) (d + n)) (s₁.gpr (q n)) },
-      by rw [runBlock_map_succ, h₁, Option.bind_some, run_stS ok₁ (by omega), runBlock_nil],
+      by rw [runBlock_map_succ, h₁, Option.bind_some, run_stS ok₁ (by omega_arith), runBlock_nil],
       ok_setMem ok₁ _, fun k hk => ?_, fun w hw => ?_, g₁, rd₁, wr₁, sp₁, ?_⟩
     · show (s₁.mem.writeW (wordAddr (s₁.gpr sb) (d + n)) (s₁.gpr (q n))).readW (wordAddr (s₁.gpr sb) k) 32 = _
       by_cases hkn : k = d + n
       · subst hkn
-        rw [slot_writeW_self, itePos (by omega), g₁, show d + n - d = n by omega]
-      · rw [slot_writeW ok₁ (by omega) hk hkn]
+        rw [slot_writeW_self, itePos (by omega_arith), g₁, show d + n - d = n by omega_arith]
+      · rw [slot_writeW ok₁ (by omega_arith) hk hkn]
         show slotW s₁ k = _
         rw [m₁ k hk]
         by_cases h' : d ≤ k ∧ k < d + n
-        · rw [itePos h', itePos (by omega)]
-        · rw [iteNeg h', iteNeg (by omega)]
+        · rw [itePos h', itePos (by omega_arith)]
+        · rw [iteNeg h', iteNeg (by omega_arith)]
     · show (s₁.mem.writeW (wordAddr (s₁.gpr sb) (d + n)) (s₁.gpr (q n))).readW (wordAddr (s₁.gpr kp) w) 32 = _
-      rw [key_writeW ok₁ (by omega) hw, k₁ w hw]
+      rw [key_writeW ok₁ (by omega_arith) hw, k₁ w hw]
     · have e : slotRegion layerCfg s₁ = slotRegion layerCfg s := by simp only [slotRegion, layerCfg, b₁]
-      exact f₁.trans (e ▸ exec_stS_frame ok₁ (by omega) _)
+      exact f₁.trans (e ▸ exec_stS_frame ok₁ (by omega_arith) _)
 
 theorem getLsbD_ror8 (x : BitVec 32) {p : Nat} (hp : p < 32) :
     (x.rotateRight 8).getLsbD p = x.getLsbD ((p + 8) % 32) := by
   rw [BitVec.getLsbD_rotateRight]
   split
-  · congr 1; omega
+  · congr 1; omega_arith
   · rename_i h; simp only [Nat.reduceMod, Nat.not_lt] at h; simp only [hp, decide_true, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_arith
 
 theorem rotV_bit {L K : Nat → BitVec 32} {j p : Nat} (hp : p < 32) :
     (rotV L K j).getLsbD p =
@@ -438,10 +438,10 @@ theorem flRot_step {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 
   refine ⟨s', h, ⟨fun j hj => ?_, fun j hj p hp => ?_⟩, ok, g, fun k' hk' h' => ?_, k, rd, wr, sp, f⟩
   · simp only [mixed, hj, ↓reduceIte, hq]
   · have hjj : (j + 7) % 8 < 8 := Nat.mod_lt _ (by decide)
-    simp only [mixed, show ¬ 8 + j < 8 by omega, ↓reduceIte, hjj]
-    rw [m _ (by omega), itePos (by omega), BitVec.getLsbD_xor, rotV_bit hp,
-      show d + (8 + j) - (d + 8) = j by omega]
-  · rw [m k' hk', iteNeg (by omega)]
+    simp only [mixed, show ¬ 8 + j < 8 by omega_arith, ↓reduceIte, hjj]
+    rw [m _ (by omega_arith), itePos (by omega_arith), BitVec.getLsbD_xor, rotV_bit hp,
+      show d + (8 + j) - (d + 8) = j by omega_arith]
+  · rw [m k' hk', iteNeg (by omega_arith)]
 
 /-- The OR step, as `W32.OrStep`. -/
 theorem flOr_step {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤ keySlot)
@@ -453,16 +453,16 @@ theorem flOr_step {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 �
   obtain ⟨s', h, ok, g, o, m, rd, wr, sp⟩ := flOr_ok hok hd hw 8 (Nat.le_refl _)
   have hs : ∀ k, slotW s' k = slotW s k := fun k => by simp only [slotW, m, o sb (by decide)]
   refine ⟨s', h, ⟨fun j hj => ?_, fun j hj p hp => ?_⟩, ok, o, m, rd, wr, sp⟩
-  · simp only [mixed, show ¬ 8 + j < 8 by omega, ↓reduceIte, hs]
-  · simp only [mixed, hj, ↓reduceIte, show ¬ 8 + j < 8 by omega]
+  · simp only [mixed, show ¬ 8 + j < 8 by omega_arith, ↓reduceIte, hs]
+  · simp only [mixed, hj, ↓reduceIte, show ¬ 8 + j < 8 by omega_arith]
     rw [g j hj, itePos hj, BitVec.getLsbD_xor, BitVec.getLsbD_or, Bool.or_comm,
-      show d + (8 + j) = d + 8 + j by omega, show off + (8 + j) = off + 8 + j by omega]
+      show d + (8 + j) = d + 8 + j by omega_arith, show off + (8 + j) = off + 8 + j by omega_arith]
 
 theorem loadL_mixed {s : State} (hok : Ok layerCfg s) {d : Nat} (hd : d + 16 ≤ keySlot) :
     ∃ s', runBlock isa (loadL d) s = some s' ∧ Ok layerCfg s' ∧ (∀ i < 16, mixed s' d i = half s d i) ∧
       (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  obtain ⟨s', h, ok, g, o, m, rd, wr, sp⟩ := loadL_ok hok (d := d) (by omega) 8 (Nat.le_refl _)
+  obtain ⟨s', h, ok, g, o, m, rd, wr, sp⟩ := loadL_ok hok (d := d) (by omega_arith) 8 (Nat.le_refl _)
   refine ⟨s', h, ok, fun i hi => ?_, o, m, rd, wr, sp⟩
   simp only [mixed, half]
   split
@@ -474,14 +474,14 @@ theorem storeL_mixed {s : State} (hok : Ok layerCfg s) {d : Nat} (hd : d + 16 �
       (∀ k < keySlot, (k < d ∨ d + 8 ≤ k) → slotW s' k = slotW s k) ∧
       (∀ w < 32, keyW s' w = keyW s w) ∧ (∀ r, s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [slotRegion layerCfg s] s.mem s'.mem := by
-  obtain ⟨s', h, ok, m, k, g, rd, wr, sp, f⟩ := storeL_ok hok (d := d) (by omega) 8 (Nat.le_refl _)
+  obtain ⟨s', h, ok, m, k, g, rd, wr, sp, f⟩ := storeL_ok hok (d := d) (by omega_arith) 8 (Nat.le_refl _)
   refine ⟨s', h, ok, fun i hi => ?_, fun k' hk' h' => ?_, k, g, rd, wr, sp, f⟩
   · simp only [mixed, half]
-    rw [m _ (by omega)]
+    rw [m _ (by omega_arith)]
     split
-    · rename_i h; rw [itePos (by omega), show d + i - d = i by omega]
-    · rw [iteNeg (by omega)]
-  · rw [m _ hk', iteNeg (by omega)]
+    · rename_i h; rw [itePos (by omega_arith), show d + i - d = i by omega_arith]
+    · rw [iteNeg (by omega_arith)]
+  · rw [m _ hk', iteNeg (by omega_arith)]
 
 theorem fl_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤ keySlot) (hw : off + 16 ≤ 32)
     {x : Nat → BitVec 64} {k : BitVec 64} (hQ : W32.HalfRel (half s d) x)
@@ -490,21 +490,21 @@ theorem fl_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤ k
       W32.HalfRel (half s' d) (fun b => Spec.Camellia.fl (x b) k) ∧ FlPost s s' d := by
   obtain ⟨s₁, h₁, ok₁, x₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := loadL_mixed hok hd
   have kw₁ : ∀ w, keyW s₁ w = keyW s w := fun w => by simp only [keyW, m₁, o₁ kp (by decide)]
-  obtain ⟨s₂, h₂, r₂, ok₂, o₂, sl₂, kw₂, rd₂, wr₂, sp₂, f₂⟩ := flRot_step ok₁ hd (off := off) (by omega)
+  obtain ⟨s₂, h₂, r₂, ok₂, o₂, sl₂, kw₂, rd₂, wr₂, sp₂, f₂⟩ := flRot_step ok₁ hd (off := off) (by omega_arith)
   obtain ⟨s₃, h₃, r₃, ok₃, o₃, m₃, rd₃, wr₃, sp₃⟩ := flOr_step ok₂ hd hw
   obtain ⟨s₄, h₄, ok₄, x₄, sl₄, kw₄, o₄, rd₄, wr₄, sp₄, f₄⟩ := storeL_mixed ok₃ hd
   have hK₁ : W32.HalfRel (fun i => keyW s₁ (off + i)) fun _ => k := hK.congr fun i _ => kw₁ _
   have hK₂ : W32.HalfRel (fun i => keyW s₂ (off + i)) fun _ => k :=
-    hK₁.congr fun i hi => kw₂ _ (by omega)
+    hK₁.congr fun i hi => kw₂ _ (by omega_arith)
   have hr := W32.fl_rel (hQ.congr fun i hi => x₁ i hi) hK₁ r₂
-    ⟨r₃.1, fun j hj p hp => by rw [r₃.2 j hj p hp]; dsimp only; rw [kw₂ _ (by omega)]⟩
+    ⟨r₃.1, fun j hj p hp => by rw [r₃.2 j hj p hp]; dsimp only; rw [kw₂ _ (by omega_arith)]⟩
   have b₂ : s₂.gpr sb = s.gpr sb := by rw [o₂ _ (by decide) (by decide), o₁ _ (by decide)]
   have s₃eq : ∀ k, slotW s₃ k = slotW s₂ k := fun k => by simp only [slotW, m₃, o₃ sb (by decide)]
   refine ⟨s₄, ?_, hr.congr fun i hi => x₄ i hi, ⟨ok₄, fun k' hk' h' => ?_, fun w hw' => ?_, fun r hr => ?_,
     by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃, wr₂, wr₁], by rw [sp₄, sp₃, sp₂, sp₁], ?_⟩⟩
   · rw [flCode, runBlock_app, runBlock_app, runBlock_app, h₁, Option.bind_some, h₂, Option.bind_some, h₃,
       Option.bind_some, h₄]
-  · rw [sl₄ k' hk' (by omega), s₃eq, sl₂ k' hk' (by omega)]
+  · rw [sl₄ k' hk' (by omega_arith), s₃eq, sl₂ k' hk' (by omega_arith)]
     simp only [slotW, m₁, o₁ sb (by decide)]
   · rw [kw₄ w hw', show keyW s₃ w = keyW s₂ w by simp only [keyW, m₃, o₃ kp (by decide)], kw₂ w hw', kw₁]
   · have h1 : r ≠ t0 := fun h => hr (h ▸ by decide)
@@ -527,7 +527,7 @@ theorem flinv_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 �
   have kw₁ : ∀ w, keyW s₁ w = keyW s w := fun w => by simp only [keyW, m₁, o₁ kp (by decide)]
   obtain ⟨s₂, h₂, r₂, ok₂, o₂, m₂, rd₂, wr₂, sp₂⟩ := flOr_step ok₁ hd hw
   have kw₂ : ∀ w, keyW s₂ w = keyW s₁ w := fun w => by simp only [keyW, m₂, o₂ kp (by decide)]
-  obtain ⟨s₃, h₃, r₃, ok₃, o₃, sl₃, kw₃, rd₃, wr₃, sp₃, f₃⟩ := flRot_step ok₂ hd (off := off) (by omega)
+  obtain ⟨s₃, h₃, r₃, ok₃, o₃, sl₃, kw₃, rd₃, wr₃, sp₃, f₃⟩ := flRot_step ok₂ hd (off := off) (by omega_arith)
   obtain ⟨s₄, h₄, ok₄, x₄, sl₄, kw₄, o₄, rd₄, wr₄, sp₄, f₄⟩ := storeL_mixed ok₃ hd
   have hK₁ : W32.HalfRel (fun i => keyW s₁ (off + i)) fun _ => k := hK.congr fun i _ => kw₁ _
   have hK₂ : W32.HalfRel (fun i => keyW s₂ (off + i)) fun _ => k := hK₁.congr fun i _ => kw₂ _
@@ -539,7 +539,7 @@ theorem flinv_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 �
     by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃, wr₂, wr₁], by rw [sp₄, sp₃, sp₂, sp₁], ?_⟩⟩
   · rw [flinvCode, runBlock_app, runBlock_app, runBlock_app, h₁, Option.bind_some, h₂, Option.bind_some, h₃,
       Option.bind_some, h₄]
-  · rw [sl₄ k' hk' (by omega), sl₃ k' hk' (by omega)]
+  · rw [sl₄ k' hk' (by omega_arith), sl₃ k' hk' (by omega_arith)]
     simp only [slotW, m₂, m₁, o₂ sb (by decide), o₁ sb (by decide)]
   · rw [kw₄ w hw', kw₃ w hw', kw₂, kw₁]
   · have h1 : r ≠ t0 := fun h => hr (h ▸ by decide)

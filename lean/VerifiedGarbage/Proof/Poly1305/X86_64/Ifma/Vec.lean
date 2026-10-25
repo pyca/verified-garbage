@@ -68,7 +68,7 @@ theorem YSet.s1 {sel : Nat → Bool} {s s' : State} (h : YSet sel s s') (hb : �
   have b := hb 1 (by decide)
   have o : one 1 = 0 := rfl
   rw [h.sr 1 (by decide) (by decide) k hk]
-  split at e <;> omega
+  split at e <;> omega_arith
 
 theorem YSet.s2 {sel : Nat → Bool} {s s' : State} (h : YSet sel s s') (hb : ∀ i < 3, (s.gpr (lg i)).toNat ≤ 2 ^ 44)
     {k : Nat} (hk : k < 8) : sv s' k 2 = 20 * yv s' k 2 := by
@@ -76,15 +76,15 @@ theorem YSet.s2 {sel : Nat → Bool} {s s' : State} (h : YSet sel s s') (hb : �
   have b := hb 2 (by decide)
   have o : one 2 = 0 := rfl
   rw [h.sr 2 (by decide) (by decide) k hk]
-  split at e <;> omega
+  split at e <;> omega_arith
 
 theorem YSet.yb {sel : Nat → Bool} {s s' : State} (h : YSet sel s s') (hb : ∀ i < 3, (s.gpr (lg i)).toNat ≤ 2 ^ 44) :
     ∀ k < 8, ∀ i < 3, yv s' k i ≤ 2 ^ 44 := by
   intro k hk i hi
   have e := h.y i hi k hk
   have b := hb i hi
-  have o : one i ≤ 1 := by unfold one; split <;> omega
-  split at e <;> omega
+  have o : one i ≤ 1 := by unfold one; split <;> omega_arith
+  split at e <;> omega_arith
 
 /-- `YSet` from the shapes of the terms of a block. -/
 theorem YSet.of {σ : Sym} {s s' : State} (h : SRel σ s s') {sel : Nat → Bool}
@@ -117,7 +117,7 @@ theorem s0S_eq : Sym.init.run false (bc3 ++ twenty) = some s0S := (Option.some_g
 theorem s0S_y : ∀ i < 3, ∀ k < 8, (s0S.reg (xi (yreg i))).natw E k =
     if (fun _ => true : Nat → Bool) k then E.g (lg i) else if i = 0 then (0 ||| E.mb 104) / 2 ^ 43 else 0 := by
   intro i hi k hk
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
     rcases cases8 hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 theorem s0S_shape : (∀ i, 1 ≤ i → i < 3 →
     s0S.reg (xi (sreg i)) = .add (.shl (s0S.reg (xi (yreg i))) 4) (.shl (s0S.reg (xi (yreg i))) 2)) ∧
@@ -128,7 +128,7 @@ theorem s1S_eq : Sym.init.run true (bc3 ++ zeroOne ++ unpY ++ twenty) = some s1S
 theorem s1S_y : ∀ i < 3, ∀ k < 8, (s1S.reg (xi (yreg i))).natw E k =
     if k % 2 == 0 then E.g (lg i) else if i = 0 then (0 ||| E.mb 104) / 2 ^ 43 else 0 := by
   intro i hi k hk
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
     rcases cases8 hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 theorem s1S_shape : (∀ i, 1 ≤ i → i < 3 →
     s1S.reg (xi (sreg i)) = .add (.shl (s1S.reg (xi (yreg i))) 4) (.shl (s1S.reg (xi (yreg i))) 2)) ∧
@@ -139,7 +139,7 @@ theorem s2S_eq : Sym.init.run true (bc3 ++ zeroOne ++ shY2 ++ twenty) = some s2S
 theorem s2S_y : ∀ i < 3, ∀ k < 8, (s2S.reg (xi (yreg i))).natw E k =
     if k / 2 % 2 == 0 then E.g (lg i) else if i = 0 then (0 ||| E.mb 104) / 2 ^ 43 else 0 := by
   intro i hi k hk
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
     rcases cases8 hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 theorem s2S_shape : (∀ i, 1 ≤ i → i < 3 →
     s2S.reg (xi (sreg i)) = .add (.shl (s2S.reg (xi (yreg i))) 4) (.shl (s2S.reg (xi (yreg i))) 2)) ∧
@@ -150,7 +150,7 @@ theorem s3S_eq : Sym.init.run true (bc3 ++ zeroOne ++ shY3 ++ twenty) = some s3S
 theorem s3S_y : ∀ i < 3, ∀ k < 8, (s3S.reg (xi (yreg i))).natw E k =
     if decide (k < 4) then E.g (lg i) else if i = 0 then (0 ||| E.mb 104) / 2 ^ 43 else 0 := by
   intro i hi k hk
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
     rcases cases8 hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 theorem s3S_shape : (∀ i, 1 ≤ i → i < 3 →
     s3S.reg (xi (sreg i)) = .add (.shl (s3S.reg (xi (yreg i))) 4) (.shl (s3S.reg (xi (yreg i))) 2)) ∧
@@ -195,11 +195,11 @@ theorem yOfH_ok {s : State} (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 44) :
   · funext i
     simp only [yv, hv]
     rw [h.reg _ k hk]
-    rcases (by omega : i < 3 ∨ 3 ≤ i) with hi | hi
+    rcases (by omega_arith : i < 3 ∨ 3 ≤ i) with hi | hi
     · rw [(yhS_shape i hi).1]; simp only [Q.eval, xr_xi]
     · have e : ∀ {j}, 2 ≤ j → yreg j = yreg 2 ∧ hreg j = hreg 2 := fun {j} hj => by
         match j, hj with | _ + 2, _ => exact ⟨rfl, rfl⟩
-      rw [(e (by omega)).1, (e (by omega)).2, (yhS_shape 2 (by decide)).1]; simp only [Q.eval, xr_xi]
+      rw [(e (by omega_arith)).1, (e (by omega_arith)).2, (yhS_shape 2 (by decide)).1]; simp only [Q.eval, xr_xi]
   · have y1 : yv s' k 1 = hv s k 1 := by
       simp only [yv, hv]; rw [h.reg _ k hk, (yhS_shape 1 (by decide)).1]; simp only [Q.eval, xr_xi]
     have y2 : yv s' k 2 = hv s k 2 := by
@@ -210,7 +210,7 @@ theorem yOfH_ok {s : State} (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 44) :
       simp only [sv, hv]; rw [h.natw _ hk, (yhS_shape 1 (by decide)).2.1 (by decide)]; simp only [Q.natw, envOf_v]
     have e2 : sv s' k 2 = (hv s k 2 * 2 ^ 4 % 2 ^ 64 + hv s k 2 * 2 ^ 2 % 2 ^ 64) % 2 ^ 64 := by
       simp only [sv, hv]; rw [h.natw _ hk, (yhS_shape 2 (by decide)).2.1 (by decide)]; simp only [Q.natw, envOf_v]
-    omega
+    omega_arith
   · rw [h.reg _ k hk, (yhS_shape i hi).2.2]; simp only [Q.eval, xr_xi]
 
 def hyS : Sym := (Sym.init.run false hOfY).get (by decide +kernel)
@@ -266,7 +266,7 @@ theorem fB_env {s : State} (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 44) : En
   have h2 := hb k hk 2 (by decide)
   simp only [hv, hreg] at h0 h1 h2
   cases r <;> simp only [fB]
-  all_goals omega
+  all_goals omega_arith
 
 def f1S : Sym := (Sym.init.run false fold1).get (by decide +kernel)
 theorem f1S_eq : Sym.init.run false fold1 = some f1S := (Option.some_get _).symm
@@ -286,16 +286,16 @@ variable (E : Env)
 theorem f1S_nat : ∀ i < 3, ∀ j < 4, (f1S.reg (xi (hreg i))).nat E (2 * j) =
     E.v (xi (hreg i)) (2 * j) + E.v (xi (hreg i)) (2 * j + 1) := by
   intro i hi j hj
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
 theorem f2S_nat : ∀ i < 3, ∀ j < 2, (f2S.reg (xi (hreg i))).nat E (4 * j) =
     E.v (xi (hreg i)) (4 * j) + E.v (xi (hreg i)) (4 * j + 2) := by
   intro i hi j hj
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+    rcases (by omega_arith : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
 theorem f3S_nat : ∀ i < 3, (f3S.reg (xi (hreg i))).nat E 0 = E.v (xi (hreg i)) 0 + E.v (xi (hreg i)) 4 := by
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> rfl
 end
 
 /-- What a fold leaves: `H` below `2⁴⁵`, and the rest but `t0` as it was. -/
@@ -320,14 +320,14 @@ theorem fold1_ok {s : State} (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 44) :
       ∀ j < 4, ∀ i < 3, hv s' (2 * j) i = hv s (2 * j) i + hv s (2 * j + 1) i :=
   WP.mono (run_ok (fun h => by cases h) f1S_eq) fun _ h =>
     ⟨fold_post h hb fun i hi k hk => (fS_ok i hi k hk).1, fun j hj i hi => by
-      rw [fold_nat h hb (by omega) (fS_ok i hi _ (by omega)).1.1, f1S_nat _ i hi j hj, envOf_v, envOf_v]; rfl⟩
+      rw [fold_nat h hb (by omega_arith) (fS_ok i hi _ (by omega_arith)).1.1, f1S_nat _ i hi j hj, envOf_v, envOf_v]; rfl⟩
 
 theorem fold2_ok {s : State} (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 44) :
     WP isa (.block fold2) s fun s' => FoldPost s s' ∧
       ∀ j < 2, ∀ i < 3, hv s' (4 * j) i = hv s (4 * j) i + hv s (4 * j + 2) i :=
   WP.mono (run_ok (fun h => by cases h) f2S_eq) fun _ h =>
     ⟨fold_post h hb fun i hi k hk => (fS_ok i hi k hk).2.1, fun j hj i hi => by
-      rw [fold_nat h hb (by omega) (fS_ok i hi _ (by omega)).2.1.1, f2S_nat _ i hi j hj, envOf_v, envOf_v]; rfl⟩
+      rw [fold_nat h hb (by omega_arith) (fS_ok i hi _ (by omega_arith)).2.1.1, f2S_nat _ i hi j hj, envOf_v, envOf_v]; rfl⟩
 
 theorem fold3_ok {s : State} (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 44) :
     WP isa (.block fold3) s fun s' => FoldPost s s' ∧

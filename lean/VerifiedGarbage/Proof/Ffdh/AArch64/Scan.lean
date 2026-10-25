@@ -58,7 +58,7 @@ def ScanAt (s₀ : State) (p : Addr) (n j : Nat) (t : State) : Prop :=
     Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9] s₀ t
 
 theorem byte_ofNat (b : Byte) : ((BitVec.ofNat 64 b.toNat) : BitVec 64).toNat = b.toNat := by
-  rw [BitVec.toNat_ofNat]; have := b.isLt; omega
+  rw [BitVec.toNat_ofNat]; have := b.isLt; omega_arith
 
 theorem scan_flag8 : ∀ (b : Byte) (d : Bool),
     ((if (!decide (BitVec.setWidth 64 (BitVec.setWidth 32 b) = 0)) = true then BitVec.setWidth 64 0#16
@@ -78,7 +78,7 @@ theorem subs_c2 (x : BitVec 64) :
   have h1 : (~~~(BitVec.setWidth 64 (2#16))).toNat = 2 ^ 64 - 3 := by decide
   rw [h1, Bool.toNat_true]
   have := x.isLt
-  by_cases h : 2 ≤ x.toNat <;> simp [h] <;> omega
+  by_cases h : 2 ≤ x.toNat <;> simp [h] <;> omega_arith
 
 /-- One iteration from `j ≤ lead bs`: `x5 := j < lead bs` (as 1 or 0), and the
 pointer and the length moved by it. -/
@@ -89,7 +89,7 @@ theorem scanStep_ok {s₀ : State} {p : Addr} {bs : List Byte} (hl : bs.length <
     WP isa (.block scanBody) t fun t' => ScanAt s₀ p bs.length (min (j + 1) (lead bs)) t' ∧
       ((t'.gpr .x5).toNat ≠ 0 ↔ j + 1 ≠ lead bs + 1) := by
   have hL := lead_lt hne
-  have hjl : j < bs.length := by omega
+  have hjl : j < bs.length := by omega_arith
   obtain ⟨h1, h2, hm, kt⟩ := ht
   have hld : InRegions (t.rd ++ t.wr) (p + BitVec.ofNat 64 j) 1 := by rw [kt.rd, kt.wr]; exact hrd j hjl
   have hb : t.mem (p + BitVec.ofNat 64 j) = bs[j] := by rw [hm]; exact hval j hjl
@@ -98,12 +98,12 @@ theorem scanStep_ok {s₀ : State} {p : Addr} {bs : List Byte} (hl : bs.length <
     constructor
     · rintro ⟨hz, h2⟩
       by_contra hc
-      have hje : j = lead bs := by omega
+      have hje : j = lead bs := by omega_arith
       subst hje
-      exact lead_nonzero hne (by omega) hz
+      exact lead_nonzero hne (by omega_arith) hz
     · intro hlt
       obtain ⟨_, hz⟩ := lead_zero j hlt
-      exact ⟨hz, by omega⟩
+      exact ⟨hz, by omega_arith⟩
   generalize hc : decide (bs[j] = 0 ∧ 2 ≤ bs.length - j) = c
   have hv : (BitVec.ofNat 64 c.toNat).toNat ≠ 0 ↔ j < lead bs := by
     rw [← hgo]
@@ -115,7 +115,7 @@ theorem scanStep_ok {s₀ : State} {p : Addr} {bs : List Byte} (hl : bs.length <
       t'.gpr .x2 = BitVec.ofNat 64 (bs.length - j) - BitVec.ofNat 64 c.toNat ∧ t'.mem = t.mem)
     (by
       unfold scanBody
-      brun [h1, h2, hld, VG.Proof.MlKem.AArch64.read_one, hb, subs_one_c, subs_c2, scan_flag _ (show bs.length - j < 2 ^ 64 by omega), hc]
+      brun [h1, h2, hld, VG.Proof.MlKem.AArch64.read_one, hb, subs_one_c, subs_c2, scan_flag _ (show bs.length - j < 2 ^ 64 by omega_arith), hc]
       done)
     (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨h5, h1', h2', hm'⟩, k⟩ => ?_
   have hc' : c = decide (j < lead bs) := by rw [← hc]; exact decide_eq_decide.mpr hgo
@@ -123,19 +123,19 @@ theorem scanStep_ok {s₀ : State} {p : Addr} {bs : List Byte} (hl : bs.length <
   refine ⟨⟨?_, ?_, hm'.trans hm, (kt.trans k).mono (by decide)⟩, ?_⟩
   · rw [h1']
     by_cases hlt : j < lead bs
-    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega)]; rfl
-    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega)]
-      simp only [Bool.toNat_false, Nat.add_zero]; congr 1; omega
+    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega_arith)]; rfl
+    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega_arith)]
+      simp only [Bool.toNat_false, Nat.add_zero]; congr 1; omega_arith
   · rw [h2']
     by_cases hlt : j < lead bs
-    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega), Bool.toNat_true,
-        VG.Proof.Bignum.AArch64.ofNat_sub_one' (by omega) (by omega)]
-      exact congrArg _ (by omega)
-    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega), Bool.toNat_false]
+    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega_arith), Bool.toNat_true,
+        VG.Proof.Bignum.AArch64.ofNat_sub_one' (by omega_arith) (by omega_arith)]
+      exact congrArg _ (by omega_arith)
+    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega_arith), Bool.toNat_false]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
-  · rw [h5, hv]; omega
+      omega_arith
+  · rw [h5, hv]; omega_arith
 
 /-- `scan sp`, in the outer workspace, over the octets `bs` at the pointer in
 slot `sp`, `p_len` of them. -/
@@ -154,16 +154,16 @@ theorem scan_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sp : Nat
   refine WP.seq (WP.mono (WP.keep [.x1, .x2] (Q := fun t => t.gpr .x1 = p ∧ t.gpr .x2 = BitVec.ofNat 64 bs.length ∧
       t.mem = s.mem) (by brun [h.x0, hdr_enc hsp, hdr_enc (show sK < 32 by decide), h.ld hsp, h.ld (show sK < 32 by decide),
         hp, hk]) rfl rfl rfl) fun s₁ ⟨⟨h1₁, h2₁, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (count_loop (cr := .x5) (n := lead bs + 1) (by omega)
+  refine WP.seq (WP.mono (count_loop (cr := .x5) (n := lead bs + 1) (by omega_arith)
     (fun k t => ScanAt s₁ p bs.length (min k (lead bs)) t)
     (fun k hk t ht => by
-      have e : min k (lead bs) = k := Nat.min_eq_left (by omega)
+      have e : min k (lead bs) = k := Nat.min_eq_left (by omega_arith)
       rw [e] at ht
       refine WP.mono (scanStep_ok hl hne (fun i hi => by rw [k₁.rd, k₁.wr]; exact hsrc.rd i hi)
-        (fun i hi => by rw [hm₁]; exact hsrc.val i hi) (by omega) ht) fun t' ⟨ht', hc⟩ => ⟨ht', ?_⟩
+        (fun i hi => by rw [hm₁]; exact hsrc.val i hi) (by omega_arith) ht) fun t' ⟨ht', hc⟩ => ⟨ht', ?_⟩
       rw [hc])
     ⟨by rw [h1₁]; simp, by rw [h2₁]; simp, rfl, Keep.refl _ _⟩) fun s₂ h₂ => ?_)
-  rw [Nat.min_eq_right (by omega)] at h₂
+  rw [Nat.min_eq_right (by omega_arith)] at h₂
   obtain ⟨h1₂, h2₂, hm₂, k₂⟩ := h₂
   have h0₂' : s₂.gpr .x0 = B := by rw [k₂.gpr .x0 (by decide), k₁.gpr .x0 (by decide)]; exact h.x0
   have hs₂ : Scr s₂ B Z := h.scr.congr (k₂.wr.trans k₁.wr)
@@ -178,23 +178,23 @@ theorem scan_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sp : Nat
       t.gpr .x3 = BitVec.setWidth 64 (BitVec.setWidth 32 (((s₂.mem.writeW (off B (8 * sEp)) (off p (lead bs))).writeW
       (off B (8 * sEl)) (BitVec.ofNat 64 (bs.length - lead bs))).read (off p (lead bs)) 1)))
     (by brun [h0₂', h1₂, h2₂, hdr_enc (show sEp < 32 by decide), hdr_enc (show sEl < 32 by decide),
-      hs₂.st (d := 8 * sEp) (by omega), hs₂.st (d := 8 * sEl) (by omega), hld])
+      hs₂.st (d := 8 * sEp) (by omega_arith), hs₂.st (d := 8 * sEl) (by omega_arith), hld])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨hm, h3⟩, k⟩ => ?_
-  have o₁ := writeW_outside s₂.mem B (d := 8 * sEp) (off p (lead bs)) (by omega)
+  have o₁ := writeW_outside s₂.mem B (d := 8 * sEp) (off p (lead bs)) (by omega_arith)
   have o₂ := writeW_outside (s₂.mem.writeW (off B (8 * sEp)) (off p (lead bs))) B (d := 8 * sEl)
-    (BitVec.ofNat 64 (bs.length - lead bs)) (by omega)
+    (BitVec.ofNat 64 (bs.length - lead bs)) (by omega_arith)
   have hout : Z ≤ ofs B (off p (lead bs)) := hsrc.out _ hL
   have hbyte : ((s₂.mem.writeW (off B (8 * sEp)) (off p (lead bs))).writeW (off B (8 * sEl))
       (BitVec.ofNat 64 (bs.length - lead bs))) (off p (lead bs)) = bs[lead bs] := by
-    rw [o₂ _ (Or.inr (by omega)), o₁ _ (Or.inr (by omega)), hm₂, hm₁]; exact hsrc.val _ hL
+    rw [o₂ _ (Or.inr (by omega_arith)), o₁ _ (Or.inr (by omega_arith)), hm₂, hm₁]; exact hsrc.val _ hL
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
-  · rw [hm, o₂.word (by omega) (by omega)]; exact word_writeW_self _ _ _ _
+  · rw [hm, o₂.word (by omega_arith) (by omega_arith)]; exact word_writeW_self _ _ _ _
   · rw [hm]; exact word_writeW_self _ _ _ _
   · rw [h3, VG.Proof.MlKem.AArch64.read_one, hbyte]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     have := (bs[lead bs]'hL).isLt
-    omega
+    omega_arith
   · intro x hx
     rw [hm, o₂ x (hx (8 * sEl, 8) (by simp)), o₁ x (hx (8 * sEp, 8) (by simp)), hm₂, hm₁]
   · exact ((k₁.trans k₂).trans k).mono (by decide)
@@ -223,16 +223,16 @@ theorem scanJ_step (a : ScanPub) (j : Nat) (t : State) (hj : j < lead a.bs + 1) 
     WP isa (.block scanBody) t fun t' => isa.eval (.nonzero .x .x5) t' = some (decide (j + 1 < lead a.bs + 1)) ∧
       (j + 1 < lead a.bs + 1 → ScanJ a (j + 1) t') ∧ (j + 1 = lead a.bs + 1 → ScanJ a (lead a.bs) t') := by
   obtain ⟨h1, h2, hne, hl, hsrc, h0⟩ := h
-  refine WP.mono (scanStep_ok (s₀ := t) hl hne hsrc.rd hsrc.val (j := j) (by omega)
+  refine WP.mono (scanStep_ok (s₀ := t) hl hne hsrc.rd hsrc.val (j := j) (by omega_arith)
     ⟨h1, h2, rfl, Keep.refl _ _⟩) fun t' ⟨⟨h1', h2', hm', k'⟩, hc⟩ => ?_
   have hs' : Src t' a.B a.Z a.p a.bs := hsrc.congr (by rw [hm']; exact InScr.refl _ _ _) k'.rd k'.wr
   have h0' : t'.gpr .x0 = a.B := (k'.gpr .x0 (by decide)).trans h0
   refine ⟨?_, fun hlt => ?_, fun he => ?_⟩
   · rw [eval_nonzero, ne_zero_iff]
-    exact congrArg some (decide_eq_decide.mpr (by rw [hc]; omega))
-  · rw [Nat.min_eq_left (by omega)] at h1' h2'
+    exact congrArg some (decide_eq_decide.mpr (by rw [hc]; omega_arith))
+  · rw [Nat.min_eq_left (by omega_arith)] at h1' h2'
     exact ⟨h1', h2', hne, hl, hs', h0'⟩
-  · rw [Nat.min_eq_right (by omega)] at h1' h2'
+  · rw [Nat.min_eq_right (by omega_arith)] at h1' h2'
     exact ⟨h1', h2', hne, hl, hs', h0'⟩
 
 /-- `scan sp` leaks the same in runs on the same octets. -/
@@ -266,7 +266,7 @@ theorem scan_ct {sp : Nat} {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
       t.mem = s.mem)
     (by brun [hO.x0, hdr_enc hsp, hdr_enc (show sK < 32 by decide), l1, l2, hp, hk])
     rfl rfl rfl)
-    fun t ⟨⟨h1, h2, hm⟩, k⟩ => ⟨by omega, by rw [h1]; simp, by rw [h2]; simp, hne, hl,
+    fun t ⟨⟨h1, h2, hm⟩, k⟩ => ⟨by omega_arith, by rw [h1]; simp, by rw [h2]; simp, hne, hl,
       hsrc.congr (by rw [hm]; exact InScr.refl _ _ _) k.rd k.wr, (k.gpr .x0 (by decide)).trans hO.x0⟩
 
 /-- What `scan` changes: two header slots. -/
@@ -277,6 +277,6 @@ theorem scanR_word {i : Nat} (h1 : i ≠ sEp) (h2 : i ≠ sEl) :
     ∀ r ∈ [(8 * sEp, 8), (8 * sEl, 8)], 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
   simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
   unfold sEp sEl sFn at *
-  exact ⟨by omega, by omega⟩
+  exact ⟨by omega_arith, by omega_arith⟩
 
 end VG.Proof.Ffdh.AArch64

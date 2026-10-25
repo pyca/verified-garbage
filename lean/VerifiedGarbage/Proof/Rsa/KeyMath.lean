@@ -10,6 +10,7 @@ public import Mathlib.Data.Nat.Init
 public import Mathlib.Order.Defs.Prop
 import Mathlib.Tactic.Conv
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA keys: the mathematics of the constant-time algorithms
@@ -45,26 +46,26 @@ if it is odd. -/
 def halfMod (m x : Nat) : Nat := if x % 2 = 0 then x / 2 else (x + m) / 2
 
 theorem subMod_lt {m a b : Nat} (ha : a < m) (hb : b < m) : subMod m a b < m := by
-  unfold subMod; split <;> omega
+  unfold subMod; split <;> omega_arith
 
 theorem subMod_dvd {m a b : Nat} (_ha : a < m) (hb : b < m) :
     (m : Int) ∣ (subMod m a b : Int) - (a - b) := by
   unfold subMod
   split
-  · exact ⟨0, by push_cast [Int.ofNat_sub (by omega : b ≤ a)]; omega⟩
-  · exact ⟨1, by push_cast [Int.ofNat_sub (by omega : b ≤ a + m)]; omega⟩
+  · exact ⟨0, by push_cast [Int.ofNat_sub (by omega_arith : b ≤ a)]; omega_arith⟩
+  · exact ⟨1, by push_cast [Int.ofNat_sub (by omega_arith : b ≤ a + m)]; omega_arith⟩
 
 theorem halfMod_lt {m x : Nat} (hm : m % 2 = 1) (hx : x < m) : halfMod m x < m := by
-  unfold halfMod; split <;> omega
+  unfold halfMod; split <;> omega_arith
 
 theorem halfMod_two {m x : Nat} (hm : m % 2 = 1) : 2 * halfMod m x = x ∨ 2 * halfMod m x = x + m := by
-  unfold halfMod; split <;> omega
+  unfold halfMod; split <;> omega_arith
 
 /-- `m` odd divides `z` if it divides `2 z`. -/
 theorem dvd_of_dvd_two {m : Nat} {z : Int} (hm : m % 2 = 1) (h : (m : Int) ∣ 2 * z) : (m : Int) ∣ z := by
   have e : z = ((m + 1) / 2 : Nat) * (2 * z) - m * z := by
     have : (((m + 1) / 2 : Nat) : Int) * 2 = m + 1 := by
-      have : (m + 1) / 2 * 2 = m + 1 := by omega
+      have : (m + 1) / 2 * 2 = m + 1 := by omega_arith
       exact_mod_cast this
     rw [← Int.mul_assoc, this]; grind
   rw [e]
@@ -100,7 +101,7 @@ theorem gcd_half {u v : Nat} (hu : u % 2 = 0) (hv : v % 2 = 1) : Nat.gcd (u / 2)
   have hc : Nat.Coprime 2 v := by
     rw [Nat.coprime_comm, Nat.Coprime, Nat.gcd_comm, Nat.gcd_rec]
     rw [show v % 2 = 1 from hv]; rfl
-  conv_rhs => rw [show u = 2 * (u / 2) by omega]
+  conv_rhs => rw [show u = 2 * (u / 2) by omega_arith]
   exact (Nat.Coprime.gcd_mul_left_cancel _ hc).symm
 
 theorem gcd_sub {u v : Nat} (h : v ≤ u) : Nat.gcd (u - v) v = Nat.gcd u v := by
@@ -111,7 +112,7 @@ theorem half_cong {m a x u : Nat} (hm : m % 2 = 1) (hu : u % 2 = 0) (h : (m : In
     (m : Int) ∣ (halfMod m x : Int) * a - (u / 2 : Nat) := by
   apply dvd_of_dvd_two hm
   have e2 : ((u / 2 : Nat) : Int) * 2 = u := by
-    have : u / 2 * 2 = u := by omega
+    have : u / 2 * 2 = u := by omega_arith
     exact_mod_cast this
   rcases halfMod_two (x := x) hm with e | e
   · have : (2 : Int) * ((halfMod m x : Int) * a - (u / 2 : Nat)) = (x : Int) * a - u := by
@@ -129,7 +130,7 @@ theorem sub_cong {m a x₁ x₂ u v : Nat} (hx₁ : x₁ < m) (hx₂ : x₂ < m)
     (m : Int) ∣ (subMod m x₁ x₂ : Int) * a - (u - v : Nat) := by
   obtain ⟨c, hc⟩ := subMod_dvd (m := m) hx₁ hx₂
   have : (subMod m x₁ x₂ : Int) * a - (u - v : Nat) = ((x₁ : Int) * a - u) - ((x₂ : Int) * a - v) + m * (c * a) := by
-    rw [show (subMod m x₁ x₂ : Int) = (x₁ - x₂) + m * c by omega]
+    rw [show (subMod m x₁ x₂ : Int) = (x₁ - x₂) + m * c by omega_arith]
     push_cast [Int.ofNat_sub hv]; grind
   rw [this]
   exact Int.dvd_add (Int.dvd_sub h₁ h₂) (Int.dvd_mul_right _ _)
@@ -145,16 +146,16 @@ theorem invStep_inv {a m : Nat} (hm : m % 2 = 1) {st : Nat × Nat × Nat × Nat}
   · rename_i hu
     split
     · rename_i hlt
-      refine ⟨hu, halfMod_lt hm (subMod_lt h₂ h₁), h₁, half_cong hm (by omega) (sub_cong h₂ h₁ hlt.le c₂ c₁), c₁, ?_⟩
+      refine ⟨hu, halfMod_lt hm (subMod_lt h₂ h₁), h₁, half_cong hm (by omega_arith) (sub_cong h₂ h₁ hlt.le c₂ c₁), c₁, ?_⟩
       dsimp only
-      rw [gcd_half (by omega) hu, gcd_sub hlt.le, Nat.gcd_comm, g]
+      rw [gcd_half (by omega_arith) hu, gcd_sub hlt.le, Nat.gcd_comm, g]
     · rename_i hlt
-      refine ⟨hv, halfMod_lt hm (subMod_lt h₁ h₂), h₂, half_cong hm (by omega) (sub_cong h₁ h₂ (by omega) c₁ c₂),
+      refine ⟨hv, halfMod_lt hm (subMod_lt h₁ h₂), h₂, half_cong hm (by omega_arith) (sub_cong h₁ h₂ (by omega_arith) c₁ c₂),
         c₂, ?_⟩
       dsimp only
-      rw [gcd_half (by omega) hv, gcd_sub (by omega), g]
+      rw [gcd_half (by omega_arith) hv, gcd_sub (by omega_arith), g]
   · rename_i hu
-    exact ⟨hv, halfMod_lt hm h₁, h₂, half_cong hm (by omega) c₁, c₂, by dsimp only; rw [gcd_half (by omega) hv, g]⟩
+    exact ⟨hv, halfMod_lt hm h₁, h₂, half_cong hm (by omega_arith) c₁, c₂, by dsimp only; rw [gcd_half (by omega_arith) hv, g]⟩
 
 /-- `u v` at least halves. -/
 theorem invStep_size (m : Nat) (st : Nat × Nat × Nat × Nat) :
@@ -166,16 +167,16 @@ theorem invStep_size (m : Nat) (st : Nat × Nat × Nat × Nat) :
   · split
     · rename_i hlt
       dsimp only
-      have : (v - u) / 2 * 2 ≤ v := by omega
+      have : (v - u) / 2 * 2 ≤ v := by omega_arith
       calc (v - u) / 2 * u * 2 = (v - u) / 2 * 2 * u := by grind
         _ ≤ v * u := Nat.mul_le_mul_right _ this
         _ = u * v := Nat.mul_comm _ _
     · dsimp only
-      have : (u - v) / 2 * 2 ≤ u := by omega
+      have : (u - v) / 2 * 2 ≤ u := by omega_arith
       calc (u - v) / 2 * v * 2 = (u - v) / 2 * 2 * v := by grind
         _ ≤ u * v := Nat.mul_le_mul_right _ this
   · dsimp only
-    have : u / 2 * 2 ≤ u := by omega
+    have : u / 2 * 2 ≤ u := by omega_arith
     calc u / 2 * v * 2 = u / 2 * 2 * v := by grind
       _ ≤ u * v := Nat.mul_le_mul_right _ this
 
@@ -199,7 +200,7 @@ theorem invIter_size (m : Nat) (st : Nat × Nat × Nat × Nat) : ∀ k,
 
 /-- The invariant holds of `(a, m, 1, 0)`. -/
 theorem invI_start {a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) : InvI a m (a, m, 1, 0) :=
-  ⟨hm, h1, show 0 < m by omega, ⟨0, by simp⟩, by simp, rfl⟩
+  ⟨hm, h1, show 0 < m by omega_arith, ⟨0, by simp⟩, by simp, rfl⟩
 
 /-- After enough steps: `u = 0`, `v = gcd(a, m)`, `x₂ a ≡ v (mod m)` and
 `x₂ < m`. -/
@@ -207,12 +208,12 @@ theorem invIter_done {a m K : Nat} (hm : m % 2 = 1) (ha : a * m < 2 ^ K) :
     let st := invIter m K (a, m, 1 % m, 0)
     st.1 = 0 ∧ st.2.1 = Nat.gcd a m ∧ (m : Int) ∣ (st.2.2.2 : Int) * a - st.2.1 ∧ st.2.2.2 < m := by
   have h0 : InvI a m (a, m, 1 % m, 0) :=
-    ⟨hm, Nat.mod_lt _ (by omega), show 0 < m by omega,
+    ⟨hm, Nat.mod_lt _ (by omega_arith), show 0 < m by omega_arith,
       ⟨((1 % m : Nat) : Int) * a / m - (a / m : Nat), by
         rcases Nat.lt_or_ge m 2 with h | h
-        · have : m = 1 := by omega
+        · have : m = 1 := by omega_arith
           subst this; simp
-        · rw [Nat.mod_eq_of_lt (by omega)]; simp⟩, by simp, rfl⟩
+        · rw [Nat.mod_eq_of_lt (by omega_arith)]; simp⟩, by simp, rfl⟩
   have hI := invIter_inv hm h0 K
   have hS := invIter_size m (a, m, 1 % m, 0) K
   dsimp only at hS ⊢
@@ -224,8 +225,8 @@ theorem invIter_done {a m K : Nat} (hm : m % 2 = 1) (ha : a * m < 2 ^ K) :
     rcases Nat.eq_zero_or_pos u with h | h
     · exact h
     · exfalso
-      have : 2 ^ K ≤ u * v * 2 ^ K := Nat.le_mul_of_pos_left _ (Nat.mul_pos h (by omega))
-      omega
+      have : 2 ^ K ≤ u * v * 2 ^ K := Nat.le_mul_of_pos_left _ (Nat.mul_pos h (by omega_arith))
+      omega_arith
   subst hu
   rw [Nat.gcd_zero_left] at g
   exact ⟨rfl, g, c₂, h₂⟩
@@ -247,7 +248,7 @@ theorem xgcd_spec (q p : Nat) : ∀ (r : Nat) (s : Int) (r' : Nat) (s' : Int), (
       subst hr
       exact ⟨h', by rw [Nat.gcd_zero_left]⟩
     · rename_i hr
-      have hlt : r' % r < r := Nat.mod_lt _ (by omega)
+      have hlt : r' % r < r := Nat.mod_lt _ (by omega_arith)
       have hd : (p : Int) ∣ (s' - (r' / r : Nat) * s) * q - (r' % r : Nat) := by
         have e : (s' - (r' / r : Nat) * s) * q - (r' % r : Nat) = (s' * q - r') - (r' / r : Nat) * (s * q - r) := by
           have := Nat.div_add_mod r' r
@@ -270,19 +271,19 @@ theorem inverse_eq {q p x : Nat} (hp : 1 < p) (hx : x < p) (h : (p : Int) ∣ (x
     have d2 : ((Nat.gcd q p : Nat) : Int) ∣ (p : Int) * c := Dvd.dvd.mul_right (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right q p)) _
     have : ((Nat.gcd q p : Nat) : Int) ∣ 1 := by
       have := Int.dvd_sub d1 d2
-      rwa [show (x : Int) * q - p * c = 1 by omega] at this
+      rwa [show (x : Int) * q - p * c = 1 by omega_arith] at this
     exact Int.natCast_dvd_natCast.mp (by exact_mod_cast this) |> Nat.dvd_one.mp
   obtain ⟨e₁, e₂⟩ := xgcd_spec q p (q % p) 1 p 0
     ⟨(q / p : Nat), by have := Nat.div_add_mod q p
                        have h3 : ((p * (q / p) + q % p : Nat) : Int) = q := by exact_mod_cast this
-                       push_cast at h3; omega⟩ (by simp)
+                       push_cast at h3; omega_arith⟩ (by simp)
   rw [e₂, ← Nat.gcd_rec, Nat.gcd_comm, hg] at e₁
   unfold Spec.Rsa.inverse
   dsimp only
   obtain ⟨s, hs⟩ : ∃ s, (Spec.Rsa.xgcd (q % p) 1 p 0).2 = s := ⟨_, rfl⟩
   rw [hs] at e₁ ⊢
-  have hp0 : (0 : Int) < p := by omega
-  have hx0 : ((s % (p : Int)).toNat : Int) = s % p := Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega))
+  have hp0 : (0 : Int) < p := by omega_arith
+  have hx0 : ((s % (p : Int)).toNat : Int) = s % p := Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega_arith))
   -- `x₀ = s mod p` is an inverse too.
   have c0 : (p : Int) ∣ ((s % (p : Int)).toNat : Int) * q - 1 := by
     rw [hx0]
@@ -296,7 +297,7 @@ theorem inverse_eq {q p x : Nat} (hp : 1 < p) (hx : x < p) (h : (p : Int) ∣ (x
     have d : (p : Int) ∣ (x₀ : Int) - x := by
       have : (x₀ : Int) - x = (x : Int) * ((x₀ : Int) * q - 1) - (x₀ : Int) * ((x : Int) * q - 1) := by grind
       rw [this]; exact Int.dvd_sub (Dvd.dvd.mul_left c0 _) (Dvd.dvd.mul_left h _)
-    have hx₀ : x₀ < p := by have := Int.emod_lt_of_pos s hp0; omega
+    have hx₀ : x₀ < p := by have := Int.emod_lt_of_pos s hp0; omega_arith
     have := (Nat.modEq_iff_dvd.mpr d)
     unfold Nat.ModEq at this
     rwa [Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt hx₀, eq_comm] at this
@@ -351,23 +352,23 @@ theorem divStep_inv {D K R Q x q L T P : Nat} (hR : R < D) (hx : R + D * q = x)
   have hb : L / P < 2 := by
     rcases Nat.lt_or_ge (L / P) 2 with h | h
     · exact h
-    · exfalso; have := Nat.mul_le_mul_right P h; have := Nat.div_mul_le_self L P; omega
+    · exfalso; have := Nat.mul_le_mul_right P h; have := Nat.div_mul_le_self L P; omega_arith
   have hLd := Nat.div_add_mod L P
   have hLm := Nat.mod_lt L hP
   generalize L / P = b at hb hLd ⊢
   generalize L % P = L' at hLd hLm ⊢
-  have hT : 0 < T := by omega
+  have hT : 0 < T := by omega_arith
   -- `Q = b T P + (L' T + q)`, the latter below `T P`.
   have hr : L' * T + q < T * P := by
     have : (L' + 1) * T ≤ P * T := Nat.mul_le_mul_right _ hLm
-    rw [Nat.add_mul, Nat.one_mul] at this; rw [Nat.mul_comm T P]; omega
+    rw [Nat.add_mul, Nat.one_mul] at this; rw [Nat.mul_comm T P]; omega_arith
   have eQ : Q = (L' * T + q) + T * P * b := by
     subst hQ; rw [← hLd]; grind
   have hdiv : Q / 2 ^ (K - 1) = b := by
     rw [hK1, eQ, Nat.add_mul_div_left _ _ (Nat.mul_pos hT hP), Nat.div_eq_of_lt hr, Nat.zero_add]
   have hlt2 : L' * (2 * T) + 2 * q < 2 * (T * P) := by
     have : L' * (2 * T) = 2 * (L' * T) := by grind
-    omega
+    omega_arith
   have hmod : 2 * Q % 2 ^ K = L' * (2 * T) + 2 * q := by
     rw [hK, eQ, show 2 * (L' * T + q + T * P * b) = (L' * (2 * T) + 2 * q) + 2 * (T * P) * b by grind,
       Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt2]
@@ -375,25 +376,25 @@ theorem divStep_inv {D K R Q x q L T P : Nat} (hR : R < D) (hx : R + D * q = x)
   have e1 : D * (2 * q + 1) = 2 * (D * q) + D := by grind
   have e0 : D * (2 * q) = 2 * (D * q) := by grind
   split
-  · exact ⟨2 * q, by assumption, by omega, rfl, by omega⟩
-  · exact ⟨2 * q + 1, by omega, by omega, by omega, by omega⟩
+  · exact ⟨2 * q, by assumption, by omega_arith, rfl, by omega_arith⟩
+  · exact ⟨2 * q + 1, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
 
 theorem divIter_inv {D K N : Nat} (hD : 0 < D) (hN : N < 2 ^ K) :
     ∀ k ≤ K, ∃ q, (divIter D K k (0, N)).1 < D ∧ (divIter D K k (0, N)).1 + D * q = N / 2 ^ (K - k) ∧
       (divIter D K k (0, N)).2 = N % 2 ^ (K - k) * 2 ^ k + q ∧ q < 2 ^ k
   | 0, _ => ⟨0, hD, by simp [divIter, Nat.div_eq_of_lt hN], by simp [divIter, Nat.mod_eq_of_lt hN], by simp⟩
   | k + 1, hk => by
-    obtain ⟨q, hR, hx, hQ, hq⟩ := divIter_inv hD hN k (by omega)
+    obtain ⟨q, hR, hx, hQ, hq⟩ := divIter_inv hD hN k (by omega_arith)
     have eP : 2 ^ (K - k) = 2 * 2 ^ (K - (k + 1)) := by
-      rw [show K - k = K - (k + 1) + 1 by omega, Nat.pow_succ, Nat.mul_comm]
+      rw [show K - k = K - (k + 1) + 1 by omega_arith, Nat.pow_succ, Nat.mul_comm]
     have hL : N % 2 ^ (K - k) < 2 * 2 ^ (K - (k + 1)) := eP ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
-    have hK1 : 2 ^ (K - 1) = 2 ^ k * 2 ^ (K - (k + 1)) := by rw [← Nat.pow_add]; congr 1; omega
+    have hK1 : 2 ^ (K - 1) = 2 ^ k * 2 ^ (K - (k + 1)) := by rw [← Nat.pow_add]; congr 1; omega_arith
     have hK : 2 ^ K = 2 * (2 ^ k * 2 ^ (K - (k + 1))) := by
-      rw [← Nat.pow_add, ← Nat.pow_succ']; congr 1; omega
+      rw [← Nat.pow_add, ← Nat.pow_succ']; congr 1; omega_arith
     obtain ⟨q', h1, h2, h3, h4⟩ := divStep_inv hR hx hQ hq hL hK1 hK (Nat.two_pow_pos _)
     have es : divIter D K (k + 1) (0, N) = divStep D K ((divIter D K k (0, N)).1, (divIter D K k (0, N)).2) := rfl
     rw [es]
-    refine ⟨q', h1, ?_, ?_, by rw [Nat.pow_succ]; omega⟩
+    refine ⟨q', h1, ?_, ?_, by rw [Nat.pow_succ]; omega_arith⟩
     · rw [h2]
       -- `N / 2^(K - k - 1) = 2 (N / 2^(K - k)) + (N mod 2^(K - k)) / 2^(K - k - 1)`.
       have e := Nat.div_add_mod N (2 ^ (K - k))
@@ -401,8 +402,8 @@ theorem divIter_inv {D K N : Nat} (hD : 0 < D) (hN : N < 2 ^ K) :
       rw [eP] at e ⊢
       conv_rhs => rw [← e]
       rw [show 2 * P * (N / (2 * P)) + N % (2 * P) = N % (2 * P) + P * (2 * (N / (2 * P))) by grind,
-        Nat.add_mul_div_left _ _ (by have := Nat.two_pow_pos (K - k); omega)]
-      omega
+        Nat.add_mul_div_left _ _ (by have := Nat.two_pow_pos (K - k); omega_arith)]
+      omega_arith
     · rw [h3, Nat.mod_mod_of_dvd _ (by rw [eP]; exact Nat.dvd_mul_left _ _), Nat.pow_succ]
       grind
 
@@ -414,28 +415,28 @@ theorem divIter_from {D K R₀ N : Nat} (hR₀ : R₀ < D) (hN : N < 2 ^ K) :
       (divIter D K k (R₀, N)).2 = N % 2 ^ (K - k) * 2 ^ k + q ∧ q < 2 ^ k
   | 0, _ => ⟨0, hR₀, by simp [divIter, Nat.div_eq_of_lt hN], by simp [divIter, Nat.mod_eq_of_lt hN], by simp⟩
   | k + 1, hk => by
-    obtain ⟨q, hR, hx, hQ, hq⟩ := divIter_from hR₀ hN k (by omega)
+    obtain ⟨q, hR, hx, hQ, hq⟩ := divIter_from hR₀ hN k (by omega_arith)
     have eP : 2 ^ (K - k) = 2 * 2 ^ (K - (k + 1)) := by
-      rw [show K - k = K - (k + 1) + 1 by omega, Nat.pow_succ, Nat.mul_comm]
+      rw [show K - k = K - (k + 1) + 1 by omega_arith, Nat.pow_succ, Nat.mul_comm]
     have hL : N % 2 ^ (K - k) < 2 * 2 ^ (K - (k + 1)) := eP ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
-    have hK1 : 2 ^ (K - 1) = 2 ^ k * 2 ^ (K - (k + 1)) := by rw [← Nat.pow_add]; congr 1; omega
+    have hK1 : 2 ^ (K - 1) = 2 ^ k * 2 ^ (K - (k + 1)) := by rw [← Nat.pow_add]; congr 1; omega_arith
     have hK : 2 ^ K = 2 * (2 ^ k * 2 ^ (K - (k + 1))) := by
-      rw [← Nat.pow_add, ← Nat.pow_succ']; congr 1; omega
+      rw [← Nat.pow_add, ← Nat.pow_succ']; congr 1; omega_arith
     obtain ⟨q', h1, h2, h3, h4⟩ := divStep_inv hR hx hQ hq hL hK1 hK (Nat.two_pow_pos _)
     have es : divIter D K (k + 1) (R₀, N) =
         divStep D K ((divIter D K k (R₀, N)).1, (divIter D K k (R₀, N)).2) := rfl
     rw [es]
-    refine ⟨q', h1, ?_, ?_, by rw [Nat.pow_succ]; omega⟩
+    refine ⟨q', h1, ?_, ?_, by rw [Nat.pow_succ]; omega_arith⟩
     · rw [h2]
       have e := Nat.div_add_mod N (2 ^ (K - k))
       generalize 2 ^ (K - (k + 1)) = P at eP ⊢
       rw [eP] at e ⊢
-      have hP : 0 < P := by have := Nat.two_pow_pos (K - k); omega
+      have hP : 0 < P := by have := Nat.two_pow_pos (K - k); omega_arith
       have e2 : N / P = 2 * (N / (2 * P)) + N % (2 * P) / P := by
         conv_lhs => rw [← e]
         rw [show 2 * P * (N / (2 * P)) + N % (2 * P) = N % (2 * P) + P * (2 * (N / (2 * P))) by grind,
           Nat.add_mul_div_left _ _ hP]
-        omega
+        omega_arith
       rw [e2, Nat.pow_succ]
       grind
     · rw [h3, Nat.mod_mod_of_dvd _ (by rw [eP]; exact Nat.dvd_mul_left _ _), Nat.pow_succ]

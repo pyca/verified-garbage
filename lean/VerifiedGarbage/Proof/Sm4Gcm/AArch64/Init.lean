@@ -74,7 +74,7 @@ theorem init_wp {s : State} (hp : initAArch64.pre s) :
   have sp₂' : s₂.sp = s.sp := sp₂.trans sp₁
   -- The key schedule.
   have kc : KeyCall s₂ K Ctx := by
-    refine ⟨x0₂, x1₂, by rw [sp₂']; exact hsp, fK, by omega, d_kc.sub_right (Region.sub_prefix (by decide)),
+    refine ⟨x0₂, x1₂, by rw [sp₂']; exact hsp, fK, by omega_arith, d_kc.sub_right (Region.sub_prefix (by decide)),
       by rw [sp₂']; exact sK, by rw [sp₂']; exact sC.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
     · rw [rd₂', wr₂']
       exact covers_cons pK (covers_left (covers_prefix pC (by decide)))
@@ -115,7 +115,7 @@ theorem init_wp {s : State} (hp : initAArch64.pre s) :
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Offset.sub_base _ he)
   have dK0 : (⟨Ctx, 128⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_arith)
   have e248 : Ctx + BitVec.ofNat 64 248 = Ctx + BitVec.ofNat 64 240 + BitVec.ofNat 64 8 :=
     (add_ofNat_assoc _ 240 8).symm
   have e104 : W + BitVec.ofNat 64 104 = W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 :=
@@ -149,10 +149,10 @@ theorem init_wp {s : State} (hp : initAArch64.pre s) :
   have pW' : Covers [⟨W, 768⟩] s₄.wr := by rw [wr₄']; exact pW
   -- `H = CIPH_K(0¹²⁸)`.
   have cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 := by
-    refine ⟨x0₄, x1₄, x2₄, x3₄, by rw [sp₄']; exact hsp, by decide, ?_, by omega, ?_,
+    refine ⟨x0₄, x1₄, x2₄, x3₄, by rw [sp₄']; exact hsp, by decide, ?_, by omega_arith, ?_,
       ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (W.toNat + 96 % 2 ^ 64) (2 ^ 64); omega
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (W.toNat + 96 % 2 ^ 64) (2 ^ 64); omega_arith
     · simpa using dCW 0 128 (by decide) 96 16 (by decide)
     · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
     · rw [sp₄']; exact sC.sub_right (Region.sub_prefix (by decide))
@@ -180,13 +180,13 @@ theorem init_wp {s : State} (hp : initAArch64.pre s) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (dCW 240 16 (by decide) 128 88 (by decide)).symm
-    · exact Offset.disjoint W (.inr (by decide)) (by decide) (by omega)
+    · exact Offset.disjoint W (.inr (by decide)) (by decide) (by omega_arith)
   have dSv₅ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region), ⟨Ctx + BitVec.ofNat 64 240, 16 * 1⟩, stk s.sp],
       (savedR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint W (.inr (by decide)) (by decide) (by omega)
+    · exact Offset.disjoint W (.inr (by decide)) (by decide) (by omega_arith)
     · exact (dCW 240 16 (by decide) 128 88 (by decide)).symm
     · exact (sW.sub_right (Offset.sub_base W (by decide))).symm
   have hsv₁ : SavedAt s₁.mem W s := by rw [m₁]; exact savedAt_save _ _ _

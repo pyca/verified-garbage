@@ -85,10 +85,10 @@ theorem digit_arith {W PX PY w1 c1 e1 w c e : Nat} (hW : W < 2 ^ 64)
     (h1 : w1 + 2 ^ 64 * c1 + 2 ^ 128 * e1 = W + 2 ^ 64 * 0 + PX)
     (h2 : w + 2 ^ 64 * c + 2 ^ 128 * e = w1 + 2 ^ 64 * c1 + PY) :
     w + 2 ^ 64 * c = W + PX + PY := by
-  omega
+  omega_arith
 
 theorem prod_le {x : Word} {a : Nat} (h : a ≤ 2 ^ 62) : x.toNat * a ≤ (2 ^ 64 - 1) * 2 ^ 62 :=
-  Nat.mul_le_mul (by have := x.isLt; omega) h
+  Nat.mul_le_mul (by have := x.isLt; omega_arith) h
 
 /-- A word below a row's top. -/
 theorem digit_ok {s : State} {base : Addr} (hs : Scr s base large) {t xo yo : Nat}
@@ -164,7 +164,7 @@ theorem top_arith {W PX PY KA KB w1 h e w w4 e' : Nat} (hKA : KA < 2 ^ 64) (hKB 
     (h2 : w + 2 ^ 64 * w4 + 2 ^ 128 * e' =
       w1 + 2 ^ 64 * ((h + (2 ^ 64 - KB) % 2 ^ 64) % 2 ^ 64) + PY) :
     (w + 2 ^ 64 * w4 + 2 ^ 64 * (KA + KB)) % 2 ^ 128 = (W + PX + PY) % 2 ^ 128 := by
-  omega
+  omega_arith
 
 /-- The top two words of a row: `w + 2⁶⁴ w' + 2⁶⁴ (ka + kb) ≡ x2 + X' a + Y' b` (mod `2¹²⁸`). -/
 theorem top_ok {s : State} {base : Addr} (hs : Scr s base large) (signed : Bool) {t xo yo : Nat}
@@ -224,8 +224,8 @@ theorem top_ok {s : State} {base : Addr} (hs : Scr s base large) (signed : Bool)
     kg.gpr r (by simp [h9, h10, h1, h3])
   have hsg : Scr g base large := hsf.of_keeps kg (by decide)
   rw [WP.block_cons_iff]
-  refine ⟨_, store_sc hsg ht.1 (by omega) .x1, ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, store_sc (hsg.setMem _) (by omega) (by omega) .x3, WP.block_nil ?_⟩
+  refine ⟨_, store_sc hsg ht.1 (by omega_arith) .x1, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, store_sc (hsg.setMem _) (by omega_arith) (by omega_arith) .x3, WP.block_nil ?_⟩
   -- memory: the loads read `s.mem`
   have mc : c.mem = s.mem := by rw [kc.mem, kb.mem, ka.mem]
   have mf : f.mem = s.mem := by rw [kf.mem, ke.mem, kd.mem, mc]
@@ -271,7 +271,7 @@ theorem row_arith {C P0 P1 P2 P3 Q0 Q1 Q2 Q3 w0 w1 w2 w3 w4 c1 c2 c3 K : Nat}
     (w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 + 2 ^ 256 * w4 + 2 ^ 256 * K) % (2 ^ 256 * 2 ^ 64) =
       (C + (P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3) +
         (Q0 + 2 ^ 64 * Q1 + 2 ^ 128 * Q2 + 2 ^ 192 * Q3)) % (2 ^ 256 * 2 ^ 64) := by
-  omega
+  omega_arith
 
 theorem val4_mul (x0 x1 x2 x3 : Word) (a : Nat) :
     val4 x0 x1 x2 x3 * a = x0.toNat * a + 2 ^ 64 * (x1.toNat * a) + 2 ^ 128 * (x2.toNat * a) +

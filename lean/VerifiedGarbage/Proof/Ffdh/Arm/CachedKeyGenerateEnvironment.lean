@@ -31,14 +31,14 @@ theorem cachedKeyGenerate_environment (s : State)
   obtain ⟨stackFit,argFit,rd,wr,_xY,_xDom,_xRand,xS,xCtx,_xArgs,_yDom,_yRand,yS,yCtx,_yArgs,
     _domS,_randS,sCtx,_sArgs,_stackX,_stackY,_stackDom,_stackRand,stackS,stackCtx,_stackArgs,
     _xFit,_yFit,_domFit,_randFit,_sFit,ctxFit,_bounds,_domainLen,xLen,yLen,_rLen,_space,valid,canonical⟩ := pre
-  have frame := entered_frame s (by omega)
-  have size : p.cachedContext.toNat+8*p.cachedWords ≤ 2^32 := by rw [←cache,←cacheWords]; omega
+  have frame := entered_frame s (by omega_arith)
+  have size : p.cachedContext.toNat+8*p.cachedWords ≤ 2^32 := by rw [←cache,←cacheWords]; omega_arith
   have stackSep : (cachedRegion p).Disjoint (belowA s.sp 176) := by
     unfold cachedRegion
     rw [belowA,addr_sub' stackFit]
     simpa only [←cache,←cacheWords,State.addr,Nat.mul_comm 8] using stackCtx.symm
   have savedSub : (⟨State.addr (pcPushed s).sp,56⟩ : Region).Sub (belowA s.sp 176) :=
-    fun a h => belowA_sub (by decide) stackFit a (saved_sub_reserved s (by omega) a h)
+    fun a h => belowA_sub (by decide) stackFit a (saved_sub_reserved s (by omega_arith) a h)
   have words : Spec.Rsa.wordsAt (entered s).mem (State.addr p.cachedContext) p.cachedWords =
       Spec.Rsa.wordsAt s.mem (State.addr p.cachedContext) p.cachedWords := by
     unfold Spec.Rsa.wordsAt
@@ -47,8 +47,8 @@ theorem cachedKeyGenerate_environment (s : State)
     have hi' := List.mem_range.mp hi
     apply frame.readW (r:=cachedRegion p) _ ?_ (by decide)
     · simp only [cachedRegion,Region.Contains,Offset.add_sub_cancel_left,BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega : 8*i<2^64)]
-      omega
+        Nat.mod_eq_of_lt (by omega_arith : 8*i<2^64)]
+      omega_arith
     · intro r hr
       have eq := List.mem_singleton.mp hr
       subst r
@@ -74,7 +74,7 @@ theorem cachedKeyGenerate_environment (s : State)
     simp only [keyCallWrites,keyWrites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with (rfl|rfl|rfl|rfl)|rfl
     · simpa only [cachedRegion,←cache,←cacheWords,←base,←capacity,Nat.mul_comm 8,State.addr] using sCtx.symm
-    · exact stackSep.sub_right (fun a h => belowA_sub (by decide) stackFit a (locals_sub_reserved s (by omega) a h))
+    · exact stackSep.sub_right (fun a h => belowA_sub (by decide) stackFit a (locals_sub_reserved s (by omega_arith) a h))
     · simpa only [cachedRegion,←cache,←cacheWords,←privateValue,←count,←xLen,Nat.mul_comm 8,State.addr] using xCtx.symm
     · simpa only [cachedRegion,←cache,←cacheWords,←publicValue,←count,←yLen,Nat.mul_comm 8,State.addr] using yCtx.symm
     · rw [entered_sp]

@@ -49,10 +49,10 @@ theorem red_mac (x y z w : Zq) :
   have hs : (BitVec.ofNat 64 x.val * BitVec.ofNat 64 y.val + BitVec.ofNat 64 z.val * BitVec.ofNat 64 w.val).toNat =
       x.val * y.val + z.val * w.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, toNat_val64, toNat_val64, toNat_val64, toNat_val64,
-      Nat.mod_eq_of_lt (a := x.val * y.val) (by omega), Nat.mod_eq_of_lt (a := z.val * w.val) (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
-  refine setWidth32_ofNat ?_ (by have := val_lt (x * y + z * w); omega)
-  rw [red_toNat (by rw [hs]; omega), hs, val_add', val_mul, val_mul, ← Nat.add_mod]
+      Nat.mod_eq_of_lt (a := x.val * y.val) (by omega_arith), Nat.mod_eq_of_lt (a := z.val * w.val) (by omega_arith)]
+    exact Nat.mod_eq_of_lt (by omega_arith)
+  refine setWidth32_ofNat ?_ (by have := val_lt (x * y + z * w); omega_arith)
+  rw [red_toNat (by rw [hs]; omega_arith), hs, val_add', val_mul, val_mul, ← Nat.add_mod]
 
 theorem even_eq (a b c d γ : Zq) :
     (red (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val +
@@ -160,24 +160,24 @@ theorem out_odd (s₀ : State) {i : Nat} (hi : i < 128) :
 theorem wide {m : Mem} {p : Addr} {f : Poly} {j : Nat}
     (h : coeffAt m p j = BitVec.ofNat 32 (f[j]!).val) :
     (coeffAt m p j).setWidth 64 = BitVec.ofNat 64 (f[j]!).val := by
-  rw [h, setWidth64_ofNat (by have := val_lt f[j]!; omega)]
+  rw [h, setWidth64_ofNat (by have := val_lt f[j]!; omega_arith)]
 
 theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {i : Nat} (hi : i < 128) {s : State}
     (h : Inv s₀ m₁ i s) :
     WP isa (.block mulBody) s fun s' => Inv s₀ m₁ (i + 1) s' ∧ (s'.gpr .r11 != 0) = decide (i + 1 ≠ 128) := by
   have e0 : ∀ p : Addr, p + BitVec.ofNat 64 (8 * i) = coeffAddr p (2 * i) := fun p => by
-    rw [show 8 * i = 4 * (2 * i) by omega]
+    rw [show 8 * i = 4 * (2 * i) by omega_arith]
   have e1 : ∀ p : Addr, p + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4 = coeffAddr p (2 * i + 1) := fun p => by
-    rw [ptr_add, show 8 * i + 4 = 4 * (2 * i + 1) by omega]
+    rw [ptr_add, show 8 * i + 4 = 4 * (2 * i + 1) by omega_arith]
   have fS := hp.fitS
-  have cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega)
-  have cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega)
-  have cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega)
-  have cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega)
-  have cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega)
-  have cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega)
+  have cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  have cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  have cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
   have cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * i)) 4 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have iR : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.rd ++ s₀.wr → R.Contains a n →
       InRegions (s.rd ++ s.wr) a n := fun hR hc => by rw [h.rd, h.wr]; exact ⟨_, hR, hc⟩
   have iW : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.wr → R.Contains a n → InRegions s.wr a n :=
@@ -194,7 +194,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
   have vS : (s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * i)) 32).setWidth 64 = BitVec.ofNat 64 (gamma i).val := by
     rw [h.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.hs.symm)
       (by decide), hm.tab i hi, gammaTable_eq, gammas_getD hi,
-      setWidth64_ofNat (by have := val_lt (gamma i); omega)]
+      setWidth64_ofNat (by have := val_lt (gamma i); omega_arith)]
   refine WP.mono (body_ok h.r3 h.r4 h.r5 h.r6 h.r8 h.r9 h.r11
     (by rw [e0]; exact iR (by simp [hp.rd]) cF0) (by rw [e1]; exact iR (by simp [hp.rd]) cF1)
     (by rw [e0]; exact iR (by simp [hp.rd]) cG0) (by rw [e1]; exact iR (by simp [hp.rd]) cG1)
@@ -212,10 +212,10 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
     exact (h.frame.writeW (List.mem_singleton_self _) _ cH0).writeW (List.mem_singleton_self _) _ cH1
   · rw [m, e1, e1, e1, e0, e0, e0, vS]
     show ∀ j < 256, coeffAt ((s.mem.writeW (coeffAddr (H s₀) (2 * i)) _).writeW _ _) _ j = _
-    rw [← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, wide (vF _ (by omega)), wide (vF _ (by omega)),
-      wide (vG _ (by omega)), wide (vG _ (by omega)), even_eq, red_mac, ← out_even s₀ hi, ← out_odd s₀ hi,
-      show 2 * (i + 1) = 2 * i + 1 + 1 by omega]
-    exact coeff_one (a := 2 * i + 1) (by omega) (coeff_one (a := 2 * i) (by omega) h.coeff rfl) rfl
+    rw [← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, wide (vF _ (by omega_arith)), wide (vF _ (by omega_arith)),
+      wide (vG _ (by omega_arith)), wide (vG _ (by omega_arith)), even_eq, red_mac, ← out_even s₀ hi, ← out_odd s₀ hi,
+      show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith]
+    exact coeff_one (a := 2 * i + 1) (by omega_arith) (coeff_one (a := 2 * i) (by omega_arith) h.coeff rfl) rfl
   · rw [r11, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]
     exact count_nz hi (by decide)
 
@@ -228,31 +228,31 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
         s.sp = s₀.sp ∧ s.lr = s₀.lr := by
   have fS := hp.fitS
   have wS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) k := fun h => by
-    rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega)⟩
+    rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_arith)⟩
   have e8 : S s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 8 = S s₀ + BitVec.ofNat 64 520 := ptr_add _ _ _
   rw [WP.block_append_iff]
-  refine WP.mono (save_ok (b := .r6) (by decide) (off := 512) (by decide) (by decide) rfl (wS (by omega))
-    (by rw [e8]; exact wS (by omega))) fun s₁ ⟨g1, lr1, sp1, rd1, wr1, m1⟩ => ?_
+  refine WP.mono (save_ok (b := .r6) (by decide) (off := 512) (by decide) (by decide) rfl (wS (by omega_arith))
+    (by rw [e8]; exact wS (by omega_arith))) fun s₁ ⟨g1, lr1, sp1, rd1, wr1, m1⟩ => ?_
   refine WP.mono (table_ok gammaTable (by decide) (b := .r6) (by decide) (by decide) (by rw [g1])
-    fun k hk => by rw [wr1]; exact wS (by omega)) fun s₂ h₂ => ?_
+    fun k hk => by rw [wr1]; exact wS (by omega_arith)) fun s₂ h₂ => ?_
   have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
     have f1 : Frame [polyRegion (S s₀)] s₀.mem s₁.mem := by
       rw [m1, e8]
-      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
-        ).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+        ).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
     refine f1.trans (h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     rw [List.mem_singleton] at hr; subst hr
-    exact Ntt.sub_low _ (by omega)
+    exact Ntt.sub_low _ (by omega_arith)
   have hsav : Saved s₁.mem (S s₀ + BitVec.ofNat 64 512) s₀.gpr := by
     rw [m1]; exact saved_write _ _ _
   have hm : Setup s₀ s₂.mem := by
     refine ⟨⟨?_, ?_⟩, fun j hj => h₂.tab j hj, fun j hj => ?_, fun j hj => ?_⟩
     · rw [h₂.frame.readW (Region.contains_self _ 8) (fun r hr => by
-        rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)]
+        rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)]
       exact hsav.1
     · rw [h₂.frame.readW (Region.contains_self _ 8) (fun r hr => by
         rw [List.mem_singleton] at hr; subst hr; rw [e8]
-        exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)]
+        exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)]
       exact hsav.2
     · exact coeffAt_congr (bytes_frame fr (fun r hr => by
         rw [List.mem_singleton] at hr; subst hr; exact hp.fs) (by decide)) (by rw [n_eq]; exact hj)
@@ -290,23 +290,23 @@ theorem restore_end {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀
   have fS := hp.fitS
   have e8 : S s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 8 = S s₀ + BitVec.ofNat 64 520 := ptr_add _ _ _
   have rS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 o) k := fun h' => by
-    rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h' (by omega)⟩
+    rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h' (by omega_arith)⟩
   have dj : ∀ {o : Nat}, o + 8 ≤ 1024 → ∀ r ∈ [polyRegion (H s₀)],
       Region.Disjoint ⟨S s₀ + BitVec.ofNat 64 o, 8⟩ r := fun ho r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact hp.hs.symm.sub_left (Offset.sub_base _ ho)
   refine WP.mono (restore_ok (b := .r6) (by decide) (by decide) (off := 0) (by decide) (by decide)
-    (A := S s₀ + BitVec.ofNat 64 512) (by rw [h.r6, BitVec.add_zero]) (rS (by omega))
-    (by rw [e8]; exact rS (by omega))) fun s' ⟨r14, r15, kp, lr, sp, m⟩ =>
+    (A := S s₀ + BitVec.ofNat 64 512) (by rw [h.r6, BitVec.add_zero]) (rS (by omega_arith))
+    (by rw [e8]; exact rS (by omega_arith))) fun s' ⟨r14, r15, kp, lr, sp, m⟩ =>
       ⟨preserved_of (g := s₀.gpr) ?_ ?_ (fun r hr => (kp r hr).trans (h.kept r hr)),
         sp.trans h.sp, lr.trans h.lr, ?_⟩
-  · rw [r14, h.frame.readW (Region.contains_self _ 8) (dj (by omega)) (by decide)]
+  · rw [r14, h.frame.readW (Region.contains_self _ 8) (dj (by omega_arith)) (by decide)]
     exact hm.sav.1
-  · rw [r15, e8, h.frame.readW (Region.contains_self _ 8) (dj (by omega)) (by decide), ← e8]
+  · rw [r15, e8, h.frame.readW (Region.contains_self _ 8) (dj (by omega_arith)) (by decide), ← e8]
     exact hm.sav.2
   · rw [m]
     exact polyIs_of_coeffAt fun j hj => by
-      rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega)]; rfl
+      rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega_arith)]; rfl
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa multiplyNTTs s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧ s.lr = s₀.lr ∧

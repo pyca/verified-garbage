@@ -146,14 +146,14 @@ theorem cmpLoop_ct : RelCT isa (Two PhiB) cmpLoop (Two PhiC) := by
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp only [fixB] <;> with_reducible assumption
   · have hk := hL.khi
-    have hk1 : 1 ≤ L.k.toNat := by have := hL.klo; omega
+    have hk1 : 1 ≤ L.k.toNat := by have := hL.klo; omega_arith
     have hok : L.out.toNat + L.k.toNat ≤ 2 ^ 64 := hL.olk ▸ hL.bo
     have hik : L.inp.toNat + L.k.toNat ≤ 2 ^ 64 := hL.ilk ▸ hL.bi
     have hOk : L.OUT = ⟨L.out, L.k.toNat⟩ := by rw [Lay.OUT, hL.olk]
-    refine WP.mono (cmpLoop_ok (op := L.out) (ip := L.inp) hk1 (by omega) x11 x12
+    refine WP.mono (cmpLoop_ok (op := L.out) (ip := L.inp) hk1 (by omega_arith) x11 x12
       (by rw [x13, BitVec.ofNat_toNat, BitVec.setWidth_eq]) x14
-      (fun i hi => ⟨L.OUT, by rw [hc.rd, hc.wr]; simp, hOk ▸ contains_of_lt _ (by omega) hi⟩)
-      (fun i hi => ⟨L.IN, by rw [hc.rd, hc.wr]; simp, by rw [Lay.IN, hL.ilk]; exact contains_of_lt _ (by omega) hi⟩))
+      (fun i hi => ⟨L.OUT, by rw [hc.rd, hc.wr]; simp, hOk ▸ contains_of_lt _ (by omega_arith) hi⟩)
+      (fun i hi => ⟨L.IN, by rw [hc.rd, hc.wr]; simp, by rw [Lay.IN, hL.ilk]; exact contains_of_lt _ (by omega_arith) hi⟩))
       fun t' hI => ⟨hc.keep (hI.keep.mono (by decide)) hI.mem, by rw [hI.mem]; exact hs, ?_⟩
     rw [hI.keep.gpr _ (by decide)]; exact x9
 
@@ -200,9 +200,9 @@ theorem crt_ct (v : CrtImpl) :
         exacts [a₁.x0.trans a₂.x0.symm, a₁.x1.trans a₂.x1.symm, a₁.x2.trans a₂.x2.symm,
           a₁.x3.trans a₂.x3.symm, a₁.x4.trans a₂.x4.symm, a₁.x5.trans a₂.x5.symm, a₁.x6.trans a₂.x6.symm,
           a₁.x7.trans a₂.x7.symm]
-      · simp only [stackArgs_ten, st 0 (by omega), st 1 (by omega), st 2 (by omega), st 3 (by omega),
-          st 4 (by omega), st 5 (by omega), st 6 (by omega), st 7 (by omega), st 8 (by omega),
-          st 9 (by omega)]
+      · simp only [stackArgs_ten, st 0 (by omega_arith), st 1 (by omega_arith), st 2 (by omega_arith), st 3 (by omega_arith),
+          st 4 (by omega_arith), st 5 (by omega_arith), st 6 (by omega_arith), st 7 (by omega_arith), st 8 (by omega_arith),
+          st 9 (by omega_arith)]
       · simp only [State.withRegions_mem, State.callEntry_mem,
           gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
           a₁.x2, a₁.x3, a₂.x2, a₂.x3, c₁.n_bytes hL, c₂.n_bytes hL]
@@ -256,8 +256,8 @@ theorem pdArgs_ct : RelCT isa (Two fun L m₀ t => Slots L t.mem ∧ PreW L m₀
       have hk := hL.khi
       have d3 := slot_disj hL (d := oR3) (by decide)
       have hP16 : L.PRE.Disjoint ⟨L.B, 16⟩ :=
-        Offset.disjoint_base _ (by decide) (by simp only [oPre, Lay.pw]; omega)
-      rw [PreW, frame_wordsAt f₃ (fun r hr => ?_) (by unfold Lay.pw; omega)]
+        Offset.disjoint_base _ (by decide) (by simp only [oPre, Lay.pw]; omega_arith)
+      rw [PreW, frame_wordsAt f₃ (fun r hr => ?_) (by unfold Lay.pw; omega_arith)]
       · exact hp
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl

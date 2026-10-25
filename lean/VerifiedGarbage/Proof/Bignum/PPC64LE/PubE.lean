@@ -32,28 +32,28 @@ theorem sat_step (acc : BitVec 64) (b : BitVec 64) (ha : acc.toNat ≤ 2 ^ 33) (
   intro a m
   have hA : a.toNat = acc.toNat * 256 + b.toNat := by
     have e1 : (acc <<< 8).toNat = acc.toNat <<< 8 := by
-      rw [BitVec.toNat_shiftLeft, Nat.mod_eq_of_lt (by rw [Nat.shiftLeft_eq]; omega)]
+      rw [BitVec.toNat_shiftLeft, Nat.mod_eq_of_lt (by rw [Nat.shiftLeft_eq]; omega_arith)]
     simp only [a, BitVec.toNat_or, e1]
-    rw [← Nat.shiftLeft_add_eq_or_of_lt (by omega), Nat.shiftLeft_eq]
+    rw [← Nat.shiftLeft_add_eq_or_of_lt (by omega_arith), Nat.shiftLeft_eq]
   have hT : (a >>> 33).toNat = a.toNat / 2 ^ 33 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   by_cases h : a.toNat < 2 ^ 33
-  · have h0 : a >>> 33 = 0 := BitVec.eq_of_toNat_eq (by rw [hT]; simp; omega)
+  · have h0 : a >>> 33 = 0 := BitVec.eq_of_toNat_eq (by rw [hT]; simp; omega_arith)
     have hm : m = 0#64 := by simp only [m, h0]; rfl
     rw [hm, BitVec.and_zero, BitVec.xor_zero, hA]
-    unfold sat; omega
+    unfold sat; omega_arith
   · have hm : m = BitVec.allOnes 64 := by
       apply BitVec.eq_of_toNat_eq
       have h1 : ((BitVec.ofNat 64 0 - a >>> 33) >>> 63).toNat = 1 := by
         rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, hT, BitVec.toNat_ofNat]
-        omega
+        omega_arith
       simp only [m, BitVec.toNat_sub, h1, BitVec.toNat_ofNat, BitVec.toNat_allOnes]
     rw [hm, BitVec.and_allOnes, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-    unfold sat; simp; omega
+    unfold sat; simp; omega_arith
 
 theorem sat_snoc (v b : Nat) : sat (sat v * 256 + b) = sat (256 * v + b) := by
-  unfold sat; omega
+  unfold sat; omega_arith
 
 theorem bytesAt_succ (m : Mem) (p : Addr) (i : Nat) :
     Spec.Rsa.bytesAt m p (i + 1) = Spec.Rsa.bytesAt m p i ++ [m (off p i)] := by
@@ -78,7 +78,7 @@ theorem readE_ok {s : State} {E : Addr} {L : Nat} (h7 : s.gpr .r7 = off E 0)
   let Inv : Nat → State → Prop := fun i t =>
     t.gpr .r24 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i))) ∧
       t.gpr .r7 = off E i ∧ t.mem = s.mem ∧ Keep [.r0, .r3, .r4, .r7, .r8, .r24] s t
-  refine WP.mono (wp_countdown (cnt := .r8) (N := L) (by omega) (by omega) Inv
+  refine WP.mono (wp_countdown (cnt := .r8) (N := L) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨t24, t7, tm, tk⟩ hc => ?_)
     ⟨by rw [i24]; rfl, by rw [k₁.gpr .r7 (by decide), h7], im, k₁.mono⟩ ((k₁.gpr .r8 (by decide)).trans h8))
     fun t ⟨t24, _, tm, tk⟩ => ⟨⟨t24, tm⟩, tk⟩
@@ -92,17 +92,17 @@ theorem readE_ok {s : State} {E : Addr} {L : Nat} (h7 : s.gpr .r7 = off E 0)
   have hbt := (t.mem (off E i)).isLt
   have hs := Nat.min_le_right (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i)) (2 ^ 33)
   apply BitVec.eq_of_toNat_eq
-  rw [sat_step _ _ (by rw [BitVec.toNat_ofNat]; unfold sat; omega) (by rw [BitVec.toNat_ofNat]; omega),
+  rw [sat_step _ _ (by rw [BitVec.toNat_ofNat]; unfold sat; omega_arith) (by rw [BitVec.toNat_ofNat]; omega_arith),
     bytesAt_succ, VG.Proof.Rsa.os2ip_snoc, tm]
   simp only [BitVec.toNat_ofNat]
   unfold sat at hs ⊢
-  omega
+  omega_arith
 
 theorem odd_bit (E : Nat) : BitVec.ofNat 64 E &&& 1#64 = BitVec.ofNat 64 (E % 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (1#64).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem ge3_bit {E : Nat} (hE : E ≤ 2 ^ 33) :
     (BitVec.ofNat 64 E - 3#64) >>> 63 ^^^ 1#64 = BitVec.ofNat 64 (if 3 ≤ E then 1 else 0) := by
@@ -110,7 +110,7 @@ theorem ge3_bit {E : Nat} (hE : E ≤ 2 ^ 33) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
     simp only [BitVec.toNat_ofNat]
-    split <;> omega
+    split <;> omega_arith
   rw [e]
   split <;> decide
 
@@ -120,7 +120,7 @@ theorem lt_bit {E : Nat} (hE : E ≤ 2 ^ 33) :
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub,
     show (1#64 <<< 33).toNat = 2 ^ 33 from rfl]
   simp only [BitVec.toNat_ofNat]
-  split <;> omega
+  split <;> omega_arith
 
 theorem valid_bits {E : Nat} (hE : E ≤ 2 ^ 33) :
     BitVec.ofNat 64 E &&& 1#64 &&& ((BitVec.ofNat 64 E - 3#64) >>> 63 ^^^ 1#64) &&&

@@ -20,14 +20,7 @@ theorem saveR1_ok {s : State} {d : Nat} (stack : Workspace s s.sp 72) (fit : d +
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.write fit
   have offset : d < 4096 := by omega
-  refine withRest [.r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 d) : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.save
   ffrun [BitVec.add_zero, write, offset]
 
@@ -39,15 +32,7 @@ theorem saveWord_ok {s : State} {d : Nat} (stack : Workspace s s.sp 72) (fit : d
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.write fit
   have offset : d < 4096 := by omega
-  refine withRest [.r1, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block ([.mov .r1 (.imm value)] ++
-        VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 d) : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.save
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, write, enc, offset]
 

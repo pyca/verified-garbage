@@ -22,15 +22,7 @@ theorem requestHead_ok (s : State) {base : BitVec 32} {available width : Nat}
       VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r10 1, .mov .r10 (.shifted .r10 .lsl 8)]) s fun t =>
       (t.gpr .r9 = BitVec.ofNat 32 available ∧ t.gpr .r10 = BitVec.ofNat 32 (256 * width) ∧
         t.mem = s.mem) ∧ Rest [.r9, .r10] s t := by
-  refine withRest [.r9, .r10] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 10,
-        VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r10 1, .mov .r10 (.shifted .r10 .lsl 8)] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r9, .r10] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord at *
   ffrun [h.addr (by decide : 10 < 16), h.addr (by decide : 1 < 16),
     h.read (by decide : 10 < 16), h.read (by decide : 1 < 16), tape, length]
@@ -44,15 +36,7 @@ theorem requestDouble_ok (s : State) {base : BitVec 32} {n cap : Nat}
     WP isa (.block [.dp .add .r9 .r9 (.reg .r9), VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r10 2]) s fun t =>
       (t.gpr .r9 = BitVec.ofNat 32 (2 * n) ∧ t.gpr .r10 = BitVec.ofNat 32 cap ∧ t.mem = s.mem) ∧
         Rest [.r9, .r10] s t := by
-  refine withRest [.r9, .r10] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [.dp .add .r9 .r9 (.reg .r9),
-        VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r10 2] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r9, .r10] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord at *
   ffrun [h.addr (by decide : 2 < 16), h.read (by decide : 2 < 16), value, capacity]
   rw [← BitVec.ofNat_add]
@@ -68,15 +52,7 @@ theorem requestStore_ok (s : State) {base : BitVec 32} {request : Nat}
     WP isa (.block [VG.Impl.Ffdh.Arm.ParameterSearch.stf .r9 3, .mov .r11 (.imm 0),
       .str .r11 .r4 28, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r11 13]) s fun t =>
       t.mem = requestMem s.mem base request ∧ Rest [.r11] s t := by
-  refine withRest [.r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.stf .r9 3, .mov .r11 (.imm 0),
-        .str .r11 .r4 28, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r11 13] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.stf requestMem
   ffrun [controllerAddr h 24 (by decide), controllerAddr h 28 (by decide), controllerAddr h 104 (by decide),
     h.space.write (off := 24) (by decide), h.space.write (off := 28) (by decide),

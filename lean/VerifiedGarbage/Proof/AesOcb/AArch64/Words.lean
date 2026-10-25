@@ -68,7 +68,7 @@ theorem imm0 : BitVec.setWidth 64 (BitVec.ofNat 16 0) <<< (16 * 0) = (0 : BitVec
 theorem zero16_ok {W : Addr} {s : State} {d : Nat} (hd : d % 8 = 0 ∧ d + 8 < 32768) (h19 : s.gpr .x19 = W)
     (w₀ : InRegions s.wr (W + BitVec.ofNat 64 d) 8) (w₁ : InRegions s.wr (W + BitVec.ofNat 64 (d + 8)) 8) :
     ∃ s', runBlock isa (zero16 d) s = some s' ∧ BlkStep W d 0 [.x9] s s' := by
-  refine ⟨_, by orun [zero16, h19, w₀, w₁, hd.1, Nat.add_mod_right, show d < 32768 by omega, hd.2], ?_⟩
+  refine ⟨_, by orun [zero16, h19, w₀, w₁, hd.1, Nat.add_mod_right, show d < 32768 by omega_arith, hd.2], ?_⟩
   refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp only [imm0]; rw [← addr8 W d]; exact Proof.Cmac.frame_store2 _ _ _
   · simp only [imm0]; rw [← addr8 W d, blockAtMem_store2]; decide
@@ -83,8 +83,8 @@ theorem copy16_ok {W : Addr} {s : State} {a d : Nat} (ha : a % 8 = 0 ∧ a + 8 <
     (w₀ : InRegions s.wr (W + BitVec.ofNat 64 d) 8) (w₁ : InRegions s.wr (W + BitVec.ofNat 64 (d + 8)) 8) :
     ∃ s', runBlock isa (copy16 a d) s = some s' ∧
       BlkStep W d (blockAtMem s.mem (W + BitVec.ofNat 64 a)) [.x9, .x10] s s' := by
-  refine ⟨_, by orun [copy16, h19, r₀, r₁, w₀, w₁, ha.1, hd.1, Nat.add_mod_right, show a < 32768 by omega,
-    show d < 32768 by omega, ha.2, hd.2], ?_⟩
+  refine ⟨_, by orun [copy16, h19, r₀, r₁, w₀, w₁, ha.1, hd.1, Nat.add_mod_right, show a < 32768 by omega_arith,
+    show d < 32768 by omega_arith, ha.2, hd.2], ?_⟩
   refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [← addr8 W d]; exact Proof.Cmac.frame_store2 _ _ _
   · rw [← addr8 W d, blockAtMem_store2, ← addr8 W a, blockAtMem_words]
@@ -104,7 +104,7 @@ theorem xor16_ok {W B : Addr} {s : State} {b : Reg} {a d : Nat} (ha : a % 8 = 0 
   have v₀ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) 8 := in_left w₀
   have v₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 (d + 8)) 8 := in_left w₁
   refine ⟨_, by orun [xor16, h19, hb, hb9, hb10, hb11, r₀, r₁, v₀, v₁, w₀, w₁, ha.1, hd.1, Nat.add_mod_right,
-    show a < 32768 by omega, show d < 32768 by omega, ha.2, hd.2], ?_⟩
+    show a < 32768 by omega_arith, show d < 32768 by omega_arith, ha.2, hd.2], ?_⟩
   refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [← addr8 W d]; exact Proof.Cmac.frame_store2 _ _ _
   · rw [← addr8 W d, blockAtMem_store2, ← addr8 B a, blockAtMem_xor_words]
@@ -135,7 +135,7 @@ theorem dbl_ok {W B : Addr} {s : State} {b : Reg} {a d : Nat} (ha : a % 8 = 0 �
     ∃ s', runBlock isa (dbl b a d) s = some s' ∧
       BlkStep W d (double (blockAtMem s.mem (B + BitVec.ofNat 64 a))) [.x9, .x10, .x11, .x12, .x13] s s' := by
   refine ⟨_, by orun [dbl, h19, hb, hb9, r₀, r₁, w₀, w₁, ha.1, hd.1, Nat.add_mod_right,
-    show a < 32768 by omega, show d < 32768 by omega, ha.2, hd.2], ?_⟩
+    show a < 32768 by omega_arith, show d < 32768 by omega_arith, ha.2, hd.2], ?_⟩
   refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [← addr8 W d]; exact Proof.Cmac.frame_store2 _ _ _
   · rw [← addr8 W d, blockAtMem_store2, ← addr8 B a]

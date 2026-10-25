@@ -41,7 +41,7 @@ theorem winIndex_ok (s : State) {base : Addr} {size : Nat} (hs : Scr s base size
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth,
       Nat.shiftLeft_eq, Nat.mul_zero, Nat.pow_zero, Nat.mul_one]
-    simp only [Size.bits, Nat.mod_eq_of_lt (show w < 2 ^ 16 by omega), Nat.mod_mod]
+    simp only [Size.bits, Nat.mod_eq_of_lt (show w < 2 ^ 16 by omega_arith), Nat.mod_mod]
     rw [← Nat.mul_mod, Nat.mul_comm]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
@@ -63,16 +63,16 @@ theorem hornerBits_ok {v : Nat → Nat} (hv : ∀ i, v i ≤ 1) :
     exact RegUpd.gpr_write_of_ne _ _ _ hr.1
   | k + 1, d, s, hk, hd, hb => by
     rw [hornerBits, WP.block_append_iff]
-    refine WP.mono (hornerBits_ok hv k (d + 1) (by omega) (by omega) fun i hi => by
-      rw [show d + 1 + i = d + (i + 1) by omega]; exact hb (i + 1) (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (hornerBits_ok hv k (d + 1) (by omega_arith) (by omega_arith) fun i hi => by
+      rw [show d + 1 + i = d + (i + 1) by omega_arith]; exact hb (i + 1) (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
     have h16 : s₁.gpr .x16 = s.gpr .x16 := k₁.gpr _ (by decide)
-    obtain ⟨hr, hm⟩ := hb 0 (by omega)
+    obtain ⟨hr, hm⟩ := hb 0 (by omega_arith)
     rw [Nat.add_zero] at hr hm
     have hlt := hornerVal_lt hv (d + 1) k
-    have hk2 : 2 ^ k < 2 ^ 63 := Nat.pow_lt_pow_right (by decide) (by omega)
+    have hk2 : 2 ^ k < 2 ^ 63 := Nat.pow_lt_pow_right (by decide) (by omega_arith)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, State.load, addr,
-      Size.bits, Nat.mod_one, show d < 4096 * 1 by omega, and_self, ite_true, h16,
+      Size.bits, Nat.mod_one, show d < 4096 * 1 by omega_arith, and_self, ite_true, h16,
       k₁.rd, k₁.wr, k₁.mem, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
       hr, read1_zext, hm, BitVec.setWidth_eq, ite_false, reduceCtorEq, e₁, Option.map_some,
       Option.bind_some, Option.some.injEq, exists_eq_left']
@@ -80,9 +80,9 @@ theorem hornerBits_ok {v : Nat → Nat} (hv : ∀ i, v i ≤ 1) :
     · apply BitVec.eq_of_toNat_eq
       have := hv d
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_setWidth, hornerVal]
-      rw [Nat.mod_eq_of_lt (by omega : v d % 2 ^ 8 < 2 ^ 64), Nat.mod_eq_of_lt (by omega : v d < 2 ^ 8),
-        Nat.mod_eq_of_lt (by omega : hornerVal v (d + 1) k < 2 ^ 64)]
-      omega
+      rw [Nat.mod_eq_of_lt (by omega_arith : v d % 2 ^ 8 < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith : v d < 2 ^ 8),
+        Nat.mod_eq_of_lt (by omega_arith : hornerVal v (d + 1) k < 2 ^ 64)]
+      omega_arith
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
       simp only [RegUpd.gpr_write, hr'.1, hr'.2, ite_false]
       exact k₁.gpr r (by simpa using hr')
@@ -102,7 +102,7 @@ theorem magnitudeH_ok (s : State) {w v : Nat} (hw : w < 9) (hv : v < 2 ^ w)
     WP isa (.block (magnitudeH (2 ^ (w - 1)))) s fun t =>
       t.gpr .x2 = BitVec.ofNat 64 (magH (2 ^ (w - 1)) v) ∧ Keeps [.x2, .x3, .x4, .x9] s t := by
   have hH : 2 ^ (w - 1) < 4096 := Nat.lt_of_le_of_lt (Nat.pow_le_pow_right (by decide)
-    (show w - 1 ≤ 7 by omega)) (by decide)
+    (show w - 1 ≤ 7 by omega_arith)) (by decide)
   apply WP.of_runBlock
   simp only [magnitudeH, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits, hH,
     show (63 : Nat) < 64 from by decide, show 16 * 0 < 64 from by decide,
@@ -124,25 +124,25 @@ theorem signMaskW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   rw [signMaskW, WP.block_append_iff]
   refine WP.mono (winIndex_ok s hs hw hx) fun a ⟨a16, ka⟩ => ?_
   have hr : InRegions (a.rd ++ a.wr) (off base (bits + (w * j + (w - 1)))) 1 :=
-    ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega) (by decide)⟩
+    ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega_arith) (by decide)⟩
   have he : a.gpr .x16 + BitVec.ofNat 64 (bits + w - 1) = off base (bits + (w * j + (w - 1))) := by
     rw [a16, off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact congrArg (base + ·) (congrArg _ (by omega))
+    exact congrArg (base + ·) (congrArg _ (by omega_arith))
   have hv : ((a.mem.read (off base (bits + (w * j + (w - 1)))) 1).setWidth 32).setWidth 64 =
       (((if k.testBit (w * j + (w - 1)) then 1 else 0 : BitVec 8)).setWidth 32).setWidth 64 := by
-    rw [read1_zext, ka.mem, hbits _ (by omega)]
+    rw [read1_zext, ka.mem, hbits _ (by omega_arith)]
     rfl
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     State.load, addr, Size.bits, RegUpd.gpr_write, BitVec.setWidth_eq, Nat.mod_one,
-    show bits + w - 1 < 4096 * 1 by omega, show (1 : Nat) < 4096 by decide,
+    show bits + w - 1 < 4096 * 1 by omega_arith, show (1 : Nat) < 4096 by decide,
     and_self, he, hr, hv, ite_true, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, ⟨fun r hr => ?_, ka.mem, ka.rd, ka.wr, ka.sp⟩⟩
   · rw [sign_byte, testBit_top k w j hw1]
     by_cases h : 2 ^ (w - 1) ≤ combWin w k j
-    · simp [h, show ¬ combWin w k j < 2 ^ (w - 1) by omega]
-    · simp [h, show combWin w k j < 2 ^ (w - 1) by omega]
+    · simp [h, show ¬ combWin w k j < 2 ^ (w - 1) by omega_arith]
+    · simp [h, show combWin w k j < 2 ^ (w - 1) by omega_arith]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, ite_false]
     exact ka.gpr r (by simpa using hr.2)
@@ -157,22 +157,22 @@ theorem digitW_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
       t.gpr .x2 = BitVec.ofNat 64 (magH K.H (combWin K.w k j)) ∧ Keeps [.x2, .x3, .x4, .x9, .x16] s t := by
   have hn := hs.nowrap
   rw [TCombCfg.digit, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (winIndex_ok s hs (by omega) hx) fun a ⟨a16, ka⟩ => ?_
+  refine WP.mono (winIndex_ok s hs (by omega_arith) hx) fun a ⟨a16, ka⟩ => ?_
   rw [WP.block_append_iff]
   have hv : ∀ i, (fun t => (k.testBit (K.w * j + (t - K.bits))).toNat) i ≤ 1 := fun _ => Bool.toNat_le _
-  refine WP.mono (hornerBits_ok hv K.w K.bits (s := a) (by omega) hbw fun i hi => ?_)
+  refine WP.mono (hornerBits_ok hv K.w K.bits (s := a) (by omega_arith) hbw fun i hi => ?_)
     fun b ⟨b2, kb⟩ => ?_
   · have he : a.gpr .x16 + BitVec.ofNat 64 (K.bits + i) = off base (K.bits + (K.w * j + i)) := by
       rw [a16, off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact congrArg (base + ·) (congrArg _ (by omega))
-    refine ⟨by rw [he]; exact ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega) (by decide)⟩, ?_⟩
-    rw [he, ka.mem, hbits _ (by omega), show K.bits + i - K.bits = i by omega]
+      exact congrArg (base + ·) (congrArg _ (by omega_arith))
+    refine ⟨by rw [he]; exact ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega_arith) (by decide)⟩, ?_⟩
+    rw [he, ka.mem, hbits _ (by omega_arith), show K.bits + i - K.bits = i by omega_arith]
     cases k.testBit (K.w * j + i) <;> rfl
   · have hw' : hornerVal (fun t => (k.testBit (K.w * j + (t - K.bits))).toNat) K.bits K.w = combWin K.w k j := by
       have := hornerVal_eq k K.w j K.w (Nat.le_refl _)
       rw [Nat.sub_self, Nat.add_zero] at this
       rw [combWin, ← this]
-      exact hornerVal_congr fun i _ => by simp only [show K.bits + i - K.bits = i by omega]
+      exact hornerVal_congr fun i _ => by simp only [show K.bits + i - K.bits = i by omega_arith]
     have hlt := combWin_lt K.w k j
     refine WP.mono (magnitudeH_ok b hw hlt (by rw [b2, hw'])) fun t ⟨t2, kt⟩ =>
       ⟨t2, ((Keeps.regs ka).mono (by decide)).trans ((Keeps.regs kb).mono (by decide)) |>.trans

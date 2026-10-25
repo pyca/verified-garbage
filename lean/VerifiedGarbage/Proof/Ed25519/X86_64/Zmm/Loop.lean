@@ -37,7 +37,7 @@ theorem entry_rep {P : Spec.Ed25519.Point} {v : ℤ} (hP : Rep P (v • baseAff)
     (hj : j < 26) :
     Rep (vAddPt P (negIf (decide (nib S i < 16)) (selEntry j (mag (nib S i)))))
       ((sdig S i * 1024 ^ j + v) • baseAff) := by
-  have hmag : mag (nib S i) < 17 := by unfold mag nib; split <;> omega
+  have hmag : mag (nib S i) < 17 := by unfold mag nib; split <;> omega_arith
   obtain ⟨q₀, hq₀, hrq₀⟩ := combCached_ok j (mag (nib S i)) hj hmag
   have hcc : selEntry j (mag (nib S i)) = cache q₀ := by
     rw [← hq₀, selEntry, ← combCached_T j (mag (nib S i))]; rfl
@@ -51,12 +51,12 @@ theorem entry_rep {P : Spec.Ed25519.Point} {v : ℤ} (hP : Rep P (v • baseAff)
     by_cases hlt : nib S i < 16
     · simp only [hlt, ↓reduceIte, q]
       have e : sdig S i * 1024 ^ j = -(((mag (nib S i) * 1024 ^ j : Nat) : ℤ)) := by
-        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : nib S i ≤ 16)]; ring
+        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_arith : nib S i ≤ 16)]; ring
       rw [e, neg_smul, natCast_zsmul]
       exact hrq₀.neg
     · simp only [hlt, ↓reduceIte, q]
       have e : sdig S i * 1024 ^ j = (((mag (nib S i) * 1024 ^ j : Nat) : ℤ)) := by
-        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 16 ≤ nib S i)]; ring
+        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_arith : 16 ≤ nib S i)]; ring
       rw [e, natCast_zsmul]
       exact hrq₀
   rw [hcc, hneg, vAddPt_cache, add_smul, add_comm]
@@ -104,30 +104,30 @@ theorem ZFrame.readW {s₀ s : State} {b : Addr} (h : ZFrame s₀ b s) {d w : Na
     (hd : ∀ i < w / 8, ¬ ZChg (d + i)) (hd' : d + w / 8 < 2 ^ 64) :
     s.mem.readW (b + BitVec.ofNat 64 d) w = s₀.mem.readW (b + BitVec.ofNat 64 d) w :=
   Mem.readW_congr fun i hi => by
-    rw [Offset.add_ofNat_add_ofNat]; exact h.byte (hd i hi) (by omega)
+    rw [Offset.add_ofNat_add_ofNat]; exact h.byte (hd i hi) (by omega_arith)
 
 theorem ZFrame.zok {s₀ s : State} {b T : Addr} {S : Nat} (hp : ZLoopPre s₀ b T S) (h : ZFrame s₀ b s)
     (hr : s.gpr .rdi = b) : ZOK b s :=
   ⟨hr, by rw [h.wr]; exact hp.scratch.wr, hp.scratch.nowrap, fun sel hs i hi => by
     have hm : ∀ sel ∈ blendSels, ZMASK ≤ maskRow sel ∧ maskRow sel + 64 ≤ 6016 := by decide
     have := hm sel hs
-    rw [h.readW (fun q hq => by unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK at *; omega) (by omega)]
+    rw [h.readW (fun q hq => by unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK at *; omega_arith) (by omega_arith)]
     exact hp.zok.masks sel hs i hi⟩
 
 theorem ZFrame.k2 {s₀ s : State} {b : Addr} (h : ZFrame s₀ b s) :
     ∀ h' < 2, ∀ k < 4, s.mem.readW (b + BitVec.ofNat 64 (ZK2 + 32 * h' + 8 * k)) 64 =
       s₀.mem.readW (b + BitVec.ofNat 64 (ZK2 + 32 * h' + 8 * k)) 64 :=
-  fun h' hh k hk => h.readW (fun q hq => by unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZK2 ZB at *; omega)
-    (by unfold ZK2; omega)
+  fun h' hh k hk => h.readW (fun q hq => by unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZK2 ZB at *; omega_arith)
+    (by unfold ZK2; omega_arith)
 
 theorem ZFrame.bits {s₀ s : State} {b T : Addr} {S : Nat} (hp : ZLoopPre s₀ b T S) (h : ZFrame s₀ b s) :
     ∀ q < 256, s.mem (off b (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) := fun q hq => by
-  rw [h.mem _ (by rw [bits_far hq]; unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega)]
+  rw [h.mem _ (by rw [bits_far hq]; unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega_arith)]
   exact hp.bits q hq
 
 theorem ZFrame.keep {s₀ s : State} {b : Addr} (h : ZFrame s₀ b s) : PowersKeep b 56 7368 s₀ s :=
   ⟨fun r h1 h2 h3 => h.gpr r h1 h2 h3, h.rd, h.wr, fun p _ hp => h.mem p (by
-    unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega)⟩
+    unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega_arith)⟩
 
 theorem ZFrame.tbl {s₀ s : State} {b T : Addr} {S : Nat} (hp : ZLoopPre s₀ b T S) (h : ZFrame s₀ b s) :
     CombTbl s T :=
@@ -136,7 +136,7 @@ theorem ZFrame.tbl {s₀ s : State} {b T : Addr} {S : Nat} (hp : ZLoopPre s₀ b
 theorem ZFrame.consts {s₀ s : State} {b T : Addr} {S : Nat} (hp : ZLoopPre s₀ b T S) (h : ZFrame s₀ b s) :
     EConsts s.mem b :=
   hp.consts.of_mq fun d h1 h2 => h.readW (fun q hq => by
-    unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega) (by omega)
+    unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega_arith) (by omega_arith)
 
 /-- The loop's invariant after `j` steps, with the points `[vA]B` and `[vB]B` in the halves. -/
 structure ZInv (s₀ : State) (b : Addr) (j : Nat) (vA vB : ℤ) (s : State) : Prop where
@@ -188,20 +188,20 @@ theorem hconsts_dig {m m' : Mem} {b : Addr} (hk : MemOff b DigOff m m') {h : Nat
     (hc : EConsts (hmem b h m) b) : EConsts (hmem b h m') b :=
   hc.of_mq fun d h1 h2 => Mem.readW_congr fun i hi => by
     simp only [hmem]
-    rw [Offset.add_ofNat_add_ofNat, off_ofNat _ (by omega)]
+    rw [Offset.add_ofNat_add_ofNat, off_ofNat _ (by omega_arith)]
     split
     · rename_i hw
       unfold InWin at hw
       refine hk _ ?_
       simp only [ofs]
-      rw [off_ofNat _ (by unfold zoff ZB; omega)]
+      rw [off_ofNat _ (by unfold zoff ZB; omega_arith)]
       unfold DigOff zoff ZB SGA SGB combSignMask
-      omega
+      omega_arith
     · refine hk _ ?_
       simp only [ofs]
-      rw [off_ofNat _ (by omega)]
+      rw [off_ofNat _ (by omega_arith)]
       unfold DigOff SGA SGB combSignMask
-      omega
+      omega_arith
 
 /-! ## A step -/
 
@@ -241,8 +241,8 @@ theorem zstep_ok {s₀ z : State} {b T : Addr} {S j : Nat} {vA vB : ℤ} (hp : Z
     · rw [k₂.2.2.2, wr₁]; exact h.frame.wr
     · rw [k₂.2.1, m₁ a (fun e => ha (Or.inr e))]; exact h.frame.mem a ha
     · rw [sy₂, sy₁]; exact h.frame.syms
-  have hmA : mag (nib S (2 * j + 1)) ≤ 16 := by unfold mag nib; split <;> omega
-  have hmB : mag (nib S (2 * j)) ≤ 16 := by unfold mag nib; split <;> omega
+  have hmA : mag (nib S (2 * j + 1)) ≤ 16 := by unfold mag nib; split <;> omega_arith
+  have hmB : mag (nib S (2 * j)) ≤ 16 := by unfold mag nib; split <;> omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (zselect_ok hs₂ (f₂.tbl hp) hj hmA hmB d₂ (by rw [k₂.1 _ (by decide)]; exact r8₁)
     (by rw [k₂.1 _ (by decide)]; exact r10₁)) fun z₃ ⟨sel₃, k14₃, k₃⟩ => ?_
@@ -257,7 +257,7 @@ theorem zstep_ok {s₀ z : State} {b T : Addr} {S j : Nat} {vA vB : ℤ} (hp : Z
       simp only [lanes, Nat.zero_add]
       rw [qw_half b z₃ _ hl, qw_half b z _ hl]
       simp only [zq]
-      rw [zl _ (hreg i (by omega)) _ (by omega)]
+      rw [zl _ (hreg i (by omega_arith)) _ (by omega_arith)]
   have p₃ : ∀ h' < 2, lanePt (Zmm.half b h' z₃) = lanePt (Zmm.half b h' z) := fun h' hh => by
     simp only [lanePt]
     rw [fe5_congr (l0 h' hh 0 (by decide)), fe5_congr (l0 h' hh 1 (by decide)),
@@ -272,7 +272,7 @@ theorem zstep_ok {s₀ z : State} {b T : Addr} {S j : Nat} {vA vB : ℤ} (hp : Z
   refine WP.mono_syms (zentry_ok (m := hmag (mag (nib S (2 * j + 1))) (mag (nib S (2 * j))))
     (n := hmag (nib S (2 * j + 1)) (nib S (2 * j))) hs₃
     ⟨hs₃.rdi, hs₃.wr, hsz.nowrap, by rw [k₃.mem]; exact (f₂.zok hp hs₂.rdi).masks⟩
-    hk₃ sm₃ (fun h' hh => by simp only [hmag]; split <;> omega) sel₃
+    hk₃ sm₃ (fun h' hh => by simp only [hmag]; split <;> omega_arith) sel₃
     (fun h' hh => by
       rw [k14₃ h' hh 0 (by decide), k14₃ h' hh 1 (by decide), k14₃ h' hh 2 (by decide), k14₃ h' hh 3 (by decide),
         f₂.k2 h' hh 0 (by decide), f₂.k2 h' hh 1 (by decide), f₂.k2 h' hh 2 (by decide),
@@ -291,7 +291,7 @@ theorem zstep_ok {s₀ z : State} {b T : Addr} {S j : Nat} {vA vB : ℤ} (hp : Z
       fe5_congr fun i _ => lt h' hh 0 2 i (by decide), fe5_congr fun i _ => lt h' hh 0 3 i (by decide)]
   have gz : ∀ r, r ≠ .rbx → r ≠ .rax → r ≠ .rcx → r ≠ .rdx → t.gpr r = z₂.gpr r := fun r h0 h1 h2 h3 => by
     rw [kt.1 r (by simp [h0]), g₄ r h2, k₃.gpr r (by simp [h1, h2, h3])]
-  refine ⟨by omega, by rw [gz _ (by decide) (by decide) (by decide) (by decide)]; exact hs₂.rdi, rb, ?_,
+  refine ⟨by omega_arith, by rw [gz _ (by decide) (by decide) (by decide) (by decide)]; exact hs₂.rdi, rb, ?_,
     fun h' hh => ?_, fun h' hh l hl i hi => ?_, ?_, ?_⟩
   · refine ⟨fun r h1 h2 h3 => ?_, ?_, ?_, ?_, fun a ha => ?_, ?_⟩
     · rw [gz r h1 (fun e => h3 (e ▸ by decide)) (fun e => h3 (e ▸ by decide)) (fun e => h3 (e ▸ by decide))]

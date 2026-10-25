@@ -105,11 +105,11 @@ theorem sub_scr0 {n : Nat} (h : n ≤ 2048) : Region.Sub ⟨P.scr, n⟩ P.scrR :
 
 omit hp in
 theorem disj_scr {a n b m : Nat} (h : a + n ≤ b) (hb : b + m ≤ 2048) :
-    Region.Disjoint ⟨P.at' a, n⟩ ⟨P.at' b, m⟩ := Offset.disjoint _ (.inl h) (by omega) (by omega)
+    Region.Disjoint ⟨P.at' a, n⟩ ⟨P.at' b, m⟩ := Offset.disjoint _ (.inl h) (by omega_arith) (by omega_arith)
 
 omit hp in
 theorem disj_scr0 {n b m : Nat} (h : n ≤ b) (hb : b + m ≤ 2048) :
-    Region.Disjoint ⟨P.scr, n⟩ ⟨P.at' b, m⟩ := Offset.base_disjoint _ h (by omega)
+    Region.Disjoint ⟨P.scr, n⟩ ⟨P.at' b, m⟩ := Offset.base_disjoint _ h (by omega_arith)
 
 theorem sd_scr' {a n : Nat} (h : a + n ≤ 2048) : P.sdR.Disjoint ⟨P.at' a, n⟩ := hp.sd_scr.sub_right (sub_scr h)
 
@@ -126,11 +126,11 @@ theorem stk_scr0 {n : Nat} (h : n ≤ 2048) : (below (σ.gpr .rsp) 16).Disjoint 
 
 omit hp in
 theorem contains_scr {a n : Nat} (h : a + n ≤ 2048) : P.scrR.Contains (P.at' a) n :=
-  Offset.contains_base _ h (by omega)
+  Offset.contains_base _ h (by omega_arith)
 
 /-- The message is not written. -/
 theorem sd_frame {s : State} (he : Env P σ s) : bytesAt s.mem P.sd P.len = bytesAt σ.mem P.sd P.len :=
-  MlKem.bytesAt_frame he.frame (by simpa using ⟨hp.sd_a, hp.sd_scr, hp.stk_sd.symm⟩) (by have := hp.len_lt; omega)
+  MlKem.bytesAt_frame he.frame (by simpa using ⟨hp.sd_a, hp.sd_scr, hp.stk_sd.symm⟩) (by have := hp.len_lt; omega_arith)
 
 /-- A word of the working space from byte 2024 on (a saved register) is apart
 from the first 2024 bytes, the output polynomial and the stack. -/
@@ -163,13 +163,13 @@ theorem Env.call {s s' : State} (he : Env P σ s) {rs : List Region} (hrs : ∀ 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> decide
     rw [hcs r hr', he.cs r hr]
-  · rw [hf.readW (Region.contains_self _ _) (hd 2024 (by omega) (by omega)) (by decide),
-      hf.readW (Region.contains_self _ _) (hd 2032 (by omega) (by omega)) (by decide),
-      hf.readW (Region.contains_self _ _) (hd 2040 (by omega) (by omega)) (by decide)]
+  · rw [hf.readW (Region.contains_self _ _) (hd 2024 (by omega_arith) (by omega_arith)) (by decide),
+      hf.readW (Region.contains_self _ _) (hd 2032 (by omega_arith) (by omega_arith)) (by decide),
+      hf.readW (Region.contains_self _ _) (hd 2040 (by omega_arith) (by omega_arith)) (by decide)]
     exact he.saved
   · refine he.frame.trans (hf.sub fun r hr => ?_)
     rcases List.mem_append.mp hr with hr | hr
-    · exact ⟨P.scrR, by simp, fun x h => sub_scr0 (P := P) (n := 2024) (by omega) x (hrs r hr x h)⟩
+    · exact ⟨P.scrR, by simp, fun x h => sub_scr0 (P := P) (n := 2024) (by omega_arith) x (hrs r hr x h)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨below (σ.gpr .rsp) 16, by simp, by rw [he.rsp]; exact fun _ h => h⟩
 
@@ -241,7 +241,7 @@ def spRate (rate : BitVec 32) : Prop := rate.toNat = 136 ∨ rate.toNat = 168
 theorem spRate_mem {rate : BitVec 32} (h : spRate rate) : rate.toNat ∈ rates := by
   rcases h with h | h <;> rw [h] <;> decide
 
-theorem spRate_pos {rate : BitVec 32} (h : spRate rate) : 0 < rate.toNat := by rcases h with h | h <;> omega
+theorem spRate_pos {rate : BitVec 32} (h : spRate rate) : 0 < rate.toNat := by rcases h with h | h <;> omega_arith
 
 section
 variable {P : Sp} {σ : State} (hp : SpOk P σ)
@@ -256,7 +256,7 @@ theorem blk1_ok {rate : BitVec 32} (hr : spRate rate) {s : State} (h : J0 P σ s
   rw [WP.block_append_iff]
   have hb1 : s1.gpr .rbx = P.scr := by rw [k1.gpr (by decide), h.env.rbx]
   refine WP.mono (zeroSt_ok .rbx 0 s1 hax fun i hi => by
-      rw [hb1, add_ofNat_zero, k1.2.2]; exact inScr hp h.env (by omega)) fun s2 ⟨hz, hf2, k2⟩ => ?_
+      rw [hb1, add_ofNat_zero, k1.2.2]; exact inScr hp h.env (by omega_arith)) fun s2 ⟨hz, hf2, k2⟩ => ?_
   rw [hb1, add_ofNat_zero] at hz hf2
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .r9] (Q := fun s' => s'.mem = s2.mem ∧
       s'.gpr .rdi = P.scr ∧ s'.gpr .rsi = BitVec.ofNat 64 rate.toNat ∧ s'.gpr .rdx = BitVec.ofNat 64 0 ∧
@@ -269,22 +269,22 @@ theorem blk1_ok {rate : BitVec 32} (hr : spRate rate) {s : State} (h : J0 P σ s
   have hsv : ∀ k, 2024 ≤ k → k + 8 ≤ 2048 → s3.mem.readW (P.at' k) 64 = s1.mem.readW (P.at' k) 64 := by
     intro k hk hk'
     rw [hm3, hf2.readW (Region.contains_self _ _) (by
-      simpa using (disj_scr0 (n := 200) (b := k) (m := 8) (by omega) hk').symm) (by decide)]
+      simpa using (disj_scr0 (n := 200) (b := k) (m := 8) (by omega_arith) hk').symm) (by decide)]
   refine ⟨⟨k23.2.1.trans e1.rd, k23.2.2.trans e1.wr, by rw [k23.gpr (by decide), e1.rbx],
     by rw [k23.gpr (by decide), e1.rbp], by rw [k23.gpr (by decide), e1.r12], hsp,
     fun r hr => by rw [k23.gpr (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide), e1.cs r hr],
-    (by rw [hsv 2024 (by omega) (by omega), hsv 2032 (by omega) (by omega), hsv 2040 (by omega) (by omega)];
+    (by rw [hsv 2024 (by omega_arith) (by omega_arith), hsv 2032 (by omega_arith) (by omega_arith), hsv 2040 (by omega_arith) (by omega_arith)];
         exact e1.saved), ?_⟩, by rw [hm3]; exact hz, ?_⟩
   · rw [hm3]
     exact e1.frame.trans (hf2.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨P.scrR, by simp, sub_scr0 (by omega)⟩)
+      exact ⟨P.scrR, by simp, sub_scr0 (by omega_arith)⟩)
   · have hcx : s3.gpr .rcx = P.sd := by rw [k23.gpr (by decide), k1.gpr (by decide), h.rcx]
     have h8 : s3.gpr .r8 = BitVec.ofNat 64 P.len := by rw [k23.gpr (by decide), k1.gpr (by decide), h.r8]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, spRate_mem hr, spRate_pos hr, hp.len_lt,
-      disj_scr0 (by omega) (by omega), (sd_scr0 hp (by omega)), sd_scr' hp (by omega),
-      by rw [hsp]; exact stk_scr0 hp (by omega), by rw [hsp]; exact hp.stk_sd,
-      by rw [hsp]; exact stk_scr' hp (by omega)⟩
+      disj_scr0 (by omega_arith) (by omega_arith), (sd_scr0 hp (by omega_arith)), sd_scr' hp (by omega_arith),
+      by rw [hsp]; exact stk_scr0 hp (by omega_arith), by rw [hsp]; exact hp.stk_sd,
+      by rw [hsp]; exact stk_scr' hp (by omega_arith)⟩
 
 /-- After absorbing the message. -/
 structure J2 (rate : Nat) (P : Sp) (σ s : State) : Prop where
@@ -310,7 +310,7 @@ theorem subA : ∀ r ∈ [(⟨P.scr, 200⟩ : Region), ⟨P.at' 200, 640⟩], Re
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  exacts [Region.sub_prefix (by omega), Offset.sub_base _ (by omega)]
+  exacts [Region.sub_prefix (by omega_arith), Offset.sub_base _ (by omega_arith)]
 
 omit hp in
 /-- The all-zero state represents the empty message. -/
@@ -346,8 +346,8 @@ theorem blk2_ok {rate : BitVec 32} (hr : spRate rate) {s : State} (h : J2 rate.t
     fun s' ⟨⟨hm, hdi, hsi, hdx, hcx, h8⟩, k⟩ => ?_
   have he := h.env.keep hm (k.mono (by decide))
   exact ⟨he, by rw [hm]; exact h.repr, ⟨hdi, hsi, hdx, h8, spRate_mem hr, Nat.mod_lt _ (spRate_pos hr),
-    disj_scr0 (by omega) (by omega), by rw [he.rsp]; exact stk_scr0 hp (by omega),
-    by rw [he.rsp]; exact stk_scr' hp (by omega)⟩, by rw [hcx]; decide⟩
+    disj_scr0 (by omega_arith) (by omega_arith), by rw [he.rsp]; exact stk_scr0 hp (by omega_arith),
+    by rw [he.rsp]; exact stk_scr' hp (by omega_arith)⟩, by rw [hcx]; decide⟩
 
 /-- After padding. -/
 structure J4 (rate : Nat) (P : Sp) (σ s : State) : Prop where
@@ -380,11 +380,11 @@ theorem blk3_ok {rate outlen : BitVec 32} (hr : spRate rate) (ho : 840 + outlen.
     (by unfold sqzArgs; xrun [h.env.rbx, sx200, sx840, sw64]) (by rfl))
     fun s' ⟨⟨hm, hdi, hsi, hdx, hcx, h8, h9⟩, k⟩ => ?_
   have he := h.env.keep hm (k.mono (by decide))
-  refine ⟨⟨he, by rw [hm]; exact h.st⟩, ⟨hdi, hsi, hdx, hcx, h8, h9, spRate_mem hr, Nat.zero_le _, by omega,
-    disj_scr0 (by omega) (by omega), disj_scr0 (by omega) (by omega),
-    (disj_scr (a := 200) (n := 640) (b := 840) (m := outlen.toNat) (by omega) (by omega)).symm,
-    by rw [he.rsp]; exact stk_scr0 hp (by omega), by rw [he.rsp]; exact stk_scr' hp (by omega),
-    by rw [he.rsp]; exact stk_scr' hp (by omega)⟩⟩
+  refine ⟨⟨he, by rw [hm]; exact h.st⟩, ⟨hdi, hsi, hdx, hcx, h8, h9, spRate_mem hr, Nat.zero_le _, by omega_arith,
+    disj_scr0 (by omega_arith) (by omega_arith), disj_scr0 (by omega_arith) (by omega_arith),
+    (disj_scr (a := 200) (n := 640) (b := 840) (m := outlen.toNat) (by omega_arith) (by omega_arith)).symm,
+    by rw [he.rsp]; exact stk_scr0 hp (by omega_arith), by rw [he.rsp]; exact stk_scr' hp (by omega_arith),
+    by rw [he.rsp]; exact stk_scr' hp (by omega_arith)⟩⟩
 
 /-- After squeezing: the output. -/
 structure J6 (rate outlen : Nat) (P : Sp) (σ s : State) : Prop where
@@ -398,12 +398,12 @@ theorem covS {outlen : Nat} (ho : 840 + outlen ≤ 2024) {s : State} (he : Env P
   · intro r hr
     simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    exacts [.inr ⟨0, (add_ofNat_zero _).symm, by simp⟩, .inr ⟨840, rfl, by simp; omega⟩,
+    exacts [.inr ⟨0, (add_ofNat_zero _).symm, by simp⟩, .inr ⟨840, rfl, by simp; omega_arith⟩,
       .inr ⟨200, rfl, by simp⟩]
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    exacts [⟨0, (add_ofNat_zero _).symm, by simp⟩, ⟨840, rfl, by simp; omega⟩, ⟨200, rfl, by simp⟩]
+    exacts [⟨0, (add_ofNat_zero _).symm, by simp⟩, ⟨840, rfl, by simp; omega_arith⟩, ⟨200, rfl, by simp⟩]
 
 theorem call3_ok {rate outlen : Nat} (ho : 840 + outlen ≤ 2024) {s : State} (h : J5 rate outlen P σ s) :
     WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) s (J6 rate outlen P σ) := by
@@ -414,7 +414,7 @@ theorem call3_ok {rate outlen : Nat} (ho : 840 + outlen ≤ 2024) {s : State} (h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    exacts [Region.sub_prefix (by omega), Offset.sub_base _ (by omega), Offset.sub_base _ (by omega)]
+    exacts [Region.sub_prefix (by omega_arith), Offset.sub_base _ (by omega_arith), Offset.sub_base _ (by omega_arith)]
   refine squeeze_call hargs cov.1 cov.2 fun s' hrd hwr hcs hf ho' => ⟨Env.call hp h.env sub hrd hwr hcs hf, ?_⟩
   rw [ho', h.st]
 

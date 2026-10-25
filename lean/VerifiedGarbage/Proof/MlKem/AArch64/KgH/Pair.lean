@@ -38,7 +38,7 @@ variable {P : KemLay}
 theorem srcOkK (hw : P.Wf) : Hybrid.SrcOk (Impl.MlKem.AArch64.Kem16.kgSrc P) := by
   have := hw.facts
   refine ⟨.inr (.inl rfl), ?_, rfl, ?_⟩ <;>
-    simp only [Impl.MlKem.AArch64.Kem16.kgSrc, KemLay.ekLen] <;> omega
+    simp only [Impl.MlKem.AArch64.Kem16.kgSrc, KemLay.ekLen] <;> omega_arith
 
 /-- What a hashing pair of key generation writes. -/
 abbrev pairWritesH (s₀ : State) (e : Nat) : List Region :=
@@ -56,7 +56,7 @@ theorem pairH_far {s₀ : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e : Na
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [stR_scratch]
-      exact hp.args.rdisj hb (by decide) hf (by kl) (by rcases hs with hs | hs <;> omega)
+      exact hp.args.rdisj hb (by decide) hf (by kl) (by rcases hs with hs | hs <;> omega_arith)
     · exact (hk.R hb hf).symm
 
 theorem pairH_kb {s₀ s t : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e : Nat} (he : e+1<P.k*P.k)
@@ -89,19 +89,19 @@ theorem BInvW.pairedH {s₀ s t : State} (hp : Pre P s₀) (hk : Stk128K P s₀)
   · have hall : allOk P s₀ (e+2) ↔ (allOk P s₀ e ∧
         (sampleNTT 280 (matSeed (rhoK P s₀) (e/P.k) (e%P.k))).isSome) ∧
         (sampleNTT 280 (matSeed (rhoK P s₀) ((e+1)/P.k) ((e+1)%P.k))).isSome := by
-      rw [show e+2=(e+1)+1 by omega,allOk_succ,allOk_succ]
+      rw [show e+2=(e+1)+1 by omega_arith,allOk_succ,allOk_succ]
     rw [ht.status,h.acc]
     by_cases ha : allOk P s₀ e <;>
       by_cases hb : (sampleNTT 280 (matSeed (rhoK P s₀) (e/P.k) (e%P.k))).isSome <;>
       by_cases hc : (sampleNTT 280 (matSeed (rhoK P s₀) ((e+1)/P.k) ((e+1)%P.k))).isSome <;>
       simp [hall,ha,hb,hc]
   · intro i hi
-    rcases (by omega : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
+    rcases (by omega_arith : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
     · exact reducedW_frame fr (old hi) (h.red i hi)
     · exact ht.reducedLeft
     · exact ht.reducedRight
   · intro i hi
-    rcases (by omega : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
+    rcases (by omega_arith : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
     · rw [aAtW,polyAtW_frame fr (old hi)]; exact h.res i hi
     · exact ht.left
     · exact ht.right
@@ -116,7 +116,7 @@ theorem hash_inputK {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e 
       (kA s₀ 3+BitVec.ofNat 64 (AH+1024*e)) (kA s₀ 3+BitVec.ofNat 64 (AH+1024*(e+1)))
       (s.syms "VG_MLKEM_REJ_SHUFFLE") (kA s₀ 1) (kA s₀ 3) s := by
   have hw := hp.wf
-  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega)
+  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega_arith)
   have f2 : AH+1024*(e+1)+1024≤kL P 3 := matrixEntry_fit hw he
   have ek : (⟨kA s₀ 1, (Impl.MlKem.AArch64.Kem16.kgSrc P).len⟩ : Region) = R (kA s₀) 1 0 (kL P 1) := ekR s₀
   have pR : (⟨kA s₀ 3+BitVec.ofNat 64 SS, 2048⟩ : Region) = R (kA s₀) 3 SS 2048 := rfl
@@ -126,7 +126,7 @@ theorem hash_inputK {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e 
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
   have fP : KG.SS + 2048 ≤ kL P 3 := by
     show 1056 + 2048 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
-  have fE : 0 + kL P 1 ≤ kL P 1 := by omega
+  have fE : 0 + kL P 1 ≤ kL P 1 := by omega_arith
   refine ⟨⟨cov_w hp h (b := 3) (o := SS) (l := 2048) (by decide) fP, ?_, ?_,
     by rw [h.sp]; exact hk.sp, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, h.x28, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [stR_scratch]; exact cov_w hp h (b := 3) (o := 0) (l := 200) (by decide) fS
@@ -170,7 +170,7 @@ theorem matrixTable_of {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) (ta 
 theorem pairH_wr {s₀ s : State} (hp : Pre P s₀) (hk : KB P s₀ s) {e : Nat} (he : e+1<P.k*P.k) :
     ∀ q ∈ pairWritesH s₀ e, ∃ q' ∈ s.wr ++ [frame s.sp], Region.Sub q q' := by
   have hw := hp.wf
-  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega)
+  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega_arith)
   have f2 : AH+1024*(e+1)+1024≤kL P 3 := matrixEntry_fit hw he
   have fS : 0 + 200 ≤ kL P 3 := by
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
@@ -197,10 +197,10 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
   have kb := H.b.kb
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
-  have hoa : AH+1024*(2*p)<65536 := by simp only [KG.AH]; omega
-  have hob : AH+1024*(2*p+1)<65536 := by simp only [KG.AH]; omega
-  have hk1 : 0 < P.k := by omega
-  have hk2 : P.k ≤ 256 := by omega
+  have hoa : AH+1024*(2*p)<65536 := by simp only [KG.AH]; omega_arith
+  have hob : AH+1024*(2*p+1)<65536 := by simp only [KG.AH]; omega_arith
+  have hk1 : 0 < P.k := by omega_arith
+  have hk2 : P.k ≤ 256 := by omega_arith
   have mt := matrixTable_of hp kb H.tables
   have pin := pair_input hp he kb mt
   have hin := hash_inputK hp hk he kb H.tstk mt
@@ -217,8 +217,8 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
   have hrn := H.rn
   have hrk := H.rk
   have far {o l : Nat} (hf : o+l≤kL P 3) (hs : AH + 1024 * (P.k * P.k) ≤ o) :=
-    pairH_far hp hk he (b := 3) (o := o) (l := l) (by decide) hf (.inr ⟨.inr (by lom), .inr (by omega), by lom⟩)
-  refine ⟨bt, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_, ?_, by omega, by omega, H.rk, ?_, hhr, ?_,
+    pairH_far hp hk he (b := 3) (o := o) (l := l) (by decide) hf (.inr ⟨.inr (by lom), .inr (by omega_arith), by lom⟩)
+  refine ⟨bt, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_, ?_, by omega_arith, by omega_arith, H.rk, ?_, hhr, ?_,
     H.tstk.of sy (by rw [kbt.sp, kb.sp])⟩
   · exact polyIsW_frame_poly (w16 := true) fr (far (by kl) (by lom)) (H.sp j hj)
   · exact polyIsW_frame_poly (w16 := true) fr (far (Noise.noise_fits hr hj)
@@ -233,7 +233,7 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
       (.inr ⟨.inr (by lom), .inl (by lom), by lom⟩) q hq
   · rw [post.hash, ← post.ek, Nat.min_eq_right hm]; rfl
   · exact Hybrid.tables_frame128 H.tables H.tstk sy post.keep.rd post.keep.wr post.keep.sp
-      (fr.sub (pairH_wr hp kb (by omega)))
+      (fr.sub (pairH_wr hp kb (by omega_arith)))
 
 /-- `matrix_singleton`, with what it writes. -/
 theorem matrix_singletonF {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
@@ -254,7 +254,7 @@ theorem matrix_singletonF {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P
       intro j hj
       rw [ptr_add]
       exact in_R (cov_r hp h.kb (b:=3) (o:=SB) (l:=32) (by decide) (by kl))
-        (k:=8*j) (by omega) (by omega))
+        (k:=8*j) (by omega_arith) (by omega_arith))
     (hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=SS) (l₂:=2048)
       (by decide) (by decide) (by kl) f0 (by decide))
     (hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=AH+1024*e) (l₂:=1024)
@@ -274,8 +274,8 @@ theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : 
     WP isa (Paired.lastSample P true true) s (IL P s₀ (P.k * P.k) r h) := by
   have hw := hp.wf
   have kb := H.b.kb
-  have hk1 : 0 < P.k * P.k := by omega
-  have he : P.k * P.k - 1 < P.k * P.k := by omega
+  have hk1 : 0 < P.k * P.k := by omega_arith
+  have he : P.k * P.k - 1 < P.k * P.k := by omega_arith
   have hrn := H.rn
   have hrk := H.rk
   rw [Paired.lastSample_eq]
@@ -285,10 +285,10 @@ theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : 
   rw [Nat.sub_add_cancel hk1] at bt
   have kbt := bt.kb
   have far {o l : Nat} (hf : o+l≤kL P 3) (hs : AH + 1024 * (P.k * P.k) ≤ o) :=
-    last_far hp he (b := 3) (o := o) (l := l) (by decide) hf (.inr ⟨.inr (by lom), .inr (by omega)⟩)
+    last_far hp he (b := 3) (o := o) (l := l) (by decide) hf (.inr ⟨.inr (by lom), .inr (by omega_arith)⟩)
   have fS : 0 + 200 ≤ kL P 3 := by
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
-  refine ⟨bt, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_, ?_, by omega, Nat.le_refl _, H.rk, ?_, H.hr, ?_,
+  refine ⟨bt, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_, ?_, by omega_arith, Nat.le_refl _, H.rk, ?_, H.hr, ?_,
     H.tstk.of sy (by rw [kbt.sp, kb.sp])⟩
   · exact polyIsW_frame_poly (w16 := true) fr (far (by kl) (by lom)) (H.sp j hj)
   · exact polyIsW_frame_poly (w16 := true) fr (far (Noise.noise_fits hr hj)
@@ -305,8 +305,8 @@ theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : 
         (.inr ⟨.inl (by lom), .inl (by lom)⟩) q hq), H.hash]
     rw [show kA s₀ 1 = kA s₀ 1 + BitVec.ofNat 64 0 from (ptr_zero _).symm,
       bytesAt_frame (p := kA s₀ 1 + BitVec.ofNat 64 0) (len := P.ekLen) fr
-        (last_far hp he (b := 1) (o := 0) (l := kL P 1) (by decide) (by omega) (.inl (by decide)))
-        (by have := kL_le hw 1; simp only [kL] at this; omega)]
+        (last_far hp he (b := 1) (o := 0) (l := kL P 1) (by decide) (by omega_arith) (.inl (by decide)))
+        (by have := kL_le hw 1; simp only [kL] at this; omega_arith)]
   · exact H.tables.frame sy kt.rd kt.wr kt.sp (fr.sub fun q hq => by
       rw [kb.wr, hp.wr]
       simp only [lastWrites, Paired.fullWrites, List.mem_cons, List.not_mem_nil, or_false] at hq

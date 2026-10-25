@@ -148,11 +148,11 @@ theorem cr_e1 (p : CpP) (s : State) (h : CR p s) : WP isa (.block CheckPublic.en
   have hk1 := c.k1
   have h' := h
   obtain ⟨-, -, hB, hZ', hk, hdl, hdp, hyp, -⟩ := h'
-  have hw : ∀ i < 22, InRegions s.wr (off (s.gpr .x5) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 22, InRegions s.wr (off (s.gpr .x5) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   refine WP.mono (cpEntry_ok rfl hw) fun t ⟨h0, hD, hL, hK, hY, ho, k⟩ => ?_
   rw [hB] at h0 hD hL hK hY ho
   rw [hZ'] at hn hZ
-  refine ⟨⟨s, h, InScr.of_outside ho (by rw [← hZ']; omega), k.rd, k.wr⟩, h0, ?_⟩
+  refine ⟨⟨s, h, InScr.of_outside ho (by rw [← hZ']; omega_arith), k.rd, k.wr⟩, h0, ?_⟩
   intro q hq
   simp only [CpP.hd, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl
@@ -165,7 +165,7 @@ theorem e1_dhp (p : CpP) (t : State) (h : E1 p t) : DHP p.d t := by
   obtain ⟨hx, h0, hs⟩ := h
   have c := hx.ctx
   have := c.hZ
-  exact ⟨c.scr, h0, show 256 ≤ p.Z by omega, hs (sDom, p.dp) (by simp), hs (sK, BitVec.ofNat 64 p.k) (by simp)⟩
+  exact ⟨c.scr, h0, show 256 ≤ p.Z by omega_arith, hs (sDom, p.dp) (by simp), hs (sK, BitVec.ofNat 64 p.k) (by simp)⟩
 
 /-- After `domHead`. -/
 def CE (p : CpP) (t : State) : Prop :=
@@ -187,8 +187,8 @@ theorem e1_ce (p : CpP) (t : State) (h : E1 p t) : WP isa (.block domHead) t (CE
   have c := hx.ctx
   have hn := c.scr.nowrap
   have hZ := c.hZ
-  have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega
-  refine WP.mono (domHead_ok c.scr h0 (by omega) c.k1 c.k2 (hs (sDom, p.dp) (by simp)) (hs (sK, BitVec.ofNat 64 p.k) (by simp)) (c.dom.take p.k) hl)
+  have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega_arith
+  refine WP.mono (domHead_ok c.scr h0 (by omega_arith) c.k1 c.k2 (hs (sDom, p.dp) (by simp)) (hs (sK, BitVec.ofNat 64 p.k) (by simp)) (c.dom.take p.k) hl)
     fun u ⟨h9, _, hQ, f, h0', k⟩ => ⟨hx.keep (InScr.of_frm f fun r hr => by
       have h1 := domHeadR_le r hr; omega_using [h1, hZ]) k, h0', ?_, h9⟩
   have hs' : Slots u.mem p.B p.hd := hs.frm f (fun q hq => (hd_domHead p q hq).2) (fun q hq => (hd_domHead p q hq).1)
@@ -212,7 +212,7 @@ theorem ce_setupP (p : CpP) (t : State) (h : CE p t) (he : isa.eval (.zero .x .x
   have hv := ce_valid h he
   obtain ⟨hx, h0, hs, -⟩ := h
   have c := hx.ctx
-  have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega
+  have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega_arith
   obtain ⟨hodd, -⟩ := valid_facts hv c.k1
   exact ⟨p.dom.take p.k, c.scr, h0, c.k1, c.k2, c.hZ, hs (sDom, p.dp) (by simp), hs (sK, BitVec.ofNat 64 p.k) (by simp), c.dom.take p.k, hl, hodd⟩
 
@@ -245,7 +245,7 @@ theorem ce_c1 (p : CpP) (t : State) (h : CE p t) (he : isa.eval (.zero .x .x9) t
   have hn := c.scr.nowrap
   have hZ := c.hZ
   have hroom := room_k c.k1 hZ
-  have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega
+  have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega_arith
   obtain ⟨hodd, -⟩ := valid_facts hv c.k1
   refine WP.mono (setup_ok c.scr h0 c.k1 c.k2 hZ (hs (sDom, p.dp) (by simp)) (hs (sK, BitVec.ofNat 64 p.k) (by simp)) (c.dom.take p.k) hl hodd)
     fun u ⟨mi, hc, hX, hWs, f, k⟩ => ⟨mi, hx.keep (InScr.of_frm f (setupR_le _ (Nat.le_trans (Nat.le_add_right _ _) hroom))) k,
@@ -263,13 +263,13 @@ theorem In.step {p : CpP} {mi : BitVec 64} {t u : State} (h : In p mi t) {rs : L
   have c := hx.ctx
   have hroom := room_k c.k1 c.hZ
   rw [show (p.k + 7) / 8 = p.w from rfl] at hroom
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have hGn := hc.good.scr.nowrap
   have hc' := hc.of_frm hf (fun r hr' => ⟨(hr r hr').1, (hr r hr').2.1⟩) hwr h0
-  obtain ⟨hb, hi⟩ := child_frm hc (by unfold inner at hroom ⊢; omega) hf (fun r hr' => by
-    have := (hr r hr').2.1; omega)
-  exact ⟨hx.step hi hrd hwr, hc', hv.of_frmA hGn (by omega) hf (fun r hr' => (hr r hr').2.2),
+  obtain ⟨hb, hi⟩ := child_frm hc (by unfold inner at hroom ⊢; omega_arith) hf (fun r hr' => by
+    have := (hr r hr').2.1; omega_arith)
+  exact ⟨hx.step hi hrd hwr, hc', hv.of_frmA hGn (by omega_arith) hf (fun r hr' => (hr r hr').2.2),
     by rw [hb _ (by decide)]; exact hWs, fun q hq => by rw [hb _ (hdQ_lt p q hq)]; exact hs q hq⟩
 
 theorem In.keep {p : CpP} {mi : BitVec 64} {t u : State} (h : In p mi t) (hm : u.mem = t.mem) {rs : List Reg}
@@ -287,13 +287,13 @@ abbrev CpP.yl (p : CpP) : BPub := ⟨⟨p.B, p.Z, inner p.w, p.w, p.w⟩, p.yp, 
 theorem c1_lpre (p : CpP) (t : State) (h : C1 p t) : LPre aXm sY sK p.yl t := by
   obtain ⟨mi, ⟨hx, hc, -, -, hs⟩, -⟩ := c1_in h
   have c := hx.ctx
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
   have := c.yl
-  exact ⟨mi, p.yb, hc, show 2 ≤ p.w by omega, Nat.le_refl _, show p.w < 2 ^ 30 by omega, by decide, by decide,
+  exact ⟨mi, p.yb, hc, show 2 ≤ p.w by omega_arith, Nat.le_refl _, show p.w < 2 ^ 30 by omega_arith, by decide, by decide,
     by decide, hs (sY, p.yp) (by simp), by rw [c.yl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp), c.yl, c.y,
-    by omega, by omega, show (p.yb.length + 7) / 8 ≤ p.w by rw [c.yl]⟩
+    by omega_arith, by omega_arith, show (p.yb.length + 7) / 8 ≤ p.w by rw [c.yl]⟩
 
 /-- With y in `aXm`. -/
 def C2 (p : CpP) (t : State) : Prop :=
@@ -304,13 +304,13 @@ theorem c1_c2 (p : CpP) (t : State) (h : C1 p t) : WP isa (seqs (Crt.loadArr aXm
   have hI' := hI
   obtain ⟨hx, hc, -, -, hs⟩ := hI'
   have c := hx.ctx
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
   have := c.yl
-  refine WP.mono (primeLoad_ok hc (show 2 ≤ p.w by omega) (Nat.le_refl _) (show p.w < 2 ^ 30 by omega)
+  refine WP.mono (primeLoad_ok hc (show 2 ≤ p.w by omega_arith) (Nat.le_refl _) (show p.w < 2 ^ 30 by omega_arith)
     (show aXm < 8 by decide) (show sY < 32 by decide) (show sK < 32 by decide) (hs (sY, p.yp) (by simp))
-    (by rw [c.yl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp)) c.y (by omega) (by omega)
+    (by rw [c.yl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp)) c.y (by omega_arith) (by omega_arith)
     (show (p.yb.length + 7) / 8 ≤ p.w by rw [c.yl])) fun u ⟨_, hy, ho, k⟩ =>
     ⟨mi, hI.step (rs := [(slot p.w aXm, 8 * (p.w + 2))]) (Frm.of_outside ho (by simp)) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact stepR_arr _ (by decide) (by decide) (by decide)) k.rd k.wr
@@ -319,10 +319,10 @@ theorem c1_c2 (p : CpP) (t : State) (h : C1 p t) : WP isa (seqs (Crt.loadArr aXm
 theorem c2_goodW1 (p : CpP) (t : State) (h : C2 p t) : GoodW1 p.ws t := by
   obtain ⟨mi, ⟨hx, hc, -⟩, -⟩ := h
   have c := hx.ctx
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
-  exact ⟨⟨mi, hc.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega, show p.w < 2 ^ 31 by omega⟩
+  exact ⟨⟨mi, hc.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega_arith, show p.w < 2 ^ 31 by omega_arith⟩
 
 /-- Whether `1 < y < p − 1`, as the code compares. -/
 abbrev CpP.rg (p : CpP) : Prop := 1 < p.Y ∧ 2 * (p.Y / 2) + 1 < p.P
@@ -335,10 +335,10 @@ theorem c2_c3 (p : CpP) (t : State) (h : C2 p t) : WP isa (seqs (range aXm)) t (
   have hI' := hI
   obtain ⟨hx, hc, hv, -⟩ := hI'
   have c := hx.ctx
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
-  refine WP.mono (range_ok hc.good (Nat.le_refl _) (show 1 ≤ p.w by omega) (show p.w < 2 ^ 31 by omega)
+  refine WP.mono (range_ok hc.good (Nat.le_refl _) (show 1 ≤ p.w by omega_arith) (show p.w < 2 ^ 31 by omega_arith)
     (show aXm < 8 by decide) (by decide) hv.one) fun u ⟨h9, _, f, k⟩ => ⟨mi, hI.step f (fun r hr => ?_) k.rd k.wr
       (k.gpr .x0 (by decide)), hm, by rw [h9, hy, hv.n]⟩
   exact range_frame _ r hr
@@ -363,7 +363,7 @@ theorem c3_c4 (p : CpP) (t : State) (h : C3 p t) : WP isa (.block (leave :: qTes
   obtain ⟨mi, ⟨hx, hc, hv, hWs, hs⟩, hm, -⟩ := h
   have c := hx.ctx
   refine WP.mono (leaveQ_ok hc (hs (sDomLen, BitVec.ofNat 64 p.dl) (by simp)) (hs (sK, BitVec.ofNat 64 p.k) (by simp))
-    (by rw [← c.doml]; rcases c.dl with h | h <;> rw [c.doml] <;> omega)) fun u ⟨⟨h0, h3, hmu⟩, k⟩ =>
+    (by rw [← c.doml]; rcases c.dl with h | h <;> rw [c.doml] <;> omega_arith)) fun u ⟨⟨h0, h3, hmu⟩, k⟩ =>
     ⟨mi, hx.keep (by rw [hmu]; exact InScr.refl _ _ _) k, hc.toMem.congr hmu k.wr,
       ⟨by rw [hmu]; exact hv.n, by rw [hmu]; exact hv.inv, by rw [hmu]; exact hv.one⟩, by rw [hmu]; exact hWs,
       by rw [hmu]; exact hs, hm, h0, h3⟩
@@ -378,7 +378,7 @@ theorem c4_q {p : CpP} {t : State} (h : C4 p t) (he : isa.eval (.zero .x .x3) t 
   rw [c4_eval h] at he
   have := c.k2
   rcases c.dl with hd | hd
-  · rw [hd, show 2 * p.k - 2 * p.k = 0 by omega] at he; simp at he
+  · rw [hd, show 2 * p.k - 2 * p.k = 0 by omega_arith] at he; simp at he
   · exact hd
 
 /-! ## q's first nonzero octet -/
@@ -387,14 +387,14 @@ theorem c4_q {p : CpP} {t : State} (h : C4 p t) (he : isa.eval (.zero .x .x3) t 
 abbrev CpP.qs (p : CpP) : ScanPub := ⟨p.B, p.Z, p.w, p.dp + BitVec.ofNat 64 (2 * p.k), p.qb⟩
 
 theorem qb_length {p : CpP} {t : State} (c : FxCtx p t) (hq : p.dl = 3 * p.k) : p.qb.length = p.k := by
-  simp only [CpP.qb, List.length_take, List.length_drop, c.doml, hq]; omega
+  simp only [CpP.qb, List.length_take, List.length_drop, c.doml, hq]; omega_arith
 
 theorem c4_scan (p : CpP) (t : State) (h : C4 p t) (he : isa.eval (.zero .x .x3) t = some false) :
     ScanPre sQ p.qs t := by
   have hq := c4_q h he
   obtain ⟨mi, hx, hc, -, -, hs, -, h0, -⟩ := h
   have c := hx.ctx
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
   have hroom := room_k c.k1 c.hZ
@@ -403,9 +403,9 @@ theorem c4_scan (p : CpP) (t : State) (h : C4 p t) (he : isa.eval (.zero .x .x3)
   show Outer t p.B p.Z p.w ∧ word t.mem p.B (8 * sQ) = p.dp + BitVec.ofNat 64 (2 * p.k) ∧
     word t.mem p.B (8 * sK) = BitVec.ofNat 64 p.qb.length ∧ p.qb ≠ [] ∧ p.qb.length < 2 ^ 32 ∧
     Src t p.B p.Z (p.dp + BitVec.ofNat 64 (2 * p.k)) p.qb ∧ sQ < 32
-  refine ⟨Outer.of_mem hc h0 hroom (by omega) (by omega), hs (sQ, p.dp + BitVec.ofNat 64 (2 * p.k)) (by simp),
-    by rw [hl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp), fun he' => by rw [he'] at hl; simp at hl; omega,
-    by omega, (c.dom.drop (2 * p.k)).take p.k, by decide⟩
+  refine ⟨Outer.of_mem hc h0 hroom (by omega_arith) (by omega_arith), hs (sQ, p.dp + BitVec.ofNat 64 (2 * p.k)) (by simp),
+    by rw [hl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp), fun he' => by rw [he'] at hl; simp at hl; omega_arith,
+    by omega_arith, (c.dom.drop (2 * p.k)).take p.k, by decide⟩
 
 /-- After the scan. -/
 def C5 (p : CpP) (t : State) : Prop :=
@@ -457,12 +457,12 @@ theorem c5_x0 {p : CpP} {t : State} (h : C5 p t) : t.gpr .x0 = p.B := h.choose_s
 theorem c5_c6 (p : CpP) (t : State) (h : C5 p t) : WP isa (.block [enter]) t (C6 p) := by
   obtain ⟨mi, hx, hc, hv, hWs, hs, hm, h0, hq, hEp, hEl⟩ := h
   have c := hx.ctx
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
   have hroom := room_k c.k1 c.hZ
   rw [show (p.k + 7) / 8 = p.w from rfl] at hroom
-  refine WP.mono (enter_ok (Outer.of_mem hc h0 hroom (by omega) (by omega)) hWs) fun u ⟨⟨h0', hmu⟩, k⟩ =>
+  refine WP.mono (enter_ok (Outer.of_mem hc h0 hroom (by omega_arith) (by omega_arith)) hWs) fun u ⟨⟨h0', hmu⟩, k⟩ =>
     ⟨mi, ⟨hx.keep (by rw [hmu]; exact InScr.refl _ _ _) k, (hc.congr hmu k.wr).ctx h0',
       ⟨by rw [hmu]; exact hv.n, by rw [hmu]; exact hv.inv, by rw [hmu]; exact hv.one⟩, by rw [hmu]; exact hWs,
       by rw [hmu]; exact hs⟩, hm, hq, by rw [hmu]; exact hEp, by rw [hmu]; exact hEl⟩
@@ -472,11 +472,11 @@ theorem c6_r2 {p : CpP} {t : State} {mi : BitVec 64} (hI : In p mi t) (hm : p.mv
     R2Pre ⟨⟨off p.B (inner p.w), slot p.w 8, p.w, mi⟩, p.P⟩ t := by
   obtain ⟨hx, hc, hv, -⟩ := hI
   have c := hx.ctx
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
   obtain ⟨hodd, -, hlo⟩ := valid_facts hm c.k1
-  exact ⟨⟨hc.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega, show p.w < 2 ^ 30 by omega, hv.n, hv.inv, hodd, hlo⟩
+  exact ⟨⟨hc.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega_arith, show p.w < 2 ^ 30 by omega_arith, hv.n, hv.inv, hodd, hlo⟩
 
 /-- After `R² mod p`. -/
 def C7 (p : CpP) (t : State) : Prop :=
@@ -489,8 +489,8 @@ theorem c6_c7 (M : Mont) (p : CpP) (t : State) (h : C6 p t) : WP isa (seqs (r2St
   have c := hx.ctx
   have hroom := room_k c.k1 c.hZ
   refine WP.mono (r2_ctx M hc hv hm c.k1 c.k2 c.hZ) fun u ⟨hM, f, k⟩ => ?_
-  obtain ⟨hb, hi⟩ := child_frm hc (by unfold inner at hroom ⊢; omega) f (fun r hr => by
-    have := r2Ranges_le p.w r hr; unfold tabBytes32; omega)
+  obtain ⟨hb, hi⟩ := child_frm hc (by unfold inner at hroom ⊢; omega_arith) f (fun r hr => by
+    have := r2Ranges_le p.w r hr; unfold tabBytes32; omega_arith)
   exact ⟨mi, hx.keep hi k, hM, fun q hq => by rw [hb _ (hdQ_lt p q hq)]; exact hs q hq, hq,
     by rw [hb _ (by decide)]; exact hEp, by rw [hb _ (by decide)]; exact hEl⟩
 
@@ -503,17 +503,17 @@ theorem c7_ps0 (p : CpP) (t : State) (h : C7 p t) : PS0 sY sK sEp sEl p.pw t := 
   obtain ⟨mi, hx, hM, hs, hq, hEp, hEl⟩ := h
   have c := hx.ctx
   have hl := qb_length c hq
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
-  have hne : p.qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega
+  have hne : p.qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
   have hlead := lead_lt hne
   have := c.yl
   have hsq : Src t p.B p.Z (off (p.dp + BitVec.ofNat 64 (2 * p.k)) (lead p.qb)) (p.qb.drop (lead p.qb)) :=
     ((c.dom.drop (2 * p.k)).take p.k).drop (lead p.qb)
   exact ps0_of hM (by decide) (by decide) (by decide) (by decide) (hs (sY, p.yp) (by simp))
-    (by rw [c.yl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp)) c.y (by omega) (by rw [c.yl]) hEp
-    (by rw [hEl, List.length_drop, hl]) hsq (by rw [List.length_drop]; omega) (by rw [List.length_drop]; omega)
+    (by rw [c.yl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp)) c.y (by omega_arith) (by rw [c.yl]) hEp
+    (by rw [hEl, List.length_drop, hl]) hsq (by rw [List.length_drop]; omega_arith) (by rw [List.length_drop]; omega_arith)
 
 /-- After `pow`: the inner workspace. -/
 def C8 (p : CpP) (t : State) : Prop := GoodW1 p.ws t
@@ -524,17 +524,17 @@ theorem c7_c8 (W : Window) (M : Mont) (S : Selector) (p : CpP) (t : State) (h : 
   obtain ⟨mi, hx, hM, hs, hq, hEp, hEl⟩ := h
   have c := hx.ctx
   have hl := qb_length c hq
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_arith
   have := c.k1
   have := c.k2
-  have hne : p.qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega
+  have hne : p.qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
   have hlead := lead_lt hne
   have := c.yl
   have hsq : Src t p.B p.Z (off (p.dp + BitVec.ofNat 64 (2 * p.k)) (lead p.qb)) (p.qb.drop (lead p.qb)) :=
     ((c.dom.drop (2 * p.k)).take p.k).drop (lead p.qb)
   exact WP.mono (pow_ok W M S hM (by decide) (by decide) (by decide) (by decide) (hs (sY, p.yp) (by simp))
-    (by rw [c.yl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp)) c.y (by omega) (by rw [c.yl]) hEp
-    (by rw [hEl, List.length_drop, hl]) hsq (by rw [List.length_drop]; omega) (by rw [List.length_drop]; omega))
-    fun u ⟨hM', _⟩ => ⟨⟨mi, hM'.sub.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega, show p.w < 2 ^ 31 by omega⟩
+    (by rw [c.yl]; exact hs (sK, BitVec.ofNat 64 p.k) (by simp)) c.y (by omega_arith) (by rw [c.yl]) hEp
+    (by rw [hEl, List.length_drop, hl]) hsq (by rw [List.length_drop]; omega_arith) (by rw [List.length_drop]; omega_arith))
+    fun u ⟨hM', _⟩ => ⟨⟨mi, hM'.sub.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega_arith, show p.w < 2 ^ 31 by omega_arith⟩
 
 end VG.Proof.Ffdh.AArch64.CheckPublic

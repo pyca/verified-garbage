@@ -66,7 +66,7 @@ theorem expandWord_run (w : Nat) (hw : w < 26) (s : State)
     (fun i => s.mem.readW (wordAddr (s.gpr .r0) i) 32)
     (fun r i h => by simp at h) (fun j hj => by
       have hj' : j < 4 := hj
-      refine ⟨by omega, ?_⟩
+      refine ⟨by omega_arith, ?_⟩
       simp only [Nat.zero_add]
       rfl)
   refine ⟨s', hs', fun p hp => ?_, hrd, hwr, hsp, ?_, fun r hr => hoth r (expand_kept w hw r hr)⟩
@@ -107,20 +107,20 @@ theorem words_run (s₀ : State) (hp : ExpPre s₀) : ∀ q ≤ 26, ∃ t,
     runBlock isa ((List.range q).flatMap fun w => expandWord w ++ ([.str .r12 .r1 (4 * w)] : List Instr)) s₀ =
       some t ∧ ExpInv s₀ q t
   | 0, _ => ⟨s₀, by simp [runBlock_nil], ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _,
-      fun i hi => absurd hi (by omega)⟩⟩
+      fun i hi => absurd hi (by omega_arith)⟩⟩
   | q + 1, hq => by
-    obtain ⟨t, ht, hi⟩ := words_run s₀ hp q (by omega)
-    obtain ⟨t₁, h₁, bits₁, rd₁, wr₁, sp₁, mem₁, regs₁⟩ := expandWord_run q (by omega) t (fun j hj => by
-      rw [hi.rd, hi.wr, hi.r0, wordAddr, addr_add (by have := hp.fit0; omega)]
-      exact ⟨_, hp.key, Offset.contains_base _ (by omega) (by omega)⟩)
+    obtain ⟨t, ht, hi⟩ := words_run s₀ hp q (by omega_arith)
+    obtain ⟨t₁, h₁, bits₁, rd₁, wr₁, sp₁, mem₁, regs₁⟩ := expandWord_run q (by omega_arith) t (fun j hj => by
+      rw [hi.rd, hi.wr, hi.r0, wordAddr, addr_add (by have := hp.fit0; omega_arith)]
+      exact ⟨_, hp.key, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     have r1₁ : t₁.gpr .r1 = s₀.gpr .r1 := (regs₁ .r1 (by simp)).trans hi.r1
-    have hfit : (t₁.gpr .r1).toNat + 4 * q < 2 ^ 32 := by rw [r1₁]; have := hp.fit1; omega
+    have hfit : (t₁.gpr .r1).toNat + 4 * q < 2 ^ 32 := by rw [r1₁]; have := hp.fit1; omega_arith
     have hw : InRegions t₁.wr (State.addr (t₁.gpr .r1 + BitVec.ofNat 32 (4 * q))) 4 := by
       rw [addr_add hfit, r1₁, wr₁, hi.wr]
-      exact ⟨_, hp.sched, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hp.sched, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     have h₂ : runBlock isa [.str .r12 .r1 (4 * q)] t₁ =
         some { t₁ with mem := t₁.mem.writeW (State.addr (t₁.gpr .r1 + BitVec.ofNat 32 (4 * q))) (t₁.gpr .r12) } := by
-      rw [runBlock_cons, exec_str (by omega) hw, runStep_some, runBlock_nil]
+      rw [runBlock_cons, exec_str (by omega_arith) hw, runStep_some, runBlock_nil]
     rw [addr_add hfit, r1₁] at h₂
     refine ⟨{ t₁ with mem := t₁.mem.writeW (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 (4 * q)) (t₁.gpr .r12) }, ?_, ?_⟩
     · rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
@@ -130,9 +130,9 @@ theorem words_run (s₀ : State) (hp : ExpPre s₀) : ∀ q ≤ 26, ∃ t,
       · show Frame _ s₀.mem (t₁.mem.writeW _ _)
         rw [mem₁]
         refine (hi.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-          (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+          (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
         simp only [List.mem_singleton] at hr; subst hr
-        exact Region.sub_prefix (by omega)
+        exact Region.sub_prefix (by omega_arith)
       · intro i hiq p hp32
         show ((t₁.mem.writeW _ _).readW _ 32).getLsbD p = _
         rw [mem₁]
@@ -140,16 +140,16 @@ theorem words_run (s₀ : State) (hp : ExpPre s₀) : ∀ q ≤ 26, ∃ t,
         · subst he
           rw [Mem.readW_writeW_self32, bits₁ p hp32]
           have src := keyLoc32_spec (keyBit_lt (2 * i + p / 16) (p % 16))
-          rw [hi.r0, wordAddr, addr_add (by have := hp.fit0; simp only [expandSrc32] at src ⊢; omega),
+          rw [hi.r0, wordAddr, addr_add (by have := hp.fit0; simp only [expandSrc32] at src ⊢; omega_arith),
             readW32_getLsbD _ _ (by simpa [expandSrc32] using src.2.1), Offset.add_ofNat_add_ofNat]
           simp only [expandSrc32] at src ⊢
-          rw [src.2.2.1, src.2.2.2, keyValue_getLsbD _ (keyBit_lt _ _), keyAt_getD _ _ (by omega)]
+          rw [src.2.2.1, src.2.2.2, keyValue_getLsbD _ (keyBit_lt _ _), keyAt_getD _ _ (by omega_arith)]
           refine congrArg (fun b => BitVec.getLsbD b _) (hi.frame _ fun r hr hc => ?_)
           simp only [List.mem_singleton] at hr; subst hr
-          exact hp.sep _ (Offset.contains_base _ (by omega) (by omega))
-            (Region.sub_prefix (by omega) _ hc)
-        · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-          exact hi.words i (by omega) p hp32
+          exact hp.sep _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+            (Region.sub_prefix (by omega_arith) _ hc)
+        · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+          exact hi.words i (by omega_arith) p hp32
 
 theorem schedule_eq (s₀ t : State) (hi : ExpInv s₀ 26 t) :
     Spec.Idea.scheduleAt t.mem (State.addr (s₀.gpr .r1)) =
@@ -159,8 +159,8 @@ theorem schedule_eq (s₀ t : State) (hi : ExpInv s₀ 26 t) :
   rw [← getD_lt _ 0 hn, ← getD_lt _ 0 hn]
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
-  rw [scheduleAt_getLsbD32 _ _ hn hb, hi.words (n / 2) (by omega) _ (by omega), expandKey_getLsbD _ hn hb,
-    show 2 * (n / 2) + (16 * (n % 2) + b) / 16 = n by omega, show (16 * (n % 2) + b) % 16 = b by omega]
+  rw [scheduleAt_getLsbD32 _ _ hn hb, hi.words (n / 2) (by omega_arith) _ (by omega_arith), expandKey_getLsbD _ hn hb,
+    show 2 * (n / 2) + (16 * (n % 2) + b) / 16 = n by omega_arith, show (16 * (n % 2) + b) % 16 = b by omega_arith]
 
 /-- `vg_idea_expand_key` on ARMv7. -/
 def expandContract : Contract isa where

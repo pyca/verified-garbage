@@ -88,8 +88,8 @@ theorem statesAt_of_ecbInv {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Spec
   apply Vector.ext
   intro t ht
   simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
-  rw [Offset.add_add, h _ (by omega), ite_eq_left (show 16 * j + t < 16 * n by omega),
-    show (16 * j + t) / 16 = j by omega, show (16 * j + t) % 16 = t by omega, getD_eq _ ht]
+  rw [Offset.add_add, h _ (by omega_arith), ite_eq_left (show 16 * j + t < 16 * n by omega_arith),
+    show (16 * j + t) / 16 = j by omega_arith, show (16 * j + t) % 16 = t by omega_arith, getD_eq _ ht]
 
 theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     (hcr : CryptOk crypt4 f) {s₀ : State} (hp : (Proof.Aes.blocksAArch64 f).pre s₀) :
@@ -104,8 +104,8 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     refine Nat.lt_of_not_le fun hc => dDS (s₀.gpr .x4) ?_ (by simp [Region.Contains])
     simp only [Region.Contains]
     have := (s₀.gpr .x4 - s₀.gpr .x2).isLt
-    omega
-  have hR14 : (s₀.gpr .x1).toNat ≤ 14 := by omega
+    omega_arith
+  have hR14 : (s₀.gpr .x1).toNat ≤ 14 := by omega_arith
   let b := s₀.gpr .x4
   let D := s₀.gpr .x2
   -- The prologue.
@@ -125,7 +125,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   have f₀₃ : Frame [⟨b, 2048⟩] s₀.mem s₃.mem := by
     rw [m₃, ← m₁]
     exact f₂.sub fun r hr => ⟨⟨b, 2048⟩, by simp, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩
   let R := (s₀.gpr .x1).toNat
   let w := Spec.Aes.bytesAt s₀.mem (s₀.gpr .x0) (16 * (R + 1))
   have hk : KSetup s₃ b (s₀.gpr .x0) R w :=
@@ -137,7 +137,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       w := fun i hi => by
         simp only [w, Spec.Aes.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
           List.getElem?_range hi, Option.map_some, Option.getD_some]
-        refine (f₀₃.bytes (R := ⟨s₀.gpr .x0, 240⟩) (fun r hr => ?_) (by simp) (by simp only; omega)).symm
+        refine (f₀₃.bytes (R := ⟨s₀.gpr .x0, 240⟩) (fun r hr => ?_) (by simp) (by simp only; omega_arith)).symm
         simp only [List.mem_singleton] at hr; subst hr
         exact dSS }
   have hi₃ : KInv s₃ b (s₀.gpr .x0) R w R s₃ :=
@@ -154,7 +154,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       sp := rfl
       keep := fun _ _ => rfl
       frame := Frame.refl _ _
-      done := fun i h1 h2 => absurd h2 (by omega) }
+      done := fun i h1 h2 => absurd h2 (by omega_arith) }
   -- The key loop.
   refine WP.seq (WP.mono (keyLoop_ok hk hi₃) fun s₄ d₄ => ?_)
   refine WP.seq ?_
@@ -180,22 +180,22 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       rounds := hR
       keys := fun j hj => keyRel_congr (d₄.keys j hj) fun k hk => by
         rw [m₅, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
-          1920 - 64 * (R - j) by omega] }
+          1920 - 64 * (R - j) by omega_arith] }
   have data₅ : EcbInv s₀.mem s₅.mem D n 0 (ecbOut f s₀.mem D R w) := by
     refine ecbInv_frame fK (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact dDS.sub_right (scr_sub _ (by omega))) n16
+        rcases hr with rfl | rfl <;> exact dDS.sub_right (scr_sub _ (by omega_arith))) n16
       (ecbInv_frame f₀₃ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS)
         n16 fun i hi => by simp)
   refine WP.seq (WP.mono (Q := EDone f s₀.mem s₅ b D n R w) ?_ fun s₆ gd => ?_)
   · refine WP.ite (s₀.gpr .x3 == 0) (by simp [AArch64.eval, State.read, x4₅]) (fun h0 => ?_)
       (fun h0 => ?_)
     · have hn0 : n = 0 := by simp only [beq_iff_eq] at h0; simp [n, h0]
-      exact WP.block_nil ⟨hb₅, rfl, rfl, rfl, Frame.refl _ _, fun i hi => by omega⟩
+      exact WP.block_nil ⟨hb₅, rfl, rfl, rfl, Frame.refl _ _, fun i hi => by omega_arith⟩
     · have hn0 : n ≠ 0 := by
         simp only [beq_eq_false_iff_ne, ne_eq] at h0
         intro h; apply h0; exact BitVec.eq_of_toNat_eq (by simpa [n] using h)
-      refine ecbGroups_ok hcr hs ⟨by omega, ?_, ?_, hb₅, hK0, rfl, rfl, rfl, Frame.refl _ _, data₅⟩
+      refine ecbGroups_ok hcr hs ⟨by omega_arith, ?_, ?_, hb₅, hK0, rfl, rfl, rfl, Frame.refl _ _, data₅⟩
       · rw [x3₅]; simp
       · rw [x4₅]; simp [n]
   -- The epilogue.
@@ -207,18 +207,18 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
     · intro r hr
       simp only [eRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (scr_disj _ (by omega) (by omega)).symm
-      · exact (dDS.sub_right (scr_sub _ (by omega))).symm
+      · exact (scr_disj _ (by omega_arith) (by omega_arith)).symm
+      · exact (dDS.sub_right (scr_sub _ (by omega_arith))).symm
   refine WP.mono (restore_ok (by rw [gd.wr, wr₅, d₄.wr, wr₃, wr₂, wr₁]; exact hwS) gd.base (by decide) sv)
     fun s₇ ⟨rg₇, fR⟩ => ⟨rg₇, ?_⟩
   have dR : ∀ r ∈ [(⟨b, 8 * 59⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact dDS.sub_right (Region.sub_prefix (by omega))
+    exact dDS.sub_right (Region.sub_prefix (by omega_arith))
   show Spec.Aes.statesAt s₇.mem D n = _
   rw [statesAt_of_ecbInv (ecbInv_frame fR dR n16 gd.data)]
   simp only [Spec.Aes.statesAt, List.map_map]
@@ -238,16 +238,16 @@ theorem blocks_correct {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he hv⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
-  · exact h₁ 9 (by omega)
+  · exact h₁ 0 (by omega_arith)
+  · exact h₁ 1 (by omega_arith)
+  · exact h₁ 2 (by omega_arith)
+  · exact h₁ 3 (by omega_arith)
+  · exact h₁ 4 (by omega_arith)
+  · exact h₁ 5 (by omega_arith)
+  · exact h₁ 6 (by omega_arith)
+  · exact h₁ 7 (by omega_arith)
+  · exact h₁ 8 (by omega_arith)
+  · exact h₁ 9 (by omega_arith)
   · exact h₃ _ (by simp)
 
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :

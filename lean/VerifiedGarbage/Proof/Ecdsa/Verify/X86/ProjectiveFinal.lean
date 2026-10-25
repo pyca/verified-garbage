@@ -45,18 +45,18 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
   have saved : ∀ rd ∈ Cfg.saved, t.mem.readW (off base rd.2) 32 = s₀.gpr rd.1 := by
     intro rd hr
     have bound : rd.2 + 4 ≤ 16 := by revert rd; decide
-    rw [Unch.readW32 U (fun w hw => ?_) (by omega)]
+    rw [Unch.readW32 U (fun w hw => ?_) (by omega_arith)]
     · exact hP.fixed.saved rd hr
     · rcases List.mem_append.mp hw with hw | hw
       · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-        left; rw [sl_eq]; omega
+        left; rw [sl_eq]; omega_arith
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         left
         have := sl_below_wk c (i := FLAG) (by decide)
         rw [sl_eq] at this
         rcases hw with rfl | rfl
-        · omega
-        · dsimp only [Mont.outW]; omega
+        · omega_arith
+        · dsimp only [Mont.outW]; omega_arith
   have flag : flagW c base t = mask32 A := by
     rw [flagW, flag_unch U h7 h0 hn (by decide)]
     exact hP.flag

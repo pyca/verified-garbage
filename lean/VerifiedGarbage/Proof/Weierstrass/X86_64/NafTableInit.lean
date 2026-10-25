@@ -44,9 +44,9 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     intro x hx
     simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl|rfl|rfl
-    · rw [tblPt_x]; exact nafTbl_slot K (by omega)
-    · rw [tblPt_y]; exact nafTbl_slot K (by omega)
-    · rw [tblPt_z]; exact nafTbl_slot K (by omega)
+    · rw [tblPt_x]; exact nafTbl_slot K (by omega_arith)
+    · rw [tblPt_y]; exact nafTbl_slot K (by omega_arith)
+    · rw [tblPt_z]; exact nafTbl_slot K (by omega_arith)
   have dv : ∀ x∈rcbR K.S K.P K.P,x∈winRo K := by
     intro x hx; simp only [rcbR,winRo,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
   have dw : ∀ x∈rcbW K.S (Naf.twice K),x∈nafWrites K := by
@@ -74,11 +74,11 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   have hn0 := hL.n
   rw [List.append_assoc,WP.block_append_iff]
   refine WP.mono (copyPointFields_ok hL.lay (q:=K.P) (o:=K.tblPt 1)
-    (by simp [jacCoords,WinCfg.tblPt] <;> omega) (by
+    (by simp [jacCoords,WinCfg.tblPt] <;> omega_arith) (by
       intro x hx y hy he
       have hs := hL.tbl x (List.mem_append_left _ (pr x hx))
       simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hy
-      omega) ts ia.to_tmv (fun x hx => List.mem_append_right _ (pr x hx))) fun b ⟨eb,kb,ib,vb⟩ => ?_
+      omega_arith) ts ia.to_tmv (fun x hx => List.mem_append_right _ (pr x hx))) fun b ⟨eb,kb,ib,vb⟩ => ?_
   have jb : InvJ C (tmv C K.M.n base b (K.tblPt 1).x) (tmv C K.M.n base b (K.tblPt 1).y)
       (tmv C K.M.n base b (K.tblPt 1).z) P := by
     apply ib.point_tmv (fun _ hx => List.mem_append_left _ hx)
@@ -87,14 +87,14 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   have pb := kb.invJ hL.lay ia.scr ts (fun x hx => slR x (pr x hx)) (by
     intro x hx hy
     have hs := hL.tbl x (List.mem_append_left _ (pr x hx))
-    simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hy; omega) pa
+    simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hy; omega_arith) pa
   have bb := kb.invJ hL.lay ia.scr ts bs (by
     intro x hx hy
-    simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx hy; omega) ja
+    simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx hy; omega_arith) ja
   rw [WP.block_append_iff]
   refine WP.mono (copyPointFields_ok hL.lay (q:=K.P) (o:=K.R)
     (by simp only [jacCoords,hL.rxy,hL.rxz,List.nodup_cons,List.mem_cons,List.not_mem_nil,or_false,
-      not_or,List.nodup_nil,not_false_eq_true,and_true]; omega)
+      not_or,List.nodup_nil,not_false_eq_true,and_true]; omega_arith)
     (fun x hx y hy he => hL.ro x (pr x hx) (he ▸ rr y hy))
     (fun x hx => slO x (rr x hx)) ib.to_tmv
     (fun x hx => List.mem_append_right _ (List.mem_append_right _ (pr x hx)))) fun c ⟨ec,kc,ic,vc⟩ => ?_
@@ -106,8 +106,8 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     intro x hx hy
     have hs := hL.tbl x (List.mem_append_right _ (rr x hy))
     simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
-    have := entry_end_le (24*K.M.n) (show a-1<9 by omega)
-    omega
+    have := entry_end_le (24*K.M.n) (show a-1<9 by omega_arith)
+    omega_arith
   have bc := kc.invJ hL.lay ib.scr (fun x hx => slO x (rr x hx)) bs (sep 9 (by decide) (by decide)) bb
   have tc := kc.invJ hL.lay ib.scr (fun x hx => slO x (rr x hx)) ts (sep 1 (by decide) (by decide)) jb
   refine WP.mono (nafTable_initCounter_ok c) fun t ⟨ct,kt⟩ => ?_
@@ -119,12 +119,12 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   · intro x hx
     simp only [nafTableLive,jacCoords,nafTableSlots,Naf.twice,WinCfg.tblPt,List.range_succ,List.range_zero,
       List.map_append,List.map_cons,List.map_nil,List.nil_append,Nat.mul_one,Nat.sub_self,Nat.mul_zero,Nat.add_zero,
-      List.mem_append,List.mem_cons,List.not_mem_nil,or_false,show 8*K.M.n*2=16*K.M.n by omega] at hx ⊢
+      List.mem_append,List.mem_cons,List.not_mem_nil,or_false,show 8*K.M.n*2=16*K.M.n by omega_arith] at hx ⊢
     grind
   · rw [show 2*1-1=1 from rfl,mul_one_pt]; simpa only [tmv,kt.2.1] using jc
   · simpa only [tmv,kt.2.1,Naf.twice] using bc
   · intro a ha ha1
-    obtain rfl : a=1 := by omega
+    obtain rfl : a=1 := by omega_arith
     rw [show 2*1-1=1 from rfl,mul_one_pt]; simpa only [tmv,kt.2.1] using tc
   · have lift {W : List Nat} {u v : State} (k : ProgKeep K.M base W u v) : KeepRegs (nafTableClob K) u v :=
       (KeepRegs.mono ⟨k.gpr,k.rd,k.wr⟩ (fun _ hx => List.mem_append_left _ hx))

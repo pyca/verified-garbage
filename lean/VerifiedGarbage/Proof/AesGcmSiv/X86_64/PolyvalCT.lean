@@ -106,7 +106,7 @@ theorem dbStep_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R 
     WP isa (.block blkBody) t fun t' =>
       DB K W SP R N A D al n (i + 1) t' ∧ t'.zf = some (decide (i + 1 = R / 2 - 1)) :=
   let ⟨σ, St, I⟩ := h
-  WP.mono (blkStep_ok L St.1.sl St.2 hDW (by omega) hi I) fun _ ⟨I', z⟩ => ⟨⟨σ, St, I'⟩, z⟩
+  WP.mono (blkStep_ok L St.1.sl St.2 hDW (by omega_arith) hi I) fun _ ⟨I', z⟩ => ⟨⟨σ, St, I'⟩, z⟩
 
 /-- `deriveBlocks`, in two runs with the same public arguments. -/
 theorem blocks_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
@@ -121,7 +121,7 @@ theorem blocks_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
   refine RelCT.seq r₁ ?_
   refine (RelCT.loop (fun m t₁ t₂ => ∃ i, m = (R / 2 - 1) - i ∧ i < R / 2 - 1 ∧ DB K W SP R N A D al n i t₁ ∧
       DB K W SP R N A D al n i t₂) (fun m => ?_) ((R / 2 - 1) - 0)).mono
-    (fun t₁ t₂ h => ⟨0, rfl, by omega, h.2.1, h.2.2⟩) fun _ _ h => h
+    (fun t₁ t₂ h => ⟨0, rfl, by omega_arith, h.2.1, h.2.2⟩) fun _ _ h => h
   refine RelCT.exists_ fun i => ?_
   by_cases hi : i < R / 2 - 1
   · by_cases hm : m = (R / 2 - 1) - i
@@ -139,7 +139,7 @@ theorem blocks_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
         exact ⟨I₁, I₂⟩
       · rw [eval_ne z₁] at hc
         have he : i + 1 ≠ R / 2 - 1 := by simpa using hc
-        exact ⟨(R / 2 - 1) - (i + 1), by omega, i + 1, rfl, by omega, I₁, I₂⟩
+        exact ⟨(R / 2 - 1) - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, I₁, I₂⟩
     · exact RelCT.of_false fun _ _ h => hm h.1
   · exact RelCT.of_false fun _ _ h => hi h.2.1
 
@@ -159,14 +159,14 @@ theorem daArgs_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R 
   obtain ⟨_, _, B⟩ := h
   obtain ⟨t₂, run₂, rdi, rsi, rdx, rcx, r8, sv₂, m₂, rd₂, wr₂⟩ := deriveArgs_ok O.env O.sl B.rbp
   have E₂ : Env K W SP t₂ := O.env.of_saved sv₂ rd₂ wr₂
-  exact WP.of_runBlock ⟨t₂, run₂, bargsK L E₂ hR (by omega) rdi rsi rdx rcx r8, E₂.rsp,
+  exact WP.of_runBlock ⟨t₂, run₂, bargsK L E₂ hR (by omega_arith) rdi rsi rdx rcx r8, E₂.rsp,
     ⟨E₂, by rw [m₂]; exact O.sl, wr₂.trans O.wr⟩, by rw [sv₂ _ (by decide), B.rbp]⟩
 
 theorem dCall_wp (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} {t : State} (h : DA K W SP R N A D al n t) :
     WP isa (.call eb.enc.name eb.enc.code) t (DC K W SP R N A D al n) := by
   obtain ⟨bc, hsp, O, bp⟩ := h
-  have hc : R / 2 - 1 ≤ 6 := by omega
+  have hc : R / 2 - 1 ≤ 6 := by omega_arith
   refine WP.mono (Proof.AesOcb.X86_64.blk_call eb.encOk eb.encNosp eb.encDepth bc) fun t₃ P => ?_
   have fP := P.frame
   rw [hsp] at fP
@@ -174,7 +174,7 @@ theorem dCall_wp (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (h
     by rw [P.saved _ (by decide), bp]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl
-  · exact L.w_w (.inl (by omega)) (by decide) (by omega)
+  · exact L.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w' (by decide)).symm
 
@@ -210,11 +210,11 @@ theorem dkStep_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R 
       DK K W SP R N A D al n (j + 1) t' ∧ t'.zf = some (decide (R / 2 - 1 - j = 1)) := by
   have O := h.one
   obtain ⟨t', run', hm', si', di', cx', zf', hg', hrd', hwr'⟩ :=
-    keepStep_run L (by omega) hj O.env h.rsi h.rdi h.rcx
+    keepStep_run L (by omega_arith) hj O.env h.rsi h.rdi h.rcx
   have fr : Frame [⟨W + BitVec.ofNat 64 (16 + 8 * j), 8⟩] t.mem t'.mem := by
     rw [hm', h.rdi]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   exact WP.of_runBlock ⟨t', run', ⟨⟨O.env.keep hg' hrd' hwr', O.sl.of_frame fr (fun q hq => by
-      simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by omega)) (by decide) (by omega)),
+      simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by omega_arith)) (by decide) (by omega_arith)),
     hwr'.trans O.wr⟩, si', di', cx'⟩, zf'⟩
 
 /-- `deriveKeep`, in two runs after the call. -/
@@ -229,7 +229,7 @@ theorem keep_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R =
   refine RelCT.seq r₁ ?_
   refine (RelCT.loop (fun m t₁ t₂ => ∃ j, m = (R / 2 - 1) - j ∧ j < R / 2 - 1 ∧ DK K W SP R N A D al n j t₁ ∧
       DK K W SP R N A D al n j t₂) (fun m => ?_) ((R / 2 - 1) - 0)).mono
-    (fun t₁ t₂ h => ⟨0, rfl, by omega, h.2.1, h.2.2⟩) fun _ _ h => h
+    (fun t₁ t₂ h => ⟨0, rfl, by omega_arith, h.2.1, h.2.2⟩) fun _ _ h => h
   refine RelCT.exists_ fun j => ?_
   by_cases hj : j < R / 2 - 1
   · by_cases hm : m = (R / 2 - 1) - j
@@ -243,7 +243,7 @@ theorem keep_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R =
         fun t₁ t₂ ⟨_, ⟨I₁, z₁⟩, ⟨I₂, z₂⟩⟩ => ⟨by rw [eval_ne z₁, eval_ne z₂], fun _ => ⟨I₁.one, I₂.one⟩, fun hc => ?_⟩
       rw [eval_ne z₁] at hc
       have he : R / 2 - 1 - j ≠ 1 := by simpa using hc
-      exact ⟨(R / 2 - 1) - (j + 1), by omega, j + 1, rfl, by omega, I₁, I₂⟩
+      exact ⟨(R / 2 - 1) - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I₁, I₂⟩
     · exact RelCT.of_false fun _ _ h => hm h.1
   · exact RelCT.of_false fun _ _ h => hj h.2.1
 
@@ -286,7 +286,7 @@ theorem expArgs_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
         (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP := by
   obtain ⟨t₁, run₁, -, rdi, rsi, rdx, rcx, hg₁, hrd₁, hwr₁⟩ := expArgs_ok hR O.env O.sl
   have E₁ : Env K W SP t₁ := O.env.of_saved hg₁ hrd₁ hwr₁
-  have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega
+  have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega_arith
   exact WP.of_runBlock ⟨t₁, run₁, kargs L E₁ hl rdi rsi rdx rcx, E₁.rsp⟩
 
 /-- `keys`, in two runs with the same public arguments. -/
@@ -413,12 +413,12 @@ theorem chunkPre_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N 
       fun t₅ => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
         (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₅ := by
-  have hQ : Buf K W SP t (Q + BitVec.ofNat 64 (16 * d)) (16 * (b - d)) := I.buf.slice (by omega)
-  refine WP.mono (chunkPre_ok wide L I.one.env (by omega) hQ I.r12 I.rbx) fun t₅ Pr => ⟨Pr.call, Pr.env.rsp, ?_, Pr.r14⟩
+  have hQ : Buf K W SP t (Q + BitVec.ofNat 64 (16 * d)) (16 * (b - d)) := I.buf.slice (by omega_arith)
+  refine WP.mono (chunkPre_ok wide L I.one.env (by omega_arith) hQ I.r12 I.rbx) fun t₅ Pr => ⟨Pr.call, Pr.env.rsp, ?_, Pr.r14⟩
   refine ⟨⟨Pr.env, I.one.sl.of_frame Pr.frame (fun q hq => ?_), Pr.wr.trans I.one.wr⟩, I.buf.of_eq Pr.rd Pr.wr,
     I.res.of_eq Pr.rd Pr.wr, by rw [Pr.regs _ (by simp), I.r12], by rw [Pr.regs _ (by simp), I.rbx], by rw [Pr.regs _ (by simp), I.rbp]⟩
   simp only [List.mem_singleton] at hq; subst hq
-  exact L.w_w (.inl (by decide)) (by decide) (by omega)
+  exact L.w_w (.inl (by decide)) (by decide) (by omega_arith)
 
 theorem chunkCalled_wp (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     {Q : Addr} {b nr d k : Nat} {t : State} (h : GhCall t (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80)
@@ -446,7 +446,7 @@ theorem chunkEnd_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : A
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .r12 (.reg .rax), .alu .sub .rbx (.reg .r14)]) t
       fun t' => AInv K W SP R N A D al n Q b nr (d + min (b - d) 64) t' ∧
         t'.zf = some (decide (b - (d + min (b - d) 64) = 0)) := by
-  have hbl : b < 2 ^ 60 := by have := M.inv.buf.lt; omega
+  have hbl : b < 2 ^ 60 := by have := M.inv.buf.lt; omega_arith
   refine WP.of_runBlock ⟨_, by srun [], ?_, ?_⟩
   · refine ⟨⟨M.inv.one.env.keep (fun r hr => ?_) rfl rfl, M.inv.one.sl, M.inv.one.wr⟩, M.inv.buf.of_eq rfl rfl,
       M.inv.res.of_eq rfl rfl, ?_, ?_, ?_⟩
@@ -455,11 +455,11 @@ theorem chunkEnd_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : A
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, M.inv.r12, M.r14,
         Proof.AesGcm.X86_64.times16_val, add_ofNat_assoc, Nat.mul_add]
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, M.inv.rbx, M.r14]
-      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega), Nat.sub_sub]
+      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith), Nat.sub_sub]
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, M.inv.rbp]
   · simp only [zf_setReg, zf_arithFlags, gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, M.inv.rbx,
-      M.r14, Proof.AesGcm.X86_64.sub_beq (show b - d < 2 ^ 64 by omega) (show min (b - d) 64 < 2 ^ 64 by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+      M.r14, Proof.AesGcm.X86_64.sub_beq (show b - d < 2 ^ 64 by omega_arith) (show min (b - d) 64 < 2 ^ 64 by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 
 theorem chunkPre_check (wide : Bool) : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
     (.seq (.block [.mov32 .r14 (imm 64), .alu .cmp .rbx (.reg .r14)])
@@ -531,12 +531,12 @@ theorem chunks_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) 
       refine (chunk_rel v wide L hDW hn hd).mono (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩)
         fun t₁ t₂ ⟨⟨I₁, z₁⟩, ⟨I₂, z₂⟩⟩ => ⟨by rw [eval_ne z₁, eval_ne z₂], fun hc => ?_, fun hc => ?_⟩
       · rw [eval_ne z₁] at hc
-        have he : d + min (b - d) 64 = b := by simp at hc; omega
+        have he : d + min (b - d) 64 = b := by simp at hc; omega_arith
         rw [he] at I₁ I₂
         exact ⟨I₁, I₂⟩
       · rw [eval_ne z₁] at hc
         have he : b - (d + min (b - d) 64) ≠ 0 := by simpa using hc
-        exact ⟨b - (d + min (b - d) 64), by omega, d + min (b - d) 64, rfl, by omega, I₁, I₂⟩
+        exact ⟨b - (d + min (b - d) 64), by omega_arith, d + min (b - d) 64, rfl, by omega_arith, I₁, I₂⟩
     · exact RelCT.of_false fun _ _ h => hm h.1
   · exact RelCT.of_false fun _ _ h => hd h.2.1
 
@@ -583,8 +583,8 @@ theorem absHead_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : Ad
   have hand := Proof.AesGcm.X86_64.and15 (BitVec.ofNat 64 nb)
   rw [toNat_ofNat_of_lt hn, Proof.AesGcm.X86_64.imm_eq (by decide)] at hand
   refine WP.of_runBlock ⟨_, by srun [], ?_, ?_⟩
-  · refine ⟨⟨h.one.env.keep (fun r hr => ?_) rfl rfl, h.one.sl, h.one.wr⟩, (h.buf.take (by omega)).of_eq rfl rfl,
-      (h.buf.slice (by omega)).of_eq rfl rfl, ?_, ?_, ?_⟩
+  · refine ⟨⟨h.one.env.keep (fun r hr => ?_) rfl rfl, h.one.sl, h.one.wr⟩, (h.buf.take (by omega_arith)).of_eq rfl rfl,
+      (h.buf.slice (by omega_arith)).of_eq rfl rfl, ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;>
         simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
@@ -595,7 +595,7 @@ theorem absHead_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : Ad
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h.rbp, hand]
   · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false,
       reduceCtorEq, h.rbp, Proof.AesGcm.X86_64.shr4 _ hn]
-    rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+    rw [Proof.AesGcm.X86_64.and_self_beq (by omega_arith)]
 
 theorem absHead_check : ∃ hc, (taint.check (sivT [.r12, .rbp])
     (.block [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) hc).isSome =
@@ -610,7 +610,7 @@ theorem absTest_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : Ad
       I.buf.of_eq rfl rfl, I.res.of_eq rfl rfl, by simp only [gpr_arithFlags, I.r12], by simp only [gpr_arithFlags, I.rbx],
       by simp only [gpr_arithFlags, I.rbp]⟩
   · simp only [zf_arithFlags, I.rbp]
-    rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+    rw [Proof.AesGcm.X86_64.and_self_beq (by omega_arith)]
 
 /-- `absorb`, in two runs with the same public arguments. -/
 theorem absorb_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
@@ -643,7 +643,7 @@ theorem absorb_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) 
         have := h.2
         rw [eval_e h.1.2.1.2] at this
         simp [h0] at this
-      · exact (chunks_rel v wide L hDW hn (b := nb / 16) (by omega)).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
+      · exact (chunks_rel v wide L hDW hn (b := nb / 16) (by omega_arith)).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
           fun _ _ h => h
   have r₃ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ =>
       AInv K W SP R N A D al n Q (nb / 16) (nb % 16) (nb / 16) t₁ ∧
@@ -653,7 +653,7 @@ theorem absorb_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) 
       t.zf = some (decide (nb % 16 = 0)))
     (F₂ := fun (t : State) => AInv K W SP R N A D al n Q (nb / 16) (nb % 16) (nb / 16) t ∧
       t.zf = some (decide (nb % 16 = 0)))
-    fun t₁ t₂ h => ⟨absTest_wp (by omega) h.1, absTest_wp (by omega) h.2⟩
+    fun t₁ t₂ h => ⟨absTest_wp (by omega_arith) h.1, absTest_wp (by omega_arith) h.2⟩
   have r₄ : RelCT isa (fun t₁ t₂ => True ∧ (AInv K W SP R N A D al n Q (nb / 16) (nb % 16) (nb / 16) t₁ ∧
         t₁.zf = some (decide (nb % 16 = 0))) ∧ (AInv K W SP R N A D al n Q (nb / 16) (nb % 16) (nb / 16) t₂ ∧
         t₂.zf = some (decide (nb % 16 = 0))))
@@ -664,7 +664,7 @@ theorem absorb_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) 
       have := h.2
       rw [eval_e h.1.2.1.2] at this
       simp [h0] at this
-    · exact (absTail_rel v L hDW hn (by omega) (by omega)).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
+    · exact (absTail_rel v L hDW hn (by omega_arith) (by omega_arith)).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
         fun _ _ _ => trivial
   exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ r₄))
 
@@ -826,7 +826,7 @@ theorem stage_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D
     {nb k : Nat} (hk : k + nb / 16 < 64) {t : State} (h : SIn K W SP R N A D al n Q nb k t) :
     WP isa (stage wide) t (SAt K W SP R N A D al n (k + (nb + 15) / 16)) :=
   WP.mono (stage_ok wide L h.bufs.one.env h.buf h.r12 h.rbp hk h.rdi) fun _ P =>
-    ⟨h.bufs.of_eq P.env (Frame.stR_absR (by have := P.le; omega) P.frame) L P.rd P.wr,
+    ⟨h.bufs.of_eq P.env (Frame.stR_absR (by have := P.le; omega_arith) P.frame) L P.rd P.wr,
       by rw [P.rdi, elems_pad16_length_eq]⟩
 
 /-- `stage`, in two runs with the same public arguments. -/
@@ -909,9 +909,9 @@ theorem lensAt_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al 
   have fL : Frame (absR W SP) t.mem t₁.mem := by
     rw [hm₁]
     have mR : (⟨W + BitVec.ofNat 64 488, 1024⟩ : Region) ∈ absR W SP := by simp
-    exact ((Frame.refl _ _).writeW mR _ (Offset.contains W (by omega) (by omega) (by have := L.ww; omega))).writeW mR _
-      (by rw [add_ofNat_assoc]; exact Offset.contains W (by omega) (by omega) (by have := L.ww; omega))
-  exact WP.of_runBlock ⟨t₁, run₁, gargs L E₁ (d := 488) (n := k + 1) (by decide) (by omega) rdi₁ rsi₁ rdx₁ rcx₁ r8₁,
+    exact ((Frame.refl _ _).writeW mR _ (Offset.contains W (by omega_arith) (by omega_arith) (by have := L.ww; omega_arith))).writeW mR _
+      (by rw [add_ofNat_assoc]; exact Offset.contains W (by omega_arith) (by omega_arith) (by have := L.ww; omega_arith))
+  exact WP.of_runBlock ⟨t₁, run₁, gargs L E₁ (d := 488) (n := k + 1) (by decide) (by omega_arith) rdi₁ rsi₁ rdx₁ rcx₁ r8₁,
     E₁.rsp, B.of_eq E₁ fL L hrd₁ hwr₁⟩
 
 theorem ghBufs_wp (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n k : Nat} {t : State}
@@ -936,7 +936,7 @@ theorem polyvalOne_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W 
     polyOneA_check).wp
     (F₁ := SIn K W SP R N A D al n A al 0) (F₂ := SIn K W SP R N A D al n A al 0)
     fun t₁ t₂ h => ⟨polyOneA_wp (hP _ _ h).1, polyOneA_wp (hP _ _ h).2⟩
-  have r₂ := stage_rel wide L hDW hn (Q := A) (nb := al) (k := 0) (by omega)
+  have r₂ := stage_rel wide L hDW hn (Q := A) (nb := al) (k := 0) (by omega_arith)
     (P := fun t₁ t₂ => True ∧ SIn K W SP R N A D al n A al 0 t₁ ∧ SIn K W SP R N A D al n A al 0 t₂)
     fun t₁ t₂ h => ⟨h.2.1, h.2.2⟩
   have r₃ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ SAt K W SP R N A D al n (0 + (al + 15) / 16) t₁ ∧
@@ -944,11 +944,11 @@ theorem polyvalOne_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W 
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.one, h.2.2.1.one, fun _ h => nomatch h⟩) polyD_check).wp
     (F₁ := SIn K W SP R N A D al n D n (0 + (al + 15) / 16)) (F₂ := SIn K W SP R N A D al n D n (0 + (al + 15) / 16))
     fun t₁ t₂ h => ⟨polyOneD_wp h.2.1, polyOneD_wp h.2.2⟩
-  have r₄ := stage_rel wide L hDW hn (Q := D) (nb := n) (k := 0 + (al + 15) / 16) (by omega)
+  have r₄ := stage_rel wide L hDW hn (Q := D) (nb := n) (k := 0 + (al + 15) / 16) (by omega_arith)
     (P := fun t₁ t₂ => True ∧ SIn K W SP R N A D al n D n (0 + (al + 15) / 16) t₁ ∧
       SIn K W SP R N A D al n D n (0 + (al + 15) / 16) t₂)
     fun t₁ t₂ h => ⟨h.2.1, h.2.2⟩
-  have hk : 0 + (al + 15) / 16 + (n + 15) / 16 < 64 := by omega
+  have hk : 0 + (al + 15) / 16 + (n + 15) / 16 < 64 := by omega_arith
   have r₅ := (rel_taintC [.rdi] (P := fun t₁ t₂ => True ∧
       SAt K W SP R N A D al n (0 + (al + 15) / 16 + (n + 15) / 16) t₁ ∧
       SAt K W SP R N A D al n (0 + (al + 15) / 16 + (n + 15) / 16) t₂)
@@ -1000,7 +1000,7 @@ theorem polyval_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP)
     show t₁.cf.map (!·) = t₂.cf.map (!·); rw [h.2.1.2, h.2.2.2]) ?_ ?_)
   · exact polyvalLong_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
   · by_cases hs : al / 16 + n / 16 < 62
-    · exact polyvalOne_rel v wide L hDW hn hal hn' (by omega) fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
+    · exact polyvalOne_rel v wide L hDW hn hal hn' (by omega_arith) fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
     · refine RelCT.of_false fun t₁ t₂ h => ?_
       have := h.2
       rw [show isa.eval .ae t₁ = t₁.cf.map (!·) from rfl, h.1.2.1.2] at this

@@ -129,11 +129,11 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
   have hs6 := k6.scr hs5
   -- the sign
   have hb128 : (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 < 2 := by
-    have := (s.mem (q + BitVec.ofNat 64 56)).isLt; omega
+    have := (s.mem (q + BitVec.ofNat 64 56)).isLt; omega_arith
   have K16 : CKeep base s1 s6 :=
     (Keep.toC k2).trans ((IKeep.toC k3).trans ((Keep.toC k4).trans (k5.trans (Keep.toC k6))))
   have sg : word s6.mem base SIGN = BitVec.ofNat 32 ((s.mem (q + BitVec.ofNat 64 56)).toNat / 128) := by
-    rw [K16.mem.word (Or.inl (by simp only [SIGN]; omega)) (Or.inl (by simp only [SIGN, ACC]; omega))
+    rw [K16.mem.word (Or.inl (by simp only [SIGN]; omega_arith)) (Or.inl (by simp only [SIGN, ACC]; omega_arith))
       (by decide), sg1]
   -- the values
   have h10' : E s1.mem base 10 = 1 := by
@@ -205,11 +205,11 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
       exact ⟨xt, kY, rfl⟩
     · rw [ite_eq_right hall] at ha
       cases ha
-  · have h1 : i ≠ 1 := fun h => by subst h; omega
-    have h12 : i ≠ 12 := fun h => by subst h; omega
+  · have h1 : i ≠ 1 := fun h => by subst h; omega_arith
+    have h12 : i ≠ 12 := fun h => by subst h; omega_arith
     rw [et i h1 h12 hix, e6, negX_keep _ xo hxo i h12, e5 i h1, e4, decodeX_keep _ xo hxo i ⟨h12, hix⟩,
-      r3k i h1 (by omega), e2, decodeUV_keep _ xo yo hxy i ⟨fun h => by subst h; omega,
-        fun h => by subst h; omega, fun h => by subst h; omega, h12, fun h => by subst h; omega, hix⟩,
+      r3k i h1 (by omega_arith), e2, decodeUV_keep _ xo yo hxy i ⟨fun h => by subst h; omega_arith,
+        fun h => by subst h; omega_arith, fun h => by subst h; omega_arith, h12, fun h => by subst h; omega_arith, hix⟩,
       e1 i h1 hiy]
 
 end VG.Proof.Ed448.Arm

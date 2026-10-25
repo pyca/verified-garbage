@@ -29,32 +29,32 @@ theorem carry_ok {s : State} {W : Addr} {L : Nat} (hw : Ws s W L) {y : Nat}
       Keeps [.eax] s u := by
   have hn := hw.nowrap
   simp only [carryWords]
-  refine wp_movS (readSrc_ptr hw hp (d := 0) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_ptr hw hp (d := 0) (by omega_arith)) fun s₁ u₁ _ => ?_
   refine wp_addS rfl fun s₂ u₂ c₂ => ?_
   have k₂ : Keeps [.eax] s s₂ := (u₁.keeps.trans u₂.keeps)
   have hw₂ := hw.of_keeps k₂
   have hp₂ : PtrAt s₂ W .ebp y := by rw [PtrAt, k₂.1 _ (by decide)]; exact hp
-  refine wp_storeS (ea_ptr hw₂ hp₂ (d := 0) (by omega)) (ws_write hw₂ (y := y + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hw₂ hp₂ (d := 0) (by omega_arith)) (ws_write hw₂ (y := y + 0) (n := 4) (by omega_arith))
     fun s₃ m₃ => ?_
   have k₃ : Keeps [.eax] s s₃ := k₂.widen (m₃.keeps [])
   have hw₃ := hw.of_keeps k₃
   have hp₃ : PtrAt s₃ W .ebp y := by rw [PtrAt, k₃.1 _ (by decide)]; exact hp
-  refine wp_movS (readSrc_ptr hw₃ hp₃ (d := 4) (by omega)) fun s₄ u₄ cf₄ => ?_
+  refine wp_movS (readSrc_ptr hw₃ hp₃ (d := 4) (by omega_arith)) fun s₄ u₄ cf₄ => ?_
   refine wp_adcS rfl (by rw [cf₄, m₃.cf]; exact c₂) fun s₅ u₅ _ => ?_
   have k₅ : Keeps [.eax] s s₅ := (k₃.trans u₄.keeps).trans u₅.keeps
   have hw₅ := hw.of_keeps k₅
   have hp₅ : PtrAt s₅ W .ebp y := by rw [PtrAt, k₅.1 _ (by decide)]; exact hp
-  refine wp_storeS (ea_ptr hw₅ hp₅ (d := 4) (by omega)) (ws_write hw₅ (y := y + 4) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hw₅ hp₅ (d := 4) (by omega_arith)) (ws_write hw₅ (y := y + 4) (n := 4) (by omega_arith))
     fun s₆ m₆ => WP.block_nil ?_
   rw [Nat.add_zero] at m₃
   have hm₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   have hm₅ : s₅.mem = s₃.mem := by rw [u₅.mem, u₄.mem]
   rw [hm₂] at m₃
   rw [hm₅, m₃.mem] at m₆
-  have W₀ := writeW32_outside s.mem W (d := y) (s₂.gpr .eax) (by omega)
-  have W₁ := writeW32_outside (s.mem.writeW (off W y) (s₂.gpr .eax)) W (d := y + 4) (s₅.gpr .eax) (by omega)
+  have W₀ := writeW32_outside s.mem W (d := y) (s₂.gpr .eax) (by omega_arith)
+  have W₁ := writeW32_outside (s.mem.writeW (off W y) (s₂.gpr .eax)) W (d := y + 4) (s₅.gpr .eax) (by omega_arith)
   rw [← m₆.mem] at W₁
-  refine ⟨(W₀.mono (Nat.le_refl _) (by omega)).trans (W₁.mono (by omega) (by omega)), ?_,
+  refine ⟨(W₀.mono (Nat.le_refl _) (by omega_arith)).trans (W₁.mono (by omega_arith) (by omega_arith)), ?_,
     k₅.widen (m₆.keeps [])⟩
   have a₂ : s₂.gpr .eax = s.mem.readW (off W y) 32 + s.gpr .ebx := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), Nat.add_zero]
@@ -63,10 +63,10 @@ theorem carry_ok {s : State} {W : Addr} {L : Nat} (hw : Ws s W L) {y : Nat}
       (BitVec.ofBool (decide (2 ^ 32 ≤ (s₁.gpr .eax).toNat + (s₁.gpr .ebx).toNat))).setWidth 32 := by
     rw [u₅.gpr, u₄.gpr, h0]
   have t₁ : w32 s₃.mem W (y + 4) = w32 s.mem W (y + 4) := by
-    rw [m₃.mem]; exact w32_write_ne hn (by omega) (by omega) (by omega) _
+    rw [m₃.mem]; exact w32_write_ne hn (by omega_arith) (by omega_arith) (by omega_arith) _
   rw [u₁.gpr, u₁.other _ (by decide), Nat.add_zero, m₃.mem] at a₅
   simp only [val32, Nat.mul_zero, Nat.add_zero]
-  rw [m₆.mem, w32_write_ne hn (by omega) (by omega) (by omega), w32_write_self, w32_write_self,
+  rw [m₆.mem, w32_write_ne hn (by omega_arith) (by omega_arith) (by omega_arith), w32_write_self, w32_write_self,
     a₂, a₅, BitVec.toNat_add, BitVec.toNat_add, ofBool_toNat]
   simp only [val32, Nat.mul_zero, Nat.add_zero] at hlt
   rw [m₃.mem] at t₁
@@ -76,7 +76,7 @@ theorem carry_ok {s : State} {W : Addr} {L : Nat} (hw : Ws s W L) {y : Nat}
   have := (s.gpr .ebx).isLt
   simp only [Nat.add_zero]
   by_cases hc : 2 ^ 32 ≤ (s.mem.readW (off W y) 32).toNat + (s.gpr .ebx).toNat <;>
-    simp only [hc, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [hc, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- What a row changes. -/
 abbrev clob6 : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]

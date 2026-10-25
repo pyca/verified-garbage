@@ -62,11 +62,11 @@ theorem Outside.of_frameAt {base : Addr} {d n : Nat} {m m' : Mem} (hd : d + n �
   fun x hx => hf x fun r hr => by
     rw [List.mem_singleton.mp hr]
     change ¬ ((x - (base + BitVec.ofNat 64 d)).toNat + 1 ≤ n)
-    have := (Offset.lt_iff x base (d := d) (n := n) (by omega)).mp
+    have := (Offset.lt_iff x base (d := d) (n := n) (by omega_arith)).mp
     simp only [ofs] at hx
     intro h
-    have := this (by omega)
-    omega
+    have := this (by omega_arith)
+    omega_arith
 
 theorem fnEntry_ok {s : State} {base : Addr} {n o a : Nat} (h : FnEntry s base n o a) :
     WP isa (.block fnEntry) s fun t =>
@@ -74,11 +74,11 @@ theorem fnEntry_ok {s : State} {base : Addr} {n o a : Nat} (h : FnEntry s base n
       Keeps [.eax, .edi] s t := by
   change WP isa (.block (.mov .eax (.mem (argOp 0)) ::
     (Spill.saveCode .eax fnSlots ++ [.mov .edi (.reg .eax)]))) s _
-  refine h.args.load (by have := h.n3; omega) fun t ht => ?_
+  refine h.args.load (by have := h.n3; omega_arith) fun t ht => ?_
   refine Spill.save_ofNat_ok fnSlots fnSlots_fits (by rw [ht.gpr]; exact h.nowrap)
     (fun p hp => by
       rw [ht.gpr, ht.wr, h.ws]
-      exact ⟨_, h.wr, contains_sc (by have := fnSlots_fits.1 p hp; omega)⟩) fun u hu => ?_
+      exact ⟨_, h.wr, contains_sc (by have := fnSlots_fits.1 p hp; omega_arith)⟩) fun u hu => ?_
   have hm : u.mem = Spill.saveMem s.mem (off base) s.gpr fnSlots := by
     rw [hu.mem, ht.gpr, ht.mem, h.ws]
     exact Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p hp => ht.other _ (by revert p hp; decide)
@@ -91,12 +91,12 @@ theorem fnEntry_ok {s : State} {base : Addr} {n o a : Nat} (h : FnEntry s base n
     refine Outside.of_frameAt (by decide) (Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p hp => ?_)
     have := fnSlots_fits.1 p hp
     have h2 : SAVE ≤ p.2 ∧ p.2 + 4 ≤ SAVE + 16 := by revert p hp; decide
-    exact Offset.contains _ h2.1 h2.2 (by simp only [SAVE]; omega)
+    exact Offset.contains _ h2.1 h2.2 (by simp only [SAVE]; omega_arith)
   have vs : Scr v base := ⟨by rw [hv.gpr, hu.gpr, ht.gpr]; exact h.ws, by rw [hv.wr, hu.wr, ht.wr]; exact h.wr,
     by rw [hv.gpr, hu.gpr, ht.gpr]; exact h.nowrap⟩
   obtain ⟨va, varg⟩ := h.args.keep (kv.1 _ (by decide)) kv.2.1 kv.2.2 (mv.mono (by decide) (by decide))
-  refine ⟨⟨vs, va, h.n3, by rw [varg 1 (by have := h.n3; omega)]; exact h.argO,
-    by rw [varg 2 (by have := h.n3; omega)]; exact h.argA, h.slotO, h.slotA⟩, ?_, mv, kv⟩
+  refine ⟨⟨vs, va, h.n3, by rw [varg 1 (by have := h.n3; omega_arith)]; exact h.argO,
+    by rw [varg 2 (by have := h.n3; omega_arith)]; exact h.argA, h.slotO, h.slotA⟩, ?_, mv, kv⟩
   rw [hv.mem, hm]
   exact Spill.saveMem_saved_ofNat _ _ _ fnSlots_fits (by decide)
 
@@ -112,10 +112,10 @@ theorem fnExit_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitVe
       p ∈ fnSlots := by decide
   refine Spill.restoreBase_ok (g := g) _ (by decide) (fun p hp => ?_) (fun p hp => ?_) fun t ht => WP.block_nil ?_
   · have := fnSlots_fits.1 p (slot p hp)
-    rw [Spill.addr_eq_of hs.nowrap (n := 8192) (by omega), hb]
-    exact hs.read (by omega)
+    rw [Spill.addr_eq_of hs.nowrap (n := 8192) (by omega_arith), hb]
+    exact hs.read (by omega_arith)
   · have := fnSlots_fits.1 p (slot p hp)
-    rw [Spill.addr_eq_of hs.nowrap (n := 8192) (by omega), hb]
+    rw [Spill.addr_eq_of hs.nowrap (n := 8192) (by omega_arith), hb]
     exact hsv p (slot p hp)
   · refine ⟨fun r hr => ?_, ht.mem, ⟨fun r hr => ht.other r (by
       simp only [List.map_append, List.map_cons, List.map_nil, List.mem_append, List.mem_cons,
@@ -129,10 +129,10 @@ theorem FnSaved.keep {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (hs : Fn
   have ho' : o + 112 ≤ 3584 := ho
   refine hs.of_readW fun p hp => ?_
   have hp' : SAVE ≤ p.2 ∧ p.2 + 4 ≤ SAVE + 16 := by revert p hp; decide
-  have hs' : p.2 + 4 < 2 ^ 64 := by simp only [SAVE] at hp'; omega
+  have hs' : p.2 + 4 < 2 ^ 64 := by simp only [SAVE] at hp'; omega_arith
   exact Mem.readW_congr fun i hi => h _
-    (Or.inr (by rw [ofs_off base (d := p.2) (i := i) (by omega)]; simp only [SAVE] at hp'; omega))
-    (Or.inr (by rw [ofs_off base (d := p.2) (i := i) (by omega)]; simp only [SAVE, ACC, WORK, TMP] at hp' ⊢; omega))
+    (Or.inr (by rw [ofs_off base (d := p.2) (i := i) (by omega_arith)]; simp only [SAVE] at hp'; omega_arith))
+    (Or.inr (by rw [ofs_off base (d := p.2) (i := i) (by omega_arith)]; simp only [SAVE, ACC, WORK, TMP] at hp' ⊢; omega_arith))
 
 /-- The exit, after a body that changed the registers `rs` (not `esp`) and,
 in the working space, the result and the arithmetic's own bytes. -/
@@ -172,9 +172,9 @@ theorem mulA24Fn_ok {s : State} {base : Addr} {o a : Nat} (h : FnEntry s base 3 
   have ha' : a + 112 ≤ 3584 := h.slotA
   refine WP.mono (fnBlock_ok (body := argPtr .esi 2 ++ a24Cols ++ normalize)
     (Q := fun m => F m base o = Spec.X448.a24 * F s.mem base a) h fun t tc tm _ => ?_) fun _ h => h
-  have ea : fe t.mem base a = fe s.mem base a := tm.fe (Or.inl (by simp only [SAVE]; omega)) (by omega)
+  have ea : fe t.mem base a = fe s.mem base a := tm.fe (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith)
   have bt : Bounded t.mem base a := fun i hi => by
-    rw [tm.limbs (Or.inl (by simp only [SAVE]; omega)) (by omega) hi]; exact ab i hi
+    rw [tm.limbs (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith) hi]; exact ab i hi
   refine WP.mono (a24Body_ok tc bt) fun u ⟨up, uv⟩ => ⟨up, ?_⟩
   rw [uv, F, F, ea]
 
@@ -189,8 +189,8 @@ theorem entry_operand {s t : State} {base : Addr} {a : Nat} (ha : Slot a)
     (tm : Outside base SAVE 16 s.mem t.mem) :
     fe t.mem base a = fe s.mem base a ∧ (Bounded s.mem base a → Bounded t.mem base a) := by
   have ha' : a + 112 ≤ 3584 := ha
-  refine ⟨tm.fe (Or.inl (by simp only [SAVE]; omega)) (by omega), fun ab i hi => ?_⟩
-  rw [tm.limbs (Or.inl (by simp only [SAVE]; omega)) (by omega) hi]; exact ab i hi
+  refine ⟨tm.fe (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith), fun ab i hi => ?_⟩
+  rw [tm.limbs (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith) hi]; exact ab i hi
 
 theorem addFn_ok {s : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 4 o a)
     (hvb : arg s 3 = BitVec.ofNat 32 b) (hb : Slot b) (ab : Bounded s.mem base a)

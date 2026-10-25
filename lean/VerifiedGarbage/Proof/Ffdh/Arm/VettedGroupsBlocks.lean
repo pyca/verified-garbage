@@ -27,13 +27,7 @@ open VG.Proof.X25519.Arm (Rest)
       (t.gpr .r4 = p + 8 ∧ t.gpr .r5 = BitVec.ofNat 32 (3 * g.len) ∧
        t.gpr .r11 = BitVec.ofNat 32 g.bits ∧ t.gpr .r2 = 1 ∧
        t.z = decide (g.len = k) ∧ t.mem = s.mem) ∧ Rest [.r2, .r4, .r5, .r11] s t := by
-  refine withRest [.r2, .r4, .r5, .r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block header : Prog isa)).all (fun i => !(VG.Arm.clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have hf := List.all_eq_true.mp checked i hi
-    cases hc : VG.Arm.clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r2, .r4, .r5, .r11] ?_ (by rfl) (by rfl)
   have eq : (BitVec.ofNat 32 g.len - BitVec.ofNat 32 k == 0) = decide (g.len = k) := by
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]
@@ -58,13 +52,7 @@ open VG.Proof.X25519.Arm (Rest)
     WP isa (.block compareArgs) s fun t =>
       (t.gpr .r0 = s.gpr .r9 ∧ t.gpr .r1 = s.gpr .r4 ∧ t.gpr .lr = s.gpr .r10 ∧
         t.gpr .r2 = 0 ∧ t.mem = s.mem) ∧ Rest [.r0, .r1, .r2, .lr] s t := by
-  refine withRest [.r0, .r1, .r2, .lr] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block compareArgs : Prog isa)).all (fun i => !(VG.Arm.clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have hf := List.all_eq_true.mp checked i hi
-    cases hc : VG.Arm.clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r2, .lr] ?_ (by rfl) (by rfl)
   unfold compareArgs
   ffrun []
 

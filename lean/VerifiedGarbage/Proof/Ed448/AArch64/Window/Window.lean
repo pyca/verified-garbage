@@ -52,11 +52,11 @@ theorem TabOk.of_outside2 {m m' : Mem} {base : Addr} {P : Point} {k : Nat} (h : 
     (ho : Outside2 base 64 2816 ACC 1152 m m') (hk : k ≤ 16) : TabOk m' base P k := by
   have hw : ∀ e < 16, ∀ w < 24, tw m' base e w = tw m base e w := fun e he w hw => by
     unfold tw
-    exact ho.word (Or.inr (by simp only [TAB]; omega)) (Or.inr (by simp only [ACC, TAB]; omega))
-      (by simp only [TAB]; omega)
+    exact ho.word (Or.inr (by simp only [TAB]; omega_arith)) (Or.inr (by simp only [ACC, TAB]; omega_arith))
+      (by simp only [TAB]; omega_arith)
   intro e he
-  refine ⟨by rw [TPt_of_tw (hw e (by omega))]; exact (h e he).1, fun w hw' => ?_⟩
-  rw [hw e (by omega) w hw']; exact (h e he).2 w hw'
+  refine ⟨by rw [TPt_of_tw (hw e (by omega_arith))]; exact (h e he).1, fun w hw' => ?_⟩
+  rw [hw e (by omega_arith) w hw']; exact (h e he).2 w hw'
 
 /-- The windows' state, from the state `s₀` at their start, for the table of `P`. -/
 structure WCtx (s₀ : State) (base : Addr) (P : Point) (s : State) : Prop where
@@ -146,29 +146,29 @@ theorem dbl4_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P
     ⟨by decide, by decide, c₁, h₁, by rw [m₁]; rfl, fun _ _ _ _ => by rw [m₁],
       k₁.1 _ (by decide)⟩
   intro n t ⟨n1, n4, ct, ht, qt, kt, xt⟩
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
   rw [WP.seq_iff]
   refine WP.mono (dbl_step ht) fun u ⟨hu, qu, ku, xu, x1u⟩ => ?_
   have cu : u.gpr .x1 = BitVec.ofNat 64 (k + 1) := x1u.trans ct
-  refine WP.mono (decX1_ok u (by omega) cu) fun v ⟨cv, kv, mv⟩ => ?_
+  refine WP.mono (decX1_ok u (by omega_arith) cu) fun v ⟨cv, kv, mv⟩ => ?_
   have hv : WCtx s₀ base P v :=
     ⟨hu.scr.of_keeps kv (by decide), by rw [mv]; exact hu.env, by rw [mv]; exact hu.zero,
       by rw [mv]; exact hu.one, by rw [mv]; exact hu.z5, by rw [mv]; exact hu.tab,
       by rw [kv.1 _ (by decide)]; exact hu.chk,
       by rw [kv.2.1]; exact hu.rd, by rw [kv.2.2]; exact hu.wr, by rw [mv]; exact hu.mem⟩
   have qv : pt (EV v.mem base) 3 4 5 = dblN (pt (EV s.mem base) 3 4 5) (4 - k) := by
-    rw [mv, qu, qt, show 4 - k = (4 - (k + 1)) + 1 by omega]; rfl
+    rw [mv, qu, qt, show 4 - k = (4 - (k + 1)) + 1 by omega_arith]; rfl
   have kv' : Kept base s.mem v.mem := kt.trans (by rw [mv]; exact ku)
   have xv : v.gpr .x19 = s.gpr .x19 := by rw [kv.1 _ (by decide), xu, xt]
-  simp only [eval, State.read, BitVec.setWidth_eq, cv, (dec_x1 k (by omega)).2]
+  simp only [eval, State.read, BitVec.setWidth_eq, cv, (dec_x1 k (by omega_arith)).2]
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · exact .inl ⟨rfl, hv, by rw [qv]; rfl, kv', xv⟩
-  · exact .inr ⟨congrArg some (decide_eq_true (by omega)), k, by omega, by omega, by omega, rfl, hv, qv, kv', xv⟩
+  · exact .inr ⟨congrArg some (decide_eq_true (by omega_arith)), k, by omega_arith, by omega_arith, by omega_arith, rfl, hv, qv, kv', xv⟩
 
 /-! ## The selected entry -/
 
 theorem dst_slot {c i : Nat} (hi : i < 8) : dst (8 * c + i) = slot (6 + c) + 8 * i := by
-  simp only [dst, slot]; omega
+  simp only [dst, slot]; omega_arith
 
 theorem select_env {s t : State} {base : Addr} {P : Point} {n : Nat} (hn : n < 16)
     (hsel : ∀ w < 24, word t.mem base (dst w) = tw s.mem base n w) (ho : Outside base 832 384 s.mem t.mem)
@@ -178,17 +178,17 @@ theorem select_env {s t : State} {base : Addr} {P : Point} {n : Nat} (hn : n < 1
   have keep : ∀ i : Index, (i.val < 6 ∨ 9 ≤ i.val) → ∀ j < 8,
       limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := fun i hi j hj => by
     have := i.isLt
-    exact ho.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega)
+    exact ho.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)
   have hc : ∀ c < 3, FV t.mem base (slot (6 + c)) = FV s.mem base (TAB + 192 * n + 64 * c) := fun c hc =>
-    (FV_entry s.mem t.mem base (e := n) (c := c) rfl (fun i hi => by rw [← hsel _ (by omega), dst_slot hi])).symm
+    (FV_entry s.mem t.mem base (e := n) (c := c) rfl (fun i hi => by rw [← hsel _ (by omega_arith), dst_slot hi])).symm
   refine ⟨fun i => ?_, ?_, fun i hi j hj => keep i ?_ j hj, keep⟩
   · by_cases h : i.val < 6 ∨ 9 ≤ i.val
     · exact fun j hj => by rw [keep i h j hj]; exact hb i j hj
     · intro j hj
-      have hi' : i.val = 6 + (i.val - 6) := by omega
+      have hi' : i.val = 6 + (i.val - 6) := by omega_arith
       show (word t.mem base (slot i.val + 8 * j)).toNat < Ib
-      rw [hi', ← dst_slot (c := i.val - 6) hj, hsel _ (by omega)]
-      exact (htab n hn).2 _ (by omega)
+      rw [hi', ← dst_slot (c := i.val - 6) hj, hsel _ (by omega_arith)]
+      exact (htab n hn).2 _ (by omega_arith)
   · rw [← (htab n hn).1]
     show (⟨FV t.mem base (slot (6 + 0)), FV t.mem base (slot (6 + 1)), FV t.mem base (slot (6 + 2))⟩ : Point) = _
     rw [hc 0 (by decide), hc 1 (by decide), hc 2 (by decide)]
@@ -199,7 +199,7 @@ theorem select_env {s t : State} {base : Addr} {P : Point} {n : Nat} (hn : n < 1
     simp only [temps, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rcases i with ⟨i, hlt⟩
     simp only [Fin.ext_iff] at *
-    omega
+    omega_arith
 
 /-! ## A window -/
 
@@ -218,13 +218,13 @@ theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base
   -- The nibble read is the one at the windows' start.
   have hbyte : t1.mem (off base (BITS + i)) = s₀.mem (off base (BITS + i)) := by
     have hn := h1.scr.nowrap
-    have ho : ofs base (off base (BITS + i)) = BITS + i := ofs_off0' base (by simp only [BITS]; omega)
-    exact h1.mem _ (Or.inr (by rw [ho]; simp only [BITS]; omega)) (Or.inl (by rw [ho]; simp only [BITS, ACC]; omega))
+    have ho : ofs base (off base (BITS + i)) = BITS + i := ofs_off0' base (by simp only [BITS]; omega_arith)
+    exact h1.mem _ (Or.inr (by rw [ho]; simp only [BITS]; omega_arith)) (Or.inl (by rw [ho]; simp only [BITS, ACC]; omega_arith))
   rw [hbyte] at d2
   refine WP.mono (selectEntry_ok hs2 hn d2) fun t3 ⟨w3, o3, k3⟩ => ?_
   have hs3 : Scr t3 base := hs2.of_keeps k3 (by decide)
   obtain ⟨b3, e3, kp3, kk3⟩ := select_env hn w3 o3 (by rw [m2]; exact h1.env) (by rw [m2]; exact h1.tab)
-  have o3' : Outside2 base 64 2816 ACC 1152 t2.mem t3.mem := fun x a _ => o3 x (by omega)
+  have o3' : Outside2 base 64 2816 ACC 1152 t2.mem t3.mem := fun x a _ => o3 x (by omega_arith)
   have keepE : ∀ i : Index, (i.val < 6 ∨ 9 ≤ i.val) → EV t3.mem base i = EV t1.mem base i := fun i hi => by
     rw [← m2]
     exact congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (kk3 i hi))

@@ -129,13 +129,15 @@ theorem out_ok {s₀ s : State} (hp : APre e s₀) (hx0 : s.gpr .x0 = off (cx s�
     rw [m₃, p48]
     exact (Frame.refl _ _).writeW List.mem_cons_self _ (contains_sub s₀ (by decide) (by decide)
       (by lit_omega))
-  have hg (r : Reg) (h4 : r ≠ .x4) (h20 : r ≠ .x20) (h22 : r ≠ .x22) : s₃.gpr r = s₁.gpr r := by
+  have hg (r : Reg) (h : r ≠ .x4 ∧ r ≠ .x20 ∧ r ≠ .x22) :
+      s₃.gpr r = s₁.gpr r := by
+    obtain ⟨h4, h20, h22⟩ := h
     rw [g₃ r h4, g₂ r h22 h20]
-  refine ⟨fun h23 => ?_, ?_, ?_, by rw [hg _ (by decide) (by decide) (by decide), x21₁],
-    by rw [hg _ (by decide) (by decide) (by decide), x27₁],
-    by rw [hg _ (by decide) (by decide) (by decide), x28₁],
+  refine ⟨fun h23 => ?_, ?_, ?_, by rw [hg _ (by decide), x21₁],
+    by rw [hg _ (by decide), x27₁],
+    by rw [hg _ (by decide), x28₁],
     by rw [g₃ _ (by decide), x22₂, g₁ _ (by decide)], by rw [g₃ _ (by decide), x20₂, g₁ _ (by decide)],
-    by rw [hg _ (by decide) (by decide) (by decide), x23₁]; rfl, fun r hr => ?_,
+    by rw [hg _ (by decide), x23₁]; rfl, fun r hr => ?_,
     by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], by rw [sp₃, sp₂, sp₁], by rw [v₃, v₂, v₁]⟩
   · rw [bytesAt_frame fc (by
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
@@ -151,7 +153,7 @@ theorem out_ok {s₀ s : State} (hp : APre e s₀) (hx0 : s.gpr .x0 = off (cx s�
         exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h4, h5, h6, h9, h10, h11, h12, h13, h14, h20, h21, h22, h23, h27, h28⟩ := hr
-    rw [hg r h4 h20 h22, g₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact
+    rw [hg r ⟨h4, h20, h22⟩, g₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact
       ⟨h4, h5, h6, h9, h10, h11, h12, h13, h14, h21, h22, h23, h27, h28⟩)]
 
 theorem shr8_ofNat {r : Nat} (h : r < 2 ^ 64) : BitVec.ofNat 64 r >>> 8 = BitVec.ofNat 64 (r / 256) := by
@@ -264,35 +266,38 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key 
   have x20₂' : s₂.gpr .x20 = W := by rw [x20₂, hc.x22, pre_eq]
   refine WP.seq ((kernel_ok sve x20₂' hin hw hst hrd a₂).mono
     fun s₃ ⟨ks₃, f₃, hv₃, h2₃, g₃, rd₃, wr₃, sp₃⟩ => ?_)
-  have g₃' (r : Reg) (h1 : r ≠ .x1) (h4 : r ≠ .x4) (hp' : r ∉ Poly.regs) : s₃.gpr r = s₂.gpr r :=
+  have g₃' (r : Reg) (h : r ≠ .x1 ∧ r ≠ .x4 ∧ r ∉ Poly.regs) :
+      s₃.gpr r = s₂.gpr r :=
+    have ⟨h1, h4, hp'⟩ := h
     g₃ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h4⟩) hp'
-  have x0₃ : s₃.gpr .x0 = off (cx s₀) 64 := by rw [g₃' _ (by decide) (by decide) (by decide), x0₂]
+  have x0₃ : s₃.gpr .x0 = off (cx s₀) 64 := by rw [g₃' _ (by decide), x0₂]
   rw [x3₂] at ks₃ f₃
   -- The accumulator stored.
   refine WP.seq ((out_ok hp x0₃ (by rw [rd₃, rd₂']) (by rw [wr₃, wr₂'])).mono
     fun s₄ ⟨acc₄, f₄, st₄, x21₄, x27₄, x28₄, x22₄, x20₄, x23₄, g₄, rd₄, wr₄, sp₄, v₄⟩ => ?_)
   have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (L s₀ - (o + 512 * T)) := by
-    rw [g₄ _ (by decide), g₃' _ (by decide) (by decide) (by decide), g₂ _ (by decide), hc.x2]
+    rw [g₄ _ (by decide), g₃' _ (by decide), g₂ _ (by decide), hc.x2]
   -- `m` bytes of the rest.
   refine WP.seq ((take_ok (r := L s₀ - (o + 512 * T)) (by omega_arith) x2₄).mono
     fun s₅ ⟨x23₅, g₅, m₅, rd₅, wr₅⟩ => ?_)
   have x21₅ : s₅.gpr .x21 = cx s₀ := by rw [g₅ _ (by decide) (by decide), x21₄]
   have x22₅ : s₅.gpr .x22 = dp s₀ + BitVec.ofNat 64 ((o + 512 * T)) := by
-    rw [g₅ _ (by decide) (by decide), x22₄, g₃' _ (by decide) (by decide) (by decide), x7₂, hc.x1]
+    rw [g₅ _ (by decide) (by decide), x22₄, g₃' _ (by decide), x7₂, hc.x1]
   have rd₅' : s₅.rd = s₀.rd := by rw [rd₅, rd₄, rd₃, rd₂']
   have wr₅' : s₅.wr = s₀.wr := by rw [wr₅, wr₄, wr₃, wr₂']
   refine WP.seq ((Short.xorKsAt_ok hp (o := (o + 512 * T)) (n := min (L s₀ - (o + 512 * T)) 256) (by omega_arith)
     (by omega_arith) x21₅ x22₅ x23₅ rd₅' wr₅').mono fun s₆ ⟨k₆, d₆, f₆, g₆⟩ => ?_)
   -- The stream's arguments.
-  have g₆' (r : Reg) (h9 : r ≠ .x9) (h10 : r ≠ .x10) (h11 : r ≠ .x11) (h12 : r ≠ .x12)
-      (h13 : r ≠ .x13) : s₆.gpr r = s₅.gpr r :=
+  have g₆' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+      s₆.gpr r = s₅.gpr r :=
+    have ⟨h9, h10, h11, h12, h13⟩ := h
     g₆ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
   refine (args_ok (s₀ := s₀) (D := dp s₀ + BitVec.ofNat 64 ((o + 512 * T)))
     (m := min (L s₀ - (o + 512 * T)) 256) (r := L s₀ - (o + 512 * T)) (Nat.min_le_left _ _)
-    (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x21₅])
-    (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x22₅])
-    (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x23₅])
-    (by rw [g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide),
+    (by rw [g₆' _ (by decide), x21₅])
+    (by rw [g₆' _ (by decide), x22₅])
+    (by rw [g₆' _ (by decide), x23₅])
+    (by rw [g₆' _ (by decide),
       g₅ _ (by decide) (by decide), x2₄])).mono
     fun s₇ ⟨x0₇, x1₇, x2₇, x3₇, x23₇, g₇, m₇, rd₇, wr₇⟩ =>
       ⟨(o + 512 * T) + min (L s₀ - (o + 512 * T)) 256, fun vw spw => ?_⟩
@@ -342,13 +347,14 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key 
       simp only [List.mem_singleton] at hr; subst hr; exact not_in hout (by omega_arith) (by omega_arith),
       dctx k hk]
   -- Registers.
-  have g₇' (r : Reg) (h0 : r ≠ .x0) (h1 : r ≠ .x1) (h2 : r ≠ .x2) (h3 : r ≠ .x3) (h23 : r ≠ .x23) :
+  have g₇' (r : Reg) (h : r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x23) :
       s₇.gpr r = s₆.gpr r :=
+    have ⟨h0, h1, h2, h3, h23⟩ := h
     g₇ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h0, h1, h2, h3, h23⟩)
-  have to₄ (r : Reg) (h0 : r ≠ .x0) (h1 : r ≠ .x1) (h2 : r ≠ .x2) (h3 : r ≠ .x3) (h23 : r ≠ .x23)
-      (h9 : r ≠ .x9) (h10 : r ≠ .x10) (h11 : r ≠ .x11) (h12 : r ≠ .x12) (h13 : r ≠ .x13) :
+  have to₄ (r : Reg) (h : r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x23 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
       s₇.gpr r = s₄.gpr r := by
-    rw [g₇' r h0 h1 h2 h3 h23, g₆' r h9 h10 h11 h12 h13, g₅ r h9 h23]
+    obtain ⟨h0, h1, h2, h3, h23, h9, h10, h11, h12, h13⟩ := h
+    rw [g₇' r ⟨h0, h1, h2, h3, h23⟩, g₆' r ⟨h9, h10, h11, h12, h13⟩, g₅ r h9 h23]
   have r32 (d : Nat) (hd : d = 32 ∨ d = 40) :
       s₃.mem.readW (off (cx s₀) d) 64 = s₂.mem.readW (off (cx s₀) d) 64 :=
     f₃.readW (r := sub s₀ d 8) (Region.contains_self _ _) (fun r hr => by
@@ -359,24 +365,19 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key 
     have hu := hc.inv.un r hr
     simp only [untouched, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · rw [to₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide) (by decide) (by decide), g₄ _ (by decide), g₃' _ (by decide) (by decide) (by decide),
+    · rw [to₄ _ (by decide), g₄ _ (by decide), g₃' _ (by decide),
         g₂ _ (by decide), hu]
-    · rw [to₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide) (by decide) (by decide), x20₄, g₃' _ (by decide) (by decide) (by decide), x8₂, hu]
-    · rw [to₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide) (by decide) (by decide), g₄ _ (by decide), g₃' _ (by decide) (by decide) (by decide),
+    · rw [to₄ _ (by decide), x20₄, g₃' _ (by decide), x8₂, hu]
+    · rw [to₄ _ (by decide), g₄ _ (by decide), g₃' _ (by decide),
         g₂ _ (by decide), hu]
-    · rw [to₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide) (by decide) (by decide), x27₄, r32 32 (.inl rfl), m₂, memIn_800, hu]
-    · rw [to₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide) (by decide) (by decide), x28₄, r32 40 (.inr rfl), m₂, memIn_808, hu]
+    · rw [to₄ _ (by decide), x27₄, r32 32 (.inl rfl), m₂, memIn_800, hu]
+    · rw [to₄ _ (by decide), x28₄, r32 40 (.inr rfl), m₂, memIn_808, hu]
   have x21₇ : s₇.gpr .x21 = cx s₀ := by
-    rw [g₇' _ (by decide) (by decide) (by decide) (by decide) (by decide),
-      g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x21₅]
+    rw [g₇' _ (by decide),
+      g₆' _ (by decide), x21₅]
   have x22₇ : s₇.gpr .x22 = dp s₀ + BitVec.ofNat 64 ((o + 512 * T)) := by
-    rw [g₇' _ (by decide) (by decide) (by decide) (by decide) (by decide),
-      g₆' _ (by decide) (by decide) (by decide) (by decide) (by decide), x22₅]
+    rw [g₇' _ (by decide),
+      g₆' _ (by decide), x22₅]
   have rd₇' : s₇.rd = s₀.rd := by rw [rd₇, k₆.rd, rd₅']
   have wr₇' : s₇.wr = s₀.wr := by rw [wr₇, k₆.wr, wr₅']
   -- The counter.

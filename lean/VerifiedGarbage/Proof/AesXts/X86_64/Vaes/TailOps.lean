@@ -78,13 +78,13 @@ theorem tPreList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
     simp only [List.length_cons] at hd he
     rw [tPre, WP.block_append_iff]
-    have hd0 := hd 0 (by omega)
-    have he0 := he 0 (by omega)
+    have hd0 := hd 0 (by omega_arith)
+    have he0 := he 0 (by omega_arith)
     rw [Nat.add_zero] at hd0 he0
     refine WP.mono (tPre1_ok b (16 * j) s hd0 he0) fun s₁ ⟨v₁, g₁, m₁, rd₁, wr₁, o₁⟩ => ?_
     refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2
-        (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega]; exact hd (k + 1) (by omega))
-        (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega]; exact he (k + 1) (by omega)))
+        (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega_arith]; exact hd (k + 1) (by omega_arith))
+        (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega_arith]; exact he (k + 1) (by omega_arith)))
       fun s' ⟨hb, g, m, rd, wr, hx⟩ => ?_
     rw [g₁, m₁] at hb
     refine ⟨fun k hk => ?_, g.trans g₁, m.trans m₁, rd.trans rd₁, wr.trans wr₁, fun r hr => ?_⟩
@@ -94,7 +94,7 @@ theorem tPreList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
         rw [hx b hbs, v₁, ofInt_natCast]
       | succ k =>
         simp only [List.getElem_cons_succ]
-        rw [hb k (by simpa using hk), show j + 1 + k = j + (k + 1) by omega]
+        rw [hb k (by simpa using hk), show j + 1 + k = j + (k + 1) by omega_arith]
     · simp only [List.mem_cons, not_or] at hr
       rw [hx r hr.2, o₁ r hr.1]
 
@@ -115,8 +115,8 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
   | cons b bs ih =>
     simp only [List.length_cons] at hd he hw hsep
     rw [tPost, WP.block_append_iff]
-    have hd0 := hd 0 (by omega)
-    have he0 := he 0 (by omega)
+    have hd0 := hd 0 (by omega_arith)
+    have he0 := he 0 (by omega_arith)
     rw [Nat.add_zero] at hd0 he0
     refine WP.mono (tPost1_ok b (16 * j) s hd0 he0) fun s₁ ⟨m₁, g₁, rd₁, wr₁, x₁⟩ => ?_
     have h11 : s₁.gpr .r11 = s.gpr .r11 := by rw [g₁]
@@ -132,25 +132,25 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
       intro k hk
       refine hblk.readW (r := ⟨_, 16⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
-      have := hsep (k + 1) (by omega)
-      rw [show j + (k + 1) = j + 1 + k by omega] at this
-      exact this.sub_right (Region.sub_prefix (by omega))
+      have := hsep (k + 1) (by omega_arith)
+      rw [show j + (k + 1) = j + 1 + k by omega_arith] at this
+      exact this.sub_right (Region.sub_prefix (by omega_arith))
     have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
     refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2 (fun k hk => by
-        rw [wr₁, h11, show j + 1 + k = j + (k + 1) by omega]; exact hd (k + 1) (by omega))
+        rw [wr₁, h11, show j + 1 + k = j + (k + 1) by omega_arith]; exact hd (k + 1) (by omega_arith))
       (fun k hk => by
-        rw [rd₁, wr₁, hax, show j + 1 + k = j + (k + 1) by omega]; exact he (k + 1) (by omega))
-      (by rw [h11]; omega)
+        rw [rd₁, wr₁, hax, show j + 1 + k = j + (k + 1) by omega_arith]; exact he (k + 1) (by omega_arith))
+      (by rw [h11]; omega_arith)
       (fun k hk => by
         rw [hax, h11]
-        have := hsep (k + 1) (by omega)
-        rw [show j + (k + 1) = j + 1 + k by omega] at this
+        have := hsep (k + 1) (by omega_arith)
+        rw [show j + (k + 1) = j + 1 + k by omega_arith] at this
         refine this.sub_right ?_
         intro a ha
         simp only [Region.Contains] at ha ⊢
-        rw [Aes.X86_64.AesNi.off_toNat _ _ (by omega)] at ha ⊢
+        rw [Aes.X86_64.AesNi.off_toNat _ _ (by omega_arith)] at ha ⊢
         have := (a - s.gpr .r11).isLt
-        omega)) fun s' ⟨hb, hf, g, rd, wr, xs⟩ => ?_
+        omega_arith)) fun s' ⟨hb, hf, g, rd, wr, xs⟩ => ?_
     rw [h11, hax] at hb
     rw [h11] at hf
     have hdj : ∀ r ∈ [(⟨s.gpr .r11 + BitVec.ofNat 64 (16 * (j + 1)), 16 * bs.length⟩ : Region)],
@@ -158,9 +158,9 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
       simp only [List.mem_singleton, forall_eq]
       intro a h₁ h₂
       simp only [Region.Contains] at h₁ h₂
-      rw [Aes.X86_64.AesNi.off_toNat _ _ (by omega)] at h₁ h₂
+      rw [Aes.X86_64.AesNi.off_toNat _ _ (by omega_arith)] at h₁ h₂
       have := (a - s.gpr .r11).isLt
-      omega
+      omega_arith
     refine ⟨fun k hk => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr => ?_⟩
     · cases k with
       | zero =>
@@ -170,17 +170,17 @@ theorem tPostList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
         simp only [List.getElem_cons_succ]
         have hk' : k < bs.length := by simpa using hk
         have hne : bs[k] ≠ b := fun h => hbs (h ▸ List.getElem_mem hk')
-        rw [show j + (k + 1) = j + 1 + k by omega, hb k hk', x₁ _ hne, hslot k hk']
+        rw [show j + (k + 1) = j + 1 + k by omega_arith, hb k hk', x₁ _ hne, hslot k hk']
     · rw [m₁] at hf
       refine (Frame.writeW (Frame.refl [⟨s.gpr .r11 + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩]
-        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega)).trans
+        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega_arith)).trans
         (hf.sub fun r hr => ⟨_, List.mem_cons_self, fun a ha => ?_⟩)
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at ha ⊢
-      rw [Aes.X86_64.AesNi.off_toNat _ _ (by omega)] at ha ⊢
+      rw [Aes.X86_64.AesNi.off_toNat _ _ (by omega_arith)] at ha ⊢
       have := (a - s.gpr .r11).isLt
-      omega
+      omega_arith
     · simp only [List.mem_cons, not_or] at hr
       rw [xs r hr.2, x₁ r hr.1]
 

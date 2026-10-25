@@ -41,7 +41,7 @@ def batchWrites (n : Nat) : List (Nat × Nat) :=
 
 local macro "apart" : tactic => `(tactic|
  (simp only [writes,List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq,
-   Prod.fst,Prod.snd,offset] at * <;> omega))
+   Prod.fst,Prod.snd,offset] at * <;> omega_arith))
 
 theorem batch_ok {s : State} {base : Addr} {size n p j : Nat} {I : Int × Int × Int}
     (hs : Scr s base size) (hn : 16 ≤ n) (hz : offset n 15 ≤ size)

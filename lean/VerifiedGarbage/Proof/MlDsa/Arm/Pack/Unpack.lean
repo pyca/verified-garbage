@@ -88,10 +88,10 @@ theorem unpackLoop_buFin_ok {B d c nb : Nat} (hs : Shape d c nb) (hB : encodable
   have hy := field_lt (inNum s.mem (State.addr (s.gpr .r0)) d) d i hs.d20
   have hy' := hy
   unfold inNum at hy'
-  rw [hc i hi, buWord, bm_toNat (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega),
-    BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show B < 2 ^ 32 by omega),
-    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi, hd,
-    ofInt_sub (by omega)]
+  rw [hc i hi, buWord, bm_toNat (by rw [BitVec.toNat_ofNat]; omega_arith) (by rw [BitVec.toNat_ofNat]; omega_arith),
+    BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show B < 2 ^ 32 by omega_arith),
+    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_arith), toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi, hd,
+    ofInt_sub (by omega_arith)]
 
 /-- The loop of `BitUnpack` is constant time, with `r0` and `r1` public. -/
 theorem unpackLoop_ct18 {P : State → State → Prop} (hP : ∀ a b, P a b → a.gpr .r0 = b.gpr .r0 ∧ a.gpr .r1 = b.gpr .r1) :
@@ -160,7 +160,7 @@ theorem bu_wp {s₀ : State} (hp : BuPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitU
       fun s₃ ⟨hpoly, hf, hk⟩ => ⟨?_, ⟨fun r hr => ?_, ?_⟩⟩
     · rw [popped_mem, ← x1, hlen]
       rw [x0, xm, bytesAt_frame (pushed4_frame hsp) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [eb, ← hlen]; exact hp.bV.symm) (by omega), m₁,
+        simp only [List.mem_singleton] at hr; subst hr; rw [eb, ← hlen]; exact hp.bV.symm) (by omega_arith), m₁,
         ← hB] at hpoly
       exact hpoly
     · -- The registers: `r4` from the frame, the others kept.
@@ -184,26 +184,26 @@ theorem bu_wp {s₀ : State} (hp : BuPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitU
   refine sel_ok .r3 2 (by decide) (by decide) _ _ s₂ (fun s₃ h₃ e => ?_) (fun s₃ h₃ n2 => ?_)
   · rw [e3 s₂ ⟨rfl, rfl, rfl, rfl, rfl⟩] at e
     exact go (d := 3) (c := 8) (nb := 3) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r2).toNat = 2 by omega]; decide) s₃ h₃
+      (by rw [show (s₀.gpr .r2).toNat = 2 by omega_arith]; decide) s₃ h₃
   rw [e3 s₂ ⟨rfl, rfl, rfl, rfl, rfl⟩] at n2
   refine sel_ok .r3 4 (by decide) (by decide) _ _ s₃ (fun s₄ h₄ e => ?_) (fun s₄ h₄ n4 => ?_)
   · rw [e3 s₃ h₃] at e
     exact go (d := 4) (c := 2) (nb := 1) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r2).toNat = 4 by omega]; decide) s₄ (h₃.trans h₄)
+      (by rw [show (s₀.gpr .r2).toNat = 4 by omega_arith]; decide) s₄ (h₃.trans h₄)
   rw [e3 s₃ h₃] at n4
   refine sel_ok .r3 4096 (by decide) (by decide) _ _ s₄ (fun s₅ h₅ e => ?_) (fun s₅ h₅ n4096 => ?_)
   · rw [e3 s₄ (h₃.trans h₄)] at e
     exact go (d := 13) (c := 8) (nb := 13) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r2).toNat = 4095 by omega]; decide) s₅ ((h₃.trans h₄).trans h₅)
+      (by rw [show (s₀.gpr .r2).toNat = 4095 by omega_arith]; decide) s₅ ((h₃.trans h₄).trans h₅)
   rw [e3 s₄ (h₃.trans h₄)] at n4096
   refine sel_ok .r3 131072 (by decide) (by decide) _ _ s₅ (fun s₆ h₆ e => ?_) (fun s₆ h₆ n17 => ?_)
   · rw [e3 s₅ ((h₃.trans h₄).trans h₅)] at e
     exact go (d := 18) (c := 4) (nb := 9) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r2).toNat = 131071 by omega]; decide) s₆ (((h₃.trans h₄).trans h₅).trans h₆)
+      (by rw [show (s₀.gpr .r2).toNat = 131071 by omega_arith]; decide) s₆ (((h₃.trans h₄).trans h₅).trans h₆)
   · rw [e3 s₅ ((h₃.trans h₄).trans h₅)] at n17
-    have e : (s₀.gpr .r3).toNat = 524288 := by omega
+    have e : (s₀.gpr .r3).toNat = 524288 := by omega_arith
     exact go (d := 20) (c := 2) (nb := 5) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r2).toNat = 524287 by omega]; decide) s₆ (((h₃.trans h₄).trans h₅).trans h₆)
+      (by rw [show (s₀.gpr .r2).toNat = 524287 by omega_arith]; decide) s₆ (((h₃.trans h₄).trans h₅).trans h₆)
 
 theorem relct_ldrSp {P : State → State → Prop} {t : Reg} {off : Nat} (hsp : ∀ a b, P a b → a.sp = b.sp) :
     RelCT isa P (.block [.ldrSp t off]) fun _ _ => True := by
@@ -296,7 +296,7 @@ theorem t1_wp {s₀ : State} (hp : T1Pre s₀) :
   refine polyIs_of_toNat fun i hi => ?_
   have hy : inNum s₀.mem (State.addr (s₀.gpr .r0)) 10 / 2 ^ (10 * i) % 2 ^ 10 < 2 ^ 10 := Nat.mod_lt _ (by decide)
   rw [hc i hi, t1Word, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), Vector.getElem_map,
+    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_arith), Vector.getElem_map,
     simpleBitUnpack_get _ _ hi, show bitlen t1Max = 10 by decide, ofInt_t1 hy]
 
 /-- `unpackT1` writes no register the ABI preserves. -/

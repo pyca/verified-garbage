@@ -37,7 +37,7 @@ theorem r12V_eq (M : Nat) (hM : 2 * M < 2 ^ 63) :
       ((BitVec.ofNat 64 (2 * M) >>> 2) + (BitVec.ofNat 64 (2 * M) >>> 2)) = BitVec.ofNat 64 (4 * (M / 2)) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- A pass's registers, as `gRegs_ok`, and `r12 = 4 ⌊M / 2⌋` for `M = ⌈w / 2⌉`. -/
 theorem gRegsV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc p n : Nat}
@@ -54,7 +54,7 @@ theorem gRegsV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc p n
     fun t₁ ⟨⟨h15, hcx, h11, h13, hbx, hm, _, k₁⟩, hx₁, hy₁⟩ => ?_)
   refine WP.mono (WP.vecKeep (by decide) (WP.keep [.r12] (Q := fun t' => t'.gpr .r12 =
       BitVec.ofNat 64 (4 * ((wx + 1) / 2 / 2)) ∧ t'.mem = t₁.mem) (by
-    xrun [h13, r12V_eq ((wx + 1) / 2) (by omega)]) rfl)) fun t' ⟨⟨⟨h12, hm'⟩, k'⟩, hx', hy'⟩ =>
+    xrun [h13, r12V_eq ((wx + 1) / 2) (by omega_arith)]) rfl)) fun t' ⟨⟨⟨h12, hm'⟩, k'⟩, hx', hy'⟩ =>
       ⟨by rw [k'.gpr (by decide)]; exact h15, by rw [k'.gpr (by decide)]; exact hcx,
         by rw [k'.gpr (by decide)]; exact h11, by rw [k'.gpr (by decide)]; exact h13, h12,
         by rw [k'.gpr (by decide)]; exact hbx, hm'.trans hm,
@@ -70,7 +70,7 @@ theorem dupV_ok {s : State} (x : XReg) :
   refine ⟨fun l hl q hq => ?_, fun y hy l => ?_, rfl, rfl, rfl, rfl⟩
   · simp only [VOp.exec, State.lane_setV256, ↓reduceIte, VG.X86_64.RegUpd.xmm_setV]
     rw [show qword ((0 : BitVec 64) ++ s.gpr .r14) 0 = s.gpr .r14 from q128_low _]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp only [↓reduceIte, Nat.one_ne_zero] <;>
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> simp only [↓reduceIte, Nat.one_ne_zero] <;>
       exact q128_pair _ hq
   · simp only [VOp.exec, State.lane_setV256, State.lane_setV128, hy, ↓reduceIte]
 
@@ -88,13 +88,13 @@ theorem gMaskV_ok {t : State} {P : Addr} {k j v : Nat} (hdi : t.gpr .rdi = P)
   refine WP.block_append_iff.mpr (WP.mono (WP.vecKeep rfl (WP.keep [.r14] (Q := fun t' =>
       (∃ b : Bool, b = decide (BitVec.ofNat 64 k + BitVec.ofNat 64 j ^^^ BitVec.ofNat 64 v = 0) ∧
         t'.gpr .r14 = mask b) ∧ t'.mem = t.mem) (by
-    xrun [State.ea, hdr, hdi, hdrOff, hld, hN, h15, sx_ofNat (show j < 2 ^ 31 by omega)]
+    xrun [State.ea, hdr, hdi, hdrOff, hld, hN, h15, sx_ofNat (show j < 2 ^ 31 by omega_arith)]
     exact ⟨_, decide_lt_one _, rfl⟩) rfl)) fun t₁ ⟨⟨⟨⟨b, hb, h14⟩, hm⟩, k₁⟩, hx₁, hy₁⟩ => ?_)
   refine WP.mono (dupV_ok x) fun t' ⟨hd, hy, hg, hm', hrd, hwr⟩ => ⟨fun l hl q hq => ?_,
     fun y hy' l => by rw [hy y hy' l]; simp only [State.lane, hx₁, hy₁], by rw [hm', hm], ?_⟩
   · rw [hd l hl q hq, h14, hb, BitVec.ofNat_add_ofNat]
     congr 1
-    exact decide_eq_decide.mpr (xor_eq_zero_iff.trans (ofNat64_inj (by omega) (by omega)))
+    exact decide_eq_decide.mpr (xor_eq_zero_iff.trans (ofNat64_inj (by omega_arith) (by omega_arith)))
   · exact ⟨fun r hr => by rw [hg]; exact k₁.1 r hr, hrd.trans k₁.2.1, hwr.trans k₁.2.2⟩
 
 /-- The mask of `p ≠ 0` in every quadword of `ymm7`, `8 p` in `r15`. -/
@@ -108,7 +108,7 @@ theorem gKeepV_ok {t : State} {p : Nat} (h15 : t.gpr .r15 = BitVec.ofNat 64 (8 *
   refine WP.block_append_iff.mpr (WP.mono (WP.vecKeep (by decide) (WP.keep [.r14] (Q := fun t' =>
       t'.gpr .r14 = mask (decide (p ≠ 0)) ∧ t'.mem = t.mem) (by
     xrun [h15]
-    rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;> decide) rfl))
+    rcases (by omega_arith : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;> decide) rfl))
       fun t₁ ⟨⟨⟨h14, hm⟩, k₁⟩, hx₁, hy₁⟩ => ?_)
   refine WP.mono (dupV_ok .xmm7) fun t' ⟨hd, hy, hg, hm', hrd, hwr⟩ => ⟨fun l hl q hq => by rw [hd l hl q hq, h14],
     fun y hy' l => by rw [hy y hy' l]; simp only [State.lane, hx₁, hy₁], by rw [hm', hm], ?_⟩
@@ -136,7 +136,7 @@ theorem gathHeadV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
         s'.mem = t.mem ∧ s'.gpr .rdi = P ∧ s'.rd = t.rd ∧ s'.wr = t.wr ∧ s'.gpr .r15 = BitVec.ofNat 64 (8 * p) ∧
         Keep [.r14] s s' :=
     fun s j x hj hdi hm hrd hwr h15 => WP.mono (gMaskV_ok hdi (hld s hm hrd hwr) (by rw [hm]; exact hN) h15
-      (by omega) hj hv x) fun s' ⟨hq, hy, hm', k⟩ =>
+      (by omega_arith) hj hv x) fun s' ⟨hq, hy, hm', k⟩ =>
         ⟨hq, hy, hm'.trans hm, (k.gpr (by decide)).trans hdi, k.2.1.trans hrd, k.2.2.trans hwr,
           (k.gpr (by decide)).trans h15, k⟩
   refine WP.seq (WP.mono (mstep t₁ 0 .xmm8 (by decide) hdi₁ hm₁ k₁.2.1 k₁.2.2 h15)
@@ -165,7 +165,7 @@ theorem gathHeadV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
   have hG : GRegsV P wx p v s₉ := by
     refine ⟨hb, by rw [kA.gpr (by decide)]; exact hbx, by rw [kA.gpr (by decide)]; exact h13,
       by rw [kA.gpr (by decide)]; exact h12, fun k hk l hl q hq => ?_, fun l hl q hq => by rw [l₉]; exact q₈ l hl q hq⟩
-    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_arith
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [show gX 0 = .xmm8 from rfl, l₉, y₈ _ (by decide), y₇ _ (by decide), y₆ _ (by decide), y₅ _ (by decide),
         y₄ _ (by decide), y₃ _ (by decide), y₂ _ (by decide), y₁ _ (by decide)]; exact q₀ l hl q hq
@@ -200,8 +200,8 @@ theorem gChunksV_ok {s : State} {B : Addr} {wx p v : Nat} (hs : Scr s B (slot wx
   -- `ZF` of `r12 = 4 ⌊M / 2⌋`.
   refine WP.seq (WP.mono (WP.keep [.r12] (Q := fun t => t.zf = some (decide ((wx + 1) / 2 / 2 = 0)) ∧ t.mem = s.mem ∧
       (∀ y l, t.lane y l = s.lane y l) ∧ t.gpr .r12 = s.gpr .r12) (by
-    xrun [hG.r12, BitVec.and_self, ofNat_beq_zero (show 4 * ((wx + 1) / 2 / 2) < 2 ^ 64 by omega)]
-    exact ⟨decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩, fun _ _ => rfl⟩) rfl)
+    xrun [hG.r12, BitVec.and_self, ofNat_beq_zero (show 4 * ((wx + 1) / 2 / 2) < 2 ^ 64 by omega_arith)]
+    exact ⟨decide_eq_decide.mpr ⟨fun h => by omega_arith, fun h => by omega_arith⟩, fun _ _ => rfl⟩) rfl)
     fun s₁ ⟨⟨hz₁, hm₁, hl₁, h12₁⟩, k₁⟩ => ?_)
   have hg₁ : s₁.gpr = s.gpr := funext fun r => by
     by_cases hr : r = .r12
@@ -217,14 +217,14 @@ theorem gChunksV_ok {s : State} {B : Addr} {wx p v : Nat} (hs : Scr s B (slot wx
     · refine WP.ite false (by simp [eval, hz₁, hN]) (by simp) (fun _ => WP.block_nil ?_)
       rw [hN]; exact GathInvV.init h14₁
     · refine WP.ite true (by simp [eval, hz₁, hN]) (fun _ => ?_) (by simp)
-      exact gLoopV_ok hs₁ hG₁ hp h14₁ (by omega) (by omega) hw' hG₁.r12
+      exact gLoopV_ok hs₁ hG₁ hp h14₁ (by omega_arith) (by omega_arith) hw' hG₁.r12
   refine WP.seq (WP.mono hloop fun s₂ hI₂ => ?_)
   -- The last two words, if left.
   have hr13 : s₂.gpr .r13 = BitVec.ofNat 64 (2 * ((wx + 1) / 2)) := by rw [hI₂.gpr _ (by decide)]; exact hG₁.r13
   refine WP.seq (WP.mono (WP.keep [.r14] (Q := fun t => t.zf = some (decide (4 * ((wx + 1) / 2 / 2) = 2 * ((wx + 1) / 2))) ∧
       t.mem = s₂.mem ∧ (∀ y l, t.lane y l = s₂.lane y l) ∧ t.gpr .r14 = s₂.gpr .r14) (by
-    xrun [hI₂.r14, hr13, ofNat_sub_beq (show 4 * ((wx + 1) / 2 / 2) < 2 ^ 64 by omega)
-      (show 2 * ((wx + 1) / 2) < 2 ^ 64 by omega)]
+    xrun [hI₂.r14, hr13, ofNat_sub_beq (show 4 * ((wx + 1) / 2 / 2) < 2 ^ 64 by omega_arith)
+      (show 2 * ((wx + 1) / 2) < 2 ^ 64 by omega_arith)]
     exact fun _ _ => rfl) rfl) fun s₃ ⟨⟨hz₃, hm₃, hl₃, h14₃⟩, k₃⟩ => ?_)
   have hg₃ : s₃.gpr = s₂.gpr := funext fun r => by
     by_cases hr : r = .r14
@@ -243,9 +243,9 @@ theorem gChunksV_ok {s : State} {B : Addr} {wx p v : Nat} (hs : Scr s B (slot wx
   · refine WP.ite false (by simp [eval, hz₃, hodd]) (by simp) (fun _ => WP.block_nil (hfin _ ?_))
     rw [← hodd]; exact hI₃
   · refine WP.ite true (by simp [eval, hz₃, hodd]) (fun _ => ?_) (by simp)
-    refine WP.mono (gStepV_ok .l128 hs₁ hG₁ hp (c := 4 * ((wx + 1) / 2 / 2)) (by simp only [nl]; omega) rfl hI₃)
+    refine WP.mono (gStepV_ok .l128 hs₁ hG₁ hp (c := 4 * ((wx + 1) / 2 / 2)) (by simp only [nl]; omega_arith) rfl hI₃)
       fun t ⟨hI, _⟩ => hfin t ?_
-    rw [show 2 * ((wx + 1) / 2) = 4 * ((wx + 1) / 2 / 2) + 2 * nl .l128 by simp only [nl]; omega]
+    rw [show 2 * ((wx + 1) / 2) = 4 * ((wx + 1) / 2 / 2) + 2 * nl .l128 by simp only [nl]; omega_arith]
     exact hI
 
 /-- The pass's end with AVX2: as `gEnd_ok`, `ZF` after the fourth. -/
@@ -256,7 +256,7 @@ theorem gEndV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc p n 
       t'.mem = (t.mem.writeW (off P (8 * Crt.sEnt)) (off P (slot wx (8 + 8 * (p + 1))))).writeW (off P (8 * Crt.sJ))
         (BitVec.ofNat 64 (8 * (p + 1))) ∧ t'.zf = some (decide (p + 1 = 4)) ∧ Keep [.rax] t t' := by
   have hs : slot wx (8 + 8 * p + 7) + 8 * (wx + 2) = slot wx (8 + 8 * (p + 1)) := by
-    rw [← slot_succ, show 8 + 8 * p + 7 + 1 = 8 + 8 * (p + 1) by omega]
+    rw [← slot_succ, show 8 + 8 * p + 7 + 1 = 8 + 8 * (p + 1) by omega_arith]
   have h8 : BitVec.ofNat 64 (8 * p) + 8 = BitVec.ofNat 64 (8 * (p + 1)) := by
     rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.ofNat_add_ofNat]; congr 1
   refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.mem = (t.mem.writeW (off P (8 * Crt.sEnt))
@@ -264,10 +264,10 @@ theorem gEndV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc p n 
       t'.zf = some (decide (p + 1 = 4))) (by
     unfold Crt.gatherEndV
     xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.st (i := Crt.sEnt) (by decide), hc.st (i := Crt.sJ) (by decide),
-      h7, h11, h15, off_add_eq, hs, sx_ofNat (show 8 < 2 ^ 31 by omega), h8]
+      h7, h11, h15, off_add_eq, hs, sx_ofNat (show 8 < 2 ^ 31 by omega_arith), h8]
     rw [show (32 : BitVec 64) = BitVec.ofNat 64 32 from rfl,
-      ofNat_sub_beq (show 8 * (p + 1) < 2 ^ 64 by omega) (show 32 < 2 ^ 64 by decide)]
-    exact decide_eq_decide.mpr (by omega)) rfl) fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
+      ofNat_sub_beq (show 8 * (p + 1) < 2 ^ 64 by omega_arith) (show 32 < 2 ^ 64 by decide)]
+    exact decide_eq_decide.mpr (by omega_arith)) rfl) fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
 
 /-- Pass `p` of the selection with AVX2. -/
 theorem gPassV_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v p : Nat}
@@ -291,7 +291,7 @@ theorem gPassV_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X X
   have hgL : ∀ r, r ≠ .r14 → s₁₀.gpr r = s₉.gpr r := fun r hr => (hL.gpr r hr).trans (hg₀ r hr)
   have kL : Keep [.r14] s₉ s₁₀ := ⟨fun r hr => hgL r (by simpa using hr), hL.rd.trans hrd₀, hL.wr.trans hwr₀⟩
   have oL : Outside P (slot wx Crt.aT) (8 * (wx + 2)) t.mem s₁₀.mem := by
-    rw [← hm₉, ← hm₀]; exact hL.out.mono (Nat.le_refl _) (by omega)
+    rw [← hm₉, ← hm₀]; exact hL.out.mono (Nat.le_refl _) (by omega_arith)
   have hc₁₀ : CExpCtx s₁₀ P wx minv X Xc 32 :=
     hc.of_win (Frm.of_outside oL (by simp [crtWinRanges])) (by rw [kL.2.2, kA.2.2]) ((kA.trans kL).gpr (by decide))
   refine WP.mono (gEndV_ok hc₁₀ hp (by rw [hgL _ (by decide)]; exact hG.base 7 (by decide))
@@ -308,22 +308,22 @@ theorem gPassV_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X X
     fun k hk => by
       have := hdr_lt_slot wx Crt.aT (show Crt.sJ < 32 by decide)
       have := hdr_lt_slot wx Crt.aT (show Crt.sEnt < 32 by decide)
-      rw [o₂.word (by omega) (by omega), o₁.word (by omega) (by omega)]
+      rw [o₂.word (by omega_arith) (by omega_arith), o₁.word (by omega_arith) (by omega_arith)]
   have hE : ∀ j < 32, ∀ k < 2 * ((wx + 1) / 2), word t.mem P (slot wx (8 + j) + 8 * k) =
       word t₀.mem P (slot wx (8 + j) + 8 * k) := fun j hj k hk =>
     hI.frm.word_eq (fun r hr => by
       have := hdr_lt_slot wx 8 (show 31 < 32 by decide)
-      have := slot_mono wx (show 8 ≤ 8 + j by omega)
+      have := slot_mono wx (show 8 ≤ 8 + j by omega_arith)
       simp only [selRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · simp only; omega
-      · simp only [Crt.sEnt, sFn]; omega
-      · simp only [Crt.sJ, sFn]; omega) (by have := ent_le wx hj; omega)
+      · simp only; omega_arith
+      · simp only [Crt.sEnt, sFn]; omega_arith
+      · simp only [Crt.sJ, sFn]; omega_arith) (by have := ent_le wx hj; omega_arith)
   refine ⟨hc₁₀.of_win (fE.mono (selRanges_sub wx)) k'.2.2 (k'.gpr (by decide)), ?_, ?_, ?_, Or.inr fun k hk => ?_,
     hI.frm.trans (fL.trans fE), ((hI.keep.trans ((kA.trans kL).trans k')).mono (by decide))⟩
   · have := hdr_lt_slot wx Crt.aT (show Crt.sNib < 32 by decide)
     rw [hm', hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
-      hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), oL.word (by omega) (by omega)]
+      hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), oL.word (by omega_arith) (by omega_arith)]
     exact hI.nib
   · rw [hm', hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
   · rw [hm', word_writeW_self]
@@ -333,18 +333,18 @@ theorem gPassV_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X X
     have hv' : v < 32 := hv
     rcases Nat.eq_zero_or_pos p with rfl | hp0
     · by_cases h8 : v < 8
-      · simp [h8, show v ≤ 8 * 0 + 7 by omega, hE v (by omega) k hk]
-      · simp [h8, show ¬ v ≤ 8 * 0 + 7 by omega]
+      · simp [h8, show v ≤ 8 * 0 + 7 by omega_arith, hE v (by omega_arith) k hk]
+      · simp [h8, show ¬ v ≤ 8 * 0 + 7 by omega_arith]
     · rcases hold with h | hold
-      · omega
+      · omega_arith
       rw [hold k hk]
-      have hp0' : p ≠ 0 := by omega
+      have hp0' : p ≠ 0 := by omega_arith
       by_cases h8 : v < 8 * p
-      · simp [h8, hp0', show ¬ 8 * p ≤ v by omega, show v < 8 * (p + 1) by omega]
+      · simp [h8, hp0', show ¬ 8 * p ≤ v by omega_arith, show v < 8 * (p + 1) by omega_arith]
       · by_cases h8' : v < 8 * (p + 1)
-        · simp [h8, h8', hp0', show 8 * p ≤ v by omega, show v ≤ 8 * p + 7 by omega,
-            show 8 + 8 * p + (v - 8 * p) = 8 + v by omega, hE v (by omega) k hk]
-        · simp [h8, h8', hp0', show ¬ v ≤ 8 * p + 7 by omega]
+        · simp [h8, h8', hp0', show 8 * p ≤ v by omega_arith, show v ≤ 8 * p + 7 by omega_arith,
+            show 8 + 8 * p + (v - 8 * p) = 8 + v by omega_arith, hE v (by omega_arith) k hk]
+        · simp [h8, h8', hp0', show ¬ v ≤ 8 * p + 7 by omega_arith]
 
 theorem tabSelectV_eq : Crt.tabSelectV = [.block [.mov .rax (.mem (hdr Crt.sTab)), .store (hdr Crt.sEnt) .rax,
     .mov32 .rax (.imm 0), .store (hdr Crt.sJ) .rax], .loop (seqs Crt.gatherPassV) .ne,
@@ -387,20 +387,20 @@ theorem tabSelV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v 
   refine WP.mono (vzu_ok t₂) fun t₃ ⟨hg₃, hm₃, hrd₃, hwr₃⟩ => ?_
   have hEv : ∀ i < wx, word t₁.mem P (slot wx (8 + v) + 8 * i) = word t.mem P (slot wx (8 + v) + 8 * i) :=
     fun i hi => f₁.word_eq (fun r hr => by
-      have := slot_mono wx (show 8 ≤ 8 + v by omega)
+      have := slot_mono wx (show 8 ≤ 8 + v by omega_arith)
       have := hdr_lt_slot wx 8 (show 31 < 32 by decide)
       simp only [selRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · have := slot_le (w := wx) (show Crt.aT < 8 by decide); simp only; omega
-      · simp only [Crt.sEnt, sFn]; omega
-      · simp only [Crt.sJ, sFn]; omega) (by have := ent_le wx hv; omega)
+      · have := slot_le (w := wx) (show Crt.aT < 8 by decide); simp only; omega_arith
+      · simp only [Crt.sEnt, sFn]; omega_arith
+      · simp only [Crt.sJ, sFn]; omega_arith) (by have := ent_le wx hv; omega_arith)
   have k₂ : Keep mmRegs t t₂ := (k₁.trans hI.keep).mono (by decide)
   refine ⟨hI.ctx.of_frm (by rw [hm₃]; exact Frm.refl _ _ _) (by rw [hwr₃]) (by rw [hg₃]), wv_congr2 fun i hi => ?_,
     by rw [hm₃]; exact f₁.trans hI.frm, ⟨fun r hr => by rw [hg₃]; exact k₂.1 r hr, hrd₃.trans k₂.2.1, hwr₃.trans k₂.2.2⟩⟩
   rw [hm₃]
   rcases hI.val with h | h
-  · omega
-  rw [h i (by omega), ite_eq_left (by omega), hEv i hi]
+  · omega_arith
+  rw [h i (by omega_arith), ite_eq_left (by omega_arith), hEv i hi]
 
 /-- The selection with AVX2, from a table of 32 entries. -/
 def CrtSel.avx : CrtSel 32 := ⟨Crt.tabSelectV, by simp [tabSelectV_eq], tabSelV_ok⟩

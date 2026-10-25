@@ -94,14 +94,14 @@ variable {s₀ : State}
 
 /-- Block `c + 2k + l` from block `c`. -/
 theorem blk_lane (c k l : Nat) : blk s₀ c + BitVec.ofNat 64 (32 * (0 + k) + 16 * l) = blk s₀ (c + (2 * k + l)) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
 
 theorem slot_scr {j : Nat} (hj : j < 16) : Region.Sub ⟨slot s₀ j, 16⟩ (scrR s₀) :=
-  UPre.scr_sub (by simp only [bufOff]; omega)
+  UPre.scr_sub (by simp only [bufOff]; omega_arith)
 
 /-- The blocks of a group lie in the data. -/
 theorem group_data {c : Nat} (hc : c + 8 ≤ N s₀) : Region.Sub ⟨blk s₀ c, 128⟩ (dataR s₀) := by
-  rw [blk]; exact Offset.sub_base _ (by omega)
+  rw [blk]; exact Offset.sub_base _ (by omega_arith)
 
 theorem buf_scr : Region.Sub (bufR s₀) (scrR s₀) := UPre.scr_sub (d := bufOff) (n := 1920) (by decide)
 
@@ -121,7 +121,7 @@ theorem group_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa
     intro k hk
     refine ⟨dataR s₀, by rw [hW]; simp, ?_⟩
     rw [h.r11, ofInt_natCast, blk, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   -- The tweaks XORed in.
   refine WP.seq (WP.mono (preList_ok regs4 tws 0 s (by decide) rfl tws_regs4
     (fun k hk => inRegions_wr (inD k hk))) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, x₁⟩ => ?_)
@@ -142,7 +142,7 @@ theorem group_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (postList_ok regs4 tws 0 s₂ (by decide) rfl tws_regs4
     (fun k hk => by rw [wr₂, g₂]; exact inD k hk)
-    (by rw [g₂, h.r11, hp.blk_toNat (by omega)]; show _ + 32 * (0 + 4) ≤ _; omega))
+    (by rw [g₂, h.r11, hp.blk_toNat (by omega_arith)]; show _ + 32 * (0 + 4) ≤ _; omega_arith))
     fun s₃ ⟨e₃, f₃, g₃, rd₃, wr₃, x₃⟩ => ?_
   rw [g₂, h.r11, Nat.mul_zero, BitVec.add_zero, m₂, show 32 * regs4.length = 128 from rfl] at f₃
   have g₃' : s₃.gpr = s.gpr := g₃.trans g₂
@@ -172,13 +172,13 @@ theorem group_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa
     intro k hk
     rw [m₄]
     by_cases hin : c ≤ k ∧ k < c + 8
-    · obtain ⟨i, rfl⟩ : ∃ i, k = c + i := ⟨k - c, by omega⟩
-      have hi : i < 8 := by omega
-      have hkk : i / 2 < regs4.length := by have : regs4.length = 4 := rfl; omega
-      have hkt : i / 2 < tws.length := by have : tws.length = 4 := rfl; omega
+    · obtain ⟨i, rfl⟩ : ∃ i, k = c + i := ⟨k - c, by omega_arith⟩
+      have hi : i < 8 := by omega_arith
+      have hkk : i / 2 < regs4.length := by have : regs4.length = 4 := rfl; omega_arith
+      have hkt : i / 2 < tws.length := by have : tws.length = 4 := rfl; omega_arith
       have hl : i % 2 < 2 := Nat.mod_lt _ (by decide)
       have ab : blk s₀ (c + i) = s.gpr .r11 + BitVec.ofNat 64 (32 * (0 + i / 2) + 16 * (i % 2)) := by
-        rw [h.r11, blk_lane]; congr 2; omega
+        rw [h.r11, blk_lane]; congr 2; omega_arith
       rw [g₂] at e₃
       rw [bytesAt_b16, ab, e₃ _ hkk _ hl, ← ab]
       have hT : s₂.lane tws[i / 2] (i % 2) = s.lane tws[i / 2] (i % 2) :=
@@ -192,20 +192,20 @@ theorem group_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa
         (e₂ _ (List.getElem_mem hkk) _ hl).trans (congrArg (fun v => stF enc (R s₀) (wK s₀) (st v)) e1)
       rw [hT]
       refine (xts_word enc (R s₀) (wK s₀) _ _ _ hc').trans ?_
-      rw [← bytesAt_b16, ht.tw _ hkt _ hl, h.data _ hk, show c + (2 * (i / 2) + i % 2) = c + i by omega]
-      simp only [show ¬ c + i < c by omega, ite_false, show c + i < c + 8 by omega, ite_true]
+      rw [← bytesAt_b16, ht.tw _ hkt _ hl, h.data _ hk, show c + (2 * (i / 2) + i % 2) = c + i by omega_arith]
+      simp only [show ¬ c + i < c by omega_arith, ite_false, show c + i < c + 8 by omega_arith, ite_true]
     · rw [AesCbc.X86_64.bytesAt_frame f₃ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           rw [blk, blk]
-          exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide), h.data k hk]
+          exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), h.data k hk]
       by_cases hlt : k < c
-      · simp only [hlt, ite_true, show k < c + 8 by omega]
-      · simp only [hlt, ite_false, show ¬ k < c + 8 by omega]
+      · simp only [hlt, ite_true, show k < c + 8 by omega_arith]
+      · simp only [hlt, ite_false, show ¬ k < c + 8 by omega_arith]
   have hbuf : ∀ j < 8, bytesAt s₄.mem (slot s₀ j) 16 = Spec.Xts.next (iv0 s₀) (b + j) := by
     intro j hj
     rw [m₄, AesCbc.X86_64.bytesAt_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ((hp.data_scr.sub_left (group_data hc)).sub_right (slot_scr (j := j) (by omega))).symm) (by decide),
+      exact ((hp.data_scr.sub_left (group_data hc)).sub_right (slot_scr (j := j) (by omega_arith))).symm) (by decide),
       h.buf j hj]
   have htw : ∀ k (hk : k < tws.length), ∀ l < 2,
       b16 (s₄.lane tws[k] l) = Spec.Xts.next (iv0 s₀) (c + 8 + (2 * k + l)) := by
@@ -213,7 +213,7 @@ theorem group_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa
     have hm : tws[k] ∈ tws := List.getElem_mem hk
     rw [e₄ _ hm l hl, o₃ _ (tws_regs4 _ hm) (by intro h8; rw [h8] at hm; exact absurd hm (by decide)) l hl,
       stepW, ← next_b8, ht.tw k hk l hl, ← next_add]
-    congr 1; omega
+    congr 1; omega_arith
   have hrd : s₄.rd = s₀.rd := by rw [rd₄, rd₃, rd₂, h.rd]
   have hwr : s₄.wr = s₀.wr := by rw [wr₄, wr₃, wr₂, h.wr]
   -- `add r11, 128`, `sub r9, 8` and `cmp r9, 8`.
@@ -222,10 +222,10 @@ theorem group_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa
   have hr11 : s₄.gpr .r11 = blk s₀ c := by rw [g₄', h.r11]
   have hr9 : s₄.gpr .r9 = BitVec.ofNat 64 (N s₀ - c) := by rw [g₄', h.r9]
   have hsub : BitVec.ofNat 64 (N s₀ - c) - 8 = BitVec.ofNat 64 (N s₀ - (c + 8)) := by
-    rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.ofNat_sub_ofNat (by omega_arith), Nat.sub_sub]
   have hadd : blk s₀ c + 128 = blk s₀ (c + 8) := by
     rw [blk, blk, show (128 : BitVec 64) = BitVec.ofNat 64 128 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 16 * c + 128 = 16 * (c + 8) by omega]
+      show 16 * c + 128 = 16 * (c + 8) by omega_arith]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, arithFlags, State.setFlags, isa, State.setReg, e128, e8, hr11, hr9,
@@ -235,7 +235,7 @@ theorem group_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa
       by simp [g₄', h.r8], by simp; exact hsub, by simp; exact hadd, by simp [g₄', h.r10],
       fun r h1 h2 h3 h4 h5 h6 h7 => by simp [h5, h7, g₄', h.keep r h1 h2 h3 h4 h5 h6 h7],
       hrd, hwr, fr, hdata, hbuf, by simp [g₄', h.rdx]⟩, ⟨htw, hK₄⟩⟩, ?_⟩
-  simp only [hsub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N s₀ - (c + 8) < 2 ^ 64 by omega),
+  simp only [hsub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N s₀ - (c + 8) < 2 ^ 64 by omega_arith),
     show (8 : BitVec 64).toNat = 8 from rfl]
 
 end VG.Proof.AesXts.X86_64.Vaes

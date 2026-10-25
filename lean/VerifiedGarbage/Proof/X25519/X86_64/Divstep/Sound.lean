@@ -41,7 +41,7 @@ theorem toInt_neg {m : BitVec 64} (h : m.msb = true) : m.toInt = -(absN m : Int)
   simp only [↓reduceIte] at e
   have := m.isLt
   have := Int.natAbs_eq m.toInt
-  omega
+  omega_arith
 
 theorem toInt_pos {m : BitVec 64} (h : m.msb = false) : m.toInt = (absN m : Int) := by
   unfold absN
@@ -49,7 +49,7 @@ theorem toInt_pos {m : BitVec 64} (h : m.msb = false) : m.toInt = (absN m : Int)
   rw [h] at e
   simp only [Bool.false_eq_true, ↓reduceIte] at e
   have := Int.natAbs_eq m.toInt
-  omega
+  omega_arith
 
 /-- One product of a row of `f` and `g`. -/
 theorem fterm (m : BitVec 64) {X : Nat} (hX : X < 2 ^ 256) :
@@ -59,22 +59,22 @@ theorem fterm (m : BitVec 64) {X : Nat} (hX : X < 2 ^ 256) :
   cases hm : m.msb
   · rw [toInt_pos hm]
     by_cases hx : X < 2 ^ 255
-    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show ¬ 2 ^ 255 ≤ X by omega]
+    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show ¬ 2 ^ 255 ≤ X by omega_arith]
       push_cast; ring
-    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show 2 ^ 255 ≤ X by omega]
+    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show 2 ^ 255 ≤ X by omega_arith]
       push_cast; ring
   · rw [toInt_neg hm]
-    have e : ((2 ^ 256 - 1 - X : Nat) : Int) = 2 ^ 256 - 1 - (X : Int) := by omega
+    have e : ((2 ^ 256 - 1 - X : Nat) : Int) = 2 ^ 256 - 1 - (X : Int) := by omega_arith
     by_cases hx : X < 2 ^ 255
-    · simp only [↓reduceIte, hx, show 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega]
+    · simp only [↓reduceIte, hx, show 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega_arith]
       rw [Nat.cast_add, Nat.cast_mul, e]; push_cast; ring
-    · simp only [↓reduceIte, hx, show ¬ 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega]
+    · simp only [↓reduceIte, hx, show ¬ 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega_arith]
       rw [Nat.cast_add, Nat.cast_mul, e]; push_cast; ring
 
 theorem shift_mod (Z k M D : Int) (hD : D ≠ 0) : (Z + k * M * D) / D % M = Z / D % M := by
   rw [Int.add_mul_ediv_right _ _ hD, Int.add_mul_emod_self_right]
 
-theorem negN_le (m : BitVec 64) : negN m ≤ absN m := by unfold negN; split <;> omega
+theorem negN_le (m : BitVec 64) : negN m ≤ absN m := by unfold negN; split <;> omega_arith
 
 /-- A row of `f` and `g` is `(m₁ X + m₂ Y) / 2⁵⁹` modulo `2²⁵⁶`, if the corrections
 `|m|` of the negative `m` do not overflow a word. -/
@@ -89,7 +89,7 @@ theorem fRowV_eq (m₁ m₂ : BitVec 64) {X Y : Nat} (hX : X < 2 ^ 256) (hY : Y 
       (2 ^ 256 * 2 ^ 65 - 2 ^ 256 * (topN m₁ X + topN m₂ Y)) : Nat) : Int) =
       (m₁.toInt * sv X + m₂.toInt * sv Y) + (2 ^ 6 * 2 ^ 256) * 2 ^ 59 := by
     push_cast at e1 e2 ⊢
-    rw [Nat.cast_sub (by omega)]
+    rw [Nat.cast_sub (by omega_arith)]
     push_cast
     linear_combination e1 + e2
   rw [Int.natCast_emod, Int.natCast_ediv, hN]
@@ -106,7 +106,7 @@ theorem aterm (m : BitVec 64) {A : Nat} (hA : A < 2 ^ 256) :
   · rw [toInt_pos hm]; simp only [Bool.false_eq_true, ↓reduceIte]; push_cast; ring_nf; rfl
   · rw [toInt_neg hm]
     simp only [↓reduceIte]
-    have e : ((2 ^ 256 - 1 - A : Nat) : Int) = 2 ^ 256 - 1 - (A : Int) := by omega
+    have e : ((2 ^ 256 - 1 - A : Nat) : Int) = 2 ^ 256 - 1 - (A : Int) := by omega_arith
     rw [Nat.cast_mul, e, Int.modEq_iff_dvd, P_val]
     exact ⟨-(2 * (absN m : Int)), by ring⟩
 
@@ -124,10 +124,10 @@ theorem foldV_cong {Q c : Nat} (hQ : Q < 2 ^ 256 * 2 ^ 64) (hc : c < 2 ^ 64) :
   dsimp only
   rw [Int.modEq_iff_dvd, P_val]
   split
-  · refine ⟨⟨2 * ((h : Int) - 1), by omega⟩, by omega⟩
+  · refine ⟨⟨2 * ((h : Int) - 1), by omega_arith⟩, by omega_arith⟩
   · split
-    · refine ⟨⟨2 * (h : Int), by omega⟩, by omega⟩
-    · refine ⟨⟨2 * ((h : Int) + 1), by omega⟩, by omega⟩
+    · refine ⟨⟨2 * (h : Int), by omega_arith⟩, by omega_arith⟩
+    · refine ⟨⟨2 * ((h : Int) + 1), by omega_arith⟩, by omega_arith⟩
 
 /-- A row of `a` and `b` is `m₁ A + m₂ B` modulo `p`, below `2²⁵⁶`, if the
 corrections do not overflow a word. -/
@@ -137,7 +137,7 @@ theorem aRowV_cong (m₁ m₂ : BitVec 64) {A B : Nat} (hA : A < 2 ^ 256) (hB : 
   unfold aRowV cN
   rw [Nat.mod_eq_of_lt hc]
   have p1 := prodN_le m₁ hA; have p2 := prodN_le m₂ hB
-  obtain ⟨h1, h2⟩ := foldV_cong (Q := absN m₁ * flipN m₁ A + absN m₂ * flipN m₂ B) (by omega) hc
+  obtain ⟨h1, h2⟩ := foldV_cong (Q := absN m₁ * flipN m₁ A + absN m₂ * flipN m₂ B) (by omega_arith) hc
   refine ⟨h1.trans ?_, h2⟩
   have := (aterm m₁ hA).add (aterm m₂ hB)
   push_cast at this ⊢
@@ -190,7 +190,7 @@ theorem sv_rep {f : Int} (hf : |f| ≤ P) {X : Nat} (hX : (X : Int) = f % 2 ^ 25
   have := P_lt
   rw [abs_le] at hf
   unfold sv
-  split <;> omega
+  split <;> omega_arith
 
 theorem toInt_eq_of_abs {u : Int} (h : |u| ≤ 2 ^ 59) : (BitVec.ofInt 64 u).toInt = u := toInt_small h
 
@@ -241,7 +241,7 @@ theorem pk_row_mod {w : BitVec 64} {F : Int} {K n k : Nat} (hn : n ≤ 15) (hK :
     (h : (w.toNat : Int) % 2 ^ K = F % 2 ^ K) :
     (((w.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ k) % 2 ^ n = F % 2 ^ n := by
   have d1 : (2 : Int) ^ n ∣ 2 ^ 15 := pow_dvd_pow 2 hn
-  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega)
+  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega_arith)
   have d3 : (2 : Int) ^ n ∣ 2 ^ K := pow_dvd_pow 2 hK
   rw [Int.natCast_mod, Nat.cast_pow, Nat.cast_ofNat, Int.add_emod, Int.emod_eq_zero_of_dvd d2, add_zero,
     Int.emod_emod_of_dvd _ d1, Int.emod_emod, ← Int.emod_emod_of_dvd _ d3, h, Int.emod_emod_of_dvd _ d3]
@@ -261,7 +261,7 @@ theorem pkChunkV_rel {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ n ≤ 15)
   have lo := msteps_lo T.d T.f T.g n
   have hrel := psteps_rel (d := T.d) (f := T.f) (g := T.g)
     (P := ((w.F.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 31)
-    (Q := ((w.G.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47) (n := n) (by omega) hf hd
+    (Q := ((w.G.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47) (n := n) (by omega_arith) hf hd
     (pk_row_mod hn.2 hK.1 (by norm_num) hI.F) (pk_row_mod hn.2 hK.1 (by norm_num) hI.G) n le_rfl
   rw [msteps_gen n T]
   simp only
@@ -360,7 +360,7 @@ theorem run_step {x i : Nat} (hx : x < P) (hi : i < 10) {t : DSt} (h : RInv x i 
   simp only at hod hof hlf hlg hd hD hF hG hca hcb hzero
   -- The packed divsteps are those of the matrix.
   have hd30 : |d| ≤ 2 ^ 30 := by
-    have : (59 * i : Int) ≤ 59 * 9 := by exact_mod_cast (by omega : 59 * i ≤ 59 * 9)
+    have : (59 * i : Int) ≤ 59 * 9 := by exact_mod_cast (by omega_arith : 59 * i ≤ 59 * 9)
     linarith
   have hW := pkBatchV_rel (D := t.D) (F := BitVec.ofNat 64 t.f) (G := BitVec.ofNat 64 t.g) hD (ofNat_rel64 hF)
     (ofNat_rel64 hG) hof hd30
@@ -382,11 +382,11 @@ theorem run_step {x i : Nat} (hx : x < P) (hi : i < 10) {t : DSt} (h : RInv x i 
   have nUV : negN W.U + negN W.V < 2 ^ 64 := by
     have := negN_ofInt_le (le_trans (le_add_of_nonneg_right (abs_nonneg tN.v)) b1)
     have := negN_ofInt_le (le_trans (le_add_of_nonneg_left (abs_nonneg tN.u)) b1)
-    rw [wU, wV]; omega
+    rw [wU, wV]; omega_arith
   have nQR : negN W.Q + negN W.R < 2 ^ 64 := by
     have := negN_ofInt_le (le_trans (le_add_of_nonneg_right (abs_nonneg tN.r)) b2)
     have := negN_ofInt_le (le_trans (le_add_of_nonneg_left (abs_nonneg tN.q)) b2)
-    rw [wQ, wR]; omega
+    rw [wQ, wR]; omega_arith
   have tu := toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg tN.v)) b1)
   have tv := toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg tN.u)) b1)
   have tq := toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg tN.r)) b2)
@@ -434,13 +434,13 @@ theorem run_inv {x : Nat} (hx : x < P) : ∀ i, i ≤ 10 → RInv x i (drun x i)
   | 0, _ => by
     have hP := P_lt
     have e : dsI x 0 = (1, (P : Int), (x : Int)) := by simp only [dsI, divsteps]
-    refine ⟨by rw [e]; rfl, by rw [e]; simp only [drun]; omega, by rw [e]; simp only [drun]; omega,
-      by simp only [drun]; omega, by simp only [drun]; omega, by simp only [drun]; omega,
-      by simp only [drun]; omega, ?_, ?_, fun _ => by simp [drun]⟩
+    refine ⟨by rw [e]; rfl, by rw [e]; simp only [drun]; omega_arith, by rw [e]; simp only [drun]; omega_arith,
+      by simp only [drun]; omega_arith, by simp only [drun]; omega_arith, by simp only [drun]; omega_arith,
+      by simp only [drun]; omega_arith, ?_, ?_, fun _ => by simp [drun]⟩
     · rw [e]; simp only [drun, pow_zero, one_mul, Nat.cast_zero, mul_zero]
       exact (Int.emod_self).trans (by simp)
     · rw [e]; simp [drun]
-  | i + 1, hi => run_step hx (by omega) (run_inv hx i (by omega))
+  | i + 1, hi => run_step hx (by omega_arith) (run_inv hx i (by omega_arith))
 
 theorem toZ_toFe (n : Nat) : VG.Proof.Ed25519.toZ (toFe n) = (n : ZMod P) := by
   apply ZMod.val_injective
@@ -480,7 +480,7 @@ theorem byAlg_eq (x : Fe) : byAlg x = pow x (P - 2) := by
     rw [hs] at hF hca
     generalize (divsteps 590 (1, (P : Int), (x.val : Int))).2.1 = f at hdone hF hca
     rw [hcop] at hdone
-    have hf : f = 1 ∨ f = -1 := by omega
+    have hf : f = 1 ∨ f = -1 := by omega_arith
     set A : ZMod P := ((drun x.val 10).a : ZMod P)
     set X : ZMod P := (x.val : ZMod P)
     have hc := (ZMod.intCast_eq_intCast_iff _ _ _).2 hca
@@ -497,11 +497,11 @@ theorem byAlg_eq (x : Fe) : byAlg x = pow x (P - 2) := by
     have hxak : X * (A * (kSel (drun x.val 10).f : ZMod P)) = 1 := by
       unfold kSel
       rcases hf with rfl | rfl
-      · have h1 : (drun x.val 10).f = 1 := by omega
+      · have h1 : (drun x.val 10).f = 1 := by omega_arith
         rw [h1]; simp only [show (1 : Nat) < 2 ^ 255 by norm_num, ↓reduceIte]
         rw [← mul_assoc, ← hc]
         simpa using k1
-      · have h1 : (drun x.val 10).f = 2 ^ 256 - 1 := by omega
+      · have h1 : (drun x.val 10).f = 2 ^ 256 - 1 := by omega_arith
         rw [h1]; simp only [show ¬ (2 ^ 256 - 1 : Nat) < 2 ^ 255 by norm_num, ↓reduceIte]; rw [k2]
         rw [← mul_assoc, ← hc]
         have : (2 : ZMod P) ^ (59 * 10) * ((-1 : Int) : ZMod P) * -(Impl.X25519.X86_64.kInv : ZMod P) =

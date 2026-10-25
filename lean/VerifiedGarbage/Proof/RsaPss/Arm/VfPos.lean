@@ -131,14 +131,14 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     obtain ⟨σ', ok⟩ := hg.ok
     have kk : ∀ d, d + 4 ≤ frameBytes → (d + 4 ≤ sAcc ∨ sPos + 4 ≤ d) →
         t.mem.readW ((P.lay h.D).fr d) 32 = s.mem.readW ((P.lay h.D).fr d) 32 := fun d hd hd' => by
-      rw [m, slot_ww _ _ hd (by decide) (by unfold sAcc sPos at hd'; unfold sAcc; omega),
-        slot_ww _ _ hd (by decide) (by unfold sAcc sPos at hd'; unfold sPos; omega)]
+      rw [m, slot_ww _ _ hd (by decide) (by unfold sAcc sPos at hd'; unfold sAcc; omega_arith),
+        slot_ww _ _ hd (by decide) (by unfold sAcc sPos at hd'; unfold sPos; omega_arith)]
     have kb : ∀ o, o + 1 ≤ oRsa → t.mem (sa P.scr o) = s.mem (sa P.scr o) := fun o ho =>
       fr _ fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact (hg.slot ok (o := o) (n := 1) (by omega) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
-        · exact (hg.slot ok (o := o) (n := 1) (by omega) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
+        · exact (hg.slot ok (o := o) (n := 1) (by omega_arith) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
+        · exact (hg.slot ok (o := o) (n := 1) (by omega_arith) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
     obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hf
     have e1 : oEm = 1024 := rfl
     have e2 : oRsa = 8192 := rfl
@@ -146,8 +146,8 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       ⟨by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.1, by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.1,
         by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.2.1,
         by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.2.2⟩,
-      fun i hi' => by rw [kb _ (by omega)]; exact hk.2.1 i hi',
-      fun i hi' => by rw [kb _ (by omega)]; exact hk.2.2 i hi', ?_, by rw [m, Mem.readW_writeW_self32]⟩
+      fun i hi' => by rw [kb _ (by omega_arith)]; exact hk.2.1 i hi',
+      fun i hi' => by rw [kb _ (by omega_arith)]; exact hk.2.2 i hi', ?_, by rw [m, Mem.readW_writeW_self32]⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact slotW hg (by decide)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

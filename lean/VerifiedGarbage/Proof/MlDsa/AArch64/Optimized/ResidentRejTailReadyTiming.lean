@@ -81,7 +81,7 @@ theorem tailRead_value {s : State} {k : Nat} (hk : k<4)
       (t.gpr .x7).toNat=8380417 := by
   unfold tailRead
   simp only [List.cons_append,List.nil_append]
-  refine wp_addImm (by omega) fun a ha ea => wp_addImm (by decide) fun b hb eb =>
+  refine wp_addImm (by omega_arith) fun a ha ea => wp_addImm (by decide) fun b hb eb =>
     wp_ldrw (a := s.gpr .x19+BitVec.ofNat 64 (840+1008*k+1005)) (by decide)
       (by rw [ptr_zero,eb,ea,Offset.add_add])
       (by rw [hb.rd,hb.wr,ha.rd,ha.wr]; exact hr) fun c hc ec =>
@@ -108,13 +108,13 @@ open VG.Proof.MlDsa.Sample (coeffAddr)
 theorem zeroTail_frame_ok {v k : Nat} {σ s : State} (hp : Pre v σ) (h : Done v σ s)
     (hk : k<v) :
     WP isa (Impl.MlDsa.AArch64.Optimized.ResidentRej.Four.zeroTail k) s (fun t => Done v σ t ∧ Frame [aR v σ] s.mem t.mem) := by
-  have hk4 : k<4 := by have := hp.streams; omega
+  have hk4 : k<4 := by have := hp.streams; omega_arith
   unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.Four.zeroTail
   apply WP.seq
   refine wp_ldrx (a := countP σ k) (by
-    unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)
+    unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega_arith)
     (by rw [h.env.x19]; rfl) (in_scr_rd hp h.env.wr (by
-      unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)) fun a ha ea => wp_nil ?_
+      unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega_arith)) fun a ha ea => wp_nil ?_
   have hd : Done v σ a := h.of_control ha (by decide)
   have hc : (a.gpr .x4).toNat=256-(prefixRow σ k 1008).length := by
     rw [ea]; exact h.counts k hk
@@ -129,7 +129,7 @@ theorem zeroTail_frame_ok {v k : Nat} {σ s : State} (hp : Pre v σ) (h : Done v
     have hl : (prefixRow σ k 1008).length<256 := by
       have := h.length k hk
       have hn : (a.gpr .x4).toNat≠0 := by intro e; exact hz (BitVec.eq_of_toNat_eq e)
-      omega
+      omega_arith
     change WP isa (.block (tailCursor k++tailRead k++tailAdjust)) a _
     refine WP.mono (tailSetup_ok hp hd.env hk hl hc) fun b hb => ?_
     have hdb : Done v σ b := hd.of_control hb.1 (by decide)
@@ -143,19 +143,19 @@ theorem zeroTail_frame_ok {v k : Nat} {σ s : State} (hp : Pre v σ) (h : Done v
         rw [he]) (by simp) (fun _ => ?_)
       have hn : 0<256-((prefixRow σ k 1008).length+skip) := by
         have hn' : (b.gpr .x4).toNat≠0 := by intro e; exact hz' (BitVec.eq_of_toNat_eq e)
-        omega
-      refine WP.mono (tailLoop_ok hn (by omega) hptr hcount ?_) fun t ht => ?_
+        omega_arith
+      refine WP.mono (tailLoop_ok hn (by omega_arith) hptr hcount ?_) fun t ht => ?_
       · intro i hi
         rw [hdb.env.wr]
         refine ⟨aR v σ,by simp [hp.wr],?_⟩
         change (aR v σ).Contains (((aP σ+BitVec.ofNat 64 (1024*k))+
           BitVec.ofNat 64 (4*((prefixRow σ k 1008).length+skip)))+BitVec.ofNat 64 (4*i)) 4
         rw [Offset.add_add,Offset.add_add]
-        exact Offset.contains_base (aP σ) (by omega) (by have := hp.streams; omega)
-      · refine ⟨hdb.tailKeep hp hk (by omega) (by omega) ht.1 ht.2,?_⟩
+        exact Offset.contains_base (aP σ) (by omega_arith) (by have := hp.streams; omega_arith)
+      · refine ⟨hdb.tailKeep hp hk (by omega_arith) (by omega_arith) ht.1 ht.2,?_⟩
         have hf : Frame [aR v σ] b.mem t.mem := ht.2.sub (fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact ⟨aR v σ,by simp,fun x hx => poly_sub hk x (tailRange_sub (by omega) x hx)⟩)
+          exact ⟨aR v σ,by simp,fun x hx => poly_sub hk x (tailRange_sub (by omega_arith) x hx)⟩)
         rw [hb.1.mem,ha.mem] at hf
         exact hf
 
@@ -183,7 +183,7 @@ theorem zeroTail_ready {v k : Nat} {σ s : State} (hp : Pre v σ)
   have hb : (scrR σ).Contains (bufP σ j+BitVec.ofNat 64 d) 1 := by
     change (scrR σ).Contains ((scr σ+BitVec.ofNat 64 (840+1008*j))+BitVec.ofNat 64 d) 1
     rw [Offset.add_add]
-    exact Offset.contains_base (scr σ) (by have:=hp.streams; omega) (by have:=hp.streams; omega)
+    exact Offset.contains_base (scr σ) (by have:=hp.streams; omega_arith) (by have:=hp.streams; omega_arith)
   rw [hf (bufP σ j+BitVec.ofNat 64 d) (by
     intro r hr
     rw [List.mem_singleton.mp hr]
@@ -246,7 +246,7 @@ private theorem countLoad_ok {s : State} {k len : Nat} (hk : k<4)
     (hc : (s.mem.readW (countAddress s k) 64).toNat=256-len) :
     WP isa (.block [.ldr .x .x4 .x19 (counts+8*k)]) s fun t =>
       Only [.x4] s t ∧ (t.gpr .x4).toNat=256-len := by
-  refine wp_ldrx (a := countAddress s k) (by unfold counts; omega) (by rfl) hr
+  refine wp_ldrx (a := countAddress s k) (by unfold counts; omega_arith) (by rfl) hr
     fun t ht et => wp_nil ⟨ht,?_⟩
   rw [et]; exact hc
 
@@ -335,7 +335,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
   · subst k; constructor <;> taint_decide
   by_cases h2 : k=2
   · subst k; constructor <;> taint_decide
-  have h3 : k=3 := by omega
+  have h3 : k=3 := by omega_arith
   subst k
   constructor <;> taint_decide
 
@@ -363,7 +363,7 @@ theorem zeroTail_relCT {v k : Nat} {σ τ : State}
     (hp : Pre v σ) (hq : Pre v τ) (pub : Pub v σ τ) (hk : k<v) :
     RelCT isa (fun s t => TailReady v σ s ∧ TailReady v τ t) (Four.zeroTail k)
       (fun s t => TailReady v σ s ∧ TailReady v τ t) := by
-  have h4 : k<4 := by have:=hp.streams; omega
+  have h4 : k<4 := by have:=hp.streams; omega_arith
   have ct : RelCT isa (fun s t => TailReady v σ s ∧ TailReady v τ t) (Four.zeroTail k)
       (fun _ _ => True) := by
     intro s t tr ur s' t' h es et
@@ -372,12 +372,12 @@ theorem zeroTail_relCT {v k : Nat} {σ τ : State}
     exact zeroTailRaw_relCT h4 (h.1.1.length k hk) (tailChecks k h4)
       (hs.sp.trans (pub.2.2.2.1.trans ht.sp.symm))
       (by rw [hs.x19,ht.x19,pub.2.2.1]) (by rw [hs.x21,ht.x21,pub.2.1])
-      (by rw [segment_count_eq hs]; exact in_scr_rd hp hs.wr (by unfold counts; omega))
-      (by rw [segment_count_eq ht]; exact in_scr_rd hq ht.wr (by unfold counts; omega))
+      (by rw [segment_count_eq hs]; exact in_scr_rd hp hs.wr (by unfold counts; omega_arith))
+      (by rw [segment_count_eq ht]; exact in_scr_rd hq ht.wr (by unfold counts; omega_arith))
       (by rw [segment_count_eq hs]; exact h.1.1.counts k hk)
       (by rw [segment_count_eq ht,pub.prefix hk 1008]; exact h.2.1.counts k hk)
-      (by rw [hs.x19]; exact in_scr_rd hp hs.wr (by omega))
-      (by rw [ht.x19]; exact in_scr_rd hq ht.wr (by omega))
+      (by rw [hs.x19]; exact in_scr_rd hp hs.wr (by omega_arith))
+      (by rw [ht.x19]; exact in_scr_rd hq ht.wr (by omega_arith))
       (tail_candidate_eq pub h.1 h.2 hk) _ _ _ _ _ _ ⟨rfl,rfl⟩ es et
   exact (ct.wp (fun _ _ h => ⟨zeroTail_ready hp h.1 hk,zeroTail_ready hq h.2 hk⟩)).mono
     (fun _ _ h => h) (fun _ _ h => h.2)

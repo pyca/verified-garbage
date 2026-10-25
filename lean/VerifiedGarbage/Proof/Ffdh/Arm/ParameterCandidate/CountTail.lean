@@ -71,14 +71,7 @@ theorem halfCountTail_ok {s : State} {base : BitVec 32} {capacity w count : Nat}
     rw [← BitVec.toNat_inj, VG.Proof.Rsa.Arm.Keys.bv_and_one, nativeAddr,
       ← VG.Proof.Rsa.Arm.Keys.num_mod2 s.mem B (by omega : 0 < 2 * w + 2)]
     rfl
-  refine withRest [.r0, .r1, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountTail : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountTail VG.Impl.Ffdh.Arm.ParameterCandidate.save
     VG.Impl.Rsa.Arm.Keys.ptr
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, read, write, saved, plus, r7, r8,

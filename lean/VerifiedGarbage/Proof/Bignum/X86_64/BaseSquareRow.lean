@@ -39,13 +39,13 @@ theorem macR_ok (s : State) {aS aX : Addr}
   have hc := (s.gpr .rcx).isLt
   have hx := (s.mem.readW aX 64).isLt
   have e1 := addc_toNat (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .r13).toNat))
-    (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .r13).toNat / 2 ^ 64)) (s.mem.readW aX 64) (by omega)
+    (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .r13).toNat / 2 ^ 64)) (s.mem.readW aX 64) (by omega_arith)
   have e2 := addc_toNat (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .r13).toNat) + s.mem.readW aX 64)
     (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .r13).toNat / 2 ^ 64) + 0 +
       (BitVec.ofBool (decide (2 ^ 64 ≤ (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat *
-        (s.gpr .r13).toNat)).toNat + (s.mem.readW aX 64).toNat))).setWidth 64) (s.gpr .rcx) (by omega)
+        (s.gpr .r13).toNat)).toNat + (s.mem.readW aX 64).toNat))).setWidth 64) (s.gpr .rcx) (by omega_arith)
   rw [e2, Nat.mul_comm (s.gpr .r13).toNat]
-  omega
+  omega_arith
 
 /-- `add r14, 1; cmp r14, rbp`. -/
 theorem countBp_ok (s : State) {j N : Nat} (hj : s.gpr .r14 = BitVec.ofNat 64 j)
@@ -82,23 +82,23 @@ theorem rowStep_ok {s₀ : State} {B : Addr} {Z e eb n : Nat}
   unfold macStep
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.rax, .rdx, .rcx] (macR_ok t (addr0 t9 hI.r14) (addr0 t8 hI.r14)
-    (hI.scr.ld (by omega)) (hI.scr.ld (by omega)) (hI.scr.st (by omega))) rfl) fun t₁ ⟨⟨lo, hm, hv⟩, k₁⟩ => ?_
+    (hI.scr.ld (by omega_arith)) (hI.scr.ld (by omega_arith)) (hI.scr.st (by omega_arith))) rfl) fun t₁ ⟨⟨lo, hm, hv⟩, k₁⟩ => ?_
   have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
   have t₁bp : t₁.gpr .rbp = BitVec.ofNat 64 n := (k₁.gpr (by decide)).trans tbp
-  refine WP.mono (countBp_ok t₁ t₁14 t₁bp (by omega) (by omega)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
+  refine WP.mono (countBp_ok t₁ t₁14 t₁bp (by omega_arith) (by omega_arith)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
   have hk : Keep [.rax, .rdx, .rcx, .r14] s₀ t' := ((hI.keep.trans k₁).trans k').mono (by decide)
   have hcx : t'.gpr .rcx = t₁.gpr .rcx := k'.gpr (by decide)
   have hmem : t'.mem = t.mem.writeW (off B (e + 8 * j)) lo := hm'.trans hm
   have hx : t.mem.readW (off B (e + 8 * j)) 64 = word s₀.mem B (e + 8 * j) :=
-    hI.out.word (Or.inr (Nat.le_refl _)) (by omega)
+    hI.out.word (Or.inr (Nat.le_refl _)) (by omega_arith)
   have hy : t.mem.readW (off B (eb + 8 * j)) 64 = word s₀.mem B (eb + 8 * j) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_arith) (by omega_arith)
   refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), hk, h14, ?_, ?_⟩
   · rw [hmem]
     refine fun x hx' => ?_
-    rw [writeW_outside t.mem B lo (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega), hcx]
+    rw [writeW_outside t.mem B lo (by omega_arith) x (by omega_arith)]
+    exact hI.out x (by omega_arith)
+  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega_arith), hcx]
     simp only [wv]
     rw [hx, hy, t13] at hv
     have hval := hI.val

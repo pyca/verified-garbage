@@ -110,53 +110,53 @@ theorem bytes_eq {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) :
     b1 ((coeffAt s₀.mem (F s₀) (2 * i)).setWidth 64) ((coeffAt s₀.mem (F s₀) (2 * i + 1)).setWidth 64) =
       (E s₀)[3 * i + 1]! ∧
     b2 ((coeffAt s₀.mem (F s₀) (2 * i + 1)).setWidth 64) = (E s₀)[3 * i + 2]! := by
-  have ea := polyAt_val hp.red (i := 2 * i) (by rw [n_eq]; omega)
-  have eb := polyAt_val hp.red (i := 2 * i + 1) (by rw [n_eq]; omega)
+  have ea := polyAt_val hp.red (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have eb := polyAt_val hp.red (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
   have la := val_lt (polyAt s₀.mem (F s₀))[2 * i]!
   have lb := val_lt (polyAt s₀.mem (F s₀))[2 * i + 1]!
   rw [encode12_byte0 _ hi, encode12_byte1 _ hi, encode12_byte2 _ hi]
   refine ⟨?_, ?_, ?_⟩ <;> apply BitVec.eq_of_toNat_eq <;>
     simp only [b0, b1, b2, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_add, BitVec.toNat_ushiftRight,
-      BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, ← ea, ← eb] <;> omega
+      BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, ← ea, ← eb] <;> omega_arith
 
 theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State} (h : Inv s₀ i s) :
     WP isa (.block encode12Body) s fun s' => Inv s₀ (i + 1) s' ∧ (s'.gpr .r5 != 0) = decide (i + 1 ≠ 128) := by
   have fF := hp.fitF
   have fO := hp.fitO
   have eA : F s₀ + BitVec.ofNat 64 (8 * i) = coeffAddr (F s₀) (2 * i) := by
-    rw [show 8 * i = 4 * (2 * i) by omega]
+    rw [show 8 * i = 4 * (2 * i) by omega_arith]
   have eB : F s₀ + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4 = coeffAddr (F s₀) (2 * i + 1) := by
-    rw [ptr_add, show 8 * i + 4 = 4 * (2 * i + 1) by omega]
+    rw [ptr_add, show 8 * i + 4 = 4 * (2 * i + 1) by omega_arith]
   have e1 : O s₀ + BitVec.ofNat 64 (3 * i) + BitVec.ofNat 64 1 = O s₀ + BitVec.ofNat 64 (3 * i + 1) := ptr_add _ _ _
   have e2 : O s₀ + BitVec.ofNat 64 (3 * i) + BitVec.ofNat 64 2 = O s₀ + BitVec.ofNat 64 (3 * i + 2) := ptr_add _ _ _
   have hrw : s.rd ++ s.wr = [polyRegion (F s₀), outR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have hw : s.wr = [outR s₀] := by rw [h.wr, hp.wr]
   have cO : ∀ {k : Nat}, k < 384 → (outR s₀).Contains (O s₀ + BitVec.ofNat 64 k) 1 := fun hk =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have dF : ∀ r ∈ [outR s₀], (⟨F s₀, 1024⟩ : Region).Disjoint r := fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact hp.disj
   have ra : s.mem.readW (coeffAddr (F s₀) (2 * i)) 32 = coeffAt s₀.mem (F s₀) (2 * i) :=
-    coeffAt_congr (bytes_frame h.frame dF (by decide)) (by rw [n_eq]; omega)
+    coeffAt_congr (bytes_frame h.frame dF (by decide)) (by rw [n_eq]; omega_arith)
   have rb : s.mem.readW (coeffAddr (F s₀) (2 * i + 1)) 32 = coeffAt s₀.mem (F s₀) (2 * i + 1) :=
-    coeffAt_congr (bytes_frame h.frame dF (by decide)) (by rw [n_eq]; omega)
+    coeffAt_congr (bytes_frame h.frame dF (by decide)) (by rw [n_eq]; omega_arith)
   obtain ⟨v0, v1, v2⟩ := bytes_eq hp hi
   refine WP.mono (body_ok h.r3 h.r4 h.r5 ?_ ?_ ?_ ?_ ?_) fun s' ⟨r3, r4, r5, m, rd, wr, sp, lr, pres⟩ =>
     ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, lr.trans h.lr,
       fun r hr => (pres r hr).trans (h.pres r hr), ?_, ?_⟩, ?_⟩
-  · rw [eA, hrw]; exact ⟨_, by simp, coeff_contains _ (by rw [n_eq]; omega)⟩
-  · rw [eB, hrw]; exact ⟨_, by simp, coeff_contains _ (by rw [n_eq]; omega)⟩
-  · rw [hw]; exact ⟨_, List.mem_singleton_self _, cO (by omega)⟩
-  · rw [e1, hw]; exact ⟨_, List.mem_singleton_self _, cO (by omega)⟩
-  · rw [e2, hw]; exact ⟨_, List.mem_singleton_self _, cO (by omega)⟩
+  · rw [eA, hrw]; exact ⟨_, by simp, coeff_contains _ (by rw [n_eq]; omega_arith)⟩
+  · rw [eB, hrw]; exact ⟨_, by simp, coeff_contains _ (by rw [n_eq]; omega_arith)⟩
+  · rw [hw]; exact ⟨_, List.mem_singleton_self _, cO (by omega_arith)⟩
+  · rw [e1, hw]; exact ⟨_, List.mem_singleton_self _, cO (by omega_arith)⟩
+  · rw [e2, hw]; exact ⟨_, List.mem_singleton_self _, cO (by omega_arith)⟩
   · rw [r3]; exact ptr_succ _ 8 i
   · rw [r4]; exact ptr_succ _ 3 i
   · rw [r5]; exact count_sub hi
   · rw [m, e1, e2]
-    exact ((h.frame.writeW (List.mem_singleton_self _) _ (cO (by omega))).writeW
-      (List.mem_singleton_self _) _ (cO (by omega))).writeW (List.mem_singleton_self _) _ (cO (by omega))
+    exact ((h.frame.writeW (List.mem_singleton_self _) _ (cO (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (cO (by omega_arith))).writeW (List.mem_singleton_self _) _ (cO (by omega_arith))
   · rw [m, e1, e2, eB, eA, ra, rb, v0, v1, v2]
-    exact byte_one (by omega) (by decide) (byte_one (by omega) (by decide)
-      (byte_one (by omega) (by decide) h.bytes rfl) rfl) rfl
+    exact byte_one (by omega_arith) (by decide) (byte_one (by omega_arith) (by decide)
+      (byte_one (by omega_arith) (by decide) h.bytes rfl) rfl) rfl
   · rw [r5, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]
     exact count_nz hi (by decide)
 
@@ -192,7 +192,7 @@ theorem verified :
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
     sig_post [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs]
     exact bytesAt_eq! (p := O s) (encode12_length _) fun k hk => by
-      rw [h.bytes k hk, ite_eq_left (by omega)]
+      rw [h.bytes k hk, ite_eq_left (by omega_arith)]
   · sig_pub [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

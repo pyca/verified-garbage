@@ -90,13 +90,13 @@ theorem entryFields_ok {K : WinCfg} {base : Addr} {size : Nat} {b : BitVec 8} {C
     have := ev 1 (by decide); rw [tblPt_y, hL.exy]; simpa using this
   have eEz : wordsVal t.mem base K.E.z K.M.n = wordsVal u.mem base (K.tblPt ((nafMagnitude b + 1) / 2)).z K.M.n := by
     have := ev 2 (by decide)
-    rw [tblPt_z, hL.exz, show K.E.x + 16 * K.M.n = K.E.x + 8 * K.M.n * 2 by omega]
+    rw [tblPt_z, hL.exz, show K.E.x + 16 * K.M.n = K.E.x + 8 * K.M.n * 2 by omega_arith]
     exact this
   have eRy : wordsVal t.mem base K.R.y K.M.n = wordsVal u.mem base (cacheAt K ((nafMagnitude b + 1) / 2)) K.M.n := by
     have := er 0 (by decide); simpa using this
   have eRz : wordsVal t.mem base K.R.z K.M.n = wordsVal u.mem base (cacheAt K ((nafMagnitude b + 1) / 2) + 8 * K.M.n) K.M.n := by
     have := er 1 (by decide)
-    rw [hL.rxz, show K.R.x + 16 * K.M.n = K.R.y + 8 * K.M.n * 1 by rw [hL.rxy]; omega]
+    rw [hL.rxz, show K.R.x + 16 * K.M.n = K.R.y + 8 * K.M.n * 1 by rw [hL.rxy]; omega_arith]
     simpa using this
   obtain ⟨cl2, cl3, ce2, ce3⟩ := cu _ ha1 ha8
   have kp : ProgKeep K.M base (entryW K) s t := by
@@ -177,8 +177,8 @@ theorem signedEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat
   have hmag := Naf5.magnitude_le k j
   have hodd := (Naf5.magnitude_odd_or_zero k j).resolve_left hm0
   have hma : nafMagnitude (Naf5.byte k j) = Naf5.magnitude k j := nafMagnitude_byte k j
-  have ha1 : 1 ≤ (nafMagnitude (Naf5.byte k j) + 1) / 2 := by omega
-  have ha8 : (nafMagnitude (Naf5.byte k j) + 1) / 2 ≤ 8 := by omega
+  have ha1 : 1 ≤ (nafMagnitude (Naf5.byte k j) + 1) / 2 := by omega_arith
+  have ha8 : (nafMagnitude (Naf5.byte k j) + 1) / 2 ≤ 8 := by omega_arith
   have hT : ∀ x ∈ jacCoords (K.tblPt ((nafMagnitude (Naf5.byte k j) + 1) / 2)), x ∈ V := by
     intro x hx
     obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K ha1 ha8 x (by simpa [jacCoords] using hx)
@@ -267,8 +267,8 @@ theorem signedEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat
   | seq es₁ es₂ =>
     cases et with
     | seq et₁ et₂ =>
-      obtain ⟨_, _, xs, vs, ks⟩ := nafSignRead_ok hp.left.scr (by omega) (by omega) s19 (ss.digits hL hF₁ j hj)
-      obtain ⟨_, _, xt, vt, kt⟩ := nafSignRead_ok hp.right.scr (by omega) (by omega) t19 (st.digits hL hF₂ j hj)
+      obtain ⟨_, _, xs, vs, ks⟩ := nafSignRead_ok hp.left.scr (by omega_arith) (by omega_arith) s19 (ss.digits hL hF₁ j hj)
+      obtain ⟨_, _, xt, vt, kt⟩ := nafSignRead_ok hp.right.scr (by omega_arith) (by omega_arith) t19 (st.digits hL hF₂ j hj)
       obtain ⟨_, rfl⟩ := Exec.det es₁ xs
       obtain ⟨_, rfl⟩ := Exec.det et₁ xt
       have he₁ := hc.sign _ _ _ _ _ _ trivial trivial (agree_of hp (s19.trans t19.symm)) es₁ et₁
@@ -369,8 +369,8 @@ theorem digit_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
         s.gpr .x19 = BitVec.ofNat 64 j ∧ t.gpr .x19 = BitVec.ofNat 64 j ∧
         s.gpr .x2 = (Naf5.byte k j).setWidth 64 ∧ t.gpr .x2 = (Naf5.byte k j).setWidth 64) := by
     intro s t ts tt s' t' ⟨hp, ss, st, cs, ct, s19, t19⟩ es et
-    obtain ⟨_, _, xs, vs, ks⟩ := nafRead_ok hp.left.scr (by omega) (by omega) s19 (ss.digits hL hF₁ j hj) .x2
-    obtain ⟨_, _, xt, vt, kt⟩ := nafRead_ok hp.right.scr (by omega) (by omega) t19 (st.digits hL hF₂ j hj) .x2
+    obtain ⟨_, _, xs, vs, ks⟩ := nafRead_ok hp.left.scr (by omega_arith) (by omega_arith) s19 (ss.digits hL hF₁ j hj) .x2
+    obtain ⟨_, _, xt, vt, kt⟩ := nafRead_ok hp.right.scr (by omega_arith) (by omega_arith) t19 (st.digits hL hF₂ j hj) .x2
     obtain ⟨_, rfl⟩ := Exec.det es xs
     obtain ⟨_, rfl⟩ := Exec.det et xt
     have kc : ∀ r ∈ [Reg.x2, .x16], r ∈ nafClob K.M.n := fun r hr => nafClob_mem (by
@@ -454,8 +454,8 @@ theorem stepRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
         CacheOk K C base s ∧ CacheOk K C base t ∧
         s.gpr .x19 = BitVec.ofNat 64 j ∧ t.gpr .x19 = BitVec.ofNat 64 j) := by
     intro s t ts tt s' t' ⟨⟨E, hp⟩, ss, st, cs, ct, s19, t19⟩ es et
-    obtain ⟨_, _, xs, vs, ks⟩ := decCounter_ok s (j := j + 1) (by omega) (by omega) s19
-    obtain ⟨_, _, xt, vt, kt⟩ := decCounter_ok t (j := j + 1) (by omega) (by omega) t19
+    obtain ⟨_, _, xs, vs, ks⟩ := decCounter_ok s (j := j + 1) (by omega_arith) (by omega_arith) s19
+    obtain ⟨_, _, xt, vt, kt⟩ := decCounter_ok t (j := j + 1) (by omega_arith) (by omega_arith) t19
     obtain ⟨_, rfl⟩ := Exec.det es xs
     obtain ⟨_, rfl⟩ := Exec.det et xt
     have kc : ∀ r ∈ [Reg.x19], r ∈ nafClob K.M.n := fun r hr => nafClob_mem (by

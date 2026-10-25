@@ -85,18 +85,18 @@ theorem quadsThenOnes_ok {pre quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63)
     {u : State} (h₀ : P 0 u) :
     WP isa (quadsThenOnes pre quad one) u (P c) := by
   unfold quadsThenOnes
-  obtain ⟨x, o, run₁⟩ := cmp8_run u (k := c) (by omega) (by rw [hrcx 0 u h₀, Nat.sub_zero])
+  obtain ⟨x, o, run₁⟩ := cmp8_run u (k := c) (by omega_arith) (by rw [hrcx 0 u h₀, Nat.sub_zero])
   refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
   have hP₁ := hP 0 u x (decide (c < 8)) o h₀
   -- Below eight blocks, one at a time from block 0.
-  refine WP.ite (decide (c < 8)) rfl (fun _ => hone 0 (by omega) _ hP₁) (fun h8 => ?_)
+  refine WP.ite (decide (c < 8)) rfl (fun _ => hone 0 (by omega_arith) _ hP₁) (fun h8 => ?_)
   have h8' : ¬ c < 8 := by simpa using h8
   refine WP.seq (WP.mono (hpre _ hP₁) fun u₁ ⟨hq₁, _⟩ => ?_)
   -- The quads, from block 0: after them, `k` blocks done with `c - k < 4`.
   have lp : WP isa (.loop (.block quad) .ae) u₁ fun v => ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k v := by
     refine WP.loop (M := isa) (body := .block quad) (c := .ae)
       (fun (m : Nat) (v : State) => ∃ k, m = c - k ∧ k + 4 ≤ c ∧ Q k v) ?_ (c - 0) u₁
-      ⟨0, rfl, by omega, hq₁⟩
+      ⟨0, rfl, by omega_arith, hq₁⟩
     rintro m v ⟨k, rfl, hk, hv⟩
     refine WP.mono (hquad k hk v hv) fun v' ⟨hv', hcf'⟩ => ?_
     have ev : isa.eval .ae v' = some !(decide (c - (k + 4) < 4)) := by
@@ -105,17 +105,17 @@ theorem quadsThenOnes_ok {pre quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63)
     · left
       exact ⟨by rw [ev, decide_eq_true hlt]; rfl, k + 4, hk, hlt, hv'⟩
     · right
-      exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega, k + 4, rfl, by omega, hv'⟩
+      exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega_arith, k + 4, rfl, by omega_arith, hv'⟩
   refine WP.seq (WP.mono lp fun v ⟨k, hkc, hk4, hv⟩ => ?_)
   refine WP.seq (WP.of_runBlock ⟨_, rfl, ?_⟩)
   have hP₂ := hPz k _ (hQP k v hv)
-  obtain ⟨run₂, hy⟩ := test0_run _ (k := c - k) (by omega) (hrcx k _ hP₂)
+  obtain ⟨run₂, hy⟩ := test0_run _ (k := c - k) (by omega_arith) (hrcx k _ hP₂)
   refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
   have hP₃ := hP k _ (BitVec.ofNat 64 (c - k)) false false hP₂
   refine WP.ite (decide (c - k = 0)) (by rw [← hy]; rfl) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
-  · have : k = c := by simp at h0; omega
+  · have : k = c := by simp at h0; omega_arith
     subst this; exact hP₃
-  · exact hone k (by simp at h0; omega) _ hP₃
+  · exact hone k (by simp at h0; omega_arith) _ hP₃
 
 /-! ## Two blocks at a time on 256-bit registers -/
 
@@ -127,7 +127,7 @@ theorem ea_atd (s : State) (b : Reg) (d : Nat) :
 /-- Lane `l` of a 32-byte load. -/
 theorem load256_lane (m : Mem) (a : Addr) {l : Nat} (hl : l < 2) :
     (m.readW a 256).extractLsb' (128 * l) 128 = m.readW (a + BitVec.ofNat 64 (16 * l)) 128 := by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   · simpa using Proof.Aes.X86_64.Vaes.load256_lo m a
   · simpa using Proof.Aes.X86_64.Vaes.load256_hi m a
 
@@ -135,15 +135,15 @@ theorem load256_lane (m : Mem) (a : Addr) {l : Nat} (hl : l < 2) :
 theorem ymm_lane (s : State) (r : XReg) {l : Nat} (hl : l < 2) :
     (s.ymm r).extractLsb' (128 * l) 128 = s.lane r l := by
   rw [State.ymm_eq]
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   · exact Proof.Aes.X86_64.Vaes.extract_lo _ _
   · exact Proof.Aes.X86_64.Vaes.extract_hi _ _
 
 /-- Lane `l` of a 32-byte write, read back. -/
 theorem readW_lane256 (m : Mem) (q : Addr) (v : BitVec 256) {l : Nat} (hl : l < 2) :
     (m.writeW q v).readW (q + BitVec.ofNat 64 (16 * l)) 128 = v.extractLsb' (128 * l) 128 := by
-  have e := readW_writeW_inside m q v (k := 16 * l) (n := 16) (by omega) (by decide)
-  rwa [show 8 * (16 * l) = 128 * l by omega] at e
+  have e := readW_writeW_inside m q v (k := 16 * l) (n := 16) (by omega_arith) (by decide)
+  rwa [show 8 * (16 * l) = 128 * l by omega_arith] at e
 
 /-- The two blocks at `rsi + d`, each byte-reversed (`ymm1` holding the mask
 in each lane), stored at `rdi + d`. -/
@@ -172,7 +172,7 @@ theorem rev2_ok (d : Nat) (s : State) {S P : Addr} (hsi : s.gpr .rsi = S) (hdi :
     simp only [s₂, lane_vbin256, ite_true, VBinOp.sse, s₁, State.lane_setV256,
       show (XReg.xmm1 = .xmm0) = False by decide, ite_false, hm l hl]
     rw [← load256_lane _ _ hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
   · simp [s₂, s₁, lane_vbin256, State.lane_setV256]
 
 /-- The four blocks at `rsi` (`S`), each byte-reversed (`ymm1` holding the
@@ -197,30 +197,30 @@ theorem revY_ok (s : State) {S P : Addr} (hsi : s.gpr .rsi = S) (hdi : s.gpr .rd
     (by rw [wr₁]; exact hw')) fun s₂ ⟨⟨v₂, m₂, h₂⟩, g₂, rd₂, wr₂, k₂⟩ => ?_
   rw [e0] at m₁ h₁
   have c0 : (⟨P, 64⟩ : Region).Contains P 32 := by
-    have := Offset.contains_base P (d := 0) (n := 32) (k := 64) (by decide) (by omega)
+    have := Offset.contains_base P (d := 0) (n := 32) (k := 64) (by decide) (by omega_arith)
     rwa [e0] at this
   -- The source is outside the first store.
   have srcS : ∀ l < 2, s₁.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 =
       s.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
     rw [m₁, Offset.add_add]
-    exact Mem.readW_writeW_sep (hSP.sep (Offset.contains_base S (by omega) (by omega))
+    exact Mem.readW_writeW_sep (hSP.sep (Offset.contains_base S (by omega_arith) (by omega_arith))
       c0) (by decide)
   refine ⟨?_, fun l hl => ?_, by rw [g₂, g₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], fun l hl => by rw [k₂ l hl, k₁ l hl]⟩
   · rw [m₂, m₁]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       c0).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base P (show 32 + 256 / 8 ≤ 64 by decide) (by omega))
+      (List.mem_singleton_self _) _ (Offset.contains_base P (show 32 + 256 / 8 ≤ 64 by decide) (by omega_arith))
   · rw [Proof.Gcm.X86_64.blockAt_eq]
     by_cases hl2 : l < 2
-    · rw [m₂, Mem.readW_writeW_sep (Offset.disjoint P (.inl (by omega)) (by omega) (by omega) |>.sep
+    · rw [m₂, Mem.readW_writeW_sep (Offset.disjoint P (.inl (by omega_arith)) (by omega_arith) (by omega_arith) |>.sep
           (Region.contains_self _ _) (Region.contains_self _ _)) (by decide), m₁, readW_lane256 _ _ _ hl2,
         h₁ l hl2, Proof.Gcm.X86_64.pshufb_rev_rev]
     · have e : P + BitVec.ofNat 64 (16 * l) = P + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
-        rw [Offset.add_add]; congr 2; omega
+        rw [Offset.add_add]; congr 2; omega_arith
       have eS : S + BitVec.ofNat 64 (16 * l) = S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
-        rw [Offset.add_add]; congr 2; omega
-      rw [e, m₂, readW_lane256 _ _ _ (by omega), h₂ (l - 2) (by omega), Proof.Gcm.X86_64.pshufb_rev_rev, eS,
-        srcS (l - 2) (by omega)]
+        rw [Offset.add_add]; congr 2; omega_arith
+      rw [e, m₂, readW_lane256 _ _ _ (by omega_arith), h₂ (l - 2) (by omega_arith), Proof.Gcm.X86_64.pshufb_rev_rev, eS,
+        srcS (l - 2) (by omega_arith)]
 
 /-- The two keystream blocks at `rsi + d` XORed into the two data blocks at
 `r12 + d`. -/
@@ -255,7 +255,7 @@ theorem xor2_ok (d : Nat) (s : State) {S Q : Addr} (hsi : s.gpr .rsi = S) (h12 :
   simp only [s₃, lane_vbin256, ite_true, VBinOp.sse, s₂, s₁, State.lane_setV256,
     show (XReg.xmm1 = .xmm0) = False by decide, ite_false, ite_true]
   rw [Proof.Aes.X86_64.AesNi.eval_pxor, BitVec.xor_comm, ← load256_lane _ _ hl, ← load256_lane _ _ hl]
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
 
 /-- The four keystream blocks at `rsi` (`S`) XORed into the four data blocks
 at `r12` (`Q`), outside them. -/
@@ -276,33 +276,33 @@ theorem ksY_ok (s : State) {S Q : Addr} (hsi : s.gpr .rsi = S) (h12 : s.gpr .r12
     (by rw [wr₁]; exact hw')) fun s₂ ⟨⟨v₂, m₂, h₂⟩, g₂, rd₂, wr₂⟩ => ?_
   simp only [e0] at m₁ h₁
   have c0 : (⟨Q, 64⟩ : Region).Contains Q 32 := by
-    have := Offset.contains_base Q (d := 0) (n := 32) (k := 64) (by decide) (by omega)
+    have := Offset.contains_base Q (d := 0) (n := 32) (k := 64) (by decide) (by omega_arith)
     rwa [e0] at this
   -- The second pair, read after the first store: the keystream is outside
   -- it, and the data after it.
   have srcS : ∀ l < 2, s₁.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 =
       s.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
     rw [m₁, Offset.add_add]
-    exact Mem.readW_writeW_sep (hSQ.sep (Offset.contains_base S (by omega) (by omega)) c0) (by decide)
+    exact Mem.readW_writeW_sep (hSQ.sep (Offset.contains_base S (by omega_arith) (by omega_arith)) c0) (by decide)
   have srcQ : ∀ l < 2, s₁.mem.readW (Q + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 =
       s.mem.readW (Q + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
     rw [m₁, Offset.add_add]
-    exact Mem.readW_writeW_sep ((Offset.disjoint_base Q (d := 32 + 16 * l) (n := 16) (k := 32) (by omega)
-      (by omega)).sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
+    exact Mem.readW_writeW_sep ((Offset.disjoint_base Q (d := 32 + 16 * l) (n := 16) (k := 32) (by omega_arith)
+      (by omega_arith)).sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
   refine ⟨?_, fun l hl => ?_, by rw [g₂, g₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
   · rw [m₂, m₁]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base Q (show 32 + 256 / 8 ≤ 64 by decide) (by omega))
+      (List.mem_singleton_self _) _ (Offset.contains_base Q (show 32 + 256 / 8 ≤ 64 by decide) (by omega_arith))
   · by_cases hl2 : l < 2
-    · rw [m₂, Mem.readW_writeW_sep (Offset.disjoint Q (.inl (by omega)) (by omega) (by omega) |>.sep
+    · rw [m₂, Mem.readW_writeW_sep (Offset.disjoint Q (.inl (by omega_arith)) (by omega_arith) (by omega_arith) |>.sep
           (Region.contains_self _ _) (Region.contains_self _ _)) (by decide), m₁, readW_lane256 _ _ _ hl2,
         h₁ l hl2]
     · have e : Q + BitVec.ofNat 64 (16 * l) = Q + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
-        rw [Offset.add_add]; congr 2; omega
+        rw [Offset.add_add]; congr 2; omega_arith
       have eS : S + BitVec.ofNat 64 (16 * l) = S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
-        rw [Offset.add_add]; congr 2; omega
-      rw [e, m₂, readW_lane256 _ _ _ (by omega), h₂ (l - 2) (by omega), srcQ (l - 2) (by omega),
-        srcS (l - 2) (by omega), eS]
+        rw [Offset.add_add]; congr 2; omega_arith
+      rw [e, m₂, readW_lane256 _ _ _ (by omega_arith), h₂ (l - 2) (by omega_arith), srcQ (l - 2) (by omega_arith),
+        srcS (l - 2) (by omega_arith), eS]
 
 /-! ## The pointers and the count -/
 
@@ -318,7 +318,7 @@ theorem adv4_run (u : State) {a b : Reg} (ha : a ≠ .rcx) (hb : b ≠ .rcx) (ha
   have e64 : BitVec.signExtend 64 (BitVec.ofNat 32 64) = BitVec.ofNat 64 64 := by decide
   have e4 : BitVec.signExtend 64 (BitVec.ofNat 32 4) = BitVec.ofNat 64 4 := by decide
   have s4 : BitVec.ofNat 64 k - BitVec.ofNat 64 4 = BitVec.ofNat 64 (k - 4) :=
-    Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega)
+    Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith)
   have hba : b ≠ a := fun h => hab h.symm
   have hcb : Reg.rcx ≠ b := fun h => hb h.symm
   have hca : Reg.rcx ≠ a := fun h => ha h.symm
@@ -329,7 +329,7 @@ theorem adv4_run (u : State) {a b : Reg} (ha : a ≠ .rcx) (hb : b ≠ .rcx) (ha
     BitVec.toNat_ofNat]
   refine ⟨trivial, trivial, trivial, ?_, fun r h₁ h₂ h₃ => by simp only [gpr_setReg, gpr_arithFlags, h₁, h₂, h₃,
     ite_false], trivial, trivial, trivial, fun _ _ => rfl⟩
-  rw [Nat.mod_eq_of_lt (by omega : k - 4 < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_arith : k - 4 < 2 ^ 64)]
 
 /-! ## The mask -/
 
@@ -343,7 +343,7 @@ theorem revMaskY_ok (s : State) :
   apply WP.of_runBlock
   refine ⟨_, rfl, fun l hl => ?_, fun r h₁ => ?_, O.mem, O.rd, O.wr⟩
   · simp only [isa, exec, VOp.exec, show (1 : BitVec 8).getLsbD 0 = true by decide, ite_true, State.lane_setV256]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
     · simp only [ite_true]; rw [show s₁.lane .xmm1 0 = s₁.xmm .xmm1 from rfl, x₁]; rfl
     · simp only [show (1 : Nat) ≠ 0 by decide, ite_false]; rw [x₁]; rfl
   · simp only [isa, exec, VOp.exec_gpr, State.setV_gpr]

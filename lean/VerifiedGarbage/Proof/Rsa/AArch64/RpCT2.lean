@@ -68,7 +68,7 @@ theorem HalfInv.el {s₁ t : State} {B : Addr} {Z w m j el : Nat} (hI : HalfInv 
   have eE : 8 * Public.sElen = 160 := rfl
   rw [hI.frm.word_eq (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega) (by omega_using [eE])]
+    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by omega_using [eE])]
   exact hel
 
 /-- `halfA` and `shr`: the working space, and the header's `e_len`. -/
@@ -226,7 +226,7 @@ theorem halfInit_ct : RelCT isa (Two GR0) (.block halfInit) (Two fun p s => 0 < 
       have hZ := hw.hZ
       have hT0 := hdr_lt_slot (wk I.k) aM (show sT < 32 by decide)
       have L := h.L
-      refine WP.mono (halfInit_ok hw h.S.args.el (by have := L.el2; have := L.k2; omega))
+      refine WP.mono (halfInit_ok hw h.S.args.el (by have := L.el2; have := L.k2; omega_arith))
         fun t ⟨h6, m₁, k₁⟩ => ⟨by show 0 < 64 * (wk I.k + (I.el + 7) / 8); unfold wk; have := L.k1; omega_using [this], t,
           I.D * I.E - 1, ?_, L.el1, by show I.el ≤ 8 * wk I.k; have := L.el2; unfold wk; omega_using [this], h.mlt, ?_,
           by rw [h6, Nat.sub_zero]⟩
@@ -269,7 +269,7 @@ theorem halving_ct : RelCT isa (Two GR0) halving (Two GR1) :=
   two_post ((RelCT.seq halfInit_ct halfLoop_ct).mono (fun _ _ h => h) fun _ _ _ => trivial) fun p s h => by
     obtain ⟨I, m₀, rfl, h, O, hv⟩ := h
     have L := h.L
-    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := h.S.ws.scr.nowrap; have := h.S.ws.hZ; omega
+    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := h.S.ws.scr.nowrap; have := h.S.ws.hZ; omega_arith
     refine WP.mono (halving_ok h.S.ws h.S.args.el L.el1 (by have := L.el2; unfold wk; omega_using [this]) h.M h.m0 h.mlt)
       fun t ⟨_, hr₁, ht₁, hf₁', k₁⟩ => ?_
     have hf₁ := frm_halving hf₁'

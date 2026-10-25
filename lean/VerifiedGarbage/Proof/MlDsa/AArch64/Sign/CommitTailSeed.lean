@@ -85,26 +85,26 @@ theorem coreEmit_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
       RoundState σ wlen w1 work A B i (i+1) t ∧ LoopRegs wlen work i (i+1) t := by
   by_cases hi : i<5
   · have h12 : s.gpr .x12=BitVec.ofNat 64 (5-i) := by
-      rw [hl.masks,Nat.min_eq_left (by omega)]
+      rw [hl.masks,Nat.min_eq_left (by omega_arith)]
     have h10 : s.gpr .x10=work+BitVec.ofNat 64 (256+136*i) := by
-      rw [hl.out,Nat.min_eq_left (by omega)]
+      rw [hl.out,Nat.min_eq_left (by omega_arith)]
     refine WP.ite false (by
       rw [eval_zero,h12]
       exact congrArg some (beq_eq_false_iff_ne.mpr fun he => by
         have := congrArg BitVec.toNat he
         change _=(BitVec.ofNat 64 0).toNat at this
         simp only [BitVec.toNat_ofNat] at this
-        omega)) (fun hb => Bool.noConfusion hb) fun _ => ?_
+        omega_arith)) (fun hb => Bool.noConfusion hb) fun _ => ?_
     unfold squeezeNext
     rw [show ∀ (L : List Instr) (a b c d : Instr), L++[a,b,c,d]=(L++[a,b])++[c,d] from
       fun _ _ _ _ _ => by simp,WP.block_append_iff]
     refine WP.mono (highRate_ok h.pairs h10 (fun j hj => ?_) ?_) fun a ⟨hk,hp,ho,hf⟩ => ?_
     · rw [h.keep.wr,Offset.add_add]
-      exact hc.writable _ _ (by omega)
+      exact hc.writable _ _ (by omega_arith)
     · rw [h.keep.wr]
       change InRegions σ.wr ((work+BitVec.ofNat 64 (256+136*i))+BitVec.ofNat 64 128) 8
       rw [Offset.add_add]
-      exact hc.writable _ _ (by omega)
+      exact hc.writable _ _ (by omega_arith)
     have hka : RegKeep [.x6,.x7] s a :=
       ⟨fun r hr => hk.gpr r (fun he => hr (by simp [he])) (fun he => hr (by simp [he])),
         hk.rd,hk.wr,hk.sp⟩
@@ -124,30 +124,30 @@ theorem coreEmit_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
         intro r hr
         rcases List.mem_singleton.mp hr with rfl
         exact ⟨bufferRegion work,by simp,Offset.sub_base (bufferBase work)
-          (d:=136*i) (n:=136) (k:=680) (by omega)⟩)
+          (d:=136*i) (n:=136) (k:=680) (by omega_arith)⟩)
     · rw [ht.other .x5 (by decide),hb.other .x5 (by decide),hka.gpr .x5 (by decide)]
       exact h.ptr
-    · rw [ht.mem,hb.mem,Nat.min_eq_left (by omega)]
+    · rw [ht.mem,hb.mem,Nat.min_eq_left (by omega_arith)]
       have hold := h.output
-      rw [Nat.min_eq_left (by omega)] at hold
+      rw [Nat.min_eq_left (by omega_arith)] at hold
       exact streamOutput_append hi hold ho hf
     · rw [ht.other .x11 (by decide),hb.other .x11 (by decide),h11a]; exact hl.left
-    · rw [ht.gpr,hb.other .x12 (by decide),h12a,h12,Nat.min_eq_left (by omega),
-        Offset.ofNat_sub_ofNat (by omega)]
+    · rw [ht.gpr,hb.other .x12 (by decide),h12a,h12,Nat.min_eq_left (by omega_arith),
+        Offset.ofNat_sub_ofNat (by omega_arith)]
       congr 1
-    · rw [ht.other .x10 (by decide),hb.gpr,h10a,h10,Nat.min_eq_left (by omega),
+    · rw [ht.other .x10 (by decide),hb.gpr,h10a,h10,Nat.min_eq_left (by omega_arith),
         Offset.add_add]
       congr 1
-  · have h12 : s.gpr .x12=0 := by rw [hl.masks,Nat.min_eq_right (by omega)]; rfl
+  · have h12 : s.gpr .x12=0 := by rw [hl.masks,Nat.min_eq_right (by omega_arith)]; rfl
     refine WP.ite true (by rw [eval_zero,h12]; rfl) (fun _ => WP.block_nil ?_)
       (fun hb => Bool.noConfusion hb)
     refine ⟨⟨⟨h.keep,h.frame,h.ptr,?_⟩,h.pairs⟩,⟨hl.left,?_,?_⟩⟩
     · have ho := h.output
-      rw [Nat.min_eq_right (by omega)] at ho
-      rw [Nat.min_eq_right (by omega)]
+      rw [Nat.min_eq_right (by omega_arith)] at ho
+      rw [Nat.min_eq_right (by omega_arith)]
       exact ho
-    · rw [hl.masks,Nat.min_eq_right (by omega),Nat.min_eq_right (by omega)]
-    · rw [hl.out,Nat.min_eq_right (by omega),Nat.min_eq_right (by omega)]
+    · rw [hl.masks,Nat.min_eq_right (by omega_arith),Nat.min_eq_right (by omega_arith)]
+    · rw [hl.out,Nat.min_eq_right (by omega_arith),Nat.min_eq_right (by omega_arith)]
 
 private theorem full_bound {σ : State} {wlen i j : Nat} {w1 work : Addr}
     (hc : CoreConfig σ wlen w1 work) (hi : i<(64+wlen)/136-1) (hj : j<17) :
@@ -155,10 +155,10 @@ private theorem full_bound {σ : State} {wlen i j : Nat} {w1 work : Addr}
   rcases hc.length with he|he
   · rw [he] at hi ⊢
     simp only [Nat.reduceAdd,Nat.reduceDiv,Nat.reduceSub] at hi
-    omega
+    omega_arith
   · rw [he] at hi ⊢
     simp only [Nat.reduceAdd,Nat.reduceDiv,Nat.reduceSub] at hi
-    omega
+    omega_arith
 
 /-- The next full commitment block is read from the immutable packed input. -/
 theorem coreFull_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
@@ -167,7 +167,7 @@ theorem coreFull_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
     WP isa (.block full) s fun t =>
       CoreState σ wlen w1 work A B (i+1) t ∧ RegKeep [.x5,.x7] s t := by
   have hptr : s.gpr .x5=w1+BitVec.ofNat 64 (72+136*i) := by
-    rw [h.ptr,inputPtr,fullCount,Nat.min_eq_left (by omega)]
+    rw [h.ptr,inputPtr,fullCount,Nat.min_eq_left (by omega_arith)]
   refine WP.mono (full_ok h.pairs (fun j hj=>?_)) fun t ⟨hk,hm,hp5,hp⟩ => ?_
   · rw [hptr,Offset.add_add]
     exact h.toCoreEnv.readable hc (full_bound hc hi hj)
@@ -184,7 +184,7 @@ theorem coreFull_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
     · rw [hm]; exact h.frame
     · rw [hp5,hptr]
       change (w1+BitVec.ofNat 64 (72+136*i))+BitVec.ofNat 64 136=inputPtr wlen w1 (i+1)
-      rw [Offset.add_add,inputPtr,fullCount,Nat.min_eq_left (by omega)]
+      rw [Offset.add_add,inputPtr,fullCount,Nat.min_eq_left (by omega_arith)]
       congr 1
     · rw [hm]; exact h.output
     · change Pairs t (absorbAfter wlen σ.mem w1 i (Spec.Sha3.keccakF (lowRun wlen σ.mem w1 A i))) _
@@ -198,7 +198,7 @@ theorem coreTail65_ok {σ s : State} {w1 work : Addr} {A B : Spec.Sha3.State}
   have hptr : s.gpr .x5=w1+BitVec.ofNat 64 752 := h.ptr
   refine WP.mono (tail_ok h.pairs (fun j hj=>?_)) fun t ⟨hk,hm,hp⟩ => ?_
   · rw [hptr,Offset.add_add]
-    exact h.toCoreEnv.readable hc (by omega)
+    exact h.toCoreEnv.readable hc (by omega_arith)
   · have he : xorWords (Spec.Sha3.keccakF (lowRun 768 σ.mem w1 A 5)) s.mem
         (w1+BitVec.ofNat 64 752) 2 =
       xorWords (Spec.Sha3.keccakF (lowRun 768 σ.mem w1 A 5)) σ.mem
@@ -206,7 +206,7 @@ theorem coreTail65_ok {σ s : State} {w1 work : Addr} {A B : Spec.Sha3.State}
       apply xorWords_congr
       intro j hj
       rw [Offset.add_add]
-      exact h.toCoreEnv.word hc (by omega)
+      exact h.toCoreEnv.word hc (by omega_arith)
     rw [hptr,he] at hp
     refine ⟨⟨⟨(h.keep.trans hk).mono (by simp [coreRegs]),?_,?_,?_⟩,?_⟩,hk.mono (by simp)⟩
     · rw [hm]; exact h.frame
@@ -250,19 +250,19 @@ theorem coreAbsorb_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
   have hka : RegKeep [.x13] s a := RegKeep.upd ha
   by_cases hl : i=(64+wlen)/136
   · refine WP.ite true (by
-      rw [eval_zero,h13,Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+      rw [eval_zero,h13,Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
       simp [hl]) (fun _ => WP.block_nil ?_) (fun hb => Bool.noConfusion hb)
     refine ⟨⟨⟨hra.keep,hra.frame,?_,hra.output⟩,?_⟩,hka.mono (by simp)⟩
     · rw [hra.ptr,inputPtr,inputPtr,fullCount,fullCount,
-        Nat.min_eq_right (by omega),Nat.min_eq_right (by omega)]
+        Nat.min_eq_right (by omega_arith),Nat.min_eq_right (by omega_arith)]
     · change Pairs a (absorbAfter wlen σ.mem w1 i
         (Spec.Sha3.keccakF (lowRun wlen σ.mem w1 A i))) _
-      rw [absorbAfter,ite_eq_right (by omega),ite_eq_right (by omega)]
+      rw [absorbAfter,ite_eq_right (by omega_arith),ite_eq_right (by omega_arith)]
       exact hra.pairs
   refine WP.ite false (by
-    rw [eval_zero,h13,Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+    rw [eval_zero,h13,Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
     simp only [Option.some.injEq,decide_eq_false_iff_not]
-    omega) (fun hb => Bool.noConfusion hb) fun _ => ?_
+    omega_arith) (fun hb => Bool.noConfusion hb) fun _ => ?_
   refine WP.seq (wp_subImm (by decide) fun b hb => WP.block_nil ?_)
   have hrb : RoundState σ wlen w1 work A B i (i+1) b :=
     ⟨hra.toCoreEnv.upd hb (by simp [coreRegs]) (by decide),pairs_upd hra.pairs hb⟩
@@ -271,9 +271,9 @@ theorem coreAbsorb_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
   have hkb : RegKeep [.x13] s b := (hka.trans (RegKeep.upd hb)).mono (by simp)
   by_cases hp : i=(64+wlen)/136-1
   · refine WP.ite true (by
-      rw [eval_zero,h13b,Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+      rw [eval_zero,h13b,Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
       simp only [Option.some.injEq,decide_eq_true_eq]
-      omega) (fun _ => ?_) (fun hb => Bool.noConfusion hb)
+      omega_arith) (fun _ => ?_) (fun hb => Bool.noConfusion hb)
     rcases hc.length with hw|hw
     · subst wlen
       have hi5 : i=5 := hp
@@ -286,10 +286,10 @@ theorem coreAbsorb_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
       exact WP.mono (coreTail87_ok hrb) fun t ⟨ht,hk⟩ =>
         ⟨ht,(hkb.trans hk).mono (by simp)⟩
   · refine WP.ite false (by
-      rw [eval_zero,h13b,Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+      rw [eval_zero,h13b,Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
       simp only [Option.some.injEq,decide_eq_false_iff_not]
-      omega) (fun hb => Bool.noConfusion hb) fun _ => ?_
-    exact WP.mono (coreFull_ok hc (by omega) hrb) fun t ⟨ht,hk⟩ =>
+      omega_arith) (fun hb => Bool.noConfusion hb) fun _ => ?_
+    exact WP.mono (coreFull_ok hc (by omega_arith) hrb) fun t ⟨ht,hk⟩ =>
       ⟨ht,(hkb.trans hk).mono (by simp)⟩
 
 /-- The loop's invariant, `k` iterations before its exit. -/
@@ -317,30 +317,30 @@ theorem core_ok {σ s : State} {wlen : Nat} {w1 work : Addr} {A B : Spec.Sha3.St
     · rw [hc'.other .x12 (by decide),hb.gpr]; rfl
     · rw [hc'.gpr,hb.other .x19 (by decide),ha.other .x19 (by decide),h19]; rfl
   refine WP.loop (M:=isa) (CoreInv σ wlen w1 work A B) ?_ ((64+wlen)/136+1) c
-    ⟨0,by omega,by omega,hsc,hlc⟩
+    ⟨0,by omega_arith,by omega_arith,hsc,hlc⟩
   rintro k t ⟨i,hik,hk,hs,hl⟩
   refine WP.seq (WP.mono (coreRound_ok hs) fun a ⟨ha,hka⟩ => ?_)
   have hla := hl.keep hka (by simp)
   refine WP.seq (WP.mono (coreEmit_ok hc ha hla) fun b ⟨hb,hlb⟩ => ?_)
-  refine WP.seq (WP.mono (coreAbsorb_ok hc (by omega) hb hlb.left) fun d ⟨hd,hkd⟩ => ?_)
+  refine WP.seq (WP.mono (coreAbsorb_ok hc (by omega_arith) hb hlb.left) fun d ⟨hd,hkd⟩ => ?_)
   have hld := hlb.keep hkd (by simp)
   refine wp_subImm (by decide) fun e he => WP.block_nil ?_
   have hse : CoreState σ wlen w1 work A B (i+1) e :=
     ⟨hd.toCoreEnv.upd he (by simp [coreRegs]) (by decide),pairs_upd hd.pairs he⟩
   have h11 : e.gpr .x11=BitVec.ofNat 64 ((64+wlen)/136+1-(i+1)) := by
-    rw [he.gpr,hld.left,Offset.ofNat_sub_ofNat (by omega)]
+    rw [he.gpr,hld.left,Offset.ofNat_sub_ofNat (by omega_arith)]
     congr 1
   by_cases hlast : i=(64+wlen)/136
   · refine Or.inl ⟨?_,?_⟩
     · rw [eval_nonzero,h11,hlast,Nat.sub_self]; rfl
     · rw [← hlast]; exact hse
-  · refine Or.inr ⟨?_,k-1,by omega,i+1,by omega,by omega,hse,⟨h11,?_,?_⟩⟩
+  · refine Or.inr ⟨?_,k-1,by omega_arith,i+1,by omega_arith,by omega_arith,hse,⟨h11,?_,?_⟩⟩
     · rw [eval_nonzero,h11]
       exact congrArg some (bne_iff_ne.mpr fun he' => by
         have := congrArg BitVec.toNat he'
         change _=(BitVec.ofNat 64 0).toNat at this
         simp only [BitVec.toNat_ofNat] at this
-        omega)
+        omega_arith)
     · rw [he.other .x12 (by decide)]; exact hld.masks
     · rw [he.other .x10 (by decide)]; exact hld.out
 
@@ -363,13 +363,13 @@ theorem nonceWord_value (k : BitVec 64) :
     rw [Nat.mul_mod_mul_right,Nat.mul_div_cancel _ (by decide)]
   rw [nonceWord,BitVec.toNat_add,hx]
   change (k.toNat%65536+2031616)%18446744073709551616=_
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 theorem nonceValue_byte (a k : BitVec 64) (hk : a.toNat=k.toNat%65536+2031616) {i : Nat} (hi : i<8) :
     a.extractLsb' (8*i) 8 =
       if i=0 then k.extractLsb' 0 8 else if i=1 then k.extractLsb' 8 8
       else if i=2 then 0x1f else 0 := by
-  rcases (show i=0 ∨ i=1 ∨ i=2 ∨ 3≤i by omega) with h|h|h|h
+  rcases (show i=0 ∨ i=1 ∨ i=2 ∨ 3≤i by omega_arith) with h|h|h|h
   · subst i
     simp only [ite_true,Nat.mul_zero]
     apply BitVec.eq_of_toNat_eq
@@ -393,12 +393,12 @@ theorem nonceValue_byte (a k : BitVec 64) (hk : a.toNat=k.toNat%65536+2031616) {
     rw [hk]
     change ((k.toNat % 65536 + 31*65536)/65536)%256 = 31
     rw [Nat.add_mul_div_right _ _ (by decide), Nat.mod_div_self]
-  · simp only [ite_eq_right (by omega : ¬ i=0),ite_eq_right (by omega : ¬ i=1),
-      ite_eq_right (by omega : ¬ i=2)]
+  · simp only [ite_eq_right (by omega_arith : ¬ i=0),ite_eq_right (by omega_arith : ¬ i=1),
+      ite_eq_right (by omega_arith : ¬ i=2)]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.extractLsb'_toNat]
-    have hb : 8*i≥24 := by omega
-    have he : a.toNat<2^24 := by omega
+    have hb : 8*i≥24 := by omega_arith
+    have he : a.toNat<2^24 := by omega_arith
     have hdiv : a.toNat/2^(8*i)=0 := Nat.div_eq_of_lt (Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) hb))
     rw [Nat.shiftRight_eq_div_pow,hdiv]
     rfl
@@ -435,8 +435,8 @@ theorem seedBytes_get (m : Mem) (p : Addr) (k : BitVec 64) {j : Nat} (hj : j<66)
   · rw [ite_eq_left h]
     rw [List.getD,List.getElem?_append_left (by rw [Proof.Sha3.bytesAt_length]; exact h)]
     exact Proof.MlKem.bytesAt_getD m p h
-  · rw [ite_eq_right h,List.getD,List.getElem?_append_right (by rw [Proof.Sha3.bytesAt_length]; omega),Proof.Sha3.bytesAt_length]
-    rcases (show j=64 ∨ j=65 by omega) with rfl|rfl <;> rfl
+  · rw [ite_eq_right h,List.getD,List.getElem?_append_right (by rw [Proof.Sha3.bytesAt_length]; omega_arith),Proof.Sha3.bytesAt_length]
+    rcases (show j=64 ∨ j=65 by omega_arith) with rfl|rfl <;> rfl
 
 theorem seedNonceState_get (m : Mem) (p : Addr) (k : BitVec 64) {i : Nat} (hi : i<25) :
     (seedNonceState m p k)[i]! = if i<8 then m.readW (p+BitVec.ofNat 64 (8*i)) 64
@@ -451,17 +451,17 @@ theorem seedNonceState_A0 (m : Mem) (p : Addr) (k : BitVec 64) :
   intro j hj
   rw [Optimized.ResidentSeed66.byteOf_A0 (seedBytes_length m p k) hj]
   unfold Proof.Sha3.byteOf
-  rw [seedNonceState_get m p k (by omega)]
+  rw [seedNonceState_get m p k (by omega_arith)]
   by_cases h32 : j<64
-  · rw [ite_eq_left (by omega : j/8<8),ite_eq_left (by omega : j<66),
-      seedBytes_get m p k (by omega),ite_eq_left h32]
+  · rw [ite_eq_left (by omega_arith : j/8<8),ite_eq_left (by omega_arith : j<66),
+      seedBytes_get m p k (by omega_arith),ite_eq_left h32]
     change (m.read (p+BitVec.ofNat 64 (8*(j/8))) 8).extractLsb' (8*(j%8)) 8 = _
-    rw [Mem.extractLsb'_read m _ (by omega),BitVec.add_assoc,← BitVec.ofNat_add,
-      show 8*(j/8)+j%8=j by omega]
-  · rw [ite_eq_right (by omega : ¬ j/8<8)]
+    rw [Mem.extractLsb'_read m _ (by omega_arith),BitVec.add_assoc,← BitVec.ofNat_add,
+      show 8*(j/8)+j%8=j by omega_arith]
+  · rw [ite_eq_right (by omega_arith : ¬ j/8<8)]
     by_cases h40 : j<72
-    · rw [ite_eq_left (by omega : j/8=8),nonceWord_byte k (by omega)]
-      rcases (show j=64 ∨ j=65 ∨ j=66 ∨ 67≤j by omega) with h|h|h|h
+    · rw [ite_eq_left (by omega_arith : j/8=8),nonceWord_byte k (by omega_arith)]
+      rcases (show j=64 ∨ j=65 ∨ j=66 ∨ 67≤j by omega_arith) with h|h|h|h
       · subst j
         rw [ite_eq_left (by decide : 64<66),seedBytes_get m p k (by decide)]
         rfl
@@ -469,13 +469,13 @@ theorem seedNonceState_A0 (m : Mem) (p : Addr) (k : BitVec 64) :
         rw [ite_eq_left (by decide : 65<66),seedBytes_get m p k (by decide)]
         rfl
       · subst j; simp
-      · simp (disch := omega) only [ite_eq_right]
-    · rw [ite_eq_right (by omega : ¬ j/8=8)]
+      · simp (disch := omega_arith) only [ite_eq_right]
+    · rw [ite_eq_right (by omega_arith : ¬ j/8=8)]
       by_cases h20 : j/8=16
-      · rw [ite_eq_left h20,Optimized.ResidentMask.pad_byte (j%8) (by omega)]
-        by_cases he : j=135 <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
+      · rw [ite_eq_left h20,Optimized.ResidentMask.pad_byte (j%8) (by omega_arith)]
+        by_cases he : j=135 <;> simp (disch := omega_arith) only [ite_eq_left,ite_eq_right]
       · rw [ite_eq_right h20]
-        simp (disch := omega) only [ite_eq_right]
+        simp (disch := omega_arith) only [ite_eq_right]
         apply BitVec.eq_of_getLsbD_eq
         intro i hi
         simp

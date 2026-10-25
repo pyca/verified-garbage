@@ -86,25 +86,25 @@ at different offsets, the stack below the return address, the data, the
 additional data and the return address. (Matching only reducibly, so that a
 lemma that does not apply fails fast.) -/
 tactic_template "rdisj" : tactic => `(tactic| first
-  | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
-  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).symm
-  | with_reducible exact APre.stk_sub ‹APre _ _› (by lit_omega)
-  | with_reducible exact APre.d_sub ‹APre _ _› (by lit_omega)
-  | with_reducible exact (APre.d_sub ‹APre _ _› (by lit_omega)).symm
+  | (with_reducible refine sub_disj _ ?_ ?_ ?_ <;> lit_omega)
+  | (with_reducible refine (APre.stk_sub ‹APre _ _› ?_).symm <;> lit_omega)
+  | (with_reducible refine APre.stk_sub ‹APre _ _› ?_ <;> lit_omega)
+  | (with_reducible refine APre.d_sub ‹APre _ _› ?_ <;> lit_omega)
+  | (with_reducible refine (APre.d_sub ‹APre _ _› ?_).symm <;> lit_omega)
   | with_reducible exact (‹APre _ _›).stk_d.symm
-  | with_reducible exact APre.a_sub ‹APre _ _› (by lit_omega)
+  | (with_reducible refine APre.a_sub ‹APre _ _› ?_ <;> lit_omega)
   | with_reducible exact (‹APre _ _›).stk_a.symm
   | with_reducible exact (‹APre _ _›).a_d
-  | with_reducible exact APre.ret_sub ‹APre _ _› (by lit_omega)
+  | (with_reducible refine APre.ret_sub ‹APre _ _› ?_ <;> lit_omega)
   | with_reducible exact (‹APre _ _›).ret_d
   | with_reducible exact APre.ret_stk ‹APre _ _›
-  | with_reducible exact APre.t_sub ‹APre _ _› (by lit_omega)
-  | with_reducible exact (APre.t_sub ‹APre _ _› (by lit_omega)).symm
+  | (with_reducible refine APre.t_sub ‹APre _ _› ?_ <;> lit_omega)
+  | (with_reducible refine (APre.t_sub ‹APre _ _› ?_).symm <;> lit_omega)
   | with_reducible exact (‹APre _ _›).stk_t.symm
   | with_reducible exact (‹APre _ _›).d_t
   | with_reducible exact (‹APre _ _›).d_t.symm
   | with_reducible exact (‹APre _ _›).ret_t
-  | with_reducible exact APre.g_sub ‹APre _ _› (by lit_omega)
+  | (with_reducible refine APre.g_sub ‹APre _ _› ?_ <;> lit_omega)
   | with_reducible exact (‹APre _ _›).g_stk
   | with_reducible exact (‹APre _ _›).g_d
   | with_reducible exact (‹APre _ _›).g_t

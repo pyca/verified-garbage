@@ -114,7 +114,7 @@ theorem p2r_step {s₀ : State} (hp : P2Pre s₀) {k : Nat} (hk : k < 256) {s : 
   have v₁ : (s₁.gpr .eax).toNat = a := by
     rw [u₁.gpr, addr_cf hp.t_fit hk, ← VG.Proof.MlDsa.Round.coeffAt_eq, hkeep, ea]
   have v₂ : (s₂.gpr .eax).toNat = a + 4095 := by
-    rw [u₂.gpr, BitVec.toNat_add, v₁]; simp; omega
+    rw [u₂.gpr, BitVec.toNat_add, v₁]; simp; omega_arith
   have v₄ : (s₄.gpr .edx).toNat = p2r1 a := by
     rw [u₄.gpr, u₃.gpr, BitVec.toNat_ushiftRight, v₂, Nat.shiftRight_eq_div_pow]; rfl
   have edi₄ : s₄.gpr .edi = arg s₀ 1 + BitVec.ofNat 32 (4 * k) := by
@@ -128,7 +128,7 @@ theorem p2r_step {s₀ : State} (hp : P2Pre s₀) {k : Nat} (hk : k < 256) {s : 
       show (8191 : BitVec 32) = BitVec.ofNat 32 (2 ^ 13 - 1) from rfl,
       VG.Proof.MlKem.X86.toNat_and_mask _ 13 (by decide), v₂]
   refine condAdd_spec (by decide) (X := 4095) rfl
-    (by rw [v₆, show qImm.toNat = 8380417 from rfl, show (4095 : BitVec 32).toNat = 4095 from rfl]; omega)
+    (by rw [v₆, show qImm.toNat = 8380417 from rfl, show (4095 : BitVec 32).toNat = 4095 from rfl]; omega_arith)
     fun s₇ o₇ v₇ => ?_
   have ebp₇ : s₇.gpr .ebp = arg s₀ 2 + BitVec.ofNat 32 (4 * k) := by
     rw [o₇.gpr _ (by decide), u₆.other _ (by decide), m₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide),
@@ -161,18 +161,18 @@ theorem p2r_step {s₀ : State} (hp : P2Pre s₀) {k : Nat} (hk : k < 256) {s : 
     exact cnt_next hk
   · rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, m₈.mem, addr_cf hp.t0_fit hk, m₇]
     exact (h.frame.writeW (by simp) _ (coeff_contains _ hk')).writeW (by simp) _ (coeff_contains _ hk')
-  · rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, m₈.mem, addr_cf hp.t0_fit hk, m₇, coeffAt_writeW_disjoint _ hp.t1_t0 (coeff_contains _ hk') (by rw [n_eq]; omega),
-      coeffAt_writeW _ _ (by rw [n_eq]; omega) hk']
+  · rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, m₈.mem, addr_cf hp.t0_fit hk, m₇, coeffAt_writeW_disjoint _ hp.t1_t0 (coeff_contains _ hk') (by rw [n_eq]; omega_arith),
+      coeffAt_writeW _ _ (by rw [n_eq]; omega_arith) hk']
     by_cases e : k = i
     · subst e; rw [ite_eq_left rfl, ea]; exact eq_ofNat_of_toNat v₄
-    · rw [ite_eq_right e]; exact h.out1 i (by omega)
-  · rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, m₈.mem, addr_cf hp.t0_fit hk, m₇, coeffAt_writeW _ _ (by rw [n_eq]; omega) hk',
-      coeffAt_writeW_disjoint _ hp.t1_t0.symm (coeff_contains _ hk') (by rw [n_eq]; omega)]
+    · rw [ite_eq_right e]; exact h.out1 i (by omega_arith)
+  · rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, m₈.mem, addr_cf hp.t0_fit hk, m₇, coeffAt_writeW _ _ (by rw [n_eq]; omega_arith) hk',
+      coeffAt_writeW_disjoint _ hp.t1_t0.symm (coeff_contains _ hk') (by rw [n_eq]; omega_arith)]
     by_cases e : k = i
     · subst e; rw [ite_eq_left rfl, ea]
       refine eq_ofNat_of_toNat (v₇.trans ?_)
       rw [v₆]; rfl
-    · rw [ite_eq_right e]; exact h.out0 i (by omega)
+    · rw [ite_eq_right e]; exact h.out0 i (by omega_arith)
   · simp only [eval, z₁₂, Option.map_some]
     rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), m₈.gpr,
       g₇ _ (by decide) (by decide), h.ecx]
@@ -192,9 +192,9 @@ theorem p2rInit_piece : Piece P2Pre P2Pub (fun s₀ s => s = P0 s₀) P2S (.bloc
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have hin : aR s₀ 3 ∈ s₀.rd ++ s₀.wr := by simp [hp.wr]
-    obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a
-    obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega) hp.sp hp.sp' hin hp.stk_a
-    obtain ⟨a₂, i₂, v₂⟩ := arg_P0 (i := 2) (by omega) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega_arith) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega_arith) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₂, i₂, v₂⟩ := arg_P0 (i := 2) (by omega_arith) hp.sp hp.sp' hin hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, p2rInit, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -208,7 +208,7 @@ theorem p2rInit_piece : Piece P2Pre P2Pub (fun s₀ s => s = P0 s₀) P2S (.bloc
 theorem p2r_piece : Piece P2Pre P2Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (P2Inv s₀ 256) s₀ s')
     power2Round := by
   refine Piece.leaf (fun s₀ => [pR (pA s₀ 1), pR (pA s₀ 2)]) (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩) (fun _ hp r hr => ?_) (fun _ _ _ _ hq => hq.1)
+    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_arith⟩) (fun _ hp r hr => ?_) (fun _ _ _ _ hq => hq.1)
     ((Piece.seq p2rInit_piece (Piece.seq (B := (P2Inv · 0)) ?_ ?_)).mono (fun _ _ _ h => h)
       fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -217,8 +217,8 @@ theorem p2r_piece : Piece P2Pre P2Pub (fun s₀ s => s = s₀) (fun s₀ s' => L
     · exact ⟨by rw [← stk_eq hp.sp]; exact hp.stk_0, hp.ret_0⟩
   · refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
       (by native_taint_decide)
-    refine wp_movi fun s₁ u₁ => WP.block_nil_iff.mpr ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega),
-      fun i hi => absurd hi (by omega)⟩
+    refine wp_movi fun s₁ u₁ => WP.block_nil_iff.mpr ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega_arith),
+      fun i hi => absurd hi (by omega_arith)⟩
     · rw [u₁.other _ (by decide), h.esp]
     · rw [u₁.rd, h.rd]
     · rw [u₁.wr, h.wr]
@@ -241,14 +241,14 @@ theorem p2r_piece : Piece P2Pre P2Pub (fun s₀ s => s = s₀) (fun s₀ s' => L
 theorem p2r0_lt {a : Nat} : p2r0 a < 2 ^ 32 := by
   have hq : q = 8380417 := rfl
   have := Nat.mod_lt (a + 4095) (show 8192 > 0 by decide)
-  unfold p2r0 condAddN; split <;> omega
+  unfold p2r0 condAddN; split <;> omega_arith
 
 theorem p2r_post {s₀ s : State} (hp : P2Pre s₀) (hinv : P2Inv s₀ 256 s) :
     NatPolyIs s.mem (pA s₀ 1) ((polyAt s₀.mem (pA s₀ 0)).map fun c => (power2Round c).1.toNat) ∧
       PolyIs s.mem (pA s₀ 2) ((polyAt s₀.mem (pA s₀ 0)).map fun c => ofInt (power2Round c).2) := by
   refine ⟨natPolyIs_of_toNat fun i hi => ?_, polyIs_of_toNat fun i hi => ?_⟩
   · rw [hinv.out1 i hi, map_get _ _ hi, power2Round_eq, polyAt_val hp.t_red hi,
-      toNat_ofNat32 (by have := hp.t_red i hi; unfold p2r1; rw [q_eq] at this; omega)]
+      toNat_ofNat32 (by have := hp.t_red i hi; unfold p2r1; rw [q_eq] at this; omega_arith)]
     rfl
   · rw [hinv.out0 i hi, map_get _ _ hi, power2Round_t0, polyAt_val hp.t_red hi, toNat_ofNat32 p2r0_lt]
     rfl
@@ -258,8 +258,8 @@ def p2rSatMem : Mem := fun a => if a = 0x5005 then 4 else if a = 0x500d then 8 e
 
 theorem p2rSat_zero (a : Addr) (ha : a.toNat < 0x5000) : p2rSatMem a = 0 := by
   simp only [p2rSatMem]
-  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)]
+  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_arith),
+    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_arith)]
 
 theorem power2Round_verified : Verified X86.target power2Round (power2RoundContract X86.abi 16) := by
   refine Piece.verified ((p2r_piece.pre_mono (fun _ h => P2Pre.of h) fun s s' _ _ h => by

@@ -71,7 +71,7 @@ theorem dPtrs₁_inv {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg �
       (t.mem.writeW (L.Q + BitVec.ofNat 64 oR) (rOf (t.gpr .x0))).readW (L.Q + BitVec.ofNat 64 d) 64 =
         t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     unfold oR at h₂ ⊢
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
   have hf : Frame [⟨L.Q + BitVec.ofNat 64 oR, 8⟩] t.mem u.mem := by
     rw [hm]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -80,7 +80,7 @@ theorem dPtrs₁_inv {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg �
   · rw [List.mem_singleton.mp hr]
     exact .inr ⟨oR, Nat.le_refl _, by show oR + 8 ≤ frameBytes; decide, rfl⟩
   · rw [hm, Mem.readW_writeW_self64]
-  · refine bytesAt_eq fun i hi => hf.bytes (R := L.OUT) (fun X hX => ?_) (by show L.k.toNat ≤ 2 ^ 64; omega) hi
+  · refine bytesAt_eq fun i hi => hf.bytes (R := L.OUT) (fun X hX => ?_) (by show L.k.toNat ≤ 2 ^ 64; omega_arith) hi
     rw [List.mem_singleton.mp hX]
     exact (hL.kO.sub_left (Lay.Ok.sub_stk (by decide))).symm
   · rw [h11, rd oScr (by decide) (by decide), hc.kept.scr]; rfl
@@ -107,10 +107,10 @@ theorem zeroLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg →
     WP isa zeroLoop t (ZInv L g vv m₀ R EM L.k.toNat) := by
   have hk := hL.k1024
   have hk64 := hL.k64
-  refine Bytes.count_loop (by omega) (ZInv L g vv m₀ R EM) (fun j hj u hu => ?_) h
+  refine Bytes.count_loop (by omega_arith) (ZInv L g vv m₀ R EM) (fun j hj u hu => ?_) h
   have hin : InRegions u.wr (u.gpr .x11 + BitVec.ofNat 64 0) 1 := by
     rw [hu.x11, BitVec.add_zero]
-    exact (scCov hL hu.post.ctx (a := sD + j) (n := 1) (by unfold sD scrBytes; omega)) _ _
+    exact (scCov hL hu.post.ctx (a := sD + j) (n := 1) (by unfold sD scrBytes; omega_arith)) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   refine WP.mono (zBody_ok hin) fun w ⟨hrd, hwr, hsp, hv, hm, h11, h12, ho⟩ => ?_
   have hm' : w.mem = u.mem.write (scA L (sD + j)) 1 0 := by rw [hm, hu.x11, hu.x13]; rfl
@@ -120,13 +120,13 @@ theorem zeroLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg →
     rw [h12, hu.x12, Bytes.counter_step hj L.k.isLt]
   refine ⟨⟨hu.post.step hL hrd hwr hsp (fun r _ => by rw [hv]) (fun r hr _ => ho r (mem_ne hr (by decide))
     (mem_ne hr (by decide))) hf fun r hr => ?_, ?_, hx12, ?_, fun i hi => ?_⟩, ?_⟩
-  · rw [List.mem_singleton.mp hr]; exact .inl (scSub (by unfold sD scrBytes; omega))
+  · rw [List.mem_singleton.mp hr]; exact .inl (scSub (by unfold sD scrBytes; omega_arith))
   · rw [h11, hu.x11, add_add, Nat.add_assoc]
   · rw [ho .x13 (by decide) (by decide), hu.x13]
   · rw [hm']
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Bytes.write1_ne _ _ (Offset.add_ofNat_ne _ (by unfold sD; omega) (by have := hL.bS; have := hL.s8192; unfold sD; omega)
-        (by have := hL.bS; have := hL.s8192; unfold sD; omega)), hu.z i hi]
+    · rw [Bytes.write1_ne _ _ (Offset.add_ofNat_ne _ (by unfold sD; omega_arith) (by have := hL.bS; have := hL.s8192; unfold sD; omega_arith)
+        (by have := hL.bS; have := hL.s8192; unfold sD; omega_arith)), hu.z i hi]
     · exact Bytes.write1_self _ _ _
   · rw [hx12]; exact Bytes.counter_ne hj L.k.isLt
 
@@ -154,7 +154,7 @@ theorem x11_eq (p : Addr) (a : Nat) (k dl : BitVec 64) (h : dl.toNat ≤ k.toNat
   have ek : k = BitVec.ofNat 64 k.toNat := by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have ed : dl = BitVec.ofNat 64 dl.toNat := by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   rw [show p + BitVec.ofNat 64 a + k - dl = p + BitVec.ofNat 64 a + BitVec.ofNat 64 k.toNat -
-    BitVec.ofNat 64 dl.toNat by rw [← ek, ← ed], add_add, Offset.add_ofNat_sub _ (by omega), Nat.add_sub_assoc h]
+    BitVec.ofNat 64 dl.toNat by rw [← ek, ← ed], add_add, Offset.add_ofNat_sub _ (by omega_arith), Nat.add_sub_assoc h]
 
 /-- After the zeros of `D` and `j` bytes of `d`. -/
 structure CInv (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (R : BitVec 64)
@@ -177,7 +177,7 @@ theorem dPtrs₂_inv {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg �
   · rw [h14, hc.kept.d, BitVec.add_zero]
   · rw [h11, hc.kept.scr, hc.kept.k, hc.kept.dl, x11_eq _ _ _ _ hL.dlk]; rfl
   · rw [h12, hc.kept.dl, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [hm]; exact h.z i (by omega)
+  · rw [hm]; exact h.z i (by omega_arith)
   · exact absurd hi (Nat.not_lt_zero _)
 
 theorem cBody_ok {t : State} (hr : InRegions (t.rd ++ t.wr) (t.gpr .x14 + BitVec.ofNat 64 0) 1)
@@ -206,15 +206,15 @@ theorem copyLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg →
   have hdk := hL.dlk
   have hbS := hL.bS
   have h8 := hL.s8192
-  refine Bytes.count_loop (by have := hL.dl1; omega) (CInv L g vv m₀ R EM) (fun j hj u hu => ?_) h
+  refine Bytes.count_loop (by have := hL.dl1; omega_arith) (CInv L g vv m₀ R EM) (fun j hj u hu => ?_) h
   have hc := hu.post.ctx
   have hin : InRegions u.wr (u.gpr .x11 + BitVec.ofNat 64 0) 1 := by
     rw [hu.x11, BitVec.add_zero]
-    exact (scCov hL hc (a := sD + (L.k.toNat - L.dl.toNat) + j) (n := 1) (by unfold sD scrBytes; omega)) _ _
+    exact (scCov hL hc (a := sD + (L.k.toNat - L.dl.toNat) + j) (n := 1) (by unfold sD scrBytes; omega_arith)) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   have hrd : InRegions (u.rd ++ u.wr) (u.gpr .x14 + BitVec.ofNat 64 0) 1 := by
     rw [hu.x14, BitVec.add_zero]
-    exact ⟨L.D, by rw [hc.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨L.D, by rw [hc.rd]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine WP.mono (cBody_ok hrd hin) fun w ⟨hrd', hwr, hsp, hv, hm, h14, h11, h12, ho⟩ => ?_
   have hm' : w.mem = u.mem.write (scA L (sD + (L.k.toNat - L.dl.toNat) + j)) 1 (m₀ (L.d + BitVec.ofNat 64 j)) := by
     rw [hm, hu.x11, hu.x14, hc.byte_ro hL (ro_D L) hj]
@@ -224,17 +224,17 @@ theorem copyLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg →
     rw [h12, hu.x12, Bytes.counter_step hj L.dl.isLt]
   have hne : ∀ a, a < sD + (L.k.toNat - L.dl.toNat) + j →
       scA L a ≠ scA L (sD + (L.k.toNat - L.dl.toNat) + j) := fun a ha =>
-    Offset.add_ofNat_ne _ (by unfold sD at *; omega) (by unfold sD; omega) (by omega)
+    Offset.add_ofNat_ne _ (by unfold sD at *; omega_arith) (by unfold sD; omega_arith) (by omega_arith)
   refine ⟨⟨hu.post.step hL hrd' hwr hsp (fun r _ => by rw [hv]) (fun r hr _ => ho r (mem_ne hr (by decide))
     (mem_ne hr (by decide)) (mem_ne hr (by decide)) (mem_ne hr (by decide))) hf fun r hr => ?_, ?_, ?_, hx12,
     fun i hi => ?_, fun i hi => ?_⟩, ?_⟩
-  · rw [List.mem_singleton.mp hr]; exact .inl (scSub (by unfold sD scrBytes; omega))
+  · rw [List.mem_singleton.mp hr]; exact .inl (scSub (by unfold sD scrBytes; omega_arith))
   · rw [h14, hu.x14, add_add]
   · rw [h11, hu.x11, add_add, Nat.add_assoc]
-  · rw [hm', Bytes.write1_ne _ _ (hne _ (by omega)), hu.z i hi]
+  · rw [hm', Bytes.write1_ne _ _ (hne _ (by omega_arith)), hu.z i hi]
   · rw [hm']
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Bytes.write1_ne _ _ (hne _ (by omega)), hu.c i hi]
+    · rw [Bytes.write1_ne _ _ (hne _ (by omega_arith)), hu.c i hi]
     · exact Bytes.write1_self _ _ _
   · rw [hx12]; exact Bytes.counter_ne hj L.dl.isLt
 
@@ -251,14 +251,14 @@ theorem cinv_db {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → Bit
   have hdk := hL.dlk
   rw [VG.Proof.RsaPkcs1Enc.i2osp_os2ip_pad _ (by simp [Spec.Rsa.bytesAt]; exact hdk)]
   simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
-  refine List.ext_getElem (by simp; omega) fun i h₁ _ => ?_
+  refine List.ext_getElem (by simp; omega_arith) fun i h₁ _ => ?_
   simp only [List.getElem_map, List.getElem_range]
   by_cases hi : i < L.k.toNat - L.dl.toNat
   · rw [List.getElem_append_left (by simpa using hi), List.getElem_replicate, add_add, hu.z i hi]
-  · rw [List.getElem_append_right (by simp; omega)]
+  · rw [List.getElem_append_right (by simp; omega_arith)]
     simp only [List.length_replicate, List.getElem_map, List.getElem_range]
-    have := hu.c (i - (L.k.toNat - L.dl.toNat)) (by simp at h₁; omega)
-    rw [add_add, show sD + i = sD + (L.k.toNat - L.dl.toNat) + (i - (L.k.toNat - L.dl.toNat)) by omega, this]
+    have := hu.c (i - (L.k.toNat - L.dl.toNat)) (by simp at h₁; omega_arith)
+    rw [add_add, show sD + i = sD + (L.k.toNat - L.dl.toNat) + (i - (L.k.toNat - L.dl.toNat)) by omega_arith, this]
 
 theorem dBuild_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
     (h : Called L g vv m₀ t) :

@@ -65,7 +65,7 @@ theorem copySeed_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : N
       Rep u'.mem F S (cpV V (fun i => u.mem (p + BitVec.ofNat 64 i)) (oEm + (oEm + 1)) H.D) W := by
   have hs := L.slot
   simp only [Bignum.word] at hs
-  refine copyFrom_ok L R ?_ hD (by omega) (by unfold oEm oRsa; omega) hsrc hdis
+  refine copyFrom_ok L R ?_ hD (by omega_arith) (by unfold oEm oRsa; omega_arith) hsrc hdis
   refine WP.mono (WP.keep [.rsi, .rcx, .r8] (Q := fun v => v.gpr .rsi = p ∧ v.gpr .rcx = off S oEm ∧
     v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, d, k⟩
   xrun [scr, Impl.Mgf1.X86_64.scr, lay, List.cons_append, List.nil_append, ea_sp, L.rsp,
@@ -80,9 +80,9 @@ theorem copyLh_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat
   simp only [Bignum.word] at hs
   have c1 : oDig = 3328 := rfl
   have c2 : oEm = 0 := rfl
-  refine WP.mono (copyFrom_ok L R (p := off S oDig) (o := oEm) ?_ hD (by omega) (by unfold oRsa; omega)
-    (fun i hi => by rw [off_plus]; exact L.sld8 (by unfold oRsa; omega))
-    (fun i hi j hj => by rw [off_plus]; exact Offset.add_ofNat_ne S (by omega) (by omega) (by omega)))
+  refine WP.mono (copyFrom_ok L R (p := off S oDig) (o := oEm) ?_ hD (by omega_arith) (by unfold oRsa; omega_arith)
+    (fun i hi => by rw [off_plus]; exact L.sld8 (by unfold oRsa; omega_arith))
+    (fun i hi j hj => by rw [off_plus]; exact Offset.add_ofNat_ne S (by omega_arith) (by omega_arith) (by omega_arith)))
     fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, kw, ?_⟩
   · refine WP.mono (WP.keep [.rsi, .rcx, .r8] (Q := fun v => v.gpr .rsi = off S oDig ∧ v.gpr .rcx = off S oEm ∧
       v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, d, k⟩
@@ -92,11 +92,11 @@ theorem copyLh_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat
   · refine (congrArg (fun V' => Rep w.mem F S V' W) (funext fun x => ?_)).mp Rw
     simp only [cpV]
     split
-    · rw [off_plus, R.scr _ (by unfold oRsa; omega)]
+    · rw [off_plus, R.scr _ (by unfold oRsa; omega_arith)]
     · rfl
 
 theorem cpV_zero (V src : Nat → Byte) (o : Nat) : cpV V src o 0 = V := by
-  funext x; simp only [cpV]; rw [ifn (by omega)]
+  funext x; simp only [cpV]; rw [ifn (by omega_arith)]
 
 theorem putMsg_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {k mLen : Nat} {p : Addr} (hk : W 23 = BitVec.ofNat 64 k) (hml : W 30 = BitVec.ofNat 64 mLen)
@@ -109,10 +109,10 @@ theorem putMsg_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have hs := L.slot
   simp only [Bignum.word] at hs
   have c2 : oEm = 0 := rfl
-  have hst := L.sst8 (d := oEm + k - mLen - 1) (by unfold oEm oRsa; omega)
-  have e0 : oEm + k - mLen - 1 = k - mLen - 1 := by unfold oEm; omega
+  have hst := L.sst8 (d := oEm + k - mLen - 1) (by unfold oEm oRsa; omega_arith)
+  have e0 : oEm + k - mLen - 1 = k - mLen - 1 := by unfold oEm; omega_arith
   have G' := L.geo
-  have R1 := R.wb G' (o := k - mLen - 1) (by unfold oRsa; omega) 1
+  have R1 := R.wb G' (o := k - mLen - 1) (by unfold oRsa; omega_arith) 1
   have hsplit : putMsg = .seq (.block ((scr .rdi oEm ++ ([.mov .rax (.mem (sp sK)), .alu .add .rdi (.reg .rax),
       .mov .rax (.mem (sp sMsgLen)), .alu .sub .rdi (.reg .rax), .alu .sub .rdi (.imm 1), .mov32 .rax (.imm 1)] :
         List Instr)) ++
@@ -131,17 +131,17 @@ theorem putMsg_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
         L.ld (d := sScr) (by decide), L.ld (d := sK) (by decide), L.ld (d := sMsgLen) (by decide), hs,
         R.slot (d := sK) (k := 23) rfl (by decide) hk, R.slot (d := sMsgLen) (k := 30) rfl (by decide) hml,
         VG.Proof.MlKem.X86_64.sx_ofNat (show oEm < 2 ^ 31 by decide), off_plus,
-        off_sub _ (show mLen ≤ oEm + k by omega), off_sub1 _ (show 1 ≤ oEm + k - mLen by omega)]
+        off_sub _ (show mLen ≤ oEm + k by omega_arith), off_sub1 _ (show 1 ≤ oEm + k - mLen by omega_arith)]
     · have Lv : Lay v F S := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [c])
       have Rv : Rep v.mem F S V W := c ▸ R
-      have hst' := Lv.sst8 (d := oEm + k - mLen - 1) (by unfold oEm oRsa; omega)
-      have R2 := R.wb L.geo (o := oEm + k - mLen - 1) (by unfold oEm oRsa; omega) (BitVec.setWidth 8 (1 : BitVec 64))
+      have hst' := Lv.sst8 (d := oEm + k - mLen - 1) (by unfold oEm oRsa; omega_arith)
+      have R2 := R.wb L.geo (o := oEm + k - mLen - 1) (by unfold oEm oRsa; omega_arith) (BitVec.setWidth 8 (1 : BitVec 64))
       xrun [ea_sp, ea_at0, Lv.rsp, a, b, hst', Lv.ld (d := sMsgLen) (by decide), Lv.ld (d := sMsg) (by decide),
         R2.slot (d := sMsgLen) (k := 30) rfl (by decide) hml, R2.slot (d := sMsg) (k := 29) rfl (by decide) hp, c,
-        BitVec.and_self, ofNat_beq_zero (show mLen < 2 ^ 64 by omega)]
+        BitVec.and_self, ofNat_beq_zero (show mLen < 2 ^ 64 by omega_arith)]
       rfl
   rw [e0] at h₁ hm
-  have R1 := R.wb G' (o := k - mLen - 1) (by unfold oRsa; omega) (1 : Byte)
+  have R1 := R.wb G' (o := k - mLen - 1) (by unfold oRsa; omega_arith) (1 : Byte)
   have Lv : Lay v F S := L.of_rep R (hm ▸ R1) (hk'.gpr (by decide)) hk'.2.2
   have Rv : Rep v.mem F S (upd V (k - mLen - 1) 1) W := hm ▸ R1
   refine WP.ite (M := isa) _ (show isa.eval .e v = _ from h₅) (fun hz => ?_) (fun hz => ?_)
@@ -152,16 +152,16 @@ theorem putMsg_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
     have hsrc' : ∀ i < mLen, InRegions (v.rd ++ v.wr) (p + BitVec.ofNat 64 i) 1 := fun i hi => by
       rw [hk'.2.1, hk'.2.2]; exact hsrc i hi
     have hsame : ∀ i < mLen, v.mem (p + BitVec.ofNat 64 i) = u.mem (p + BitVec.ofNat 64 i) := fun i hi => by
-      rw [hm, VG.WriteBytes.writeW8_apply, ifn (by have := hdis i hi 0 (by omega); rwa [Nat.add_zero] at this)]
+      rw [hm, VG.WriteBytes.writeW8_apply, ifn (by have := hdis i hi 0 (by omega_arith); rwa [Nat.add_zero] at this)]
     refine WP.mono (copy_ok Lv Rv (d := .rdi) (by decide) (o := k - mLen - 1) (disp := 1)
-      (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₃) (by omega)
-      (by unfold oRsa; omega) h₂ h₁ h₄ hsrc'
-      (fun i hi j hj => by have := hdis i hi (1 + j) (by omega); rwa [← Nat.add_assoc] at this))
+      (stepR_ok (by omega_arith) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₃) (by omega_arith)
+      (by unfold oRsa; omega_arith) h₂ h₁ h₄ hsrc'
+      (fun i hi j hj => by have := hdis i hi (1 + j) (by omega_arith); rwa [← Nat.add_assoc] at this))
       fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, (hk'.trans kw).mono (by decide), ?_⟩
     refine (congrArg (fun V' => Rep w.mem F S V' W) (funext fun x => ?_)).mp Rw
     simp only [cpV]
     split
-    · rw [hsame _ (by omega)]
+    · rw [hsame _ (by omega_arith)]
     · rfl
 
 
@@ -177,7 +177,7 @@ theorem mW_args (W : Nat → BitVec 64) (S : Addr) (src srcLen dst dstLen : Nat)
 
 theorem mW_other {W : Nat → BitVec 64} {S : Addr} {src srcLen dst dstLen k : Nat} (h1 : k < 15 ∨ 18 < k) :
     mW W S src srcLen dst dstLen k = W k := by
-  simp only [mW, upd]; rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
+  simp only [mW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith)]
 
 theorem dbArgs_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {k : Nat} (hk : W 23 = BitVec.ofNat 64 k) (hD : H.D < 2 ^ 30) (hkD : H.D + 1 ≤ k) :
@@ -197,10 +197,10 @@ theorem dbArgs_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat
       L.ld (d := sScr) (by decide), L.ld (d := sK) (by decide), hs, R.slot (d := sK) (k := 23) rfl (by decide) hk,
       L.st (d := sDst) (by decide), L.st (d := sDstLen) (by decide), L.st (d := sSrc) (by decide),
       L.st (d := sSrcLen) (by decide),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 + H.D < 2 ^ 31 by unfold oEm; omega),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 < 2 ^ 31 by unfold oEm; omega),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show H.D + 1 < 2 ^ 31 by omega), zx32 (show H.D < 2 ^ 32 by omega),
-      VG.Offset.ofNat_sub_ofNat (show H.D + 1 ≤ k by omega)]
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 + H.D < 2 ^ 31 by unfold oEm; omega_arith),
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 < 2 ^ 31 by unfold oEm; omega_arith),
+      VG.Proof.MlKem.X86_64.sx_ofNat (show H.D + 1 < 2 ^ 31 by omega_arith), zx32 (show H.D < 2 ^ 32 by omega_arith),
+      VG.Offset.ofNat_sub_ofNat (show H.D + 1 ≤ k by omega_arith)]
     rfl
   · exact L.of_rep' R (by rw [hm]; exact R1) (by simp [upd]) (kk.gpr (by decide)) kk.2.2
 
@@ -222,10 +222,10 @@ theorem seedArgs_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : N
       L.ld (d := sScr) (by decide), L.ld (d := sK) (by decide), hs, R.slot (d := sK) (k := 23) rfl (by decide) hk,
       L.st (d := sDst) (by decide), L.st (d := sDstLen) (by decide), L.st (d := sSrc) (by decide),
       L.st (d := sSrcLen) (by decide),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 + H.D < 2 ^ 31 by unfold oEm; omega),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 < 2 ^ 31 by unfold oEm; omega),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show H.D + 1 < 2 ^ 31 by omega), zx32 (show H.D < 2 ^ 32 by omega),
-      VG.Offset.ofNat_sub_ofNat (show H.D + 1 ≤ k by omega)]
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 + H.D < 2 ^ 31 by unfold oEm; omega_arith),
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 < 2 ^ 31 by unfold oEm; omega_arith),
+      VG.Proof.MlKem.X86_64.sx_ofNat (show H.D + 1 < 2 ^ 31 by omega_arith), zx32 (show H.D < 2 ^ 32 by omega_arith),
+      VG.Offset.ofNat_sub_ofNat (show H.D + 1 ≤ k by omega_arith)]
     rfl
   · exact L.of_rep' R (by rw [hm]; exact R1) (by simp [upd]) (kk.gpr (by decide)) kk.2.2
 

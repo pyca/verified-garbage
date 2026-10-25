@@ -25,7 +25,7 @@ open VG.Proof.Sha256.AArch64 (Compress)
 theorem imm16 {n : Nat} (hn : n < 65536) : BitVec.setWidth 64 (BitVec.ofNat 16 n) <<< 0 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.shiftLeft_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem prfHead_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block (scr .x9 sMsg ++ ([.ldrSp .x11 oI, .ldrSp .x12 oK] : List Instr))) t fun u => Same t u ∧
@@ -137,7 +137,7 @@ theorem shl5 (i dst : Nat) (scr : Addr) :
     (BitVec.ofNat 64 i <<< 5) + (scr + BitVec.ofNat 64 dst) = scr + BitVec.ofNat 64 (dst + 32 * i) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count : List Instr} {dst : Nat}
     {t : State} {i : Nat} {kd text : List Byte} {nbv C : BitVec 64} (hc : Post L g vv m₀ R EM t)
@@ -166,13 +166,13 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
   have k₂ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
       Spec.Rsa.bytesAt t₂.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := fun a l h₁ h₂ => by
     rw [bytes_keep F₂ (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact scD hL (.inr (by unfold sMsg; omega)) h₂ (by decide))
-      (by unfold scrBytes at h₂; omega), S₁.mem]
+      rw [List.mem_singleton.mp hr]; exact scD hL (.inr (by unfold sMsg; omega_arith)) h₂ (by decide))
+      (by unfold scrBytes at h₂; omega_arith), S₁.mem]
   have sl₂ : ∀ d, d + 8 ≤ frameBytes → slot t₂ L.Q d = slot t L.Q d := fun d hd => by
     show t₂.mem.readW _ 64 = t.mem.readW _ 64
     rw [F₂.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact hL.stk_buf (by unfold frameBytes at hd; omega) (.inr (.inr (sub_trans (scSub (by decide))
+      exact hL.stk_buf (by unfold frameBytes at hd; omega_arith) (.inr (.inr (sub_trans (scSub (by decide))
         hL.sc_sub)))) (by decide), S₁.mem]
   -- HMAC's `init` with `KDK`.
   refine mac_init hL hP hc₂ (key := sKDK) (by decide) (by decide) fun u hu => ?_
@@ -180,21 +180,21 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
   rw [hkd₂] at hu
   have hk0 := blockKey_length (key := kd) (by rw [← hkd]; simp [Spec.Rsa.bytesAt])
   -- `update` with the message.
-  refine WP.seq (WP.mono (prfUpdArgs_ok hu.post.ctx.sp hu.post.slots (n := label.length + 4) (by omega))
+  refine WP.seq (WP.mono (prfUpdArgs_ok hu.post.ctx.sp hu.post.slots (n := label.length + 4) (by omega_arith))
     fun t₄ ⟨S₄, y0, y1, y2, y3, y4⟩ => ?_)
   have hc₄ := hu.post.same S₄
   simp only [hu.post.ctx.kept.scr] at y0 y2 y4
   have hmsg₄ : Spec.Rsa.bytesAt t₄.mem (scA L sMsg) (label.length + 4) = text := by
-    rw [S₄.mem, hu.keep.scr _ _ (by decide) (by unfold sMsg scrBytes; omega) (.inr (Nat.zero_le _)), hm₂]
-  refine WP.seq (WP.mono (mac_upd hL hP hc₄ (n := label.length + 4) y0 y1 y2 (by rw [y3, BitVec.toNat_ofNat]; omega) y4
-    (Covers.right (scCov hL hc₄.ctx (by unfold sMsg scrBytes; omega)))
-    (fun a l hal => scD hL (.inr (by unfold sMsg; omega)) (by unfold sMsg scrBytes; omega)
-      (by unfold scrBytes; omega))
-    (stkD hL hP (by unfold sMsg scrBytes; omega)) hk0 (by rw [S₄.mem]; exact hu.inner)
+    rw [S₄.mem, hu.keep.scr _ _ (by decide) (by unfold sMsg scrBytes; omega_arith) (.inr (Nat.zero_le _)), hm₂]
+  refine WP.seq (WP.mono (mac_upd hL hP hc₄ (n := label.length + 4) y0 y1 y2 (by rw [y3, BitVec.toNat_ofNat]; omega_arith) y4
+    (Covers.right (scCov hL hc₄.ctx (by unfold sMsg scrBytes; omega_arith)))
+    (fun a l hal => scD hL (.inr (by unfold sMsg; omega_arith)) (by unfold sMsg scrBytes; omega_arith)
+      (by unfold scrBytes; omega_arith))
+    (stkD hL hP (by unfold sMsg scrBytes; omega_arith)) hk0 (by rw [S₄.mem]; exact hu.inner)
     (by rw [S₄.mem]; exact hu.outer)) fun t₅ ⟨hc₅, hi₅, ho₅, kp₅⟩ => ?_)
   rw [hmsg₄] at hi₅
   -- HMAC's `finalize` to the block.
-  refine WP.seq (WP.mono (prfFinArgs_ok hc₅.ctx.sp hc₅.slots (n := label.length + 4) (dst := dst) (by omega) hdst)
+  refine WP.seq (WP.mono (prfFinArgs_ok hc₅.ctx.sp hc₅.slots (n := label.length + 4) (dst := dst) (by omega_arith) hdst)
     fun t₆ ⟨S₆, z0, z1, z2, z3, z4⟩ => ?_)
   have hc₆ := hc₅.same S₆
   have sl₅ : slot t₅ L.Q oI = BitVec.ofNat 64 i := by
@@ -203,8 +203,8 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
     exact (sl₂ oI (by decide)).trans hctr
   simp only [hc₅.ctx.kept.scr, sl₅] at z0 z1 z3 z4
   rw [shl5 i dst] at z3
-  refine WP.seq (WP.mono (mac_fin hL hP hc₆ (o := dst + 32 * i) (by omega) hd2 hk0 (text := text)
-    (by rw [htl]; omega) z0 z1 (by rw [z2, htl]) z3 z4 (by rw [S₆.mem]; exact hi₅)
+  refine WP.seq (WP.mono (mac_fin hL hP hc₆ (o := dst + 32 * i) (by omega_arith) hd2 hk0 (text := text)
+    (by rw [htl]; omega_arith) z0 z1 (by rw [z2, htl]) z3 z4 (by rw [S₆.mem]; exact hi₅)
     (by rw [S₆.mem]; exact ho₅)) fun t₇ ⟨hc₇, hb₇, kp₇⟩ => ?_)
   -- The counter.
   have nb₇ : slot t₇ L.Q oNB = nbv := by
@@ -228,7 +228,7 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
     bytes_keep Fw (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ((hL.stk_buf (d := oI) (n := 8) (by decide) (.inr (.inr (sub_trans (scSub h₂) hL.sc_sub))))).symm)
-      (by unfold scrBytes at h₂; omega)
+      (by unfold scrBytes at h₂; omega_arith)
   refine ⟨hcw, ?_, ?_, ?_, ?_, fun a l h₁ h₂ h₃ => ?_⟩
   · show w.mem.readW _ 64 = _
     rw [mw, Mem.readW_writeW_self64, ct₇, one]
@@ -237,8 +237,8 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
     exact nb₇
   · rw [kw _ _ hd2, hb₇]; rfl
   · rw [xw, ct₇, one]
-  · rw [kw _ _ h₂, kp₇.scr _ _ (by omega) h₂ h₃, S₆.mem, kp₅.scr _ _ (by omega) h₂ (.inr (Nat.zero_le _)),
-      S₄.mem, hu.keep.scr _ _ (by omega) h₂ (.inr (Nat.zero_le _)), k₂ _ _ h₁ h₂]
+  · rw [kw _ _ h₂, kp₇.scr _ _ (by omega_arith) h₂ h₃, S₆.mem, kp₅.scr _ _ (by omega_arith) h₂ (.inr (Nat.zero_le _)),
+      S₄.mem, hu.keep.scr _ _ (by omega_arith) h₂ (.inr (Nat.zero_le _)), k₂ _ _ h₁ h₂]
 
 end
 

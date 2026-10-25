@@ -12,12 +12,14 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.PPC64LE.CallSum
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrLit
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Sm4.PPC64LE.CallSum
 meta import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesConstantTime
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
@@ -49,7 +51,8 @@ def ctrPost (s s' : State) : Prop :=
 
 theorem ctr_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre Proof.Sm4.PPC64LE.modePub ctr :=
-  VG.Taint.constantTime (A := slotTaint) modeTaint modes_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
+    (by taint_decide_sum [prepSum, cryptSum])
 
 theorem ctr_correct (s : State) (hs : (modeContract 16 ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctrPost).post s s' :=

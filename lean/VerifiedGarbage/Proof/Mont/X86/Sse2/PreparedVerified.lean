@@ -34,7 +34,7 @@ theorem prReady {s : State} (A : PrABI s) :
       (arrAt (wOf s.mem (wsOf s)) 0) 56 (arrAt (wOf s.mem (wsOf s)) (arg s 2).toNat)
       (arrAt (wOf s.mem (wsOf s)) (arg s 3).toNat) (arrAt (wOf s.mem (wsOf s)) (arg s 4).toNat) s := by
   have Ly := A.lay
-  have hinv := Compact.prepared_inverse (by have := A.layout.1; omega) A.inverse
+  have hinv := Compact.prepared_inverse (by have := A.layout.1; omega_arith) A.inverse
   have hb := A.rightLt
   rw [Compact.numAt_val32, Compact.numAt_val32] at hb
   exact ⟨A.entry, Ly, preparedParams_ok A,
@@ -55,48 +55,48 @@ theorem prepared_correct (s : State) (h : (Spec.Rsa.Mont.mulContract abi 56).pre
   have hb := A.bound
   have po := Compact.operand_apart (w := wOf s.mem (wsOf s)) A.output
   have e2 : arrAt (wOf s.mem (wsOf s)) 2 + 16 * (wOf s.mem (wsOf s) + 2) = arrAt (wOf s.mem (wsOf s)) 4 := by
-    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   have e3 : arrAt (wOf s.mem (wsOf s)) 3 = arrAt (wOf s.mem (wsOf s)) 2 + 8 * (wOf s.mem (wsOf s) + 2) := by
-    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   refine ⟨tr, t, E, ⟨cs, ?_⟩, ?_⟩
   · refine Mem.readW_congr fun i hi => mem _ (fun r hr => ?_) (fun hc => ?_)
     · have := ofs_far (base := wsOf s) (size := lenOf s) (x := (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i)
-        fun hc => A.retScratch _ (Offset.contains_base _ (by omega) (by omega)) hc
+        fun hc => A.retScratch _ (Offset.contains_base _ (by omega_arith) (by omega_arith)) hc
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only at this ⊢ <;> omega
+      rcases hr with rfl | rfl <;> simp only at this ⊢ <;> omega_arith
     · have := (s.gpr .esp).isLt
       simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
         at hc
-      omega
+      omega_arith
   · sig_post [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_, ?_⟩
     · rw [Compact.numAt_val32, Compact.numAt_val32]; exact lt
     · rw [Compact.numAt_val32, Compact.numAt_val32, Compact.numAt_val32, Compact.numAt_val32,
-        show 64 * wOf s.mem (wsOf s) = 32 * (2 * wOf s.mem (wsOf s)) by omega]
+        show 64 * wOf s.mem (wsOf s) = 32 * (2 * wOf s.mem (wsOf s)) by omega_arith]
       exact cong
     · intro i hi hj
       apply mem _ (fun r hr => ?_) (fun hc => ?_)
       · rw [show ofs (wsOf s) (wsOf s + BitVec.ofNat 64 i) = i by
-          simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by simp only [lenOf] at hb; omega)]]
+          simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by simp only [lenOf] at hb; omega_arith)]]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         have h2 := hj Spec.Rsa.Mont.aAcc (by simp)
         have h3 := hj Spec.Rsa.Mont.aTmp (by simp)
         have ho := hj (arg s 2).toNat (by simp)
         simp only [Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] at h2 h3
         generalize wOf s.mem (wsOf s) = w at *
-        have e2' : arrAt w 2 + 16 * (w + 2) = arrAt w 4 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
-        have e3' : arrAt w 3 = arrAt w 2 + 8 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
-        rcases hr with rfl | rfl <;> simp only <;> omega
+        have e2' : arrAt w 2 + 16 * (w + 2) = arrAt w 4 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+        have e3' : arrAt w 3 = arrAt w 2 + 8 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+        rcases hr with rfl | rfl <;> simp only <;> omega_arith
       · have := (s.gpr .esp).isLt
         have := (arg s 0).isLt
         have := A.stackLo
         refine A.stkScratch (wsOf s + BitVec.ofNat 64 i) ?_ ?_
         · simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
             at hc ⊢
-          omega
+          omega_arith
         · simp only [Region.Contains, lenOf, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth,
             BitVec.toNat_ofNat]
-          omega
+          omega_arith
 
 theorem prepared_publicArgs {s t : State} (H : (Spec.Rsa.Mont.mulContract abi 56).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ (∀ i < 5, arg s i = arg t i) ∧ wOf s.mem (wsOf s) = wOf t.mem (wsOf t) := by
@@ -124,14 +124,14 @@ theorem PrABI.argsApart {s : State} (A : PrABI s) :
   · intro x hx hf
     simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, List.length_cons,
       List.length_nil] at hx hf
-    omega
+    omega_arith
   · intro x hx hw
     by_cases h4 : (x - (s.gpr .esp).setWidth 64).toNat < 4
-    · exact A.retScratch x (by simp only [Region.Contains]; omega) hw
+    · exact A.retScratch x (by simp only [Region.Contains]; omega_arith) hw
     · refine A.argScratch x hw ?_
       simp only [Region.Contains, argAddr, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_add,
         BitVec.toNat_ofNat] at hx h4 ⊢
-      omega
+      omega_arith
 
 /-- A byte of the arguments, above the registers' frame. -/
 theorem PrABI.argByte {s : State} (A : PrABI s) {k : Nat} (h4 : 4 ≤ k) (hk : k < 24) :
@@ -145,17 +145,17 @@ theorem PrABI.argByte {s : State} (A : PrABI s) {k : Nat} (h4 : 4 ≤ k) (hk : k
     have := (s.gpr .esp).isLt
     simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat,
       List.length_cons, List.length_nil]
-    omega
-  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+    omega_arith
+  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   have F1 := pushed_frame (rs := rs4) (s := s) (by decide) h16
-  rw [e, F1 _ fun r hr hc => ?_, X86.Taint.argByte_eq (n := 24) (by omega) h4 hk,
+  rw [e, F1 _ fun r hr hc => ?_, X86.Taint.argByte_eq (n := 24) (by omega_arith) h4 hk,
     Mem.readW_byte s.mem (argAddr s ((k - 4) / 4)) (Nat.mod_lt _ (by decide))]
   · rfl
   · simp only [List.mem_singleton] at hr; subst hr
     have := (s.gpr .esp).isLt
     simp only [Region.Contains, X86.Taint.argByte, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_add,
       BitVec.toNat_ofNat, List.length_cons, List.length_nil] at hc
-    omega
+    omega_arith
 
 theorem agree_pr {s₁ s₂ : State} (A₁ : PrABI s₁) (A₂ : PrABI s₂) (sp : s₁.gpr .esp = s₂.gpr .esp)
     (args : ∀ i < 5, arg s₁ i = arg s₂ i) : X86.Taint.Agree prTaint (pushed rs4 s₁) (pushed rs4 s₂) := by
@@ -167,18 +167,18 @@ theorem agree_pr {s₁ s₂ : State} (A₁ : PrABI s₁) (A₂ : PrABI s₂) (sp
     have := (s.gpr .esp).isLt
     simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat,
       List.length_cons, List.length_nil]
-    omega
+    omega_arith
   have fit : ∀ {s : State}, PrABI s → ((pushed rs4 s).gpr .esp).toNat + 16 = (s.gpr .esp).toNat := by
     intro s A
     have := A.stackLo
     rw [pushed_esp, BitVec.toNat_sub]
     simp only [BitVec.toNat_ofNat, List.length_cons, List.length_nil]
-    omega
+    omega_arith
   have wf : ∀ {s : State}, PrABI s → X86.Taint.Wf prTaint (pushed rs4 s) := fun {s} A =>
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-      fun _ => ⟨by show _ + 16 + 24 ≤ _; have := fit A; have := A.stackBound; omega,
+      fun _ => ⟨by show _ + 16 + 24 ≤ _; have := fit A; have := A.stackBound; omega_arith,
         by show ∀ r ∈ _, Region.Disjoint ⟨X86.Taint.argByte _ 16, 24⟩ r; rw [ab A]; exact A.argsApart⟩,
-      fun _ h => (List.not_mem_nil h).elim, by show _ + 16 < _; have := fit A; have := A.stackBound; omega,
+      fun _ h => (List.not_mem_nil h).elim, by show _ + 16 < _; have := fit A; have := A.stackBound; omega_arith,
       fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (Nat.lt_irrefl 0)⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wf A₁, wf A₂,
     X86.Taint.slotsOk_empty, X86.Taint.slotsAgree_empty, fun _ => by rw [pushed_esp, pushed_esp, sp],
@@ -188,7 +188,7 @@ theorem agree_pr {s₁ s₂ : State} (A₁ : PrABI s₁) (A₂ : PrABI s₂) (sp
   · have hk' : k < 24 := hk
     show (pushed rs4 s₁).mem (X86.Taint.argByte (pushed rs4 s₁) (16 + k)) =
       (pushed rs4 s₂).mem (X86.Taint.argByte (pushed rs4 s₂) (16 + k))
-    rw [A₁.argByte h4 hk', A₂.argByte h4 hk', args _ (by omega)]
+    rw [A₁.argByte h4 hk', A₂.argByte h4 hk', args _ (by omega_arith)]
 
 /-- Two runs with the same numbers and arguments. -/
 def PrPair (W : Addr) (L N S mo inv o a b : Nat) (s₁ s₂ : State) : Prop :=

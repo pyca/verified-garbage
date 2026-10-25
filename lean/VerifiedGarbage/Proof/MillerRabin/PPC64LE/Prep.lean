@@ -369,7 +369,7 @@ theorem condMid_ok {s : State} {B : Addr} {Z w c : Nat} (hs : Scr s B Z) (hZ : s
     (hj : j = 1 ∨ j = 2 ∨ j = 3) :
     WP isa (.block (condMid j)) s fun t => (t.gpr .r9 = mask (decide (j < mrSig c)) ∧ t.mem = s.mem) ∧
       Keep [.r0, .r3, .r4, .r5, .r9] s t := by
-  refine WP.keep _ ?_ (by simp [writesOnly, instrs, dstOf, Instr.writesLr, condMid, repeat16, zeroMask])
+  refine WP.keep _ ?_ (by rfl)
   unfold condMid zeroMask repeat16
   prun [h14, hs.ld hZ, hL, exec_lis, exec_ori, exec_oris, repeat16_val j hj, z64_mask, not_mask, BitVec.add_zero]
   rw [← sig_word hj, decide_not]

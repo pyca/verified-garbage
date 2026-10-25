@@ -71,11 +71,11 @@ theorem slot_disj {q d : Nat} (hq : q * 16 ≤ n) (h₁ : 128 ≤ d) (h₂ : d +
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl) | rfl
-  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega)) (by omega) (by decide)
-  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact ((h.data.ok.w.sub_left (Region.sub_prefix hq)).sub_right (Lay.wSub (by omega))).symm
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (h.kw.sub_right (Lay.wSub (by omega))).symm
+  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact ((h.data.ok.w.sub_left (Region.sub_prefix hq)).sub_right (Lay.wSub (by omega_arith))).symm
+  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (h.kw.sub_right (Lay.wSub (by omega_arith))).symm
 
 /-- `src` is apart from what the call writes. -/
 theorem src_disj {q : Nat} (hq : q * 16 ≤ n) {p : Addr} {k : Nat} (hs : Region.Sub ⟨p, k⟩ ⟨S, sl⟩) :
@@ -96,11 +96,11 @@ theorem slot_disj2 {d : Nat} (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 448) :
   have hsl := h.sl_le
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
-  · exact slot_disj h (by omega) h₁ h₂ r (List.mem_append_left _ hr)
+  · exact slot_disj h (by omega_arith) h₁ h₂ r (List.mem_append_left _ hr)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ((h.data.ok.w.sub_left (Offset.sub_base D (by omega))).sub_right (Lay.wSub (by omega))).symm
-    · exact slot_disj h (q := sl / 16) (by omega) h₁ h₂ _ (List.mem_append_right _ (List.mem_singleton_self _))
+    · exact ((h.data.ok.w.sub_left (Offset.sub_base D (by omega_arith))).sub_right (Lay.wSub (by omega_arith))).symm
+    · exact slot_disj h (q := sl / 16) (by omega_arith) h₁ h₂ _ (List.mem_append_right _ (List.mem_singleton_self _))
 
 /-- `rest`, after the bytes left are copied (or none): what `prefix` leaves. -/
 theorem rest_ok {s₄ : State} (he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄) (rd₄ : s₄.rd = s.rd)
@@ -125,20 +125,20 @@ theorem rest_ok {s₄ : State} (he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s�
   have W200 : ∀ {p : Addr} {k : Nat}, (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ →
       ∀ r ∈ [(⟨W + BitVec.ofNat 64 200, 24⟩ : Region)], (⟨p, k⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd.sub_right (Lay.wSub (by decide))
-  have dB : (⟨D, 16 * (sl / 16)⟩ : Region).Disjoint ⟨W, 2560⟩ := h.data.ok.w.sub_left (Region.sub_prefix (by omega))
+  have dB : (⟨D, 16 * (sl / 16)⟩ : Region).Disjoint ⟨W, 2560⟩ := h.data.ok.w.sub_left (Region.sub_prefix (by omega_arith))
   have dT : (⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩ : Region).Disjoint ⟨W, 2560⟩ :=
-    h.data.ok.w.sub_left (Offset.sub_base D (by omega))
+    h.data.ok.w.sub_left (Offset.sub_base D (by omega_arith))
   have cW : ∀ {p : Addr}, (⟨p, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 200, 24⟩ →
       ∀ r ∈ [(⟨W + BitVec.ofNat 64 200, 24⟩ : Region)], (⟨p, 16⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd
   have eB : blocksAt s₅.mem D (sl / 16) = blocksAt s₄.mem D (sl / 16) :=
-    blocksAt_frame f₅ (W200 dB) (by omega)
+    blocksAt_frame f₅ (W200 dB) (by omega_arith)
   have eC : blockAt s₅.mem (cbA W) = blockAt s₄.mem (cbA W) :=
     blockAt_frame f₅ (cW (by simp only [cbA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide)))
   have eY : blockAt s₅.mem (yA W) = blockAt s₄.mem (yA W) :=
     blockAt_frame f₅ (cW (by simp only [yA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide)))
   refine ⟨he₄.keep g₅ rd₅ wr₅, rd₅.trans rd₄, wr₅.trans wr₄, ?_, by rw [eB, bl₄], by rw [eC, ct₄],
-    by rw [eY, eB, y₄], by rw [bytesAt_frame f₅ (W200 dT) (by omega), tl₄], d₅, l₅, a₅⟩
+    by rw [eY, eB, y₄], by rw [bytesAt_frame f₅ (W200 dT) (by omega_arith), tl₄], d₅, l₅, a₅⟩
   refine (fr₄.sub fun r hr => ?_).trans (f₅.sub fun r hr => ?_)
   · rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
@@ -157,8 +157,8 @@ theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
   have hn := h.data.ok.lt
   have hsl := h.sl_le
   have kp : ∀ d, 128 ≤ d → d + 8 ≤ 448 → s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
-    fun d h₁ h₂ => H.frame.readW (Region.contains_self _ _) (slot_disj h (q := sl / 16) (by omega) h₁ h₂) (by decide)
-  refine WP.seq (WP.mono (pre3_ok (D := D) (S := S) (sl := sl) (by omega) H.env (by rw [kp 200 (by decide) (by decide)]; exact h.dat)
+    fun d h₁ h₂ => H.frame.readW (Region.contains_self _ _) (slot_disj h (q := sl / 16) (by omega_arith) h₁ h₂) (by decide)
+  refine WP.seq (WP.mono (pre3_ok (D := D) (S := S) (sl := sl) (by omega_arith) H.env (by rw [kp 200 (by decide) (by decide)]; exact h.dat)
     (by rw [kp 224 (by decide) (by decide)]; exact h.src) (by rw [kp 192 (by decide) (by decide)]; exact h.slen))
     fun s₃ ⟨cx₃, si₃, di₃, zf₃, g₃, m₃, rd₃, wr₃⟩ => ?_)
   have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := H.env.keep g₃ rd₃ wr₃
@@ -169,23 +169,23 @@ theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
     · simp only [List.mem_singleton] at hr; subst hr; simp
   have hs₂ : bytesAt s₂.mem (S + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16) =
       bytesAt s.mem (S + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16) :=
-    bytesAt_frame H.frame (src_disj h (q := sl / 16) (by omega) (Offset.sub_base S (by omega))) (by omega)
+    bytesAt_frame H.frame (src_disj h (q := sl / 16) (by omega_arith) (Offset.sub_base S (by omega_arith))) (by omega_arith)
   refine WP.seq (WP.ite (decide (sl % 16 = 0)) (by simp only [eval, zf₃]) (fun h0 => ?_) (fun h0 => ?_))
   · have h0' : sl % 16 = 0 := of_decide_eq_true h0
     refine WP.block_nil (rest_ok h he₃ (rd₃.trans H.rd) (wr₃.trans H.wr) (by rw [m₃]; exact fr₂)
       (by rw [m₃]; exact H.blocks) (by rw [m₃]; exact H.ctr) (by rw [m₃]; exact H.y) ?_)
     rw [h0']; rfl
   · have h0' : sl % 16 ≠ 0 := of_decide_eq_false h0
-    have e1 : 16 * (sl / 16) + sl % 16 ≤ sl := by omega
-    have e2 : 16 * (sl / 16) + sl % 16 ≤ n := by omega
-    have sl64 : sl < 2 ^ 64 := by omega
+    have e1 : 16 * (sl / 16) + sl % 16 ≤ sl := by omega_arith
+    have e2 : 16 * (sl / 16) + sl % 16 ≤ n := by omega_arith
+    have sl64 : sl < 2 ^ 64 := by omega_arith
     have c1 : Covers [⟨S + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩] (s₃.rd ++ s₃.wr) := by
       rw [rd₃, wr₃, H.rd, H.wr]; exact covers_off' h.srcCov e1 sl64
     have c2 : Covers [⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩] s₃.wr := by
       rw [wr₃, H.wr]; exact covers_off' h.data.wr e2 hn
     have hlp : LoopPre s₃ (S + BitVec.ofNat 64 (16 * (sl / 16))) (D + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16) :=
-      ⟨si₃, di₃, cx₃, by omega, by omega, c1, c2,
-        (h.sD.sub_left (Offset.sub_base S (by omega))).sub_right (Offset.sub_base D (by omega))⟩
+      ⟨si₃, di₃, cx₃, by omega_arith, by omega_arith, c1, c2,
+        (h.sD.sub_left (Offset.sub_base S (by omega_arith))).sub_right (Offset.sub_base D (by omega_arith))⟩
     refine WP.mono (copyLoop_ok s₃ hlp) fun s₄ ⟨m₄, g₄, rd₄, wr₄⟩ => ?_
     have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₃.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -199,11 +199,11 @@ theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
     have dBT : (⟨D, 16 * (sl / 16)⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩ := by
       have hw := h.data.ok.wrap
       simpa using Offset.disjoint D (d := 0) (n := 16 * (sl / 16)) (e := 16 * (sl / 16))
-        (k := sl % 16) (.inl (by omega)) (by omega) (by omega)
+        (k := sl % 16) (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     have eB : blocksAt s₄.mem D (sl / 16) = blocksAt s₃.mem D (sl / 16) :=
-      blocksAt_frame fC (one dBT) (by omega)
+      blocksAt_frame fC (one dBT) (by omega_arith)
     have tW : (⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩ : Region).Disjoint ⟨W, 2560⟩ :=
-      dDT.sub_left (Offset.sub_base D (by omega))
+      dDT.sub_left (Offset.sub_base D (by omega_arith))
     have eC : blockAt s₄.mem (cbA W) = blockAt s₃.mem (cbA W) :=
       blockAt_frame fC (one ((tW.sub_right (fun a hc => st_w a (cb_sub a hc))).symm))
     have eY : blockAt s₄.mem (yA W) = blockAt s₃.mem (yA W) :=
@@ -216,7 +216,7 @@ theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
       (by rw [eB, m₃]; exact H.blocks) (by rw [eC, m₃]; exact H.ctr) (by rw [eY, eB, m₃]; exact H.y) ?_
     rw [m₄]
     have := bytesAt_writeBytes_self s₃.mem (D + BitVec.ofNat 64 (16 * (sl / 16)))
-      (bytesAt s₃.mem (S + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16)) (by rw [length_bytesAt]; omega)
+      (bytesAt s₃.mem (S + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16)) (by rw [length_bytesAt]; omega_arith)
     rw [length_bytesAt] at this
     rw [this, m₃, hs₂]
 
@@ -233,7 +233,7 @@ theorem call_ok (T : BlkToFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.ofNa
   refine WP.seq (WP.mono (pre2_ok (R := R) (D := D) (S := S) he₁ (by rw [m₁]; exact h.rounds) (by rw [m₁]; exact h.dat)
     (by rw [m₁]; exact h.src)) fun s₂ ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, r11₂, ax₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
   have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep g₂ rd₂ wr₂
-  exact WP.mono (preCall_ok h T (q := sl / 16) (by omega) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
+  exact WP.mono (preCall_ok h T (q := sl / 16) (by omega_arith) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
     (m₂.trans m₁) di₂ si₂ dx₂ cx₂ r8₂ (by rw [r9₂, ax₁]) (by rw [r10₂, ax₁]) r11₂ ax₂)
     fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => ⟨he₂.keep (fun r hr => cs₃ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -250,7 +250,7 @@ theorem prefix_ok (T : BlkToFn M) :
   have hsl := h.sl_le
   have he := h.env
   unfold SealSplit.prefix
-  refine WP.seq (WP.mono (pre1_ok (sl := sl) (by omega) he h.slen) fun s₁ ⟨ax₁, zf₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
+  refine WP.seq (WP.mono (pre1_ok (sl := sl) (by omega_arith) he h.slen) fun s₁ ⟨ax₁, zf₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
   have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁

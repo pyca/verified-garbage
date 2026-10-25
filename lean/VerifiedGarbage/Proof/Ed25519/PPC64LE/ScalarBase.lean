@@ -37,12 +37,12 @@ theorem initFields_ok {s : State} (hc : Ctx b s) :
     WP isa (.block initFields) s fun t => Rest [.r7] s t ∧ Frame [FA b] s.mem t.mem := by
   unfold initFields
   refine wp_li (by decide) fun s1 u1 => ?_
-  refine WP.mono (stores_ok (r := .r7) (o := 64) (n := 176) (by omega)
+  refine WP.mono (stores_ok (r := .r7) (o := 64) (n := 176) (by omega_arith)
     (hc.of_rest (u1.rest (ws := [.r7]) (by decide)) (by decide))) fun t ⟨_, h2, _, h4⟩ =>
       ⟨(u1.rest (by decide)).trans (h4.mono (by decide)), ?_⟩
   rw [← u1.mem]
   exact h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩
+    rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_arith)⟩
 
 theorem env_const16 (e : Env) : point (evalOps [.const 16 Spec.Ed25519.d] e) 0 1 2 3 = point e 0 1 2 3 ∧
     evalOps [.const 16 Spec.Ed25519.d] e 16 = Spec.Ed25519.d := ⟨rfl, rfl⟩
@@ -67,8 +67,8 @@ theorem pointFromScalar_ok {s : State} (hc : Ctx8 b s) {count : Nat} (hc1 : 1 �
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
     rw [← u1.mem]
-    exact bytes_ws k2.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd
-      (by omega) (List.mem_range.mp hi)
+    exact bytes_ws k2.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd
+      (by omega_arith) (List.mem_range.mp hi)
   refine WP.mono (pointMultiply_ok hc2 d2 (p := p) hc1 hc32
     (by rw [k2.rest.gpr _ (by decide), u1.gpr, h14, BitVec.add_zero])
     (fun i hi => by rw [k2.rest.rd, k2.rest.wr, u1.rd, u1.wr]; exact hin i hi) hpd) fun t ⟨rt, ft, pt, dt⟩ =>
@@ -99,7 +99,7 @@ theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) {p : Addr} (h14 : s.gpr 
   have hb2 : bytesAt s2.mem p 32 = bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
-    exact bytes_ws hF2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd (by decide)
+    exact bytes_ws hF2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd (by decide)
       (List.mem_range.mp hi)
   have hR2 : Rest baseR s s2 := (r1.mono (by decide)).trans (k2.rest.mono (by decide))
   have hR2' : Rest fclob s s2 := (r1.mono (by decide)).trans k2.rest
@@ -149,10 +149,10 @@ theorem mulW_saves {B : Addr} (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1
   have hB : BITSB = 32 := rfl
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
 
 theorem scalarBase_ok {s : State} (hp : BasePre s) :
     WP isa scalarBase s fun t =>
@@ -167,13 +167,13 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   rw [scalarSave_eq]
   have hsin : ∀ p ∈ saveList, InRegions s.wr (s.gpr .r5 + BitVec.ofNat 64 p.2) 8 := fun p hpl => by
     have := saveList_in p hpl
-    rw [← hb]; exact in_base hws (by omega) (by omega)
+    rw [← hb]; exact in_base hws (by omega_arith) (by omega_arith)
   refine WP.seq (Spill.save_ok (b := .r5) (by decide) saveList_fits hsin ?_)
   generalize hs1 : ({ s with mem := Spill.saveMem s.mem (s.gpr .r5) s.gpr saveList } : State) = s1
   have hsv : Spill.Saved b s.gpr saveList s1.mem := by rw [← hs1, hb]; exact Spill.saveMem_saved (by decide) _ _ _
   have hf1 : Frame [⟨b, 8192⟩] s.mem s1.mem := by
     rw [← hs1, hb]
-    exact Spill.saveMem_frame_base (fun p hpl => by have := saveList_in p hpl; omega) (by decide) _ _ _
+    exact Spill.saveMem_frame_base (fun p hpl => by have := saveList_in p hpl; omega_arith) (by decide) _ _ _
   have hg1 : s1.gpr = s.gpr := by rw [← hs1]
   have hrd1 : s1.rd = s.rd := by rw [← hs1]
   have hwr1 : s1.wr = s.wr := by rw [← hs1]
@@ -189,13 +189,13 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   -- The link register's slot.
   refine Spill.save_ok (b := .r6) (l := [(.r7, LRS)]) (rest := [.addi .r14 .r4 0]) (by decide) (by decide)
     (fun p hpl => by
-      rw [List.mem_singleton.mp hpl, e6, hr4.wr, hwr1]; exact in_base hws (by omega) (by omega)) ?_
+      rw [List.mem_singleton.mp hpl, e6, hr4.wr, hwr1]; exact in_base hws (by omega_arith) (by omega_arith)) ?_
   generalize hs5 : ({ s4 with mem := Spill.saveMem s4.mem (s4.gpr .r6) s4.gpr [(.r7, LRS)] } : State) = s5
   have hsvL : Spill.Saved b s4.gpr [(.r7, LRS)] s5.mem := by
     rw [← hs5, ← e6]; exact Spill.saveMem_saved (by decide) _ _ _
   have hf5 : Frame [⟨b + BitVec.ofNat 64 LRS, 8⟩] s4.mem s5.mem := by
     rw [← hs5, e6]
-    exact Spill.saveMem_frame (lo := LRS) (n := 8) (fun p hpl => by rw [List.mem_singleton.mp hpl]; omega)
+    exact Spill.saveMem_frame (lo := LRS) (n := 8) (fun p hpl => by rw [List.mem_singleton.mp hpl]; omega_arith)
       (by decide) _ _ _
   have hg5 : s5.gpr = s4.gpr := by rw [← hs5]
   have hrd5 : s5.rd = s4.rd := by rw [← hs5]
@@ -220,14 +220,14 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
     have hi' := List.mem_range.mp hi
     rw [hm6, hf5 _ fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact fun hc => hpd _ (Offset.contains_base _ (by omega) (by omega)) (Offset.sub_base b (by omega) _ hc),
+        exact fun hc => hpd _ (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Offset.sub_base b (by omega_arith) _ hc),
       (show s4.mem = s1.mem by rw [u4.mem, u3.mem, u2.mem])]
     exact hf1 _ fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact hpd _ (Offset.contains_base _ (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact hpd _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   have hin6 : ∀ i < 32, InRegions (s6.rd ++ s6.wr) (s.gpr .r4 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [hR6.rd, hR6.wr, hp.rd]
-    exact in_base (List.mem_append_left _ (List.mem_singleton_self _)) (by omega) (by omega)
+    exact in_base (List.mem_append_left _ (List.mem_singleton_self _)) (by omega_arith) (by omega_arith)
   have e27 : s6.gpr .r27 = s.gpr .r3 := by
     rw [u6.other _ (by decide), hg5, u4.other _ (by decide), u3.gpr, u2.other _ (by decide), hg1, BitVec.add_zero]
   refine WP.seq (WP.mono (scalarBaseEngine_ok hc6 e14 hin6 hpd) fun s7 ⟨r7, f7, v7⟩ => ?_)
@@ -239,11 +239,11 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   simp only [List.append_assoc]
   have hsvL7 : Spill.Saved b s4.gpr [(.r7, LRS)] s7.mem := by
     rw [← hm6] at hsvL
-    exact hsvL.frame_in (lo := LRS) (n := 8) (fun p hpl => by rw [List.mem_singleton.mp hpl]; omega) f7
-      (mulW_saves LRS 8 (by omega) (by omega))
+    exact hsvL.frame_in (lo := LRS) (n := 8) (fun p hpl => by rw [List.mem_singleton.mp hpl]; omega_arith) f7
+      (mulW_saves LRS 8 (by omega_arith) (by omega_arith))
   have hc7 : Ctx8 b s7 := hc6.of_rest r7 (by decide)
   refine Spill.restore_ok (b := .r6) (B := b) (by decide) hc7.r6 (by decide) (by decide)
-    (fun p hpl => by rw [List.mem_singleton.mp hpl]; exact hc7.inR (by omega)) hsvL7 fun s8 h8 => ?_
+    (fun p hpl => by rw [List.mem_singleton.mp hpl]; exact hc7.inR (by omega_arith)) hsvL7 fun s8 h8 => ?_
   refine wp_mtlr ?_
   generalize hu : ({ s8 with lr := s8.gpr .r7 } : State) = u
   have hlu : u.lr = s.lr := by rw [← hu]; simp only []; rw [h8.gpr _ (List.mem_singleton_self _)]; exact e7
@@ -257,9 +257,9 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
     rw [hmu]
     have h4 : Spill.Saved b s.gpr saveList s4.mem := by rw [u4.mem, u3.mem, u2.mem]; exact hsv
     have h5 := h4.frame_in (lo := SAVE) (n := 96) saveList_in hf5 fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     rw [← hm6] at h5
-    exact h5.frame_in (lo := SAVE) (n := 96) saveList_in f7 (mulW_saves SAVE 96 (by omega) (by omega))
+    exact h5.frame_in (lo := SAVE) (n := 96) saveList_in f7 (mulW_saves SAVE 96 (by omega_arith) (by omega_arith))
   have hcu : Ctx b u := ⟨by rw [hgu, h8.other _ (by decide), hc7.r6], 8192, by decide, by rw [hwru]; exact hws⟩
   refine WP.mono (WP.keep_lr (scalarOut_ok hcu (a := FR) (by decide) (P := .r27) (by decide)
     (by rw [hgu, h8.other _ (by decide), r7.gpr _ (by decide), e27]) (by rw [hwru]; exact hout) (hb ▸ hp.out_ws)

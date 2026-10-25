@@ -69,7 +69,7 @@ theorem scalarLoopStep_relCT {σ τ : State} {b p : Addr} {n d : Nat}
       simp only [VG.AArch64.Taint.ofRegs,RegSet.mem_ofList,List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl <;> simp)⟩ es et
   obtain ⟨_,u,eu,hu⟩ := scalarLoopStep_ok hs hp.1 hd hc
-  obtain ⟨_,v,ev,hv⟩ := scalarLoopStep_ok ht hp.2 hd (by rw [← parsed_eq hm (by omega) L]; exact hc)
+  obtain ⟨_,v,ev,hv⟩ := scalarLoopStep_ok ht hp.2 hd (by rw [← parsed_eq hm (by omega_arith) L]; exact hc)
   obtain ⟨_,rfl⟩ := Exec.det es eu
   obtain ⟨_,rfl⟩ := Exec.det et ev
   have hg := hu.1.publicRegs hm hsp hv.1
@@ -111,7 +111,7 @@ theorem widePhase_relCT {σ τ : State} {b p : Addr} {n d : Nat}
       have he := hp.2
       rw [eval_zero,hg,ite_eq_right hn] at he
       contradiction
-    exact wideLoop_relCT hs ht hm hsp (by omega) (by omega) _ _ _ _ _ _
+    exact wideLoop_relCT hs ht hm hsp (by omega_arith) (by omega_arith) _ _ _ _ _ _
       ⟨hp.1.1.1,hp.1.2.1,hp.1.1.2.1,hp.1.2.2.1⟩ es et
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
@@ -157,7 +157,7 @@ theorem fourPhase_relCT {σ τ : State} {b p : Addr} {n d : Nat}
       rw [eval_zero,hg,ite_eq_left hcap,hx] at he
       contradiction
     have hb := hp.1.1.1.bound
-    exact fourLoop_relCT hs ht hm hsp (by omega) hmod (by omega) _ _ _ _ _ _
+    exact fourLoop_relCT hs ht hm hsp (by omega_arith) hmod (by omega_arith) _ _ _ _ _ _
       ⟨hp.1.1.1,hp.1.2.1,hp.1.1.2.1,hp.1.2.2.1⟩ es et
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
@@ -213,9 +213,9 @@ theorem scalarLoop_relCT {σ τ : State} {b p : Addr} {n d : Nat}
     obtain ⟨h4,h5⟩ := guard_nonzero hcontinue hga
     rw [ha.x4] at h4
     rw [ha.x5] at h5
-    have hj' : j+1<n := by have := ha.bound; omega
-    have hc'' : (parsed σ b L (j+1)).length<256 := by omega
-    exact ⟨n-(j+1),by omega,j+1,hj',hc'',rfl,ha,hb⟩
+    have hj' : j+1<n := by have := ha.bound; omega_arith
+    have hc'' : (parsed σ b L (j+1)).length<256 := by omega_arith
+    exact ⟨n-(j+1),by omega_arith,j+1,hj',hc'',rfl,ha,hb⟩
   exact (RelCT.loop I hstep (n-d)).mono
     (fun _ _ hp => ⟨d,hd,hc,rfl,hp⟩) (fun _ _ h => h)
 
@@ -262,7 +262,7 @@ theorem scalarBranch_relCT {σ τ : State} {b p : Addr} {n d : Nat}
     rw [hp.1.1.1.x4] at h4
     rw [hp.1.1.1.x5] at h5
     have hb := hp.1.1.1.bound
-    exact scalarLoop_relCT hs ht hm hsp (by omega) (by omega) _ _ _ _ _ _ ⟨hp.1.1.1,hp.1.2.1⟩ es et
+    exact scalarLoop_relCT hs ht hm hsp (by omega_arith) (by omega_arith) _ _ _ _ _ _ ⟨hp.1.1.1,hp.1.2.1⟩ es et
 
 private theorem scalarSetup_ok {σ s : State} {b p : Addr} {n d : Nat} {L : List VG.Spec.MlDsa.Zq}
     (h : ParseInv σ b p n L d s) :
@@ -513,7 +513,7 @@ theorem segAt_relCT {v blocks off n k : Nat} {σ τ : State} {L : Nat → List Z
   have ct : RelCT isa (fun s t => SegAt v blocks off n σ σ L k s ∧ SegAt v blocks off n τ σ L k t)
       (segment variant n) (fun _ _ => True) := by
     intro s t tr ur s' t' h es et
-    have hb : off+3*n≤1008 := by have:=h.1.1.blockBound; omega
+    have hb : off+3*n≤1008 := by have:=h.1.1.blockBound; omega_arith
     have hs := h.1.1
     have ht := h.2.1
     have hks : (doneRows σ off n k L k).length≤256 := hs.length k hk
@@ -524,11 +524,11 @@ theorem segAt_relCT {v blocks off n k : Nat} {σ τ : State} {L : Nat → List Z
     obtain ⟨pb,pp,pc⟩ := pub.ptrs (off := off) (k := k)
     rw [←pb,←pp] at lt
     have crs : InRegions (s.rd++s.wr) (countP σ k) 8 :=
-      in_scr_rd hp hs.env.wr (by unfold counts; have:=hp.streams; omega)
+      in_scr_rd hp hs.env.wr (by unfold counts; have:=hp.streams; omega_arith)
     have crt : InRegions (t.rd++t.wr) (countP σ k) 8 := by
-      rw [pc]; exact in_scr_rd hq ht.env.wr (by unfold counts; have:=hq.streams; omega)
+      rw [pc]; exact in_scr_rd hq ht.env.wr (by unfold counts; have:=hq.streams; omega_arith)
     have hm : InputEq s t (bufP σ k+BitVec.ofNat 64 off) n := rows_input_eq pub hs ht hk hn
-    exact segment_relCT variant n (by omega) checkSetup checkNext hks hmod
+    exact segment_relCT variant n (by omega_arith) checkSetup checkNext hks hmod
       (hs.env.sp.trans (pub.2.2.2.1.trans ht.env.sp.symm))
       h.1.2.1.1 h.1.2.1.2.1 h.1.2.1.2.2
       (h.2.2.1.1.trans pb.symm) (h.2.2.1.2.1.trans pp.symm) (h.2.2.1.2.2.trans pc.symm)
@@ -572,7 +572,7 @@ theorem segments_relCT {v blocks off n count : Nat} {σ τ : State} {L : Nat →
       (segments variant off n count)
       (fun s t => Rows v blocks σ (fun k => rowResult σ k off n (L k)) s ∧
         Rows v blocks τ (fun k => rowResult σ k off n (L k)) t) := by
-  have hv4 : v≤4 := by have:=hp.streams; omega
+  have hv4 : v≤4 := by have:=hp.streams; omega_arith
   obtain ⟨_,checkNext⟩ := segmentNext_check
   unfold segments
   apply RelCT.seq (R := fun s t => SegAt v blocks off n σ σ L 0 s ∧ SegAt v blocks off n τ σ L 0 t)
@@ -582,12 +582,12 @@ theorem segments_relCT {v blocks off n count : Nat} {σ τ : State} {L : Nat →
         (fun s t h => ⟨h.1.env.sp.trans (pub.2.2.2.1.trans h.2.env.sp.symm),
           by simp [Taint.ofRegs,RegSet.mem_ofList]⟩) init.init
     exact (hc.wp (fun s t h =>
-      ⟨segAt_init n hp h.1 hv (by have:=h.1.blockBound; omega),
-       segAt_init n hq h.2 hv (by have:=h.1.blockBound; omega)⟩)).mono
+      ⟨segAt_init n hp h.1 hv (by have:=h.1.blockBound; omega_arith),
+       segAt_init n hq h.2 hv (by have:=h.1.blockBound; omega_arith)⟩)).mono
       (fun _ _ h => h) (fun _ _ h => h.2)
   · refine (RelCT.loop (M := isa) (fun m s t => ∃ k, k<v ∧ m=v-k ∧
         SegAt v blocks off n σ σ L k s ∧ SegAt v blocks off n τ σ L k t)
-      (fun m => ?_) v).mono (fun s t h => ⟨0,by have:=hp.streams; omega,by omega,h⟩)
+      (fun m => ?_) v).mono (fun s t h => ⟨0,by have:=hp.streams; omega_arith,by omega_arith,h⟩)
       (fun _ _ h => h)
     apply RelCT.exists_
     intro k
@@ -598,16 +598,16 @@ theorem segments_relCT {v blocks off n count : Nat} {σ τ : State} {L : Nat →
     obtain ⟨htr,h1,h2⟩ := segAt_relCT hp hq pub hk hn hmod variant checks.setup checkNext
       s t tr ur s' t' h es et
     refine ⟨htr,?_,?_,?_⟩
-    · rw [segAt_eval h1 (by omega) hv4,segAt_eval h2 (by omega) hv4]
+    · rw [segAt_eval h1 (by omega_arith) hv4,segAt_eval h2 (by omega_arith) hv4]
     · intro he
-      rw [segAt_eval h1 (by omega) hv4] at he
-      have hl : k+1=v := by simp at he; omega
+      rw [segAt_eval h1 (by omega_arith) hv4] at he
+      have hl : k+1=v := by simp at he; omega_arith
       subst hl
       exact ⟨h1.last,h2.last⟩
     · intro he
-      rw [segAt_eval h1 (by omega) hv4] at he
-      have hl : k+1<v := by simp at he; omega
-      exact ⟨v-(k+1),by omega,k+1,hl,rfl,h1,h2⟩
+      rw [segAt_eval h1 (by omega_arith) hv4] at he
+      have hl : k+1<v := by simp at he; omega_arith
+      exact ⟨v-(k+1),by omega_arith,k+1,hl,rfl,h1,h2⟩
 
 theorem batchFour_relCT {blocks off n : Nat} {σ τ : State} {L : Nat → List Zq}
     (hp : Pre 4 σ) (hq : Pre 4 τ) (pub : Pub 4 σ τ)

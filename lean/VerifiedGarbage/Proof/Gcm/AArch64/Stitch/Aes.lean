@@ -87,7 +87,7 @@ theorem ctr1_ok (j : Nat) (hj : j < 8) (s : State)
       s'.v (breg j) = setLane (s.mem.readW (s.gpr .x20 + BitVec.ofNat 64 48) 128) 32 3
         (rev32 (s.read .w .x10 + BitVec.ofNat 32 j)) ∧ Fr [.x12] [breg j] s s' := by
   rw [ctr1, WP.block_cons_iff]
-  refine ⟨_, exec_addImm_w (by omega), ?_⟩
+  refine ⟨_, exec_addImm_w (by omega_arith), ?_⟩
   rw [WP.block_cons_iff]
   refine ⟨_, exec_rev32, ?_⟩
   rw [WP.block_cons_iff]
@@ -113,7 +113,7 @@ theorem ctrs_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) :
     have := hp.ctr; rwa [cbA, BitVec.add_zero] at this
   refine wp_range_flatMap (M := isa) (fun i s' => (∀ j < i, s'.v (breg j) = cvec s k j) ∧
       Fr [.x12] aesV s s') (fun i s₁ hi ⟨e₁, f₁⟩ => ?_) 8 (Nat.le_refl _) s
-    ⟨fun _ h => absurd h (by omega), Fr.refl _ _ _⟩
+    ⟨fun _ h => absurd h (by omega_arith), Fr.refl _ _ _⟩
   refine WP.mono (ctr1_ok i hi s₁ (by rw [f₁.rd, f₁.wr, f₁.gpr _ (by decide)]; exact hin))
     fun s' ⟨e, f⟩ => ⟨fun j hj => ?_, f₁.trans (f.mono (fun r h => h)
       (fun r h => by simp only [List.mem_singleton] at h; subst h; exact breg_mem i))⟩
@@ -124,8 +124,8 @@ theorem ctrs_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) :
     rw [e, f₁.mem]
     simp only [State.read, f₁.gpr _ (by decide : Reg.x20 ∉ [Reg.x12]), f₁.gpr _ (by decide : Reg.x10 ∉ [Reg.x12])]
     rw [hx]
-  · rw [f.v _ (by simp only [List.mem_singleton]; exact fun h => hji (breg_inj j (by omega) i hi h)),
-      e₁ j (by omega)]
+  · rw [f.v _ (by simp only [List.mem_singleton]; exact fun h => hji (breg_inj j (by omega_arith) i hi h)),
+      e₁ j (by omega_arith)]
 
 /-! ## The rounds -/
 
@@ -155,7 +155,7 @@ theorem rnd8_ok {w : List Byte} {x : Nat → Spec.Aes.State} {r : Nat} {s : Stat
       (∀ j < i, addRoundKey (st (s'.v (breg j))) (roundKey w (r + 1)) = rnds w (x j) (r + 1)) ∧
       (∀ j, i ≤ j → j < 8 → s'.v (breg j) = s.v (breg j)) ∧ Fr [] aesV s s' ∧ s'.v K = s.v K)
     (fun i s₁ hi ⟨e₁, u₁, f₁, k₁⟩ => ?_) 8 (Nat.le_refl _) s
-    ⟨fun _ h => absurd h (by omega), fun _ _ _ => rfl, Fr.refl _ _ _, rfl⟩)
+    ⟨fun _ h => absurd h (by omega_arith), fun _ _ _ => rfl, Fr.refl _ _ _, rfl⟩)
     fun s' ⟨e, _, f, hK⟩ => ⟨e, f, hK⟩
   refine WP.of_runBlock ⟨_, aesround_run i s₁, ?_⟩
   have hne : ∀ j, j < 8 → j ≠ i → breg j ≠ breg i := fun j hj hji h => hji (breg_inj j hj i hi h)
@@ -165,8 +165,8 @@ theorem rnd8_ok {w : List Byte} {x : Nat → Spec.Aes.State} {r : Nat} {s : Stat
       rw [setV_v_self]
       refine round_st (k := s₁.v K) (by rw [k₁]; exact hk) ?_
       rw [u₁ j (Nat.le_refl _) hi]; exact hI j hi
-    · rw [setV_v_of_ne _ _ (hne j (by omega) hji)]; exact e₁ j (by omega)
-  · rw [setV_v_of_ne _ _ (hne j hj8 (by omega)), u₁ j (by omega) hj8]
+    · rw [setV_v_of_ne _ _ (hne j (by omega_arith) hji)]; exact e₁ j (by omega_arith)
+  · rw [setV_v_of_ne _ _ (hne j hj8 (by omega_arith)), u₁ j (by omega_arith) hj8]
   · refine f₁.trans ⟨fun _ _ => rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     exact setV_v_of_ne _ _ fun h => hr (by rw [h]; exact breg_mem i)
   · rw [setV_v_of_ne _ _ (breg_ne_K i).symm, k₁]
@@ -177,13 +177,13 @@ theorem rnd_ok {nr o k : Nat} {s₀ : State} (hp : APre nr o k s₀) {x : Nat �
     WP isa (.block (rnd r)) s fun s' => RI (sch nr s₀) x (r + 1) s' ∧ Fr [.x12] aesV s₀ s' := by
   have hR := hp.rounds
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .x21 + BitVec.ofNat 64 (16 * r)) 16 := by
-    rw [hf.rd, hf.wr, hf.gpr _ (by decide)]; exact hp.keys r (by omega)
+    rw [hf.rd, hf.wr, hf.gpr _ (by decide)]; exact hp.keys r (by omega_arith)
   rw [rnd, WP.block_cons_iff]
-  refine ⟨_, exec_ldrq (by omega) hin, ?_⟩
+  refine ⟨_, exec_ldrq (by omega_arith) hin, ?_⟩
   have hk : KeyIs ((s.setV K (s.mem.readW (s.gpr .x21 + BitVec.ofNat 64 (16 * r)) 128)).v K)
       (roundKey (sch nr s₀) r) := by
     rw [setV_v_self, hf.mem, hf.gpr _ (by decide)]
-    exact keyIs_readW _ _ (by omega)
+    exact keyIs_readW _ _ (by omega_arith)
   have hI' : RI (sch nr s₀) x r (s.setV K (s.mem.readW (s.gpr .x21 + BitVec.ofNat 64 (16 * r)) 128)) :=
     fun j hj => by rw [setV_v_of_ne _ _ (breg_ne_K j)]; exact hI j hj
   exact WP.mono (rnd8_ok hk hI') fun s' ⟨e, f, _⟩ =>
@@ -195,7 +195,7 @@ theorem rnds_ok {nr o k : Nat} {s₀ : State} (hp : APre nr o k s₀) {x : Nat �
       RI (sch nr s₀) x n s' ∧ Fr [.x12] aesV s₀ s' := by
   intro n hn
   refine wp_range_flatMap (M := isa) (fun r s' => RI (sch nr s₀) x r s' ∧ Fr [.x12] aesV s₀ s')
-    (fun r s₁ hr ⟨e₁, f₁⟩ => rnd_ok hp (by omega) f₁ e₁) n (Nat.le_refl _) s ⟨hI, hf⟩
+    (fun r s₁ hr ⟨e₁, f₁⟩ => rnd_ok hp (by omega_arith) f₁ e₁) n (Nat.le_refl _) s ⟨hI, hf⟩
 
 /-! ## The last round and the text -/
 
@@ -213,15 +213,15 @@ theorem aese8_ok (s : State) :
       (∀ j < i, s'.v (breg j) = aesMapBytes aesSbox (aesShiftRows (s.v (breg j) ^^^ s.v K))) ∧
       (∀ j, i ≤ j → j < 8 → s'.v (breg j) = s.v (breg j)) ∧ Fr [] aesV s s' ∧ s'.v K = s.v K)
     (fun i s₁ hi ⟨e₁, u₁, f₁, k₁⟩ => ?_) 8 (Nat.le_refl _) s
-    ⟨fun _ h => absurd h (by omega), fun _ _ _ => rfl, Fr.refl _ _ _, rfl⟩)
+    ⟨fun _ h => absurd h (by omega_arith), fun _ _ _ => rfl, Fr.refl _ _ _, rfl⟩)
     fun s' ⟨e, _, f, hK⟩ => ⟨e, f, hK⟩
   refine WP.of_runBlock ⟨_, aese_run i s₁, ?_⟩
   have hne : ∀ j, j < 8 → j ≠ i → breg j ≠ breg i := fun j hj hji h => hji (breg_inj j hj i hi h)
   refine ⟨fun j hj => ?_, fun j hj hj8 => ?_, ?_, ?_⟩
   · by_cases hji : j = i
     · subst hji; rw [setV_v_self, u₁ j (Nat.le_refl _) hi, k₁]
-    · rw [setV_v_of_ne _ _ (hne j (by omega) hji)]; exact e₁ j (by omega)
-  · rw [setV_v_of_ne _ _ (hne j hj8 (by omega)), u₁ j (by omega) hj8]
+    · rw [setV_v_of_ne _ _ (hne j (by omega_arith) hji)]; exact e₁ j (by omega_arith)
+  · rw [setV_v_of_ne _ _ (hne j hj8 (by omega_arith)), u₁ j (by omega_arith) hj8]
   · refine f₁.trans ⟨fun _ _ => rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     exact setV_v_of_ne _ _ fun h => hr (by rw [h]; exact breg_mem i)
   · rw [setV_v_of_ne _ _ (breg_ne_K i).symm, k₁]
@@ -248,17 +248,17 @@ theorem fin8_ok {o : Nat} (ho : o ≤ 128) (s : State)
       (∀ j < i, s'.v (breg j) = s.v (breg j) ^^^ s.mem.readW (s.gpr .x9 + BitVec.ofNat 64 (o + 16 * j)) 128 ^^^ s.v K) ∧
       (∀ j, i ≤ j → j < 8 → s'.v (breg j) = s.v (breg j)) ∧ Fr [] aesV s s' ∧ s'.v K = s.v K)
     (fun i s₁ hi ⟨e₁, u₁, f₁, k₁⟩ => ?_) 8 (Nat.le_refl _) s
-    ⟨fun _ h => absurd h (by omega), fun _ _ _ => rfl, Fr.refl _ _ _, rfl⟩)
+    ⟨fun _ h => absurd h (by omega_arith), fun _ _ _ => rfl, Fr.refl _ _ _, rfl⟩)
     fun s' ⟨e, _, f, _⟩ => ⟨e, f⟩
   have hin₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x9 + BitVec.ofNat 64 (o + 16 * i)) 16 := by
     rw [f₁.rd, f₁.wr, f₁.gpr _ (by decide)]; exact hin i hi
-  refine WP.of_runBlock ⟨_, eor3_run i o s₁ hin₁ (by omega) (by omega), ?_⟩
+  refine WP.of_runBlock ⟨_, eor3_run i o s₁ hin₁ (by omega_arith) (by omega_arith), ?_⟩
   have hne : ∀ j, j < 8 → j ≠ i → breg j ≠ breg i := fun j hj hji h => hji (breg_inj j hj i hi h)
   refine ⟨fun j hj => ?_, fun j hj hj8 => ?_, ?_, ?_⟩
   · by_cases hji : j = i
     · subst hji; rw [setV_v_self, u₁ j (Nat.le_refl _) hi, k₁, f₁.mem, f₁.gpr _ (by decide)]
-    · rw [setV_v_of_ne _ _ (hne j (by omega) hji), setV_v_of_ne _ _ (breg_ne_P j)]; exact e₁ j (by omega)
-  · rw [setV_v_of_ne _ _ (hne j hj8 (by omega)), setV_v_of_ne _ _ (breg_ne_P j), u₁ j (by omega) hj8]
+    · rw [setV_v_of_ne _ _ (hne j (by omega_arith) hji), setV_v_of_ne _ _ (breg_ne_P j)]; exact e₁ j (by omega_arith)
+  · rw [setV_v_of_ne _ _ (hne j hj8 (by omega_arith)), setV_v_of_ne _ _ (breg_ne_P j), u₁ j (by omega_arith) hj8]
   · refine f₁.trans ⟨fun _ _ => rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     rw [setV_v_of_ne _ _ fun h => hr (by rw [h]; exact breg_mem i), setV_v_of_ne _ _ fun h => hr (by rw [h]; decide)]
   · rw [setV_v_of_ne _ _ (breg_ne_K i).symm, setV_v_of_ne _ _ (by decide : K ≠ P), k₁]
@@ -267,7 +267,7 @@ theorem fin8_ok {o : Nat} (ho : o ≤ 128) (s : State)
 
 theorem keyStream_byte {nr k j t : Nat} {w : List Byte} {icb : Spec.Gcm.Block} (ht : t < 16) :
     keyStream nr w icb (16 * (k + j) + t) = (cipher nr w (Proof.Aes.ctrState icb (k + j))).getD t 0 := by
-  rw [keyStream, show (16 * (k + j) + t) / 16 = k + j by omega, show (16 * (k + j) + t) % 16 = t by omega]
+  rw [keyStream, show (16 * (k + j) + t) / 16 = k + j by omega_arith, show (16 * (k + j) + t) % 16 = t by omega_arith]
 
 theorem aesPart_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) (ho16 : o % 16 = 0) :
     WP isa (.block (aesPart nr o)) s (APost nr o k s) := by
@@ -281,21 +281,21 @@ theorem aesPart_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) (ho16 : o % 1
     show _ = Proof.Aes.ctrState _ _
     rw [cvec, BitVec.add_assoc, ← BitVec.ofNat_add, c0, cbk, cbA, ← ctrVec_st, BitVec.add_zero]
   have hI₁ : RI (sch nr s) x 0 s₁ := fun j hj => by rw [e₁ j hj, hx j hj]; rfl
-  refine WP.mono (rnds_ok hp f₁ hI₁ (nr - 1) (by omega)) fun s₂ ⟨e₂, f₂⟩ => ?_
+  refine WP.mono (rnds_ok hp f₁ hI₁ (nr - 1) (by omega_arith)) fun s₂ ⟨e₂, f₂⟩ => ?_
   -- The last round.
   have g₂ : s₂.gpr .x21 = s.gpr .x21 := f₂.gpr _ (by decide)
   have hin : ∀ r ≤ nr, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x21 + BitVec.ofNat 64 (16 * r)) 16 :=
     fun r hr => by rw [f₂.rd, f₂.wr, g₂]; exact hp.keys r hr
   unfold lastRnd
   rw [WP.block_append_iff, WP.block_cons_iff]
-  refine ⟨_, exec_ldrq (by omega) (hin (nr - 1) (by omega)), ?_⟩
+  refine ⟨_, exec_ldrq (by omega_arith) (hin (nr - 1) (by omega_arith)), ?_⟩
   generalize hK₁ : s₂.mem.readW (s₂.gpr .x21 + BitVec.ofNat 64 (16 * (nr - 1))) 128 = K₁
   refine WP.mono (aese8_ok _) fun s₃ ⟨e₃, f₃, _⟩ => ?_
   rw [WP.block_cons_iff]
   have hin₃ : InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .x21 + BitVec.ofNat 64 (16 * nr)) 16 := by
     rw [f₃.rd, f₃.wr, f₃.gpr _ (by decide), rd_setV, wr_setV, gpr_setV]
     exact hin nr (Nat.le_refl _)
-  refine ⟨_, exec_ldrq (by omega) hin₃, ?_⟩
+  refine ⟨_, exec_ldrq (by omega_arith) hin₃, ?_⟩
   generalize hK₂ : s₃.mem.readW (s₃.gpr .x21 + BitVec.ofNat 64 (16 * nr)) 128 = K₂
   have g₃ : ∀ r, s₃.gpr r = s₂.gpr r := fun r => by rw [f₃.gpr r (by simp)]; rfl
   have m₃ : s₃.mem = s.mem := by rw [f₃.mem, mem_setV, f₂.mem]
@@ -309,9 +309,9 @@ theorem aesPart_ok {nr o k : Nat} {s : State} (hp : APre nr o k s) (ho16 : o % 1
   refine ⟨_, exec_addImm_w (imm := 8) (by decide), WP.block_nil ?_⟩
   -- The keys, and the last round of each block.
   have hk₁ : KeyIs K₁ (roundKey (sch nr s) (nr - 1)) := by
-    rw [← hK₁, f₂.mem, g₂]; exact keyIs_readW _ _ (by omega)
+    rw [← hK₁, f₂.mem, g₂]; exact keyIs_readW _ _ (by omega_arith)
   have hk₂ : KeyIs K₂ (roundKey (sch nr s) nr) := by
-    rw [← hK₂, m₃, g₃, g₂]; exact keyIs_readW _ _ (by omega)
+    rw [← hK₂, m₃, g₃, g₂]; exact keyIs_readW _ _ (by omega_arith)
   have g₉ : s₃.gpr .x9 = s.gpr .x9 := by rw [g₃, f₂.gpr _ (by decide)]
   refine ⟨fun j hj t ht => ?_, ?_, ?_⟩
   · rw [v_write, e₄ j hj, v_setV_of_ne _ _ (breg_ne_K j), e₃ j hj, v_setV_of_ne _ _ (breg_ne_K j),

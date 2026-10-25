@@ -44,7 +44,7 @@ private theorem seedAddTail_step (n : Nat) {s : State} {Q : State → Prop}
       intro h
       have he := congrArg BitVec.toNat h
       change (n + 1) % 2 ^ 64 = 0 at he
-      omega
+      omega_arith
     exact ⟨_, _, .loopNext he (by simp only [eval, hz, hne, Option.map_some]; rfl) hv, hq⟩
 
 private theorem seedAddTail_ok (bs : List Byte) {s : State} {rp op : Addr} {carry : Nat}
@@ -67,33 +67,33 @@ private theorem seedAddTail_ok (bs : List Byte) {s : State} {rp op : Addr} {carr
   | append_singleton bs b ih =>
     simp only [List.length_append, List.length_singleton] at hlen hcount hrd hwr hbytes hsep ⊢
     have hb : s.mem (off rp bs.length) = b := by
-      simpa using hbytes bs.length (by omega)
-    refine seedAddTail_step bs.length ?_ (by omega)
-    refine WP.mono (seedAddStep_ok hc hrp hop hcarry hcount (hrd _ (by omega)) (hwr _ (by omega)) hb)
+      simpa using hbytes bs.length (by omega_arith)
+    refine seedAddTail_step bs.length ?_ (by omega_arith)
+    refine WP.mono (seedAddStep_ok hc hrp hop hcarry hcount (hrd _ (by omega_arith)) (hwr _ (by omega_arith)) hb)
       fun u ⟨hcu, hcountu, hzu, hmu, ku⟩ => ?_
     refine ⟨hzu, ?_⟩
     have hru : ∀ i < bs.length, InRegions (u.rd ++ u.wr) (off rp i) 1 := by
       intro i hi
       rw [ku.2.1, ku.2.2]
-      exact hrd i (by omega)
+      exact hrd i (by omega_arith)
     have hwu : ∀ i < bs.length, InRegions u.wr (off op i) 1 := by
       intro i hi
       rw [ku.2.2]
-      exact hwr i (by omega)
+      exact hwr i (by omega_arith)
     have hbu : ∀ i < bs.length, u.mem (off rp i) = bs.getD i 0 := by
       intro i hi
-      rw [hmu, WriteBytes.writeW8_apply, ite_eq_right (hsep i (by omega) bs.length (by omega)), hbytes i (by omega)]
+      rw [hmu, WriteBytes.writeW8_apply, ite_eq_right (hsep i (by omega_arith) bs.length (by omega_arith)), hbytes i (by omega_arith)]
       simp [List.getD_eq_getElem?_getD, List.getElem?_append, hi]
     have hcp : (b.toNat + carry) / 256 < 2 ^ 32 := by
       have := b.isLt
-      omega
-    refine WP.mono (ih (by omega) hcountu hcp ((ku.gpr (by decide)).trans hrp)
+      omega_arith
+    refine WP.mono (ih (by omega_arith) hcountu hcp ((ku.gpr (by decide)).trans hrp)
       ((ku.gpr (by decide)).trans hop) hcu hru hwu hbu
-      (fun i hi j hj => hsep i (by omega) j (by omega))) fun t ⟨hout, hf, kt⟩ => ?_
+      (fun i hi j hj => hsep i (by omega_arith) j (by omega_arith))) fun t ⟨hout, hf, kt⟩ => ?_
     refine ⟨?_, ?_, (ku.trans kt).mono (by decide)⟩
     · rw [seedAdd_snoc]
       have hl : t.mem (off op bs.length) = BitVec.ofNat 8 (b.toNat + carry) := by
-        rw [hf _ (fun i hi => Offset.add_ofNat_ne op (by omega) (by omega) (by omega)),
+        rw [hf _ (fun i hi => Offset.add_ofNat_ne op (by omega_arith) (by omega_arith) (by omega_arith)),
           hmu, WriteBytes.writeW8_apply, ite_eq_left rfl]
       apply List.ext_getElem
       · simp [bytesAt_length, encodeBE_length]
@@ -102,12 +102,12 @@ private theorem seedAddTail_ok (bs : List Byte) {s : State} {rp op : Addr} {carr
         by_cases hib : i < bs.length
         · have he := congrArg (fun xs : List Byte => xs[i]?) hout
           simpa [Spec.Rsa.bytesAt, off, hib, List.getElem?_append, encodeBE_length] using he
-        · have hie : i = bs.length := by omega
+        · have hie : i = bs.length := by omega_arith
           subst i
           simpa [Spec.Rsa.bytesAt, off, List.getElem_append, encodeBE_length] using hl
     · intro a ha
-      rw [hf a (fun i hi => ha i (by omega)), hmu, WriteBytes.writeW8_apply,
-        ite_eq_right (ha bs.length (by omega))]
+      rw [hf a (fun i hi => ha i (by omega_arith)), hmu, WriteBytes.writeW8_apply,
+        ite_eq_right (ha bs.length (by omega_arith))]
 
 private theorem seedAddUnrolled_ok (bs : List Byte) {s : State} {rp op : Addr} {carry : Nat}
     (hlen : bs.length < 2 ^ 31) (hc : carry < 2 ^ 32)
@@ -128,31 +128,31 @@ private theorem seedAddUnrolled_ok (bs : List Byte) {s : State} {rp op : Addr} {
   | append_singleton bs b ih =>
     simp only [List.length_append, List.length_singleton] at hlen hrd hwr hbytes hsep ⊢
     have hb : s.mem (off rp bs.length) = b := by
-      simpa using hbytes bs.length (by omega)
-    refine WP.seq (WP.mono (seedAddByte_ok hc hrp hop hcarry (hrd _ (by omega)) (hwr _ (by omega)) hb)
+      simpa using hbytes bs.length (by omega_arith)
+    refine WP.seq (WP.mono (seedAddByte_ok hc hrp hop hcarry (hrd _ (by omega_arith)) (hwr _ (by omega_arith)) hb)
       fun u ⟨hcu, hmu, ku⟩ => ?_)
     have hru : ∀ i < bs.length, InRegions (u.rd ++ u.wr) (off rp i) 1 := by
       intro i hi
       rw [ku.2.1, ku.2.2]
-      exact hrd i (by omega)
+      exact hrd i (by omega_arith)
     have hwu : ∀ i < bs.length, InRegions u.wr (off op i) 1 := by
       intro i hi
       rw [ku.2.2]
-      exact hwr i (by omega)
+      exact hwr i (by omega_arith)
     have hbu : ∀ i < bs.length, u.mem (off rp i) = bs.getD i 0 := by
       intro i hi
-      rw [hmu, WriteBytes.writeW8_apply, ite_eq_right (hsep i (by omega) bs.length (by omega)), hbytes i (by omega)]
+      rw [hmu, WriteBytes.writeW8_apply, ite_eq_right (hsep i (by omega_arith) bs.length (by omega_arith)), hbytes i (by omega_arith)]
       simp [List.getD_eq_getElem?_getD, List.getElem?_append, hi]
     have hcp : (b.toNat + carry) / 256 < 2 ^ 32 := by
       have := b.isLt
-      omega
-    refine WP.mono (ih (by omega) hcp ((ku.gpr (by decide)).trans hrp)
+      omega_arith
+    refine WP.mono (ih (by omega_arith) hcp ((ku.gpr (by decide)).trans hrp)
       ((ku.gpr (by decide)).trans hop) hcu hru hwu hbu
-      (fun i hi j hj => hsep i (by omega) j (by omega))) fun t ⟨hout, hf, kt⟩ => ?_
+      (fun i hi j hj => hsep i (by omega_arith) j (by omega_arith))) fun t ⟨hout, hf, kt⟩ => ?_
     refine ⟨?_, ?_, (ku.trans kt).mono (by decide)⟩
     · rw [seedAdd_snoc]
       have hl : t.mem (off op bs.length) = BitVec.ofNat 8 (b.toNat + carry) := by
-        rw [hf _ (fun i hi => Offset.add_ofNat_ne op (by omega) (by omega) (by omega)),
+        rw [hf _ (fun i hi => Offset.add_ofNat_ne op (by omega_arith) (by omega_arith) (by omega_arith)),
           hmu, WriteBytes.writeW8_apply, ite_eq_left rfl]
       apply List.ext_getElem
       · simp [bytesAt_length, encodeBE_length]
@@ -161,12 +161,12 @@ private theorem seedAddUnrolled_ok (bs : List Byte) {s : State} {rp op : Addr} {
         by_cases hib : i < bs.length
         · have he := congrArg (fun xs : List Byte => xs[i]?) hout
           simpa [Spec.Rsa.bytesAt, off, hib, List.getElem?_append, encodeBE_length] using he
-        · have hie : i = bs.length := by omega
+        · have hie : i = bs.length := by omega_arith
           subst i
           simpa [Spec.Rsa.bytesAt, off, List.getElem_append, encodeBE_length] using hl
     · intro a ha
-      rw [hf a (fun i hi => ha i (by omega)), hmu, WriteBytes.writeW8_apply,
-        ite_eq_right (ha bs.length (by omega))]
+      rw [hf a (fun i hi => ha i (by omega_arith)), hmu, WriteBytes.writeW8_apply,
+        ite_eq_right (ha bs.length (by omega_arith))]
 
 
 private theorem seedAddLoop_ok (bs : List Byte) {s : State} {rp op : Addr} {carry : Nat}
@@ -187,7 +187,7 @@ private theorem seedAddLoop_ok (bs : List Byte) {s : State} {rp op : Addr} {carr
       xrun
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega) rfl)
+      omega_arith) rfl)
     fun t ⟨⟨hd, hm⟩, hk⟩ => ?_)
   refine WP.mono (seedAddTail_ok bs hlen hd hc
     ((hk.gpr (by decide)).trans hrp) ((hk.gpr (by decide)).trans hop)

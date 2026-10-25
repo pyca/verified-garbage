@@ -76,11 +76,11 @@ theorem cross_gw {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
   have sb : slot L.w a + 8 * L.w ≤ slot L.w aAcc + 16 ∨
       slot L.w aAcc + 16 + 8 * (2 * L.w + 2) ≤ slot L.w a := by
     have := slot_sep (w := L.w) ha1; have := slot_sep (w := L.w) ha2
-    unfold slot aAcc aTmp at *; omega
-  refine WP.mono (cross_ok hg.scr h8 h9 hbx (by have := hsz.2.1; omega) (by omega)
-    (by unfold slot aAcc aTmp at *; omega) (by omega) sb) fun t ⟨_, ho, _, k⟩ => ?_
+    unfold slot aAcc aTmp at *; omega_arith
+  refine WP.mono (cross_ok hg.scr h8 h9 hbx (by have := hsz.2.1; omega_arith) (by omega_arith)
+    (by unfold slot aAcc aTmp at *; omega_arith) (by omega_arith) sb) fun t ⟨_, ho, _, k⟩ => ?_
   exact ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ho (by unfold slot; omega)⟩, hZ⟩, hsz⟩
+    hg.hdr.of_outside ho (by unfold slot; omega_arith)⟩, hZ⟩, hsz⟩
 
 theorem rawWith_ct {diag : Prog isa} {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     {hc hd : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -98,10 +98,10 @@ theorem rawWith_gw {diag : Prog isa} {P : Nat → Prop} (hd : DiagOk diag P) (hP
     {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (L : Ws) (s : State) (h : GW L s) : WP isa (AdxSquare.rawSquareWith diag a) s (GW L) := by
   obtain ⟨⟨mi, hg, hZ⟩, hsz⟩ := h
-  refine WP.mono (rawSquareWith_ok hd hg.scr hg.rdi hg.hdr hZ (by have := hsz.2.1; omega) hsz.lt
+  refine WP.mono (rawSquareWith_ok hd hg.scr hg.rdi hg.hdr hZ (by have := hsz.2.1; omega_arith) hsz.lt
     (hP _ hsz) ha ha1 ha2) fun t ⟨_, _, ho, k⟩ => ?_
   exact ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ho (by unfold slot; omega)⟩, hZ⟩, hsz⟩
+    hg.hdr.of_outside ho (by unfold slot; omega_arith)⟩, hZ⟩, hsz⟩
 
 end VG.Proof.Bignum.X86_64.AdxSquare
 
@@ -136,29 +136,29 @@ theorem redc_row_fw (L : Ws) (j : Nat) (s : State) (hj : j < L.w) (h : RW L j s)
   have hn := hg.scr.nowrap
   have hA := slot_le (w := L.w) (show aTmp < 8 by decide)
   refine WP.mono (redcRow_frame hg.scr hg.rdi hg.hdr hZ h8 h9 hbp
-    (by have := hsz.2.1; omega) hsz.lt (by unfold slot; omega)
-    (by unfold slot aAcc aTmp at *; omega) (by unfold slot aN aAcc; omega))
+    (by have := hsz.2.1; omega_arith) hsz.lt (by unfold slot; omega_arith)
+    (by unfold slot aAcc aTmp at *; omega_arith) (by unfold slot aN aAcc; omega_arith))
     fun t ⟨ho, h8', hz, k⟩ => ?_
   have gw : GW L t := ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ho (by unfold slot; omega)⟩, hZ⟩, hsz⟩
+    hg.hdr.of_outside ho (by unfold slot; omega_arith)⟩, hZ⟩, hsz⟩
   have hw : RW L (j + 1) t := ⟨gw,
     by rw [h8']; congr 1,
     (k.gpr (by decide)).trans h9, (k.gpr (by decide)).trans hbp⟩
   refine ⟨?_, fun _ => hw, fun he => he ▸ hw⟩
   simp only [eval, hz, Option.map_some]
   have he : (slot L.w aAcc + 16 + 8 * j + 8 = slot L.w aTmp) ↔ j + 1 = L.w := by
-    unfold slot aAcc aTmp; omega
+    unfold slot aAcc aTmp; omega_arith
   simp only [he]
   by_cases hj' : j + 1 = L.w
   · simp [hj']
-  · simp [hj']; omega
+  · simp [hj']; omega_arith
 
 theorem redc_ct : RelCT isa (Two GW) AdxSquare.redc (Two GW) := by
   unfold AdxSquare.redc
   refine RelCT.seq (two_piece (Ψ := fun L s => 0 < L.w ∧ RW L 0 s) [.rdi] pins_gw
     (by taint_decide) fun L s ⟨⟨mi, hg, hZ⟩, hsz⟩ => ?_) ?_
   · refine WP.mono (redcSetup_ok hg.scr hg.rdi hg.hdr hZ) fun t ⟨h8, h9, hbp, _, hm, k⟩ => ?_
-    exact ⟨by have := hsz.2.1; omega,
+    exact ⟨by have := hsz.2.1; omega_arith,
       ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, hm ▸ hg.hdr⟩, hZ⟩, hsz⟩,
       by simpa only [Nat.mul_zero, Nat.add_zero] using h8, h9, hbp⟩
   refine RelCT.seq (two_loop (fun L => L.w) (Φ := RW) (Ψ := fun L s => RW L L.w s)
@@ -168,10 +168,10 @@ theorem redc_ct : RelCT isa (Two GW) AdxSquare.redc (Two GW) := by
   intro L s h
   obtain ⟨⟨⟨mi, hg, hZ⟩, hsz⟩, h8, _, hbp⟩ := h
   have hA := slot_le (w := L.w) (show aTmp < 8 by decide)
-  refine WP.mono (redcFinish_ok hg.scr h8 hbp (by unfold slot aAcc aTmp at *; omega))
+  refine WP.mono (redcFinish_ok hg.scr h8 hbp (by unfold slot aAcc aTmp at *; omega_arith))
     fun t ⟨_, ho, k⟩ => ?_
   exact ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ho (by unfold slot; omega)⟩, hZ⟩, hsz⟩
+    hg.hdr.of_outside ho (by unfold slot; omega_arith)⟩, hZ⟩, hsz⟩
 end VG.Proof.Bignum.X86_64.AdxSquare
 
 end
@@ -188,14 +188,14 @@ theorem rotate_gw_ct : RelCT isa (Two fun L s => GW L s ∧ L.w % 8 = 0)
     AdxRotate8.redc (Two GW) := by
   intro s t ts tt s' t' h es et
   obtain ⟨L, ⟨hs, h8⟩, ⟨ht, _⟩⟩ := h
-  have hn : 0 < L.w / 8 := by have := hs.2.2.1; omega
-  let W : AdxRotate8.W8 := ⟨L, L.w / 8, by omega, hn⟩
+  have hn : 0 < L.w / 8 := by have := hs.2.2.1; omega_arith
+  let W : AdxRotate8.W8 := ⟨L, L.w / 8, by omega_arith, hn⟩
   obtain ⟨he, ⟨_, _, _⟩⟩ := AdxRotate8.redc_ct _ _ _ _ _ _ ⟨W, hs.1, ht.1⟩ es et
   have fw : ∀ u, GW L u → WP isa AdxRotate8.redc u (GW L) := by
     intro u ⟨⟨mi, hg, hZ⟩, hsz⟩
     refine WP.mono (AdxRotate8.redc_ok hg.scr hg.rdi hg.hdr hZ W.hw W.hn) fun v ⟨_, ot, kt⟩ => ?_
     exact ⟨⟨mi, ⟨hg.scr.congr kt.2.2, (kt.gpr (by decide)).trans hg.rdi,
-      hg.hdr.of_outside ot (by unfold slot; omega)⟩, hZ⟩, hsz⟩
+      hg.hdr.of_outside ot (by unfold slot; omega_arith)⟩, hZ⟩, hsz⟩
   obtain ⟨_, _, e1, h1⟩ := fw s hs
   obtain ⟨_, _, e2, h2⟩ := fw t ht
   obtain ⟨_, rfl⟩ := Exec.det es e1
@@ -207,7 +207,7 @@ theorem redcChoice_ct : RelCT isa (Two GW) AdxSquare.redcChoice (Two GW) := by
   refine RelCT.seq (two_piece (Ψ := fun L s => GW L s ∧ s.zf = some (decide (L.w % 8 = 0)))
     [.rdi] pins_gw (by taint_decide) ?_) ?_
   · intro L s ⟨⟨mi, hg, hZ⟩, hsz⟩
-    refine WP.mono (redcTest_ok hg.scr hg.rdi hg.hdr hZ (by have := hsz.lt; omega))
+    refine WP.mono (redcTest_ok hg.scr hg.rdi hg.hdr hZ (by have := hsz.lt; omega_arith))
       fun t ⟨hz, hm, kt⟩ => ?_
     exact ⟨⟨⟨mi, ⟨hg.scr.congr kt.2.2, (kt.gpr (by decide)).trans hg.rdi,
       hm ▸ hg.hdr⟩, hZ⟩, hsz⟩, hz⟩
@@ -244,7 +244,7 @@ theorem montSquareWith_ct {diag red : Prog isa} {o a : Nat} (ho : o < 8)
     obtain ⟨⟨mi, hg, hZ⟩, hsz⟩ := h
     have hsrc : readSrc s (.mem (hdr (sArr aN))) = some (off L.B (slot L.w aN)) := by
       rw [readSrc_word (d := 8 * sArr aN) hg.scr (by simp only [State.ea, hdr, hg.rdi, hdrOff])
-        (by have := hdr_lt_slot L.w 8 (show sArr aN < 32 by decide); omega), hg.hdr.harr aN (by decide)]
+        (by have := hdr_lt_slot L.w 8 (show sArr aN < 32 by decide); omega_arith), hg.hdr.harr aN (by decide)]
     refine WP.mono (movMem_ok s (dst := .r10) hsrc) fun t ⟨h10, _, _, k⟩ => ?_
     exact ⟨⟨⟨mi, ⟨hg.scr.congr k.keep.2.2, (k.keep.gpr (by decide)).trans hg.rdi,
       k.2.1 ▸ hg.hdr⟩, hZ⟩, hsz⟩, h10⟩

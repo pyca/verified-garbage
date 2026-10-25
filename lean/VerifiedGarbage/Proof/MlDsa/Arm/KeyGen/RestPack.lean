@@ -38,14 +38,14 @@ theorem small_coeff {m : Mem} {a : Addr} {η : Nat} (hη : η ≤ 4) {x : IPoly}
     have hx := small_mem hs hi
     rw [coeff_val h hi]
     simp only [toRq, Vector.getElem_map]
-    rw [Proof.MlDsa.KeyGen.modPm_ofInt (by omega) (by omega)]
+    rw [Proof.MlDsa.KeyGen.modPm_ofInt (by omega_arith) (by omega_arith)]
     exact hx
 
 theorem small_big {η : Nat} (hη : η ≤ 4) {x : IPoly} (hs : Small η x) :
     ∀ c ∈ x.toList, -4190208 ≤ c ∧ c ≤ 4190208 := fun c hc => by
-  have := hs c hc; omega
+  have := hs c hc; omega_arith
 
-theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
 
 theorem eta_params {p : Params} (hF : PFacts p) : (p.η, p.η) ∈ Spec.MlDsa.bitPackParams := by
   rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> decide
@@ -59,7 +59,7 @@ theorem KR.sPoly {p : Params} {STK : Nat} {σ : State} {A : Nat → Poly} {S : N
     PolyIs s.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + r))) (toRq (S r)) := by
   by_cases hl : r < p.ℓ
   · have := h.s1 r hl; rwa [ifn (Nat.not_lt_zero r)] at this
-  · have := h.s2 (r - p.ℓ) (by omega); rwa [show p.ℓ + (r - p.ℓ) = r by omega] at this
+  · have := h.s2 (r - p.ℓ) (by omega_arith); rwa [show p.ℓ + (r - p.ℓ) = r by omega_arith] at this
 
 /-- The states after the copies, and the first `np` entries packed, `nj` in
 the NTT domain and `nr` rows. -/
@@ -85,16 +85,16 @@ theorem packS_ok {r : Nat} (hr : r < p.ℓ + p.k) {σ : State} {A : Nat → Poly
   have hs := h.kc.site
   have hSp := h.sPoly hr
   unfold packS bitPackAt
-  refine bp_ok hP.bitPack hs (by omega) (packS_m hF hr) hSp.1 (small_coeff (eta_le hF) hSp (h.small r hr))
+  refine bp_ok hP.bitPack hs (by omega_arith) (packS_m hF hr) hSp.1 (small_coeff (eta_le hF) hSp (h.small r hr))
     fun s' k' hb => ?_
   have hle : 128 + lenS p * r + lenS p ≤ oT0 p := by
     simp only [oT0]; rw [Nat.add_assoc, ← Nat.mul_succ]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ hr) _
   have hk' := h.keep hF k' ((KRChk.c4 (o := 128 + lenS p * r) (n := lenS p) hF (Nat.le_of_lt hr) (Nat.zero_le _)
-    (by omega) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega)).append (W₁ := [_])
+    (by omega_arith) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega_arith)).append (W₁ := [_])
     (KRChk.stk hF (Nat.le_of_lt hr) (Nat.zero_le _)))
   refine ⟨hk'.kc, hk'.r11, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1,
     fun r' hr' => ?_, hk'.rows⟩
-  rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
+  rcases (by omega_arith : r' < r ∨ r' = r) with hr' | rfl
   · exact hk'.packs r' hr'
   · show bytesAt s'.mem (lpa (lay p STK σ) (.r6, 128 + lenS p * r')) (lenS p) = _
     rw [hb]
@@ -109,7 +109,7 @@ theorem packS_two {r : Nat} (hr : r < p.ℓ + p.k) (σ : State) :
       (∃ y' : IPoly, PolyIs y.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + r))) (toRq y') ∧ Small p.η y'))
       (packS P p r) fun _ _ => True := by
   unfold packS bitPackAt
-  exact bp_tr hP.bitPack (by omega) (packS_m hF hr) fun x y ⟨T, rx, ry, ⟨x', hx, sx⟩, ⟨y', hy, sy⟩⟩ =>
+  exact bp_tr hP.bitPack (by omega_arith) (packS_m hF hr) fun x y ⟨T, rx, ry, ⟨x', hx, sx⟩, ⟨y', hy, sy⟩⟩ =>
     ⟨T.1, T.2.1, T.2.2, rx.1, ry.1, small_coeff (eta_le hF) hx sx, small_coeff (eta_le hF) hy sy⟩
 
 theorem packS_piece {r : Nat} (hr : r < p.ℓ + p.k) :
@@ -136,10 +136,10 @@ theorem nttS_ok {j : Nat} (hj : j < p.ℓ) {σ : State} {A : Nat → Poly} {S' :
   rw [ifn (Nat.lt_irrefl j)] at hSj
   obtain ⟨m1, m2, m3⟩ := nttS_m hF (STK := STK) (σ := σ) hj
   unfold nttS nttAt
-  refine ip_ok (t := ntt) hP.ntt hs (by omega) m1 m2 (show ix Reg.r7 ∈ kWb by decide)
+  refine ip_ok (t := ntt) hP.ntt hs (by omega_arith) m1 m2 (show ix Reg.r7 ∈ kWb by decide)
     (show ix Reg.r7 ∈ kWb by decide) m3 hSj.1 fun s' k' hb => ?_
   have hL := hs.ok
-  have hle : lenS p ≤ 2 ^ 64 := by rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> omega
+  have hle : lenS p ≤ 2 ^ 64 := by rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> omega_arith
   have hpk : ∀ r < p.ℓ + p.k, sepAll [scrLen p, STK, 32, p.pkLen, p.skLen] (4, 128 + lenS p * r, lenS p)
       [tri (sP p j) 1024, tri (sc oSS) 1024, (1, 0, STK)] = true := fun r hr => by
     rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> lsep hF [hF.sk, hlen]
@@ -161,15 +161,15 @@ theorem nttS_ok {j : Nat} (hj : j < p.ℓ) {σ : State} {A : Nat → Poly} {S' :
     rw [← hSj.2]; exact hb
   · have := polyIs_keepW hL k'.frame (by lsep hF) (by decide) rfl (h.s1 j' hj')
     by_cases hlt : j' < j
-    · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega) (ntt (toRq (S' j'))) (toRq (S' j'))] at this
-    · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega) (ntt (toRq (S' j'))) (toRq (S' j'))] at this
+    · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega_arith) (ntt (toRq (S' j'))) (toRq (S' j'))] at this
+    · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega_arith) (ntt (toRq (S' j'))) (toRq (S' j'))] at this
 
 theorem nttS_two {j : Nat} (hj : j < p.ℓ) (σ : State) :
     RelCT isa (fun x y => Two (lay p STK σ) kWb STK x y ∧ Reduced x.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + j))) ∧
       Reduced y.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + j)))) (nttS P p j) fun _ _ => True := by
   obtain ⟨m1, m2, m3⟩ := nttS_m hF (STK := STK) (σ := σ) hj
   unfold nttS nttAt
-  exact ip_tr (t := ntt) hP.ntt (by omega) m1 m2 (show ix Reg.r7 ∈ kWb by decide) (show ix Reg.r7 ∈ kWb by decide)
+  exact ip_tr (t := ntt) hP.ntt (by omega_arith) m1 m2 (show ix Reg.r7 ∈ kWb by decide) (show ix Reg.r7 ∈ kWb by decide)
     m3 fun x y ⟨T, rx, ry⟩ => ⟨T.1, T.2.1, T.2.2, rx, ry⟩
 
 theorem nttS_piece {j : Nat} (hj : j < p.ℓ) :

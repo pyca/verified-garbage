@@ -66,15 +66,15 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
   have h0 : ∀ e, out + BitVec.ofNat 64 0 + BitVec.ofNat 64 e = out + BitVec.ofNat 64 e := fun e =>
     congrArg (· + BitVec.ofNat 64 e) (BitVec.add_zero out)
   rw [finish_eq, WP.block_append_iff]
-  refine WP.mono (ld_ok hs (d := c.sl FLAG) (by omega) (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+  refine WP.mono (ld_ok hs (d := c.sl FLAG) (by omega_arith) (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.mem
   have hx20₁ : s₁.gpr .x20 = out := by rw [k₁.gpr _ (by decide), hx20]
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok hs₁ (dst := .x20) (d := 0) (a := c.sl X) (by decide) (by decide) (by decide) b
-    (by rw [e₁, hf]) hX (sl_mod8 c X) (by omega) hlo hhi (by omega) (by rw [hx20₁, BitVec.add_zero]; omega)
+    (by rw [e₁, hf]) hX (sl_mod8 c X) (by omega_arith) hlo hhi (by omega_arith) (by rw [hx20₁, BitVec.add_zero]; omega_arith)
     (fun e m he => ⟨_, by rw [k₁.wr]; exact hw, by
-      rw [hx20₁, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
+      rw [hx20₁, h0]; exact Offset.contains_base out (by omega_arith) (by omega_arith)⟩)
     (by rw [hx20₁, BitVec.add_zero]; exact (hd.symm.sub_left (Offset.sub_base base hX))))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   rw [hx20₁, BitVec.add_zero] at e₂ O₂
@@ -88,7 +88,7 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
     exact Saved.unch (hm₁ ▸ hsv) h16 U₂
   refine Spill.restore_ok hs₂.x0 (by decide) (by decide) (fun p hp => ?_) hsv₂ fun s₃ R₃ => ?_
   · have := saved_lt p hp
-    exact ⟨_, List.mem_append_right _ hs₂.wr, hs₂.contains (by have : size = 8192 := rfl; omega) (by decide)⟩
+    exact ⟨_, List.mem_append_right _ hs₂.wr, hs₂.contains (by have : size = 8192 := rfl; omega_arith) (by decide)⟩
   refine WP.mono (retBit_ok s₃) fun s₄ ⟨e₄, k₄⟩ => ⟨?_, ?_, fun r hr => ?_⟩
   · rw [k₄.mem, R₃.mem, e₂, hm₁]
   · have hx3 : Reg.x3 ∉ Cfg.saved.map Prod.fst := by decide
@@ -127,7 +127,7 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   rw [middle_eq]
   have hM := modP_of hc F.mp
   have hone : sv c base s ONE = 1 := F.one
@@ -140,7 +140,7 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
   refine WP.seq (WP.mono (slMulP_ok hc hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ X → i ≠ TMP → sv c base s₂ i = sv c base s i := fun hi h₁ h₂ h₃ =>
@@ -274,7 +274,7 @@ theorem peer_bytes (m : Mem) (p : Addr) (n : Nat) :
       Spec.Ecdsa.bytesAt m (p + BitVec.ofNat 64 (1 + n)) n) := by
   have h1 : Spec.Ecdsa.bytesAt m p 1 = [m p] := by
     simp only [Spec.Ecdsa.bytesAt, List.range_one, List.map_cons, List.map_nil, BitVec.add_zero]
-  rw [show 1 + 2 * n = 1 + (n + n) by omega, bytesAt_add, bytesAt_add, h1, BitVec.add_assoc,
+  rw [show 1 + 2 * n = 1 + (n + n) by omega_arith, bytesAt_add, bytesAt_add, h1, BitVec.add_assoc,
     BitVec.ofNat_add_ofNat]
   rfl
 
@@ -306,13 +306,13 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     refine ⟨by rw [k₁.wr, hp.wr, x4₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [x4₁]; exact hp.sc_fit⟩
     · rw [x3₁, hrd₁, hp.rd]
-      exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
+      exact ⟨_, by simp, Offset.contains_base _ he (by omega_arith)⟩
     · rw [x1₁, hrd₁, hp.rd]
-      exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
+      exact ⟨_, by simp, Offset.contains_base _ he (by omega_arith)⟩
     · rw [x2₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .x2, 1 + 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨s₀.gpr .x2, 1 + 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [x1₁, x4₁]; exact hp.d_sc
-    · rw [x2₁, x4₁]; exact hp.peer_sc.sub_left (Offset.sub_base _ (by omega))
+    · rw [x2₁, x4₁]; exact hp.peer_sc.sub_left (Offset.sub_base _ (by omega_arith))
     · rw [x3₁, x4₁]; exact hp.d_sc
   refine WP.seq (WP.mono (stage₁ hc (.inl rfl) hsp (rest := .block []) (Q := St₁ c none s₁ (s₁.gpr .x4))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
@@ -332,7 +332,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have W₂ : Outside (s₀.gpr .x3) 0 size s₀.mem s₂.mem := fun x hx =>
     (S₂.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact hx).trans (congrFun k₁.mem x)
   have hq0 : s₂.mem (s₀.gpr .x2) = s₀.mem (s₀.gpr .x2) := by
-    have := keep_of_disjoint' W₂ hp.peer_sc (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₂ hp.peer_sc (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
   have hf₃ : word s₃.mem (s₀.gpr .x3) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .x2) = 4) := by
@@ -378,7 +378,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     rw [saved r hr, k₁.gpr r (hsv r hr)]
   -- The specification.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_arith
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * c.C.len)).head? = some (s₀.mem (s₀.gpr .x2)) := by
     rw [peer_bytes]; rfl
   have hxs : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
@@ -389,7 +389,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hys : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (1 + 2 * c.C.len)).drop (c.C.len + 1)) =
       sv c (s₀.gpr .x3) s₃ QY := by
     rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
-      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have hP' : ∀ h : Ecdh.Valid c.C (s₀.mem (s₀.gpr .x2)) (sv c (s₀.gpr .x3) s₃ E) (sv c (s₀.gpr .x3) s₃ QY),
       peerPt c (s₀.mem (s₀.gpr .x2) = 4) (sv c (s₀.gpr .x3) s₃ E) (sv c (s₀.gpr .x3) s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by

@@ -88,9 +88,9 @@ theorem DerivePre.sources {p : DeriveInput} {original s : State} (h : DerivePre 
   have hsrc := h.paramsSource.congrK hm hk
   refine ⟨source_take hsrc, ?_, ?_, h.xSource.congrK hm hk⟩
   · rw [h.pLength]
-    exact source_slice hsrc (by rw [p.paramsLength]; omega)
+    exact source_slice hsrc (by rw [p.paramsLength]; omega_arith)
   · rw [h.pLength, Offset.add_add]
-    exact source_slice hsrc (by rw [p.paramsLength]; omega)
+    exact source_slice hsrc (by rw [p.paramsLength]; omega_arith)
 
 structure DeriveShapePost (p : DeriveInput) (original : State)
     (hp : original.gpr .r8 = BitVec.ofNat 64 p.pLen) (s : State) : Prop where
@@ -111,9 +111,9 @@ theorem deriveShape_ok {p : DeriveInput} {s0 : State} (h : DerivePre p s0) :
   have hinside : InScr p.base deriveExtent s0.mem s1.mem := InScr.of_outside he.frame (by decide)
   obtain ⟨hps, hqs, _, _⟩ := h.sources hinside (he.keep.mono (by decide))
   have hp64 : p.pb.length < 2 ^ 64 := by
-    rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_arith
   have hq64 : p.qb.length < 2 ^ 64 := by
-    rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_arith
   refine WP.mono (domainShape_ok (n := 0) (hsu.congr he.keep.2.2) he.base (by decide)
     (he.fields .p (by decide) (by decide)) (he.fields .q (by decide) (by decide))
     ((he.fields .pLen (by decide) (by decide)).trans (by rw [p.pbLength]; exact h.pLength))
@@ -169,11 +169,11 @@ theorem deriveRejected_ok {p : DeriveInput} {original s : State} (h : DerivePre 
     (hs : DeriveShapePost p original h.pLength s) (ha : p.accepted = false) :
     WP isa Generate.deriveFailure s (DerivePost p original) := by
   have hf := hs.fields
-  have hq1 : 1 ≤ p.qLen := by have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  have hq1 : 1 ≤ p.qLen := by have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_arith
   have hk31 : p.outLen < 2 ^ 31 := by
-    have := p.lengths; unfold Spec.Dsa.lengthsValid at this; unfold DeriveInput.outLen; omega
+    have := p.lengths; unfold Spec.Dsa.lengthsValid at this; unfold DeriveInput.outLen; omega_arith
   refine WP.mono (deriveFailure_ok (k := p.outLen) (q := p.qLen) (p := p.pLen) hs.scratch hs.rdi (by decide) rfl
-    (by unfold DeriveInput.outLen; omega) hk31 (hf .out) (hf .pLen |>.trans h.pLength) (hf .qLen)
+    (by unfold DeriveInput.outLen; omega_arith) hk31 (hf .out) (hf .pLen |>.trans h.pLength) (hf .qLen)
     (fun j hj => by rw [hs.keep.2.2]; exact h.outWrite j hj) h.outSeparate)
     fun t ⟨hbytes, hret, hsave, hframe, hk⟩ => ?_
   have hres : Spec.Dsa.deriveKeyBytes p.pLen p.qLen p.params p.x = none := by
@@ -302,17 +302,17 @@ theorem bytesAt_key (mem : Mem) (O : Addr) (l₁ l₂ l₃ : List Byte)
   simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at hi
   simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
   by_cases a : i < l₁.length
-  · rw [List.getElem_append_left (by simp only [List.length_append]; omega), List.getElem_append_left a]
+  · rw [List.getElem_append_left (by simp only [List.length_append]; omega_arith), List.getElem_append_left a]
     exact h₁ i a
   by_cases b : i < l₁.length + l₂.length
-  · rw [List.getElem_append_left (by simp only [List.length_append]; omega),
-      List.getElem_append_right (by omega)]
-    have := h₂ (i - l₁.length) (by omega)
-    rwa [show l₁.length + (i - l₁.length) = i by omega] at this
-  · rw [List.getElem_append_right (by simp only [List.length_append]; omega)]
-    have := h₃ (i - (l₁ ++ l₂).length) (by simp only [List.length_append]; omega)
+  · rw [List.getElem_append_left (by simp only [List.length_append]; omega_arith),
+      List.getElem_append_right (by omega_arith)]
+    have := h₂ (i - l₁.length) (by omega_arith)
+    rwa [show l₁.length + (i - l₁.length) = i by omega_arith] at this
+  · rw [List.getElem_append_right (by simp only [List.length_append]; omega_arith)]
+    have := h₃ (i - (l₁ ++ l₂).length) (by simp only [List.length_append]; omega_arith)
     simp only [List.length_append] at this ⊢
-    rwa [show l₁.length + l₂.length + (i - (l₁.length + l₂.length)) = i by omega] at this
+    rwa [show l₁.length + l₂.length + (i - (l₁.length + l₂.length)) = i by omega_arith] at this
 
 structure DeriveOperands (L : ExecutionLayout) (p : DeriveInput) (s : State) : Prop where
   generator : OperandBytes s L.base deriveExtent Core.generator p.gb
@@ -352,7 +352,7 @@ theorem deriveInitialize_ok {p : DeriveInput} {original st : State} (h : DeriveP
     operand .q .qLen (by decide) (by decide) hqs' (by rw [p.qbLength]; rfl),
     operand .x .qLen (by decide) (by decide) hxs' (by rw [p.xLength]; rfl)⟩,
     hm.trans ((hs.fields .mask).trans (congrArg mask ha)),
-    fun i hi => (hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi),
+    fun i hi => (hf.word (Or.inl (by omega_arith)) (by omega_arith)).trans (hs.saved i hi),
     hframe, hkeep.mono (by decide)⟩
 
 theorem deriveSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {original st : State}
@@ -418,7 +418,7 @@ theorem deriveSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {original st 
     rw [VG.Proof.Dsa.decodeBE_encodeBE hyfit]
     rfl
   have hlen : p.outLen = p.params.length + p.yb.length + p.x.length := by
-    rw [p.paramsLength, VG.Proof.Dsa.encodeBE_length, p.xLength]; unfold DeriveInput.outLen; omega
+    rw [p.paramsLength, VG.Proof.Dsa.encodeBE_length, p.xLength]; unfold DeriveInput.outLen; omega_arith
   refine ⟨?_, ?_, fun i hi => (hsave i hi).trans ((hwv _ (by unfold deriveExtent derivedY usedBytes; omega_using [hi])).trans
       ((hfv.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hsv i hi))), ?_,
     ((hkeep'.trans hkw).trans hkt).mono (by decide)⟩
@@ -433,11 +433,11 @@ theorem deriveSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {original st 
       by_cases h1 : i < 2 * p.pLen + p.qLen
       · rw [hw₁ i h1, hvb]; rfl
       by_cases h2 : i < 3 * p.pLen + p.qLen
-      · have := hw₂ (i - (2 * p.pLen + p.qLen)) (by omega)
-        rw [show 2 * p.pLen + p.qLen + (i - (2 * p.pLen + p.qLen)) = i by omega, hvb] at this
+      · have := hw₂ (i - (2 * p.pLen + p.qLen)) (by omega_arith)
+        rw [show 2 * p.pLen + p.qLen + (i - (2 * p.pLen + p.qLen)) = i by omega_arith, hvb] at this
         exact this
-      · have := hw₃ (i - (3 * p.pLen + p.qLen)) (by unfold DeriveInput.outLen at hi; omega)
-        rw [show 3 * p.pLen + p.qLen + (i - (3 * p.pLen + p.qLen)) = i by omega, hvb] at this
+      · have := hw₃ (i - (3 * p.pLen + p.qLen)) (by unfold DeriveInput.outLen at hi; omega_arith)
+        rw [show 3 * p.pLen + p.qLen + (i - (3 * p.pLen + p.qLen)) = i by omega_arith, hvb] at this
         exact this
     · simp only [↓reduceIte, Option.getD_some]
       rw [hlen]
@@ -455,7 +455,7 @@ theorem deriveSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {original st 
       · intro i hi
         rw [p.xLength] at hi
         rw [p.paramsLength, VG.Proof.Dsa.encodeBE_length,
-          show 2 * p.pLen + p.qLen + p.pLen = 3 * p.pLen + p.qLen by omega, hw₃ i hi, hvb]
+          show 2 * p.pLen + p.qLen + p.pLen = 3 * p.pLen + p.qLen by omega_arith, hw₃ i hi, hvb]
         simp only [↓reduceIte]
         exact hxs.val i (by rw [p.xLength]; exact hi)
   · intro x hx hout

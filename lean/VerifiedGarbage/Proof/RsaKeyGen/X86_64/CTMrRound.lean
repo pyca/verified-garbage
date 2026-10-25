@@ -196,10 +196,10 @@ theorem tabCopy_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm j :
   have hg := hc.good
   have hn := hg.scr.nowrap
   have hZ := hd.z
-  have hw' : w < 2 ^ 31 := by have := hd.w128; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
-  have hE := ent_in_tab w (e := j + 2) (by omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
+  have hE := ent_in_tab w (e := j + 2) (by omega_arith)
   have hte := tab_end w
   have haE := aE_fits hd
   have hY8 := slot_le (w := w) (show aY < 8 by decide)
@@ -208,14 +208,14 @@ theorem tabCopy_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm j :
       t.gpr .rsi = off B (slot w aY) ∧ t.gpr .rbx = off B (slot w (8 + (j + 2))) ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aY) (by decide), hl kV (by decide), hg.hdr.hw,
       hg.hdr.harr aY (by decide), hV]) rfl) fun s₁ ⟨⟨h12, hsi, hbx, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (copyB_ok (hg.scr.congr k₁.2.2) hsi hbx h12 (by have := hd.w4; omega) hw' (by omega)
-    (by omega) (Or.inr (by omega))) fun t ⟨_, ho, k⟩ => ?_
+  refine WP.mono (copyB_ok (hg.scr.congr k₁.2.2) hsi hbx h12 (by have := hd.w4; omega_arith) hw' (by omega_arith)
+    (by omega_arith) (Or.inr (by omega_arith))) fun t ⟨_, ho, k⟩ => ?_
   rw [hm₁] at ho
   have hf : Frm B [(slot w 8, tabBytes w)] s.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot w 8) (n' := tabBytes w) hE.1 (by omega)) (by simp)
+    Frm.of_outside (ho.mono (o' := slot w 8) (n' := tabBytes w) hE.1 (by omega_arith)) (by simp)
   have hdi : t.gpr .rdi = B := (k.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)
-  have h8 : 256 ≤ slot w 8 := by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega
-  have hgt : Good t B Z w mi := ⟨hg.scr.congr (k.2.2.trans k₁.2.2), hdi, Hdr.of_frm hg.hdr hf (by simp; omega)⟩
+  have h8 : 256 ≤ slot w 8 := by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega_arith
+  have hgt : Good t B Z w mi := ⟨hg.scr.congr (k.2.2.trans k₁.2.2), hdi, Hdr.of_frm hg.hdr hf (by simp; omega_arith)⟩
   have hN8 := slot_le (w := w) (show aN < 8 by decide)
   have hX8 := slot_le (w := w) (show aXm < 8 by decide)
   have hR1 := slot_mono w (show aE ≤ aR1 by decide)
@@ -225,21 +225,21 @@ theorem tabCopy_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm j :
   have hx' := hd.x
   have hBs : slot w aB = slot w 8 + 8 * (w + 2) := slot_succ w 8
   have h10 : slot w 8 + 2 * (8 * (w + 2)) ≤ slot w (8 + (j + 2)) := by
-    rw [show 8 + (j + 2) = 8 + (2 + j) by omega, slot_add_mul, Nat.add_mul]; omega
+    rw [show 8 + (j + 2) = 8 + (2 + j) by omega_arith, slot_add_mul, Nat.add_mul]; omega_arith
   have lo : ∀ {d : Nat}, d + 8 * w ≤ slot w 8 →
       ∀ r ∈ [(slot w 8, tabBytes w)], d + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ d := by
     intro d hd' r hr; simp only [List.mem_singleton] at hr; subst hr; exact Or.inl hd'
   have hi : ∀ {d : Nat}, slot w aE ≤ d → ∀ r ∈ [(slot w 8, tabBytes w)], d + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ d := by
-    intro d hd' r hr; simp only [List.mem_singleton] at hr; subst hr; right; dsimp only; omega
+    intro d hd' r hr; simp only [List.mem_singleton] at hr; subst hr; right; dsimp only; omega_arith
   refine ⟨⟨hgt, ?_, ?_, ?_, ?_, ?_⟩, ?_, hf, (k₁.trans k).mono (by decide)⟩
   · rw [hf.word_eq (d := slot w aN) (fun r hr => by
-      have := lo (d := slot w aN) (by omega) r hr; have := hd.w4; omega) (by omega)]
+      have := lo (d := slot w aN) (by omega_arith) r hr; have := hd.w4; omega_arith) (by omega_arith)]
     exact hc.inv
-  · rw [hf.wv_eq (lo (by omega)) (by omega)]; exact hc.n
-  · rw [ho.wv (Or.inl (by omega)) (by omega)]; exact hc.b
-  · rw [hf.wv_eq (hi hR1) (by omega)]; exact hc.r1
-  · rw [hf.wv_eq (hi hRm) (by omega)]; exact hc.rm1
-  · exact hf.wv_eq (lo (by omega)) (by omega)
+  · rw [hf.wv_eq (lo (by omega_arith)) (by omega_arith)]; exact hc.n
+  · rw [ho.wv (Or.inl (by omega_arith)) (by omega_arith)]; exact hc.b
+  · rw [hf.wv_eq (hi hR1) (by omega_arith)]; exact hc.r1
+  · rw [hf.wv_eq (hi hRm) (by omega_arith)]; exact hc.rm1
+  · exact hf.wv_eq (lo (by omega_arith)) (by omega_arith)
 
 /-- The copy of `y` into the entry keeps `TLW`. -/
 theorem tlw_copy {p : RPub × Nat} {s : State} (h : TLW p s) :
@@ -252,7 +252,7 @@ theorem tlw_copy {p : RPub × Nat} {s : State} (h : TLW p s) :
   dsimp only at hV
   have h8 := hdr_lt_slot p.1.p.w 8 (show 31 < 32 by decide)
   refine WP.mono (tabCopy_ok hd hc hj hV) fun t ⟨hct, hxt, hf, k⟩ => ⟨hk, hp.frm hf (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; dsimp only; omega) (tvs_lt _ _) hct.good.rdi k.2.2, hd, hj, mi, c,
+    simp only [List.mem_singleton] at hr; subst hr; dsimp only; omega_arith) (tvs_lt _ _) hct.good.rdi k.2.2, hd, hj, mi, c,
     bm, hct, by rw [hxt]; exact hx⟩
 
 /-- At iteration `j` of the table's loop, from `s₀` where it starts. -/
@@ -318,7 +318,7 @@ theorem tabLoop_ct (M : Mont) :
   · rintro q j s hj ⟨mi, c, bm, b, s₀, hk, hh, hw, hd, hI, hodd, hc1⟩
     refine WP.mono (tabStep_ok M hd hodd hc1 hj hI) fun t ⟨hz, hI'⟩ => ⟨?_, fun _ => ?_, fun _ => ?_⟩
     · simp only [eval, hz, Option.map_some, Option.some.injEq]
-      by_cases h : j + 1 = 14 <;> simp [h]; omega
+      by_cases h : j + 1 = 14 <;> simp [h]; omega_arith
     · exact ⟨mi, c, bm, b, s₀, hk, hh, hw, hd, hI', hodd, hc1⟩
     · rename_i e; rw [← e]; exact ⟨mi, c, bm, b, s₀, hk, hh, hw, hd, hI', hodd, hc1⟩
 

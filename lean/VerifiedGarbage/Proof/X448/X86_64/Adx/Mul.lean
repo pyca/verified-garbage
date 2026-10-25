@@ -118,7 +118,7 @@ theorem madd_ok (s : State) {x y : Reg} {m : MemOp} {v : BitVec 64}
     have x3 : s3.gpr x = s2.gpr x := k3.1 x (by simp [hxy])
     have d1 : s1.gpr .rdx = s.gpr .rdx := k1.1 _ (by decide)
     rw [x1] at e2; rw [y2, a2] at e3; rw [x3]
-    omega
+    omega_arith
   · exact ((k1.mono (by simp)).trans (k2.mono (by simp))).trans (k3.mono (by simp))
 
 theorem madds_arith {B Q x1 y1 x y o c o1 c1 Y' R d V WV o' c' : Nat}
@@ -150,7 +150,7 @@ theorem madds_ok (X : List Reg) (s₀ : State) (hax : Reg.rax ∈ X) (hcx : Reg.
       refine WP.block_nil ⟨c, o, hc, ho, ?_, Keeps.refl _ _⟩
       simp only [wv, List.length_nil, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add,
         Nat.mul_one]
-      omega
+      omega_arith
     | cons => simp at hl
   | _, _ :: _, [], _, _, _, _, _, _, _, _, hl, _, _, _ => by simp at hl
   | x, y :: rs, m :: ms, vs, s, c, o, hk, hX, hnd, hr, hl, hf, hc, ho => by
@@ -204,7 +204,7 @@ theorem madds_ok (X : List Reg) (s₀ : State) (hax : Reg.rax ∈ X) (hcx : Reg.
 /-! ## The rotating window -/
 
 theorem win_mod (i k : Nat) : win i k = win (i % 8) k := by
-  unfold win; rw [show (i + k) % 8 = (i % 8 + k) % 8 by omega]
+  unfold win; rw [show (i + k) % 8 = (i % 8 + k) % 8 by omega_arith]
 
 theorem wins_mod (i n : Nat) : wins i n = wins (i % 8) n := by
   unfold wins; rw [show win i = win (i % 8) from funext (win_mod i)]
@@ -216,7 +216,7 @@ theorem wins_succ (i : Nat) : wins i 8 = win i 0 :: wins (i + 1) 7 := by
   rw [show (8 : Nat) = 7 + 1 from rfl, List.range_succ_eq_map, List.map_cons, List.map_map]
   refine congrArg (win i 0 :: ·) (congrArg (List.map · _) (funext fun k => ?_))
   show win i (k + 1) = win (i + 1) k
-  unfold win; rw [show i + (k + 1) = i + 1 + k by omega]
+  unfold win; rw [show i + (k + 1) = i + 1 + k by omega_arith]
 
 theorem wins_snoc (i : Nat) : wins i 8 = wins i 7 ++ [win i 7] := by
   unfold wins; rw [show (8 : Nat) = 7 + 1 from rfl, List.range_succ, List.map_append]; rfl
@@ -264,17 +264,17 @@ theorem row_arith {Q B L4 w4 w5 o4 c4 o5 R0 dA : Nat} (hb : R0 + dA < B * Q)
     rw [show B * Q * o5 = Q * (B * o5) by grind]
     generalize Q * w5 = a1 at *; generalize Q * (B * o5) = a2 at *
     generalize Q * w4 = a3 at *; generalize Q * o4 = a4 at *; generalize B * Q * c4 = a5 at *
-    omega
+    omega_arith
   generalize B * Q = BQ at *
   rcases Nat.le_one_iff_eq_zero_or_eq_one.mp o5l with rfl | rfl <;>
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp c4l with rfl | rfl <;> omega
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp c4l with rfl | rfl <;> omega_arith
 
 theorem row_bound {R0 d A B Q : Nat} (hR : R0 < Q) (hd : d < B) (hA : A < Q) :
     R0 + d * A < B * Q := by
-  have h1 : d * A ≤ (B - 1) * Q := Nat.mul_le_mul (by omega) (Nat.le_of_lt hA)
+  have h1 : d * A ≤ (B - 1) * Q := Nat.mul_le_mul (by omega_arith) (Nat.le_of_lt hA)
   have h2 : (B - 1) * Q + Q = B * Q := by
-    rw [← Nat.succ_mul, Nat.succ_eq_add_one, Nat.sub_add_cancel (by omega)]
-  omega
+    rw [← Nat.succ_mul, Nat.succ_eq_add_one, Nat.sub_add_cancel (by omega_arith)]
+  omega_arith
 
 theorem rowX_eq (a b i : Nat) : rowX a b i = loads (b + 8 * i) ([.rdx] : List Reg) ++
     (([.mov32 (win i 7) (.imm 0), clear] : List Instr) ++
@@ -297,7 +297,7 @@ theorem rowX_ok {t : State} {base : Addr} (hs : Scr t base) {a b i : Nat} (ha : 
   have r7 := hr _ (win_mem i 7 (by decide))
   rw [rowX_eq, WP.block_append_iff]
   refine WP.mono (loads_ok hs (b + 8 * i) [.rdx] (by decide) (by decide)
-    (by simp only [List.length_cons, List.length_nil]; omega)) fun s1 ⟨g1, _, k1⟩ => ?_
+    (by simp only [List.length_cons, List.length_nil]; omega_arith)) fun s1 ⟨g1, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   have d1 : s1.gpr .rdx = word t.mem base (b + 8 * i) := by
     have := g1 0 (by decide) .r8; simpa using this
@@ -312,7 +312,7 @@ theorem rowX_ok {t : State} {base : Addr} (hs : Scr t base) {a b i : Nat} (ha : 
   have hsrc := stable_scs_mem (X := clob) hs3 (by decide)
     [a, a + 8, a + 16, a + 24, a + 32, a + 40, a + 48] fun d hd => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith
   refine WP.mono (madds_ok clob s3 (by decide) (by decide) (win i 0) (wins (i + 1) 7) _ _ s3 false
     false (Keeps.refl _ _) (fun r h => (hr r (by rw [wins_succ]; exact h)).1)
     (by rw [← wins_succ]; exact nd) (fun r h => by
@@ -324,7 +324,7 @@ theorem rowX_ok {t : State} {base : Addr} (hs : Scr t base) {a b i : Nat} (ha : 
     simp only [List.mem_cons, not_or]
     exact ⟨by decide, by decide, Ne.symm (hr _ (win_mem i 0 (by decide))).2.2.2.2.2,
       fun e => (hr _ (wins_succ_sub i e)).2.2.2.2.2 rfl⟩)).of_keeps k5 hrdi7
-  refine WP.mono (stores_ok hs5 (h i) [win i 0] (by simp only [h, ACC]; simp; omega))
+  refine WP.mono (stores_ok hs5 (h i) [win i 0] (by simp only [h, ACC]; simp; omega_arith))
     fun s6 ⟨m6, out6, g6, rd6, wr6⟩ => ⟨?_, ?_, ?_⟩
   · -- the arithmetic
     have w6 : (word s6.mem base (h i)).toNat = (s5.gpr (win i 0)).toNat := by
@@ -420,16 +420,16 @@ theorem rowsX_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (ha : S
     intro n t hn ⟨tk, tout, tv⟩
     have ht : Scr t base := hs.of_keepsR tk (by decide)
     refine WP.mono (rowX_ok ht ha hb hn) fun t' ⟨e, k', out'⟩ => ⟨tk.trans k', ?_, ?_⟩
-    · exact (tout.mono (Nat.le_refl _) (by omega)).trans
-        (out'.mono (by simp only [h]; omega) (by simp only [h]; omega))
+    · exact (tout.mono (Nat.le_refl _) (by omega_arith)).trans
+        (out'.mono (by simp only [h]; omega_arith) (by simp only [h]; omega_arith))
     · have m1 : mv t'.mem base ACC n = mv t.mem base ACC n :=
-        out'.mv (Or.inl (by simp only [h]; omega)) (by simp only [ACC]; omega)
+        out'.mv (Or.inl (by simp only [h]; omega_arith)) (by simp only [ACC]; omega_arith)
       have w1 : mv t'.mem base (ACC + 8 * n) 1 = (word t'.mem base (h n)).toNat := by
         simp only [mv, h, Nat.mul_zero, Nat.add_zero]
       have b1 : word t.mem base (b + 8 * n) = word s.mem base (b + 8 * n) :=
-        tout.word (Or.inl (by simp only [ACC]; omega)) (by omega)
+        tout.word (Or.inl (by simp only [ACC]; omega_arith)) (by omega_arith)
       have a1 : fe t.mem base a = fe s.mem base a :=
-        tout.fe (Or.inl (by simp only [ACC]; omega)) (by omega)
+        tout.fe (Or.inl (by simp only [ACC]; omega_arith)) (by omega_arith)
       have mb : mv s.mem base b (n + 1) =
           mv s.mem base b n + 2 ^ (64 * n) * (word s.mem base (b + 8 * n)).toNat := by
         rw [mv_add]; simp only [mv, Nat.mul_zero, Nat.add_zero]
@@ -465,12 +465,12 @@ theorem mulX_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : 
   · rw [wr4, wr3, k2.2.2, k1.2.2.2]
   · rw [← k1.2.1]
     have ho' : o + 56 ≤ ACC := ho
-    exact ((out2.mono (Nat.le_refl _) (by omega)).right o 56).trans
-      (((out3.mono (by simp only [h]; omega) (by rw [wins_length]; simp only [h]; omega)).right
+    exact ((out2.mono (Nat.le_refl _) (by omega_arith)).right o 56).trans
+      (((out3.mono (by simp only [h]; omega_arith) (by rw [wins_length]; simp only [h]; omega_arith)).right
         o 56).trans (out4.left ACC 112))
   · have m1 : s1.mem = s.mem := k1.2.1
     have hm : mv s3.mem base ACC 7 = mv s2.mem base ACC 7 :=
-      out3.mv (Or.inl (by simp only [h]; omega)) (by simp only [ACC]; omega)
+      out3.mv (Or.inl (by simp only [h]; omega_arith)) (by simp only [ACC]; omega_arith)
     rw [wins_length] at m3
     rw [show ACC + 56 = h 7 from rfl, m3, hm, show (448 : Nat) = 64 * 7 from rfl, v2, m1] at e4
     rw [Nat.mul_comm] at e4

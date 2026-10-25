@@ -40,17 +40,17 @@ theorem blockAt_keep {rs : List Region} {m m' : Mem} (f : Frame rs m m') {p : Ad
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 1024⟩ r) : blockAt m' p = blockAt m p := by
   unfold blockAt
   exact congrArg Vector.ofFn (funext fun j => f.read (r := ⟨p, 1024⟩)
-    (Offset.contains_base p (by have := j.isLt; omega) (by have := j.isLt; omega)) hd (by decide))
+    (Offset.contains_base p (by have := j.isLt; omega_arith) (by have := j.isLt; omega_arith)) hd (by decide))
 
 theorem read_zero {m : Mem} {a : Addr} {n : Nat} (h : ∀ i < n, m (a + BitVec.ofNat 64 i) = 0) :
     m.read a n = 0 := by
   induction n generalizing a with
   | zero => rfl
   | succ n ih =>
-    have h0 : m a = 0 := by simpa using h 0 (by omega)
+    have h0 : m a = 0 := by simpa using h 0 (by omega_arith)
     have h1 : m.read (a + 1) n = 0 := ih fun i hi => by
       rw [BitVec.add_assoc, show (1 : Addr) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
-      exact h (1 + i) (by omega)
+      exact h (1 + i) (by omega_arith)
     simp only [Mem.read, h0, h1]
     exact BitVec.zero_append_zero
 
@@ -62,7 +62,7 @@ theorem blockAt_zero {m : Mem} {p : Addr} (h : ∀ i < 1024, m (p + BitVec.ofNat
   intro j hj
   simp only [Vector.getElem_ofFn, Vector.getElem_replicate]
   exact read_zero fun i hi => by
-    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; exact h _ (by omega)
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; exact h _ (by omega_arith)
 
 /-! ## The initialized cells -/
 
@@ -77,7 +77,7 @@ theorem initCell_zero (p : Spec.Argon2.Params) (h0 : List Byte) (k : Nat) : init
   exact ite_eq_right fun h => Nat.not_lt_zero _ h.1
 
 theorem cell_div {L l c : Nat} (hc : c < L) : (l * L + c) / L = l := by
-  rw [Nat.add_comm, Nat.add_mul_div_right _ _ (by omega), Nat.div_eq_of_lt hc, Nat.zero_add]
+  rw [Nat.add_comm, Nat.add_mul_div_right _ _ (by omega_arith), Nat.div_eq_of_lt hc, Nat.zero_add]
 
 theorem cell_mod {L l c : Nat} (hc : c < L) : (l * L + c) % L = c := by
   rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hc]
@@ -85,8 +85,8 @@ theorem cell_mod {L l c : Nat} (hc : c < L) : (l * L + c) % L = c := by
 theorem initCell_new (p : Spec.Argon2.Params) (h0 : List Byte) {l c : Nat} (hL : 2 ≤ p.laneLen) (hc : c < 2) :
     initCell p h0 (l + 1) (l * p.laneLen + c) = parseBlock (initialBytes h0 l c) := by
   unfold initCell
-  rw [cell_div (by omega), cell_mod (by omega)]
-  exact ite_eq_left ⟨by omega, hc⟩
+  rw [cell_div (by omega_arith), cell_mod (by omega_arith)]
+  exact ite_eq_left ⟨by omega_arith, hc⟩
 
 theorem initCell_old (p : Spec.Argon2.Params) (h0 : List Byte) {l k : Nat}
     (h₀ : k ≠ l * p.laneLen) (h₁ : k ≠ l * p.laneLen + 1) :
@@ -95,10 +95,10 @@ theorem initCell_old (p : Spec.Argon2.Params) (h0 : List Byte) {l k : Nat}
   have hdm := Nat.div_add_mod k p.laneLen
   by_cases hq : k / p.laneLen = l
   · rw [hq, Nat.mul_comm] at hdm
-    rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
   · by_cases hc : k / p.laneLen < l ∧ k % p.laneLen < 2
-    · rw [ite_eq_left (by omega), ite_eq_left hc]
-    · rw [ite_eq_right (by omega), ite_eq_right hc]
+    · rw [ite_eq_left (by omega_arith), ite_eq_left hc]
+    · rw [ite_eq_right (by omega_arith), ite_eq_right hc]
 
 /-- `a - b` is zero exactly when `a = b`, for 32-bit numbers. -/
 theorem ofNat_sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
@@ -110,7 +110,7 @@ theorem ofNat_sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
       have e' := congrArg BitVec.toNat e
       have z : (0 : BitVec 32).toNat = 0 := rfl
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb, z] at e'
-      omega
+      omega_arith
     rw [decide_eq_false h]
     exact beq_eq_false_iff_ne.mpr hne
 
@@ -125,10 +125,10 @@ theorem loc_bytes_store {s₀ : State} (hp : DPre s₀) {m : Mem} {d n : Nat} (h
   refine bytes_keep
     ((Frame.refl [⟨State.addr (E s₀ + BitVec.ofNat 32 d), 4⟩] m).writeW (List.mem_singleton_self _) v
       (Region.contains_self _ _))
-    (fun r hr => ?_) (by omega)
+    (fun r hr => ?_) (by omega_arith)
   simp only [List.mem_singleton] at hr; subst hr
-  exact disj32 (.inl (by rw [loc_nat hp (d := d) (by omega)]; omega)) (by omega)
-    (by rw [loc_nat hp (d := d) (by omega)]; omega)
+  exact disj32 (.inl (by rw [loc_nat hp (d := d) (by omega_arith)]; omega_arith)) (by omega_arith)
+    (by rw [loc_nat hp (d := d) (by omega_arith)]; omega_arith)
 
 /-- The 72 bytes of H′'s input: H₀, then two words. -/
 theorem bytes72 (m : Mem) (p : Addr) :
@@ -181,8 +181,8 @@ theorem cell_disj {k : Nat} (hk : k < blocksN s₀) :
 theorem cell_addr {k : Nat} (hk : k < blocksN s₀) :
     State.addr (memP s₀ + BitVec.ofNat 32 (k * 1024)) = matrixCell (memB s₀) k := by
   have := hp.mem_fits
-  have : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
-  exact addr_add (by omega)
+  have : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_arith
+  exact addr_add (by omega_arith)
 
 omit hp in
 theorem cell_in_mem {k : Nat} (hk : k < blocksN s₀) :
@@ -191,7 +191,7 @@ theorem cell_in_mem {k : Nat} (hk : k < blocksN s₀) :
 /-- Cells other than `k` are outside its region. -/
 theorem cell_other {j k : Nat} (hj : j < blocksN s₀) (hk : k < blocksN s₀) (ne : j ≠ k) :
     Region.Disjoint ⟨matrixCell (memB s₀) j, 1024⟩ ⟨matrixCell (memB s₀) k, 1024⟩ :=
-  matrixCell_disjoint _ _ _ _ (by have := hp.blocks_lt; omega) hj hk ne
+  matrixCell_disjoint _ _ _ _ (by have := hp.blocks_lt; omega_arith) hj hk ne
 
 /-- Block `c < 2` of lane `l`: H′ of H₀, `c` and `l`. -/
 theorem initBlock_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List Byte}
@@ -207,14 +207,14 @@ theorem initBlock_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List B
   have hs := hp.scr_fits
   have hm := hp.mem_fits
   have hlt := hp.lanes_lt
-  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega
+  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_arith
   have hcell : l * (prm s₀).laneLen + c < blocksN s₀ := by
     rw [hp.blocks_eq]
-    have := Nat.mul_le_mul_right (prm s₀).laneLen (show l + 1 ≤ lanesN s₀ by omega)
+    have := Nat.mul_le_mul_right (prm s₀).laneLen (show l + 1 ≤ lanesN s₀ by omega_arith)
     rw [Nat.succ_mul] at this
-    omega
+    omega_arith
   have hec : encodable (BitVec.ofNat 32 c) = true := by
-    rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : c = 0 ∨ c = 1) with rfl | rfl <;> decide
   unfold Impl.Argon2.Arm.Derive.initBlock
   refine WP.seq (wp_mov (op2_imm hec) fun s₁ u₁ => ?_)
   have i₁ := h.upd u₁ (by decide)
@@ -242,30 +242,30 @@ theorem initBlock_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List B
     rw [r2₈, r6, cell_addr hp hcell]
   have sO : Region.Sub ⟨State.addr (s₈.gpr .r2), (s₈.gpr .r3).toNat⟩ (memR s₀) := by
     rw [O, r3₈]; exact cell_in_mem hcell
-  have hcell' : (l * (prm s₀).laneLen + c) * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
+  have hcell' : (l * (prm s₀).laneLen + c) * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_arith
   refine hcall_ok hp i₈ u₈.gpr
-    ⟨locR s₀, by simp, 0, by rw [r0₈]; simp, by rw [r1₈]; show 0 + 72 ≤ 144; omega⟩ (by rw [r0₈, r1₈]; omega)
+    ⟨locR s₀, by simp, 0, by rw [r0₈]; simp, by rw [r1₈]; show 0 + 72 ≤ 144; omega_arith⟩ (by rw [r0₈, r1₈]; omega_arith)
     ⟨memR s₀, by simp, (l * (prm s₀).laneLen + c) * 1024, by rw [O]; rfl, by rw [r3₈]; exact hcell'⟩
-    (by rw [r2₈, r6, r3₈, add_nat (x := memP s₀) (k := (l * (prm s₀).laneLen + c) * 1024) (by omega)]; omega)
+    (by rw [r2₈, r6, r3₈, add_nat (x := memP s₀) (k := (l * (prm s₀).laneLen + c) * 1024) (by omega_arith)]; omega_arith)
     (by rw [r3₈]; decide)
     fun t it cs fr post => ⟨it, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · -- The parameters.
     exact Prm.of_lw pr fun d hd => by
       have hd' := prm_offs d hd
-      rw [lw_keep hp fr (call_sub (.inl sO)) hd'.1, lw_mem m₈, o₃ d (by omega) (by omega),
-        o₂ d (by omega) (by omega), lw_mem u₁.mem]
-  · rw [bytes_keep fr (h0_call hp (.inl sO)) (by omega), m₈, m₃,
+      rw [lw_keep hp fr (call_sub (.inl sO)) hd'.1, lw_mem m₈, o₃ d (by omega_arith) (by omega_arith),
+        o₂ d (by omega_arith) (by omega_arith), lw_mem u₁.mem]
+  · rw [bytes_keep fr (h0_call hp (.inl sO)) (by omega_arith), m₈, m₃,
       loc_bytes_store hp (by decide) (by decide), m₂, loc_bytes_store hp (by decide) (by decide), u₁.mem, b0]
   · rw [cs .r5 (by decide) (by decide), g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
   · rw [cs .r6 (by decide) (by decide), g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
   · refine Proof.Argon2.blockAt_of_initialBytes _ _ _ _ _ ?_
     rw [← O, ← r3₈, post, r3₈, r0₈, r1₈, bytes72, m₈]
     have w64 : s₃.mem.readW (State.addr (E s₀) + BitVec.ofNat 64 64) 32 = BitVec.ofNat 32 c := by
-      rw [← loc_addr hp (by omega)]
+      rw [← loc_addr hp (by omega_arith)]
       show lw s₀ s₃ 64 = _
       rw [o₃ 64 (by decide) (by decide), v₂, u₁.gpr]
     have w68 : s₃.mem.readW (State.addr (E s₀) + BitVec.ofNat 64 68) 32 = BitVec.ofNat 32 l := by
-      rw [← loc_addr hp (by omega)]
+      rw [← loc_addr hp (by omega_arith)]
       show lw s₀ s₃ 68 = _
       rw [v₃, g₂, u₁.other _ (by decide), r5]
     rw [w64, w68, m₃, loc_bytes_store hp (by decide) (by decide), m₂, loc_bytes_store hp (by decide) (by decide),
@@ -316,7 +316,7 @@ include hp
 theorem lane_ok {h0 : List Byte} {l : Nat} {s : State} (hl : l < lanesN s₀) (h : LI s₀ h0 l s) :
     WP isa Impl.Argon2.Arm.Derive.initLane s fun t =>
       LI s₀ h0 (l + 1) t ∧ VG.Arm.eval .ne t = some (!decide (l + 1 = lanesN s₀)) := by
-  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega
+  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_arith
   have hlt := hp.lanes_lt
   unfold Impl.Argon2.Arm.Derive.initLane
   refine WP.seq ((initBlock_ok hp h.inv h.pr h.b0 hl (c := 0) (by decide) h.r5
@@ -354,9 +354,9 @@ theorem lane_ok {h0 : List Byte} {l : Nat} {s : State} (hl : l < lanesN s₀) (h
     by_cases k0 : k = l * (prm s₀).laneLen
     · rw [u₂.mem, k0, show l * (prm s₀).laneLen = l * (prm s₀).laneLen + 0 from rfl, w₁]
       exact (initCell_new _ _ L2 (by decide)).symm
-    rw [u₂.mem, o₁ k hk (by omega), h.cells k hk, initCell_old _ _ k0 k1]
+    rw [u₂.mem, o₁ k hk (by omega_arith), h.cells k hk, initCell_old _ _ k0 k1]
   · rw [MdStream.Arm.eval_ne, z, u₈.gpr, r5₈, show arg s₀ 7 = BitVec.ofNat 32 (lanesN s₀) by simp,
-      ofNat_sub_beq (by omega) (by omega)]
+      ofNat_sub_beq (by omega_arith) (by omega_arith)]
 
 /-- `clear`, from the body with H₀ in the locals. -/
 theorem clearW_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List Byte}
@@ -368,7 +368,7 @@ theorem clearW_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List Byte
   · have fsub : ∀ r ∈ [memR s₀], ∃ r' ∈ [memR s₀, scrR s₀, outR s₀, callR s₀], Region.Sub r r' :=
       fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; simp, fun _ h => h⟩
     exact Prm.of_lw pr fun d hd => lw_keep hp f₁ fsub (prm_offs d hd).1
-  · rw [bytes_keep f₁ (fun r hr => ?_) (by omega), b0]
+  · rw [bytes_keep f₁ (fun r hr => ?_) (by omega_arith), b0]
     simp only [List.mem_singleton] at hr; subst hr
     exact (loc_disj' hp (R := memR s₀) (by simp)).sub_left (Region.sub_prefix (by decide))
 
@@ -387,7 +387,7 @@ theorem laneStart_ok {s : State} {h0 : List Byte} (h : Inv s₀ s ∧ Prm s₀ s
   · rw [initCell_zero, m₃]
     refine blockAt_zero fun i hi => ?_
     rw [matrixCell, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact z₁ _ (by omega)
+    exact z₁ _ (by omega_arith)
 
 theorem memoryInit_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List Byte}
     (b0 : bytesAt s.mem (State.addr (E s₀)) 64 = h0) :
@@ -399,7 +399,7 @@ theorem memoryInit_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List 
   unfold Impl.Argon2.Arm.Derive.memoryInit
   refine WP.seq ((clearW_ok hp h pr b0).mono fun s₁ h₁ => WP.seq ((laneStart_ok hp h₁).mono fun s₃ start => ?_))
   refine WP.loop (M := isa) (fun n t => ∃ l, n = lanesN s₀ - l ∧ l < lanesN s₀ ∧ LI s₀ h0 l t) ?_
-    (lanesN s₀) s₃ ⟨0, by omega, by omega, start⟩
+    (lanesN s₀) s₃ ⟨0, by omega_arith, by omega_arith, start⟩
   rintro n t ⟨l, rfl, hl, ht⟩
   refine (lane_ok hp hl ht).mono fun u ⟨hu, cu⟩ => ?_
   by_cases done : l + 1 = lanesN s₀
@@ -414,7 +414,7 @@ theorem memoryInit_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List 
     by_cases c2 : k % (prm s₀).laneLen < 2
     · rw [ite_eq_left ⟨this, c2⟩, ite_eq_left c2]
     · rw [ite_eq_right (fun h => c2 h.2), ite_eq_right c2]
-  · refine .inr ⟨by show VG.Arm.eval .ne u = _; rw [cu]; simp [done], lanesN s₀ - (l + 1), by omega, l + 1, rfl, by omega, hu⟩
+  · refine .inr ⟨by show VG.Arm.eval .ne u = _; rw [cu]; simp [done], lanesN s₀ - (l + 1), by omega_arith, l + 1, rfl, by omega_arith, hu⟩
 
 end
 

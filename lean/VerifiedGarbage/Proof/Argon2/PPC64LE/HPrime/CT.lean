@@ -163,9 +163,9 @@ theorem chooseFirst_rel : RelCT isa (Related FirstReady) chooseLength
   apply ct.mono (fun _ _ h => h)
   rintro t₁ t₂ ⟨pub, s₁, s₂, hp, ⟨len₁, k₁⟩, ⟨_, k₂⟩⟩
   refine ⟨hp.keeps first_stable k₁ k₂, ?_, pub.2 _ (List.mem_cons_self ..)⟩
-  rw [len₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : min (s₁.gpr .r30).toNat 64 < 2 ^ 64)]
+  rw [len₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : min (s₁.gpr .r30).toNat 64 < 2 ^ 64)]
   have := hp.1.positive
-  omega
+  omega_arith
 
 theorem inputCount_ok (s : State) :
     WP isa (.block [.addi .r4 .r28 4]) s fun t =>
@@ -211,22 +211,22 @@ theorem sub32_nat (v : BitVec 64) (h : 32 ≤ v.toNat) : (v - 32).toNat = v.toNa
   have eq : v - 32 = BitVec.ofNat 64 (v.toNat - 32) := by
     simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq,
       show BitVec.ofNat 64 32 = (32 : Addr) from rfl] using (Offset.ofNat_sub_ofNat (w := 64) h)
-  rw [eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := v.isLt; omega)]
+  rw [eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := v.isLt; omega_arith)]
 
 theorem Emitted.ready {s t : State} (h : Emitted s t) (pre : LoopReady s) : OutputReady t := by
   have count : (t.gpr .r30).toNat = (s.gpr .r30).toNat - 32 := by
-    rw [h.remaining, sub32_nat _ (by have := pre.2; omega)]
+    rw [h.remaining, sub32_nat _ (by have := pre.2; omega_arith)]
   refine ⟨?_, ?_, ?_⟩
   · rw [count]
     apply pre.1.space.advance (Written.of_emitted h)
     simp only [Spec.Blake2.bytesAt, List.length_map, List.length_range]
     have := pre.2
-    omega
-  · rw [count]; have := pre.2; omega
-  · rw [count]; have := pre.1.bound; omega
+    omega_arith
+  · rw [count]; have := pre.2; omega_arith
+  · rw [count]; have := pre.1.bound; omega_arith
 
 theorem emit_ready (v : State) (h : LoopReady v) : WP isa emitPrefix v (Emitted v) := by
-  have space := h.1.space.prefix (show 32 ≤ (v.gpr .r30).toNat by have := h.2; omega)
+  have space := h.1.space.prefix (show 32 ≤ (v.gpr .r30).toNat by have := h.2; omega_arith)
   exact emitPrefix_ok v space.work space.out
     (space.sep.sub_left (Offset.sub_base _ (by decide : 768 + 32 ≤ 16384)))
 
@@ -287,8 +287,8 @@ theorem chainBody_rel :
 theorem chainStep_ready (s : State) (h : LoopReady s) :
     WP isa (.seq (.block [.li .r4 64])
       (.seq (next) (.seq emitPrefix (.block cmpLeft)))) s (ChainStep s) := by
-  have space := h.1.space.prefix (show 32 ≤ (s.gpr .r30).toNat by have := h.2; omega)
-  exact chainStep_ok s space.spBound ⟨by have := h.2; omega, h.1.bound⟩ space.work space.out space.sep space.stackWork
+  have space := h.1.space.prefix (show 32 ≤ (s.gpr .r30).toNat by have := h.2; omega_arith)
+  exact chainStep_ok s space.spBound ⟨by have := h.2; omega_arith, h.1.bound⟩ space.work space.out space.sep space.stackWork
 
 theorem chain_rel :
     RelCT isa (Related LoopReady) (chain)
@@ -308,19 +308,19 @@ theorem chain_rel :
     · intro flag
       refine ⟨ready, ?_⟩
       by_contra h
-      have hn : ¬ (t₁.gpr .r30).toNat < 65 := by omega
+      have hn : ¬ (t₁.gpr .r30).toNat < 65 := by omega_arith
       simp [eval_zero, value, hn] at flag
     intro flag
     have lo : 65 ≤ (t₁.gpr .r30).toNat := by
       by_contra h
-      have lt : (t₁.gpr .r30).toNat < 65 := by omega
+      have lt : (t₁.gpr .r30).toNat < 65 := by omega_arith
       simp [eval_zero, value, lt] at flag
     have remain : (t₁.gpr .r30).toNat = (s₁.gpr .r30).toNat - 32 := by
-      rw [h₁.remaining, sub32_nat _ (by have := hp.1.1.2; omega)]
+      rw [h₁.remaining, sub32_nat _ (by have := hp.1.1.2; omega_arith)]
     refine ⟨(t₁.gpr .r30).toNat, ?_, ⟨⟨ready.1, lo⟩, ⟨ready.2.1, ?_⟩, ready.2.2⟩, rfl⟩
     · have before : 65 ≤ (s₁.gpr .r30).toNat := hp.1.1.2
       have count : (s₁.gpr .r30).toNat = m := hp.2
-      omega
+      omega_arith
     · rw [← ready.2.2.2 .r30 (by decide)]; exact lo
   exact (RelCT.exists_ loops).mono (fun s₁ _ h => ⟨(s₁.gpr .r30).toNat, h, rfl⟩) (fun _ _ h => h)
 
@@ -341,14 +341,14 @@ def OutputCompared (s t : State) : Prop := Related OutputReady s t ∧ s.gpr .r1
 theorem OutputCompared.short {s t : State} (h : OutputCompared s t) (flag : isa.eval (.nonzero .d .r10) s = some true) :
     (s.gpr .r30).toNat ≤ 64 := by
   by_contra hn
-  have n : ¬ (s.gpr .r30).toNat < 65 := by omega
+  have n : ¬ (s.gpr .r30).toNat < 65 := by omega_arith
   simp [eval_nonzero, h.2.2, n] at flag
 
 theorem OutputCompared.long {s t : State} (h : OutputCompared s t) (flag : isa.eval (.nonzero .d .r10) s = some false) :
     Related LoopReady s t := by
   have n : 65 ≤ (s.gpr .r30).toNat := by
     by_contra hn
-    have n : (s.gpr .r30).toNat < 65 := by omega
+    have n : (s.gpr .r30).toNat < 65 := by omega_arith
     simp [eval_nonzero, h.2.2, n] at flag
   exact ⟨⟨h.1.1, n⟩, ⟨h.1.2.1, by rw [← h.1.2.2.2 .r30 (by decide)]; exact n⟩, h.1.2.2⟩
 
@@ -417,7 +417,7 @@ theorem setup_ready {s t : State} (h : localContract.pre s) (ht : Setup s t) : F
     · rw [ht.workspace, ht.wr, wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
     · intro i hi'
       rw [ht.wr, ht.output, wr]
-      exact ⟨outputR s, List.mem_cons_self .., Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨outputR s, List.mem_cons_self .., Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [ht.workspace, ht.output]; exact ow.symm
     · rw [sp, ht.workspace]; exact sw
     · rw [sp, ht.output]; exact so

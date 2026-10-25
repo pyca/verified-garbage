@@ -27,10 +27,7 @@ theorem squaresInit_raw (s : State) {base : BitVec 32} {len d : Nat}
   have a68 : State.addr (s.sp+BitVec.ofNat 32 68)=off (State.addr s.sp) 68 := addr_add (by have := locals.space.nowrap; omega)
   have read := locals.read (d:=44) (by decide)
   have write := locals.space.write (off:=68) (by decide)
-  refine withRest (c:=.block squaresInit) [.r3,.r12] ?_ (by
-    intro r hr i hi
-    simp only [instrs,squaresInit,VG.Impl.Ffdh.Arm.Domain.st,List.mem_cons,List.not_mem_nil,or_false] at hi
-    rcases hi with rfl|rfl|rfl <;> simp [clobbers,dstOf] at * <;> grind) rfl
+  refine withRest_all (c:=.block squaresInit) [.r3,.r12] ?_ (by rfl) rfl
   unfold squaresInit VG.Impl.Ffdh.Arm.Domain.st
   ffrun [a44,a68,read,write,saved,off,BitVec.add_zero]
 
@@ -44,10 +41,7 @@ theorem squaresNext_raw (s : State) {base : BitVec 32} {len n : Nat}
   have write := locals.space.write (off:=68) (by decide)
   have sub : BitVec.ofNat 32 n-1=BitVec.ofNat 32 (n-1) := BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive
   have val : (BitVec.ofNat 32 (n-1)).toNat=n-1 := Nat.mod_eq_of_lt (by omega)
-  refine withRest (c:=.block squaresNext) [.r3,.r12] ?_ (by
-    intro r hr i hi
-    simp only [instrs,squaresNext,VG.Impl.Ffdh.Arm.Domain.st,List.mem_cons,List.not_mem_nil,or_false] at hi
-    rcases hi with rfl|rfl|rfl|rfl <;> simp [clobbers,dstOf] at * <;> grind) rfl
+  refine withRest_all (c:=.block squaresNext) [.r3,.r12] ?_ (by rfl) rfl
   unfold squaresNext VG.Impl.Ffdh.Arm.Domain.st
   ffrun [a68,read,write,saved,sub,val,off,BitVec.add_zero,subFlags]
   exact ofNat_beq_zero (by omega)

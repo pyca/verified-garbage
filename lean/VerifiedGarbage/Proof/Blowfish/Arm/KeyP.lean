@@ -29,22 +29,22 @@ theorem key_next (c L : Nat) (hL : 0 < L) (hL' : L < 2 ^ 32) :
       else BitVec.ofNat 32 (c % L) + 1#32) = BitVec.ofNat 32 ((c + 1) % L) := by
   have hb := Nat.mod_lt c hL
   have ht : (BitVec.ofNat 32 (c % L) + 1#32).toNat = c % L + 1 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show c % L < 2 ^ 32 by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show c % L < 2 ^ 32 by omega_arith)]
     change (c % L + 1) % 2 ^ 32 = _
-    omega
+    omega_arith
   have ha : (c + 1) % L = (c % L + 1) % L := by simp only [Nat.add_mod, Nat.mod_mod]
   have e : (BitVec.ofNat 32 (c % L) + 1#32 - BitVec.ofNat 32 L == 0#32) = decide (c % L + 1 = L) := by
     rw [show BitVec.ofNat 32 (c % L) + 1#32 = BitVec.ofNat 32 (c % L + 1) from
-      BitVec.eq_of_toNat_eq (by rw [ht, BitVec.toNat_ofNat]; omega)]
-    exact ofNat_sub_beq (by omega) hL'
+      BitVec.eq_of_toNat_eq (by rw [ht, BitVec.toNat_ofNat]; omega_arith)]
+    exact ofNat_sub_beq (by omega_arith) hL'
   rw [e]
   by_cases h : c % L + 1 = L
   · simp only [decide_eq_true h, ↓reduceIte]; rw [ha, h, Nat.mod_self]
   · rw [decide_eq_false h]
     simp only [Bool.false_eq_true, ite_false]
     apply BitVec.eq_of_toNat_eq
-    rw [ht, BitVec.toNat_ofNat, ha, Nat.mod_eq_of_lt (show c % L + 1 < L by omega),
-      Nat.mod_eq_of_lt (show c % L + 1 < 2 ^ 32 by omega)]
+    rw [ht, BitVec.toNat_ofNat, ha, Nat.mod_eq_of_lt (show c % L + 1 < L by omega_arith),
+      Nat.mod_eq_of_lt (show c % L + 1 < 2 ^ 32 by omega_arith)]
 
 /-- The key bytes: `key` at `Kk`, `L` bytes long. -/
 structure KeyEnv (Kk : BitVec 32) (L : Nat) (u : State) : Prop where
@@ -63,8 +63,8 @@ theorem keyByte_run (u : State) {Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u) (
   have hc := Nat.mod_lt c E.pos
   have fit := E.fit
   have ea : State.addr (Kk + BitVec.ofNat 32 (c % L) + BitVec.ofNat 32 0) =
-      State.addr Kk + BitVec.ofNat 64 (c % L) := by rw [BitVec.add_zero, addr_add (by omega)]
-  have hr : InRegions (u.rd ++ u.wr) (State.addr Kk + BitVec.ofNat 64 (c % L)) 1 := inRegions_off E.rd (by omega)
+      State.addr Kk + BitVec.ofNat 64 (c % L) := by rw [BitVec.add_zero, addr_add (by omega_arith)]
+  have hr : InRegions (u.rd ++ u.wr) (State.addr Kk + BitVec.ofNat 64 (c % L)) 1 := inRegions_off E.rd (by omega_arith)
   unfold keyByte
   apply WP.seq
   refine WP.mono (WP.keep [.r4, .r5, .r6, .r7] (Q := fun t =>
@@ -72,7 +72,7 @@ theorem keyByte_run (u : State) {Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u) (
       t.gpr .r4 = BitVec.ofNat 32 (c % L) + 1#32 ∧
       t.z = (BitVec.ofNat 32 (c % L) + 1#32 - BitVec.ofNat 32 L == 0#32) ∧ t.mem = u.mem)
     (by brun [E.r0, E.r1, h4, ea, hr]) (by decide)) fun v ⟨⟨v5, v4, vz, vm⟩, vk⟩ => ?_
-  have nx := key_next c L E.pos (by have := E.small; omega)
+  have nx := key_next c L E.pos (by have := E.small; omega_arith)
   refine WP.ite _ (by rw [eval_eq, vz]) (fun hz => ?_) (fun hz => ?_)
   · rw [hz] at nx
     refine WP.mono (WP.keep [.r4] (Q := fun t => t.gpr .r4 = 0#32 ∧ t.gpr .r5 = v.gpr .r5 ∧ t.mem = v.mem)
@@ -165,33 +165,33 @@ theorem keyStep {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u�
   have Et := E.keep I.keep (by decide) (by decide)
   refine keyWord_run t Et w I.r4 fun v v5 v4 vm vk => ?_
   have ea : State.addr (K + BitVec.ofNat 32 (4096 + 4 * w) + BitVec.ofNat 32 0) =
-      State.addr K + BitVec.ofNat 64 (4096 + 4 * w) := by rw [BitVec.add_zero, addr_add (by omega)]
+      State.addr K + BitVec.ofNat 64 (4096 + 4 * w) := by rw [BitVec.add_zero, addr_add (by omega_arith)]
   have hwv : InRegions v.wr (State.addr K + BitVec.ofNat 64 (4096 + 4 * w)) 4 := by
-    rw [vk.2.2.1, I.keep.2.2.1, ← Offset.add_add]; exact inRegions_off hw (by omega)
+    rw [vk.2.2.1, I.keep.2.2.1, ← Offset.add_add]; exact inRegions_off hw (by omega_arith)
   refine WP.mono (WP.keep [.r6, .r8, .r12] (keyTail_run v w (by rw [vk.gpr (by decide), I.r12]) v5 ea hwv)
     (by decide)) fun t' ⟨⟨tm, t12, t8, tz⟩, tk⟩ => ?_
   -- the key's bytes are where they were
   have hkey : bytesAt t.mem (State.addr Kk) L = bytesAt u₀.mem (State.addr Kk) L :=
     bytesAt_frame I.frame fun c hc r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr
-      exact fun h => hd _ (Offset.contains_base _ (by omega) (by have := E.fit; omega)) h
+      exact fun h => hd _ (Offset.contains_base _ (by omega_arith) (by have := E.fit; omega_arith)) h
   have hv8 : v.gpr .r8 = BitVec.ofNat 32 (18 - w) := by rw [vk.gpr (by decide), I.r8]
   have h8 : BitVec.ofNat 32 (18 - w) - 1#32 = BitVec.ofNat 32 (18 - (w + 1)) := by
-    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_arith
   have sepw : ∀ j, j < 18 → j ≠ w → Mem.Sep (State.addr K + BitVec.ofNat 64 (4096 + 4 * j)) (32 / 8)
       (State.addr K + BitVec.ofNat 64 (4096 + 4 * w)) (32 / 8) :=
-    fun j hj hne => Offset.sep _ (by omega) (by omega) (by omega)
-  refine ⟨⟨by omega, by rw [tk.gpr (by decide), v4], t12, by rw [t8, hv8, h8],
+    fun j hj hne => Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)
+  refine ⟨⟨by omega_arith, by rw [tk.gpr (by decide), v4], t12, by rw [t8, hv8, h8],
     (I.keep.trans (vk.trans tk)).mono (by decide), fun j hj => ?_, fun j h1 h2 => ?_, ?_⟩, by rw [tz, hv8, h8]⟩
   · rw [tm, vm]
     by_cases e : j = w
     · subst e
-      rw [Mem.readW_writeW_self32, I.rest j (by omega) hw18, kb_keyWord _ _ E.pos, hkey]
-    · rw [Mem.readW_writeW_sep (sepw j (by omega) e) (by decide)]; exact I.done j (by omega)
-  · rw [tm, vm, Mem.readW_writeW_sep (sepw j h2 (by omega)) (by decide)]; exact I.rest j (by omega) h2
+      rw [Mem.readW_writeW_self32, I.rest j (by omega_arith) hw18, kb_keyWord _ _ E.pos, hkey]
+    · rw [Mem.readW_writeW_sep (sepw j (by omega_arith) e) (by decide)]; exact I.done j (by omega_arith)
+  · rw [tm, vm, Mem.readW_writeW_sep (sepw j h2 (by omega_arith)) (by decide)]; exact I.rest j (by omega_arith) h2
   · rw [tm, vm]
     exact I.frame.writeW List.mem_cons_self _ (Offset.contains (e := 4096) (k := 72) (d := 4096 + 4 * w)
-      (n := 4) _ (by omega) (by omega) (by omega))
+      (n := 4) _ (by omega_arith) (by omega_arith) (by omega_arith))
 
 theorem keyP_run {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u₀) (h2 : u₀.gpr .r2 = K)
     (fit : K.toNat + 4168 ≤ 2 ^ 32)
@@ -216,7 +216,7 @@ theorem keyP_run {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u�
     exact ⟨by rw [e]; rfl, e ▸ J'⟩
   · right
     have nz : BitVec.ofNat 32 (18 - (w + 1)) ≠ 0#32 := by
-      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
-    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega, w + 1, by omega, rfl, J'⟩
+      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_arith
+    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega_arith, w + 1, by omega_arith, rfl, J'⟩
 
 end VG.Proof.Blowfish.Arm

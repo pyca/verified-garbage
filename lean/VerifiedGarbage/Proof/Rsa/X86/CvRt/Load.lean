@@ -54,7 +54,7 @@ structure Lengths (g : CallGeometry) : Prop where
 theorem scratchFrame {g : CallGeometry} {s : State} {m : Mem} (h : Inputs g s)
     (frame : Outside g.base 0 g.size s.mem m) : Frame g.writes s.mem m := by
   have fit := h.ws.workspace.nowrap
-  have f := outside_frame frame (by omega)
+  have f := outside_frame frame (by omega_arith)
   simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
     f.mono (rs' := g.writes) (by simp [CallGeometry.writes, off])
 
@@ -200,11 +200,11 @@ theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   have fitsN : hdr + 4 * (nArr * (kw (g.args 7).toNat + 2)) ≤ g.size := by
     simp only [arr, S] at fits; rw [Nat.mul_left_comm] at fits; exact fits
   rw [a0] at oz
-  have Oz : Outside g.base 0 g.size s.mem z.mem := oz.mono (Nat.zero_le _) (by omega)
-  have Bz : Outside g.base 16 (g.size - 16) s.mem z.mem := oz.mono (by unfold hdr; omega) (by unfold hdr at *; omega)
+  have Oz : Outside g.base 0 g.size s.mem z.mem := oz.mono (Nat.zero_le _) (by omega_arith)
+  have Bz : Outside g.base 16 (g.size - 16) s.mem z.mem := oz.mono (by unfold hdr; omega_arith) (by unfold hdr at *; omega_arith)
   have hz := h.after (kz.mono (rs' := [.eax, .ecx, .edx, .ebp]) (by decide)) (by decide) (by decide) (scratchFrame h Oz)
   have zero : ∀ j < nArr, num z.mem g.base (kw (g.args 7).toNat) j = 0 := fun j hj => by
-    have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros j hj) (a := 0) (c := kw (g.args 7).toNat) (by omega)
+    have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros j hj) (a := 0) (c := kw (g.args 7).toNat) (by omega_arith)
     simpa only [Nat.mul_zero, Nat.add_zero] using part
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (load_ok hz len 0 (j := aDQ) (by decide) (zero _ (by decide))) fun u ⟨hu, ku, vu, ru⟩ => ?_
@@ -249,18 +249,18 @@ theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
     change Spec.Rsa.os2ip (inputBytes g x.mem 3) = _
     rw [h.inputFrame (((Oz.trans Ou).trans Ov).trans Ox)]
   · change w32 t.mem g.base (arr (kw (g.args 7).toNat) aDD + 4 * kw (g.args 7).toNat) = 0
-    rw [K.word (by unfold S; omega) (by decide) (by simp) (fit _ (by decide))]
+    rw [K.word (by unfold S; omega_arith) (by decide) (by simp) (fit _ (by decide))]
     have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros aDD (by decide))
-      (a := kw (g.args 7).toNat) (c := 1) (by omega)
+      (a := kw (g.args 7).toNat) (c := 1) (by omega_arith)
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using part
   · intro j hj
     have jfit : j < nArr := by
       simp only [zeroC, List.mem_cons, List.not_mem_nil, or_false] at hj
-      unfold nArr; omega
+      unfold nArr; omega_arith
     have separate : ∀ k ∈ [aDQ, aP, aQ, aD], k ≠ j := by
       simp only [zeroC, List.mem_cons, List.not_mem_nil, or_false] at hj
       simp only [aDQ, aP, aQ, aD, List.mem_cons, List.not_mem_nil, or_false]
-      omega
+      omega_arith
     change num t.mem g.base (kw (g.args 7).toNat) j = 0
     rw [K.num separate (by simp) (fit _ jfit)]
     exact zero j jfit

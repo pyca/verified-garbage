@@ -113,9 +113,9 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
   have F := hF.fixed
-  have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   have hr2lt : ∀ {m : Mem}, wordsVal m base (c.sl R2N) c.n = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n →
-      wordsVal m base (c.sl R2N) c.n < c.C.n := fun h => by rw [h]; exact Nat.mod_lt _ (by omega)
+      wordsVal m base (c.sl R2N) c.n < c.C.n := fun h => by rw [h]; exact Nat.mod_lt _ (by omega_arith)
   refine WP.seq (hF.keep.withSp hsp₁ ?_)
   rw [scalars_eq]
   -- The checks.
@@ -158,7 +158,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       rw [tbl_unch U₃ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
         tbl_unch U₂ h7 (j := 2) (by decide) ht (tbl_apart_flag h0 2 t)]
       exact hF.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ f₄ => ?_))
+    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega_arith)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ f₄ => ?_))
   have hs₄ := hs₃.of_keeps K₄ (by decide)
   have F₄ := F₃.unch h7 hn fixedOk_pwW U₄
   have KK₄ : Keep c s₀ base s₄ := ⟨hs₄, by rw [K₄.1 _ (by decide), K₃.esp], by rw [K₄.2.1, K₃.rd],
@@ -191,11 +191,11 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     fun s₈ ⟨hs₈, M₈, g₈, rd₈, wr₈, U₈, v₈, lt₈, e₈⟩ => ?_)
   have F₈ := F₇.unch h7 hn (fixedOk_slWk (by decide)) U₈
   refine WP.seq (WP.mono (mulN_ok hc hs₈ M₈ (o := U) (a := UM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega) (by decide))
+    (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega_arith) (by decide))
     fun s₉ ⟨hs₉, M₉, g₉, rd₉, wr₉, U₉, v₉, lt₉, e₉⟩ => ?_)
   have F₉ := F₈.unch h7 hn (fixedOk_slWk (by decide)) U₉
   refine WP.mono (mulN_ok hc hs₉ M₉ (o := V) (a := VM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega) (by decide))
+    (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega_arith) (by decide))
     fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ f₁₀ => h s₁₀ ?_
   have F₁₀ := F₉.unch h7 hn (fixedOk_slWk (by decide)) U₁₀
   -- What changed: the flag and `midW`, and the accumulator.

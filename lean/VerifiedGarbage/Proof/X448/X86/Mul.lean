@@ -46,12 +46,12 @@ theorem rowSrcU_ok {s : State} {base : Addr} (hs : Scr s base) {b i j : Nat}
       Keeps [.eax, .edx] s t ∧ t.mem = s.mem := by
   have hb' : b + 112 ≤ 3584 := hb
   unfold rowSrcU
-  refine wp_load (hs.ea_ptr hp (by omega)) (hs.read (by omega)) fun t ht => ?_
+  refine wp_load (hs.ea_ptr hp (by omega_arith)) (hs.read (by omega_arith)) fun t ht => ?_
   refine wp_mul fun u uv um uk => ?_
   have us := (hs.of_upd ht (by decide)).of_keeps uk (by decide)
   have rd : readSrc u (.mem (sc (ACC + 4 * (i + j)))) = some (word u.mem base (ACC + 4 * (i + j))) := by
-    simp only [readSrc, us.ea (d := ACC + 4 * (i + j)) (by simp only [ACC]; omega), State.load32,
-      us.read (d := ACC + 4 * (i + j)) (n := 4) (by simp only [ACC]; omega), ite_true]
+    simp only [readSrc, us.ea (d := ACC + 4 * (i + j)) (by simp only [ACC]; omega_arith), State.load32,
+      us.read (d := ACC + 4 * (i + j)) (n := 4) (by simp only [ACC]; omega_arith), ite_true]
   refine wp_alu (Or.inl rfl) rd fun v hv _ => WP.block_nil ⟨?_, ?_, hv.mem.trans (um.trans ht.mem)⟩
   · rw [hv.gpr]
     change (u.gpr .eax + word u.mem base (ACC + 4 * (i + j))).toNat = _
@@ -60,7 +60,7 @@ theorem rowSrcU_ok {s : State} {base : Addr} (hs : Scr s base) {b i j : Nat}
     simp only [radix] at hc hy hacc prod
     change ((limbs s.mem base b j * (s.gpr .ecx).toNat) % 2 ^ 32 + accw s.mem base (i + j)) % 2 ^ 32 = _
     rw [Nat.mul_comm (limbs s.mem base b j)]
-    omega
+    omega_arith
   · exact (ht.rest (by decide)).trans (uk.trans (hv.rest (by decide)))
 
 /-- Row `i` of the product. -/
@@ -80,7 +80,7 @@ theorem mulRowU_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
   rw [List.append_assoc, WP.block_append_iff]
   have pa : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 a := by
     rw [sp .ebp (by decide) h.regs, sp .edi (by decide) h.regs]; exact hpa
-  refine wp_load (h.scr.ea_ptr pa (by omega)) (h.scr.read (by omega)) fun t ht => ?_
+  refine wp_load (h.scr.ea_ptr pa (by omega_arith)) (h.scr.read (by omega_arith)) fun t ht => ?_
   refine wp_mov rfl fun u hu => ?_
   have ku : Keeps [.ecx, .ebx] s u := (ht.rest (by decide)).trans (hu.rest (by decide))
   have us := h.scr.of_keeps ku (by decide)
@@ -92,15 +92,15 @@ theorem mulRowU_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
   let c := rowC (accw s.mem base) (limbs s0.mem base a) (limbs s0.mem base b) i
   have cb : ∀ j < 28, c j ≤ 2 ^ 32 - radix := by
     intro j hj
-    exact rowC_bound (ab i hi) (bb j hj) (h.lt (i + j) (by omega))
+    exact rowC_bound (ab i hi) (bb j hj) (h.lt (i + j) (by omega_arith))
   refine WP.block_nil ?_
   rw [WP.block_append_iff]
   refine WP.mono (carryPass_ok (s0 := u) (base := base) (o := ACC + 4 * i) (c := c)
-    (by decide) (by simp only [ACC]; omega)
+    (by decide) (by simp only [ACC]; omega_arith)
     (fun j hj => by
       rw [show ACC + 4 * i + 4 * j = ACC + 4 * i + 4 * j from rfl]
-      exact us.ea (by simp only [ACC]; omega))
-    (fun j hj => us.write (by simp only [ACC]; omega)) (by rw [hu.gpr]; rfl) cb ?_) fun v hv => ?_
+      exact us.ea (by simp only [ACC]; omega_arith))
+    (fun j hj => us.write (by simp only [ACC]; omega_arith)) (by rw [hu.gpr]; rfl) cb ?_) fun v hv => ?_
   · intro j hj v hv
     have vs := us.of_keeps hv.regs (by decide)
     have vk : Keeps [.eax, .ebx, .ecx, .edx] s0 v := k0u.trans (hv.regs.mono (by decide))
@@ -108,17 +108,17 @@ theorem mulRowU_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
       rw [sp .esi (by decide) vk, sp .edi (by decide) vk]; exact hpb
     have va : (v.gpr .ecx).toNat = limbs s0.mem base a i := by rw [hv.regs.1 _ (by decide), uc]
     have vb : limbs v.mem base b j = limbs s0.mem base b j := by
-      rw [hv.mem.limbs (Or.inl (by simp only [ACC]; omega)) (by omega) hj, um, input b hb j hj]
+      rw [hv.mem.limbs (Or.inl (by simp only [ACC]; omega_arith)) (by omega_arith) hj, um, input b hb j hj]
     have vacc : accw v.mem base (i + j) = accw s.mem base (i + j) := by
       change (word v.mem base (ACC + 4 * (i + j))).toNat = _
-      rw [hv.mem.word (Or.inr (by omega)) (by simp only [ACC]; omega), um]
+      rw [hv.mem.word (Or.inr (by omega_arith)) (by simp only [ACC]; omega_arith), um]
     refine WP.mono (rowSrcU_ok vs hb hi hj vp (by rw [va]; exact ab i hi) (by rw [vb]; exact bb j hj)
-      (by rw [vacc]; exact h.lt (i + j) (by omega))) fun w ⟨wv, wk, wm⟩ => ⟨?_, wk, wm⟩
+      (by rw [vacc]; exact h.lt (i + j) (by omega_arith))) fun w ⟨wv, wk, wm⟩ => ⟨?_, wk, wm⟩
     rw [va, vb, vacc] at wv
-    have e : ACC + 4 * (i + j) = ACC + 4 * i + 4 * j := by omega
+    have e : ACC + 4 * (i + j) = ACC + 4 * i + 4 * j := by omega_arith
     exact wv
   · have vs := us.of_keeps hv.regs (by decide)
-    refine store_ok vs (o := ACC + 4 * (i + 28)) (by simp only [ACC]; omega) fun w hw => WP.block_nil ?_
+    refine store_ok vs (o := ACC + 4 * (i + 28)) (by simp only [ACC]; omega_arith) fun w hw => WP.block_nil ?_
     have passMem : Outside base (ACC + 4 * i) 112 s.mem v.mem := by rw [← um]; exact hv.mem
     have kv : Keeps [.eax, .ebx, .ecx, .edx] s v := (ku.mono (by decide)).trans (hv.regs.mono (by decide))
     have wm : w.mem = v.mem.writeW (off base (ACC + 4 * (i + 28))) (v.gpr .ebx) := hw.mem
@@ -126,27 +126,27 @@ theorem mulRowU_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
         rowAcc (accw s.mem base) (limbs s0.mem base a) (limbs s0.mem base b) i k := by
       intro k hk
       change (word w.mem base (ACC + 4 * k)).toNat = _
-      rw [wm, word_write v.mem base (by simp only [ACC]; omega) (by simp only [ACC]; omega)]
+      rw [wm, word_write v.mem base (by simp only [ACC]; omega_arith) (by simp only [ACC]; omega_arith)]
       by_cases he : k = i + 28
       · rw [ite_eq_left he, hv.carry]
-        simp only [c, rowAcc, he, show ¬i + 28 < i by omega, Nat.lt_irrefl, ite_false]
+        simp only [c, rowAcc, he, show ¬i + 28 < i by omega_arith, Nat.lt_irrefl, ite_false]
       · rw [ite_eq_right he]
         by_cases hk' : k < i
-        · rw [passMem.word (Or.inl (by omega)) (by simp only [ACC]; omega)]
+        · rw [passMem.word (Or.inl (by omega_arith)) (by simp only [ACC]; omega_arith)]
           simp only [rowAcc, hk', ite_true]
-        · have out := hv.outs (k - i) (by omega)
-          rw [acc_shift, show i + (k - i) = k by omega] at out
+        · have out := hv.outs (k - i) (by omega_arith)
+          rw [acc_shift, show i + (k - i) = k by omega_arith] at out
           change accw v.mem base k = _
           rw [out]
-          simp only [c, rowAcc, hk', show k < i + 28 by omega, ite_false, ite_true]
+          simp only [c, rowAcc, hk', show k < i + 28 by omega_arith, ite_false, ite_true]
     refine ⟨vs.of_keeps (hw.rest []) (by decide), h.regs.trans (kv.trans ((hw.rest []).mono (by decide))),
       ?_, ?_, ?_⟩
     · rw [wm]
-      exact (h.mem.trans (passMem.mono (by omega) (by omega))).trans
-        ((writeW_outside _ _ _ (by simp only [ACC]; omega)).mono (by omega) (by omega))
+      exact (h.mem.trans (passMem.mono (by omega_arith) (by omega_arith))).trans
+        ((writeW_outside _ _ _ (by simp only [ACC]; omega_arith)).mono (by omega_arith) (by omega_arith))
     · intro k hk
       rw [limbsOut k hk]
-      exact rowAcc_lt (fun k hk => h.lt k (by omega)) cb k hk
+      exact rowAcc_lt (fun k hk => h.lt k (by omega_arith)) cb k hk
     · rw [valN_congr limbsOut]
       exact row_val h.val
 

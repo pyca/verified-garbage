@@ -52,8 +52,8 @@ theorem mrRound_hits {w a : Nat} (h1 : 1 ≤ (Spec.Rsa.splitTwos (w - 1)).1) :
   rfl
 
 theorem splitTwos_pos {w : Nat} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) : 1 ≤ (Spec.Rsa.splitTwos (w - 1)).1 := by
-  rw [VG.Proof.Rsa.splitTwos_even (by omega) (by omega)]
-  omega
+  rw [VG.Proof.Rsa.splitTwos_even (by omega_arith) (by omega_arith)]
+  omega_arith
 
 theorem hdr_hit : Hdr hitOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
 theorem hdr_j : Hdr jOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
@@ -88,10 +88,10 @@ theorem pwR_sv4 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   have e7 := lo_wide len 7
   have e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
-  refine frameR_val32 F R nw (by omega) ?_ (pwR_fit h .wide)
+  refine frameR_val32 F R nw (by omega_arith) ?_ (pwR_fit h .wide)
   intro p hp
   simp only [pwR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winOff] <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winOff] <;> omega_arith
 
 /-- `a^d mod w` into slot 6, for the witness in slot 13 and the exponent in slot 11. -/
 theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {rest : Prog isa} {Q : State → Prop}
@@ -109,7 +109,7 @@ theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {rest : Prog is
   have e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
   refine WP.seq (WP.mono (copyIn_ok h (j := 13) (d := 5) (by decide) (by decide) (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
-  have h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
+  have h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copyIn_ok h₂ (j := 11) (d := 8) (by decide) (by decide) (by decide)) fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
   have sp₂ : u₂.gpr .esp = s.gpr .esp := K₂.1 _ (by decide)
   have sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
@@ -120,11 +120,11 @@ theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {rest : Prog is
   have C₃ : CtxOk Ex base bytes len args .wide w u₃ := by
     refine C₀.keepF (regs := [.eax, .ebx, .ecx, .edx, .ebp]) (K₂.trans K₃) (by decide) (by decide)
       (ws := [(lo len (.slot .wide 5), bc len .wide), (lo len (.slot .wide 8), bc len .wide)])
-      ((frameR_of_outside O₂ (by omega) (by simp)).trans (frameR_of_outside O₃ (by omega) (by simp))) ?_ ?_
+      ((frameR_of_outside O₂ (by omega_arith) (by simp)).trans (frameR_of_outside O₃ (by omega_arith) (by simp))) ?_ ?_
     · intro p hp; simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
     · intro p hp; simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
   have B₃ : sv u₃.mem base len .wide 5 = sv s.mem base len .wide 13 := by
     rw [slotKeep h₂ (by decide) (by decide) O₃, V₂]
   have E₃ : sv u₃.mem base len .wide 8 = sv s.mem base len .wide 11 := by
@@ -156,7 +156,7 @@ theorem sqr_ok {w : Nat} (R : Ready Ex base bytes len args w s) {z : Nat} (hz : 
   have h := C.inp
   have hM := C.gt
   have RR : 2 ^ (16 * bc len .wide) = 2 ^ (8 * bc len .wide) * 2 ^ (8 * bc len .wide) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_arith
   refine WP.seq (WP.mono (cmul_ok C (o := 6) (a := 6) (b := 6) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [hz]; exact hzw)) fun u₁ ⟨C₁, K₁, F₁, L₁, V₁⟩ => ?_)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
@@ -165,7 +165,7 @@ theorem sqr_ok {w : Nat} (R : Ready Ex base bytes len args w s) {z : Nat} (hz : 
   have s4₁ : sv u₁.mem base len .wide 4 = sv s.mem base len .wide 4 :=
     mulR_sv h F₁ h.room (by decide) (by decide) (by decide) (by decide) (by decide)
   refine WP.seq (WP.mono (cmul_ok C₁ (o := 6) (a := 6) (b := 4) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [s4₁, R.r2]; exact Nat.mod_lt _ (by omega))) fun u ⟨C₂, K₂, F₂, L₂, V₂⟩ => ?_)
+    (by decide) (by decide) (by rw [s4₁, R.r2]; exact Nat.mod_lt _ (by omega_arith))) fun u ⟨C₂, K₂, F₂, L₂, V₂⟩ => ?_)
   rw [sp₁] at F₂
   have s3 : sv u.mem base len .wide 3 = sv u₁.mem base len .wide 3 :=
     mulR_sv h F₂ h.room (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -205,7 +205,7 @@ theorem tally_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {d : Nat} (h
   refine hdr_store (S₂.inp.regs (U₃.keeps.trans U₄.keeps) (by rw [U₄.mem, U₃.mem])) hdr_j
     fun v₅ S₅ W₅ k₅ O₅ _ _ z₅ => WP.block_nil ?_
   have dn : w32 v₂.mem base d = n := by
-    rw [← hn, k₂.word_eq ⟨by rcases hd.1 with e | e <;> omega, by rcases hd.1 with e | e <;> simp only [numBase] <;> omega,
+    rw [← hn, k₂.word_eq ⟨by rcases hd.1 with e | e <;> omega_arith, by rcases hd.1 with e | e <;> simp only [numBase] <;> omega_arith,
       hd.2, by simp only [List.mem_singleton]; exact hdh⟩, U₁.mem]
   have e₄ : v₄.gpr .eax = BitVec.ofNat 32 n - 1 := by rw [U₄.gpr, U₃.gpr, dn]
   have S₁ : Step Ex base bytes len args s v₁ := Step.regs h U₁.mem U₁.keeps
@@ -227,14 +227,14 @@ theorem tally_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {d : Nat} (h
   have bw := bc_eq_cwc len .wide
   have s6 : sv v₅.mem base len .wide 6 = sv s.mem base len .wide 6 := by
     show val32 _ _ _ _ = val32 _ _ _ _
-    rw [O₅.val32 (.inr (by simp only [jOff]; omega)) (by omega), U₄.mem, U₃.mem,
-      O₂.val32 (.inr (by simp only [hitOff]; omega)) (by omega), U₁.mem]
+    rw [O₅.val32 (.inr (by simp only [jOff]; omega_arith)) (by omega_arith), U₄.mem, U₃.mem,
+      O₂.val32 (.inr (by simp only [hitOff]; omega_arith)) (by omega_arith), U₁.mem]
   refine ⟨S₁.trans (S₂.trans (S₄.trans S₅)), P.keep R kt (by decide), ?_, ?_, ?_, kt, s6⟩
   · rw [k₅.word_eq, U₄.mem, U₃.mem, W₂, U₁.gpr, hc, hold, BitVec.ofNat_toNat, BitVec.setWidth_eq, cmask_or_hit]
   · rw [W₅, e₄]
     have h1 : (1 : BitVec 32).toNat = 1 := rfl
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, h1]
-    omega
+    omega_arith
   · have e₃ : v₃.gpr .eax = BitVec.ofNat 32 n := by rw [U₃.gpr, dn]
     rw [z₅, z₄, e₃, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq nl (by decide)]
 
@@ -254,7 +254,7 @@ theorem squareStep_ok {w z i n : Nat} {t : State} (A : RoundAt Ex base bytes len
       w32 u.mem base jOff = n - 1 ∧ u.zf = some (decide (n = 1)) := by
   have hM := A.prep.ctx.gt
   unfold squareStep
-  refine sqr_ok A.prep.toReady A.z6 (Nat.mod_lt _ (by omega)) fun u₁ S₁ R₁ Z₁ k₁ => ?_
+  refine sqr_ok A.prep.toReady A.z6 (Nat.mod_lt _ (by omega_arith)) fun u₁ S₁ R₁ Z₁ k₁ => ?_
   rw [sq_pow] at Z₁
   have P₁ := A.prep.keep R₁ k₁ (by decide)
   refine WP.seq (WP.mono (eqW_ok S₁.inp (a := 6) (b := 15) (by decide) (by decide)) fun u₂ ⟨m₂, e₂, K₂⟩ => ?_)
@@ -278,7 +278,7 @@ theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (ha : sv s
   have s1 := splitTwos_pos hw3 hodd
   rw [mrRound_hits s1]
   generalize hz : a ^ (Spec.Rsa.splitTwos (w - 1)).2 % w = z
-  have zw : z < w := by rw [← hz]; exact Nat.mod_lt _ (by omega)
+  have zw : z < w := by rw [← hz]; exact Nat.mod_lt _ (by omega_arith)
   unfold round
   refine pw_ok P fun u₁ S₁ P₁ Z₁ k₁ => ?_
   rw [ha, P.exp, hz] at Z₁
@@ -299,7 +299,7 @@ theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (ha : sv s
   have bw := bc_eq_cwc len .wide
   have z₃ : sv u₃.mem base len .wide 6 = z := by
     show val32 _ _ _ _ = _
-    rw [O₃.val32 (.inr (by simp only [hitOff]; omega)) (by omega), m₂]; exact Z₁
+    rw [O₃.val32 (.inr (by simp only [hitOff]; omega_arith)) (by omega_arith), m₂]; exact Z₁
   refine WP.seq (WP.mono (eqW_ok S₃.inp (a := 6) (b := 15) (by decide) (by decide)) fun u₄ ⟨m₄, e₄, K₄⟩ => ?_)
   rw [z₃, P₃.m1] at e₄
   have P₄ := P₃.keep (P₃.toReady.regs K₄ (by decide) (by decide) m₄) (ds := []) (by rw [m₄]; exact Kept.refl _)
@@ -321,14 +321,14 @@ theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (ha : sv s
       Kept base len [] [hitOff, jOff] s.mem u.mem := fun u A => ⟨A.step, A.prep, A.hit, A.kept⟩
   refine WP.ite (decide (sn = 1)) Z₅ (fun e => WP.block_nil (fin _ ?_)) fun e => ?_
   · rw [show sn = 1 by simpa using e]; exact A
-  have sn2 : 2 ≤ sn := by simp at e; omega
+  have sn2 : 2 ≤ sn := by simp at e; omega_arith
   refine WP.loop (M := isa) (fun n t => ∃ i, n = sn - 1 - i ∧ i < sn - 1 ∧ RoundAt Ex base bytes len args s w z i t ∧
-    w32 t.mem base jOff = sn - 1 - i) ?_ (sn - 1) u₅ ⟨0, by omega, by omega, A, by rw [J₅, Nat.sub_zero]⟩
+    w32 t.mem base jOff = sn - 1 - i) ?_ (sn - 1) u₅ ⟨0, by omega_arith, by omega_arith, A, by rw [J₅, Nat.sub_zero]⟩
   rintro n t ⟨i, rfl, hi, At, Jt⟩
-  refine WP.mono (squareStep_ok At Jt (by omega)) fun u ⟨Au, Ju, Zu⟩ => ?_
+  refine WP.mono (squareStep_ok At Jt (by omega_arith)) fun u ⟨Au, Ju, Zu⟩ => ?_
   by_cases last : i + 1 = sn - 1
-  · refine .inl ⟨by show u.zf.map (!·) = _; rw [Zu]; simp; omega, fin u (last ▸ Au)⟩
-  · refine .inr ⟨by show u.zf.map (!·) = _; rw [Zu]; simp; omega, sn - 1 - (i + 1), by omega, i + 1, rfl, by omega,
-      Au, by rw [Ju]; omega⟩
+  · refine .inl ⟨by show u.zf.map (!·) = _; rw [Zu]; simp; omega_arith, fin u (last ▸ Au)⟩
+  · refine .inr ⟨by show u.zf.map (!·) = _; rw [Zu]; simp; omega_arith, sn - 1 - (i + 1), by omega_arith, i + 1, rfl, by omega_arith,
+      Au, by rw [Ju]; omega_arith⟩
 
 end VG.Proof.Ffdh.X86.Cand

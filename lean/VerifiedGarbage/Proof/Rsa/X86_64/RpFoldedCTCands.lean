@@ -58,7 +58,7 @@ theorem candidate_ct (M : Mont) : RelCT isa (Two CA)
   · obtain ⟨minv, N, r, t, hc⟩ := h
     have hg := hc.good
     have hw2 := hc.ws.w2
-    refine WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega) (o := aXm) (a := aX) (b := aR2) (by decide)
+    refine WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega_arith) (o := aXm) (a := aX) (b := aR2) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.hinv
       (by rw [hc.hn]; exact hc.hr2lt)) fun u ⟨_, hlt, hm, ha, k⟩ => ?_
     rw [hc.hn] at hlt hm
@@ -70,15 +70,15 @@ theorem candidate_ct (M : Mont) : RelCT isa (Two CA)
   · obtain ⟨minv, N, r, t, g, hc, hlt, hm⟩ := h
     have hZ16 := hc.hZ16
     refine WP.mono (copyA_ok hc.ws (o := aG) (a := aXm) (by decide) (by decide) (by decide)) fun u ⟨hv, o, k⟩ => ?_
-    have hf : Frm p.B (rg (wk p.k) [aG] []) s.mem u.mem := Frm.rg_of_out o (by omega) _ _ (by decide)
+    have hf : Frm p.B (rg (wk p.k) [aG] []) s.mem u.mem := Frm.rg_of_out o (by omega_arith) _ _ (by decide)
     exact ⟨minv, N, r, t, g, hc.congr hf (by decide) (by simp) k (by decide), by rw [hv]; exact hlt,
       by rw [hv]; exact hm⟩
   · obtain ⟨minv, N, r, t, g, hc, hlt, hm⟩ := h
     have hZ16 := hc.hZ16
     refine WP.mono (copyA_ok hc.ws (o := aY) (a := aO) (by decide) (by decide) (by decide)) fun u ⟨hv, o, k⟩ => ?_
-    have hf : Frm p.B (rg (wk p.k) [aY] []) s.mem u.mem := Frm.rg_of_out o (by omega) _ _ (by decide)
+    have hf : Frm p.B (rg (wk p.k) [aY] []) s.mem u.mem := Frm.rg_of_out o (by omega_arith) _ _ (by decide)
     have hG : wv u.mem p.B (slot (wk p.k) aG) (wk p.k) = wv s.mem p.B (slot (wk p.k) aG) (wk p.k) :=
-      hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)
+      hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)
     exact ⟨minv, N, r, t, g, hc.congr hf (by decide) (by simp) k (by decide), by rw [hG]; exact hlt,
       by rw [hG]; exact hm, by rw [hv, hc.ho]⟩
 
@@ -109,10 +109,10 @@ theorem candLoopL_ct (M : Mont) : RelCT isa (Two fun p s => 0 < p.cnt ∧ CL p 0
       obtain ⟨hj, s₀, minv, N, E, sigma, r, a, hc, hsigma, hE, hr, hcnt, hI⟩ := hq
       have := go_le N (2 * a + sigma) r recoverTries (Nat.le_refl _)
       exact ⟨minv, N, E, sigma, r, a, q.2, hc.congr hI.frm (by decide) cand_hs hI.keep (by decide), hsigma, hE, hr, hI.cand,
-        by have : recoverTries = 100 := rfl; omega⟩) (candBody_ct M))
+        by have : recoverTries = 100 := rfl; omega_arith⟩) (candBody_ct M))
     fun p j s hj ⟨s₀, minv, N, E, sigma, r, a, hc, hsigma, hE, hr, hcnt, hI⟩ => by
       have hle := go_le N (2 * a + sigma) r recoverTries (Nat.le_refl _)
-      have hj100 : j < 100 := by have : recoverTries = 100 := rfl; omega
+      have hj100 : j < 100 := by have : recoverTries = 100 := rfl; omega_arith
       have hcu := hc.congr hI.frm (by decide) cand_hs hI.keep (by decide)
       refine WP.mono (candBody_ok M hcu hsigma hE hr hI.cand hj100) fun u' ⟨hz, hf, k, hcand, _, _⟩ => ⟨?_, fun hlt => ?_,
         fun _ => trivial⟩
@@ -142,7 +142,7 @@ theorem split_even {m : Nat} (hm : 0 < m) (he : m % 2 = 0) : 1 ≤ (splitTwos m)
   by_contra h
   have hz : (splitTwos m).1 = 0 := by omega
   rw [hz, Nat.pow_zero, Nat.one_mul] at hs
-  omega
+  omega_arith
 
 theorem candLoop_ct (M : Mont) : RelCT isa (Two GR2) (Folded.candLoop M.mm) (Two GR3) := by
   refine two_post ?_ ?_
@@ -163,12 +163,12 @@ theorem candLoop_ct (M : Mont) : RelCT isa (Two GR2) (Folded.candLoop M.mm) (Two
     refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = s.mem.writeW (off I.B (8 * sCand))
       (BitVec.ofNat 64 0)) (by
       xrun [State.ea, hdr, hc.ws.rdi, hdrOff,
-        hc.ws.scr.st (d := 8 * sCand) (by simp only [sCand, Impl.Bignum.X86_64.Public.sV, sFn]; omega)]
+        hc.ws.scr.st (d := 8 * sCand) (by simp only [sCand, Impl.Bignum.X86_64.Public.sV, sFn]; omega_arith)]
       rfl) rfl) fun u ⟨mu, ku⟩ => ⟨?_, s, _, I.N, _, _, _, _, hc, hsigma.2, hE, hspl.2, hcnt,
         ?_, ku.mono (by decide), by rw [mu, word_writeW_self], rfl⟩
     · rw [show (Spec.Rsa.primesKey I.nb I.eb I.db).2 = I.pub.cnt from rfl, hcnt]
       exact VG.Proof.Rsa.go_pos _ _ _ _ (Nat.le_refl _)
-    · rw [mu]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sCand, Impl.Bignum.X86_64.Public.sV, sFn]; omega))
+    · rw [mu]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sCand, Impl.Bignum.X86_64.Public.sV, sFn]; omega_arith))
         _ _ (by decide)
   · intro p s h
     obtain ⟨I, m₀, rfl, S, L, O, hv, hc, hm0, heven⟩ := h

@@ -45,13 +45,13 @@ theorem red_mac (x y z w : Zq) :
   have hs : (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val + BitVec.ofNat 32 z.val * BitVec.ofNat 32 w.val).toNat =
       x.val * y.val + z.val * w.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := x.val) (by omega),
-      Nat.mod_eq_of_lt (a := y.val) (by omega), Nat.mod_eq_of_lt (a := z.val) (by omega),
-      Nat.mod_eq_of_lt (a := w.val) (by omega), Nat.mod_eq_of_lt (a := x.val * y.val) (by omega),
-      Nat.mod_eq_of_lt (a := z.val * w.val) (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := x.val) (by omega_arith),
+      Nat.mod_eq_of_lt (a := y.val) (by omega_arith), Nat.mod_eq_of_lt (a := z.val) (by omega_arith),
+      Nat.mod_eq_of_lt (a := w.val) (by omega_arith), Nat.mod_eq_of_lt (a := x.val * y.val) (by omega_arith),
+      Nat.mod_eq_of_lt (a := z.val * w.val) (by omega_arith)]
+    exact Nat.mod_eq_of_lt (by omega_arith)
   refine ofNat_val_eq ?_
-  rw [red_toNat (by rw [hs]; omega), hs, val_add', val_mul, val_mul, ← Nat.add_mod]
+  rw [red_toNat (by rw [hs]; omega_arith), hs, val_add', val_mul, val_mul, ← Nat.add_mod]
 
 theorem even_eq (a b c d γ : Zq) :
     red C (BitVec.ofNat 32 a.val * BitVec.ofNat 32 b.val +
@@ -168,21 +168,21 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
   have fF := hp.fitF
   have fG := hp.fitG
   have fS := hp.fitS
-  have eF0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fF (by omega) (by omega)
-  have eF1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fF (by omega) (by omega)
-  have eG0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fG (by omega) (by omega)
-  have eG1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fG (by omega) (by omega)
-  have eH0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fH (by omega) (by omega)
-  have eH1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fH (by omega) (by omega)
-  have eS := addr_ptr (ps s₀) (4 * i) 0 (by omega)
-  have cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega)
-  have cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega)
-  have cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega)
-  have cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega)
-  have cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega)
-  have cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega)
+  have eF0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fF (by omega_arith) (by omega_arith)
+  have eF1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fF (by omega_arith) (by omega_arith)
+  have eG0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fG (by omega_arith) (by omega_arith)
+  have eG1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fG (by omega_arith) (by omega_arith)
+  have eH0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fH (by omega_arith) (by omega_arith)
+  have eH1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fH (by omega_arith) (by omega_arith)
+  have eS := addr_ptr (ps s₀) (4 * i) 0 (by omega_arith)
+  have cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  have cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  have cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
   have cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * i + 0)) 4 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_arith) (by omega_arith)
   have iR : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.rd ++ s₀.wr → R.Contains a n →
       InRegions (s.rd ++ s.wr) a n := fun hR hc => by rw [h.rd, h.wr]; exact inRegions_of hR hc
   have iW : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.wr → R.Contains a n → InRegions s.wr a n :=
@@ -215,10 +215,10 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
     exact (h.frame.writeW (List.mem_singleton_self _) _ cH0).writeW (List.mem_singleton_self _) _ cH1
   · rw [m, eF0, eF1, eG0, eG1, eH0, eH1, eS]
     show ∀ j < 256, coeffAt ((s.mem.writeW (coeffAddr (H s₀) (2 * i)) _).writeW _ _) _ j = _
-    rw [← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, vF _ (by omega), vF _ (by omega),
-      vG _ (by omega), vG _ (by omega), vS, even_eq, red_mac, ← out_even s₀ hi, ← out_odd s₀ hi,
-      show 2 * (i + 1) = 2 * i + 1 + 1 by omega]
-    exact coeff_one (a := 2 * i + 1) (by omega) (coeff_one (a := 2 * i) (by omega) h.coeff rfl) rfl
+    rw [← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, vF _ (by omega_arith), vF _ (by omega_arith),
+      vG _ (by omega_arith), vG _ (by omega_arith), vS, even_eq, red_mac, ← out_even s₀ hi, ← out_odd s₀ hi,
+      show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith]
+    exact coeff_one (a := 2 * i + 1) (by omega_arith) (coeff_one (a := 2 * i) (by omega_arith) h.coeff rfl) rfl
   · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
 
 /-! ## Setup and the end -/
@@ -228,14 +228,14 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
       s₀ fun s => Setup s₀ s.mem ∧ Inv s₀ s.mem 0 s := by
   have fS := hp.fitS
   have wS : ∀ {o n : Nat}, o + n ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) n := fun h => by
-    rw [hp.wr]; exact inRegions_of (by simp) (contains_off h (by omega))
+    rw [hp.wr]; exact inRegions_of (by simp) (contains_off h (by omega_arith))
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (saveRegs_ok .r3 (off := 512) (by decide) (fit_le (by decide) fS) fun i hi => by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact wS (by omega)) fun s₁ h₁ => ?_
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact wS (by omega_arith)) fun s₁ h₁ => ?_
   rw [WP.block_append_iff]
   have g3 : (s₁.gpr .r3) = ps s₀ := by rw [h₁.gpr]
   refine WP.mono (table_ok gammaTable (by decide) (b := .r3) (by decide) (by rw [g3]; exact fit_le (by decide) fS)
-    fun k hk => by rw [g3, h₁.wr]; exact wS (by omega)) fun s₂ h₂ => ?_
+    fun k hk => by rw [g3, h₁.wr]; exact wS (by omega_arith)) fun s₂ h₂ => ?_
   -- The memory after the setup, and its bytes outside `scratch`.
   have hS : (S s₀).toNat + 1024 ≤ 2 ^ 64 := addr_fit _ (by decide)
   have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
@@ -253,7 +253,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
       · exact h₁.saved i hi
       · rw [List.mem_singleton] at hr; subst hr
         rw [g3, add_ofNat_add, ← add_ofNat_zero (State.addr (ps s₀))]
-        exact region_disj_off (by omega) (by omega) (by omega) hS
+        exact region_disj_off (by omega_arith) (by omega_arith) (by omega_arith) hS
     · have := h₂.tab j hj; rwa [g3] at this
     · exact frame_coeff fr (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.fs)
         (by rw [n_eq]; exact hj)
@@ -275,7 +275,7 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ 
   have fS := hp.fitS
   have hS : (S s₀).toNat + 1024 ≤ 2 ^ 64 := addr_fit _ (by decide)
   have e3 : State.addr (s.gpr .r3) + BitVec.ofNat 64 0 = S s₀ + BitVec.ofNat 64 512 := by
-    rw [h.r3, addr_add (by omega), add_ofNat_zero]
+    rw [h.r3, addr_add (by omega_arith), add_ofNat_zero]
   refine WP.mono (restoreRegs_ok .r3 (by decide) (off := 0) (by decide) (by rw [h.r3]; bv_omega)
     (g := s₀.gpr) (by
       rw [e3]
@@ -286,14 +286,14 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ 
       · rw [List.mem_singleton] at hr; subst hr
         refine hp.hs.symm.sub_left ?_
         rw [add_ofNat_add]
-        exact region_sub_off (by omega))
+        exact region_sub_off (by omega_arith))
     fun i hi => by
       rw [e3, h.rd, h.wr, hp.wr, add_ofNat_add]
-      exact inRegions_of (R := polyRegion (S s₀)) (by simp) (contains_off (by omega) (by omega)))
+      exact inRegions_of (R := polyRegion (S s₀)) (by simp) (contains_off (by omega_arith) (by omega_arith)))
     fun s' h' => ⟨preserved_of_restore h' h.lr, h'.sp.trans h.sp, ?_⟩
   rw [h'.mem]
   exact polyIs_of_coeffAt fun j hj => by
-    rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega)]; rfl
+    rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega_arith)]; rfl
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa multiplyNTTs s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧

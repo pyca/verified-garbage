@@ -91,10 +91,10 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Idea.Sche
     ⟨by rw [hB], by rw [hp]; simp, by decide, by decide, by decide, by decide, by decide, by decide,
       by decide, by decide, fun w hw => ⟨_, hs.wr, by
         rw [addr_add, total_eq]
-        exact Offset.contains_base B (by simp only [schedSlot]; omega) (by simp only [schedSlot]; omega)⟩,
-      fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
-      (hsep.sub_right (sched_sub B)).symm, by omega⟩) fun s' h => ?_
-  refine ⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega)],
+        exact Offset.contains_base B (by simp only [schedSlot]; omega_arith) (by simp only [schedSlot]; omega_arith)⟩,
+      fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_arith) (by omega_arith)⟩,
+      (hsep.sub_right (sched_sub B)).symm, by omega_arith⟩) fun s' h => ?_
+  refine ⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega_arith)],
     by rw [h.regs _ (by decide) (by decide), hB], h.regs _ (by decide) (by decide), h.regs _ (by decide) (by decide),
     ?_, h.rd, h.wr⟩
   rw [h.mem, core_eq]
@@ -130,7 +130,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Idea.Schedule} (hB : s.gpr sb 
   have rd₄' : s₄.rd = s.rd := by rw [k₄.rd, rd₃, rd₂, rd₁]
   have wr₄' : s₄.wr = s.wr := by rw [k₄.wr, wr₃, wr₂, wr₁]
   have inS : ∀ {t n}, t + n ≤ 208 → 0 < n → InRegions s₄.wr (B + BitVec.ofNat 64 t) n := fun ht hn =>
-    ⟨_, by rw [wr₄']; exact hw, Offset.contains_base B (by omega) (by omega)⟩
+    ⟨_, by rw [wr₄']; exact hw, Offset.contains_base B (by omega_arith) (by omega_arith)⟩
   -- The block.
   have hk : KeyOk k s₄ := ⟨by
       rw [x0₄]
@@ -139,9 +139,9 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Idea.Schedule} (hB : s.gpr sb 
     by rw [x0₄, mem₄]; exact hr⟩
   obtain ⟨s₅, e₅, b₅, f₅, g₅, rd₅, wr₅, -⟩ := cryptBlock_run k s₄ x1₄
     (fun i hi => by
-      obtain ⟨r, h1, h2⟩ := inS (t := i) (n := 1) (by omega) (by decide)
+      obtain ⟨r, h1, h2⟩ := inS (t := i) (n := 1) (by omega_arith) (by decide)
       exact ⟨r, List.mem_append_right _ h1, by simpa using h2⟩)
-    (fun i hi => by simpa using inS (t := i) (n := 1) (by omega) (by decide)) hk mk₄
+    (fun i hi => by simpa using inS (t := i) (n := 1) (by omega_arith) (by decide)) hk mk₄
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := addImm_ok s₅ sb .x2 (v := 0) (by decide)
   refine WP.of_runBlock ⟨s₆, ?_, ?_⟩
   · show runBlock isa (([.addImm .x .x2 sb 0] ++ ([.addImm .x .x0 sb (8 * schedSlot)] ++
@@ -163,7 +163,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Idea.Schedule} (hB : s.gpr sb 
     exact fB.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-  · have hj0 : j = 0 := by simp only [modeCore, Impl.Modes.AArch64.Core.G] at hj; omega
+  · have hj0 : j = 0 := by simp only [modeCore, Impl.Modes.AArch64.Core.G] at hj; omega_arith
     subst hj0
     have ea : blkAddr modeCore B 0 = B := by simp [modeCore]
     rw [modeCore_bw, ea, cipher_bytes, bytesAt_eq, m₆, b₅, mem₄]

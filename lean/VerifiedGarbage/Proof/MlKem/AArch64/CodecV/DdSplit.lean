@@ -35,7 +35,7 @@ theorem eval_trn1_s4 (x y : BitVec 128) :
 theorem vword_trn1_s4 (x y : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VPermOp.eval .trn1 .s4 x y) e = if e % 2 = 0 then vword x e else vword y (e - 1) := by
   rw [eval_trn1_s4, vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The value of `b` bits `m` of two groups of `4 b` bits. -/
 abbrev dig (b : Nat) (Gv : Nat → Nat) (m : Nat) : Nat := Gv (m / 4) / 2 ^ (b * (m % 4)) % 2 ^ b
@@ -53,8 +53,8 @@ abbrev CS (b : Nat) (Gv : Nat → Nat) (m : Nat) : Nat :=
 theorem splitCS {b : Nat} (hb : b = 10 ∨ b = 11) {Gv : Nat → Nat} {m : Nat} (hm : m < 8) :
     CS b Gv m = dig b Gv m := by
   rcases hb with rfl | rfl <;>
-  rcases (show m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [CS, V2, dig] <;> omega
+  rcases (show m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 by omega_arith) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [CS, V2, dig] <;> omega_arith
 
 theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
     (h18 : Lanes (s.v .v18) fun _ => 2 ^ (2 * b) - 1) (h19 : Lanes (s.v .v19) fun _ => 2 ^ b - 1)
@@ -65,7 +65,7 @@ theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
     (k : ∀ s', VChg [g, .v1, .v2, .v3] s s' → Lanes (s'.v .v2) (fun e => dig b Gv e) →
       Lanes (s'.v .v3) (fun e => dig b Gv (4 + e)) → WP isa (.block is) s' Q) :
     WP isa (.block (ddSplit b g ++ is)) s Q := by
-  have hb22 : 2 * b < 32 := by omega
+  have hb22 : 2 * b < 32 := by omega_arith
   have hsh1 : VShiftOp.ok .ushr VArr.d2.esize (2 * b) = true := by
     rcases hb with rfl | rfl <;> decide
   have hsh2 : VShiftOp.ok .ushr VArr.s4.esize b = true := by
@@ -80,7 +80,7 @@ theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
     have w := vdword_words' (s.v g) l
     rw [hG l hl] at w
     have := (vword (s.v g) (2 * l + 1)).isLt
-    omega
+    omega_arith
   have B : ∀ l < 2, (vword (a1.v .v1) (2 * l)).toNat = Gv l / 2 ^ (2 * b) % 2 ^ 32 := fun l hl => by
     have dv : (vdword (a1.v .v1) l).toNat = Gv l / 2 ^ (2 * b) := by
       rw [h1.v, StraightV.vdword_map2 _ _ _ hl]
@@ -90,15 +90,15 @@ theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
     rw [dv] at w
     have := (vword (a1.v .v1) (2 * l)).isLt
     have := (vword (a1.v .v1) (2 * l + 1)).isLt
-    omega
+    omega_arith
   have L2 : Lanes (a2.v g) (V2 b Gv) := fun e he => by
     rw [h2.v, vword_trn1_s4 _ _ he, h1.get g g1]
     simp only [V2]
     rcases Nat.mod_two_eq_zero_or_one e with h | h
-    · rw [ite_eq_left h, ite_eq_left h, show e = 2 * (e / 2) from by omega, A _ (by omega)]
-      congr 2; omega
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega), show e - 1 = 2 * (e / 2) from by omega,
-        B _ (by omega)]
+    · rw [ite_eq_left h, ite_eq_left h, show e = 2 * (e / 2) from by omega_arith, A _ (by omega_arith)]
+      congr 2; omega_arith
+    · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), show e - 1 = 2 * (e / 2) from by omega_arith,
+        B _ (by omega_arith)]
   have L3 : Lanes (a3.v g) fun e => V2 b Gv e % 2 ^ (2 * b) := by
     rw [h3'.v]
     have l18 : Lanes (a2.v .v18) fun _ => 2 ^ (2 * b) - 1 := by
@@ -117,19 +117,19 @@ theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
     rw [h7.get .v2 (by decide), h6.v, vword_zip1_s4' _ _ he, h5.get .v1 g1.symm]
     simp only [CS, show e < 4 from he, ite_true]
     split
-    · exact L5 _ (by omega)
-    · exact L4 _ (by omega)
+    · exact L5 _ (by omega_arith)
+    · exact L4 _ (by omega_arith)
   have L7 : Lanes (a7.v .v3) fun e => CS b Gv (4 + e) := fun e he => by
     rw [h7.v, vword_zip2_s4 _ _ he, h6.get g g2, h6.get .v1 (by decide), h5.get .v1 g1.symm]
-    simp only [CS, show ¬ 4 + e < 4 by omega, ite_false, show 4 + e - 4 = e by omega]
+    simp only [CS, show ¬ 4 + e < 4 by omega_arith, ite_false, show 4 + e - 4 = e by omega_arith]
     split
-    · exact L5 _ (by omega)
-    · exact L4 _ (by omega)
+    · exact L5 _ (by omega_arith)
+    · exact L4 _ (by omega_arith)
   refine k a7 ((((((h1.chg.trans h2.chg).trans h3'.chg).trans h4.chg).trans h5.chg).trans
     (h6.chg.trans h7.chg)).mono (by
       intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hr ⊢
       rcases hr with h | h | h | h | h | h | h <;> simp [h]))
-    (L6.congr fun e he => splitCS hb (by omega))
-    (L7.congr fun e he => splitCS hb (by omega))
+    (L6.congr fun e he => splitCS hb (by omega_arith))
+    (L7.congr fun e he => splitCS hb (by omega_arith))
 
 end VG.Proof.MlKem.AArch64.CodecV

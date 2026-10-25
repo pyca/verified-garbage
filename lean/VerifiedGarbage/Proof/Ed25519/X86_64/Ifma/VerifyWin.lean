@@ -44,16 +44,16 @@ theorem EConsts.below {m m' : Mem} {base : Addr} (hk : EConsts m base) {o n : Na
       VG.Proof.X25519.X86_64.Ifma.mq m' base d = VG.Proof.X25519.X86_64.Ifma.mq m base d :=
     fun d h1 h2 => by
       rw [VG.Proof.X25519.X86_64.Ifma.mq_eq_word, VG.Proof.X25519.X86_64.Ifma.mq_eq_word]
-      exact h.word (by omega) (by omega)
+      exact h.word (by omega_arith) (by omega_arith)
   refine ⟨⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, fun l hl => ?_,
     fun l hl => ?_, fun l hl => ?_⟩
-  · rw [w _ (by simp only [KM]; omega) (by simp only [KM]; omega)]; exact hk.km l hl
-  · rw [w _ (by simp only [K19]; omega) (by simp only [K19]; omega)]; exact hk.k19 l hl
-  · rw [w _ (by simp only [KB0]; omega) (by simp only [KB0]; omega)]; exact hk.kb0 l hl
-  · rw [w _ (by simp only [KB1]; omega) (by simp only [KB1]; omega)]; exact hk.kb1 l hl
-  · rw [w _ (by simp only [EK13]; omega) (by simp only [EK13]; omega)]; exact hk.k13 l hl
-  · rw [w _ (by simp only [EK26]; omega) (by simp only [EK26]; omega)]; exact hk.k26 l hl
-  · rw [w _ (by simp only [EK39]; omega) (by simp only [EK39]; omega)]; exact hk.k39 l hl
+  · rw [w _ (by simp only [KM]; omega_arith) (by simp only [KM]; omega_arith)]; exact hk.km l hl
+  · rw [w _ (by simp only [K19]; omega_arith) (by simp only [K19]; omega_arith)]; exact hk.k19 l hl
+  · rw [w _ (by simp only [KB0]; omega_arith) (by simp only [KB0]; omega_arith)]; exact hk.kb0 l hl
+  · rw [w _ (by simp only [KB1]; omega_arith) (by simp only [KB1]; omega_arith)]; exact hk.kb1 l hl
+  · rw [w _ (by simp only [EK13]; omega_arith) (by simp only [EK13]; omega_arith)]; exact hk.k13 l hl
+  · rw [w _ (by simp only [EK26]; omega_arith) (by simp only [EK26]; omega_arith)]; exact hk.k26 l hl
+  · rw [w _ (by simp only [EK39]; omega_arith) (by simp only [EK39]; omega_arith)]; exact hk.k39 l hl
 
 /-! ## Positions -/
 
@@ -149,9 +149,9 @@ theorem vaddA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB :
     {top p : Nat} (hdg : Digits fA fB top) (hp : p ≤ top) (h : VAt s₀ base kp sp T A fA fB v p s) :
     WP isa (.seq (.block (digitAt 0)) (vaddDigit 5376)) s
       (VAt s₀ base kp sp T A fA fB (v + (Recode.dec (fA p)) • A) p) := by
-  refine WP.seq (WP.mono (WP.vk (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter))
+  refine WP.seq (WP.mono (WP.vk (digitAt_ok h.ctx.scratch (by have := hdg.top; omega_arith) (by decide) h.counter))
     fun a ⟨⟨ab, az, ka⟩, ax, ay⟩ => ?_)
-  rw [(h.digits p (by have := hdg.top; omega)).1] at ab az
+  rw [(h.digits p (by have := hdg.top; omega_arith)).1] at ab az
   have ha := h.of_scalar ka (by decide) ax ay
   refine WP.mono (vaddDigit_ok ha.ctx.scratch ha.consts ha.small (by decide) (by decide) ha.ctx.aTab (fA p)
     (hdg.a p) ab az ha.value) fun t ⟨tr, tsm, kt⟩ => ?_
@@ -162,9 +162,9 @@ theorem vaddB_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB :
     {top p : Nat} (hdg : Digits fA fB top) (hp : p ≤ top) (h : VAt s₀ base kp sp T A fA fB v p s) :
     WP isa (.seq (.block (digitAt 1)) vaddBase) s
       (VAt s₀ base kp sp T A fA fB (v + (Recode.dec (fB p)) • (-baseAff)) p) := by
-  refine WP.seq (WP.mono (WP.vk (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter))
+  refine WP.seq (WP.mono (WP.vk (digitAt_ok h.ctx.scratch (by have := hdg.top; omega_arith) (by decide) h.counter))
     fun a ⟨⟨ab, az, ka⟩, ax, ay⟩ => ?_)
-  rw [(h.digits p (by have := hdg.top; omega)).2] at ab az
+  rw [(h.digits p (by have := hdg.top; omega_arith)).2] at ab az
   have ha := h.of_scalar ka (by decide) ax ay
   refine WP.mono (vaddBase_ok ha.ctx.scratch ha.consts ha.small ha.ctx.bHeader ha.ctx.bTab (fB p) (hdg.b p)
     ab az ha.value) fun t ⟨tr, tsm, kt⟩ => ?_
@@ -200,7 +200,7 @@ theorem vstepAt_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB
     h.of_keep ka ac (by rw [pa]; exact h.value) (sa h.small)
   refine WP.seq (WP.mono (vdblAt_ok ha) fun b hb => ?_)
   refine WP.seq (WP.mono (vaddsAt_ok hdg hp hb) fun c hc => ?_)
-  refine WP.mono (WP.vk (counterTest_ok hc.ctx.scratch (by have := hdg.top; omega) hc.counter))
+  refine WP.mono (WP.vk (counterTest_ok hc.ctx.scratch (by have := hdg.top; omega_arith) hc.counter))
     fun t ⟨⟨tz, kt⟩, tx, ty⟩ => ⟨tz, (hc.of_scalar kt (by decide) tx ty).congr ?_⟩
   rw [winVal_step A fA fB hp]
 
@@ -222,9 +222,9 @@ theorem vskipTop_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA f
   obtain ⟨pa, sa⟩ := lanePt_vec ax ay
   have ha : VAt s₀ base kp sp T A fA fB 0 p a :=
     hl.of_keep ka ac (by rw [pa, ← h0]; exact hl.value) (sa hl.small)
-  refine WP.mono (WP.vk (digitsAt_ok ha.ctx.scratch (by have := hdg.top; omega) ha.counter))
+  refine WP.mono (WP.vk (digitsAt_ok ha.ctx.scratch (by have := hdg.top; omega_arith) ha.counter))
     fun b ⟨⟨bz, kb⟩, bx, bw⟩ => ?_
-  rw [(ha.digits p (by have := hdg.top; omega)).1, (ha.digits p (by have := hdg.top; omega)).2] at bz
+  rw [(ha.digits p (by have := hdg.top; omega_arith)).1, (ha.digits p (by have := hdg.top; omega_arith)).2] at bz
   have hb := ha.of_scalar kb (by decide) bx bw
   have e2 : (0 : EPoint dZ) = (2 : Int) • winVal A fA fB top (p + 1) := by rw [h0, smul_zero]
   refine WP.ite (!decide (fA p = 0 ∧ fB p = 0)) (by simp only [eval, bz, Option.map_some])
@@ -234,7 +234,7 @@ theorem vskipTop_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA f
     refine WP.mono (WP.vk (cmpSelf_ok b)) fun t ⟨⟨tz, kt⟩, tx, ty⟩ => ⟨by rw [tz, hst],
       fun _ => (hb.of_scalar kt (by decide) tx ty).congr e2, fun hf => absurd hf (by rw [hst]; decide)⟩
   · have hz0 : fA p = 0 ∧ fB p = 0 := by simpa using hz
-    refine WP.mono (WP.vk (counterTest_ok hb.ctx.scratch (by have := hdg.top; omega) hb.counter))
+    refine WP.mono (WP.vk (counterTest_ok hb.ctx.scratch (by have := hdg.top; omega_arith) hb.counter))
       fun t ⟨⟨tz, kt⟩, tx, ty⟩ => ?_
     have ht := hb.of_scalar kt (by decide) tx ty
     have hst : skipStops fA fB p = decide (p = 0) := by
@@ -245,9 +245,9 @@ theorem vskipTop_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA f
     · have hz' : ∀ j, p ≤ j → j ≤ top → fA j = 0 ∧ fB j = 0 := fun j h1 h2 => by
         rcases Nat.eq_or_lt_of_le h1 with rfl | h1'
         · exact hz0
-        · exact h.zero j (by omega) h2
+        · exact h.zero j (by omega_arith) h2
       exact ⟨by rw [tz, hst], fun hs => absurd hs (by rw [hst]; simp [hp0]),
-        fun _ => ⟨ht.congr (winVal_zero hz').symm, hz', by omega, by omega⟩⟩
+        fun _ => ⟨ht.congr (winVal_zero hz').symm, hz', by omega_arith, by omega_arith⟩⟩
 
 /-- The windows in the lanes, from one above `top` to after position 0, `vstore` aside. -/
 theorem vloops_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top : Nat}
@@ -259,16 +259,16 @@ theorem vloops_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB 
       ∃ p, p ≤ top ∧ VAt s₀ base kp sp T A fA fB ((2 : Int) • winVal A fA fB top (p + 1)) p t by
     apply WP.loop (fun q t => VSkip s₀ base kp sp T A fA fB top q t) (n := top + 1)
     · intro q t ht
-      obtain ⟨p, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := ht.pos; omega : q ≠ 0)
+      obtain ⟨p, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := ht.pos; omega_arith : q ≠ 0)
       have hle := ht.le
       refine WP.mono (vskipTop_ok hdg ht) fun u ⟨uz, ut, uf⟩ => ?_
       cases hs : skipStops fA fB p
-      · exact Or.inr ⟨by simp only [eval, uz, hs, Option.map_some, Bool.not_false], p, by omega, uf hs⟩
-      · exact Or.inl ⟨by simp only [eval, uz, hs, Option.map_some, Bool.not_true], p, by omega, ut hs⟩
+      · exact Or.inr ⟨by simp only [eval, uz, hs, Option.map_some, Bool.not_false], p, by omega_arith, uf hs⟩
+      · exact Or.inl ⟨by simp only [eval, uz, hs, Option.map_some, Bool.not_true], p, by omega_arith, ut hs⟩
     · exact h) fun a ⟨p, hp, ha⟩ => ?_)
   refine WP.seq (WP.mono (vaddsAt_ok hdg hp ha) fun b hb => ?_)
   have hb' : VLoop s₀ base kp sp T A fA fB top p b := hb.congr (by rw [winVal_step A fA fB hp])
-  refine WP.seq (WP.mono (WP.vk (counterTest_ok hb'.ctx.scratch (by have := hdg.top; omega) hb'.counter))
+  refine WP.seq (WP.mono (WP.vk (counterTest_ok hb'.ctx.scratch (by have := hdg.top; omega_arith) hb'.counter))
     fun c ⟨⟨cz, kc⟩, cx, cy⟩ => ?_)
   have hc := hb'.of_scalar kc (by decide) cx cy
   refine WP.seq ?_
@@ -277,14 +277,14 @@ theorem vloops_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB 
     refine WP.mono (show WP isa (.loop vstepAt .ne) c (VLoop s₀ base kp sp T A fA fB top 0) by
       apply WP.loop (fun n t => VLoop s₀ base kp sp T A fA fB top n t ∧ 0 < n ∧ n ≤ top) (n := p)
       · intro n t ⟨ht, hn0, hn⟩
-        obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
-        refine WP.mono (vstepAt_ok hdg (by omega) ht) fun u ⟨uz, hu⟩ => ?_
+        obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega_arith : n ≠ 0)
+        refine WP.mono (vstepAt_ok hdg (by omega_arith) ht) fun u ⟨uz, hu⟩ => ?_
         by_cases hm : m = 0
         · subst hm
           exact Or.inl ⟨by simp only [eval, uz, decide_true, Option.map_some, Bool.not_true], hu⟩
         · exact Or.inr ⟨by simp only [eval, uz, decide_eq_false hm, Option.map_some, Bool.not_false],
-            m, by omega, hu, by omega, by omega⟩
-      · exact ⟨hc, by omega, hp⟩) hq
+            m, by omega_arith, hu, by omega_arith, by omega_arith⟩
+      · exact ⟨hc, by omega_arith, hp⟩) hq
   · have hp0 : p = 0 := by simpa using hz
     subst hp0
     exact WP.block_nil (hq c hc)
@@ -303,8 +303,8 @@ theorem wprep_ok {s : State} {base : Addr} (hs : Scratch s base) :
   have hs₁ : Scratch s₁ base := ⟨by rw [g₁ _ (by decide)]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
   refine WP.mono (vload_wp hs₁.rdi (ctx_of hs₁) ha hc hd hb h8 h9 h10) fun t ⟨g₂, rd₂, wr₂, o₂, k₂, u₂⟩ => ?_
   refine ⟨fun r hr => by rw [g₂, g₁ r (fun h => hr (cregs_clob r h))], by rw [rd₂, rd₁], by rw [wr₂, wr₁],
-    by rw [← m₁]; exact o₂, k₂, fun l hl i hi => by have := (u₂ l hl i hi).2; omega, ?_⟩
-  have e : ∀ l (hl : l < 4), fe5 (lanes t 0 l) = env s.mem base ⟨l, by omega⟩ := fun l hl => by
+    by rw [← m₁]; exact o₂, k₂, fun l hl i hi => by have := (u₂ l hl i hi).2; omega_arith, ?_⟩
+  have e : ∀ l (hl : l < 4), fe5 (lanes t 0 l) = env s.mem base ⟨l, by omega_arith⟩ := fun l hl => by
     rw [fe5_congr (fun i hi => (u₂ l hl i hi).1), fe5_load, m₁]; rfl
   simp only [lanePt, point]
   rw [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide)]
@@ -354,14 +354,14 @@ theorem enter_ok {R₀ : State → Prop} {s : State} {base kp sp T : Addr} {A : 
       rw [g₃ r (fun e => hc (e ▸ by decide)), g₂ r (fun e => hc (e ▸ by decide)), g₁ r hc],
     by rw [k₃.rd, k₂.rd, rd₁], by rw [k₃.wr, k₂.wr, wr₁], m₃⟩
   have m₃' : Outside base 1600 288 s.mem s₃.mem :=
-    ((o₁.mono (by decide) (by decide)).trans (k₂.mem.mono (by simp only [EMX]; omega) (by simp only [EMX]; omega))).trans
-      (k₃.mem.mono (by simp only [EMX]; omega) (by simp only [EMX]; omega))
+    ((o₁.mono (by decide) (by decide)).trans (k₂.mem.mono (by simp only [EMX]; omega_arith) (by simp only [EMX]; omega_arith))).trans
+      (k₃.mem.mono (by simp only [EMX]; omega_arith) (by simp only [EMX]; omega_arith))
   refine ⟨s₀, s₃, r₀, h.keep.trans k₀₃, by rw [g₃ _ (by decide), r11₂]; exact and_ffff _, ?_⟩
   refine ⟨⟨h.ctx.of_byte k₀₃, ?_, ?_, h.digits.of_byte k₀₃.mem, ?_,
     fun l hl i hi => by rw [lanes_qw q₃]; exact sm₁ l hl i hi, (k₁.outsideMx k₂.mem).outsideMx k₃.mem,
     BKeep.refl _ _⟩, hk.zero, hk.pos, hk.le⟩
   · rw [show env s₃.mem base 16 = env s.mem base 16 from
-      Outside_F m₃' (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega))]
+      Outside_F m₃' (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith))]
     exact h.d
   · exact (m₃'.word (Or.inl (by decide)) (by decide)).trans h.counter
   · rw [lanePt_qw q₃, p₁, winVal_zero hk.zero]; exact hk.full
@@ -388,16 +388,16 @@ theorem exit_ok {R₀ : State → Prop} {w : State} {base kp sp T : Addr} {A : E
       Outside_F k₈.mem (by decide) (Or.inl (by decide)), Outside_F k₈.mem (by decide) (Or.inl (by decide))]
     rfl
   have mwt : Outside base 64 1544 w.mem t.mem :=
-    (tou.mono (by decide) (by decide)).trans (k₈.mem.mono (by simp only [EMX]; omega) (by simp only [EMX]; omega))
+    (tou.mono (by decide) (by decide)).trans (k₈.mem.mono (by simp only [EMX]; omega_arith) (by simp only [EMX]; omega_arith))
   have kwt : ByteKeep base w t := ⟨fun r _ _ _ => by rw [g₈, tg], by rw [k₈.rd, trd], by rw [k₈.wr, twr],
     mwt.mono (by decide) (by decide)⟩
   have kst : ByteKeep base s₃ t := hw.keep.byte.trans kwt
   refine ⟨s₀, r₀, hw.ctx.of_byte kwt, ?_, ?_, hw.digits.of_byte kwt.mem, by rw [pt]; exact hw.value.proj,
     k₀₃.trans kst⟩
   · rw [show env t.mem base 16 = env t₁.mem base 16 from
-        Outside_F k₈.mem (by simp only [offset]; omega) (Or.inl (by simp only [offset, EMX]; omega)),
+        Outside_F k₈.mem (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset, EMX]; omega_arith)),
       show env t₁.mem base 16 = env w.mem base 16 from
-        Outside_F tou (by simp only [offset]; omega) (Or.inr (by simp only [offset]; omega))]
+        Outside_F tou (by simp only [offset]; omega_arith) (Or.inr (by simp only [offset]; omega_arith))]
     exact hw.d
   · exact (mwt.word (Or.inl (by decide)) (by decide)).trans hw.counter
 

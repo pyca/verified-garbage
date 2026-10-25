@@ -60,7 +60,7 @@ theorem cmacArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat}
   have hcd := chainedLen_div n
   unfold cmacArgs₁ macArgs
   simp only [List.cons_append, List.nil_append]
-  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega) fun t₃ v₃ =>
+  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_mv fun t₅ v₅ => wp_lsr (by decide) fun t₆ v₆ =>
     WP.block_nil ?_
   have K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
@@ -70,7 +70,7 @@ theorem cmacArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat}
   rw [← hcd] at hq
   refine ⟨K, by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide),
       v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide)], ?_⟩
-  exact uargs L E₆ hst hq.src (hq.wd (d := st) (k := 16) (by omega)) (by omega)
+  exact uargs L E₆ hst hq.src (hq.wd (d := st) (k := 16) (by omega_arith)) (by omega_arith)
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
       v₂.other _ (by decide), v₁.gpr, E.r15])
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -80,7 +80,7 @@ theorem cmacArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat}
     (by rw [v₆.other _ (by decide), v₅.gpr, v₄.other _ (by decide), v₃.other _ (by decide),
       v₂.other _ (by decide), v₁.other _ (by decide), h19])
     (by rw [v₆.gpr, v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
-      v₂.other _ (by decide), v₁.other _ (by decide), h21, ofNat_lsr4' (by omega)])
+      v₂.other _ (by decide), v₁.other _ (by decide), h21, ofNat_lsr4' (by omega_arith)])
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.gpr, v₃.other _ (by decide),
       v₂.other _ (by decide), v₁.other _ (by decide), E.r14]; rfl)
 
@@ -97,7 +97,7 @@ theorem cmacArgs₂_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat}
   have hrest := chainedLen_rest n
   unfold cmacArgs₂ macArgs
   simp only [List.cons_append, List.nil_append]
-  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega) fun t₃ v₃ =>
+  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_add fun t₅ v₅ => wp_sub fun t₆ v₆ =>
     WP.block_nil ?_
   have K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
@@ -105,7 +105,7 @@ theorem cmacArgs₂_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat}
   have E₆ := E.of_pk K.pk
   have hq' := hq.of_eq K.pk.rd K.pk.wr
   refine ⟨K, ?_⟩
-  exact fargs L E₆ hst hrest hq'.src (hq'.wd (by omega))
+  exact fargs L E₆ hst hrest hq'.src (hq'.wd (by omega_arith))
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
       v₂.other _ (by decide), v₁.gpr, E.r15])
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -129,18 +129,18 @@ theorem shortArgs_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {out : Nat} 
   have ho8 : out % 4 = 0 := by rcases hout with rfl | rfl <;> decide
   unfold shortArgs
   rw [List.append_assoc]
-  refine zero16_wp E (d := out) (by omega) ho8 fun s₁ pk₁ _ _ => ?_
+  refine zero16_wp E (d := out) (by omega_arith) ho8 fun s₁ pk₁ _ _ => ?_
   have E₁ := E.of_pk pk₁
   unfold macArgs
   simp only [List.cons_append, List.nil_append]
-  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega) fun t₃ v₃ =>
+  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_addi (by decide) (by decide) fun t₅ v₅ =>
     wp_li (by decide) fun t₆ v₆ => WP.block_nil ?_
   have pk₆ : PK s₁ t₆ := (PK.ofUpd v₁).trans ((PK.ofUpd v₂).trans ((PK.ofUpd v₃).trans ((PK.ofUpd v₄).trans
     ((PK.ofUpd v₅).trans (PK.ofUpd v₆)))))
   have E₆ := E₁.of_pk pk₆
   exact ⟨pk₁.trans pk₆, fargs L E₆ (y := out) ho' (Nat.le_refl 16) (L.srcW E₆.perm (t := tailO) (k := 16) (by decide))
-    (L.w_w (by omega) (by decide) (by omega))
+    (L.w_w (by omega_arith) (by decide) (by omega_arith))
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
       v₂.other _ (by decide), v₁.gpr, E₁.r15])
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -164,9 +164,9 @@ theorem longArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Addr}
   have ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
   have ho8 : out % 4 = 0 := by rcases hout with rfl | rfl <;> decide
   unfold longArgs₁
-  refine zero16_wp E (d := out) (by omega) ho8 fun s₀ pk₀ g₀ _ => ?_
+  refine zero16_wp E (d := out) (by omega_arith) ho8 fun s₀ pk₀ g₀ _ => ?_
   simp only [List.append_eq, List.cons_append, List.nil_append]
-  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega) fun t₃ v₃ =>
+  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_mv fun t₅ v₅ => wp_lsr (by decide) fun t₆ v₆ =>
     WP.block_nil ?_
   have K₀ : MacKeep s s₀ := ⟨pk₀, g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide)⟩
@@ -178,7 +178,7 @@ theorem longArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Addr}
   have r21₆ : t₆.gpr .r21 = s.gpr .r21 := by
     simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other, g₀]
   refine ⟨K₀.trans K, r21₆, ?_⟩
-  exact uargs L E₆ ho hq.src (hq.wd (d := out) (k := 16) (by omega)) (by omega)
+  exact uargs L E₆ ho hq.src (hq.wd (d := out) (k := 16) (by omega_arith)) (by omega_arith)
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
       v₂.other _ (by decide), v₁.gpr, E₀.r15])
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -189,7 +189,7 @@ theorem longArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Addr}
       v₂.other _ (by decide), v₁.other _ (by decide), g₀ _ (by decide), h19])
     (by
       simp (disch := decide) only [v₆.gpr, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other, g₀, h21]
-      rw [ofNat_lsr4' (by omega), show 16 * k / 16 = k by omega])
+      rw [ofNat_lsr4' (by omega_arith), show 16 * k / 16 = k by omega_arith])
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.gpr, v₃.other _ (by decide),
       v₂.other _ (by decide), v₁.other _ (by decide), E₀.r14]; rfl)
 
@@ -205,7 +205,7 @@ theorem longArgs₂_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n : Nat}
   have ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
   unfold longArgs₂ macArgs
   simp only [List.cons_append, List.nil_append]
-  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega) fun t₃ v₃ =>
+  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_addi (by decide) (by decide) fun t₅ v₅ =>
     wp_mv fun t₆ v₆ => WP.block_nil ?_
   have K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
@@ -213,8 +213,8 @@ theorem longArgs₂_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n : Nat}
   have E₆ := E.of_pk K.pk
   refine ⟨K, by simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other],
     by simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other], ?_⟩
-  exact uargs L E₆ ho (L.srcW E₆.perm (t := tailO) (k := 16 * jOf n) (by simp only [tailO]; omega))
-    (out_tail L hout (by decide) (by simp only [tailO]; omega)) (by omega)
+  exact uargs L E₆ ho (L.srcW E₆.perm (t := tailO) (k := 16 * jOf n) (by simp only [tailO]; omega_arith))
+    (out_tail L hout (by decide) (by simp only [tailO]; omega_arith)) (by omega_arith)
     (by simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.gpr, E.r15])
     (by simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.gpr, v₁.other, E.r16])
     (by simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.gpr, v₂.other, v₁.other, E.r14])
@@ -233,11 +233,11 @@ theorem longArgs₃_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n : Nat} 
   have hT := kOf_tail h16
   have hJ := jOf_rest h16
   have hj1 := jOf_le n
-  have hk : 16 * kOf n ≤ n := by omega
+  have hk : 16 * kOf n ≤ n := by omega_arith
   have ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
   unfold longArgs₃ macArgs
   simp only [List.cons_append, List.nil_append]
-  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega) fun t₃ v₃ =>
+  refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_addi (by decide) (by decide) fun t₅ v₅ =>
     wp_lsl (by decide) fun t₆ v₆ => wp_add fun t₇ v₇ => wp_sub fun t₈ v₈ => wp_sub fun t₉ v₉ =>
     WP.block_nil ?_
@@ -247,11 +247,11 @@ theorem longArgs₃_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n : Nat} 
   have E₉ := E.of_pk K.pk
   have sh : t₆.gpr .r9 = BitVec.ofNat 64 (16 * jOf n) := by
     simp (disch := decide) only [v₆.gpr, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other, h25]
-    exact ofNat_shl4 (by omega)
+    exact ofNat_shl4 (by omega_arith)
   refine ⟨K, ?_⟩
   exact fargs L E₉ ho hJ.2.2 (L.srcW E₉.perm (t := tailO + 16 * jOf n) (k := n - 16 * kOf n - 16 * jOf n)
-      (by simp only [tailO]; omega))
-    (out_tail L hout (by simp only [tailO]; omega) (by simp only [tailO]; omega))
+      (by simp only [tailO]; omega_arith))
+    (out_tail L hout (by simp only [tailO]; omega_arith) (by simp only [tailO]; omega_arith))
     (by simp (disch := decide) only [v₉.other, v₈.other, v₇.other, v₆.other, v₅.other, v₄.other, v₃.other,
       v₂.other, v₁.gpr, E.r15])
     (by simp (disch := decide) only [v₉.other, v₈.other, v₇.other, v₆.other, v₅.other, v₄.other, v₃.other,
@@ -265,7 +265,7 @@ theorem longArgs₃_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n : Nat} 
     (by
       simp (disch := decide) only [v₉.gpr, v₈.gpr, v₈.other, v₇.other, sh]
       simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other, h20, h21]
-      rw [ofNat_sub' hk hn, ofNat_sub' (by omega) (by omega)])
+      rw [ofNat_sub' hk hn, ofNat_sub' (by omega_arith) (by omega_arith)])
     (by simp (disch := decide) only [v₉.other, v₈.other, v₇.other, v₆.other, v₅.other, v₄.gpr, v₃.other,
       v₂.other, v₁.other, E.r14]; rfl)
 
@@ -366,7 +366,7 @@ descriptors agree. -/
 theorem s2vAds_rel {c : Cx} (L : Lay c) {σ₁ σ₂ s₁ s₂ : State} (I₁ : AInv c σ₁ 0 s₁) (I₂ : AInv c σ₂ 0 s₂)
     (hsp : s₁.sp = s₂.sp) (hd : DescAgree c σ₁.mem σ₂.mem) : RelCT isa (Eq2 s₁ s₂) s2vAds TT := by
   have aw := L.aw
-  have hN : c.N < 2 ^ 64 := by omega
+  have hN : c.N < 2 ^ 64 := by omega_arith
   have hσ : σ₁.sp = σ₂.sp := I₁.pk.sp.symm.trans (hsp.trans I₂.pk.sp)
   have h18₁ : s₁.gpr .r18 = BitVec.ofNat 64 c.N := by rw [I₁.r18, Nat.sub_zero]
   have h18₂ : s₂.gpr .r18 = BitVec.ofNat 64 c.N := by rw [I₂.r18, Nat.sub_zero]
@@ -378,15 +378,15 @@ theorem s2vAds_rel {c : Cx} (L : Lay c) {σ₁ σ₂ s₁ s₂ : State} (I₁ : 
       AInv c σ₁ j a ∧ AInv c σ₂ j b) (fun k => ?_) (c.N - 0)).mono
     (fun a b hab => by
       obtain ⟨rfl, rfl⟩ := hab
-      exact ⟨0, rfl, by omega, I₁, I₂⟩) fun _ _ h => h
+      exact ⟨0, rfl, by omega_arith, I₁, I₂⟩) fun _ _ h => h
   refine rel_of_eq2 fun a b ⟨j, hk, hj, J₁, J₂⟩ => ?_
   refine (rel_post (aStep_rel L hj J₁ J₂ (by rw [J₁.pk.sp, J₂.pk.sp, hσ]) hd) (Runs.of_wp (aStep_wp L J₁ hj))
     (Runs.of_wp (aStep_wp L J₂ hj))).mono (fun _ _ h => h) fun a' b' ⟨J₁', J₂'⟩ => ?_
-  have ev₁ := eval_nonzero J₁'.r18 (by omega)
-  have ev₂ := eval_nonzero J₂'.r18 (by omega)
+  have ev₁ := eval_nonzero J₁'.r18 (by omega_arith)
+  have ev₂ := eval_nonzero J₂'.r18 (by omega_arith)
   refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ⟨c.N - (j + 1), ?_, j + 1, rfl, ?_, J₁', J₂'⟩⟩
-  · rw [ev₁] at ht; simp at ht; omega
-  · rw [ev₁] at ht; simp at ht; omega
+  · rw [ev₁] at ht; simp at ht; omega_arith
+  · rw [ev₁] at ht; simp at ht; omega_arith
 
 /-! ## Finishing S2V -/
 
@@ -417,7 +417,7 @@ theorem short_rel (hn : n < 16) : RelCT isa (Eq2 σ₁ σ₂) (.seq shortTail (s
 theorem long_rel (h16 : 16 ≤ n) : RelCT isa (Eq2 σ₁ σ₂) (.seq longTail (longMac out)) TT := by
   have hn := hP₁.lt
   have hT := kOf_tail h16
-  have hk : 16 * kOf n ≤ n := by omega
+  have hk : 16 * kOf n ≤ n := by omega_arith
   have t₁ : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r19, .r20]))
       (.seq longTail (.block (longArgs₁ out))) h).isSome = true := by
     rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
@@ -503,11 +503,11 @@ theorem finish_rel : RelCT isa (Eq2 σ₁ σ₂) (finish out) TT := by
   have q20₂ : τ₂.gpr .r20 = BitVec.ofNat 64 n := by rw [K₂.r20, h20₂]
   have B₁ := hP₁.of_eq K₁.pk.rd K₁.pk.wr
   have B₂ := hP₂.of_eq K₂.pk.rd K₂.pk.wr
-  refine rel_ite (eval_zero r9₁ (by omega)) (eval_zero r9₂ (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine rel_ite (eval_zero r9₁ (by omega_arith)) (eval_zero r9₂ (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n / 16 = 0 := by simpa using ht
-    exact short_rel L F₁ F₂ hspτ B₁ B₂ q19₁ q19₂ q20₁ q20₂ hout (by omega)
+    exact short_rel L F₁ F₂ hspτ B₁ B₂ q19₁ q19₂ q20₁ q20₂ hout (by omega_arith)
   · have h0 : n / 16 ≠ 0 := by simpa using hf
-    exact long_rel L F₁ F₂ hspτ B₁ B₂ q19₁ q19₂ q20₁ q20₂ hout (by omega)
+    exact long_rel L F₁ F₂ hspτ B₁ B₂ q19₁ q19₂ q20₁ q20₂ hout (by omega_arith)
 
 end
 

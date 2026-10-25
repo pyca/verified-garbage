@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
 import VerifiedGarbage.Proof.Divstep.Mred32
 import VerifiedGarbage.Proof.Divstep.Tc32Words
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Signed Montgomery reduction on multiword values -/
 
@@ -40,10 +41,10 @@ theorem mred_first_words {A B H p m t W k E R R₁ : Int} (hB : B = 2 ^ 32) (hH 
   subst hB hH
   have hH : 0 < A * 2 ^ 31 := by positivity
   have hQ : A * 2 ^ 32 = 2 * (A * 2 ^ 31) := by ring
-  have hpH : 2 * p < A * 2 ^ 31 := by omega
+  have hpH : 2 * p < A * 2 ^ 31 := by omega_arith
   rw [abs_le] at ht
   have htH : -(A * 2 ^ 31) ≤ t ∧ t < A * 2 ^ 31 := by
-    constructor <;> omega
+    constructor <;> omega_arith
   -- `W` holds `t`.
   have eW := tc_eq hH htH.1 htH.2 hW0 (by rw [← hQ]; exact hW1) (by rw [← hQ]; exact hWt)
   have sW := tc_neg htH.1 htH.2 eW
@@ -57,7 +58,7 @@ theorem mred_first_words {A B H p m t W k E R R₁ : Int} (hB : B = 2 ^ 32) (hH 
   set r := mredRaw p m t with hr
   have hraw : 2 ^ 32 * r = t + (t * m) % 2 ^ 32 * p := mredRaw_spec hm
   rw [← hk'] at hraw
-  obtain ⟨rlo, rhi⟩ := mredRaw_range hp hm (abs_le.mpr ⟨by omega, ht.2⟩)
+  obtain ⟨rlo, rhi⟩ := mredRaw_range hp hm (abs_le.mpr ⟨by omega_arith, ht.2⟩)
   rw [← hr] at rlo rhi
   have hE' : E = 2 ^ 32 * (r + if r < 0 then A * 2 ^ 32 else 0) := by
     have hX : W + A * 2 ^ 32 * (if A * 2 ^ 31 ≤ W then 2 ^ 32 - 1 else 0) + k * p =
@@ -65,19 +66,19 @@ theorem mred_first_words {A B H p m t W k E R R₁ : Int} (hB : B = 2 ^ 32) (hH 
           ((if t < 0 then 1 else 0) - (if r < 0 then 1 else 0)) := by
       have hS : (if A * 2 ^ 31 ≤ W then (2 : Int) ^ 32 - 1 else 0) = if t < 0 then 2 ^ 32 - 1 else 0 := by
         simp only [sW]
-      have hkp : k * p = 2 ^ 32 * r - t := by omega
+      have hkp : k * p = 2 ^ 32 * r - t := by omega_arith
       rw [hS, eW, hkp]
       by_cases h1 : t < 0 <;> by_cases h2 : r < 0 <;> simp only [h1, h2, ↓reduceIte] <;> ring
     rw [hE, hX, Int.add_mul_emod_self_left]
     have h0 : 0 ≤ 2 ^ 32 * r + (if r < 0 then A * 2 ^ 32 * 2 ^ 32 else 0) := by
-      split <;> omega
+      split <;> omega_arith
     have h1 : 2 ^ 32 * r + (if r < 0 then A * 2 ^ 32 * 2 ^ 32 else 0) < A * 2 ^ 32 * 2 ^ 32 := by
-      split <;> omega
+      split <;> omega_arith
     rw [Int.emod_eq_of_lt h0 h1]
     split <;> ring
   have eR : R = r + if r < 0 then 2 * (A * 2 ^ 31) else 0 := by
     rw [hR, hE', Int.mul_ediv_cancel_left _ (by norm_num), hQ]
-  have rH : -(A * 2 ^ 31) ≤ r ∧ r < A * 2 ^ 31 := ⟨by omega, by omega⟩
+  have rH : -(A * 2 ^ 31) ≤ r ∧ r < A * 2 ^ 31 := ⟨by omega_arith, by omega_arith⟩
   have sR := tc_neg rH.1 rH.2 eR
   -- `R₁ = r + p` if negative, else `r`.
   have eR₁ : R₁ = r + if r < 0 then p else 0 := by
@@ -86,9 +87,9 @@ theorem mred_first_words {A B H p m t W k E R R₁ : Int} (hB : B = 2 ^ 32) (hH 
     by_cases h : r < 0
     · simp only [h, ↓reduceIte]
       rw [show r + 2 * (A * 2 ^ 31) + p = r + p + 2 * (A * 2 ^ 31) * 1 by ring, Int.add_mul_emod_self_left,
-        Int.emod_eq_of_lt (by omega) (by omega)]
+        Int.emod_eq_of_lt (by omega_arith) (by omega_arith)]
     · simp only [h, ↓reduceIte, Int.add_zero]
-      rw [Int.emod_eq_of_lt (by omega) (by omega)]
+      rw [Int.emod_eq_of_lt (by omega_arith) (by omega_arith)]
   exact eR₁
 
 theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 32) (hH : H = 2 ^ 31) (hA : 0 < A)
@@ -105,20 +106,20 @@ theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 32) 
   subst hB hH
   have hH : 0 < A * 2 ^ 31 := by positivity
   have hQ : A * 2 ^ 32 = 2 * (A * 2 ^ 31) := by ring
-  have hpH : 2 * p < A * 2 ^ 31 := by omega
+  have hpH : 2 * p < A * 2 ^ 31 := by omega_arith
   set r := mredRaw p m t with hr
   obtain ⟨rlo, rhi⟩ := mredRaw_range hp hm ht
   rw [← hr] at rlo rhi
   -- `R₂ = R₁ - p`, in two's complement.
   obtain ⟨r₂, hr₂⟩ : ∃ r₂, r₂ = r + (if r < 0 then p else 0) - p := ⟨_, rfl⟩
-  have r₂lo : -p ≤ r₂ := by rw [hr₂]; split <;> omega
-  have r₂hi : r₂ < p := by rw [hr₂]; split <;> omega
+  have r₂lo : -p ≤ r₂ := by rw [hr₂]; split <;> omega_arith
+  have r₂hi : r₂ < p := by rw [hr₂]; split <;> omega_arith
   have eR₂ : R₂ = r₂ + if r₂ < 0 then 2 * (A * 2 ^ 31) else 0 := by
-    refine tc_eq hH (by omega) (by omega) hR₂0 (by rw [← hQ]; exact hR₂1) ?_
+    refine tc_eq hH (by omega_arith) (by omega_arith) hR₂0 (by rw [← hQ]; exact hR₂1) ?_
     have h1 : (R₂ + p) % (A * 2 ^ 32) = (r₂ + p) % (A * 2 ^ 32) := by
-      rw [hR₂, eR₁, Int.emod_eq_of_lt (a := r₂ + p) (by omega) (by omega), hr₂]; ring
+      rw [hR₂, eR₁, Int.emod_eq_of_lt (a := r₂ + p) (by omega_arith) (by omega_arith), hr₂]; ring
     rw [← hQ]; exact Int.ModEq.add_right_cancel' p h1
-  have sR₂ := tc_neg (by omega) (by omega) eR₂
+  have sR₂ := tc_neg (by omega_arith) (by omega_arith) eR₂
   -- `R₃ = norm p r`.
   have hc₂ : (if A * 2 ^ 31 ≤ R₂ then p else 0) = if r₂ < 0 then p else 0 := by simp only [sR₂]
   rw [hR₃, hc₂, eR₂, hQ]
@@ -127,16 +128,16 @@ theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 32) 
   by_cases h2 : r₂ < 0
   · simp only [h2, ↓reduceIte]
     rw [show r₂ + 2 * (A * 2 ^ 31) + p = r₂ + p + 2 * (A * 2 ^ 31) * 1 by ring, Int.add_mul_emod_self_left,
-      Int.emod_eq_of_lt (by omega) (by omega), hr₂]
+      Int.emod_eq_of_lt (by omega_arith) (by omega_arith), hr₂]
     by_cases h : r < 0
     · simp only [h, ↓reduceIte]; ring
-    · have h' : ¬ p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
+    · have h' : ¬ p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_arith
       simp only [h, h', ↓reduceIte]; ring
   · simp only [h2, ↓reduceIte, Int.add_zero]
-    rw [Int.emod_eq_of_lt (by omega) (by omega), hr₂]
+    rw [Int.emod_eq_of_lt (by omega_arith) (by omega_arith), hr₂]
     by_cases h : r < 0
-    · rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
-    · have h' : p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
+    · rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_arith
+    · have h' : p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_arith
       simp only [h, h', ↓reduceIte]; ring
 
 /-- `mred_words` on natural numbers, as words hold them (`B = 2^32`, `H = 2^31`). -/
@@ -151,11 +152,11 @@ theorem mred_nat {A B H p m W k E R R₁ R₂ R₃ : Nat} {t : Int} (hB : B = 2 
     (hR₃ : R₃ = (R₂ + if A * H ≤ R₂ then p else 0) % (A * B)) :
     (R₃ : Int) = mred p m t := by
   have hB1 : 1 ≤ B := by rw [hB]; exact Nat.one_le_two_pow
-  have hk1 : k < B := by rw [hk]; exact Nat.mod_lt _ (by omega)
+  have hk1 : k < B := by rw [hk]; exact Nat.mod_lt _ (by omega_arith)
   refine mred_words (A := A) (B := B) (H := H) (p := p) (m := m) (t := t) (W := W) (k := k) (E := E) (R := R)
     (R₁ := R₁) (R₂ := R₂) (R₃ := R₃) (by rw [hB]; norm_num) (by rw [hH]; norm_num) (by exact_mod_cast hA)
-    (by exact_mod_cast hp) (by exact_mod_cast hpA) (by exact_mod_cast hm) ht (by omega) (by exact_mod_cast hW1)
-    (by exact_mod_cast hWt) (by omega) (by exact_mod_cast hk1) ?_ ?_ ?_ ?_ (by omega) (by exact_mod_cast hR₂1) ?_ ?_
+    (by exact_mod_cast hp) (by exact_mod_cast hpA) (by exact_mod_cast hm) ht (by omega_arith) (by exact_mod_cast hW1)
+    (by exact_mod_cast hWt) (by omega_arith) (by exact_mod_cast hk1) ?_ ?_ ?_ ?_ (by omega_arith) (by exact_mod_cast hR₂1) ?_ ?_
   · rw [hk]
     have h1 : W % B * m % B = W * m % B := by rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]
     rw [h1]; push_cast; rw [Int.emod_emod_of_dvd _ (dvd_refl _)]

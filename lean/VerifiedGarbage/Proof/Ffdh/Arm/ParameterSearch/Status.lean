@@ -18,14 +18,7 @@ open VG.Proof.Ffdh.Arm.KeySearch (Controller lowWord writeLow lowWord_store)
 theorem againBlock_ok (s : State) {base : BitVec 32} (h : Controller base s) :
     WP isa (.block [.mov .r11 (.imm 4), VG.Impl.Ffdh.Arm.ParameterSearch.stf .r11 13]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr base) 104) (4#32) ∧ Rest [.r11] s t := by
-  refine withRest [.r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [.mov .r11 (.imm 4), VG.Impl.Ffdh.Arm.ParameterSearch.stf .r11 13] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.stf
   ffrun [h.addr (by decide : 13 < 16), h.write (by decide : 13 < 16)]
   rfl

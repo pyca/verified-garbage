@@ -57,17 +57,17 @@ theorem hashWhole_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t 0
     rw [h0]; exact H
   · have hm : p.al / 16 ≠ 0 := by simpa using hb
     refine WP.loop (M := isa) (fun k t' => ∃ j, k = p.al / 16 - j ∧ j < p.al / 16 ∧ HInv p t₀ t' j) ?_
-      (p.al / 16 - 0) t ⟨0, rfl, by omega, H⟩
+      (p.al / 16 - 0) t ⟨0, rfl, by omega_arith, H⟩
     rintro k t' ⟨j, rfl, hj, Hj⟩
     refine WP.mono (hashChunk_ok L Hj hj) fun t'' ⟨H', z⟩ => ?_
     by_cases h : p.al / 16 - (j + min 16 (p.al / 16 - j)) = 0
     · left
       refine ⟨(eval_ne' z).trans (by simp [h]), ?_⟩
-      have e : j + min 16 (p.al / 16 - j) = p.al / 16 := by omega
+      have e : j + min 16 (p.al / 16 - j) = p.al / 16 := by omega_arith
       rw [e] at H'; exact H'
     · right
-      exact ⟨(eval_ne' z).trans (by simp [h]), p.al / 16 - (j + min 16 (p.al / 16 - j)), by omega,
-        j + min 16 (p.al / 16 - j), rfl, by omega, H'⟩
+      exact ⟨(eval_ne' z).trans (by simp [h]), p.al / 16 - (j + min 16 (p.al / 16 - j)), by omega_arith,
+        j + min 16 (p.al / 16 - j), rfl, by omega_arith, H'⟩
 
 /-- The rest of the associated data, `n` bytes after the `m` whole blocks. -/
 theorem hashRest_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t (p.al / 16))
@@ -86,8 +86,8 @@ theorem hashRest_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t (p
   -- the offset `⊕ L_*`
   refine WP.seq (WP.mono (xorB_wp (s := t) (pb := .r11) (qb := .r10) (cb := .r11) (pd := ohO) (qd := 240)
     (cd := ohO) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by rw [E.r11]; simp only [ohO]; omega) (by rw [E.r10]; omega)
-    (by rw [E.r11]; simp only [ohO]; omega) (by rw [E.r11]; exact E.perm.wCR (by decide))
+    (by decide) (by rw [E.r11]; simp only [ohO]; omega_arith) (by rw [E.r10]; omega_arith)
+    (by rw [E.r11]; simp only [ohO]; omega_arith) (by rw [E.r11]; exact E.perm.wCR (by decide))
     (by rw [E.r10]; exact E.perm.kC (by decide)) (by rw [E.r11]; exact E.perm.wC (by decide))) fun t₁ R₁ => ?_)
   rw [E.r11, E.r10] at R₁
   have E₁ : Env p t₁ := E.of_others R₁.gpr R₁.sp R₁.rd R₁.wr
@@ -101,26 +101,26 @@ theorem hashRest_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t (p
     rw [R₁.mem, blockAtMem_xor4 _ (Proof.Cmac.Sep4.self _) (Proof.Cmac.Sep4.of_disjoint
       ((L.k_w' (d := ohO) (k := 16) (by decide)).symm.sub_right (Offset.sub_base _ (by decide)))), H.oh, lK]
   -- `pad(A_*)` at `W + bufO`
-  have hm : 16 * (p.al / 16) + p.al % 16 = p.al := by omega
+  have hm : 16 * (p.al / 16) + p.al % 16 = p.al := by omega_arith
   have eA : State.addr (p.A + BitVec.ofNat 32 (16 * (p.al / 16))) =
-      State.addr p.A + BitVec.ofNat 64 (16 * (p.al / 16)) := addr_add (by have := L.aw; omega)
+      State.addr p.A + BitVec.ofNat 64 (16 * (p.al / 16)) := addr_add (by have := L.aw; omega_arith)
   have hSA : (⟨State.addr p.A + BitVec.ofNat 64 (16 * (p.al / 16)), p.al % 16⟩ : Region).Sub ⟨State.addr p.A, p.al⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   refine WP.seq (WP.mono (padTo_ok L E₁ (S := p.A + BitVec.ofNat 32 (16 * (p.al / 16))) (n := p.al % 16)
-    (d := bufO) (by omega) (by omega) (by decide) (by decide) (by rw [R₁.gpr _ (by decide), H.r4])
+    (d := bufO) (by omega_arith) (by omega_arith) (by decide) (by decide) (by rw [R₁.gpr _ (by decide), H.r4])
     (by rw [R₁.gpr _ (by decide), h5])
-    (by rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (p.al / 16)) (by omega),
-      Nat.mod_eq_of_lt (by have := L.aw; omega)]; have := L.aw; omega)
-    (by rw [eA]; exact Proof.AesGcm.Arm.covers_off E₁.perm.aad (by omega) (by omega))
+    (by rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (p.al / 16)) (by omega_arith),
+      Nat.mod_eq_of_lt (by have := L.aw; omega_arith)]; have := L.aw; omega_arith)
+    (by rw [eA]; exact Proof.AesGcm.Arm.covers_off E₁.perm.aad (by omega_arith) (by omega_arith))
     (by rw [eA]; exact (L.a_w' (by decide)).sub_left hSA)) fun t₂ ⟨fr₂, pad₂, g₂, sp₂, rd₂, wr₂⟩ => ?_)
   have E₂ : Env p t₂ := E₁.of_others g₂ sp₂ rd₂ wr₂
   have hrest : bytesAt t₁.mem (State.addr (p.A + BitVec.ofNat 32 (16 * (p.al / 16)))) (p.al % 16) =
       (aadOf p t₀.mem).drop (16 * (p.al / 16)) := by
-    rw [eA, Proof.Ocb.bytesAt_drop _ _ (by omega), show p.al - 16 * (p.al / 16) = p.al % 16 by omega]
+    rw [eA, Proof.Ocb.bytesAt_drop _ _ (by omega_arith), show p.al - 16 * (p.al / 16) = p.al % 16 by omega_arith]
     rw [R₁.mem]
     exact Proof.Cmac.bytesAt_frame ((hashR_mut L H.frame).trans ((Proof.Cmac.xor4Mem_frame _ _ _ _).sub
       fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact w_mut L (.inr ⟨by decide, by decide⟩)))
-      (fun r hr => (disj_mut L L.a_w L.ba L.a_d r hr).sub_left hSA) (by omega)
+      (fun r hr => (disj_mut L L.a_w L.ba L.a_d r hr).sub_left hSA) (by omega_arith)
   rw [hrest] at pad₂
   have oh₂ : blockAtMem t₂.mem (State.addr p.W + BitVec.ofNat 64 ohO) =
       offAt 0 (lstarOf p t₀.mem) (p.al / 16) ^^^ lstarOf p t₀.mem := by
@@ -129,8 +129,8 @@ theorem hashRest_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t (p
   -- the XOR with the offset
   refine WP.seq (WP.mono (xorB_wp (s := t₂) (pb := .r11) (qb := .r11) (cb := .r11) (pd := bufO) (qd := ohO)
     (cd := bufO) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by rw [E₂.r11]; simp only [bufO]; omega) (by rw [E₂.r11]; simp only [ohO]; omega)
-    (by rw [E₂.r11]; simp only [bufO]; omega) (by rw [E₂.r11]; exact E₂.perm.wCR (by decide))
+    (by decide) (by rw [E₂.r11]; simp only [bufO]; omega_arith) (by rw [E₂.r11]; simp only [ohO]; omega_arith)
+    (by rw [E₂.r11]; simp only [bufO]; omega_arith) (by rw [E₂.r11]; exact E₂.perm.wCR (by decide))
     (by rw [E₂.r11]; exact E₂.perm.wCR (by decide)) (by rw [E₂.r11]; exact E₂.perm.wC (by decide))) fun t₃ R₃ => ?_)
   rw [E₂.r11] at R₃
   have E₃ : Env p t₃ := E₂.of_others R₃.gpr R₃.sp R₃.rd R₃.wr
@@ -179,8 +179,8 @@ theorem hashRest_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t (p
   -- added to the sum
   refine WP.mono (xorB_wp (s := t₄) (pb := .r11) (qb := .r11) (cb := .r11) (pd := sumO) (qd := bufO)
     (cd := sumO) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by rw [E₄.r11]; simp only [sumO]; omega) (by rw [E₄.r11]; simp only [bufO]; omega)
-    (by rw [E₄.r11]; simp only [sumO]; omega) (by rw [E₄.r11]; exact E₄.perm.wCR (by decide))
+    (by decide) (by rw [E₄.r11]; simp only [sumO]; omega_arith) (by rw [E₄.r11]; simp only [bufO]; omega_arith)
+    (by rw [E₄.r11]; simp only [sumO]; omega_arith) (by rw [E₄.r11]; exact E₄.perm.wCR (by decide))
     (by rw [E₄.r11]; exact E₄.perm.wCR (by decide)) (by rw [E₄.r11]; exact E₄.perm.wC (by decide))) fun t₅ R₅ => ?_
   rw [E₄.r11] at R₅
   refine ⟨E₄.of_others R₅.gpr R₅.sp R₅.rd R₅.wr, ?_, by rw [R₅.rd, C₄.rd, R₃.rd, rd₂, R₁.rd, H.rd],
@@ -202,10 +202,10 @@ theorem hashHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p 
   have fw := L.ww
   have al32 := L.al_lt
   refine WP.block_append (WP.block_append (WP.mono (zero16_wp (s := t) (o := sumO) (by decide)
-    (by rw [E.r11]; simp only [sumO]; omega) (by rw [E.r11]; exact E.perm.wC (by decide))) fun t₁ R₁ => ?_))
+    (by rw [E.r11]; simp only [sumO]; omega_arith) (by rw [E.r11]; exact E.perm.wC (by decide))) fun t₁ R₁ => ?_))
   rw [E.r11] at R₁
   have E₁ : Env p t₁ := E.of_others R₁.gpr R₁.sp R₁.rd R₁.wr
-  refine WP.mono (zero16_wp (s := t₁) (o := ohO) (by decide) (by rw [E₁.r11]; simp only [ohO]; omega)
+  refine WP.mono (zero16_wp (s := t₁) (o := ohO) (by decide) (by rw [E₁.r11]; simp only [ohO]; omega_arith)
     (by rw [E₁.r11]; exact E₁.perm.wC (by decide))) fun t₂ R₂ => ?_
   rw [E₁.r11] at R₂
   have E₂ : Env p t₂ := E₁.of_others R₂.gpr R₂.sp R₂.rd R₂.wr
@@ -252,7 +252,7 @@ theorem hashHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p 
     · simp only [Proof.AesGcm.Arm.mem_subFlags, mem_setReg]
       rw [kblk (by decide) (.inr (by decide)) (.inl (by decide)), hl0]
   · simp only [z_subFlags, Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, BitVec.sub_zero, ofNat_lsr32 al32,
-      z_cmp0 (show p.al / 2 ^ 4 < 2 ^ 32 by omega)]
+      z_cmp0 (show p.al / 2 ^ 4 < 2 ^ 32 by omega_arith)]
 
 /-- After the whole blocks of the associated data: the rest's length in `r5`. -/
 theorem hashMid_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t (p.al / 16)) (A : Args p t.mem) :
@@ -266,7 +266,7 @@ theorem hashMid_ok {p : Prm} (L : Lay p) {t₀ t : State} (H : HInv p t₀ t (p.
       H.sum, H.oh, H.r4, H.r6, H.r7, H.l0⟩
   · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, and15, toNat_ofNat32 L.al_lt]
   · simp only [z_subFlags, gpr_setReg, ite_true, BitVec.sub_zero, and15, toNat_ofNat32 L.al_lt,
-      z_cmp0 (show p.al % 16 < 2 ^ 32 by omega)]
+      z_cmp0 (show p.al % 16 < 2 ^ 32 by omega_arith)]
 
 theorem hash_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem)
     (hl0 : blockAtMem t.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p t.mem) 0) :
@@ -279,15 +279,15 @@ theorem hash_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.me
   refine WP.seq (WP.mono (hashMid_ok L H₃ A₃) fun t₄ ⟨H₄, h5₄, hz₄⟩ => ?_)
   have hlen : (aadOf p t.mem).length = p.al := Proof.Ocb.length_bytesAt _ _ _
   have hdrop : ((aadOf p t.mem).drop (16 * ((aadOf p t.mem).length / 16))).length = p.al % 16 := by
-    rw [List.length_drop, hlen]; omega
+    rw [List.length_drop, hlen]; omega_arith
   have heq := Proof.Ocb.hash_eq (ciphOf p t.mem) (lstarOf p t.mem) (aadOf p t.mem)
   rw [hdrop, hlen] at heq
   refine WP.ite (decide (p.al % 16 = 0)) (eval_eq' hz₄) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have h0 : p.al % 16 = 0 := of_decide_eq_true hb
     refine ⟨H₄.env, H₄.frame, H₄.rd, H₄.wr, ?_⟩
-    rw [H₄.sum, heq]; simp only [show ¬ p.al % 16 > 0 by omega, ↓reduceIte]
+    rw [H₄.sum, heq]; simp only [show ¬ p.al % 16 > 0 by omega_arith, ↓reduceIte]
   · have h0 : p.al % 16 ≠ 0 := by simpa using hb
     refine WP.mono (hashRest_ok L H₄ h5₄ h0) fun t' ⟨E', fr', rd', wr', sum'⟩ => ⟨E', fr', rd', wr', ?_⟩
-    rw [sum', heq]; simp only [show p.al % 16 > 0 by omega, ↓reduceIte, hlen]
+    rw [sum', heq]; simp only [show p.al % 16 > 0 by omega_arith, ↓reduceIte, hlen]
 
 end VG.Proof.AesOcb.Arm

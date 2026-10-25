@@ -57,7 +57,7 @@ theorem rvalT_congr {m m' : Mem} {W : Addr} {N S : Nat} :
       rvalT m' W N S n = rvalT m W N S n
   | 0, _ => rfl
   | n + 1, h => by
-    rw [rvalT, rvalT, rvalT_congr fun j hj => h j (by omega), h n (by omega)]
+    rw [rvalT, rvalT, rvalT_congr fun j hj => h j (by omega_arith), h n (by omega_arith)]
 
 /-- After the columns `j < k`. -/
 structure ColsI (s0 : State) (W : Addr) (L : Nat) (V : Nat → BitVec 32) (N S mo a b k c : Nat) (q : Nat → Nat)
@@ -79,7 +79,7 @@ structure ColsI (s0 : State) (W : Addr) (L : Nat) (V : Nat → BitVec 32) (N S m
   keep : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] s0 t
 
 theorem digits_lt (m : Mem) (W : Addr) (x i : Nat) : digits m W x i ≤ 2 ^ 32 - 1 := by
-  have := (m.readW (off W (x + 4 * i)) 32).isLt; simp only [digits, w32]; omega
+  have := (m.readW (off W (x + 4 * i)) 32).isLt; simp only [digits, w32]; omega_arith
 
 theorem coeff_le (m : Mem) (W : Addr) (y : Nat) {N k : Nat} (q : Nat → Nat) (hq : ∀ i, q i ≤ 2 ^ 32 - 1) :
     Column.coeff q (digits m W y) N k ≤ N * (2 ^ 32 - 1) * (2 ^ 32 - 1) :=
@@ -96,7 +96,7 @@ theorem Outs.w32 {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs b
 theorem digits_out {m m' : Mem} {W : Addr} {L N S x : Nat} (hn : W.toNat + L ≤ 2 ^ 32)
     (O : Outs W [(S, 8 * N + 28)] m m') (hx : x + 4 * N ≤ L) (sep : x + 4 * N ≤ S ∨ S + 8 * N + 28 ≤ x) :
     ∀ i < N, digits m' W x i = digits m W x i := fun i hi =>
-  Outs.w32 O (by simp only [List.mem_singleton, forall_eq]; omega) (by omega)
+  Outs.w32 O (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith)
 
 theorem outs_widen {base : Addr} {rs rs' : List (Nat × Nat)} {m₁ m₂ : Mem} (h : Outs base rs m₁ m₂)
     (hr : ∀ y : Nat, (∀ r ∈ rs', y < r.1 ∨ r.1 + r.2 ≤ y) → ∀ r ∈ rs, y < r.1 ∨ r.1 + r.2 ≤ y) :
@@ -109,7 +109,7 @@ theorem outs_sub {base : Addr} {rs rs' : List (Nat × Nat)} {m₁ m₂ : Mem} (h
   outs_widen h fun y hy r h' => by
     obtain ⟨r', hr', h1, h2⟩ := hr r h'
     have := hy r' hr'
-    omega
+    omega_arith
 
 theorem outs_sub1 {base : Addr} {rs' : List (Nat × Nat)} {m₁ m₂ : Mem} {a n : Nat} (h : Outs base [(a, n)] m₁ m₂)
     {r : Nat × Nat} (hr : r ∈ rs') (h1 : r.1 ≤ a) (h2 : a + n ≤ r.1 + r.2) : Outs base rs' m₁ m₂ :=
@@ -156,42 +156,42 @@ theorem cols_next {s0 t u : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} 
     ColsI s0 W L V N S mo a b (k + 1) c' q' u := by
   have hn := ws.nowrap
   have hs := Ly.s_le
-  have hsl : slot N k < N := by unfold slot; split <;> omega
+  have hsl : slot N k < N := by unfold slot; split <;> omega_arith
   have Ow : Outs W [(S, 8 * N + 28)] t.mem u.mem := outs_widen O fun y hy r hr => by
     have := hy _ (List.mem_singleton_self _)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only at this ⊢ <;> omega
+    rcases hr with rfl | rfl <;> simp only at this ⊢ <;> omega_arith
   -- The digits.
   have qkk : ∀ j, j ≠ k → q' j = q j := hq'
   have qs : Column.partSum (2 ^ 32) (Column.prefixDigits q' (k + 1)) (digits s0.mem W mo) N (k + 1) =
       Column.partSum (2 ^ 32) (Column.prefixDigits q k) (digits s0.mem W mo) N k +
         (Column.coeff (Column.prefixDigits q k) (digits s0.mem W mo) N k + qk * digits s0.mem W mo 0) *
           (2 ^ 32) ^ k :=
-    Column.qPart_step (2 ^ 32) q q' (digits s0.mem W mo) N k qk (fun i _ hik => hq' i (by omega)) hqk
+    Column.qPart_step (2 ^ 32) q q' (digits s0.mem W mo) N k qk (fun i _ hik => hq' i (by omega_arith)) hqk
       (fun h => (hqz h).2)
   -- The result's words.
   have keepSlot : ∀ j, j ≠ slot N k → j < N → w32 u.mem W (S + 24 + 4 * j) = w32 t.mem W (S + 24 + 4 * j) :=
     fun j hj hjN => Outs.w32 O (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega) (by omega)
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith) (by omega_arith)
   have out : (2 ^ 32) ^ N * rvalT u.mem W N S (k + 1 - N) =
       (2 ^ 32) ^ N * rvalT t.mem W N S (k - N) + (2 ^ 32) ^ k * residue := by
     by_cases hkN : k < N
-    · rw [show k + 1 - N = 0 by omega, show k - N = 0 by omega, hres0 hkN]; simp [rvalT]
-    · have hs' : slot N k = N - 1 - (k - N) := by unfold slot; rw [ite_eq_right hkN]; omega
-      rw [show k + 1 - N = (k - N) + 1 by omega, rvalT, ← hs', hw, ite_eq_right hkN,
-        rvalT_congr fun j hj => keepSlot _ (by rw [hs']; omega) (by omega),
+    · rw [show k + 1 - N = 0 by omega_arith, show k - N = 0 by omega_arith, hres0 hkN]; simp [rvalT]
+    · have hs' : slot N k = N - 1 - (k - N) := by unfold slot; rw [ite_eq_right hkN]; omega_arith
+      rw [show k + 1 - N = (k - N) + 1 by omega_arith, rvalT, ← hs', hw, ite_eq_right hkN,
+        rvalT_congr fun j hj => keepSlot _ (by rw [hs']; omega_arith) (by omega_arith),
         Nat.mul_add, ← Nat.mul_assoc, ← VG.Proof.Mont.X86.Square.pow32 (k - N), ← Nat.pow_add,
-        show N + (k - N) = k by omega]
+        show N + (k - N) = k by omega_arith]
   refine ⟨ws, prm, I.out.trans Ow, ecx, mc, hcar, hb, fun i hi => ?_, fun j => ?_, fun j h1 h2 => ?_, win, ?_,
     I.keep.trans K⟩
-  · rw [Outs.w32 O (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega)
-      (by omega)]
+  · rw [Outs.w32 O (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
+      (by omega_arith)]
     exact I.revA i hi
   · by_cases hj : j = k
     · subst hj
       by_cases hkN : j < N
       · rw [hqk hkN]; exact hqlt
-      · rw [(hqz (by omega)).1]; exact I.qlt j
+      · rw [(hqz (by omega_arith)).1]; exact I.qlt j
     · rw [hq' j hj]; exact I.qlt j
   · -- The digits still stored.
     by_cases hkN : k < N
@@ -199,10 +199,10 @@ theorem cols_next {s0 t u : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} 
       · subst hj
         have hs' : slot N j = N - 1 - j := by unfold slot; rw [ite_eq_left hkN]
         rw [← hs', hw, ite_eq_left hkN, hqk hkN]
-      · rw [keepSlot _ (by unfold slot; rw [ite_eq_left hkN]; omega) (by omega), hq' j hj]
-        exact I.qs j (by omega) (by omega)
-    · rw [keepSlot _ (by unfold slot; rw [ite_eq_right hkN]; omega) (by omega), (hqz (by omega)).1]
-      exact I.qs j (by omega) (by omega)
+      · rw [keepSlot _ (by unfold slot; rw [ite_eq_left hkN]; omega_arith) (by omega_arith), hq' j hj]
+        exact I.qs j (by omega_arith) (by omega_arith)
+    · rw [keepSlot _ (by unfold slot; rw [ite_eq_right hkN]; omega_arith) (by omega_arith), (hqz (by omega_arith)).1]
+      exact I.qs j (by omega_arith) (by omega_arith)
   · exact VG.Proof.Mont.X86.Square.advance (2 ^ 32) N k c c' residue _ _ _ _ _ _ _ _ _ I.eq
       (by rw [heq]) out (Column.partSum_succ _ _ _ _ _) qs
 
@@ -274,7 +274,7 @@ theorem sums_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S
       Column.coeff (digits s0.mem W a) (digits s0.mem W b) N k := by rw [m0]; exact coeff_congr aT bT
   rw [eAB] at A1
   have hQ : ∀ {lo hi'}, lo ≥ k - N → hi' ≤ min k N → RevQ t1.mem W N S q lo hi' := fun h1 h2 j hj1 hj2 => by
-    rw [mem1]; exact I.qs j (by omega) (by omega)
+    rw [mem1]; exact I.qs j (by omega_arith) (by omega_arith)
   have eM : ∀ k', Column.coeff (Column.prefixDigits q k') (digits t1.mem W mo) N k' =
       Column.coeff (Column.prefixDigits q k') (digits s0.mem W mo) N k' := fun _ => by
     rw [mem1]; exact coeff_congr (fun _ _ => rfl) moT
@@ -286,32 +286,32 @@ theorem sums_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S
     have C2 := C1.of_keeps R2.keep R2.mem R2.mcdt
     have mem2 : t2.mem = t.mem := by rw [R2.mem, mem1]
     have hc2 : w32 t2.mem W (S + 16) + 2 ^ 32 * w32 t2.mem W (S + 20) = c := by rw [mem2]; exact I.carry
-    refine WP.seq (WP.mono (fold_ok C2 PV.s (by omega) A2 (by omega) hc2)
+    refine WP.seq (WP.mono (fold_ok C2 PV.s (by omega_arith) A2 (by omega_arith) hc2)
       fun t3 ⟨z3, b3, h3, c3, O3, K3, mc3, x63, x73⟩ => K t3 H2 ?_)
     have Kt3 : Keeps [.eax, .ebx, .edx, .esi, .edi, .ebp] t t3 :=
       ((((K0.mono (by decide)).trans (P1.keep.mono (by decide))).trans (R2.keep.mono (by decide))).trans
         (K3.mono (by decide)))
     have O3' : Outs W [(0, L)] t2.mem t3.mem := outs_widen O3 fun y hy r hr => by
       have := hy _ (List.mem_singleton_self _)
-      simp only [List.mem_singleton] at hr; subst hr; simp only at this ⊢; omega
+      simp only [List.mem_singleton] at hr; subst hr; simp only at this ⊢; omega_arith
     have := A2.le
     have := A2.low
     exact ⟨C2.ws.of_keeps K3, C2.prm.keep O3' (K3.1 _ (by decide)) K3.2.1 K3.2.2, z3, b3,
       by rw [K3.1 _ (by decide)]; exact C2.ecx, h3, c3, A2.le,
-      Nat.le_trans A2.low (Nat.mul_le_mul_right _ (by omega)), by rw [← mem2]; exact O3, Kt3,
+      Nat.le_trans A2.low (Nat.mul_le_mul_right _ (by omega_arith)), by rw [← mem2]; exact O3, Kt3,
       by rw [mc3, R2.mcdt, P1.mcdt, mc0], by rw [x63, R2.x6, P1.x6, x60], by rw [x73, R2.x7, P1.x7, x70]⟩
   cases hi with
   | true =>
     have hkN := hhi.mp rfl
-    exact WP.seq (WP.mono (reduceHi_ok C1 PV hkN Ly.mo_le hs (hQ (by omega) (by omega)) (by omega) A1) post2)
+    exact WP.seq (WP.mono (reduceHi_ok C1 PV hkN Ly.mo_le hs (hQ (by omega_arith) (by omega_arith)) (by omega_arith) A1) post2)
   | false =>
-    have hkN : k < N := by have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega
+    have hkN : k < N := by have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega_arith
     have Wd : Window t1 W N mo k q := by
       have Wt := I.win hkN
       refine ⟨by rw [P1.x6, x60]; exact Wt.q1, by rw [P1.x6, x60]; exact Wt.q2, ?_, ?_⟩
       · rw [P1.x7, x70, Wt.m1, mem1]
       · rw [P1.x7, x70, Wt.m2, mem1]
-    exact WP.seq (WP.mono (reduceLo_ok C1 PV hkN Ly.mo_le hs (hQ (by omega) (by omega)) Wd (by omega) A1) post2)
+    exact WP.seq (WP.mono (reduceLo_ok C1 PV hkN Ly.mo_le hs (hQ (by omega_arith) (by omega_arith)) Wd (by omega_arith) A1) post2)
 
 /-- What a column's last block takes from `fold`'s state: the memory as at
 the column's start but the sums, the modulus and the inverse as they were. -/
@@ -325,12 +325,12 @@ theorem folded_facts {s0 t t4 : State} {W : Addr} {L : Nat} {V : Nat → BitVec 
   have O5 : Outs W [(S, 8 * N + 28)] s0.mem t4.mem :=
     I.out.trans (outs_widen F.out fun y hy r hr => by
       have := hy _ (List.mem_singleton_self _)
-      simp only [List.mem_singleton] at hr; subst hr; simp only at this ⊢; omega)
-  refine ⟨O5, Outs.w32 O5 (by have := Ly.sinv; simp only [List.mem_singleton, forall_eq]; omega)
-      (by have := Ly.inv_le; omega), ?_, digits_out hn O5 Ly.mo_le Ly.smo⟩
+      simp only [List.mem_singleton] at hr; subst hr; simp only at this ⊢; omega_arith)
+  refine ⟨O5, Outs.w32 O5 (by have := Ly.sinv; simp only [List.mem_singleton, forall_eq]; omega_arith)
+      (by have := Ly.inv_le; omega_arith), ?_, digits_out hn O5 Ly.mo_le Ly.smo⟩
   rw [digits, Nat.mul_zero, Nat.add_zero]
-  exact Outs.w32 O5 (by have := Ly.smo; simp only [List.mem_singleton, forall_eq]; omega)
-    (by have := Ly.mo_le; omega)
+  exact Outs.w32 O5 (by have := Ly.smo; simp only [List.mem_singleton, forall_eq]; omega_arith)
+    (by have := Ly.mo_le; omega_arith)
 
 /-- A column's last block while `k < N`: the digit stored and into the window,
 the carry stored, `ecx` up a word. -/
@@ -357,19 +357,19 @@ theorem digitBlock_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {
         (dword (u.xmm .xmm6) 0).toNat = (Z % 2 ^ 32 * w32 t.mem W inv) % 2 ^ 32 ∧
         dword (u.xmm .xmm6) 2 = dword (t.xmm .xmm6) 0 ∧ u.xmm .xmm7 = t.xmm .xmm7 := by
   have hn := hw.nowrap
-  have hk : k < 2 * N := by omega
+  have hk : k < 2 * N := by omega_arith
   refine WP.block_append (WP.mono (digit_ok hw P hcx hkN hN4 hM hI hs hm hi sep hb hz hH)
     fun t6 ⟨d6, q6, hh6, O6, K6, mc6, w60, w62, w67⟩ => ?_)
   have hw6 := hw.of_keeps K6
   have O6' : Outs W [(0, L)] t.mem t6.mem := outs_sub2 O6 (List.mem_singleton_self _) (Nat.zero_le _)
-    (by simp only; omega) (List.mem_singleton_self _) (Nat.zero_le _) (by simp only; omega)
+    (by simp only; omega_arith) (List.mem_singleton_self _) (Nat.zero_le _) (by simp only; omega_arith)
   have P6 : Params t6 W L V 12 := P.keep O6' (K6.1 _ (by decide)) K6.2.1 K6.2.2
   have b6 : PtrAt t6 W .ebx S := by rw [PtrAt, K6.1 _ (by decide)]; exact hb
   have ecx6 : t6.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [K6.1 _ (by decide)]; exact hcx
-  refine WP.block_append (WP.mono (carry_ok hw6 (by omega) b6) fun t7 ⟨cl, ch, O7, K7, mc7, x7⟩ => ?_)
+  refine WP.block_append (WP.mono (carry_ok hw6 (by omega_arith) b6) fun t7 ⟨cl, ch, O7, K7, mc7, x7⟩ => ?_)
   have hw7 := hw6.of_keeps K7
   have O7' : Outs W [(0, L)] t6.mem t7.mem := outs_sub1 O7 (List.mem_singleton_self _) (Nat.zero_le _)
-    (by simp only; omega)
+    (by simp only; omega_arith)
   have P7 : Params t7 W L V 12 := P6.keep O7' (K7.1 _ (by decide)) K7.2.1 K7.2.2
   have ecx7 : t7.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [K7.1 _ (by decide)]; exact ecx6
   refine WP.mono (step_ok P7 hN4 ecx7 hk hN28 false) fun u ⟨ecxu, zfu, Ku, mu, mcu, xu⟩ => ?_
@@ -380,11 +380,11 @@ theorem digitBlock_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {
     by rw [mcu, mc7, mc6], by rw [xu, x7]; exact w60, by rw [xu, x7]; exact w62, by rw [xu, x7, w67]⟩
   · rw [mu, cl, d6]
   · rw [mu, ch, d6]
-  · rw [mu, Outs.w32 O7 (by simp only [List.mem_singleton, forall_eq]; omega) (by omega), q6]
+  · rw [mu, Outs.w32 O7 (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith), q6]
   · rw [mu]
-    refine (outs_sub2 O6 (r := (S + 8, 16)) (List.mem_cons_self ..) (Nat.le_refl _) (by simp only; omega)
+    refine (outs_sub2 O6 (r := (S + 8, 16)) (List.mem_cons_self ..) (Nat.le_refl _) (by simp only; omega_arith)
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) (Nat.le_refl _) (Nat.le_refl _)).trans
-      (outs_sub1 O7 (List.mem_cons_self ..) (by simp only; omega) (by simp only; omega))
+      (outs_sub1 O7 (List.mem_cons_self ..) (by simp only; omega_arith) (by simp only; omega_arith))
 
 /-- A column while `k < N`: its digit stored and into the window. -/
 theorem columnLo_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N S mo inv o a b k c : Nat}
@@ -398,33 +398,33 @@ theorem columnLo_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} 
   have hN28 := Ly.hN28
   have hs := Ly.s_le
   have hcb := I.bound
-  have hk : k < 2 * N := by omega
+  have hk : k < 2 * N := by omega_arith
   unfold column
   simp only [seqs]
   rw [show (if false = true then VG.Impl.Mont.X86.Sse2.word else digit) = digit from rfl]
   simp only [List.append_assoc]
-  refine sums_ok Ly PV hm0 I hk sq false hsq (by simp; omega) fun t4 H F => ?_
+  refine sums_ok Ly PV hm0 I hk sq false hsq (by simp; omega_arith) fun t4 H F => ?_
   obtain ⟨O4, iv4, m04, mo4⟩ := folded_facts Ly I F
-  refine WP.mono (digitBlock_ok F.ws F.prm F.ecx hkN PV.n4 hN28 PV.mo PV.inv (by omega)
-    (by have := Ly.mo_le; omega) Ly.inv_le (by have := Ly.smo; omega) F.ebx F.z F.hw)
+  refine WP.mono (digitBlock_ok F.ws F.prm F.ecx hkN PV.n4 hN28 PV.mo PV.inv (by omega_arith)
+    (by have := Ly.mo_le; omega_arith) Ly.inv_le (by have := Ly.smo; omega_arith) F.ebx F.z F.hw)
     fun u ⟨Hl, Hh, hHl, hHw, cl, ch, qw, Ou4, wsu, Pu, ecxu, zfu, Ku, mcu, w60, w62, w67⟩ => ?_
   rw [iv4, m04] at hHw cl ch
   rw [iv4] at qw w60
   have hsl : slot N k = N - 1 - k := by unfold slot; rw [ite_eq_left hkN]
   have Ou : Outs W [(S, 24), (S + 24 + 4 * slot N k, 4)] t.mem u.mem := by
     rw [hsl]
-    refine (outs_sub1 F.out (List.mem_cons_self ..) (Nat.le_refl _) (by simp only; omega)).trans
-      (outs_sub2 Ou4 (List.mem_cons_self ..) (by simp only; omega) (by simp only; omega)
+    refine (outs_sub1 F.out (List.mem_cons_self ..) (Nat.le_refl _) (by simp only; omega_arith)).trans
+      (outs_sub2 Ou4 (List.mem_cons_self ..) (by simp only; omega_arith) (by simp only; omega_arith)
         (List.mem_cons_of_mem _ (List.mem_singleton_self _)) (Nat.le_refl _) (Nat.le_refl _))
   have Owide : Outs W [(S, 8 * N + 28)] t.mem u.mem := by
     rw [hsl] at Ou
-    exact outs_sub2 Ou (List.mem_singleton_self _) (Nat.le_refl _) (by simp only; omega)
-      (List.mem_singleton_self _) (by simp only; omega) (by simp only; omega)
+    exact outs_sub2 Ou (List.mem_singleton_self _) (Nat.le_refl _) (by simp only; omega_arith)
+      (List.mem_singleton_self _) (by simp only; omega_arith) (by simp only; omega_arith)
   have hP := coeff_le s0.mem W b (N := N) (k := k) (digits s0.mem W a) (digits_lt _ _ _)
   have hQ := coeff_le s0.mem W mo (N := N) (k := k) (Column.prefixDigits q k) (fun i => by
       unfold Column.prefixDigits; split
       · exact I.qlt i
-      · omega)
+      · omega_arith)
   have fl := F.le
   have fw := F.low
   generalize hAB : Column.coeff (digits s0.mem W a) (digits s0.mem W b) N k = AB at fl fw hP hHw cl ch qw w60
@@ -432,7 +432,7 @@ theorem columnLo_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} 
   have hM0 := digits_lt s0.mem W mo 0
   generalize hq : ((AB + QM + c) % 2 ^ 64 % 2 ^ 32 * w32 s0.mem W inv) % 2 ^ 32 = qk at hHw cl ch qw w60
   have hq32 : qk < 2 ^ 32 := by rw [← hq]; exact Nat.mod_lt _ (by decide)
-  have hqm : qk * digits s0.mem W mo 0 ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1) := Nat.mul_le_mul (by omega) hM0
+  have hqm : qk * digits s0.mem W mo 0 ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1) := Nat.mul_le_mul (by omega_arith) hM0
   have h0 : digits s0.mem W mo 0 = w32 s0.mem W mo := by simp only [digits, Nat.mul_zero, Nat.add_zero]
   have cancel := cancel_digit (2 ^ 32) (AB + QM + c) (digits s0.mem W mo 0) (w32 s0.mem W inv)
     (by rw [h0]; exact hinv)
@@ -493,19 +493,19 @@ theorem wordBlock_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N
   refine WP.block_append (WP.mono (word_ok hw P hN4 hcx hk hs hb) fun t6 ⟨w6, O6, K6, mc6, x6⟩ => ?_)
   have hw6 := hw.of_keeps K6
   have O6' : Outs W [(0, L)] t.mem t6.mem := outs_sub1 O6 (List.mem_singleton_self _) (Nat.zero_le _)
-    (by simp only; omega)
+    (by simp only; omega_arith)
   have P6 : Params t6 W L V 12 := P.keep O6' (K6.1 _ (by decide)) K6.2.1 K6.2.2
   have b6 : PtrAt t6 W .ebx S := by rw [PtrAt, K6.1 _ (by decide)]; exact hb
   have ecx6 : t6.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [K6.1 _ (by decide)]; exact hcx
   have r8 : w32 t6.mem W (S + 8) = w32 t.mem W (S + 8) :=
-    Outs.w32 O6 (by simp only [List.mem_singleton, forall_eq]; omega) (by omega)
+    Outs.w32 O6 (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith)
   have r12 : w32 t6.mem W (S + 12) = w32 t.mem W (S + 12) :=
-    Outs.w32 O6 (by simp only [List.mem_singleton, forall_eq]; omega) (by omega)
+    Outs.w32 O6 (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith)
   have edx6 : t6.gpr .edx = t.gpr .edx := K6.1 _ (by decide)
-  refine WP.block_append (WP.mono (carry_ok hw6 (by omega) b6) fun t7 ⟨cl, ch, O7, K7, mc7, x7⟩ => ?_)
+  refine WP.block_append (WP.mono (carry_ok hw6 (by omega_arith) b6) fun t7 ⟨cl, ch, O7, K7, mc7, x7⟩ => ?_)
   have hw7 := hw6.of_keeps K7
   have O7' : Outs W [(0, L)] t6.mem t7.mem := outs_sub1 O7 (List.mem_singleton_self _) (Nat.zero_le _)
-    (by simp only; omega)
+    (by simp only; omega_arith)
   have P7 : Params t7 W L V 12 := P6.keep O7' (K7.1 _ (by decide)) K7.2.1 K7.2.2
   have ecx7 : t7.gpr .ecx = BitVec.ofNat 32 (4 * k) := by rw [K7.1 _ (by decide)]; exact ecx6
   refine WP.mono (step_ok P7 hN4 ecx7 hk hN28 true) fun u ⟨ecxu, zfu, Ku, mu, mcu, xu⟩ => ?_
@@ -513,7 +513,7 @@ theorem wordBlock_ok {t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N
     P7.keep (by rw [mu]; exact Outs.refl _ _ _) (Ku.1 _ (by decide)) Ku.2.1 Ku.2.2, ecxu,
     by rw [zfu]; simp, ((K6.mono (by decide)).trans (K7.mono (by decide))).trans (Ku.mono (by decide)),
     by rw [mcu, mc7, mc6]⟩
-  · rw [mu, Outs.w32 O7 (by simp only [List.mem_singleton, forall_eq]; omega) (by omega), w6]
+  · rw [mu, Outs.w32 O7 (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith), w6]
   · rw [mu]
     exact (outs_sub1 O6 (List.mem_cons_of_mem _ (List.mem_singleton_self _)) (Nat.le_refl _) (Nat.le_refl _)).trans
       (outs_sub1 O7 (List.mem_cons_self ..) (Nat.le_refl _) (Nat.le_refl _))
@@ -532,20 +532,20 @@ theorem columnHi_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} 
   unfold column
   simp only [seqs]
   simp only [↓reduceIte, List.append_assoc]
-  refine sums_ok Ly PV hm0 I hk sq true hsq (by simp; omega) fun t4 H F => ?_
-  refine WP.mono (wordBlock_ok F.ws F.prm F.ecx hk PV.n4 hN28 (by omega) F.ebx)
+  refine sums_ok Ly PV hm0 I hk sq true hsq (by simp; omega_arith) fun t4 H F => ?_
+  refine WP.mono (wordBlock_ok F.ws F.prm F.ecx hk PV.n4 hN28 (by omega_arith) F.ebx)
     fun u ⟨cl, ch, ww, Ou4, wsu, Pu, ecxu, zfu, Ku, mcu⟩ => ?_
   have hsl : slot N k = 2 * N - 1 - k := by unfold slot; rw [ite_eq_right (by omega_using [hkN])]
   have Ou : Outs W [(S, 24), (S + 24 + 4 * slot N k, 4)] t.mem u.mem := by
     rw [hsl]
-    refine (outs_sub1 F.out (List.mem_cons_self ..) (Nat.le_refl _) (by simp only; omega)).trans
-      (outs_sub2 Ou4 (List.mem_cons_self ..) (by simp only; omega) (by simp only; omega)
+    refine (outs_sub1 F.out (List.mem_cons_self ..) (Nat.le_refl _) (by simp only; omega_arith)).trans
+      (outs_sub2 Ou4 (List.mem_cons_self ..) (by simp only; omega_arith) (by simp only; omega_arith)
         (List.mem_cons_of_mem _ (List.mem_singleton_self _)) (Nat.le_refl _) (Nat.le_refl _))
   have hP := coeff_le s0.mem W b (N := N) (k := k) (digits s0.mem W a) (digits_lt _ _ _)
   have hQ := coeff_le s0.mem W mo (N := N) (k := k) (Column.prefixDigits q k) (fun i => by
       unfold Column.prefixDigits; split
       · exact I.qlt i
-      · omega)
+      · omega_arith)
   have fl := F.le
   have fw := F.low
   have fz := F.z
@@ -579,7 +579,7 @@ theorem column_ok {s0 t : State} {W : Addr} {L : Nat} {V : Nat → BitVec 32} {N
         u.zf = some (decide (k + 1 = if hi then 2 * N else N)) := by
   cases hi with
   | false =>
-    have hkN : k < N := by have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega
+    have hkN : k < N := by have : ¬ N ≤ k := fun h => absurd (hhi.mpr h) (by decide); omega_arith
     exact columnLo_ok Ly PV hinv hm0 I hkN sq hsq
   | true => exact columnHi_ok Ly PV hm0 I (hhi.mp rfl) hk sq hsq
 

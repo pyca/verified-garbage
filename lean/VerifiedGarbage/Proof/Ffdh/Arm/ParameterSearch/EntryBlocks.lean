@@ -21,12 +21,7 @@ theorem entryHead_ok (s : State) {p : SearchParams} (h : EntryArguments p s)
       VG.Impl.Ffdh.Arm.ParameterSearch.stf .r2 6, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 7]) s fun t =>
       (t.gpr .r4 = p.control ∧ t.mem = writeLow s.mem p.control
         [(5, p.c.out), (6, p.c.usedPtr), (7, BitVec.ofNat 32 p.c.bits)]) ∧ Rest [.r4] s t := by
-  refine withRest [.r4] ?_ (by
-    intro r hr i hi
-    simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
-    have ne : r ≠ .r4 := by simpa only [List.mem_singleton] using hr
-    rcases hi with rfl | rfl | rfl | rfl <;>
-      simp [VG.Impl.Ffdh.Arm.ParameterSearch.stf, clobbers, dstOf, Ne.symm ne]) (by rfl)
+  refine withRest_all [.r4] ?_ (by rfl) (by rfl)
   have arg := h.incoming 5 (by decide)
   have addr44 : State.addr (s.sp + 44#32) = off (State.addr s.sp) 44 :=
     VG.Arm.addr_add (by have := arg.fits; omega)
@@ -45,12 +40,7 @@ theorem entryHead_ok (s : State) {p : SearchParams} (h : EntryArguments p s)
 theorem entryZero_ok (s : State) {p : SearchParams} (h : EntryContext p s) :
     WP isa (.block [.mov .r3 (.imm 0), VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 4]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr p.control) 32) (0#32) ∧ Rest [.r3] s t := by
-  refine withRest [.r3] ?_ (by
-    intro r hr i hi
-    simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
-    have ne : r ≠ .r3 := by simpa only [List.mem_singleton] using hr
-    rcases hi with rfl | rfl <;>
-      simp [VG.Impl.Ffdh.Arm.ParameterSearch.stf, clobbers, dstOf, Ne.symm ne]) (by rfl)
+  refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.stf
   ffrun [h.controller.addr (by decide : 4 < 16), h.controller.write (by decide : 4 < 16)]
   rfl

@@ -43,14 +43,14 @@ def lim (w0 w1 w2 : Nat) : Nat → Nat
 theorem lim_val {w0 w1 : Nat} (h0 : w0 < 2 ^ 64) (h1 : w1 < 2 ^ 64) (w2 : Nat) :
     val (lim w0 w1 w2) = w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 := by
   have := h0; have := h1
-  simp only [val, lim]; omega
+  simp only [val, lim]; omega_arith
 
 theorem lim_lt {w0 w1 w2 : Nat} (h0 : w0 < 2 ^ 64) (h1 : w1 < 2 ^ 64) (h2 : w2 ≤ 4) :
     ∀ i < 5, lim w0 w1 w2 i < 2 ^ 27 := by
   have := h0; have := h1; have := h2
   intro i hi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
-    simp only [lim] <;> omega
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl <;>
+    simp only [lim] <;> omega_arith
 
 theorem or_low {a n : Nat} (ha : a < 2 ^ n) (x : Nat) : (a ||| 2 ^ n * x) = a + 2 ^ n * x := by
   rw [Nat.or_comm, ← Nat.two_pow_add_eq_or_of_lt ha, Nat.add_comm]
@@ -76,16 +76,16 @@ theorem limbs_ok (s : State) (hm : (s.gpr .x16).toNat = 2 ^ 26 - 1) :
   · have w0 := (s.gpr .x4).isLt; have w1 := (s.gpr .x5).isLt
     have hm' : s.gpr .x16 = BitVec.ofNat 64 (2 ^ 26 - 1) := by
       apply BitVec.eq_of_toNat_eq; rw [hm]; rfl
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [X, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, Size.bits,
         BitVec.setWidth_eq, hm', BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft,
         BitVec.toNat_or, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, lim] <;>
       try simp only [and_mask26]
-    · rw [show (s.gpr .x5).toNat * 2 ^ 12 % 2 ^ 64 = 2 ^ 12 * ((s.gpr .x5).toNat % 2 ^ 52) by omega,
-        or_low (by omega)]
-      omega
-    · rw [show (s.gpr .x6).toNat * 2 ^ 24 % 2 ^ 64 = 2 ^ 24 * (s.gpr .x6).toNat by omega, or_low (by omega)]
-      omega
+    · rw [show (s.gpr .x5).toNat * 2 ^ 12 % 2 ^ 64 = 2 ^ 12 * ((s.gpr .x5).toNat % 2 ^ 52) by omega_arith,
+        or_low (by omega_arith)]
+      omega_arith
+    · rw [show (s.gpr .x6).toNat * 2 ^ 24 % 2 ^ 64 = 2 ^ 24 * (s.gpr .x6).toNat by omega_arith, or_low (by omega_arith)]
+      omega_arith
   · simp only [limbRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h9, h10, h11, h12, h13, h14⟩ := hr
     simp (disch := assumption) only [RegUpd.gpr_write_of_ne]
@@ -231,7 +231,7 @@ theorem powers_ok {s : State} {R : Nat} (hk : Radix64.Keys R s) (hm : (s.gpr .x1
     simp only [hval]
     rw [g02 .x4 (by decide), g02 .x5 (by decide), g02 .x6 (by decide), a4, a5, a6,
       ← key2 .x7 (by decide), ← key2 .x8 (by decide)] at *
-    rw [← hR, key2 .x7 (by decide), key2 .x8 (by decide)]; omega
+    rw [← hR, key2 .x7 (by decide), key2 .x8 (by decide)]; omega_arith
   have x62 : (s2.gpr .x6).toNat = 0 := by rw [g02 .x6 (by decide), a6]
   -- the keys, in any state that keeps them
   have keyOf : ∀ u : State, u.gpr .x7 = s.gpr .x7 → u.gpr .x8 = s.gpr .x8 → u.gpr .x17 = s.gpr .x17 →
@@ -241,7 +241,7 @@ theorem powers_ok {s : State} {R : Nat} (hk : Radix64.Keys R s) (hm : (s.gpr .x1
   -- r²
   obtain ⟨kr0, kr1, ks1, kR⟩ := keyOf s2 (key2 .x7 (by decide)) (key2 .x8 (by decide)) (key2 .x17 (by decide))
   refine WP.block_append (WP.mono (WP.keepV (mul_ok s2 kr0 kr1 hq ks1)) fun s3 ⟨⟨hm3, k3⟩, v3⟩ => ?_)
-  obtain ⟨e3, b3⟩ := hm3 (by omega)
+  obtain ⟨e3, b3⟩ := hm3 (by omega_arith)
   rw [kR, h2] at e3
   have key3 : ∀ r ∈ [Reg.x7, .x8, .x16, .x17, .x0, .x1, .x2, .x3], s3.gpr r = s.gpr r := fun r hr => by
     rw [k3.1 r (by revert hr; decide +revert), key2 r hr]
@@ -258,7 +258,7 @@ theorem powers_ok {s : State} {R : Nat} (hk : Radix64.Keys R s) (hm : (s.gpr .x1
   -- r³
   obtain ⟨kr0, kr1, ks1, kR⟩ := keyOf s7 (key7 .x7 (by decide)) (key7 .x8 (by decide)) (key7 .x17 (by decide))
   refine WP.block_append (WP.mono (WP.keepV (mul_ok s7 kr0 kr1 hq ks1)) fun s8 ⟨⟨hm8, k8⟩, v8⟩ => ?_)
-  obtain ⟨e8, b8⟩ := hm8 (by rw [g37 .x6 (by decide)]; omega)
+  obtain ⟨e8, b8⟩ := hm8 (by rw [g37 .x6 (by decide)]; omega_arith)
   rw [kR, h7] at e8
   have key8 : ∀ r ∈ [Reg.x7, .x8, .x16, .x17, .x0, .x1, .x2, .x3], s8.gpr r = s.gpr r := fun r hr => by
     rw [k8.1 r (by revert hr; decide +revert), key7 r hr]
@@ -273,7 +273,7 @@ theorem powers_ok {s : State} {R : Nat} (hk : Radix64.Keys R s) (hm : (s.gpr .x1
   -- r⁴
   obtain ⟨kr0, kr1, ks1, kR⟩ := keyOf s10 (key10 .x7 (by decide)) (key10 .x8 (by decide)) (key10 .x17 (by decide))
   refine WP.block_append (WP.mono (WP.keepV (mul_ok s10 kr0 kr1 hq ks1)) fun s11 ⟨⟨hm11, k11⟩, v11⟩ => ?_)
-  obtain ⟨e11, b11⟩ := hm11 (by rw [g810 .x6 (by decide)]; omega)
+  obtain ⟨e11, b11⟩ := hm11 (by rw [g810 .x6 (by decide)]; omega_arith)
   rw [kR, h10] at e11
   have key11 : ∀ r ∈ [Reg.x7, .x8, .x16, .x17, .x0, .x1, .x2, .x3], s11.gpr r = s.gpr r := fun r hr => by
     rw [k11.1 r (by revert hr; decide +revert), key10 r hr]
@@ -282,11 +282,11 @@ theorem powers_ok {s : State} {R : Nat} (hk : Radix64.Keys R s) (hm : (s.gpr .x1
   refine WP.block_append (WP.mono (insLimbs_ok rV rV_inj (by decide) s12) fun s13 ⟨i13, k13⟩ => ?_)
   refine WP.block_append (WP.mono (insLimbs_ok rV rV_inj (by decide) s13) fun s14 ⟨i14, k14⟩ => ?_)
   refine WP.mono (insLimbs_ok fV fV_inj (by decide) s14) fun t ⟨it, kt⟩ => ?_
-  have b0 : (s0.gpr .x6).toNat ≤ 4 := by omega
+  have b0 : (s0.gpr .x6).toNat ≤ 4 := by omega_arith
   have lv : ∀ u : State, val (limOf u) = hval u := fun u => lim_val (u.gpr .x4).isLt (u.gpr .x5).isLt _
   have h0 : hval s0 = R := by
     show (s0.gpr .x4).toNat + 2 ^ 64 * (s0.gpr .x5).toNat + 2 ^ 128 * (s0.gpr .x6).toNat = R
-    rw [a4, a5, a6]; omega
+    rw [a4, a5, a6]; omega_arith
   -- the limbs' registers at each insertion
   have x1 : ∀ i < 5, (s1.gpr (X i)).toNat % 2 ^ 32 = limOf s0 i := fun i hi => by rw [l1 b0 i hi, lim_word b0 hi]
   have x4' : ∀ i < 5, (s4.gpr (X i)).toNat % 2 ^ 32 = limOf s3 i := fun i hi => by rw [l4 b3 i hi, lim_word b3 hi]
@@ -310,13 +310,13 @@ theorem powers_ok {s : State} {R : Nat} (hk : Radix64.Keys R s) (hm : (s.gpr .x1
     rw [kt.v _ fun j hj => rf i hi j hj, i14 i hi c hc, x13 i hi, i13 i hi c hc, x12 i hi,
       congrFun v12 (rV i), congrFun v11 (rV i), k10.v _ fun j hj => rf i hi j hj, congrFun v9 (rV i),
       congrFun v8 (rV i), k7.v _ fun j hj => rf i hi j hj, i6 i hi c hc, x5 i hi, i5 i hi c hc, x4' i hi]
-    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> rfl
   · -- the words of the last group's multipliers
     rw [it i hi c hc, x14 i hi, k14.v _ fun j hj => fr i hi j hj, k13.v _ fun j hj => fr i hi j hj,
       congrFun v12 (fV i), congrFun v11 (fV i), i10 i hi c hc, x9 i hi, congrFun v9 (fV i), congrFun v8 (fV i),
       i7 i hi c hc, x6' i hi, k6.v _ fun j hj => fr i hi j hj, k5.v _ fun j hj => fr i hi j hj,
       congrFun v4 (fV i), congrFun v3 (fV i), i2 i hi c hc, x1 i hi]
-    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> rfl
   · intro r hr
     rw [congrFun kt.gpr r, congrFun k14.gpr r, congrFun k13.gpr r, g12 r (by revert hr; decide +revert),
       key11 r hr]

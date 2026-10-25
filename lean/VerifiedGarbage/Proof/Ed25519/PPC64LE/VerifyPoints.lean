@@ -149,11 +149,11 @@ theorem verifyLhs_ok {s : State} (h : VCtx b pk sig ch s) :
     (p := sig + BitVec.ofNat 64 32) (by rw [k2.rest.gpr _ (by decide), e14])
     (fun i hi => by
       rw [Offset.add_add]
-      exact in_base (List.mem_append_left _ h2.sigR) (by omega) (by omega)) hpd)
+      exact in_base (List.mem_append_left _ h2.sigR) (by omega_arith) (by omega_arith)) hpd)
     fun s3 ⟨r3, f3, p3, _⟩ => ?_)
   have hb2 : bytesAt s2.mem (sig + BitVec.ofNat 64 32) (2 * 16) = bytesAt s.mem (sig + BitVec.ofNat 64 32) 32 := by
     rw [← u1.mem]
-    exact bytesAt_ws k2.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega))
+    exact bytesAt_ws k2.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith))
       hpd (by decide)
   rw [hb2, p2] at p3
   have hc3 : Ctx8 b s3 := h2.ctx.of_rest r3 (by decide)
@@ -195,26 +195,26 @@ theorem verifyRhsPre_ok {s : State} (h : VCtx b pk sig ch s) :
   have hk3 : ∀ o, 1024 ≤ o → o + 128 ≤ 8192 → tableAt s3.mem b o = tableAt s.mem b o := fun o ho ho' => by
     rw [← u1.mem, m3]
     exact tableAt_keep f2 fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   have hpd : (⟨ch, 2 * 32⟩ : Region).Disjoint ⟨b, 8192⟩ := h.chD
   refine WP.seq (WP.mono (pointFromScalar_ok h3.ctx (count := 32) (by decide) (by decide) (p := ch)
     (by rw [u3.gpr, BitVec.add_zero, r2.gpr _ (by decide), u1.other _ (by decide), h.r31])
-    (fun i hi => in_base (List.mem_append_left _ h3.chR) (by omega) (by omega)) hpd)
+    (fun i hi => in_base (List.mem_append_left _ h3.chR) (by omega_arith) (by omega_arith)) hpd)
     fun s4 ⟨r4, f4, p4, d4⟩ => ?_)
   have hb3 : bytesAt s3.mem ch (2 * 32) = bytesAt s.mem ch 64 :=
-    bytesAt_ws hF3 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd (by decide)
+    bytesAt_ws hF3 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd (by decide)
   rw [hb3, m3, p2, u1.mem] at p4
   have hc4 : Ctx8 b s4 := h3.ctx.of_rest r4 (by decide)
   have hT4 : ∀ o, 7776 ≤ o → o + 128 ≤ 8192 → tableAt s4.mem b o = tableAt s.mem b o := fun o ho ho' => by
-    rw [← hk3 o (by omega) ho']
+    rw [← hk3 o (by omega_arith) ho']
     exact tableAt_keep f4 fun r hr => by
       have hB : BITSB = 32 := rfl
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   -- `[k] A` to slots 4–7, `R` to 0–3, their sum, then it to 4–7 and `[S] B` to 0–3.
   unfold verifyCombine copyPointToQ
   refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps hc4.ctx) fun s5 ⟨k5, e5⟩ => ?_)
@@ -229,7 +229,7 @@ theorem verifyRhsPre_ok {s : State} (h : VCtx b pk sig ch s) :
   refine WP.mono (pointFromTable_ok hc6 (o := 7904) (by rw [u6.gpr, hc5.r6]) (by decide) (by decide))
     fun s7 ⟨r7, f7, p7, k7⟩ => ?_
   rw [u6.mem, tableAt_keep k5.frame (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)),
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
     hT4 7904 (by decide) (by decide)] at p7
   have hc7 : Ctx8 b s7 := hc6.of_rest r7 (by decide)
   have hd7 : env s7.mem b 16 = Spec.Ed25519.d := by rw [k7 16 (by decide), u6.mem, qk 16 (by decide), d4]
@@ -250,11 +250,11 @@ theorem verifyRhsPre_ok {s : State} (h : VCtx b pk sig ch s) :
   have hFA : Frame [FA b] s7.mem s9.mem := k8.frame.trans k9.frame
   have hT9 : tableAt s9.mem b 8032 = tableAt s.mem b 8032 := by
     rw [tableAt_keep hFA (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)),
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
       tableAt_keep f7 (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)),
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
       u6.mem, tableAt_keep k5.frame (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)),
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
       hT4 8032 (by decide) (by decide)]
   rw [u10.mem, hT9] at p11
   have hq11 : point (env s11.mem b) 4 5 6 7 = point (env s9.mem b) 4 5 6 7 := by

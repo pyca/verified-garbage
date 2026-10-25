@@ -177,7 +177,7 @@ theorem checkVal_eq (sve : Bool) {L : Nat} (h : L < 2 ^ 64) :
   simp only [checkVal, lo, BitVec.ushiftRight_or_distrib, BitVec.toNat_or, Nat.or_eq_zero_iff,
     BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     Bool.false_eq_true, ite_true, ite_false] <;>
-  omega
+  omega_arith
 
 /-- The branch: to the code with `Short.lean`'s prologue iff `lo sve ≤ len ≤ 511`. -/
 theorem check_eval {sve : Bool} {s₀ s₁ : State} (h : s₁.gpr .x9 = checkVal sve (s₀.gpr .x5)) :
@@ -251,7 +251,7 @@ theorem routeVal_eq (sve enc : Bool) {L : Nat} (h : L < 2 ^ 64) :
   have h512 : L % 512 < 512 := Nat.mod_lt _ (by decide)
   generalize L % 512 = r at h512 ⊢
   cases sve <;> cases enc <;> simp only [wideLo, wideSh, Bool.false_eq_true, Bool.or_false,
-    Bool.or_true, ite_true, ite_false] <;> omega
+    Bool.or_true, ite_true, ite_false] <;> omega_arith
 
 /-- The branch: to the code with the pass of five blocks iff the length takes
 it. -/

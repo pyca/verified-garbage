@@ -31,7 +31,7 @@ theorem subWords_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
   have enc : ∀ d, d + 8 ≤ workSize large → d < 4096 * Size.x.bytes := by
     intro d hd
     change d < 32768
-    omega
+    omega_arith
   apply WP.of_runBlock
   simp only [fieldSubWords, borrowValue38, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, ld, exec, addr, State.load, read_x,
@@ -40,10 +40,10 @@ theorem subWords_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
     RegUpd.rd_addWithCarry, RegUpd.wr_addWithCarry, RegUpd.mem_addWithCarry,
     BitVec.setWidth_eq, hs.x0, hz, h38, Size.bytes,
     Nat.add_mod, ha, hb, Nat.reduceMod, Nat.zero_add,
-    enc a (by omega), enc b (by omega), enc (a + 8) (by omega), enc (b + 8) (by omega),
-    enc (a + 16) (by omega), enc (b + 16) (by omega), enc (a + 24) (by omega), enc (b + 24) (by omega),
-    w a (by omega), w b (by omega), w (a + 8) (by omega), w (b + 8) (by omega),
-    w (a + 16) (by omega), w (b + 16) (by omega), w (a + 24) (by omega), w (b + 24) (by omega),
+    enc a (by omega_arith), enc b (by omega_arith), enc (a + 8) (by omega_arith), enc (b + 8) (by omega_arith),
+    enc (a + 16) (by omega_arith), enc (b + 16) (by omega_arith), enc (a + 24) (by omega_arith), enc (b + 24) (by omega_arith),
+    w a (by omega_arith), w b (by omega_arith), w (a + 8) (by omega_arith), w (b + 8) (by omega_arith),
+    w (a + 16) (by omega_arith), w (b + 16) (by omega_arith), w (a + 24) (by omega_arith), w (b + 24) (by omega_arith),
     and_self, ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨carryOut (word s.mem base (a + 24)) (~~~word s.mem base (b + 24))
@@ -99,7 +99,7 @@ theorem subLow_ok (s : State) (h : (s.gpr .x8).toNat ≤ (s.gpr .x4).toNat) :
   refine ⟨?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
   · rw [BitVec.toNat_sub]
     have := (s.gpr .x4).isLt
-    omega
+    omega_arith
   · intro r hr
     exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)
 
@@ -156,7 +156,7 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   subst s₄
   refine ⟨Op.of_store ho (k3.mono (by decide)) _ _ _ _, ?_⟩
   simp only [F]
-  rw [fe_st4 _ _ (by have := ho.2; have := workSize_le large; omega)]
+  rw [fe_st4 _ _ (by have := ho.2; have := workSize_le large; omega_arith)]
   exact e3
 
 theorem borrow38Once_ok (s : State) (hz : s.gpr .x10 = 0) :
@@ -216,7 +216,7 @@ theorem sub1_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   refine ⟨Op.of_store ho (k0'.trans (k1'.trans k2')) _ _ _ _, ?_⟩
   simp only [F]
   apply toFe_sub
-  rw [fe_st4 _ _ (by have := ho.2; omega)]
+  rw [fe_st4 _ _ (by have := ho.2; omega_arith)]
   rw [k0.mem] at e1
   have hl := val4_lt (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7)
   have hl1 := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
@@ -226,7 +226,7 @@ theorem sub1_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   have : val4 (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7) + fe s.mem base b =
       fe s.mem base a + VG.Spec.X25519.P * (2 * (1 - c.toNat)) := by
     simp only [VG.Spec.X25519.P]
-    omega
+    omega_arith
   rw [this, Nat.add_mul_mod_self_left]
 
 end VG.Proof.Ed25519.AArch64

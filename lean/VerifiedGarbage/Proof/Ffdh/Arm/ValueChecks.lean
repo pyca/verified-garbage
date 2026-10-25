@@ -38,12 +38,7 @@ theorem isOne_ok (s : State) {base : BitVec 32} {len w a : Nat}
 theorem negateFlag_ok (s : State) :
     WP isa (.block [.dp .eor .r11 .r11 (.imm 1)]) s fun t =>
       (t.gpr .r11 = s.gpr .r11 ^^^ 1 ∧ t.mem = s.mem) ∧ Rest [.r11] s t := by
-  refine withRest [.r11] ?_ (by
-    intro r hr i hi
-    simp only [List.mem_singleton] at hr
-    simp only [instrs, List.mem_singleton] at hi
-    subst i
-    simp [clobbers, dstOf, Ne.symm hr]) (by rfl)
+  refine withRest_all [.r11] ?_ (by rfl) (by rfl)
   ffrun []
 
 theorem nonzero_ok (s : State) {base : BitVec 32} {len w a : Nat}

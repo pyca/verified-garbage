@@ -26,14 +26,7 @@ theorem shapeLast_ok (s : State) (n : Nat)
         t.mem = s.mem.writeW (State.addr (s.gpr .r4 + BitVec.ofNat 32 n - 1))
           (s.mem (State.addr (s.gpr .r4 + BitVec.ofNat 32 n - 1)) ||| 1)) ∧
         Rest [.r3, .r4, .r5] s t := by
-  refine withRest [.r3, .r4, .r5] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.shapeLast : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4, .r5] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.shapeLast
   ffrun [show (12#32) = (12 : BitVec 32) from rfl, BitVec.add_zero,
     slotRead, slot, read, write, byteOrOne]

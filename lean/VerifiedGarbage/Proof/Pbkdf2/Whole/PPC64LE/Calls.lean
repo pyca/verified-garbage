@@ -81,14 +81,14 @@ theorem hi_call {s : State} {inn ou k : Addr} {kl : Nat} (h : HiArgs hF s inn ou
   have hS := hF.hH.hS
   refine WP.callAny (k := hiK hF.hH.SH hF.X) hF.hi (rd := [⟨k, kl⟩])
     (wr := [⟨inn, hF.hH.SH.stateBytes⟩, ⟨ou, hF.hH.SH.stateBytes⟩]) h.pre (by rw [hS]; exact h.hc)
-    (by rw [hS]; exact h.hw) ?_ (by have := hF.hiSd; have := hF.hX; omega)
+    (by rw [hS]; exact h.hw) ?_ (by have := hF.hiSd; have := hF.hX; omega_arith)
   intro s' hrd hwr hsp' hf hcs hpost
   sig_post [Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig, Spec.Hmac.initPost, PPC64LE.abi,
     PPC64LE.argRegs] at hpost
   simp only [h.h3, h.h4, h.h5, h.h6] at hpost
   refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost.1 hpost.2
   rw [hS] at hf
-  exact Frame.below_mono hf hF.hiSd (by have := hF.hX; omega)
+  exact Frame.below_mono hf hF.hiSd (by have := hF.hX; omega_arith)
 
 /-- Two runs of a call of HMAC's `init` with the same arguments. -/
 theorem hi_rel {P : State → State → Prop} {inn ou k : Addr} {kl : Nat}
@@ -155,7 +155,7 @@ theorem hf_call {s : State} {inn ou o sc : Addr} (h : HfArgs F s inn ou o sc) {Q
   have hS := hF.hH.hS; have hD := hF.hH.hD; have hB := hF.hH.hB
   have hfd : F.H.finalize.fdepth ≤ 2 := by
     have := VG.Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_fdepth hF.hH
-    simp only [Hash.finalize, Code.fdepth, Nat.max_le]; omega
+    simp only [Hash.finalize, Code.fdepth, Nat.max_le]; omega_arith
   have hpf : pushFrames F.H.finalize = true := by
     simp [Hash.finalize, pushFrames, Instr.isPush, VG.Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_pf hF.hH]
   have c3 : s.callEntry.gpr .r3 = inn := (State.callEntry_gpr _ (by decide)).trans h.h3
@@ -163,13 +163,13 @@ theorem hf_call {s : State} {inn ou o sc : Addr} (h : HfArgs F s inn ou o sc) {Q
   have c5 : s.callEntry.gpr .r5 = s.gpr .r5 := State.callEntry_gpr _ (by decide)
   have c6 : s.callEntry.gpr .r6 = o := (State.callEntry_gpr _ (by decide)).trans h.h6
   refine WP.callF (k := finG hF.hH.SH (F.H.W + 48 + F.H.FD) 96) (fin_ok hF) (h.pre hF)
-    (by rw [hS, hD]; exact h.hc) (by rw [hS, hD]; exact h.hw) ?_ (by omega) hpf
+    (by rw [hS, hD]; exact h.hc) (by rw [hS, hD]; exact h.hw) ?_ (by omega_arith) hpf
   intro s' hrd hwr hsp' hf hcs hpost
   simp only [finG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6,
     hD, hB] at hpost
   refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost
   rw [hS, hD] at hf
-  exact Frame.below_mono hf (by omega) (by omega)
+  exact Frame.below_mono hf (by omega_arith) (by omega_arith)
 
 include hF in
 /-- Two runs of a call of HMAC's `finalize` with the same arguments. -/
@@ -244,7 +244,7 @@ theorem it_call {s : State} {key u t sc : Addr} (h : ItArgs F s key u t sc) {Q :
   have hS := hF.hH.hS; have hD := hF.hH.hD; have hB := hF.hH.hB
   have hfd : (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H).fdepth ≤ 2 := by
     have := VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_fdepth hF.hH
-    simp only [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, Code.fdepth, Nat.max_le]; omega
+    simp only [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, Code.fdepth, Nat.max_le]; omega_arith
   have hpf : pushFrames (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H) = true := by
     simp [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, pushFrames, Instr.isPush,
       VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_pf hF.hH]
@@ -253,13 +253,13 @@ theorem it_call {s : State} {key u t sc : Addr} (h : ItArgs F s key u t sc) {Q :
   have c5 : s.callEntry.gpr .r5 = s.gpr .r5 := State.callEntry_gpr _ (by decide)
   have c6 : s.callEntry.gpr .r6 = t := (State.callEntry_gpr _ (by decide)).trans h.h6
   refine WP.callF (k := iterG hF.hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H) 96) (it_ok hF) (h.pre hF)
-    (by rw [hS, hD]; exact h.hc) (by rw [hD]; exact h.hw) ?_ (by omega) hpf
+    (by rw [hS, hD]; exact h.hc) (by rw [hD]; exact h.hw) ?_ (by omega_arith) hpf
   intro s' hrd hwr hsp' hf hcs hpost
   simp only [iterG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6,
     hD, hB, hS] at hpost
   refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost
   rw [hD] at hf
-  exact Frame.below_mono hf (by omega) (by omega)
+  exact Frame.below_mono hf (by omega_arith) (by omega_arith)
 
 include hF in
 /-- Two runs of a call of `iterate` with the same arguments. -/

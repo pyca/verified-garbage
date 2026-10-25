@@ -72,7 +72,7 @@ theorem Clear.miss {H : Region} {s : State} (hc : Clear H s) {rs : List Region} 
 theorem overlay_read {H : Region} {hv m : Mem} {a : Addr} {n : Nat} (hn : n < 2 ^ 64)
     (h : ∀ x, (x - a).toNat < n → ¬ H.Contains x 1) : (overlay H hv m).read a n = m.read a n :=
   Mem.read_congr fun i hi => by
-    have := h (a + BitVec.ofNat 64 i) (by rw [Mem.sub_ofNat_toNat a (by omega)]; exact hi)
+    have := h (a + BitVec.ofNat 64 i) (by rw [Mem.sub_ofNat_toNat a (by omega_arith)]; exact hi)
     simp only [overlay, this, ite_false]
 
 theorem overlay_readW {H : Region} {hv m : Mem} {a : Addr} {w : Nat} (hn : w / 8 < 2 ^ 64)
@@ -218,10 +218,10 @@ theorem loadMasked512B_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) :
   by_cases hi : ∀ j ∈ State.bOn k, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 j) 1
   · rw [ite_eq_left hi, ite_eq_left hi]
     refine congrArg some (Mem.readW_congr fun j hj => ?_)
-    rw [Mem.sub_ofNat_toNat a (by omega)]
+    rw [Mem.sub_ofNat_toNat a (by omega_arith)]
     by_cases hk : k.getLsbD j
     · simp only [hk, ite_true, State.patch, overlay]
-      rw [ite_eq_right (hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr (by omega), hk⟩))
+      rw [ite_eq_right (hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr (by omega_arith), hk⟩))
         (show (a + BitVec.ofNat 64 j - (a + BitVec.ofNat 64 j)).toNat < 1 by simp))]
     · simp only [hk, Bool.false_eq_true, ↓reduceIte]
   · rw [ite_eq_right hi, ite_eq_right hi]
@@ -830,7 +830,7 @@ theorem Exec.lifts_self (h' : Addr) {c : Prog isa} (hc : c.noCalls = true) {s s'
   induction h with
   | block h =>
     refine ⟨1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
     have hl := execBlock_length h
     simp only [liftT, List.length_append, hl, Nat.le_add_right, ite_true, List.take_left', List.drop_left']
   | @seq c₁ c₂ _ _ _ t₁ t₂ _ _ ih₁ ih₂ =>
@@ -838,33 +838,33 @@ theorem Exec.lifts_self (h' : Addr) {c : Prog isa} (hc : c.noCalls = true) {s s'
     obtain ⟨N₁, h₁⟩ := ih₁ hc.1
     obtain ⟨N₂, h₂⟩ := ih₂ hc.2
     refine ⟨max N₁ N₂ + 1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, List.append_assoc, h₁ f (by omega) (t₂ ++ r), Option.bind_some, h₂ f (by omega) r,
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, List.append_assoc, h₁ f (by omega_arith) (t₂ ++ r), Option.bind_some, h₂ f (by omega_arith) r,
       Option.map_some]
   | @iteT _ _ _ _ _ t _ _ ih =>
     simp only [Code.noCalls, Bool.and_eq_true] at hc
     obtain ⟨N, h₁⟩ := ih hc.1
     refine ⟨N + 1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, List.cons_append, h₁ f (by omega) r, Option.map_some]
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, List.cons_append, h₁ f (by omega_arith) r, Option.map_some]
   | @iteF _ _ _ _ _ t _ _ ih =>
     simp only [Code.noCalls, Bool.and_eq_true] at hc
     obtain ⟨N, h₁⟩ := ih hc.2
     refine ⟨N + 1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, List.cons_append, h₁ f (by omega) r, Option.map_some]
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, List.cons_append, h₁ f (by omega_arith) r, Option.map_some]
   | @loopExit _ _ _ _ t _ _ ih =>
     obtain ⟨N, h₁⟩ := ih hc
     refine ⟨N + 1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, List.append_assoc, List.cons_append, List.nil_append, h₁ f (by omega), Option.bind_some]
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, List.append_assoc, List.cons_append, List.nil_append, h₁ f (by omega_arith), Option.bind_some]
   | @loopNext _ _ _ _ _ t t' _ _ _ ih₁ ih₂ =>
     obtain ⟨N₁, h₁⟩ := ih₁ hc
     obtain ⟨N₂, h₂⟩ := ih₂ hc
     refine ⟨max N₁ N₂ + 1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, List.append_assoc, List.cons_append, h₁ f (by omega), Option.bind_some]
-    rw [h₂ f (by omega) r]; rfl
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, List.append_assoc, List.cons_append, h₁ f (by omega_arith), Option.bind_some]
+    rw [h₂ f (by omega_arith) r]; rfl
   | call => simp [Code.noCalls] at hc
   | frame => simp [Code.noCalls] at hc
 
@@ -889,7 +889,7 @@ theorem Exec.ite_inv {k : Cond} {th el : Prog isa} {s s' : State} {t : List Leak
 def hole (sp : Addr) : Region := ⟨sp - 8, 8⟩
 
 theorem hole_contains {sp x : Addr} : (hole sp).Contains x 1 ↔ (x - (sp - 8)).toNat < 8 := by
-  simp only [hole, Region.Contains]; omega
+  simp only [hole, Region.Contains]; omega_arith
 
 theorem overlay_hole_writeW (sp : Addr) (hv m : Mem) (v : BitVec 64) :
     (overlay (hole sp) hv m).writeW (sp - 8) v = overlay (hole sp) (hv.writeW (sp - 8) v) m := by
@@ -901,7 +901,7 @@ theorem overlay_hole_readW (sp : Addr) (hv m : Mem) :
     (overlay (hole sp) hv m).readW (sp - 8) 64 = hv.readW (sp - 8) 64 :=
   Mem.readW_congr fun i hi => by
     have : (hole sp).Contains (sp - 8 + BitVec.ofNat 64 i) 1 := by
-      rw [hole_contains, Mem.sub_ofNat_toNat _ (by omega)]; omega
+      rw [hole_contains, Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith
     simp only [overlay, this, ite_true]
 
 theorem setReg_self (s : State) (r : Reg) : s.setReg r (s.gpr r) = s := by
@@ -947,17 +947,17 @@ theorem loop_uninline {body : Prog isa} {k : Cond} {sp : Addr}
     obtain ⟨hv', u', ta, ha, hs', ⟨N, hl⟩⟩ := ih h₁ hb hsp hv u
     refine ⟨hv', u', ta ++ [.branch false], .loopExit ha ((eval_patch _).trans hk), hs', N + 1,
       fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, List.append_assoc, List.cons_append, List.nil_append, hl f (by omega), Option.bind_some]
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, List.append_assoc, List.cons_append, List.nil_append, hl f (by omega_arith), Option.bind_some]
   | @loopNext body' k' s s₁ s' t t' h₁ hk _ _ ih₂ =>
     cases e
     obtain ⟨hv₁, u₁, ta₁, ha₁, hs₁, ⟨N₁, hl₁⟩⟩ := ih h₁ hb hsp hv u
     obtain ⟨hv', u', ta₂, ha₂, hs', ⟨N₂, hl₂⟩⟩ := ih₂ (hb.of_exec h₁) hs₁ hv₁ u₁ rfl
     refine ⟨hv', u', ta₁ ++ .branch true :: ta₂, .loopNext ha₁ ((eval_patch _).trans hk) ha₂, hs',
       max N₁ N₂ + 1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, List.append_assoc, List.cons_append, hl₁ f (by omega), Option.bind_some]
-    rw [hl₂ f (by omega) r]; rfl
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, List.append_assoc, List.cons_append, hl₁ f (by omega_arith), Option.bind_some]
+    rw [hl₂ f (by omega_arith) r]; rfl
 
 /-- A run of `c.inline` gives one of `c`, from the same state but for the
 bytes of the return address below `rsp` and the unknowns, to the same state
@@ -981,8 +981,8 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
     · obtain ⟨hv₁, u₁, ta₁, ha₁, hs₁, ⟨N₁, hl₁⟩⟩ := ih₁ hc.1 h₁ hb hsp hv u
       obtain ⟨hv', u', ta₂, ha₂, hs', ⟨N₂, hl₂⟩⟩ := ih₂ hc.2 h₂ (hb.of_exec h₁) hs₁ hv₁ u₁
       refine ⟨hv', u', ta₁ ++ ta₂, .seq ha₁ ha₂, hs', max N₁ N₂ + 1, fun f hf r => ?_⟩
-      obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-      simp only [liftT, List.append_assoc, hl₁ f (by omega), Option.bind_some, hl₂ f (by omega) r,
+      obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+      simp only [liftT, List.append_assoc, hl₁ f (by omega_arith), Option.bind_some, hl₂ f (by omega_arith) r,
         Option.map_some]
   | ite k th el ih₁ ih₂ =>
     simp only [Code.InlineOk, Bool.and_eq_true] at hc
@@ -990,13 +990,13 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
     rcases Exec.ite_inv h with ⟨t, rfl, hk, h₁⟩ | ⟨t, rfl, hk, h₁⟩
     · obtain ⟨hv', u', ta, ha, hs', ⟨N, hl⟩⟩ := ih₁ hc.1 h₁ hb hsp hv u
       refine ⟨hv', u', .branch true :: ta, .iteT ((eval_patch _).trans hk) ha, hs', N + 1, fun f hf r => ?_⟩
-      obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-      simp only [liftT, List.cons_append, hl f (by omega) r, Option.map_some]
+      obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+      simp only [liftT, List.cons_append, hl f (by omega_arith) r, Option.map_some]
     · obtain ⟨hv', u', ta, ha, hs', ⟨N, hl⟩⟩ := ih₂ hc.2 h₁ hb hsp hv u
       refine ⟨hv', u', .branch false :: ta, .iteF ((eval_patch _).trans hk) ha, hs', N + 1,
         fun f hf r => ?_⟩
-      obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-      simp only [liftT, List.cons_append, hl f (by omega) r, Option.map_some]
+      obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+      simp only [liftT, List.cons_append, hl f (by omega_arith) r, Option.map_some]
   | loop body k ih =>
     simp only [Code.InlineOk] at hc
     simp only [Code.inline] at h
@@ -1034,8 +1034,8 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
     refine ⟨hv₁, u₁, _, .call hcall hbody hret, hrsp, ?_⟩
     obtain ⟨N, hl⟩ := Exec.lifts_self (sp - 8) hn h
     refine ⟨N + 1, fun f hf r => ?_⟩
-    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega⟩
-    simp only [liftT, hl f (by omega) r, Option.map_some, State.patch_gpr, hsp, F, State.setReg, ite_true,
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    simp only [liftT, hl f (by omega_arith) r, Option.map_some, State.patch_gpr, hsp, F, State.setReg, ite_true,
       List.map_cons, List.map_nil, List.cons_append, List.nil_append]
   | frame => simp [Code.InlineOk] at hc
 
@@ -1060,7 +1060,7 @@ theorem Lifts.unique {h : Addr} {c : Prog isa} {ta₁ ta₂ t : List Leak} (h₁
     (h₂ : Lifts h c ta₂ t) : ta₁ = ta₂ := by
   obtain ⟨N₁, l₁⟩ := h₁
   obtain ⟨N₂, l₂⟩ := h₂
-  have := (l₁ (max N₁ N₂) (by omega) []).symm.trans (l₂ (max N₁ N₂) (by omega) [])
+  have := (l₁ (max N₁ N₂) (by omega_arith) []).symm.trans (l₂ (max N₁ N₂) (by omega_arith) [])
   simp only [Option.some.injEq, Prod.mk.injEq] at this
   exact this.1
 
@@ -1089,7 +1089,7 @@ theorem not_hole_of_above {sp x : Addr} (h : (x - sp).toNat < 8) : ¬ (hole sp).
   have : x - (sp - 8) = (x - sp) + 8 := by
     rw [BitVec.sub_eq_add_neg x (sp - 8), BitVec.neg_sub, BitVec.sub_eq_add_neg x sp, BitVec.add_assoc]
   rw [this, BitVec.toNat_add, show (8 : BitVec 64).toNat = 8 from rfl]
-  omega
+  omega_arith
 
 /-- The calling convention's obligations hold of the run of `c` if they do of `c.inline`'s. -/
 theorem abiPreserved_patch {s b : State} (hv : Mem) (u : Nat → BitVec 64) (h : abiPreserved s b) :

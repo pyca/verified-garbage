@@ -44,7 +44,7 @@ theorem movImm64_val (v : BitVec 64) :
 theorem movImm64_run (u : State) (v : BitVec 64) :
     WP isa (.block (movImm64 .r12 v)) u fun t => t.gpr .r12 = v ∧ t.mem = u.mem ∧ Keep [.r12] u t := by
   refine WP.mono (WP.keep [.r12] (c := .block (movImm64 .r12 v)) (Q := fun t => t.gpr .r12 = v ∧ t.mem = u.mem) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, movImm64, dstOf]) rfl) fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
+    (by rfl) rfl) fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   unfold movImm64
   rrun
   exact movImm64_val v
@@ -67,7 +67,7 @@ theorem piInit_steps (u : State) {W : Addr} (hW : u.gpr .r7 = W)
     have h7 : t₁.gpr .r7 = W := by rw [k₁.gpr (by decide), k.gpr (by decide), hW]
     refine WP.mono (WP.keep [] (c := .block [.store .d .r12 .r7 (8 * n)]) (Q := fun t₂ =>
         t₂.mem = t₁.mem.writeW (W + BitVec.ofNat 64 (8 * n)) (Impl.Rc2.piQuad n)) ?_
-      (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t₂ ⟨m₂, k₂⟩ => ⟨fun i hi => ?_, ?_, ?_⟩
+      (by rfl) rfl) fun t₂ ⟨m₂, k₂⟩ => ⟨fun i hi => ?_, ?_, ?_⟩
     · rrun [h7, a₁, show 8 * n < 32768 by omega, show 8 * n % 4 = 0 by omega,
         show InRegions t₁.wr (W + BitVec.ofNat 64 (8 * n)) 8 by rw [k₁.2.2, k.2.2]; exact hw n (by omega)]
     · rw [m₂, m₁]
@@ -120,7 +120,7 @@ theorem mask_loop {c₀ : Nat} (hc : c₀ < 8) : ∀ n k, k + n = 7 → ∀ u : 
     apply WP.seq
     refine WP.mono (WP.keep [.r10] (c := .block [.subi .r10 .r9 (k + 1)]) (Q := fun t =>
         t.gpr .r10 = u.gpr .r9 - BitVec.ofNat 64 (k + 1) ∧ t.mem = u.mem)
-      (by rrun [show k + 1 ≤ 32768 by omega]) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl)
+      (by rrun [show k + 1 ≤ 32768 by omega]) (by rfl) rfl)
       fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
     apply WP.seq
     have hb : isa.eval (.zero .d .r10) t₁ = some (decide (c₀ = k + 1)) := by
@@ -133,7 +133,7 @@ theorem mask_loop {c₀ : Nat} (hc : c₀ < 8) : ∀ n k, k + n = 7 → ∀ u : 
       refine WP.mono (WP.keep [.r12] (c := .block [.li .r12 (2 ^ (k + 1) - 1)]) (Q := fun t =>
           t.gpr .r12 = BitVec.ofNat 64 (2 ^ (k + 1) - 1) ∧ t.mem = t₁.mem)
         (by rrun [hli])
-        (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t₂ ⟨⟨a₂, m₂⟩, k₂⟩ => ?_
+        (by rfl) rfl) fun t₂ ⟨⟨a₂, m₂⟩, k₂⟩ => ?_
       refine WP.mono (ih (k + 1) (by omega) t₂ (by rw [k₂.gpr (by decide), k₁.gpr (by decide), h9])
         (by rw [a₂, ite_eq_left (by omega), e])) fun t ⟨a, m, kk⟩ =>
           ⟨a, by rw [m, m₂, m₁], ((k₁.trans k₂).trans kk).mono (by simp)⟩
@@ -162,7 +162,7 @@ theorem maskCode_run (u : State) {bits : Nat} (hb : bits < 2 ^ 64) (h5 : u.gpr .
   apply WP.seq
   refine WP.mono (WP.keep [.r9, .r12] (c := .block [.lsl .r9 .r5 61, .lsr .d .r9 .r9 61, .li .r12 255])
       (Q := fun t => t.gpr .r9 = BitVec.ofNat 64 (bits % 8) ∧ t.gpr .r12 = BitVec.ofNat 64 255 ∧ t.mem = u.mem)
-    (by rrun [h5]; exact low3 bits hb) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl)
+    (by rrun [h5]; exact low3 bits hb) (by rfl) rfl)
     fun t₁ ⟨⟨a₁, b₁, m₁⟩, k₁⟩ => ?_
   rw [List.range_eq_range']
   refine WP.mono (mask_loop (c₀ := bits % 8) (by omega) 7 0 rfl t₁ a₁ (by rw [b₁, ite_eq_right (by omega)]))
@@ -181,7 +181,7 @@ theorem reduceSetup_run (u : State) {bits : Nat} (hb : bits ≤ 1024) (h5 : u.gp
       t.gpr .r8 = BitVec.ofNat 64 (128 - (bits + 7) / 8) ∧ t.mem = u.mem ∧ Keep [.r8, .r14] u t := by
   refine WP.mono (WP.keep [.r8, .r14] (c := .block reduceSetup) (Q := fun t =>
       t.gpr .r14 = BitVec.ofNat 64 ((bits + 7) / 8) ∧ t.gpr .r8 = BitVec.ofNat 64 (128 - (bits + 7) / 8) ∧
-        t.mem = u.mem) ?_ (by simp [writesOnly, Code.allInstrs_eq, instrs, reduceSetup, dstOf]) rfl)
+        t.mem = u.mem) ?_ (by rfl) rfl)
     fun t ⟨⟨a, b, c⟩, d⟩ => ⟨a, b, c, d⟩
   have e14 : (BitVec.ofNat 64 bits + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((bits + 7) / 8) := by
     apply BitVec.eq_of_toNat_eq

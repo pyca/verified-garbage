@@ -61,7 +61,7 @@ theorem addsIn_ok (s : State) {t h : Reg} {ts hs : List Reg} (hl : ts.length = h
   rw [gt, gh] at e₂
   simp only [regsVal, g₁, pow64_succ]
   simp only [Nat.mul_assoc, Bool.toNat_false, Nat.add_zero] at ev ⊢
-  omega
+  omega_arith
 
 /-- `x17 = k` and `x16 = 0`, for `k < 2^16`. -/
 theorem consts_ok (s : State) {k : Nat} (hk : k < 2 ^ 16) :
@@ -72,7 +72,7 @@ theorem consts_ok (s : State) {k : Nat} (hk : k < 2 ^ 16) :
     ite_true, RegUpd.gpr_write, reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
   refine ⟨?_, rfl, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · simp only [Size.bits, Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
@@ -85,7 +85,7 @@ theorem const_ok (s : State) {k : Nat} (hk : k < 2 ^ 16) :
     ite_true, RegUpd.gpr_write_self, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · simp only [Size.bits, Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · simp only [List.mem_singleton] at hr
     exact RegUpd.gpr_write_of_ne _ _ _ hr
 
@@ -103,10 +103,10 @@ theorem foldShift_ok (s : State) (hT : (s.gpr .x16).toNat + 1 < 2 ^ 32) :
     rw [BitVec.toNat_add]
     simp only [Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.toNat_setWidth]
     have : (1 : BitVec 16).toNat = 1 := rfl
-    omega
+    omega_arith
   refine ⟨h1, ?_, trivial, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · rw [BitVec.toNat_shiftLeft, h1, Nat.shiftLeft_eq]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
 
@@ -120,9 +120,9 @@ theorem fold_arith {q x2 x3 b j : Nat} (hq : q < 2 ^ 32) (hb : b ≤ 1) (h2 : x2
     · exact h
     · exfalso
       have : 2 ^ 64 * j ≥ 2 ^ 64 := Nat.le_mul_of_pos_right _ h
-      omega
+      omega_arith
   subst hj
-  omega
+  omega_arith
 
 /-- The fold's words: `[x3 x2] = q (2^96 - 2^32 + 1)` and `x16 = q`, with
 `q = x16 + 1`. -/
@@ -193,14 +193,14 @@ theorem reduce_arith {V L T L₁ L₂ c₁ c₂ : Nat} (hV : V = L + 2 ^ 384 * T
     (h₂ : L₂ + 2 ^ 384 * c₂ = L₁ + (if c₁ = 1 then 0 else p384)) :
     L₂ = V % p384 := by
   have hp : p384 = 2 ^ 384 - 2 ^ 128 - 2 ^ 96 + 2 ^ 32 - 1 := by decide
-  rcases (by omega : c₁ = 0 ∨ c₁ = 1) with rfl | rfl
+  rcases (by omega_arith : c₁ = 0 ∨ c₁ = 1) with rfl | rfl
   · simp only [Nat.zero_ne_one, ↓reduceIte] at h₂
-    have e : V = L₂ + T * p384 := by rw [hp] at h₂ ⊢; omega
-    have hl : L₂ < p384 := by rw [hp] at h₂ ⊢; omega
+    have e : V = L₂ + T * p384 := by rw [hp] at h₂ ⊢; omega_arith
+    have hl : L₂ < p384 := by rw [hp] at h₂ ⊢; omega_arith
     rw [e, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hl]
   · simp only [↓reduceIte, Nat.add_zero] at h₂
-    have e : V = L₂ + (T + 1) * p384 := by rw [hp]; omega
-    have hl : L₂ < p384 := by rw [hp]; omega
+    have e : V = L₂ + (T + 1) * p384 := by rw [hp]; omega_arith
+    have hl : L₂ < p384 := by rw [hp]; omega_arith
     rw [e, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hl]
 
 /-- Three words and three zeros. -/
@@ -208,7 +208,7 @@ theorem regsVal_fold {s : State} (hz : s.gpr .x7 = 0) {a b c : Reg} :
     regsVal s [a, b, c, .x7, .x7, .x7] =
       (s.gpr a).toNat + 2 ^ 64 * (s.gpr b).toNat + 2 ^ 128 * (s.gpr c).toNat := by
   simp only [regsVal, hz, show (0 : BitVec 64).toNat = 0 from rfl]
-  omega
+  omega_arith
 
 /-- `[o] = (c [a] + d (p - [b])) mod p`. -/
 theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
@@ -280,13 +280,13 @@ theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     have hp : p384 < 2 ^ 384 := by decide
     have h3 := Nat.mul_le_mul_right p384 (Nat.le_of_lt hd)
     have h4 := Nat.mul_le_mul_right p384 (Nat.le_of_lt hc)
-    omega
+    omega_arith
   have hok : RowOk size .x17 rRegs (mWords a 0 6) := {
     nodup := by decide
     regs := by decide
     ok := by
       simp only [mWords, List.mem_cons, List.not_mem_nil, or_false]
-      rintro w (rfl | rfl | rfl | rfl | rfl | rfl) <;> exact ⟨by omega, by omega⟩
+      rintro w (rfl | rfl | rfl | rfl | rfl | rfl) <;> exact ⟨by omega_arith, by omega_arith⟩
     reads := by
       simp only [mWords, List.mem_cons, List.not_mem_nil, or_false]
       rintro w (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp [RWord.reads, Src.reads]
@@ -294,8 +294,8 @@ theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     x3 := by decide }
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hs₅.ptr z₅ hok (by decide) (by decide) (by decide)
-    (by simp only [mWords, rRegs, List.length_cons, List.length_nil]; omega)
-    (by rw [hV]; change _ < 2 ^ 448; omega)) fun s₆ ⟨e₆, k₆⟩ => ?_
+    (by simp only [mWords, rRegs, List.length_cons, List.length_nil]; omega_arith)
+    (by rw [hV]; change _ < 2 ^ 448; omega_arith)) fun s₆ ⟨e₆, k₆⟩ => ?_
   rw [hV] at e₆
   have hs₆ : Scr s₆ base size := hs₅.of_keeps k₆ (by decide)
   have z₆ : s₆.gpr .x7 = 0 := by rw [k₆.gpr _ (by decide), z₅]
@@ -309,9 +309,9 @@ theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   have hT : (s₆.gpr .x16).toNat + 1 < 2 ^ 32 := by
     have h := hVlt
     rw [← e₆, hsplit] at h
-    have : 2 ^ 384 * (s₆.gpr .x16).toNat < 2 ^ 384 * 2 ^ 17 := by omega
+    have : 2 ^ 384 * (s₆.gpr .x16).toNat < 2 ^ 384 * 2 ^ 17 := by omega_arith
     have := Nat.lt_of_mul_lt_mul_left this
-    omega
+    omega_arith
   rw [fold, List.append_assoc, WP.block_append_iff]
   refine WP.mono (foldPre_ok s₆ z₆ hT) fun s₇ ⟨q₇, w₇, k₇⟩ => ?_
   rw [WP.block_append_iff, show lowRegs = .x1 :: [.x4, .x5, .x6, .x14, .x15] from rfl]
@@ -371,7 +371,7 @@ theorem toM_lin (a b c d : Nat) (hb : b < m) :
     toM m R ((c * a + d * (m - b)) % m) = Fin.ofNat m c * toM m R a - Fin.ofNat m d * toM m R b := by
   rw [toM_add, toM_scale, toM_scale]
   have h : toM m R (m - b) = -toM m R b := by
-    have hh := toM_sub (m := m) (R := R) (A := 0) (B := b) (by omega)
+    have hh := toM_sub (m := m) (R := R) (A := 0) (B := b) (by omega_arith)
     simp only [Nat.zero_add, toM_mod', toM_zero] at hh
     grind
   rw [h]

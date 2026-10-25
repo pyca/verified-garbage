@@ -45,7 +45,7 @@ theorem lowInit_ok {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
       hc26.1.gpr .x4 (by decide),hb25.1.gpr .x4 (by decide),hka.gpr .x4 (by decide)]
     rcases (show i=0∨i=1∨i=2∨i=3 by omega) with rfl|rfl|rfl|rfl <;> exact hb
   have hsub : BitVec.ofNat 32 B-(1 : BitVec 32)=BitVec.ofNat 32 (B-1) := by
-    bv_omega
+    bv_omega_arith
   refine ⟨setup_mono (hka.trans hat) (by decide),?_,?_⟩
   · constructor
     · constructor

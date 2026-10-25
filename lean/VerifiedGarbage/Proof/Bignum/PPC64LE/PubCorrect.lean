@@ -29,14 +29,14 @@ def dataOf (s : State) : PD :=
 theorem sep_of_disjoint {A S : Addr} {n Z : Nat} (h : (⟨A, n⟩ : Region).Disjoint ⟨S, Z⟩) :
     ∀ x, ofs A x < n → Z ≤ ofs S x := fun x hx => by
   by_contra hc
-  exact h x (by simp only [Region.Contains]; simp only [ofs] at hx; omega)
-    (by simp only [Region.Contains]; simp only [ofs] at hc; omega)
+  exact h x (by simp only [Region.Contains]; simp only [ofs] at hx; omega_arith)
+    (by simp only [Region.Contains]; simp only [ofs] at hc; omega_arith)
 
 theorem ne_of_disjoint {A S : Addr} {n Z : Nat} (h : (⟨A, n⟩ : Region).Disjoint ⟨S, Z⟩) (hn : n ≤ 2 ^ 64) :
     ∀ i < n, ∀ x, ofs S x < Z → off A i ≠ x := fun i hi x hx e => by
   subst e
-  exact h _ (Offset.contains_base (d := i) _ (by omega) (by omega))
-    (by simp only [Region.Contains]; simp only [ofs, off] at hx; omega)
+  exact h _ (Offset.contains_base (d := i) _ (by omega_arith) (by omega_arith))
+    (by simp only [Region.Contains]; simp only [ofs, off] at hx; omega_arith)
 
 theorem saved_ne11 : ∀ i < 16, PublicChecked.saved i ≠ .r11 := by decide
 
@@ -57,7 +57,7 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
     rw [a11, k1.wr, hwr]
     show InRegions _ (stackArg s 0 + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i)) 8
     rw [Offset.add_add]
-    exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine WP.block_append (WP.mono (save_ok s₁ hin) fun s₂ hS => ?_)
   have k12 := k1.trans hS.keep
   have e4 : s₂.gpr .r4 = BitVec.ofNat 64 (s.gpr .r4).toNat :=
@@ -71,19 +71,19 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
   have hwd : (dataOf s).w = ((s.gpr .r4).toNat + 7) / 8 := rfl
   have hk1 : (s.gpr .r4).toNat < 2 ^ 64 := (s.gpr .r4).isLt
   refine ⟨⟨Scr.of_mem (by rw [k.wr, hwr]; simp [dataOf]) nwS, Scr.of_mem (by rw [k.wr, hwr]; simp [dataOf]) nwO,
-    hk, hk', by show slot (((s.gpr .r4).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8; unfold slot; rw [hh]; omega,
-    hL1, hLk, by show (s.gpr .r5).toNat + 16 * (((s.gpr .r4).toNat + 7) / 8) ≤ 2 ^ 64; omega,
+    hk, hk', by show slot (((s.gpr .r4).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8; unfold slot; rw [hh]; omega_arith,
+    hL1, hLk, by show (s.gpr .r5).toNat + 16 * (((s.gpr .r4).toNat + 7) / 8) ≤ 2 ^ 64; omega_arith,
     fun x hx => sep_of_disjoint dPS x (by
-      change ofs (s.gpr .r5) x < 16 * (((s.gpr .r4).toNat + 7) / 8) at hx; omega), sep_of_disjoint dOS,
+      change ofs (s.gpr .r5) x < 16 * (((s.gpr .r4).toNat + 7) / 8) at hx; omega_arith), sep_of_disjoint dOS,
     ne_of_disjoint dES (Nat.le_of_lt (s.gpr .r8).isLt),
-    fun i hi => ne_of_disjoint dXS (Nat.le_of_lt (s.gpr .r10).isLt) i (by change i < (s.gpr .r4).toNat at hi; omega),
+    fun i hi => ne_of_disjoint dXS (Nat.le_of_lt (s.gpr .r10).isLt) i (by change i < (s.gpr .r4).toNat at hi; omega_arith),
     fun i hi => ⟨⟨s.gpr .r5, (s.gpr .r6).toNat * 8⟩, by rw [hrd₃, hrd]; simp, Offset.contains_base _ (by
-      change i < 2 * (((s.gpr .r4).toNat + 7) / 8) at hi; omega) (by
-      change i < 2 * (((s.gpr .r4).toNat + 7) / 8) at hi; omega)⟩,
+      change i < 2 * (((s.gpr .r4).toNat + 7) / 8) at hi; omega_arith) (by
+      change i < 2 * (((s.gpr .r4).toNat + 7) / 8) at hi; omega_arith)⟩,
     fun i hi => ⟨⟨s.gpr .r7, (s.gpr .r8).toNat⟩, by rw [hrd₃, hrd]; simp, Offset.contains_base _ (by
-      change i < (s.gpr .r8).toNat at hi; omega) (by change i < (s.gpr .r8).toNat at hi; omega)⟩,
+      change i < (s.gpr .r8).toNat at hi; omega_arith) (by change i < (s.gpr .r8).toNat at hi; omega_arith)⟩,
     fun i hi => ⟨⟨s.gpr .r9, (s.gpr .r10).toNat⟩, by rw [hrd₃, hrd]; simp, Offset.contains_base _ (by
-      change i < (s.gpr .r4).toNat at hi; omega) (by change i < (s.gpr .r4).toNat at hi; omega)⟩,
+      change i < (s.gpr .r4).toNat at hi; omega_arith) (by change i < (s.gpr .r4).toNat at hi; omega_arith)⟩,
     by rw [k.gpr .r5 (by decide)]; simp [dataOf, off], by rw [k.gpr .r7 (by decide)]; simp [dataOf, off],
     by rw [k.gpr .r8 (by decide)]; simp [dataOf], k.gpr .r9 (by decide),
     (k₃.gpr .r23 (by decide)).trans (hS.r23.trans a11),
@@ -97,7 +97,7 @@ theorem front_e {s s₃ : State} (h : fnContract.pre s) (fr : Frame [savR (savW 
   obtain ⟨-, -, -, -, -, -, -, -, -, dES, -, -, -, -, -, -, nwS, -, -, -, -, -, hsl⟩ := h
   simp only [Spec.Rsa.publicScratchWords] at hsl
   have savR_sub : Region.Sub (savR (savW (stackArg s 0))) ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   refine VG.Proof.Rsa.rsa_bytes_frame fr (s.gpr .r8).isLt fun r hr => ?_
   simp only [List.mem_singleton] at hr
   subst hr
@@ -119,9 +119,9 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
   have sav_sub : ∀ i < 16, Region.Sub ⟨off (savW (stackArg s 0)) (8 * i), 8⟩ ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ :=
     fun i hi => by
       show Region.Sub ⟨stackArg s 0 + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i), 8⟩ _
-      rw [Offset.add_add]; exact Offset.sub_base _ (by omega)
+      rw [Offset.add_add]; exact Offset.sub_base _ (by omega_arith)
   have savR_sub : Region.Sub (savR (savW (stackArg s 0))) ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   unfold publicChecked
   refine WP.seq (WP.mono (front_ok hpre) fun s₃ ⟨hM, hsv, k3, fr3⟩ => ?_)
   refine mid_ok hM fun t ⟨hpost, hfr, kt⟩ => ?_
@@ -129,7 +129,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     rw [kt.wr, k3.wr, hwr]
     show InRegions _ (stackArg s 0 + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i)) 8
     rw [Offset.add_add]
-    exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hsav : ∀ i < 16, t.mem.readW (off (savW (stackArg s 0)) (8 * i)) 64 = s.gpr (PublicChecked.saved i) :=
     fun i hi => by
       rw [hfr.readW (r := ⟨off (savW (stackArg s 0)) (8 * i), 8⟩) (by simp [Region.Contains]) ?_ (by decide)]
@@ -140,9 +140,9 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
         · show Region.Disjoint ⟨stackArg s 0 + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i), 8⟩
             ⟨stackArg s 0 + BitVec.ofNat 64 (slot (dataOf s).w 0), _⟩
           rw [Offset.add_add]
-          exact Offset.disjoint _ (Or.inl (by unfold slot; rw [hh]; omega)) (by omega)
+          exact Offset.disjoint _ (Or.inl (by unfold slot; rw [hh]; omega_arith)) (by omega_arith)
             (by have := hM.hZ; unfold slot at this ⊢; rw [hh] at this ⊢; show _ ≤ 2 ^ 64
-                have := hM.scr.nowrap; omega)
+                have := hM.scr.nowrap; omega_arith)
         · exact (dOS.symm.sub_left (sav_sub i hi))
   refine WP.mono (restore_ok t (S := stackArg s 0) (v := fun i => s.gpr (PublicChecked.saved i))
     (by rw [kt.gpr .r23 (by decide)]; exact hM.r23) hin hsav)
@@ -159,18 +159,18 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     rw [uot .r3 (by decide), um]
     have hP : Spec.Rsa.wordsAt s₃.mem (s.gpr .r5) (2 * (dataOf s).w) =
         Spec.Rsa.wordsAt s.mem (s.gpr .r5) (s.gpr .r6).toNat := by
-      rw [show 2 * (dataOf s).w = (s.gpr .r6).toNat by show 2 * (((s.gpr .r4).toNat + 7) / 8) = _; omega]
-      refine VG.Proof.Rsa.wordsAt_frame fr3 (by omega) fun r hr => ?_
+      rw [show 2 * (dataOf s).w = (s.gpr .r6).toNat by show 2 * (((s.gpr .r4).toNat + 7) / 8) = _; omega_arith]
+      refine VG.Proof.Rsa.wordsAt_frame fr3 (by omega_arith) fun r hr => ?_
       simp only [List.mem_singleton] at hr
       subst hr
-      exact (dPS.sub_left (Region.sub_prefix (by omega))).sub_right savR_sub
+      exact (dPS.sub_left (Region.sub_prefix (by omega_arith))).sub_right savR_sub
     have hE := front_e hpre fr3
     have hX : Spec.Rsa.bytesAt s₃.mem (s.gpr .r9) (s.gpr .r4).toNat =
         Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r4).toNat := by
       refine VG.Proof.Rsa.rsa_bytes_frame fr3 (s.gpr .r4).isLt fun r hr => ?_
       simp only [List.mem_singleton] at hr
       subst hr
-      exact (dXS.sub_left (Region.sub_prefix (by omega))).sub_right savR_sub
+      exact (dXS.sub_left (Region.sub_prefix (by omega_arith))).sub_right savR_sub
     have := hpost nB hl (by rw [hpp]; exact congrArg some hP.symm)
     simp only [dataOf] at this
     rw [hE, hX] at this

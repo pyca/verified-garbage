@@ -56,15 +56,15 @@ theorem term_ok {s : State} {base : Addr} {a0 a1 a2 : Reg} (hs : Wk s base)
   obtain ⟨⟨h01, h02, h0a, h0b, h0c, h0d, h0z, h0x⟩, ⟨h12, h1a, h1b, h1c, h1d, h1z, h1x⟩,
     ⟨h2a, h2b, h2c, h2d, h2z, h2x⟩, -⟩ := hd
   have l1 : InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 (XK + 8 * i)) 8 := by
-    rw [hs.x2]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [XK]; omega)⟩
+    rw [hs.x2]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [XK]; omega_arith)⟩
   have l2 : InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 (YS + 8 * j)) 8 := by
-    rw [hs.x2]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [YS]; omega)⟩
+    rw [hs.x2]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [YS]; omega_arith)⟩
   apply WP.of_runBlock
   simp only [term, Z, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, addr, State.load,
-    Size.bytes, show (XK + 8 * i) % 8 = 0 by simp only [XK]; omega,
-    show XK + 8 * i < 4096 * 8 by simp only [XK]; omega,
-    show (YS + 8 * j) % 8 = 0 by simp only [YS]; omega,
-    show YS + 8 * j < 4096 * 8 by simp only [YS]; omega, and_self, l1, l2,
+    Size.bytes, show (XK + 8 * i) % 8 = 0 by simp only [XK]; omega_arith,
+    show XK + 8 * i < 4096 * 8 by simp only [XK]; omega_arith,
+    show (YS + 8 * j) % 8 = 0 by simp only [YS]; omega_arith,
+    show YS + 8 * j < 4096 * 8 by simp only [YS]; omega_arith, and_self, l1, l2,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
     RegUpd.c_addWithCarry, BitVec.setWidth_eq, Ne.symm h01, Ne.symm h02, Ne.symm h12,
     h0a, h0b, h0c, h0d, h1a, h1b, h1c, h1d, h2a, h2b, h2c, h2d,
@@ -92,7 +92,7 @@ theorem term_ok {s : State} {base : Addr} {a0 a1 a2 : Reg} (hs : Wk s base)
     have v2 : (s.gpr a2 + 0 + BitVec.ofNat 64 c1.toNat).toNat = ((s.gpr a2).toNat + c1.toNat) % 2 ^ 64 := by
       rw [show s.gpr a2 + 0 = s.gpr a2 from BitVec.add_zero _, BitVec.toNat_add, BitVec.toNat_ofNat]
       have := Bool.toNat_le c1
-      rw [Nat.mod_eq_of_lt (a := c1.toNat) (by omega)]
+      rw [Nat.mod_eq_of_lt (a := c1.toNat) (by omega_arith)]
     rw [v2]
     have := (s.gpr a0).isLt; have := (s.gpr a1).isLt; have := (s.gpr a2).isLt
     have := Bool.toNat_le c0; have := Bool.toNat_le c1
@@ -100,7 +100,7 @@ theorem term_ok {s : State} {base : Addr} {a0 a1 a2 : Reg} (hs : Wk s base)
     simp only [Bool.toNat_false, Nat.add_zero] at v0
     generalize (s.gpr a1 + hi + BitVec.ofNat 64 c0.toNat).toNat = A1 at v1 ⊢
     generalize x.toNat * y.toNat = P at hp hb ⊢
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2, ite_false]
@@ -125,7 +125,7 @@ theorem terms_ok {base : Addr} {a0 a1 a2 : Reg}
     rw [List.flatMap_cons, WP.block_append_iff]
     rw [colSum_cons] at hb
     have hct := hc t List.mem_cons_self
-    refine WP.mono (term_ok hs hd hct.1 hct.2 (by omega)) fun s1 ⟨e1, k1⟩ => ?_
+    refine WP.mono (term_ok hs hd hct.1 hct.2 (by omega_arith)) fun s1 ⟨e1, k1⟩ => ?_
     have hn := hd
     simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     obtain ⟨⟨-, -, -, -, -, -, h0z, h0x⟩, ⟨-, -, -, -, -, h1z, h1x⟩, ⟨-, -, -, -, h2z, h2x⟩, -⟩ := hn
@@ -136,9 +136,9 @@ theorem terms_ok {base : Addr} {a0 a1 a2 : Reg}
           exact ⟨by decide, by decide, by decide, by decide, Ne.symm h0z, Ne.symm h1z, Ne.symm h2z⟩)
     have m1 : s1.mem = s.mem := k1.mem
     refine WP.mono (terms_ok hd ts s1 hs1 (fun t' ht' => hc t' (List.mem_cons_of_mem _ ht'))
-      (by rw [e1, m1]; omega)) fun s2 ⟨e2, k2⟩ => ⟨?_, k1.trans k2⟩
+      (by rw [e1, m1]; omega_arith)) fun s2 ⟨e2, k2⟩ => ⟨?_, k1.trans k2⟩
     rw [e2, e1, colSum_cons, m1]
-    omega
+    omega_arith
 
 /-- The registers a product's columns change. -/
 def colX : List Reg := [.x5, .x6, .x7, .x12, .x13, .x14, .x15]
@@ -152,12 +152,12 @@ theorem acc_succ (k : Nat) : acc (k + 1) = [accR k 1, accR k 2, accR k 0] := by
   simp only [acc, accR_mod]
   refine List.cons_eq_cons.mpr ⟨by rw [Nat.add_right_comm], List.cons_eq_cons.mpr
     ⟨by rw [Nat.add_assoc], List.cons_eq_cons.mpr ⟨?_, rfl⟩⟩⟩
-  rw [show k + 1 + 2 = k + 3 by omega, Nat.add_mod_right, Nat.add_zero]
+  rw [show k + 1 + 2 = k + 3 by omega_arith, Nat.add_mod_right, Nat.add_zero]
 
 theorem acc_cases (k : Nat) :
     acc k = [.x5, .x6, .x7] ∨ acc k = [.x6, .x7, .x5] ∨ acc k = [.x7, .x5, .x6] := by
   simp only [acc, accR_mod]
-  rcases (by omega : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;>
+  rcases (by omega_arith : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;>
   simp only [Nat.add_mod k, h] <;> simp
 
 theorem acc_nodup (k : Nat) :
@@ -174,7 +174,7 @@ theorem acc_colX (k : Nat) : ∀ r ∈ [Reg.x12, .x13, .x14, .x15, accR k 0, acc
 
 theorem accR_colX (k n : Nat) (hn : n < 3) : accR k n ∈ colX := by
   have := acc_colX k
-  rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2) with rfl | rfl | rfl <;> exact this _ (by simp)
+  rcases (by omega_arith : n = 0 ∨ n = 1 ∨ n = 2) with rfl | rfl | rfl <;> exact this _ (by simp)
 
 /-- A column: its terms, its low word stored at `ACC + 8k`, and the rest of
 the accumulator passed on. -/
@@ -192,9 +192,9 @@ theorem column_ok {s : State} {base : Addr} (hs : Wk s base) (k : Nat) (hk : k <
   have hs1 : Wk s1 base := hs.of_keeps k1 (fun h => by have := hsub _ h; simp [colX] at this)
     (fun h => by have := hsub _ h; simp [colX] at this)
   have hw : InRegions s1.wr (s1.gpr .x2 + BitVec.ofNat 64 (ACC + 8 * k)) 8 := by
-    rw [hs1.x2]; exact ⟨_, hs1.wr, contains_sc (by simp only [ACC]; omega)⟩
+    rw [hs1.x2]; exact ⟨_, hs1.wr, contains_sc (by simp only [ACC]; omega_arith)⟩
   rw [WP.block_cons_iff]
-  refine ⟨_, exec_str_x ⟨by simp only [ACC]; omega, by simp only [ACC]; omega⟩ hw, ?_⟩
+  refine ⟨_, exec_str_x ⟨by simp only [ACC]; omega_arith, by simp only [ACC]; omega_arith⟩ hw, ?_⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show 16 * 0 < Size.x.bits from by decide,
     ite_true, Option.some.injEq, exists_eq_left']
@@ -208,19 +208,19 @@ theorem column_ok {s : State} {base : Addr} (hs : Wk s base) (k : Nat) (hk : k <
     simp only [acc, rv] at e1 ⊢
     rw [show (BitVec.setWidth 64 (BitVec.setWidth Size.x.bits (0 : BitVec 16) <<< (16 * 0))).toNat = 0
       from rfl]
-    omega
+    omega_arith
   · have hr0 : r ≠ accR k 0 := fun e => hr (e ▸ accR_colX k 0 (by decide))
     rw [RegUpd.gpr_write_of_ne _ _ _ hr0]
     exact k1.gpr r (fun h => hr (hsub _ h))
   · simp only [RegUpd.mem_write, hs1.x2]
-    rw [← k1.mem]; exact writeW_outside _ _ _ (by simp only [ACC]; omega)
+    rw [← k1.mem]; exact writeW_outside _ _ _ (by simp only [ACC]; omega_arith)
 
 theorem mv_succ_last (m : Mem) (base : Addr) :
     ∀ (o n : Nat), mv m base o (n + 1) = mv m base o n + 2 ^ (64 * n) * (word m base (o + 8 * n)).toNat
   | o, 0 => by simp [mv]
   | o, n + 1 => by
     rw [mv, mv_succ_last m base (o + 8) n, mv, pow64_succ,
-      show o + 8 + 8 * n = o + 8 * (n + 1) by omega]
+      show o + 8 + 8 * n = o + 8 * (n + 1) by omega_arith]
     generalize 2 ^ (64 * n) = Q
     grind
 
@@ -235,7 +235,7 @@ theorem colsVal_succ_last (xv yv : Nat → Nat) :
   | k, 0 => by simp [colsVal]
   | k, n + 1 => by
     rw [colsVal, colsVal_succ_last xv yv (k + 1) n, colsVal, pow64_succ,
-      show k + 1 + n = k + (n + 1) by omega]
+      show k + 1 + n = k + (n + 1) by omega_arith]
     generalize 2 ^ (64 * n) = Q
     grind
 
@@ -246,9 +246,9 @@ theorem colSum_le (xv yv : Nat → Nat) :
   | t :: ts, h => by
     rw [colSum_cons, List.length_cons, Nat.succ_mul]
     have h1 := h t List.mem_cons_self
-    have hp : xv t.1 * yv t.2 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+    have hp : xv t.1 * yv t.2 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
     have := colSum_le xv yv ts fun t' ht' => h t' (List.mem_cons_of_mem _ ht')
-    omega
+    omega_arith
 
 theorem colSum_congr (xv yv xv' yv' : Nat → Nat) (ts : List (Nat × Nat))
     (h : ∀ t ∈ ts, xv t.1 = xv' t.1 ∧ yv t.2 = yv' t.2) :
@@ -274,24 +274,24 @@ theorem columns_ok {s₀ : State} {base : Addr} (hs : Wk s₀ base) (h0 : rv s�
       by simp [mv, colsVal, h0], by rw [h0]; decide⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (columns_ok hs h0 n (by omega)) fun s ⟨g, rd, wr, sp, o, e, b⟩ => ?_
+    refine WP.mono (columns_ok hs h0 n (by omega_arith)) fun s ⟨g, rd, wr, sp, o, e, b⟩ => ?_
     have hsS : Wk s base := ⟨(g _ colX_x2).trans hs.x2, wr ▸ hs.wr, (g _ colX_x26).trans hs.z⟩
-    have hcn := mulCol_hc n (by omega)
+    have hcn := mulCol_hc n (by omega_arith)
     have same : ∀ t ∈ mulCol n, xw s.mem base t.1 = xw s₀.mem base t.1 ∧
         yw s.mem base t.2 = yw s₀.mem base t.2 := fun t ht => by
       have := hcn t ht
-      exact ⟨by rw [xw, o.word (by simp only [XK, ACC]; omega) (by simp only [XK]; omega)],
-        by rw [yw, o.word (by simp only [YS, ACC]; omega) (by simp only [YS]; omega)]⟩
+      exact ⟨by rw [xw, o.word (by simp only [XK, ACC]; omega_arith) (by simp only [XK]; omega_arith)],
+        by rw [yw, o.word (by simp only [YS, ACC]; omega_arith) (by simp only [YS]; omega_arith)]⟩
     have cs := colSum_congr _ _ _ _ (mulCol n) same
     have cb := colSum_le (xw s.mem base) (yw s.mem base) (mulCol n)
       fun t _ => ⟨(word s.mem base _).isLt, (word s.mem base _).isLt⟩
-    have hwn := Nat.mul_le_mul_right ((2 ^ 64 - 1) * (2 ^ 64 - 1)) (mulCol_len n (by omega))
+    have hwn := Nat.mul_le_mul_right ((2 ^ 64 - 1) * (2 ^ 64 - 1)) (mulCol_len n (by omega_arith))
     rw [List.flatMap_singleton]
-    refine WP.mono (column_ok hsS n (by omega) hcn (by omega))
+    refine WP.mono (column_ok hsS n (by omega_arith) hcn (by omega_arith))
       fun s' ⟨e', g', rd', wr', sp', o'⟩ => ?_
     refine ⟨fun r hr => (g' r hr).trans (g r hr), rd'.trans rd, wr'.trans wr, sp'.trans sp,
-      (o.mono (Nat.le_refl _) (by omega)).trans (o'.mono (by omega) (by omega)), ?_, ?_⟩
-    · rw [mv_succ_last, Outside.mv_eq o' n ACC (by omega) (by simp only [ACC]; omega),
+      (o.mono (Nat.le_refl _) (by omega_arith)).trans (o'.mono (by omega_arith) (by omega_arith)), ?_, ?_⟩
+    · rw [mv_succ_last, Outside.mv_eq o' n ACC (by omega_arith) (by simp only [ACC]; omega_arith),
         colsVal_succ_last, Nat.zero_add, pow64_succ, ← cs]
       generalize 2 ^ (64 * n) = Q at e ⊢
       calc mv s.mem base ACC n + Q * (word s'.mem base (ACC + 8 * n)).toNat +
@@ -301,7 +301,7 @@ theorem columns_ok {s₀ : State} {base : Addr} (hs : Wk s₀ base) (h0 : rv s�
         _ = mv s.mem base ACC n + Q * rv s (acc n) + Q * colSum (xw s.mem base)
               (yw s.mem base) (mulCol n) := by rw [e']; grind
         _ = _ := by rw [e]
-    · omega
+    · omega_arith
 
 /-- Eight words' value, in Horner form. -/
 def val8 (f : Nat → Nat) : Nat :=
@@ -332,13 +332,13 @@ theorem mv8_val (m : Mem) (base : Addr) (o : Nat) :
     mv m base o 8 = val8 fun i => (word m base (o + 8 * i)).toNat := by
   simp only [mv8, val8_eq, Nat.mul_zero, Nat.add_zero, Nat.reduceMul]
 
-theorem pow_mono {a b : Nat} (h : a ≤ b) : 2 ^ a ≤ 2 ^ b := Nat.pow_le_pow_right (by omega) h
+theorem pow_mono {a b : Nat} (h : a ≤ b) : 2 ^ a ≤ 2 ^ b := Nat.pow_le_pow_right (by omega_arith) h
 
 theorem sq_add_le (n : Nat) : 2 ^ n * 2 ^ n + 2 ^ n ≤ 2 ^ (2 * n + 1) := by
-  have : 2 ^ n ≤ 2 ^ (n + n) := Nat.pow_le_pow_right (by omega) (by omega)
+  have : 2 ^ n ≤ 2 ^ (n + n) := Nat.pow_le_pow_right (by omega_arith) (by omega_arith)
   rw [Nat.pow_succ, Nat.mul_two, Nat.two_mul, Nat.pow_add]
   rw [Nat.pow_add] at this
-  omega
+  omega_arith
 
 /-- `columns`: `r + k s` into the sixteen words at `ACC`, from `k`, `r`, `s`
 (each below `2^456`) and one at `XK`, `XK + 64`, `YS` and `YS + 64`. -/
@@ -367,7 +367,7 @@ theorem product_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base)
   have ey : val8 (yw a.mem base) = mv s.mem base YS 8 := by rw [mv8_val, ma]
   have er : val8 (fun i => xw a.mem base (8 + i)) = mv s.mem base (XK + 64) 8 := by
     rw [mv8_val, ma]
-    exact congrArg val8 (funext fun i => by rw [xw, show XK + 8 * (8 + i) = XK + 64 + 8 * i by omega])
+    exact congrArg val8 (funext fun i => by rw [xw, show XK + 8 * (8 + i) = XK + 64 + 8 * i by omega_arith])
   rw [hsum, ex, ey, er] at et
   refine ⟨?_, fun r hr => ?_, (gt _ colX_x26).trans ha.z, rdt.trans rda, wrt.trans wra,
     spt.trans spa, by rw [← ma]; exact ot⟩
@@ -382,7 +382,7 @@ theorem product_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base)
       · have := Nat.mul_le_mul_left P h
         generalize P * rv t (acc 16) = A at et this
         generalize mv s.mem base XK 8 * mv s.mem base YS 8 = M at hp et
-        omega
+        omega_arith
     rw [hA, Nat.mul_zero, Nat.add_zero] at et
     rw [et, Nat.add_comm]
   · simp only [List.mem_cons, not_or] at hr
@@ -399,9 +399,9 @@ theorem decode_mv (m : Mem) (base : Addr) :
     ∀ (n o : Nat), Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m (off base o) (8 * n)) = mv m base o n
   | 0, _ => rfl
   | n + 1, o => by
-    have e := words_step m (off base o) (8 * (n + 1)) 0 (by omega)
+    have e := words_step m (off base o) (8 * (n + 1)) 0 (by omega_arith)
     simp only [Nat.mul_zero, Nat.sub_zero, Nat.zero_add, Nat.mul_one, BitVec.add_zero] at e
-    rw [e, show 8 * (n + 1) - 8 = 8 * n by omega, show off base o + BitVec.ofNat 64 8 = off base (o + 8)
+    rw [e, show 8 * (n + 1) - 8 = 8 * n by omega_arith, show off base o + BitVec.ofNat 64 8 = off base (o + 8)
       from Offset.add_add base o 8, decode_mv m base n (o + 8), mv]
 
 end VG.Proof.Ed448.AArch64

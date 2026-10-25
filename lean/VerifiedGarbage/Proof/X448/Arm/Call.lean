@@ -65,7 +65,7 @@ theorem mulA24Fn_ok {s : State} {base : Addr} {o a : Nat} (h : Entry false s bas
 abbrev wsRegion (base : Addr) : Region := ⟨base, 8192⟩
 
 theorem movw_toNat {x : Nat} (h : x < 65536) : ((BitVec.ofNat 16 x).setWidth 32).toNat = x := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_arith
 
 /-- A call of `body` after the arguments are set (`r1`–`r3` changed, `pre`
 holding on the entry), as a field operation. -/
@@ -125,9 +125,9 @@ theorem callFn_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {s :
   refine wp_movw fun s₁ u₁ => wp_movw fun s₂ u₂ => wp_movw fun s₃ u₃ => WP.block_nil ?_
   exact call_ok hn hs hbody ((u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (u₃.rest (by decide))))
     (by rw [u₃.mem, u₂.mem, u₁.mem])
-    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, movw_toNat (by omega)])
-    (by rw [u₃.other _ (by decide), u₂.gpr, movw_toNat (by omega)])
-    (fun _ => by rw [u₃.gpr, movw_toNat (by omega)]) ab bb
+    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, movw_toNat (by omega_arith)])
+    (by rw [u₃.other _ (by decide), u₂.gpr, movw_toNat (by omega_arith)])
+    (fun _ => by rw [u₃.gpr, movw_toNat (by omega_arith)]) ab bb
 
 theorem mulA24Call_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
     (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) :
@@ -140,8 +140,8 @@ theorem mulA24Call_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
   exact call_ok (by decide +kernel) hs (hasB := false) (b := a)
     (fun t he ha' _ => mulA24Fn_ok he ho ha ha')
     ((u₁.rest (by decide)).trans (u₂.rest (by decide))) (by rw [u₂.mem, u₁.mem])
-    (by rw [u₂.other _ (by decide), u₁.gpr, movw_toNat (by omega)])
-    (by rw [u₂.gpr, movw_toNat (by omega)]) (fun h => absurd h (by decide)) ab ab
+    (by rw [u₂.other _ (by decide), u₁.gpr, movw_toNat (by omega_arith)])
+    (by rw [u₂.gpr, movw_toNat (by omega_arith)]) (fun h => absurd h (by decide)) ab ab
 
 /-- `[o] = [a] [b]`, by a call of `vg_gf448_r16_mul`. -/
 theorem mulCall_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}

@@ -25,14 +25,14 @@ theorem addStep_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
     WP isa (.block [ld .x4 (a + 8 * i), ld .x5 (b + 8 * i), .add .x .x4 .x4 .x5, st .x4 (TMP + 8 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (TMP + 8 * i))
         (BitVec.ofNat 64 (limbs s.mem base a i + limbs s.mem base b i)) ∧ Keeps clob s t := by
-  have la := hs.read (d := a + 8 * i) (n := 8) (by change a + 128 ≤ 3584 at ha; omega)
-  have lb := hs.read (d := b + 8 * i) (n := 8) (by change b + 128 ≤ 3584 at hb; omega)
-  have w := hs.write (d := TMP + 8 * i) (n := 8) (by simp only [TMP]; omega)
+  have la := hs.read (d := a + 8 * i) (n := 8) (by change a + 128 ≤ 3584 at ha; omega_arith)
+  have lb := hs.read (d := b + 8 * i) (n := 8) (by change b + 128 ≤ 3584 at hb; omega_arith)
+  have w := hs.write (d := TMP + 8 * i) (n := 8) (by simp only [TMP]; omega_arith)
   have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := by
-    change a + 128 ≤ 3584 at ha; omega
+    change a + 128 ≤ 3584 at ha; omega_arith
   have be : (b + 8 * i) % 8 = 0 ∧ b + 8 * i < 32768 := by
-    change b + 128 ≤ 3584 at hb; omega
-  have oe : (TMP + 8 * i) % 8 = 0 ∧ TMP + 8 * i < 32768 := by simp only [TMP]; omega
+    change b + 128 ≤ 3584 at hb; omega_arith
+  have oe : (TMP + 8 * i) % 8 = 0 ∧ TMP + 8 * i < 32768 := by simp only [TMP]; omega_arith
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     State.read, State.load, State.store, RegUpd.gpr_write, RegUpd.mem_write,
@@ -57,15 +57,15 @@ theorem subStep_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
       .add .x .x4 .x4 .x5, ld .x5 (b + 8 * i), .sub .x .x4 .x4 .x5, st .x4 (TMP + 8 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (TMP + 8 * i))
         (BitVec.ofNat 64 (difference (limbs s.mem base a) (limbs s.mem base b) i)) ∧ Keeps clob s t := by
-  have la := hs.read (d := a + 8 * i) (n := 8) (by change a + 128 ≤ 3584 at ha; omega)
-  have lb := hs.read (d := b + 8 * i) (n := 8) (by change b + 128 ≤ 3584 at hb; omega)
-  have w := hs.write (d := TMP + 8 * i) (n := 8) (by simp only [TMP]; omega)
+  have la := hs.read (d := a + 8 * i) (n := 8) (by change a + 128 ≤ 3584 at ha; omega_arith)
+  have lb := hs.read (d := b + 8 * i) (n := 8) (by change b + 128 ≤ 3584 at hb; omega_arith)
+  have w := hs.write (d := TMP + 8 * i) (n := 8) (by simp only [TMP]; omega_arith)
   have biasb := bias_bound i
   have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := by
-    change a + 128 ≤ 3584 at ha; omega
+    change a + 128 ≤ 3584 at ha; omega_arith
   have be : (b + 8 * i) % 8 = 0 ∧ b + 8 * i < 32768 := by
-    change b + 128 ≤ 3584 at hb; omega
-  have oe : (TMP + 8 * i) % 8 = 0 ∧ TMP + 8 * i < 32768 := by simp only [TMP]; omega
+    change b + 128 ≤ 3584 at hb; omega_arith
+  have oe : (TMP + 8 * i) % 8 = 0 ∧ TMP + 8 * i < 32768 := by simp only [TMP]; omega_arith
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     Size.bits, Nat.reduceLT, Nat.reduceMul, BitVec.shiftLeft_zero, State.read, State.load, State.store, RegUpd.gpr_write, RegUpd.mem_write,
@@ -79,7 +79,7 @@ theorem subStep_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
     change (2 ^ 64 - limbs s.mem base b i + (limbs s.mem base a i + bias i) % 2 ^ 64) % 2 ^ 64 =
       (limbs s.mem base a i + bias i - limbs s.mem base b i) % 2 ^ 64
     have hr : radix = 268435456 := rfl
-    omega
+    omega_arith
   · have hr' : r ≠ .x4 := fun h => hr (by subst r; decide)
     have hr'' : r ≠ .x5 := fun h => hr (by subst r; decide)
     simp only [RegUpd.gpr_write, hr', hr'', ite_false]
@@ -95,7 +95,7 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     have h2 := bb i hi
     change limbs s.mem base a i + limbs s.mem base b i < _
     simp only [radix] at h1 h2
-    omega
+    omega_arith
   refine WP.mono (columns_normalize hs ho ho8 fb (columns_ok hs (by decide : .x3 ∉ clob ∧ .x12 ∉ clob) fb ?_))
     fun t ⟨op, tb, tv⟩ => ⟨op, tb, toFe_add ?_⟩
   · intro i hi t ts tm _

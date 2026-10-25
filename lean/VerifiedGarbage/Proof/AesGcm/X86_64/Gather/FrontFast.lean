@@ -78,13 +78,13 @@ theorem fastEntry_ok {st : State} (hs : Same s st) :
   obtain ⟨a₁, e₁⟩ := same_a hp hs (i := 1) (by decide)
   obtain ⟨a₅, e₅⟩ := same_a hp hs (i := 5) (by decide)
   have w : ∀ d, d + 8 ≤ 104 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => by
-    rw [hs.wr]; exact w_in hp (by omega)
+    rw [hs.wr]; exact w_in hp (by omega_arith)
   have gdi : st.gpr .rdi = K s := hs.gpr _ (by decide) (by decide) (by decide)
   have gsi : st.gpr .rsi = s.gpr .rsi := hs.gpr _ (by decide) (by decide) (by decide)
   have hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
   have hz : ((stackArg s 1 - BitVec.ofNat 64 1) == 0) = decide (Cnt s = 1) := by
     rw [← ofNat_toNat (stackArg s 1)]
-    exact sub_beq (by omega) (by decide)
+    exact sub_beq (by omega_arith) (by decide)
   have i1 := imm_eq (n := 1) (by decide)
   apply WP.of_runBlock
   refine ⟨_, by
@@ -99,7 +99,7 @@ theorem fastEntry_ok {st : State} (hs : Same s st) :
     · simp [rd_setReg, rd_arithFlags, hs.rd]
     · simp [wr_setReg, wr_arithFlags, hs.wr]
     · have c : ∀ d, d + 8 ≤ 104 → (kpR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) :=
-        fun d h₂ => Offset.contains_base _ h₂ (by omega)
+        fun d h₂ => Offset.contains_base _ h₂ (by omega_arith)
       simp only [mem_setReg, mem_arithFlags]
       rw [← hs.mem]
       exact frame_kpR (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by decide))).writeW
@@ -117,7 +117,7 @@ theorem fastEntry_ok {st : State} (hs : Same s st) :
 theorem desc_in' {st : State} (h : FBase s st) {j : Nat} (hj : j + 8 ≤ Cnt s * 16) :
     InRegions (st.rd ++ st.wr) (Src s + BitVec.ofNat 64 j) 8 := by
   rw [h.rd, h.wr, hp.rd]
-  exact ⟨dsR s, by simp, Offset.contains_base _ hj (by have := hp.w_ds; omega)⟩
+  exact ⟨dsR s, by simp, Offset.contains_base _ hj (by have := hp.w_ds; omega_arith)⟩
 
 /-- Stack argument `i`, in a state of the path. -/
 theorem fa_in {st : State} (h : FBase s st) {i : Nat} (hi : i < 6) :
@@ -129,9 +129,9 @@ theorem fa_in {st : State} (h : FBase s st) {i : Nat} (hi : i < 6) :
 theorem fastLen2_ok (hc : Cnt s = 2) {st : State} (h : FBase s st) (h10 : st.gpr .r10 = Src s) :
     WP isa (.block fastLen2) st fun s₂ => FBase s s₂ ∧ s₂.gpr .r10 = Src s ∧
       s₂.gpr .rcx = BitVec.ofNat 64 (sl s 1) ∧ s₂.zf = some (decide (sl s 1 = 0)) := by
-  have d₂₄ := desc_in' hp h (j := 24) (by omega)
+  have d₂₄ := desc_in' hp h (j := 24) (by omega_arith)
   have v₂₄ : st.mem.readW (Src s + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 (sl s 1) := by
-    rw [← sl_eq hp h.frame (i := 1) (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
+    rw [← sl_eq hp h.frame (i := 1) (by omega_arith), BitVec.add_assoc, ← BitVec.ofNat_add]
   have hl : sl s 1 < 2 ^ 64 := BitVec.isLt _
   apply WP.of_runBlock
   refine ⟨_, by simp only [fastLen2]; xrun [h10, d₂₄, v₂₄], ?_, ?_, ?_, ?_⟩
@@ -152,18 +152,18 @@ theorem fastCopy_ok (hc : Cnt s = 2) (hlt : sl s 1 < 2 ^ 63) {st : State} (h : F
   have hfl := fl_le hp
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
   obtain ⟨a₂, e₂⟩ := fa_in hp h (i := 2) (by decide)
-  have d₁₆ := desc_in' hp h (j := 16) (by omega)
-  have d₈ := desc_in' hp h (j := 8) (by omega)
-  have v₁₆ : st.mem.readW (Src s + BitVec.ofNat 64 16) 64 = sb s 1 := sb_eq hp h.frame (i := 1) (by omega)
+  have d₁₆ := desc_in' hp h (j := 16) (by omega_arith)
+  have d₈ := desc_in' hp h (j := 8) (by omega_arith)
+  have v₁₆ : st.mem.readW (Src s + BitVec.ofNat 64 16) 64 = sb s 1 := sb_eq hp h.frame (i := 1) (by omega_arith)
   have v₈ : st.mem.readW (Src s + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (fl s) := by
-    have := sl_eq hp h.frame (i := 0) (by omega)
+    have := sl_eq hp h.frame (i := 0) (by omega_arith)
     rw [show Src s + BitVec.ofNat 64 (16 * 0) = Src s by simp] at this
     rw [this, fl_eq]; simp [hc]
   have hgl : fl s + sl s 1 = L s := by
     have := hp.glen
     rw [hc, show (2 : Nat) = 0 + 1 + 1 from rfl, gl_succ, gl_succ, gl_zero] at this
-    rw [fl_eq]; simp [hc]; omega
-  have hsl : (⟨sb s 1, sl s 1⟩ : Region) ∈ lsR s := slice_mem s (i := 1) (by omega)
+    rw [fl_eq]; simp [hc]; omega_arith
+  have hsl : (⟨sb s 1, sl s 1⟩ : Region) ∈ lsR s := slice_mem s (i := 1) (by omega_arith)
   apply WP.of_runBlock
   refine ⟨_, by simp only [fastCopy]; xrun [h10, a₂, e₂, d₁₆, v₁₆, d₈, v₈], ?_, ?_, ?_⟩
   · exact h.regs (by simp [mem_setReg, mem_arithFlags]) (fun r hr => by
@@ -179,7 +179,7 @@ theorem fastCopy_ok (hc : Cnt s = 2) (hlt : sl s 1 < 2 ^ 63) {st : State} (h : F
     · simp only [wr_setReg, wr_arithFlags, h.wr, hp.wr]
       exact Covers.of_sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨dR s, by simp, fl s, rfl, by simp only; omega⟩
+        exact ⟨dR s, by simp, fl s, rfl, by simp only; omega_arith⟩
     · have := (hp.ls _ hsl).1
       exact this.sub_right (by have := dK_sub hp (s := s); rw [← hgl, Nat.add_sub_cancel_left] at this; exact this)
   · simp [gpr_setReg, gpr_arithFlags]
@@ -199,7 +199,7 @@ include hp
 theorem gl_two (hc : Cnt s = 2) : fl s + sl s 1 = L s := by
   have := hp.glen
   rw [hc, show (2 : Nat) = 0 + 1 + 1 from rfl, gl_succ, gl_succ, gl_zero] at this
-  rw [fl_eq]; simp [hc]; omega
+  rw [fl_eq]; simp [hc]; omega_arith
 
 omit hp in
 /-- With two slices, those after the first are the second. -/
@@ -216,13 +216,13 @@ theorem fastLoop_wp (hc : Cnt s = 2) (hn : sl s 1 ≠ 0) {st : State} (h : FBase
   have hgl := gl_two hp hc
   have hfl := fl_le hp
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hsl : (⟨sb s 1, sl s 1⟩ : Region) ∈ lsR s := slice_mem s (i := 1) (by omega)
+  have hsl : (⟨sb s 1, sl s 1⟩ : Region) ∈ lsR s := slice_mem s (i := 1) (by omega_arith)
   have c0 : CInv st (sb s 1) (Dst s + BitVec.ofNat 64 (fl s)) 0 st :=
     ⟨h10, by simp [bytesAt]; rfl, fun _ _ _ _ => rfl, rfl, rfl⟩
   refine WP.mono (chunks_wp (P := fun j t => CInv st (sb s 1) (Dst s + BitVec.ofNat 64 (fl s)) j t ∧
       t.gpr .r8 = st.gpr .r8)
     (fun j t ⟨c, r8⟩ hj => let ⟨t', e, c', z, r8'⟩ := copy1Step_ok8 hcp c hj; ⟨t', e, ⟨c', r8'.trans r8⟩, z⟩)
-    (by decide) (⟨c0, rfl⟩ : _ ∧ _) (by omega) (Nat.mod_one _)) fun t ⟨c, r8⟩ => ?_
+    (by decide) (⟨c0, rfl⟩ : _ ∧ _) (by omega_arith) (Nat.mod_one _)) fun t ⟨c, r8⟩ => ?_
   have hsub : Region.Sub ⟨Dst s + BitVec.ofNat 64 (fl s), sl s 1⟩ (dR s) := by
     have := dK_sub hp (s := s); rw [← hgl, Nat.add_sub_cancel_left] at this; exact this
   have hlen : (bytesAt st.mem (sb s 1) (sl s 1)).length = sl s 1 := length_bytesAt _ _ _
@@ -231,7 +231,7 @@ theorem fastLoop_wp (hc : Cnt s = 2) (hn : sl s 1 ≠ 0) {st : State} (h : FBase
   have kd : ∀ r ∈ [(⟨Dst s + BitVec.ofNat 64 (fl s), sl s 1⟩ : Region)], (kpR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (hp.d_w.symm.sub_left kpR_sub).sub_right hsub
   have k : ∀ d, d + 8 ≤ 104 → t.mem.readW (W s + BitVec.ofNat 64 d) 64 = st.mem.readW (W s + BitVec.ofNat 64 d) 64 :=
-    fun d hd' => fD.readW (Offset.contains_base _ hd' (by omega)) kd (by decide)
+    fun d hd' => fD.readW (Offset.contains_base _ hd' (by omega_arith)) kd (by decide)
   have keep : ∀ r, r ∈ calleeSaved ∨ r = .rdx ∨ r = .r8 ∨ r = .r9 → t.gpr r = st.gpr r := fun r hr => by
     rcases hr with hr | rfl | rfl | rfl
     · exact c.keep r (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
@@ -246,10 +246,10 @@ theorem fastLoop_wp (hc : Cnt s = 2) (hn : sl s 1 ≠ 0) {st : State} (h : FBase
   · simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s, by simp, hsub⟩
   · unfold FOut
     have e := bytesAt_writeBytes_self st.mem (Dst s + BitVec.ofNat 64 (fl s)) (bytesAt st.mem (sb s 1) (sl s 1))
-      (by rw [hlen]; omega)
+      (by rw [hlen]; omega_arith)
     rw [hlen] at e
-    rw [gathered_two hc, show L s - fl s = sl s 1 by omega, c.mem, e]
-    exact bytesAt_frame h.frame (ls_apart hp hsl) (by have := hp.w_ls _ hsl; simp at this; omega)
+    rw [gathered_two hc, show L s - fl s = sl s 1 by omega_arith, c.mem, e]
+    exact bytesAt_frame h.frame (ls_apart hp hsl) (by have := hp.w_ls _ hsl; simp at this; omega_arith)
 
 end
 
@@ -266,10 +266,10 @@ theorem fout_nil {st : State} (h : Cnt s = 1 ∨ (Cnt s = 2 ∧ sl s 1 = 0)) : F
   · have hL : L s = fl s := by
       have := hp.glen
       rw [h, show (1 : Nat) = 0 + 1 from rfl, gl_succ, gl_zero] at this
-      rw [fl_eq]; simp [h]; omega
+      rw [fl_eq]; simp [h]; omega_arith
     rw [hL, Nat.sub_self, hk, h]
     simp [bytesAt, gathered, Sig.listed]
-  · rw [show L s - fl s = 0 by have := gl_two hp h; omega, gathered_two h, h0]
+  · rw [show L s - fl s = 0 by have := gl_two hp h; omega_arith, gathered_two h, h0]
     simp [bytesAt]
 
 /-- The second slice, if there is one, copied to the output after the first. -/
@@ -281,13 +281,13 @@ theorem fastTail_wp (hcnt : Cnt s = 1 ∨ Cnt s = 2) (hsub : L s - fl s ≤ 16) 
   refine WP.ite (decide (Cnt s = 1)) (by simp only [eval, hz]) (fun e => WP.block_nil ⟨h, fout_nil hp (Or.inl (by simpa using e))⟩)
     (fun e => ?_)
   have hc : Cnt s = 2 := by have : Cnt s ≠ 1 := by simpa using e
-                            omega
+                            omega_arith
   have hgl := gl_two hp hc
   refine WP.seq (WP.mono (fastLen2_ok hp hc h h10) fun s₂ ⟨F₂, r10₂, cx₂, zf₂⟩ => ?_)
   refine WP.ite (decide (sl s 1 = 0)) (by simp only [eval, zf₂]) (fun e => WP.block_nil ⟨F₂, fout_nil hp (Or.inr ⟨hc, by simpa using e⟩)⟩)
     (fun e => ?_)
   have hn : sl s 1 ≠ 0 := by simpa using e
-  exact WP.seq (WP.mono (fastCopy_ok hp hc (by omega) F₂ r10₂ cx₂) fun s₃ ⟨F₃, P₃, r10₃⟩ =>
+  exact WP.seq (WP.mono (fastCopy_ok hp hc (by omega_arith) F₂ r10₂ cx₂) fun s₃ ⟨F₃, P₃, r10₃⟩ =>
     fastLoop_wp hp hc hn F₃ P₃ r10₃)
 
 /-- The arguments of `vg_aes_gcm_seal_split` from the first slice. -/
@@ -297,14 +297,14 @@ theorem fastArgs_ok (hn : s.gpr .rcx = 12#64) (hc : Cnt s ≠ 0) {st : State} (h
   obtain ⟨a₂, e₂⟩ := fa_in hp h (i := 2) (by decide)
   obtain ⟨a₃, e₃⟩ := fa_in hp h (i := 3) (by decide)
   obtain ⟨a₄, e₄⟩ := fa_in hp h (i := 4) (by decide)
-  have d₀ := desc_in' hp h (j := 0) (by omega)
-  have d₈ := desc_in' hp h (j := 8) (by omega)
+  have d₀ := desc_in' hp h (j := 0) (by omega_arith)
+  have d₈ := desc_in' hp h (j := 8) (by omega_arith)
   have v₀ : st.mem.readW (Src s + BitVec.ofNat 64 0) 64 = fb s := by
-    have := sb_eq hp h.frame (i := 0) (by omega)
+    have := sb_eq hp h.frame (i := 0) (by omega_arith)
     rw [show (16 * 0 : Nat) = 0 from rfl] at this
     rw [this]; simp [fb, hc]
   have v₈ : st.mem.readW (Src s + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (fl s) := by
-    have := sl_eq hp h.frame (i := 0) (by omega)
+    have := sl_eq hp h.frame (i := 0) (by omega_arith)
     rw [show Src s + BitVec.ofNat 64 (16 * 0) = Src s by simp] at this
     rw [this, fl_eq]; simp [hc]
   apply WP.of_runBlock
@@ -334,7 +334,7 @@ theorem fastArgs_ok (hn : s.gpr .rcx = 12#64) (hc : Cnt s ≠ 0) {st : State} (h
 theorem frontFast_wp (S : SplitFn M) {long : Bool} (hg : frontGo long s = true) {st : State}
     (hs : Same s st) : WP isa (frontFast S.fn) st (Done s) := by
   obtain ⟨hn, hcnt, hsub⟩ := front_facts hp hg
-  have hc0 : Cnt s ≠ 0 := by omega
+  have hc0 : Cnt s ≠ 0 := by omega_arith
   unfold frontFast
   refine WP.seq (WP.mono (fastEntry_ok hp hs) fun s₁ ⟨F₁, r10₁, zf₁⟩ => ?_)
   refine WP.seq (WP.mono (fastTail_wp hp hcnt hsub F₁ r10₁ zf₁) fun s₂ ⟨F₂, O₂⟩ => ?_)

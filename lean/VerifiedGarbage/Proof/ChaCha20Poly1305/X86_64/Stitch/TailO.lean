@@ -278,7 +278,7 @@ theorem tailOg_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
     intro off n' hn
     refine ⟨_, List.mem_append_right _ (by rw [wr₁]; exact h.dw), ?_⟩
     rw [Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   -- The rounds.
   refine WP.seq (WP.mono (troundsG_ok hk hrsi₁ hin (schedOk_o hok) (Nat.le_refl _) rfl tb₁ 10 (by decide))
     fun s₂ tb₂ => ?_)
@@ -298,7 +298,7 @@ theorem tailOg_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
     rw [m₂]
     refine (tMem_frame _).readW (r := ⟨c + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint c (Or.inr (by omega)) (by omega) (by decide)
+    exact Offset.disjoint c (Or.inr (by omega_arith)) (by omega_arith) (by decide)
   have hslot : s₂.mem.readW (c + BitVec.ofNat 64 544) 64 = BitVec.ofNat 64 n := by
     rw [ctxk 544 (by decide) (by decide), ← slot_eq, h.left]
   have S₂ : stateAt s₂.mem (stA c) = stateAt s.mem (stA c) := by
@@ -310,15 +310,15 @@ theorem tailOg_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
     by rw [r14₃, ctxk 536 (by decide) (by decide)], r15₃, rcx₃,
     by rw [rsp₃, tb₂.gpr _ (by decide), gk₁ _ (by decide) (by decide), h.rsp], by rw [rd₃, tb₂.rd, rd₁],
     by rw [wr₃, wr₂]⟩
-  · have k1 : i < 128 * (if two then 2 else 1) := by omega
+  · have k1 : i < 128 * (if two then 2 else 1) := by omega_arith
     rw [ks₃ i k1, S₂, Proof.ChaCha20.X86_64.Avx2.plus_block, VG.Proof.ChaCha20.keystream_getD _ hi]
   · -- The accumulator: the first `k` blocks absorbed.
     have hb1 : bytesAt s₁.mem (dp + BitVec.ofNat 64 o) (16 * k) =
         bytesAt s.mem (dp + BitVec.ofNat 64 o) (16 * k) := by
       rw [m₁]
-      refine bytesAt_frame (tMem_frame _) (fun r hr => ?_) (by omega)
+      refine bytesAt_frame (tMem_frame _) (fun r hr => ?_) (by omega_arith)
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hl.bf_d.symm.sub_left (Offset.sub_base _ (by omega)))
+      exact (hl.bf_d.symm.sub_left (Offset.sub_base _ (by omega_arith)))
     have v := tb₂.poly.val
     rw [ofirst_ten hok, hb1] at v
     rw [acc₃, v]

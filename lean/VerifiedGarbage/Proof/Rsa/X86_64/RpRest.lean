@@ -41,7 +41,7 @@ theorem frm_halving {B : Addr} {w : Nat} {m m' : Mem}
   have e := hx _ (rg_mem_hdr (w := w) [aM, aM + 1, aH, aH + 1] (show sT ∈ [sT] by decide))
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   dsimp only at a b c d e
-  rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith
 
 /-- What `rest` needs. -/
 structure RestPre (I : RpIn) (m₀ : Mem) (N m : Nat) (s : State) : Prop where
@@ -91,19 +91,19 @@ theorem rpRest_ok (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h 
   have hel1 := L.el1
   have hel2 := L.el2
   have S := h.S
-  have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := S.ws.scr.nowrap; have := S.ws.hZ; omega
+  have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := S.ws.scr.nowrap; have := S.ws.hZ; omega_arith
   have hw1 := S.ws.w1
   have hN1 : 1 < N := by
-    have : 2 ^ 64 ≤ 2 ^ (64 * (wk I.k - 1)) := Nat.pow_le_pow_right (by decide) (by omega)
-    have := h.lo; omega
+    have : 2 ^ 64 ≤ 2 ^ (64 * (wk I.k - 1)) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+    have := h.lo; omega_arith
   rw [rest_eq]
   -- The halvings.
   refine wp_seqs_append (by simp) (by simp [mont]) (WP.mono (halving_ok S.ws S.args.el hel1
-    (by unfold wk; omega) h.M h.m0 h.mlt) fun s₁ ⟨_, hr₁, ht₁, hf₁', k₁⟩ => ?_)
+    (by unfold wk; omega_arith) h.M h.m0 h.mlt) fun s₁ ⟨_, hr₁, ht₁, hf₁', k₁⟩ => ?_)
   have hf₁ := frm_halving hf₁'
   have S₁ := S.step hf₁ (by decide) (by decide) k₁ (by decide)
   have hn₁ : wv s₁.mem I.B (slot (wk I.k) aN) (wk I.k) = N := by
-    rw [hf₁.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega)]; exact h.n
+    rw [hf₁.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith)]; exact h.n
   have hi₁ : ((word s₁.mem I.B (slot (wk I.k) aN)).toNat * (word s₁.mem I.B (8 * sMinv)).toNat + 1) % 2 ^ 64 = 0 := by
     rw [hf₁.rg_word0 hZ16 (by decide) (by decide) (by decide), hf₁.rg_word (by decide) (by decide)]; exact h.inv
   -- Montgomery form.
@@ -115,19 +115,19 @@ theorem rpRest_ok (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h 
     have : (splitTwos m).2 ≤ m :=
       calc (splitTwos m).2 ≤ 2 ^ (splitTwos m).1 * (splitTwos m).2 := Nat.le_mul_of_pos_left _ (Nat.two_pow_pos _)
         _ = m := hspl.1.symm
-    have := h.mlt; omega
+    have := h.mlt; omega_arith
   have ht1 : 1 ≤ (splitTwos m).1 := by
     rcases Nat.eq_zero_or_pos (splitTwos m).1 with h0 | h0
-    · have := hspl.1; rw [h0, Nat.pow_zero, Nat.one_mul] at this; have := hspl.2; have := h.even; omega
+    · have := hspl.1; rw [h0, Nat.pow_zero, Nat.one_mul] at this; have := hspl.2; have := h.even; omega_arith
     · exact h0
   have ht2 := VG.Proof.Rsa.splitTwos_lt h.m0 h.mlt
   have hc₂ : Cst s₂ I.B I.Z (wk I.k) (word s₂.mem I.B (8 * sMinv)) N I.el (splitTwos m).2 (splitTwos m).1 := by
     refine ⟨S₂.ws, rfl, ?_, ?_, hr2lt, hr2, hone, ho, hng, S₂.args.el, ?_, ?_, h.odd, h.lo, hel1,
-      by unfold wk; omega, ht1, ht2⟩
+      by unfold wk; omega_arith, ht1, ht2⟩
     · rw [hf₂.rg_word0 hZ16 (by decide) (by decide) (by decide), hf₂.rg_word (by decide) (by decide)]; exact hi₁
-    · rw [hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega)]; exact hn₁
-    · rw [hf₂.rg_wv2 hZ16 (by decide) (by decide) (by decide) (by decide) (by unfold wk; omega)]
-      rw [wv_low_of_lt (v := wk I.k + (I.el + 7) / 8) (w := 2 * (wk I.k + 2)) (by unfold wk; omega)
+    · rw [hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith)]; exact hn₁
+    · rw [hf₂.rg_wv2 hZ16 (by decide) (by decide) (by decide) (by decide) (by unfold wk; omega_arith)]
+      rw [wv_low_of_lt (v := wk I.k + (I.el + 7) / 8) (w := 2 * (wk I.k + 2)) (by unfold wk; omega_arith)
         (by rw [hr₁]; exact hrlt), hr₁]
     · rw [hf₂.rg_word (by decide) (by decide)]; exact ht₁
   -- The candidates.
@@ -144,7 +144,7 @@ theorem rpRest_ok (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h 
     · exact h0) fun s₄ ⟨hf₄, k₄, hm₄, hU0, hU⟩ => ?_)
   have S₄ := S₃.step hf₄ (by decide) (by decide) k₄ (by decide)
   have hn₄ : wv s₄.mem I.B (slot (wk I.k) aN) (wk I.k) = N := by
-    rw [hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega)]; exact hc₃.hn
+    rw [hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith)]; exact hc₃.hn
   -- `p = gcd(u, n)`, `q = n / p`.
   refine wp_seqs_append (by simp) (by simp) (WP.mono (finB_ok S₄.ws hn₄ h.odd hN1 hU0)
     fun s₅ ⟨hf₅, k₅, _, hv₅, hq₅, _⟩ => ?_)
@@ -156,7 +156,7 @@ theorem rpRest_ok (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h 
   have hm₆ : word s₆.mem I.B (8 * sMask) = mask res.isSome := by
     rw [hf₆.rg_word (by decide) (by simp), hf₅.rg_word (by decide) (by decide)]; exact hm₄
   -- The stores.
-  refine WP.mono (rpStores_ok S₆.ws S₆.args hm₆ (by omega) (by unfold wk; omega)
+  refine WP.mono (rpStores_ok S₆.ws S₆.args hm₆ (by omega_arith) (by unfold wk; omega_arith)
     ⟨fun i hi => by rw [S₆.wr, ← S.wr]; exact h.oP.wr i hi, h.oP.sep⟩
     ⟨fun i hi => by rw [S₆.wr, ← S.wr]; exact h.oQ.wr i hi, h.oQ.sep⟩ h.a)
     fun u ⟨bP, bQ, hax, hsv, hfr, k₇⟩ => ?_

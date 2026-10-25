@@ -83,14 +83,7 @@ theorem residueHead_ok {s : State} {dst : BitVec 32} {n generator : Nat}
   have zero : ((BitVec.ofNat 32 generator - (2 : BitVec 32)) == (0 : BitVec 32)) = decide (generator = 2) := by
     rw [sub_beq_zero]
     exact ofNat_beq_eq bound (by decide)
-  refine withRest [.r1] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.ldrSp .r1 28, .cmp .r1 (.imm 2)] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, read, saved, zero]
 
 theorem residue_ok {s : State} {dst : BitVec 32} {n generator : Nat}

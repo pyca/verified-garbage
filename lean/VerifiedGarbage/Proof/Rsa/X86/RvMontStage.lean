@@ -48,20 +48,20 @@ theorem mulBody_noSp (o a b : Nat) :
 theorem mont_offs {g : Geo} {Z : Nat} (fits : arr g.w nArr ≤ Z) {o a b : Nat} (ho : MontIndex o)
     (ha : MontIndex a) (hb : MontIndex b) (ho0 : o ≠ mBase) (pos : 0 < g.n) :
     Offs Z g.n (arr g.w mBase) sInv (arr g.w mAcc) (arr g.w o) (arr g.w a) (arr g.w b) := by
-  have S8 : S g.w = 8 * g.n + 16 := by simp only [S, Geo.w, width]; omega
+  have S8 : S g.w = 8 * g.n + 16 := by simp only [S, Geo.w, width]; omega_arith
   have fN : ∀ j, j < nArr → arr g.w j + S g.w ≤ Z := fun j hj => Nat.le_trans (arr_end hj) fits
   have side : ∀ j, MontIndex j → arr g.w j + S g.w ≤ arr g.w mAcc ∨ arr g.w (mAcc + 4) ≤ arr g.w j :=
     fun j hj => hj.2.elim (fun lt => .inl (arr_end lt)) (fun ge => .inr (arr_mono ge))
-  have acc : arr g.w (mAcc + 4) = arr g.w mAcc + 4 * S g.w := by simp only [arr, mAcc]; omega
+  have acc : arr g.w (mAcc + 4) = arr g.w mAcc + 4 * S g.w := by simp only [arr, mAcc]; omega_arith
   have lowA : hdr ≤ arr g.w 0 := by simp [arr]
   have low : ∀ j, arr g.w 0 ≤ arr g.w j := fun j => arr_mono (Nat.zero_le j)
-  have sb : scratchBytes g.n ≤ 4 * S g.w := by simp only [scratchBytes]; omega
+  have sb : scratchBytes g.n ≤ 4 * S g.w := by simp only [scratchBytes]; omega_arith
   have fo := fN o ho.1
   have fa := fN a ha.1
   have fb := fN b hb.1
   have fm := fN mBase (by decide)
   have fs := fN (mAcc + 3) (by decide)
-  have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega
+  have es : arr g.w (mAcc + 3) = arr g.w mAcc + 3 * S g.w := by simp only [arr, mAcc]; omega_arith
   have so := side o ho
   have sa := side a ha
   have sbb := side b hb
@@ -72,7 +72,7 @@ theorem mont_offs {g : Geo} {Z : Nat} (fits : arr g.w nArr ≤ Z) {o a b : Nat} 
   have ls := low mAcc
   have hi : sInv + 4 ≤ hdr := by decide
   refine ⟨pos, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    (try simp only [Apart]) <;> omega
+    (try simp only [Apart]) <;> omega_arith
 
 theorem num_prefix {g : Geo} {m : Mem} {j x : Nat} (h : num m g.B g.w j = x) (hx : x < 2 ^ (64 * g.n)) :
     val32 m g.B (arr g.w j) (2 * g.n) = x := by
@@ -108,9 +108,9 @@ theorem KS.callOk {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g 
   have esp := h.sp
   have bnd := mr.bound
   have vm : val32 s.mem g.B (arr g.w mBase) (2 * g.n) = m := num_prefix mr.modulus mr.bound
-  have vb : val32 s.mem g.B (arr g.w b) (2 * g.n) = A b := num_prefix (h.arrs b hbl) (by omega)
+  have vb : val32 s.mem g.B (arr g.w b) (2 * g.n) = A b := num_prefix (h.arrs b hbl) (by omega_arith)
   have wsl : g.Z = (BitVec.ofNat 32 (g.Z / 8)).toNat * 8 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   have R : CallRoom (s.gpr .esp) g.B g.Z := by rw [esp]; exact h.room
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   have hl5 : VG.Proof.Rsa.X86.KeyRt.LenSrc narF (allocFrame 36 s) (8 * g.n + 8) := by
@@ -126,9 +126,9 @@ theorem KS.callOk {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g 
     apply BitVec.eq_of_toNat_eq
     have header := h.ws.hdr_le
     unfold hdr at header
-    rw [h.ws.workspace.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [h.ws.workspace.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have M := mulArgs_ok (f := allocFrame 36 s) (n := g.n) (o := o) (a := a) (b := b) hl5 up hr11 ho.1 ha.1 hb.1
-    (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
+    (by rw [fEsp, VG.X86.sub_toNat (by omega_arith)]; omega_arith) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
   rw [show (allocFrame 36 s).gpr .edi = s.gpr .edi from allocFrame_gpr _ _ (by decide)] at M
   refine WP.mono M fun x ⟨Kx, Fx, Rx⟩ => ?_
   have xEsp : x.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kx.1 _ (by decide), fEsp]
@@ -277,12 +277,12 @@ theorem KS.mmul {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m 
   refine WP.seq (WP.mono (h.mmulCall mr ho ha hb ho0 hal hbl hA hB hl hlW)
     fun u ⟨hu, mrU, Ku, esi, L, Vv⟩ => ?_)
   have kn := kw_nar g.n
-  refine WP.mono (clrTop_ok hu.rt (j := o) ho.1 (by rw [kn]; simp only [width]; omega))
+  refine WP.mono (clrTop_ok hu.rt (j := o) ho.1 (by rw [kn]; simp only [width]; omega_arith))
     fun t ⟨_, k, e, r⟩ => ?_
   rw [kn] at k e
   have Kt : Keeps opRegs u t := r.mono (by decide)
   have e' : num t.mem g.B g.w o = val32 u.mem g.B (arr g.w o) (2 * g.n) := by
-    rw [e, show width g.n - 2 = 2 * g.n by simp only [width]; omega]
+    rw [e, show width g.n - 2 = 2 * g.n by simp only [width]; omega_arith]
   have ht := hu.write_w k ho.1 (by simp) Kt e' (fun j hj => by
       have := hlW j hj o (by simp); exact this) (by simp)
   refine ⟨val32 u.mem g.B (arr g.w o) (2 * g.n), ht.mono (fun j hj => ?_) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩),

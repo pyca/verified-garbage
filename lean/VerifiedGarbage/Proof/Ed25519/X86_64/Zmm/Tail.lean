@@ -101,7 +101,7 @@ theorem vcache_wp {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem 
   have hs₂ : Scratch s₂ b := ⟨by rw [vm_gpr v₂]; exact hs₁.rdi, by rw [vm_wr v₂]; exact hs₁.wr, hs.nowrap⟩
   have p₂ : ∀ l < 4, fe5 (lanes s₂ 0 l) = fe5 (aOp (lanes s 0) l) := fun l hl => by
     rw [fe5_congr (fun i hi => (u₂ l hl i hi).1),
-      fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2; omega),
+      fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2; omega_arith),
       fe5_congr (fun i hi => (u₁ l hl i hi).1)]
   -- to `OPL`
   rw [WP.block_append_iff]
@@ -118,7 +118,7 @@ theorem vcache_wp {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem 
   have hs₄ : Scratch s₄ b := ⟨by rw [h₄.gpr]; exact hs₃.rdi, by rw [h₄.wr]; exact hs₃.wr, hs.nowrap⟩
   have r₄ : ∀ l < 4, ∀ k < 4, qw s₄ (xr (11 + l)) k = mq s₃.mem b (64 + 32 * (12 + l) + 8 * k) :=
     fun l hl k hk => by
-      rw [h₄.reg _ k hk, VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega), vrowsKS_regs l hl]
+      rw [h₄.reg _ k hk, VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega_arith), vrowsKS_regs l hl]
       simp only [VG.Proof.X25519.X86_64.Ifma.T.eval, hs₃.rdi, mq]
   -- split
   rw [WP.block_append_iff]
@@ -126,7 +126,7 @@ theorem vcache_wp {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem 
     fun s₅ ⟨v₅, m₅, u₅, _⟩ => ?_
   have hs₅ : Scratch s₅ b := ⟨by rw [vm_gpr v₅]; exact hs₄.rdi, by rw [vm_wr v₅]; exact hs₄.wr, hs.nowrap⟩
   have f₅ : ∀ l < 4, fe5 (lanes s₅ 5 l) = F s.mem b (64 + 32 * (12 + l)) := fun l hl => by
-    rw [fe5_congr (fun i hi => (u₅ l hl i hi).1), ← Outside_F mo₃ (by omega) (Or.inl (by omega)),
+    rw [fe5_congr (fun i hi => (u₅ l hl i hi).1), ← Outside_F mo₃ (by omega_arith) (Or.inl (by omega_arith)),
       ← fe5_words' s₃.mem b (64 + 32 * (12 + l))]
     exact fe5_congr fun i _ => limbNat_congr' (fun k hk => by
       simp only [srow, envOf_v]; rw [r₄ l hl k hk]) i
@@ -149,12 +149,12 @@ theorem vcache_wp {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem 
   have hs₇ : Scratch s₇ b := ⟨by rw [h₇.gpr]; exact hs₆.rdi, by rw [h₇.wr]; exact hs₆.wr, hs.nowrap⟩
   have l₇ : ∀ l < 4, ∀ i < 5, lanes s₇ 5 l i = lanes s₆ 0 l i := fun l hl i hi => by
     simp only [lanes, Nat.zero_add]
-    rw [h₇.reg _ l hl, VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega), vmovsS_regs i hi]; rfl
+    rw [h₇.reg _ l hl, VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega_arith), vmovsS_regs i hi]; rfl
   have m₇ : s₇.mem = s₆.mem := by rw [h₇.mem, vmovsS_st]; rfl
   -- carried
   refine WP.mono (carryF_wp hs₇.rdi (ctx_of hs₇) (by rw [m₇, m₆, m₅, m₄]; exact hk₃.toCConsts)
     fun l hl i hi => by rw [l₇ l hl i hi]; have := b₆ l hl i hi; have : prodBound < 2 ^ 63 := by decide
-                        omega) fun t ⟨v₈, m₈, u₈, _⟩ => ?_
+                        omega_arith) fun t ⟨v₈, m₈, u₈, _⟩ => ?_
   refine ⟨by rw [vm_gpr v₈, h₇.gpr, vm_gpr v₆, vm_gpr v₅, h₄.gpr, vm_gpr v₃, vm_gpr v₂, vm_gpr v₁],
     by rw [vm_rd v₈, h₇.rd, vm_rd v₆, vm_rd v₅, h₄.rd, vm_rd v₃, vm_rd v₂, vm_rd v₁],
     by rw [vm_wr v₈, h₇.wr, vm_wr v₆, vm_wr v₅, h₄.wr, vm_wr v₃, vm_wr v₂, vm_wr v₁],
@@ -164,7 +164,7 @@ theorem vcache_wp {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem 
       rw [fe5_congr (fun i hi => (u₈ l hl i hi).1),
         fe5_carry _ (by rw [l₇ l hl 4 (by decide)]; have := b₆ l hl 4 (by decide)
                         have : prodBound < 2 ^ 63 := by decide
-                        omega),
+                        omega_arith),
         fe5_congr (fun i hi => l₇ l hl i hi), p₆ l hl]
   obtain ⟨a0, a1, a2, a3⟩ := aOp_fe (lanes s 0) hx
   rw [← cacheOf_eq]
@@ -178,38 +178,38 @@ theorem vcache_wp {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem 
 /-- Quadword `k` of half `h` of a `zmm` register. -/
 theorem zmm_qword (s : State) (r : XReg) {h k : Nat} (hh : h < 2) (hk : k < 4) :
     (s.zmm r).extractLsb' (8 * (32 * h + 8 * k)) (8 * 8) = zq s r h k := by
-  rw [zq, ← zmm_lane s r (i := 2 * h + k / 2) (by omega), qword, extract_extract _ _ _ _ _ (by omega)]
-  congr 1; omega
+  rw [zq, ← zmm_lane s r (i := 2 * h + k / 2) (by omega_arith), qword, extract_extract _ _ _ _ _ (by omega_arith)]
+  congr 1; omega_arith
 
 /-- Quadword `k` of a `ymm` register. -/
 theorem ymm_qword (s : State) (r : XReg) {k : Nat} (hk : k < 4) :
     (s.ymm r).extractLsb' (8 * (8 * k)) (8 * 8) = qw s r k := by
   rw [← VG.Proof.Poly1305.X86_64.Avx2.qword256_ymm s r hk, qword256]
-  congr 1; omega
+  congr 1; omega_arith
 
 theorem readW_zmm (m : Mem) (a : Addr) (s : State) (r : XReg) {h k : Nat} (hh : h < 2) (hk : k < 4) :
     (m.writeW a (s.zmm r)).readW (a + BitVec.ofNat 64 (32 * h + 8 * k)) 64 = zq s r h k := by
-  have e := readW_writeW_inside m a (s.zmm r) (k := 32 * h + 8 * k) (n := 8) (by omega) (by decide)
+  have e := readW_writeW_inside m a (s.zmm r) (k := 32 * h + 8 * k) (n := 8) (by omega_arith) (by decide)
   rw [zmm_qword s r hh hk] at e
   exact e
 
 theorem readW_ymm (m : Mem) (a : Addr) (s : State) (r : XReg) {k : Nat} (hk : k < 4) :
     (m.writeW a (s.ymm r)).readW (a + BitVec.ofNat 64 (8 * k)) 64 = qw s r k := by
-  have e := readW_writeW_inside m a (s.ymm r) (k := 8 * k) (n := 8) (by omega) (by decide)
+  have e := readW_writeW_inside m a (s.ymm r) (k := 8 * k) (n := 8) (by omega_arith) (by decide)
   rw [ymm_qword s r hk] at e
   exact e
 
 theorem zst_ok {z : State} {b : Addr} (hs : Scratch z b) {d : Nat} (hd : d + 64 ≤ 8192) (r : Nat) :
     WP isa (.block [.vmovdqu32Store (sc d) (y r)]) z fun t =>
       t = z.setMem (z.mem.writeW (b + BitVec.ofNat 64 d) (z.zmm (y r))) := by
-  have hw : InRegions z.wr (b + BitVec.ofNat 64 d) 64 := ⟨_, hs.wr, Offset.contains_base b hd (by omega)⟩
+  have hw : InRegions z.wr (b + BitVec.ofNat 64 d) 64 := ⟨_, hs.wr, Offset.contains_base b hd (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_sc' hs.rdi, State.store512_eq, hw, ite_true,
     Option.some.injEq, exists_eq_left']
 
 theorem yst_ok {s : State} {b : Addr} (hs : Scratch s b) {d : Nat} (hd : d + 32 ≤ 8192) (r : Nat) :
     WP isa (.block [st d r]) s fun t => t = s.setMem (s.mem.writeW (b + BitVec.ofNat 64 d) (s.ymm (y r))) := by
-  have hw : InRegions s.wr (b + BitVec.ofNat 64 d) 32 := ⟨_, hs.wr, Offset.contains_base b hd (by omega)⟩
+  have hw : InRegions s.wr (b + BitVec.ofNat 64 d) 32 := ⟨_, hs.wr, Offset.contains_base b hd (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, st, ea_sc' hs.rdi, State.store256_eq, hw,
     ite_true, Option.some.injEq, exists_eq_left']
@@ -219,7 +219,7 @@ theorem yld_ok {s : State} {b : Addr} (hs : Scratch s b) {d : Nat} (hd : d + 32 
       (∀ x, x ≠ xr r → ∀ k < 4, qw t x k = qw s x k) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.syms = s.syms := by
   have hin : InRegions (s.rd ++ s.wr) (b + BitVec.ofNat 64 d) 32 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base b hd (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base b hd (by omega_arith)⟩
   have hy : y r = xr r := y_xr r hr
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ld, ea_sc' hs.rdi, State.load256, hin, ite_true,
@@ -237,9 +237,9 @@ theorem zstores_ok {b : Addr} : ∀ n ≤ 5, ∀ z : State, Scratch z b →
   | 0, _, z, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, by cases z; rfl⟩
   | n + 1, hn, z, hs => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (zstores_ok n (by omega) z hs) fun t₁ ⟨c₁, o₁, e₁⟩ => ?_
+    refine WP.mono (zstores_ok n (by omega_arith) z hs) fun t₁ ⟨c₁, o₁, e₁⟩ => ?_
     have hs₁ : Scratch t₁ b := ⟨by rw [e₁]; exact hs.rdi, by rw [e₁]; exact hs.wr, hs.nowrap⟩
-    refine WP.mono (zst_ok hs₁ (d := ZACC + 64 * n) (by unfold ZACC; omega) n) fun t et => ?_
+    refine WP.mono (zst_ok hs₁ (d := ZACC + 64 * n) (by unfold ZACC; omega_arith) n) fun t et => ?_
     have ez : t₁.zmm (y n) = z.zmm (y n) := by rw [e₁]; rfl
     refine ⟨fun j hj h hh k hk => ?_, fun a ha => ?_, ?_⟩
     · rw [et]
@@ -248,11 +248,11 @@ theorem zstores_ok {b : Addr} : ∀ n ≤ 5, ∀ z : State, Scratch z b →
         rw [State.setMem_mem, mq, ez, ← Offset.add_ofNat_add_ofNat b (ZACC + 64 * j) (32 * h + 8 * k)]
         exact readW_zmm _ _ z _ hh hk
       · rw [State.setMem_mem, mq, readW_writeW_off _ _ _ (d := ZACC + 64 * j + (32 * h + 8 * k)) (n := 8)
-          (by unfold ZACC; omega) (by unfold ZACC; omega) (Or.inl (by unfold ZACC; omega))]
-        exact c₁ j (by omega) h hh k hk
-    · rw [et, State.setMem_mem, writeW_byte_off _ _ _ _ ?_, o₁ a (by omega)]
+          (by unfold ZACC; omega_arith) (by unfold ZACC; omega_arith) (Or.inl (by unfold ZACC; omega_arith))]
+        exact c₁ j (by omega_arith) h hh k hk
+    · rw [et, State.setMem_mem, writeW_byte_off _ _ _ _ ?_, o₁ a (by omega_arith)]
       simp only [ofs] at ha
-      rw [sub_off]; have := (a - b).isLt; unfold ZACC at *; omega
+      rw [sub_off]; have := (a - b).isLt; unfold ZACC at *; omega_arith
     · rw [et, e₁]; rfl
 
 /-- `ymm0–ymm4` to the low halves of the rows at `ZACC`. -/
@@ -265,25 +265,25 @@ theorem ystores_ok {b : Addr} : ∀ n ≤ 5, ∀ s : State, Scratch s b →
       Outside.refl _ _ _ _, by cases s; rfl⟩
   | n + 1, hn, s, hs => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (ystores_ok n (by omega) s hs) fun t₁ ⟨c₁, u₁, o₁, e₁⟩ => ?_
+    refine WP.mono (ystores_ok n (by omega_arith) s hs) fun t₁ ⟨c₁, u₁, o₁, e₁⟩ => ?_
     have hs₁ : Scratch t₁ b := ⟨by rw [e₁]; exact hs.rdi, by rw [e₁]; exact hs.wr, hs.nowrap⟩
-    refine WP.mono (yst_ok hs₁ (d := ZACC + 64 * n) (by unfold ZACC; omega) n) fun t et => ?_
+    refine WP.mono (yst_ok hs₁ (d := ZACC + 64 * n) (by unfold ZACC; omega_arith) n) fun t et => ?_
     have ey : t₁.ymm (y n) = s.ymm (y n) := by rw [e₁]; rfl
     refine ⟨fun j hj k hk => ?_, fun j hj k hk => ?_, fun a ha => ?_, ?_⟩
     · rw [et]
       by_cases hjn : j = n
       · subst hjn
         rw [State.setMem_mem, mq, ey, ← Offset.add_ofNat_add_ofNat b (ZACC + 64 * j) (8 * k),
-          readW_ymm _ _ s _ hk, y_xr j (by omega)]
+          readW_ymm _ _ s _ hk, y_xr j (by omega_arith)]
       · rw [State.setMem_mem, mq, readW_writeW_off _ _ _ (d := ZACC + 64 * j + 8 * k) (n := 8)
-          (by unfold ZACC; omega) (by unfold ZACC; omega) (by unfold ZACC; omega)]
-        exact c₁ j (by omega) k hk
+          (by unfold ZACC; omega_arith) (by unfold ZACC; omega_arith) (by unfold ZACC; omega_arith)]
+        exact c₁ j (by omega_arith) k hk
     · rw [et, State.setMem_mem, mq, readW_writeW_off _ _ _ (d := ZACC + 64 * j + 32 + 8 * k) (n := 8)
-        (by unfold ZACC; omega) (by unfold ZACC; omega) (by unfold ZACC; omega)]
+        (by unfold ZACC; omega_arith) (by unfold ZACC; omega_arith) (by unfold ZACC; omega_arith)]
       exact u₁ j hj k hk
     · rw [et, State.setMem_mem, writeW_byte_off _ _ _ _ ?_, o₁ a ha]
       simp only [ofs] at ha
-      rw [sub_off]; have := (a - b).isLt; unfold ZACC at *; omega
+      rw [sub_off]; have := (a - b).isLt; unfold ZACC at *; omega_arith
     · rw [et, e₁]; rfl
 
 /-- The rows at `f j` into `ymm0–ymm4`. -/
@@ -297,21 +297,21 @@ theorem yloads_ok {b : Addr} {f : Nat → Nat} (hf : ∀ j < 5, f j + 32 ≤ 819
       rfl, rfl⟩
   | n + 1, hn, s, hs => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (yloads_ok hf n (by omega) s hs) fun t₁ ⟨c₁, k₁, g₁, m₁, rd₁, wr₁, sy₁⟩ => ?_
+    refine WP.mono (yloads_ok hf n (by omega_arith) s hs) fun t₁ ⟨c₁, k₁, g₁, m₁, rd₁, wr₁, sy₁⟩ => ?_
     have hs₁ : Scratch t₁ b := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
-    refine WP.mono (yld_ok hs₁ (hf n (by omega)) (r := n) (by omega))
+    refine WP.mono (yld_ok hs₁ (hf n (by omega_arith)) (r := n) (by omega_arith))
       fun t ⟨c, k, g, m, rd, wr, sy⟩ => ⟨fun j hj q hq => ?_, fun r hr hnr q hq => ?_, g.trans g₁, m.trans m₁,
         rd.trans rd₁, wr.trans wr₁, sy.trans sy₁⟩
     · by_cases hjn : j = n
       · subst hjn; rw [c q hq, m₁]
-      · rw [k _ (xr_ne' j (by omega) n (by omega) hjn) q hq, c₁ j (by omega) q hq]
-    · rw [k _ (xr_ne' r hr n (by omega) (by omega)) q hq, k₁ r hr (by omega) q hq]
+      · rw [k _ (xr_ne' j (by omega_arith) n (by omega_arith) hjn) q hq, c₁ j (by omega_arith) q hq]
+    · rw [k _ (xr_ne' r hr n (by omega_arith) (by omega_arith)) q hq, k₁ r hr (by omega_arith) q hq]
 
 /-! ## `32 A + B` -/
 
 theorem qw_half0 (b : Addr) (w : State) (r : XReg) {k : Nat} (hk : k < 4) : qw (Zmm.half b 0 w) r k = qw w r k := by
   rw [qw_half b w r hk]
-  simp only [zq, qw, State.zlane, Nat.mul_zero, Nat.zero_add, show k / 2 < 2 by omega, ite_true]
+  simp only [zq, qw, State.zlane, Nat.mul_zero, Nat.zero_add, show k / 2 < 2 by omega_arith, ite_true]
 
 theorem lanes_eq_of {s t : State} {r : Nat} (h : ∀ i < 5, ∀ l < 4, qw t (xr (r + i)) l = qw s (xr (r + i)) l) :
     ∀ l < 4, ∀ i < 5, lanes t r l i = lanes s r l i := fun l hl i hi => by
@@ -331,7 +331,7 @@ theorem lanePt5_eq_of {s t : State} (h : ∀ l < 4, ∀ i < 5, lanes t 5 l i = l
 theorem _root_.VG.Proof.Ed25519.X86_64.Ifma.EConsts.zacc {m m' : Mem} {b : Addr} (hk : EConsts m b) (h : Outside b ZACC 320 m m') : EConsts m' b :=
   hk.of_mq fun d _ h2 => by
     rw [VG.Proof.X25519.X86_64.Ifma.mq_eq_word, VG.Proof.X25519.X86_64.Ifma.mq_eq_word]
-    exact h.word (Or.inl (by unfold ZACC; omega)) (by omega)
+    exact h.word (Or.inl (by unfold ZACC; omega_arith)) (by omega_arith)
 
 theorem outside_mq {m m' : Mem} {b : Addr} {o n : Nat} (h : Outside b o n m m') {d : Nat}
     (hd : d + 8 ≤ o ∨ o + n ≤ d) (hd' : d + 8 < 2 ^ 64) : mq m' b d = mq m b d :=
@@ -372,16 +372,16 @@ theorem ztail_ok {w : State} {b : Addr} (hs : Scratch w b) (hk : EConsts w.mem b
   have hk₃ : EConsts t₃.mem b := hk₂.zacc o₃
   -- `B`
   rw [WP.block_append_iff]
-  refine WP.mono (yloads_ok (f := fun j => ZACC + 64 * j + 32) (fun j hj => by unfold ZACC; omega) 5 (by decide)
+  refine WP.mono (yloads_ok (f := fun j => ZACC + 64 * j + 32) (fun j hj => by unfold ZACC; omega_arith) 5 (by decide)
     t₃ hs₃) fun t₄ ⟨c₄, k₄, g₄, m₄, rd₄, wr₄, _⟩ => ?_
   have hs₄ : Scratch t₄ b := ⟨by rw [g₄]; exact hs₃.rdi, by rw [wr₄]; exact hs₃.wr, hs.nowrap⟩
   have l₄ : ∀ l < 4, ∀ i < 5, lanes t₄ 0 l i = lanes (Zmm.half b 1 w) 0 l i := fun l hl i hi => by
     simp only [lanes, Nat.zero_add]
-    rw [c₄ i hi l hl, u₃ i hi l hl, outside_mq o₂ (Or.inr (by unfold ZACC; omega)) (by unfold ZACC; omega),
-      qw_half b w _ hl, ← y_xr i (by omega), ← c₁ i hi 1 (by decide) l hl, Nat.add_assoc]
+    rw [c₄ i hi l hl, u₃ i hi l hl, outside_mq o₂ (Or.inr (by unfold ZACC; omega_arith)) (by unfold ZACC; omega_arith),
+      qw_half b w _ hl, ← y_xr i (by omega_arith), ← c₁ i hi 1 (by decide) l hl, Nat.add_assoc]
   have F₄ : ∀ d, d + 32 ≤ 1024 → F t₄.mem b d = F w.mem b d := fun d hd => by
-    rw [m₄, Outside_F o₃ (by omega) (Or.inl (by unfold ZACC; omega)), Outside_F o₂ (by omega) (Or.inl hd),
-      Outside_F o₁ (by omega) (Or.inl (by unfold ZACC; omega))]
+    rw [m₄, Outside_F o₃ (by omega_arith) (Or.inl (by unfold ZACC; omega_arith)), Outside_F o₂ (by omega_arith) (Or.inl hd),
+      Outside_F o₁ (by omega_arith) (Or.inl (by unfold ZACC; omega_arith))]
   -- `B`'s cached point
   rw [WP.block_append_iff]
   refine WP.mono (vcache_wp hs₄ (by rw [m₄]; exact hk₃)
@@ -392,14 +392,14 @@ theorem ztail_ok {w : State} {b : Addr} (hs : Scratch w b) (hk : EConsts w.mem b
   have hs₅ : Scratch t₅ b := ⟨by rw [g₅]; exact hs₄.rdi, by rw [wr₅]; exact hs₄.wr, hs.nowrap⟩
   -- `32 A` back
   rw [WP.block_append_iff]
-  refine WP.mono (yloads_ok (f := fun j => ZACC + 64 * j) (fun j hj => by unfold ZACC; omega) 5 (by decide)
+  refine WP.mono (yloads_ok (f := fun j => ZACC + 64 * j) (fun j hj => by unfold ZACC; omega_arith) 5 (by decide)
     t₅ hs₅) fun t₆ ⟨c₆, k₆, g₆, m₆, rd₆, wr₆, _⟩ => ?_
   have hs₆ : Scratch t₆ b := ⟨by rw [g₆]; exact hs₅.rdi, by rw [wr₆]; exact hs₅.wr, hs.nowrap⟩
   have l₆ : ∀ l < 4, ∀ i < 5, lanes t₆ 0 l i = lanes t₂ 0 l i := fun l hl i hi => by
     simp only [lanes, Nat.zero_add]
-    rw [c₆ i hi l hl, outside_mq o₅ (Or.inr (by unfold ZACC; omega)) (by unfold ZACC; omega), m₄, c₃ i hi l hl]
+    rw [c₆ i hi l hl, outside_mq o₅ (Or.inr (by unfold ZACC; omega_arith)) (by unfold ZACC; omega_arith), m₄, c₃ i hi l hl]
   have l₆' : ∀ l < 4, ∀ i < 5, lanes t₆ 5 l i = lanes t₅ 5 l i :=
-    lanes_eq_of fun i hi l hl => k₆ (5 + i) (by omega) (by omega) l hl
+    lanes_eq_of fun i hi l hl => k₆ (5 + i) (by omega_arith) (by omega_arith) l hl
   have hk₆ : EConsts t₆.mem b := by rw [m₆]; exact (hk₃.outside (by rw [← m₄]; exact o₅))
   -- the sum
   rw [WP.block_append_iff]
@@ -420,7 +420,7 @@ theorem ztail_ok {w : State} {b : Addr} (hs : Scratch w b) (hk : EConsts w.mem b
   refine ⟨fun r hr => by rw [g, g₇, g₆, g₅, g₄, eg₃, g₂ r hr, eg₁],
     by rw [rd, rd₇, rd₆, rd₅, rd₄, er₃, rd₂, er₁], by rw [wr, wr₇, wr₆, wr₅, wr₄, ew₃, wr₂, ew₁], ?_, ?_⟩
   · intro x hx
-    have hx' : ofs b x < 64 ∨ 6400 ≤ ofs b x := by unfold ZACC at hx; omega
+    have hx' : ofs b x < 64 ∨ 6400 ≤ ofs b x := by unfold ZACC at hx; omega_arith
     refine (o x (by omega_using [hx'])).trans ((o₇ x (by omega_using [hx'])).trans ?_)
     rw [m₆]
     refine (o₅ x (show ofs b x < 1024 ∨ 1024 + 320 ≤ ofs b x by omega_using [hx'])).trans ?_

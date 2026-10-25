@@ -44,18 +44,18 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   have nowrap := ws.nowrap
   rw [VG.Impl.Bignum.Arm.Fios2.top, WP.seq_iff]
   -- the last words of b and m, and the top words of the accumulator
-  refine wp_ldr (a := off (State.addr base) (bb + 4)) (by decide) (ws.ea pb (by omega)) (ws.read (by omega))
+  refine wp_ldr (a := off (State.addr base) (bb + 4)) (by decide) (ws.ea pb (by omega_arith)) (ws.read (by omega_arith))
     fun s1 h1 => ?_
   refine wp_ldr (a := off (State.addr base) (mm + 4)) (by decide)
-    (by rw [h1.other .r4 (by decide)]; exact ws.ea pm (by omega))
-    (by rw [h1.rd, h1.wr]; exact ws.read (by omega)) fun s2 h2 => ?_
+    (by rw [h1.other .r4 (by decide)]; exact ws.ea pm (by omega_arith))
+    (by rw [h1.rd, h1.wr]; exact ws.read (by omega_arith)) fun s2 h2 => ?_
   refine wp_ldr (a := off (State.addr base) (d + 8)) (by decide)
-    (by rw [h2.other .r0 (by decide), h1.other .r0 (by decide)]; exact ws.ea pd (by omega))
-    (by rw [h2.rd, h2.wr, h1.rd, h1.wr]; exact ws.read (by omega)) fun s3 h3 => ?_
+    (by rw [h2.other .r0 (by decide), h1.other .r0 (by decide)]; exact ws.ea pd (by omega_arith))
+    (by rw [h2.rd, h2.wr, h1.rd, h1.wr]; exact ws.read (by omega_arith)) fun s3 h3 => ?_
   refine wp_ldr (a := off (State.addr base) (d + 12)) (by decide)
     (by rw [h3.other .r0 (by decide), h2.other .r0 (by decide), h1.other .r0 (by decide)]
-        exact ws.ea pd (by omega))
-    (by rw [h3.rd, h3.wr, h2.rd, h2.wr, h1.rd, h1.wr]; exact ws.read (by omega))
+        exact ws.ea pd (by omega_arith))
+    (by rw [h3.rd, h3.wr, h2.rd, h2.wr, h1.rd, h1.wr]; exact ws.read (by omega_arith))
     fun s4 h4 => WP.block_nil ?_
   have K4 : Rest [.r1, .r2, .r3, .r4] s s4 :=
     (h1.rest (by simp)).trans ((h2.rest (by simp)).trans ((h3.rest (by simp)).trans (h4.rest (by simp))))
@@ -75,12 +75,12 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   -- row i's top: r4:r3 += r7, r8
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok s4 .r7 (by
-    rw [t3, t4, K4.gpr .r7 (by simp)]; simp only [w32] at bound; omega)) ?_
+    rw [t3, t4, K4.gpr .r7 (by simp)]; simp only [w32] at bound; omega_arith)) ?_
   rintro s5 ⟨v5, f5⟩
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok s5 .r8 (by
     rw [v5, t3, t4, K4.gpr .r7 (by simp), f5.regs .r8 (by simp), K4.gpr .r8 (by simp)]
-    simp only [w32] at bound; omega)) ?_
+    simp only [w32] at bound; omega_arith)) ?_
   rintro s6 ⟨v6, f6⟩
   -- row i + 1's last word
   rw [WP.seq_iff]
@@ -99,7 +99,7 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   -- store it, then row i + 1's top: r4:r3 := the high word, += r5, r11
   rw [WP.seq_iff]
   refine wp_str (a := off (State.addr base) d) (by decide)
-    (by simpa only [Nat.add_zero] using ws8.ea p8 (imm := 0) (by omega)) (ws8.write (by omega)) fun s9 h9 => ?_
+    (by simpa only [Nat.add_zero] using ws8.ea p8 (imm := 0) (by omega_arith)) (ws8.write (by omega_arith)) fun s9 h9 => ?_
   refine wp_mov (op2_reg _ .r4) fun s10 h10 => ?_
   refine wp_mov (op2_imm (by decide)) fun s11 h11 => WP.block_nil ?_
   have hi11 : s11.gpr .r3 = s8.gpr .r4 := by rw [h11.other .r3 (by decide), h10.gpr, h9.gpr]
@@ -109,23 +109,23 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
     rw [h11.other .r11 (by decide), h10.other .r11 (by decide), h9.gpr]
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok s11 .r5 (by
-    rw [hi11, z11, c5]; have := (s8.gpr .r5).isLt; change _ + 0 * _ + _ < _; omega)) ?_
+    rw [hi11, z11, c5]; have := (s8.gpr .r5).isLt; change _ + 0 * _ + _ < _; omega_arith)) ?_
   rintro s12 ⟨v12, f12⟩
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok s12 .r11 (by
     rw [v12, hi11, z11, c5, f12.regs .r11 (by simp), c11]
-    have := (s8.gpr .r5).isLt; have := (s8.gpr .r11).isLt; change _ + 0 * _ + _ + _ < _; omega)) ?_
+    have := (s8.gpr .r5).isLt; have := (s8.gpr .r11).isLt; change _ + 0 * _ + _ + _ < _; omega_arith)) ?_
   rintro s13 ⟨v13, f13⟩
   have f1213 := f12.trans f13
   have m13 : s13.mem = s9.mem := f1213.mem.trans (h11.mem.trans h10.mem)
   have p13 : s13.gpr .r0 = base + BitVec.ofNat 32 d := by
     rw [f1213.regs .r0 (by simp), h11.other .r0 (by decide), h10.other .r0 (by decide), h9.gpr, p8]
   have w13 : s13.wr = s.wr := by rw [f1213.wr, h11.wr, h10.wr, h9.wr, K8.wr]
-  refine wp_str (a := off (State.addr base) (d + 4)) (by decide) ((ws.congr w13).ea p13 (by omega))
-    (by rw [w13]; exact ws.write (by omega)) fun s14 h14 => ?_
+  refine wp_str (a := off (State.addr base) (d + 4)) (by decide) ((ws.congr w13).ea p13 (by omega_arith))
+    (by rw [w13]; exact ws.write (by omega_arith)) fun s14 h14 => ?_
   refine wp_str (a := off (State.addr base) (d + 8)) (by decide)
-    (by rw [h14.gpr]; exact (ws.congr w13).ea p13 (by omega))
-    (by rw [h14.wr, w13]; exact ws.write (by omega)) fun s15 h15 => ?_
+    (by rw [h14.gpr]; exact (ws.congr w13).ea p13 (by omega_arith))
+    (by rw [h14.wr, w13]; exact ws.write (by omega_arith)) fun s15 h15 => ?_
   refine wp_dp (op2_imm (by decide)) fun t ht => WP.block_nil ?_
   refine ⟨s8.gpr .r3, s13.gpr .r3, s13.gpr .r4, ?_, ?_, ?_, ?_⟩
   · rw [ht.mem, h15.mem, h14.gpr, h14.mem, m13, h9.mem, m8]
@@ -153,7 +153,7 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
     rw [r4] at v13
     rw [show (0 : BitVec 32).toNat = 0 from rfl, Nat.zero_mul, Nat.add_zero] at v13
     rw [r5'] at v13
-    omega
+    omega_arith
   · rw [ht.gpr, dpVal, h15.gpr, h14.gpr, p13]
     exact Offset.add_add _ _ _
   · have k11 : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r11] s s11 :=

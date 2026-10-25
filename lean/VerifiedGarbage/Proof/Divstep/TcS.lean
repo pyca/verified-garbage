@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Divstep.Alg
 
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inversion by batches of divsteps: signed coefficients
@@ -70,22 +71,22 @@ theorem comb_le2 {N : Nat} (hN : N ≤ 62) {y z a b p : Int} (hp : 0 < p) (hyz :
     _ ≤ |y| * (2 * p) + |z| * (2 * p) := add_le_add (mul_le_mul_of_nonneg_left ha (abs_nonneg _))
         (mul_le_mul_of_nonneg_left hb (abs_nonneg _))
     _ = (|y| + |z|) * (2 * p) := by ring
-    _ ≤ 2 ^ 62 * (2 * p) := mul_le_mul_of_nonneg_right (le_trans hyz h62) (by omega)
+    _ ≤ 2 ^ 62 * (2 * p) := mul_le_mul_of_nonneg_right (le_trans hyz h62) (by omega_arith)
     _ = 2 ^ 63 * p := by ring
 
 /-- `a`, `b` stay in `(-p, 2p)`. -/
 theorem invRunS_range {N : Nat} (hN : N ≤ 62) {p m x : Int} (hp1 : 1 < p) (hm : (p * m + 1) % 2 ^ 64 = 0) :
     ∀ B, -p < (invRunS N p m x B).a ∧ (invRunS N p m x B).a < 2 * p ∧
       -p < (invRunS N p m x B).b ∧ (invRunS N p m x B).b < 2 * p
-  | 0 => by simp only [invRunS]; omega
+  | 0 => by simp only [invRunS]; omega_arith
   | B + 1 => by
     obtain ⟨a0, a1, b0, b1⟩ := invRunS_range (x := x) hN hp1 hm B
     set s := invRunS N p m x B
     obtain ⟨bu, bq⟩ := msteps_bnd s.d s.f s.g N
-    have ha : |s.a| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
-    have hb : |s.b| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
-    have rA := mredRaw_range (by omega) hm (comb_le2 hN (by omega) bu ha hb)
-    have rB := mredRaw_range (by omega) hm (comb_le2 hN (by omega) bq ha hb)
+    have ha : |s.a| ≤ 2 * p := abs_le.mpr ⟨by omega_arith, by omega_arith⟩
+    have hb : |s.b| ≤ 2 * p := abs_le.mpr ⟨by omega_arith, by omega_arith⟩
+    have rA := mredRaw_range (by omega_arith) hm (comb_le2 hN (by omega_arith) bu ha hb)
+    have rB := mredRaw_range (by omega_arith) hm (comb_le2 hN (by omega_arith) bq ha hb)
     simp only [invRunS, batchS]
     exact ⟨rA.1, rA.2, rB.1, rB.2⟩
 
@@ -103,13 +104,13 @@ theorem norm_cong {p r : Int} : norm p r ≡ r [ZMOD p] := by
 theorem norm_range {p r : Int} (h0 : -p < r) (h1 : r < 2 * p) : 0 ≤ norm p r ∧ norm p r < p := by
   unfold norm
   split
-  · omega
-  · split <;> omega
+  · omega_arith
+  · split <;> omega_arith
 
 /-- `norm p` of the signed run's `a` is the run's. -/
 theorem norm_invRunS {N : Nat} (hN : N ≤ 62) {p m x : Int} (hp : p % 2 = 1) (hp1 : 1 < p)
     (hm : (p * m + 1) % 2 ^ 64 = 0) (B : Nat) : norm p (invRunS N p m x B).a = (invRun N p m x B).a := by
-  obtain ⟨-, -, -, ha, -⟩ := invRunS_rel (N := N) (x := x) hp (by omega) hm B
+  obtain ⟨-, -, -, ha, -⟩ := invRunS_rel (N := N) (x := x) hp (by omega_arith) hm B
   obtain ⟨a0, a1, -, -⟩ := invRunS_range (x := x) hN hp1 hm B
   obtain ⟨-, -, c0, c1, -, -⟩ := invRun_inv (x := x) hN hp hp1 hm B
   obtain ⟨n0, n1⟩ := norm_range a0 a1
@@ -130,10 +131,10 @@ theorem mredRaw_words {A B H p m t W k E R : Int} (hB : B = 2 ^ 64) (hH : H = 2 
   subst hB hH
   have hH : 0 < A * 2 ^ 63 := by positivity
   have hQ : A * 2 ^ 64 = 2 * (A * 2 ^ 63) := by ring
-  have hpH : 2 * p < A * 2 ^ 63 := by omega
+  have hpH : 2 * p < A * 2 ^ 63 := by omega_arith
   rw [abs_le] at ht
   have htH : -(A * 2 ^ 63) ≤ t ∧ t < A * 2 ^ 63 := by
-    constructor <;> omega
+    constructor <;> omega_arith
   have eW := tc_eq hH htH.1 htH.2 hW0 (by rw [← hQ]; exact hW1) (by rw [← hQ]; exact hWt)
   have sW := tc_neg htH.1 htH.2 eW
   have hk' : k = (t * m) % 2 ^ 64 := by
@@ -144,7 +145,7 @@ theorem mredRaw_words {A B H p m t W k E R : Int} (hB : B = 2 ^ 64) (hH : H = 2 
   set r := mredRaw p m t with hr
   have hraw : 2 ^ 64 * r = t + (t * m) % 2 ^ 64 * p := mredRaw_spec hm
   rw [← hk'] at hraw
-  obtain ⟨rlo, rhi⟩ := mredRaw_range hp hm (abs_le.mpr ⟨by omega, ht.2⟩)
+  obtain ⟨rlo, rhi⟩ := mredRaw_range hp hm (abs_le.mpr ⟨by omega_arith, ht.2⟩)
   rw [← hr] at rlo rhi
   have hE' : E = 2 ^ 64 * (r + if r < 0 then A * 2 ^ 64 else 0) := by
     have hX : W + A * 2 ^ 64 * (if A * 2 ^ 63 ≤ W then 2 ^ 64 - 1 else 0) + k * p =
@@ -152,14 +153,14 @@ theorem mredRaw_words {A B H p m t W k E R : Int} (hB : B = 2 ^ 64) (hH : H = 2 
           ((if t < 0 then 1 else 0) - (if r < 0 then 1 else 0)) := by
       have hS : (if A * 2 ^ 63 ≤ W then (2 : Int) ^ 64 - 1 else 0) = if t < 0 then 2 ^ 64 - 1 else 0 := by
         simp only [sW]
-      have hkp : k * p = 2 ^ 64 * r - t := by omega
+      have hkp : k * p = 2 ^ 64 * r - t := by omega_arith
       rw [hS, eW, hkp]
       by_cases h1 : t < 0 <;> by_cases h2 : r < 0 <;> simp only [h1, h2, ↓reduceIte] <;> ring
     rw [hE, hX, Int.add_mul_emod_self_left]
     have h0 : 0 ≤ 2 ^ 64 * r + (if r < 0 then A * 2 ^ 64 * 2 ^ 64 else 0) := by
-      split <;> omega
+      split <;> omega_arith
     have h1 : 2 ^ 64 * r + (if r < 0 then A * 2 ^ 64 * 2 ^ 64 else 0) < A * 2 ^ 64 * 2 ^ 64 := by
-      split <;> omega
+      split <;> omega_arith
     rw [Int.emod_eq_of_lt h0 h1]
     split <;> ring
   rw [hR, hE', Int.mul_ediv_cancel_left _ (by norm_num)]
@@ -180,8 +181,8 @@ theorem norm_words {A B H p r R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 64) (hH : H 
   subst hB hH
   have hH : 0 < A * 2 ^ 63 := by positivity
   have hQ : A * 2 ^ 64 = 2 * (A * 2 ^ 63) := by ring
-  have hpH : 2 * p < A * 2 ^ 63 := by omega
-  have rH : -(A * 2 ^ 63) ≤ r ∧ r < A * 2 ^ 63 := ⟨by omega, by omega⟩
+  have hpH : 2 * p < A * 2 ^ 63 := by omega_arith
+  have rH : -(A * 2 ^ 63) ≤ r ∧ r < A * 2 ^ 63 := ⟨by omega_arith, by omega_arith⟩
   have eR := tc_eq hH rH.1 rH.2 hR0 (by rw [← hQ]; exact hR1) (by rw [← hQ]; exact hRr)
   have sR := tc_neg rH.1 rH.2 eR
   have eR₁ : R₁ = r + if r < 0 then p else 0 := by
@@ -190,34 +191,34 @@ theorem norm_words {A B H p r R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 64) (hH : H 
     by_cases h : r < 0
     · simp only [h, ↓reduceIte]
       rw [show r + 2 * (A * 2 ^ 63) + p = r + p + 2 * (A * 2 ^ 63) * 1 by ring, Int.add_mul_emod_self_left,
-        Int.emod_eq_of_lt (by omega) (by omega)]
+        Int.emod_eq_of_lt (by omega_arith) (by omega_arith)]
     · simp only [h, ↓reduceIte, Int.add_zero]
-      rw [Int.emod_eq_of_lt (by omega) (by omega)]
+      rw [Int.emod_eq_of_lt (by omega_arith) (by omega_arith)]
   obtain ⟨r₂, hr₂⟩ : ∃ r₂, r₂ = r + (if r < 0 then p else 0) - p := ⟨_, rfl⟩
-  have r₂lo : -p ≤ r₂ := by rw [hr₂]; split <;> omega
-  have r₂hi : r₂ < p := by rw [hr₂]; split <;> omega
+  have r₂lo : -p ≤ r₂ := by rw [hr₂]; split <;> omega_arith
+  have r₂hi : r₂ < p := by rw [hr₂]; split <;> omega_arith
   have eR₂ : R₂ = r₂ + if r₂ < 0 then 2 * (A * 2 ^ 63) else 0 := by
-    refine tc_eq hH (by omega) (by omega) hR₂0 (by rw [← hQ]; exact hR₂1) ?_
+    refine tc_eq hH (by omega_arith) (by omega_arith) hR₂0 (by rw [← hQ]; exact hR₂1) ?_
     have h1 : (R₂ + p) % (A * 2 ^ 64) = (r₂ + p) % (A * 2 ^ 64) := by
-      rw [hR₂, eR₁, Int.emod_eq_of_lt (a := r₂ + p) (by omega) (by omega), hr₂]; ring
+      rw [hR₂, eR₁, Int.emod_eq_of_lt (a := r₂ + p) (by omega_arith) (by omega_arith), hr₂]; ring
     rw [← hQ]; exact Int.ModEq.add_right_cancel' p h1
-  have sR₂ := tc_neg (by omega) (by omega) eR₂
+  have sR₂ := tc_neg (by omega_arith) (by omega_arith) eR₂
   have hc₂ : (if A * 2 ^ 63 ≤ R₂ then p else 0) = if r₂ < 0 then p else 0 := by simp only [sR₂]
   rw [hR₃, hc₂, eR₂, hQ]
   unfold norm
   by_cases h2 : r₂ < 0
   · simp only [h2, ↓reduceIte]
     rw [show r₂ + 2 * (A * 2 ^ 63) + p = r₂ + p + 2 * (A * 2 ^ 63) * 1 by ring, Int.add_mul_emod_self_left,
-      Int.emod_eq_of_lt (by omega) (by omega), hr₂]
+      Int.emod_eq_of_lt (by omega_arith) (by omega_arith), hr₂]
     by_cases h : r < 0
     · simp only [h, ↓reduceIte]; ring
-    · have h' : ¬ p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
+    · have h' : ¬ p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_arith
       simp only [h, h', ↓reduceIte]; ring
   · simp only [h2, ↓reduceIte, Int.add_zero]
-    rw [Int.emod_eq_of_lt (by omega) (by omega), hr₂]
+    rw [Int.emod_eq_of_lt (by omega_arith) (by omega_arith), hr₂]
     by_cases h : r < 0
-    · rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
-    · have h' : p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
+    · rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_arith
+    · have h' : p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_arith
       simp only [h, h', ↓reduceIte]; ring
 
 /-- `mredRaw_words` on natural numbers, as words hold them (`B = 2^64`, `H = 2^63`). -/
@@ -229,12 +230,12 @@ theorem mredRaw_nat {A B H p m W k E R : Nat} {t : Int} (hB : B = 2 ^ 64) (hH : 
     (hR : R = E / B) :
     (R : Int) % ((A * B : Nat) : Int) = mredRaw p m t % ((A * B : Nat) : Int) := by
   have hB1 : 1 ≤ B := by rw [hB]; exact Nat.one_le_two_pow
-  have hk1 : k < B := by rw [hk]; exact Nat.mod_lt _ (by omega)
+  have hk1 : k < B := by rw [hk]; exact Nat.mod_lt _ (by omega_arith)
   push_cast
   refine mredRaw_words (A := A) (B := B) (H := H) (p := p) (m := m) (t := t) (W := W) (k := k) (E := E) (R := R)
     (by rw [hB]; norm_num) (by rw [hH]; norm_num) (by exact_mod_cast hA)
-    (by exact_mod_cast hp) (by exact_mod_cast hpA) (by exact_mod_cast hm) ht (by omega) (by exact_mod_cast hW1)
-    (by exact_mod_cast hWt) (by omega) (by exact_mod_cast hk1) ?_ ?_ ?_
+    (by exact_mod_cast hp) (by exact_mod_cast hpA) (by exact_mod_cast hm) ht (by omega_arith) (by exact_mod_cast hW1)
+    (by exact_mod_cast hWt) (by omega_arith) (by exact_mod_cast hk1) ?_ ?_ ?_
   · rw [hk]
     have h1 : W % B * m % B = W * m % B := by rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]
     rw [h1]; push_cast; rw [Int.emod_emod_of_dvd _ (dvd_refl _)]
@@ -251,7 +252,7 @@ theorem norm_nat {A B H p R R₁ R₂ R₃ : Nat} {r : Int} (hB : B = 2 ^ 64) (h
     (R₃ : Int) = norm p r := by
   refine norm_words (A := A) (B := B) (H := H) (p := p) (r := r) (R := R) (R₁ := R₁) (R₂ := R₂) (R₃ := R₃)
     (by rw [hB]; norm_num) (by rw [hH]; norm_num) (by exact_mod_cast hA) (by exact_mod_cast hpA) hr0 hr1
-    (by omega) (by exact_mod_cast hR1) (by exact_mod_cast hRr) ?_ (by omega) (by exact_mod_cast hR₂1) ?_ ?_
+    (by omega_arith) (by exact_mod_cast hR1) (by exact_mod_cast hRr) ?_ (by omega_arith) (by exact_mod_cast hR₂1) ?_ ?_
   · rw [hR₁, ← Nat.cast_mul A H, ite_natCast_le]; push_cast; rfl
   · rw [← hR₂]; push_cast; rfl
   · rw [hR₃, ← Nat.cast_mul A H, ite_natCast_le]; push_cast; rfl

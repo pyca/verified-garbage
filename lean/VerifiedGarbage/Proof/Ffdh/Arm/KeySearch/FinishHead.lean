@@ -50,16 +50,7 @@ theorem finishHead_ok (s : State) {base ptr : BitVec 32} {count status : Nat}
       VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 14, .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4]) s fun t =>
       (t.gpr .r0 = BitVec.ofNat 32 status ∧ t.mem = usedMem s.mem ptr (BitVec.ofNat 32 count)) ∧
       Rest [.r0, .r1, .r2, .r3] s t := by
-  refine withRest [.r0, .r1, .r2, .r3] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r1 15,
-        VG.Impl.Ffdh.Arm.KeySearch.ldf .r2 11, VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 14,
-        .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r2, .r3] ?_ (by rfl) (by rfl)
   have write0 : InRegions s.wr (State.addr ptr) 4 := by
     simpa only [BitVec.add_zero] using
       CallLay.inRegions_sub output.writable (off := 0) (by decide : 0 + 4 ≤ 8) (by decide)

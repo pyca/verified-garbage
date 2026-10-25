@@ -118,9 +118,9 @@ theorem geo : Geo P.lay P.scr := by
   have hK := h.k1024
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega)] at hf
+  rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega_arith)] at hf
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
-  exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩,
+  exact ⟨rfl, by unfold oRsa; omega_arith, ⟨P.scl * 8, by unfold oRsa; omega_arith, by simp⟩, ⟨σ, h.ok⟩,
     by show 48 ≤ 3448; decide⟩
 
 end In
@@ -181,15 +181,15 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
   rw [qil] at hrd oQI mQI qiS qiA rQI kQI fQI
   rw [dql] at hrd oDQ mDQ dqS dqA rDQ kDQ fDQ
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
-    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega
+    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_arith
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 3608, 3608⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [Taint.sub_setWidth (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
   refine
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, pl1 := pl1, plK := plK, ql1 := ql1, qlK := qlK, slK := slK
@@ -197,12 +197,12 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
       scl32 := (arg s 22).isLt
       nB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kN.sub_left below16).symm)
-        (by show (arg s 4).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 4).toNat ≤ 2 ^ 64; omega_arith)
       eB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
-        (by show (arg s 6).toNat ≤ 2 ^ 64; omega) }
+        (by show (arg s 6).toNat ≤ 2 ^ 64; omega_arith) }
   rw [ep_lay]
-  refine ok_entered (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega) hrd
+  refine ok_entered (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega_arith) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -226,18 +226,18 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [ep, BitVec.toNat_setWidth]
     all_goals first
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 3).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 5).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 7).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 9).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 13).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 15).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 17).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 19).isLt; omega)]; omega)
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 21).isLt; omega)]; omega)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 3).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 5).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 7).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 9).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 13).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 15).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 17).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 19).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 21).isLt; omega_arith)]; omega_arith)
   · intro j hj
     have : j < 23 := hj
     rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨

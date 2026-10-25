@@ -87,20 +87,20 @@ theorem crtCtx_of {s : State} (h : crtA.pre s) : CrtCtx s := by
   have hs : Scr s (stackArg s 8) ((stackArg s 9).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   have hargs : (⟨stackArgAddr s 0, 80⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  refine ⟨hk1, hk2, hpl1, hpl2, hql1, hql2, by omega, hs,
-    fun j hj => ⟨_, hargs, by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+  refine ⟨hk1, hk2, hpl1, hpl2, hql1, hql2, by omega_arith, hs,
+    fun j hj => ⟨_, hargs, by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega) (by omega))
-      rw [← stackArgAddr_add s j b] at this; omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd, ← hil]; simp) (by omega) (by rw [← hil]; exact dis),
-    src_of_region (by rw [hrd]; simp) (by omega) dps,
-    src_of_region (by rw [hrd]; simp) (by omega) dqs,
-    src_of_region (by rw [hrd, ← hdpl]; simp) (by omega) (by rw [← hdpl]; exact ddps),
-    src_of_region (by rw [hrd, ← hdql]; simp) (by omega) (by rw [← hdql]; exact ddqs),
-    src_of_region (by rw [hrd, ← hqil]; simp) (by omega) (by rw [← hqil]; exact dqis),
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self, contains_byte _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega))⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega_arith) (by omega_arith))
+      rw [← stackArgAddr_add s j b] at this; omega_arith)),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    src_of_region (by rw [hrd, ← hil]; simp) (by omega_arith) (by rw [← hil]; exact dis),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dps,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dqs,
+    src_of_region (by rw [hrd, ← hdpl]; simp) (by omega_arith) (by rw [← hdpl]; exact ddps),
+    src_of_region (by rw [hrd, ← hdql]; simp) (by omega_arith) (by rw [← hdql]; exact ddqs),
+    src_of_region (by rw [hrd, ← hqil]; simp) (by omega_arith) (by rw [← hqil]; exact dqis),
+    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self, contains_byte _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj => out_scr dOs (contains_byte _ (by omega_arith) (by omega_arith))⟩
 
 /-- After `entry`, from `s`. -/
 structure CrtHeadPost (s t : State) : Prop where
@@ -125,11 +125,11 @@ theorem crtHead_ok {s : State} (c : CrtCtx s) : WP isa (.block entry) s (CrtHead
   have hn := c.hs.nowrap
   have hZ := c.hZ
   have hk1 := c.hk1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 8) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 8) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   refine WP.mono (crtEntry_ok rfl hw c.ha c.hsep) fun t ⟨h0, hO, hN, hK, hI, hP, hPl, hQ, hQl, hDp, hDq,
     hQi, ho, k⟩ => ?_
   exact ⟨c.hs.congr k.wr, h0, hO, hN, by rw [hK, ofNat_toNat64], hI, hP, by rw [hPl, ofNat_toNat64], hQ,
-    by rw [hQl, ofNat_toNat64], hDp, hDq, hQi, InScr.of_outside ho (by omega), k⟩
+    by rw [hQl, ofNat_toNat64], hDp, hDq, hQi, InScr.of_outside ho (by omega_arith), k⟩
 
 /-- `main`'s hypotheses after the head and the modulus' check. -/
 theorem crtPre_of {s t₁ t : State} (c : CrtCtx s) (h : CrtHeadPost s t₁) (hm : t.mem = t₁.mem)
@@ -156,7 +156,7 @@ theorem crtPre_of {s t₁ t : State} (c : CrtCtx s) (h : CrtHeadPost s t₁) (hm
       wsTab (wsWords (stackArg s 1).toNat) ≤ (stackArg s 9).toNat * 8 :=
     crt_room hk1 hpl2 hql2 hZ
   exact
-    { scr := h.scr.congr k.wr, x0 := h0, z := hz, zk := (by omega), k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
+    { scr := h.scr.congr k.wr, x0 := h0, z := hz, zk := (by omega_arith), k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
       hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK), hIn := (by rw [hm]; exact h.hIn),
       hP := (by rw [hm]; exact h.hP), hPl := (by rw [hm]; exact h.hPl), hQ := (by rw [hm]; exact h.hQ),
       hQl := (by rw [hm]; exact h.hQl), hDp := (by rw [hm]; exact h.hDp), hDq := (by rw [hm]; exact h.hDq),
@@ -178,8 +178,8 @@ theorem crtFail_ok {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qi
   have h8 : 8 * 32 ≤ Z := by
     have := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
     have := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
-    unfold offQ at hZq; omega
-  refine WP.mono (pdFail_ok h.scr h.x0 h8 (by omega) (by omega) h.hO h.hK h.out)
+    unfold offQ at hZq; omega_arith
+  refine WP.mono (pdFail_ok h.scr h.x0 h8 (by omega_arith) (by omega_arith) h.hO h.hK h.out)
     fun t ⟨hb, hx, hfr, k⟩ => ⟨by rw [i2osp_zero']; exact hb, hx, fun x _ hx' => hfr x hx', k⟩
 
 /-- What `code` leaves, from what `fail` or `main` leaves. -/

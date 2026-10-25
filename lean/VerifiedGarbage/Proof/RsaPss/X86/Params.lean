@@ -76,12 +76,12 @@ theorem cW_byte {b : Byte} (h0 : b ≠ 0) (rest : List Byte) :
   obtain ⟨-, h1, h2⟩ := params_table b.toNat hb
   by_cases e : b.toNat = 1
   · rw [h1 e, ite_eq_left e]; rfl
-  · obtain ⟨j, hj, hl, hu, he⟩ := h2 (by omega)
+  · obtain ⟨j, hj, hl, hu, he⟩ := h2 (by omega_arith)
     rw [he, ite_eq_right e, RsaPss.log2_eq hn hl hu]
     apply BitVec.eq_of_toNat_eq
-    have : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
+    have : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_arith)
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- `lo = k - emLen`, for a first byte not zero. -/
 theorem lo_eq {b : Byte} (h0 : b ≠ 0) (rest : List Byte) :
@@ -90,8 +90,8 @@ theorem lo_eq {b : Byte} (h0 : b ≠ 0) (rest : List Byte) :
   rw [RsaPss.emLength_eq rest h0, List.length_cons]
   have hn : b.toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq h)
   by_cases e : b.toNat = 1
-  · rw [ite_eq_left e, ite_eq_left (by omega)]; omega
-  · rw [ite_eq_right e, ite_eq_right (by omega)]; omega
+  · rw [ite_eq_left e, ite_eq_left (by omega_arith)]; omega_arith
+  · rw [ite_eq_right e, ite_eq_right (by omega_arith)]; omega_arith
 
 /-- The top bit of a difference of numbers below `2^31`: whether the first
 is less. -/
@@ -99,10 +99,10 @@ theorem ltBit {a b : Nat} (ha : a < 2 ^ 31) (hb : b < 2 ^ 31) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 b) >>> 31 = if a < b then 1 else 0 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (a := b) (by omega)]
+    Nat.mod_eq_of_lt (a := a) (by omega_arith), Nat.mod_eq_of_lt (a := b) (by omega_arith)]
   split
-  · show _ = 1; omega
-  · show _ = 0; omega
+  · show _ = 1; omega_arith
+  · show _ = 0; omega_arith
 
 /-- The flags of `params`: whether everything fits. -/
 theorem fits_z {x K D sl lo : Nat} (hx : x < 256) (hK : K ≤ 1024) (hD : D ≤ 64) (hsl : sl < 2 ^ 32)
@@ -111,31 +111,31 @@ theorem fits_z {x K D sl lo : Nat} (hx : x < 256) (hK : K ≤ 1024) (hD : D ≤ 
         (BitVec.ofNat 32 K - BitVec.ofNat 32 lo - BitVec.ofNat 32 (D + 1) - 1) >>> 31 |||
         (BitVec.ofNat 32 K - BitVec.ofNat 32 lo - BitVec.ofNat 32 (D + 1) - 1 - BitVec.ofNat 32 sl) >>> 31 |||
         BitVec.ofNat 32 sl >>> 31 == 0) = decide (x ≠ 0 ∧ lo + D + 2 + sl ≤ K) := by
-  have e1 : (BitVec.ofNat 32 x - 1) >>> 31 = if x < 1 then 1 else 0 := ltBit (b := 1) (by omega) (by decide)
+  have e1 : (BitVec.ofNat 32 x - 1) >>> 31 = if x < 1 then 1 else 0 := ltBit (b := 1) (by omega_arith) (by decide)
   have e2 : BitVec.ofNat 32 K - BitVec.ofNat 32 lo - BitVec.ofNat 32 (D + 1) - 1 =
       BitVec.ofNat 32 K - BitVec.ofNat 32 (lo + D + 2) := by
     rw [BitVec.sub_sub, BitVec.sub_sub, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_add_ofNat,
-      BitVec.ofNat_add_ofNat, show lo + (D + 1 + 1) = lo + D + 2 by omega]
+      BitVec.ofNat_add_ofNat, show lo + (D + 1 + 1) = lo + D + 2 by omega_arith]
   have e3 : BitVec.ofNat 32 sl >>> 31 = if 2 ^ 31 ≤ sl then 1 else 0 := by
     rw [ofNat_shr hsl]
     by_cases h : 2 ^ 31 ≤ sl
-    · rw [ite_eq_left h, Nat.div_eq_of_lt_le (k := 1) (by omega) (by omega)]; rfl
-    · rw [ite_eq_right h, Nat.div_eq_of_lt (by omega)]; rfl
+    · rw [ite_eq_left h, Nat.div_eq_of_lt_le (k := 1) (by omega_arith) (by omega_arith)]; rfl
+    · rw [ite_eq_right h, Nat.div_eq_of_lt (by omega_arith)]; rfl
   have hor : ∀ a b : BitVec 32, (a ||| b = 0) ↔ (a = 0 ∧ b = 0) := fun a b => BitVec.or_eq_zero_iff
   have hb01 : ∀ (p : Prop) [Decidable p], ((if p then (1 : BitVec 32) else 0) = 0) ↔ ¬ p := by
     intro p _; by_cases hp : p <;> simp [hp]
-  rw [e1, e2, ltBit (by omega) (by omega), e3, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, hor, hor, hor,
+  rw [e1, e2, ltBit (by omega_arith) (by omega_arith), e3, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, hor, hor, hor,
     hb01, hb01, hb01]
   constructor
   · rintro ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩
-    have hf : lo + D + 2 ≤ K := by omega
-    rw [Offset.ofNat_sub_ofNat hf, ltBit (by omega) (by omega), hb01] at h3
-    omega
+    have hf : lo + D + 2 ≤ K := by omega_arith
+    rw [Offset.ofNat_sub_ofNat hf, ltBit (by omega_arith) (by omega_arith), hb01] at h3
+    omega_arith
   · rintro ⟨h1, h2⟩
-    have hf : lo + D + 2 ≤ K := by omega
-    refine ⟨⟨⟨by omega, by omega⟩, ?_⟩, by omega⟩
-    rw [Offset.ofNat_sub_ofNat hf, ltBit (by omega) (by omega), hb01]
-    omega
+    have hf : lo + D + 2 ≤ K := by omega_arith
+    refine ⟨⟨⟨by omega_arith, by omega_arith⟩, ?_⟩, by omega_arith⟩
+    rw [Offset.ofNat_sub_ofNat hf, ltBit (by omega_arith) (by omega_arith), hb01]
+    omega_arith
 
 /-- The flags of `params`, for the modulus' first byte `b`. -/
 theorem failW_z {b : Byte} {K D sl : Nat} (hK : K ≤ 1024) (hD : D ≤ 64) (hsl : sl < 2 ^ 32) :
@@ -146,7 +146,7 @@ theorem failW_z {b : Byte} {K D sl : Nat} (hK : K ≤ 1024) (hD : D ≤ 64) (hsl
   show ((b.setWidth 32 - 1) >>> 31 ||| (BitVec.ofNat 32 K - loW (b.setWidth 32) - BitVec.ofNat 32 (D + 1) - 1) >>> 31 |||
     (BitVec.ofNat 32 K - loW (b.setWidth 32) - BitVec.ofNat 32 (D + 1) - 1 - BitVec.ofNat 32 sl) >>> 31 |||
       BitVec.ofNat 32 sl >>> 31 == 0) = _
-  rw [loW_byte, setWidth_byte, fits_z b.isLt hK hD hsl (by split <;> omega)]
+  rw [loW_byte, setWidth_byte, fits_z b.isLt hK hD hsl (by split <;> omega_arith)]
   simp only [hb]
 
 /-- `params` from the modulus at `esi`, `k` in `ecx` and the salt length in

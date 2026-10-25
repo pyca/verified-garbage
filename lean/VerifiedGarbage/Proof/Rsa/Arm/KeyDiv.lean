@@ -55,10 +55,10 @@ theorem divGeom_ctx {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s 
   have ft := h.arr_fit ht
   have hS : S w = 4 * (w + 2) := rfl
   have hw := h.wle
-  have hf : 20 ≤ Z := by have := h.hdr_le; simp only [hdr] at this; omega
-  refine ⟨⟨h.nowrap, h.writable⟩, h.wpos, by rw [divGeom_n]; omega, hf, ?_, ?_, ?_, h.r8, ?_, hh.n⟩
+  have hf : 20 ≤ Z := by have := h.hdr_le; simp only [hdr] at this; omega_arith
+  refine ⟨⟨h.nowrap, h.writable⟩, h.wpos, by rw [divGeom_n]; omega_arith, hf, ?_, ?_, ?_, h.r8, ?_, hh.n⟩
   · intro i; rcases i with ⟨_ | _ | _ | _ | i, hi⟩ <;> simp only [divGeom, Geometry.words] <;>
-      (try split) <;> first | omega | (simp at hi; omega) | (simp at *)
+      (try split) <;> first | omega_arith | (simp at hi; omega_arith) | (simp at *)
   · intro i
     have e : ∀ x, 20 ≤ arr w x := fun x => Nat.le_trans (by decide : 20 ≤ hdr) (Nat.le_add_right _ _)
     rcases i with ⟨_ | _ | _ | _ | i, hi⟩ <;> simp only [divGeom] <;> first | exact e _ | (simp at hi)
@@ -75,7 +75,7 @@ theorem divGeom_ctx {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s 
     · exact hh.r
     · exact hh.d
     · exact hh.t
-    · omega
+    · omega_arith
 
 theorem val32_top {m : Mem} {base : Addr} {d w : Nat} (h : w32 m base (d + 4 * w) = 0) :
     val32 m base d (w + 1) = val32 m base d w := by
@@ -89,7 +89,7 @@ theorem val32_low {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 1
   · rw [e, Nat.mul_zero, Nat.add_zero]
   · exfalso
     have : 2 ^ (32 * w) ≤ 2 ^ (32 * w) * w32 m base (d + 4 * w) := Nat.le_mul_of_pos_right _ e
-    omega
+    omega_arith
 
 theorem div_ok {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s B Z w N)
     (hq : q < N) (hr : r < N) (hd : d < N) (ht : t < N)
@@ -108,9 +108,9 @@ theorem div_ok {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s B Z w
     have hS : S w = 4 * (w + 2) := rfl
     rw [divGeom_base]
     rcases hrg with rfl | rfl | rfl
-    · have := hx (arr w q, S w) (by simp [ranges]); dsimp only; omega
-    · have := hx (arr w r, S w) (by simp [ranges]); dsimp only; omega
-    · have := hx (arr w t, S w) (by simp [ranges]); dsimp only; omega
+    · have := hx (arr w q, S w) (by simp [ranges]); dsimp only; omega_arith
+    · have := hx (arr w r, S w) (by simp [ranges]); dsimp only; omega_arith
+    · have := hx (arr w t, S w) (by simp [ranges]); dsimp only; omega_arith
   · have eD : (divGeom B Z w q r d t).value s.mem 2 = num s.mem B w d := val32_top top
     have lt := val32_lt s.mem (State.addr B) (arr w d) w
     have v' := v (by rw [eD]; exact pos) (by rw [eD]; exact lt)

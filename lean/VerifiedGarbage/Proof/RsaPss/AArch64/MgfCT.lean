@@ -131,7 +131,7 @@ theorem counter_mct :
   have hfit := h.hd.fit
   have : p.2 ≤ p.2 * H.D := Nat.le_mul_of_pos_right _ hD
   refine WP.mono (counter_ok hH h.L (fun _ _ => rfl) (c := p.2) (h.r (.x28, fun p => BitVec.ofNat 64 p.2)
-    (by simp [mregs])) (by unfold oY at hfit; omega)) fun u' ⟨k, x22, nb, fr, _⟩ => ?_
+    (by simp [mregs])) (by unfold oY at hfit; omega_arith)) fun u' ⟨k, x22, nb, fr, _⟩ => ?_
   have h' := h.keep k (by decide) (by decide) fr fun q hq r hr => by
     simp only [mslots, List.mem_singleton] at hq
     subst hq
@@ -160,7 +160,7 @@ theorem mgfHash_mct (hc : PssChecks H.P H.D) :
       x21 := h.r (.x21, fun p => off p.1.S oDig) (by simp [mregs2, mregs])
       nb := h.s (sNb, fun _ => BitVec.ofNat 64 (mgfNb H)) (by simp [mslots2])
       len := ⟨H.D + 4, h.r (.x22, fun _ => BitVec.ofNat 64 (H.D + 4)) (by simp [mregs2]), hnb1⟩
-      hnb := by show mgfNb H * H.P.B ≤ 2048; omega
+      hnb := by show mgfNb H * H.P.B ≤ 2048; omega_arith
       fx := fun ℓ e => by
         simp only [Option.some.injEq] at e
         subst e
@@ -169,9 +169,9 @@ theorem mgfHash_mct (hc : PssChecks H.P H.D) :
   have x22 := h.r (.x22, fun _ => BitVec.ofNat 64 (H.D + 4)) (by simp [mregs2])
   refine WP.mono (ctHashWith_out hH _ h.L (fun _ _ => rfl) (h.r (.x19, fun p => off p.1.S oSt) (by simp [mregs2, mregs]))
     (h.r (.x21, fun p => off p.1.S oDig) (by simp [mregs2, mregs])) x22
-    (h.s (sNb, fun _ => BitVec.ofNat 64 (mgfNb H)) (by simp [mslots2])) hnb1 (by omega) fun L' R' _ _ => ?_)
+    (h.s (sNb, fun _ => BitVec.ofNat 64 (mgfNb H)) (by simp [mslots2])) hnb1 (by omega_arith) fun L' R' _ _ => ?_)
     fun u' O => ?_
-  · exact WP.mono (fixedPad_ok L' R' (n := mgfNb H * H.P.B) (by omega) (by unfold oY; omega)) fun _ ⟨k, f, r⟩ =>
+  · exact WP.mono (fixedPad_ok L' R' (n := mgfNb H * H.P.B) (by omega_arith) (by unfold oY; omega_arith)) fun _ ⟨k, f, r⟩ =>
       ⟨k.mono, f, r⟩
   refine ⟨h.L.congr O.sp O.wr (O.cs .x20 (by decide)), fun q hq => ?_, fun q hq => ?_, h.hd, h.hc⟩
   · have hq2 : q ∈ mregs2 H := List.mem_append_left _ hq
@@ -279,7 +279,7 @@ theorem mgfXor_ct {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) 
     · rw [hm, Mem.readW_writeW_self64, Nat.zero_mul]
     · rw [hm]; exact (frame_slot _ a.F sDone _).mono (by simp)
     · simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]
-      rw [ite_eq_right (by omega)]
+      rw [ite_eq_right (by omega_arith)]
   refine RelCT.exists_ fun a => ?_
   let I : Nat → State → State → Prop := fun n => Two fun p u => MI G H.D p u ∧ n = p.1.db - p.2 * H.D
   refine (RelCT.loop (Q := fun _ _ => True) I (fun n => ?_) (a.db - 0 * H.D)).mono
@@ -308,7 +308,7 @@ theorem mgfXor_ct {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) 
   have hs1 : (c + 1) * H.D = c * H.D + H.D := Nat.succ_mul _ _
   obtain ⟨t₁, V₁, hs₁, I₁⟩ := m₁
   obtain ⟨t₂, V₂, hs₂, I₂⟩ := m₂
-  exact ⟨a'.db - (c + 1) * H.D, by omega, (a', c + 1), ⟨⟨t₁, V₁, hs₁, I₁, hc⟩, rfl⟩, ⟨t₂, V₂, hs₂, I₂, hc⟩, rfl⟩
+  exact ⟨a'.db - (c + 1) * H.D, by omega_arith, (a', c + 1), ⟨⟨t₁, V₁, hs₁, I₁, hc⟩, rfl⟩, ⟨t₂, V₂, hs₂, I₂, hc⟩, rfl⟩
 
 end
 

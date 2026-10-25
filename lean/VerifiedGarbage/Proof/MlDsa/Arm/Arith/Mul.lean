@@ -202,11 +202,11 @@ theorem acc_of {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : Nat
   have fG := hp.fitG
   have fH := hp.fitH
   have eF : State.addr (pf s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = coeffAddr (F s₀) i :=
-    addr_ptr _ _ _ (by omega)
+    addr_ptr _ _ _ (by omega_arith)
   have eG : State.addr (pg s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = coeffAddr (G s₀) i :=
-    addr_ptr _ _ _ (by omega)
+    addr_ptr _ _ _ (by omega_arith)
   have eH : State.addr (ph s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = coeffAddr (H s₀) i :=
-    addr_ptr _ _ _ (by omega)
+    addr_ptr _ _ _ (by omega_arith)
   have cF := coeff_contains (F s₀) (i := i) hi
   have cG := coeff_contains (G s₀) (i := i) hi
   have cH := coeff_contains (H s₀) (i := i) hi
@@ -229,7 +229,7 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
     WP isa (.block body) s fun s' => Inv out s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 256) := by
   have fH := hp.fitH
   have eH : State.addr (ph s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = coeffAddr (H s₀) i :=
-    addr_ptr _ _ _ (by omega)
+    addr_ptr _ _ _ (by omega_arith)
   have cH := coeff_contains (H s₀) (i := i) hi
   refine WP.mono hb fun s' ⟨r0, r1, r2, r3, z, r4, ro, m, rd, wr, sp⟩ => ⟨⟨?_, ?_, ?_, ?_, r4,
     rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, h.keep.trans ro, ?_, ?_⟩, ?_⟩
@@ -245,8 +245,8 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
     · subst hij; simp
     · rw [ite_eq_right hij]
       by_cases hj' : j < i
-      · rw [ite_eq_left hj', ite_eq_left (by omega)]
-      · rw [ite_eq_right hj', ite_eq_right (by omega)]
+      · rw [ite_eq_left hj', ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right hj', ite_eq_right (by omega_arith)]
   · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
 
 /-- The loop, after `q` is loaded. -/
@@ -313,7 +313,7 @@ theorem mulAdd_hb {s₀ : State} (hp : Pre s₀) (hH : Reduced s₀.mem (H s₀)
     polyAt_val hp.redG hi, Nat.mul_comm (coeffAt s₀.mem (F s₀) i).toNat]
   generalize (coeffAt s₀.mem (G s₀) i).toNat * (coeffAt s₀.mem (F s₀) i).toNat = X at *
   rw [q_eq] at *
-  omega
+  omega_arith
 
 /-! ## Verified -/
 

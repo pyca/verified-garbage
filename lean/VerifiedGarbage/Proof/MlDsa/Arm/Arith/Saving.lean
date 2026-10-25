@@ -49,7 +49,7 @@ theorem word_region (sp : BitVec 32) {n : Nat} (h : 4 + n ≤ sp.toNat) :
   have := addr_toNat' sp
   have := addr_toNat' (sp - 4)
   simp only [belowA, Region.Contains]
-  bv_omega
+  bv_omega_arith
 
 theorem word_disj (sp : BitVec 32) {n : Nat} (h : 4 + n ≤ sp.toNat) :
     (⟨State.addr (sp - 4), 4⟩ : Region).Disjoint (belowA (sp - 4) n) := by
@@ -57,7 +57,7 @@ theorem word_disj (sp : BitVec 32) {n : Nat} (h : 4 + n ≤ sp.toNat) :
   have := addr_toNat' sp
   have := addr_toNat' (sp - 4)
   simp only [belowA, Region.Contains] at hx hy
-  bv_omega
+  bv_omega_arith
 
 theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
     ∀ (Q : State → Prop) (s : State), 4 * rs.length ≤ s.sp.toNat → (∀ R ∈ W, (belowA s.sp (4 * rs.length)).Disjoint R) →
@@ -75,7 +75,7 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
     simp only [List.length_cons, Nat.mul_add, Nat.mul_one] at hsp hW hb
     have hs4 : 4 ≤ s.sp.toNat := by omega
     have e4 : (4 : BitVec 32) = BitVec.ofNat 32 (4 * [r].length) := rfl
-    have hsp' : (s.sp - 4).toNat = s.sp.toNat - 4 := by bv_omega
+    have hsp' : (s.sp - 4).toNat = s.sp.toNat - 4 := by bv_omega_arith
     have hsub : Region.Sub (belowA (s.sp - 4) (4 * rs.length)) (belowA s.sp (4 * rs.length + 4)) := by
       have := belowA_push (sp := s.sp) (k := 4) (a := 4 * rs.length) (by omega)
       rwa [Nat.add_comm] at this
@@ -103,7 +103,7 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
           fun R hR => hE.wr R (by rw [pushed_wr]; exact List.mem_cons_of_mem _ hR), ?_⟩
         have f₀ : Frame [⟨State.addr (s.sp - 4), 4⟩] s.mem (pushed [r] s).mem := by
           have := storeWords_frame s.mem (s.sp - BitVec.ofNat 32 (4 * [r].length)) [s.gpr r]
-            (by simp; bv_omega)
+            (by simp; bv_omega_arith)
           simp only [List.length_singleton] at this
           exact this
         refine (f₀.sub fun R hR => ?_).trans (hE.frame.sub fun R hR => ?_)

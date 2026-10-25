@@ -56,24 +56,24 @@ theorem fastLow9 (k j : Nat) :
     BitVec.ofNat 8 (BitVec.ofInt 64 (FastNaf.digit 9 k j)).toNat=FastNaf.wbyte k (2*j) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat,fastWord_toNat,fastWbyte_toNat,fastWord9_toNat,
-    show 2*j/2=j by omega,show 2*j%2=0 by omega]
+    show 2*j/2=j by omega_arith,show 2*j%2=0 by omega_arith]
   have hb := fastMagnitude_bound 9 k j
   cases hn : FastNaf.negative 9 k j
-  · simp only [Bool.false_eq_true,ite_false] <;> omega
+  · simp only [Bool.false_eq_true,ite_false] <;> omega_arith
   · have hp := FastNaf.negative_magnitude_pos 9 k j hn
-    simp only [ite_true] <;> omega
+    simp only [ite_true] <;> omega_arith
 
 /-- The low byte of the digit's register shifted right by eight is its word's high byte. -/
 theorem fastHigh9 (k j : Nat) :
     BitVec.ofNat 8 (BitVec.ofInt 64 (FastNaf.digit 9 k j)>>>8).toNat=FastNaf.wbyte k (2*j+1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,fastWord_toNat,
-    fastWbyte_toNat,fastWord9_toNat,show (2*j+1)/2=j by omega,show (2*j+1)%2=1 by omega]
+    fastWbyte_toNat,fastWord9_toNat,show (2*j+1)/2=j by omega_arith,show (2*j+1)%2=1 by omega_arith]
   have hb := fastMagnitude_bound 9 k j
   cases hn : FastNaf.negative 9 k j
-  · simp only [Bool.false_eq_true,ite_false] <;> omega
+  · simp only [Bool.false_eq_true,ite_false] <;> omega_arith
   · have hp := FastNaf.negative_magnitude_pos 9 k j hn
-    simp only [ite_true] <;> omega
+    simp only [ite_true] <;> omega_arith
 
 theorem off_add_one (base : Addr) (d : Nat) : off base d+BitVec.ofNat 64 1=off base (d+1) := by
   unfold off
@@ -89,7 +89,7 @@ theorem fastStore9_ok {s : State} {base : Addr} {size bits k j : Nat}
         (off base (bits+2*j+1)) (FastNaf.wbyte k (2*j+1)) ∧ KeepRegs [.x3] s t := by
   have hw0 : InRegions s.wr (s.gpr .x20+BitVec.ofNat 64 0) 1 := by
     rw [hp]; simp only [BitVec.add_zero]
-    exact ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
+    exact ⟨_,hs.wr,hs.contains (by omega_arith) (by decide)⟩
   rw [Impl.Weierstrass.AArch64.FastNaf.store16,
     show ([.strb .x2 .x20 0,.lsr .x .x3 .x2 8,.strb .x3 .x20 1] : List Instr)=
       [.strb .x2 .x20 0]++([.lsr .x .x3 .x2 8]++[.strb .x3 .x20 1]) from rfl,WP.block_append_iff]
@@ -100,7 +100,7 @@ theorem fastStore9_ok {s : State} {base : Addr} {size bits k j : Nat}
   have pb : b.gpr .x20=off base (bits+2*j) := (kb.gpr .x20 (by decide)).trans hp
   have hw1 : InRegions b.wr (b.gpr .x20+BitVec.ofNat 64 1) 1 := by
     rw [pb,off_add_one,kb.wr]
-    exact ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
+    exact ⟨_,hs.wr,hs.contains (by omega_arith) (by decide)⟩
   refine WP.mono (strb_ok b (by decide) hw1) fun t ht => ?_
   subst t
   refine ⟨?_,⟨fun r hr => kb.gpr r hr,kb.rd,kb.wr,kb.sp⟩⟩
@@ -132,7 +132,7 @@ theorem fastOdd9_ok {s : State} {base : Addr} {size bits k j : Nat}
   have sa := hI.scr.of_keeps ka (by decide)
   have pa := (ka.gpr .x20 (by decide)).trans hI.ptr
   rw [WP.block_append_iff]
-  refine WP.mono (fastStore9_ok sa (by omega) pa da) fun b ⟨mb,kb⟩ => ?_
+  refine WP.mono (fastStore9_ok sa (by omega_arith) pa da) fun b ⟨mb,kb⟩ => ?_
   have vb : nafVal5 (b.gpr .x5) (b.gpr .x6) (b.gpr .x7) (b.gpr .x8) (b.gpr .x9)=FastNaf.residual 9 k j := by
     simp only [kb.gpr .x5 (by decide),kb.gpr .x6 (by decide),kb.gpr .x7 (by decide),
       kb.gpr .x8 (by decide),kb.gpr .x9 (by decide),
@@ -153,38 +153,38 @@ theorem fastOdd9_ok {s : State} {base : Addr} {size bits k j : Nat}
       (off base (bits+2*j+1)) (FastNaf.wbyte k (2*j+1)) := by
     rw [kt.mem,kd.mem,kc.mem,mb,ka.mem]
   have hnw := hI.scr.nowrap
-  have O0 := writeW8_outside s.mem base (FastNaf.wbyte k (2*j)) (d:=bits+2*j) (by omega)
+  have O0 := writeW8_outside s.mem base (FastNaf.wbyte k (2*j)) (d:=bits+2*j) (by omega_arith)
   have O1 := writeW8_outside (s.mem.writeW (off base (bits+2*j)) (FastNaf.wbyte k (2*j))) base
-    (FastNaf.wbyte k (2*j+1)) (d:=bits+2*j+1) (by omega)
-  have hoff : ∀ i, i<520 → ofs base (off base (bits+i))=bits+i := fun i hi => ofs_off0 base (by omega)
+    (FastNaf.wbyte k (2*j+1)) (d:=bits+2*j+1) (by omega_arith)
+  have hoff : ∀ i, i<520 → ofs base (off base (bits+i))=bits+i := fun i hi => ofs_off0 base (by omega_arith)
   refine ⟨⟨hI.scr.of_keepRegs keep (by decide),?_,(keep.gpr _ (by decide)).trans hI.mask,
     (keep.gpr _ (by decide)).trans hI.sign,(keep.gpr _ (by decide)).trans hI.zero,
     (keep.gpr _ (by decide)).trans hI.one,?_,?_⟩,keep,?_⟩
   · simp only [kt.gpr .x5 (by decide),kt.gpr .x6 (by decide),kt.gpr .x7 (by decide),
       kt.gpr .x8 (by decide),kt.gpr .x9 (by decide),vd,vc]
     rw [FastNaf.residual_succ,FastNaf.next_odd9 _ ho,FastNaf.residual_skip9 k j ho]
-    omega
-  · rw [pt]; congr 2 <;> omega
+    omega_arith
+  · rw [pt]; congr 2 <;> omega_arith
   · intro i hi
     rw [mt]
     by_cases h1 : i=2*j+1
     · subst i
-      rw [show bits+(2*j+1)=bits+2*j+1 by omega,writeW8_self,ite_eq_left (by omega)]
-    · rw [O1 _ (by rw [hoff i (by omega)]; omega)]
+      rw [show bits+(2*j+1)=bits+2*j+1 by omega_arith,writeW8_self,ite_eq_left (by omega_arith)]
+    · rw [O1 _ (by rw [hoff i (by omega_arith)]; omega_arith)]
       by_cases h0 : i=2*j
       · subst i
-        rw [writeW8_self,ite_eq_left (by omega)]
-      · rw [O0 _ (by rw [hoff i (by omega)]; omega),hI.digits i hi]
+        rw [writeW8_self,ite_eq_left (by omega_arith)]
+      · rw [O0 _ (by rw [hoff i (by omega_arith)]; omega_arith),hI.digits i hi]
         by_cases hlt : i/2<j
-        · simp only [hlt,ite_true,show i/2<j+9 from by omega]
+        · simp only [hlt,ite_true,show i/2<j+9 from by omega_arith]
         · by_cases hil : i/2<j+9
           · simp only [hlt,hil,ite_false,ite_true]
             exact (FastNaf.wbyte_of_zero (by
-              have h := FastNaf.magnitude_skip_zero9 k j (i/2-j) ho (by omega) (by omega)
-              rwa [Nat.add_sub_of_le (by omega)] at h)).symm
+              have h := FastNaf.magnitude_skip_zero9 k j (i/2-j) ho (by omega_arith) (by omega_arith)
+              rwa [Nat.add_sub_of_le (by omega_arith)] at h)).symm
           · simp only [hlt,hil,ite_false]
   · rw [mt]
-    exact (O0.mono (by omega) (by omega)).trans (O1.mono (by omega) (by omega))
+    exact (O0.mono (by omega_arith) (by omega_arith)).trans (O1.mono (by omega_arith) (by omega_arith))
 
 theorem fastEven9_ok {s : State} {base : Addr} {size bits k j : Nat}
     (hI : FastPrep9State base size bits k j s) (he : FastNaf.residual 9 k j%2=0) :
@@ -203,13 +203,13 @@ theorem fastEven9_ok {s : State} {base : Addr} {size bits k j : Nat}
   · simp only [kt.gpr .x5 (by decide),kt.gpr .x6 (by decide),kt.gpr .x7 (by decide),
       kt.gpr .x8 (by decide),kt.gpr .x9 (by decide),va,hI.value]
     rw [FastNaf.residual_succ,FastNaf.next_even _ _ he]
-  · rw [pt]; congr 2 <;> omega
+  · rw [pt]; congr 2 <;> omega_arith
   · intro i hi
     rw [mt,hI.digits i hi]
     by_cases hij : i/2=j
     · simp only [hij,Nat.lt_irrefl,ite_false,Nat.lt_add_one,ite_true]
       exact (FastNaf.wbyte_of_zero (by rw [hij]; exact (FastNaf.magnitude_zero_iff 9 k j).mpr he)).symm
-    · have hh : (i/2<j)=(i/2<j+1) := propext (by omega)
+    · have hh : (i/2<j)=(i/2<j+1) := propext (by omega_arith)
       simp only [hh]
   · rw [mt]; exact Outside.refl _ _ _ _
 
@@ -260,7 +260,7 @@ theorem fastPrep9Post_of_zero {s : State} {base : Addr} {size bits k j : Nat}
   split
   · rfl
   · have hv := FastNaf.residual_of_zero 9 k j hz (i/2-j)
-    rw [show j+(i/2-j)=i/2 from by omega] at hv
+    rw [show j+(i/2-j)=i/2 from by omega_arith] at hv
     exact (FastNaf.wbyte_of_zero ((FastNaf.magnitude_zero_iff 9 k (i/2)).mpr (by rw [hv]))).symm
 
 theorem fastLoop9_ok {s : State} {base : Addr} {size bits k j : Nat}
@@ -273,8 +273,8 @@ theorem fastLoop9_ok {s : State} {base : Addr} {size bits k j : Nat}
   apply WP.loop I (n:=257-j)
   · intro n a ⟨i,hi,hn,ia,ka,oa⟩
     have hv : FastNaf.residual 9 k i≤2^256 :=
-      Nat.le_trans (FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=i) (by omega))
-        (Nat.pow_le_pow_right (by decide) (by omega))
+      Nat.le_trans (FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=i) (by omega_arith))
+        (Nat.pow_le_pow_right (by decide) (by omega_arith))
     refine WP.mono (fastStep9_ok ia hb hi hv) fun t ⟨it,kt,ot,et⟩ => ?_
     by_cases hz : FastNaf.residual 9 k (fastNext9 k i)=0
     · refine Or.inl ⟨?_,fastPrep9Post_of_zero it hz,ka.trans kt,oa.trans ot⟩
@@ -282,12 +282,12 @@ theorem fastLoop9_ok {s : State} {base : Addr} {size bits k j : Nat}
       rfl
     · have hj' : fastNext9 k i<257 := by
         by_contra h
-        exact hz (FastNaf.residual_zero_ge hk (by omega))
+        exact hz (FastNaf.residual_zero_ge hk (by omega_arith))
       refine Or.inr ⟨?_,257-fastNext9 k i,?_,fastNext9 k i,hj',rfl,it,ka.trans kt,oa.trans ot⟩
       · simp only [eval,read_x,Size.bits,Option.some.injEq,bne_iff_ne]
         exact fun h => hz (et.mp h)
-      · have : i<fastNext9 k i := by unfold fastNext9; split <;> omega
-        omega
+      · have : i<fastNext9 k i := by unfold fastNext9; split <;> omega_arith
+        omega_arith
   · exact ⟨j,hj,rfl,hI,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,Outside.refl _ _ _ _⟩
 
 theorem fastClear9_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat}
@@ -298,7 +298,7 @@ theorem fastClear9_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat}
   intro i hi
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
-  rw [testBit_byte t.mem base (n:=65) (by omega) hb,ht]
+  rw [testBit_byte t.mem base (n:=65) (by omega_arith) hb,ht]
   simp only [BitVec.ofNat_eq_ofNat,Nat.zero_testBit,BitVec.getLsbD_zero]
 
 theorem fastSetup9_ok (K : WinCfg) {s : State} {base : Addr} {size src : Nat}
@@ -317,7 +317,7 @@ theorem fastSetup9_ok (K : WinCfg) {s : State} {base : Addr} {size src : Nat}
   · simp only [kt.gpr _ List.not_mem_nil,ia.value]
   · simpa only [Nat.mul_zero,Nat.add_zero] using (kt.gpr _ List.not_mem_nil).trans ia.ptr
   · intro i hi
-    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega)
+    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega_arith)
   · rw [←ma]; exact ot
 
 /-- The width-nine digits of the scalar at `src`, two bytes each at `K.bits`, touching only

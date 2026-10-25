@@ -58,13 +58,13 @@ theorem limb_slot_frame {b : BitVec 32} {m m' : Mem} {o i : Slot} (hne : i ≠ o
   have hsep : offset i + 64 ≤ offset o ∨ offset o + 64 ≤ offset i := by
     have hv : i.val ≠ o.val := fun e => hne (Fin.ext e)
     simp only [offset]
-    omega
+    omega_arith
   rw [ACC_eq] at hi ho
   refine limb_frame hf fun r hr k hk => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inl (by rw [ACC_eq]; omega)) (by omega) (by rw [ACC_eq]; omega)
+  · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint _ (.inl (by rw [ACC_eq]; omega_arith)) (by omega_arith) (by rw [ACC_eq]; omega_arith)
 
 theorem field_update {b : BitVec 32} {m m' : Mem} (o : Slot) (hl : AllLim m b)
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
@@ -94,8 +94,8 @@ theorem frame_FA16 {b : BitVec 32} {o : Slot} {m m' : Mem}
   refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.sub _ (by omega) (by omega)
-  · exact Offset.sub _ (by omega) (by omega)
+  · exact Offset.sub _ (by omega_arith) (by omega_arith)
+  · exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 /-- The product's frame, within an operation's. -/
 theorem frame_acc16 {b : BitVec 32} {o : Nat} {m m' : Mem}
@@ -139,7 +139,7 @@ theorem movw_offset (o : Slot) : ((BitVec.ofNat 16 (offset o)).setWidth 32) = Bi
   rw [ACC_eq] at this
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- **A call of `vg_gf25519_r16_mul`**, as the inlined product. -/
 theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) (o a c : Slot) :
@@ -164,7 +164,7 @@ theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
   have e3 : s3.gpr .r3 = BitVec.ofNat 32 (offset c) := by rw [u3.gpr, movw_offset]
   have hv : ∀ t, (mulK b o a c).pre t → ∃ tr t', Exec isa mulFn t tr t' ∧ abiPreserved t t' ∧
       (mulK b o a c).post t t' := fun t ⟨_, _, ht, hlt, t1, t2, t3⟩ => by
-    obtain ⟨tr, t', he, hR, hF, hL, hV⟩ := mulFn_ok (by omega) (by omega) (by omega) ht t1 t2 t3
+    obtain ⟨tr, t', he, hR, hF, hL, hV⟩ := mulFn_ok (by omega_arith) (by omega_arith) (by omega_arith) ht t1 t2 t3
       (hlt a) (hlt c)
     obtain ⟨hlim, henv⟩ := field_update o hlt hF hL
     exact ⟨tr, t', he, ⟨fun r hr => hR.gpr r (by revert hr; cases r <;> decide), hR.sp⟩, hR,
@@ -209,7 +209,7 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
     have ha := slot_range a
     have hb := slot_range c
     rw [ACC_eq] at ho ha hb
-    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c)
       hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
     exact field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_add hv)
   | sub o a c =>
@@ -217,7 +217,7 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
     have ha := slot_range a
     have hb := slot_range c
     rw [ACC_eq] at ho ha hb
-    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c)
       hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
     exact field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_sub hv)
 
@@ -264,7 +264,7 @@ theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s
     have ha := slot_range a
     have hb := slot_range c
     rw [ACC_eq] at ho ha hb
-    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c)
       hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
     obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_add hv)
     exact ⟨k, hr, frame_FA (by decide) (hs o) (frame_o hf), l, e⟩
@@ -273,7 +273,7 @@ theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s
     have ha := slot_range a
     have hb := slot_range c
     rw [ACC_eq] at ho ha hb
-    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c)
       hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
     obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_sub hv)
     exact ⟨k, hr, frame_FA (by decide) (hs o) (frame_o hf), l, e⟩
@@ -307,10 +307,10 @@ theorem copyField_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.m
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩
 
 def addResult (e : Env) (q : Nat) (hq : q + 3 < 22) : Spec.Ed25519.Point :=
-  let x := e ⟨q, by omega⟩
-  let y := e ⟨q + 1, by omega⟩
-  let z := e ⟨q + 2, by omega⟩
-  let t := e ⟨q + 3, by omega⟩
+  let x := e ⟨q, by omega_arith⟩
+  let y := e ⟨q + 1, by omega_arith⟩
+  let z := e ⟨q + 2, by omega_arith⟩
+  let t := e ⟨q + 3, by omega_arith⟩
   let a := (e 1 - e 0) * (y - x)
   let b := (e 1 + e 0) * (y + x)
   let c := (e 3 * e 16 + e 3 * e 16) * t
@@ -327,7 +327,7 @@ theorem pointDouble_formula (e : Env) :
 
 theorem addResult_eq (e : Env) (q : Nat) (hq : q + 3 < 22) (hd : e 16 = Spec.Ed25519.d) :
     addResult e q hq = Spec.Ed25519.pointAdd (point e 0 1 2 3)
-      (point e ⟨q, by omega⟩ ⟨q + 1, by omega⟩ ⟨q + 2, by omega⟩ ⟨q + 3, hq⟩) := by
+      (point e ⟨q, by omega_arith⟩ ⟨q + 1, by omega_arith⟩ ⟨q + 2, by omega_arith⟩ ⟨q + 3, hq⟩) := by
   simp only [addResult, point, Spec.Ed25519.pointAdd, hd]
   congr 1 <;> grind
 

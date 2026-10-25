@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Bytes
 public import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced Camellia: the layout and the layers
@@ -35,10 +36,10 @@ def pos (c : Nat) : Nat := c / 2 + 4 * (c % 2)
 /-- The byte of a plane holding the half's byte `i`: the inverse of `pos`. -/
 def cpos (i : Nat) : Nat := 2 * (i % 4) + i / 4
 
-theorem pos_lt {c : Nat} (hc : c < 8) : pos c < 8 := by simp only [pos]; omega
-theorem cpos_lt {i : Nat} (hi : i < 8) : cpos i < 8 := by simp only [cpos]; omega
-theorem pos_cpos {i : Nat} (hi : i < 8) : pos (cpos i) = i := by simp only [pos, cpos]; omega
-theorem cpos_pos {c : Nat} (hc : c < 8) : cpos (pos c) = c := by simp only [pos, cpos]; omega
+theorem pos_lt {c : Nat} (hc : c < 8) : pos c < 8 := by simp only [pos]; omega_arith
+theorem cpos_lt {i : Nat} (hi : i < 8) : cpos i < 8 := by simp only [cpos]; omega_arith
+theorem pos_cpos {i : Nat} (hi : i < 8) : pos (cpos i) = i := by simp only [pos, cpos]; omega_arith
+theorem cpos_pos {c : Nat} (hc : c < 8) : cpos (pos c) = c := by simp only [pos, cpos]; omega_arith
 
 /-- The planes `Q` hold the halves `d b` of the eight blocks. -/
 def HalfRel (Q : Nat → BitVec 64) (d : Nat → BitVec 64) : Prop :=
@@ -88,15 +89,15 @@ theorem rotl1_bit (x : Byte) {j : Nat} (hj : j < 8) :
     (x.rotateLeft 1).getLsbD j = x.getLsbD ((j + 7) % 8) := by
   rw [BitVec.getLsbD_rotateLeft]
   split
-  · congr 1; omega
-  · rw [show j - 1 % 8 = (j + 7) % 8 by omega]; simp [hj]
+  · congr 1; omega_arith
+  · rw [show j - 1 % 8 = (j + 7) % 8 by omega_arith]; simp [hj]
 
 theorem rotl7_bit (x : Byte) {j : Nat} (hj : j < 8) :
     (x.rotateLeft 7).getLsbD j = x.getLsbD ((j + 1) % 8) := by
   rw [BitVec.getLsbD_rotateLeft]
   split
-  · congr 1; omega
-  · rw [show j - 7 % 8 = (j + 1) % 8 by omega]; simp [hj]
+  · congr 1; omega_arith
+  · rw [show j - 7 % 8 = (j + 1) % 8 by omega_arith]; simp [hj]
 
 /-- The S-box bytes: input bit `inSrc` and output bit `outSrc` of `SBOX1`
 make the S-box of the byte's position. -/
@@ -112,7 +113,7 @@ theorem sbox_sel {x : Byte} {c j : Nat} (hc : c < 8) (hj : j < 8) :
     · rw [rotl1_bit _ hj']
     · rfl
   rw [hin]
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 ∨ c = 5 ∨ c = 6 ∨ c = 7 by omega) with
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 ∨ c = 5 ∨ c = 6 ∨ c = 7 by omega_arith) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp [outSrc, pos, sboxAt, sbox2, sbox3, sbox4, rotl1_bit _ hj, rotl7_bit _ hj]
 
@@ -130,7 +131,7 @@ theorem rowBits_eq {S : Nat → BitVec 64} {t : Nat → Byte} {j b : Nat} {l : L
     rw [hl i List.mem_cons_self, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
 
 theorem pRow_lt {i c : Nat} (h : i ∈ pRow c) : i < 8 := by
-  unfold pRow at h; split at h <;> simp at h <;> omega
+  unfold pRow at h; split at h <;> simp at h <;> omega_arith
 
 /-- A round: from the half `d1` and the subkey `k` in the planes `Q` and `K`,
 the code computes `X` (the subkey XOR and input selection), `S` (`SBOX1`),
@@ -145,22 +146,22 @@ theorem round_rel {Q K R X S Y R' : Nat → BitVec 64} {d1 d2 : Nat → BitVec 6
     (hR' : ∀ j < 8, ∀ p < 64, (R' j).getLsbD p = ((R j).getLsbD p ^^ (Y j).getLsbD p)) :
     HalfRel R' fun b => d2 b ^^^ f (d1 b) k := by
   intro b hb c hc j hj
-  have hp : 8 * c + b < 64 := by omega
+  have hp : 8 * c + b < 64 := by omega_arith
   rw [hR' j hj _ hp, hR b hb c hc j hj, byteOf_xor, BitVec.getLsbD_xor,
     getLsbD_byteOf_f _ _ (pos_lt hc) hj, hY j hj _ hp]
   congr 1
-  rw [show (8 * c + b) % 8 = b by omega, show (8 * c + b) / 8 = c by omega]
+  rw [show (8 * c + b) % 8 = b by omega_arith, show (8 * c + b) / 8 = c by omega_arith]
   refine rowBits_eq fun i hi => ?_
   have hi8 := pRow_lt hi
   have hc' := cpos_lt hi8
-  rw [hS _ (by simp only [outSrc]; split <;> (try split) <;> omega) _ (by omega)]
+  rw [hS _ (by simp only [outSrc]; split <;> (try split) <;> omega_arith) _ (by omega_arith)]
   have hx : bsByte X (8 * cpos i + b) =
       ofBits 8 fun j' => (byteOf (d1 b ^^^ k) i).getLsbD (inSrc (cpos i) j') := by
     refine byte_ext fun j' hj' => ?_
-    have hs : inSrc (cpos i) j' < 8 := by simp only [inSrc]; split <;> omega
+    have hs : inSrc (cpos i) j' < 8 := by simp only [inSrc]; split <;> omega_arith
     rw [getLsbD_bsByte _ _ hj', getLsbD_ofBits]
     simp only [hj', decide_true, Bool.true_and]
-    rw [hX j' hj' _ (by omega), show (8 * cpos i + b) / 8 = cpos i by omega,
+    rw [hX j' hj' _ (by omega_arith), show (8 * cpos i + b) / 8 = cpos i by omega_arith,
       hQ b hb _ hc' _ hs, hK b hb _ hc' _ hs, pos_cpos hi8, byteOf_xor, BitVec.getLsbD_xor]
   rw [hx, sbox_sel hc' hj, pos_cpos hi8]
 
@@ -190,13 +191,13 @@ def OrStep (Q K Q' : Nat → BitVec 64) : Prop :=
 /-- Bit `j` of byte `i` of `x` is bit `56 - 8 i + j` (`getLsbD_byteOf`), stated
 for the halves' planes. -/
 theorem oddAt_even {m b : Nat} (hb : b < 8) : oddAt (8 * (2 * m) + b) = false := by
-  unfold oddAt; rw [show (8 * (2 * m) + b) / 8 % 2 = 0 by omega]; rfl
+  unfold oddAt; rw [show (8 * (2 * m) + b) / 8 % 2 = 0 by omega_arith]; rfl
 
 theorem oddAt_odd {m b : Nat} (hb : b < 8) : oddAt (8 * (2 * m + 1) + b) = true := by
-  unfold oddAt; rw [show (8 * (2 * m + 1) + b) / 8 % 2 = 1 by omega]; rfl
+  unfold oddAt; rw [show (8 * (2 * m + 1) + b) / 8 % 2 = 1 by omega_arith]; rfl
 
-theorem pos_even {m : Nat} (_hm : m < 4) : pos (2 * m) = m := by simp only [pos]; omega
-theorem pos_odd {m : Nat} (_hm : m < 4) : pos (2 * m + 1) = 4 + m := by simp only [pos]; omega
+theorem pos_even {m : Nat} (_hm : m < 4) : pos (2 * m) = m := by simp only [pos]; omega_arith
+theorem pos_odd {m : Nat} (_hm : m < 4) : pos (2 * m + 1) = 4 + m := by simp only [pos]; omega_arith
 
 theorem half_bit {Q : Nat → BitVec 64} {d : Nat → BitVec 64} (h : HalfRel Q d) {b c j : Nat}
     (hb : b < 8) (hc : c < 8) (hj : j < 8) :
@@ -209,26 +210,26 @@ theorem rot_bit {Q K Q' : Nat → BitVec 64} {d : Nat → BitVec 64} {k : BitVec
     (hb : b < 8) (hm : m < 4) (hj : j < 8) :
     (Q' j).getLsbD (8 * (2 * m + 1) + b) = ((d b).getLsbD (24 - 8 * m + j) ^^
       ((d b).getLsbD (32 + (24 - 8 * m + j + 31) % 32) && k.getLsbD (32 + (24 - 8 * m + j + 31) % 32))) := by
-  have hp : 8 * (2 * m + 1) + b < 64 := by omega
-  rw [hr j hj _ hp, half_bit hQ hb (by omega) hj]
+  have hp : 8 * (2 * m + 1) + b < 64 := by omega_arith
+  rw [hr j hj _ hp, half_bit hQ hb (by omega_arith) hj]
   have hodd : oddAt (8 * (2 * m + 1) + b) = true := oddAt_odd hb
   have hpos : pos (2 * m + 1) = 4 + m := pos_odd hm
-  simp only [hodd, Bool.true_and, hpos, show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega]
+  simp only [hodd, Bool.true_and, hpos, show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega_arith]
   congr 1
-  have hj7 : (j + 7) % 8 < 8 := Nat.mod_lt _ (by omega)
+  have hj7 : (j + 7) % 8 < 8 := Nat.mod_lt _ (by omega_arith)
   by_cases hj0 : j = 0
   · subst hj0
     have hrp : rotPos 0 (8 * (2 * m + 1) + b) = 8 * ((2 * m + 2) % 8) + b := by
-      simp only [rotPos, ↓reduceIte]; omega
-    rw [hrp, half_bit hQ hb (by omega) hj7, half_bit hK hb (by omega) hj7]
+      simp only [rotPos, ↓reduceIte]; omega_arith
+    rw [hrp, half_bit hQ hb (by omega_arith) hj7, half_bit hK hb (by omega_arith) hj7]
     have : 56 - 8 * pos ((2 * m + 2) % 8) + (0 + 7) % 8 = 32 + (24 - 8 * m + 0 + 31) % 32 := by
-      simp only [pos]; omega
+      simp only [pos]; omega_arith
     rw [this]
   · have hrp : rotPos j (8 * (2 * m + 1) + b) = 8 * (2 * m) + b := by
-      simp only [rotPos, hj0, ↓reduceIte]; omega
-    rw [hrp, half_bit hQ hb (by omega) hj7, half_bit hK hb (by omega) hj7]
+      simp only [rotPos, hj0, ↓reduceIte]; omega_arith
+    rw [hrp, half_bit hQ hb (by omega_arith) hj7, half_bit hK hb (by omega_arith) hj7]
     have : 56 - 8 * pos (2 * m) + (j + 7) % 8 = 32 + (24 - 8 * m + j + 31) % 32 := by
-      simp only [pos]; omega
+      simp only [pos]; omega_arith
     rw [this]
 
 theorem fl_rel {Q K Q₁ Q₂ : Nat → BitVec 64} {d : Nat → BitVec 64} {k : BitVec 64}
@@ -238,27 +239,27 @@ theorem fl_rel {Q K Q₁ Q₂ : Nat → BitVec 64} {d : Nat → BitVec 64} {k : 
   have hodd : ∀ b < 8, ∀ m < 4, ∀ j < 8,
       (Q₁ j).getLsbD (8 * (2 * m + 1) + b) = (fl (d b) k).getLsbD (24 - 8 * m + j) := by
     intro b hb m hm j hj
-    rw [rot_bit hQ hK h₁ hb hm hj, getLsbD_fl_lo _ _ (by omega)]
+    rw [rot_bit hQ hK h₁ hb hm hj, getLsbD_fl_lo _ _ (by omega_arith)]
   intro b hb c hc j hj
   dsimp only
-  have hp : 8 * c + b < 64 := by omega
+  have hp : 8 * c + b < 64 := by omega_arith
   rw [getLsbD_byteOf _ (pos_lt hc) hj, h₂ j hj _ hp]
-  obtain ⟨m, rfl | rfl⟩ : ∃ m, c = 2 * m ∨ c = 2 * m + 1 := ⟨c / 2, by omega⟩
+  obtain ⟨m, rfl | rfl⟩ : ∃ m, c = 2 * m ∨ c = 2 * m + 1 := ⟨c / 2, by omega_arith⟩
   · -- The left half: `x1 ^ (x2 | k2)`.
-    have hm : m < 4 := by omega
-    have hp8 : (8 * (2 * m) + b + 8) % 64 = 8 * (2 * m + 1) + b := by omega
+    have hm : m < 4 := by omega_arith
+    have hp8 : (8 * (2 * m) + b + 8) % 64 = 8 * (2 * m + 1) + b := by omega_arith
     have h1 : (Q₁ j).getLsbD (8 * (2 * m) + b) = (d b).getLsbD (56 - 8 * m + j) := by
-      rw [h₁ j hj _ (by omega), oddAt_even hb, Bool.false_and, Bool.false_and, Bool.xor_false,
-        half_bit hQ hb (by omega) hj, pos_even hm]
+      rw [h₁ j hj _ (by omega_arith), oddAt_even hb, Bool.false_and, Bool.false_and, Bool.xor_false,
+        half_bit hQ hb (by omega_arith) hj, pos_even hm]
     have h2 : (K j).getLsbD (8 * (2 * m + 1) + b) = k.getLsbD (24 - 8 * m + j) := by
-      rw [half_bit hK hb (by omega) hj, pos_odd hm, show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega]
+      rw [half_bit hK hb (by omega_arith) hj, pos_odd hm, show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega_arith]
     rw [oddAt_even hb, pos_even hm, hp8, hodd b hb m hm j hj, h1, h2, Bool.not_false, Bool.true_and,
-      getLsbD_fl_hi (d b) k (n := 56 - 8 * m + j) (by omega) (by omega),
-      show 56 - 8 * m + j - 32 = 24 - 8 * m + j by omega]
+      getLsbD_fl_hi (d b) k (n := 56 - 8 * m + j) (by omega_arith) (by omega_arith),
+      show 56 - 8 * m + j - 32 = 24 - 8 * m + j by omega_arith]
   · -- The right half.
-    have hm : m < 4 := by omega
+    have hm : m < 4 := by omega_arith
     rw [oddAt_odd hb, pos_odd hm, hodd b hb m hm j hj, Bool.not_true, Bool.false_and, Bool.xor_false,
-      show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega]
+      show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega_arith]
 
 theorem flinv_rel {Q K Q₁ Q₂ : Nat → BitVec 64} {d : Nat → BitVec 64} {k : BitVec 64}
     (hQ : HalfRel Q d) (hK : HalfRel K fun _ => k) (h₁ : OrStep Q K Q₁) (h₂ : RotStep Q₁ K Q₂) :
@@ -267,39 +268,39 @@ theorem flinv_rel {Q K Q₁ Q₂ : Nat → BitVec 64} {d : Nat → BitVec 64} {k
   let Y : Nat → BitVec 64 := fun b => ((flinv (d b) k) >>> 32).setWidth 32 ++ (d b).setWidth 32
   have hYhi : ∀ b, ∀ n, 32 ≤ n → n < 64 → (Y b).getLsbD n = (flinv (d b) k).getLsbD n := by
     intro b n h1 h2
-    simp only [Y, BitVec.getLsbD_append, show ¬ n < 32 by omega, ite_false,
-      BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, show n - 32 < 32 by omega, decide_true,
+    simp only [Y, BitVec.getLsbD_append, show ¬ n < 32 by omega_arith, ite_false,
+      BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, show n - 32 < 32 by omega_arith, decide_true,
       Bool.true_and]
-    congr 1; omega
+    congr 1; omega_arith
   have hYlo : ∀ b, ∀ n, n < 32 → (Y b).getLsbD n = (d b).getLsbD n := by
     intro b n h1
     simp only [Y, BitVec.getLsbD_append, h1, ite_true, BitVec.getLsbD_setWidth, decide_true,
       Bool.true_and]
   have h₁r : HalfRel Q₁ Y := by
     intro b hb c hc j hj
-    have hp : 8 * c + b < 64 := by omega
+    have hp : 8 * c + b < 64 := by omega_arith
     rw [getLsbD_byteOf _ (pos_lt hc) hj, h₁ j hj _ hp]
-    obtain ⟨m, rfl | rfl⟩ : ∃ m, c = 2 * m ∨ c = 2 * m + 1 := ⟨c / 2, by omega⟩
-    · have hm : m < 4 := by omega
-      rw [oddAt_even hb, pos_even hm, show (8 * (2 * m) + b + 8) % 64 = 8 * (2 * m + 1) + b by omega,
-        half_bit hQ hb (by omega) hj, half_bit hQ hb (by omega) hj, half_bit hK hb (by omega) hj,
-        pos_even hm, pos_odd hm, hYhi b _ (by omega) (by omega),
-        getLsbD_flinv_hi (d b) k (n := 56 - 8 * m + j) (by omega) (by omega),
-        show 56 - 8 * (4 + m) + j = 56 - 8 * m + j - 32 by omega]
+    obtain ⟨m, rfl | rfl⟩ : ∃ m, c = 2 * m ∨ c = 2 * m + 1 := ⟨c / 2, by omega_arith⟩
+    · have hm : m < 4 := by omega_arith
+      rw [oddAt_even hb, pos_even hm, show (8 * (2 * m) + b + 8) % 64 = 8 * (2 * m + 1) + b by omega_arith,
+        half_bit hQ hb (by omega_arith) hj, half_bit hQ hb (by omega_arith) hj, half_bit hK hb (by omega_arith) hj,
+        pos_even hm, pos_odd hm, hYhi b _ (by omega_arith) (by omega_arith),
+        getLsbD_flinv_hi (d b) k (n := 56 - 8 * m + j) (by omega_arith) (by omega_arith),
+        show 56 - 8 * (4 + m) + j = 56 - 8 * m + j - 32 by omega_arith]
       simp only [Bool.not_false, Bool.true_and]
-    · have hm : m < 4 := by omega
+    · have hm : m < 4 := by omega_arith
       rw [oddAt_odd hb, pos_odd hm, Bool.not_true, Bool.false_and, Bool.xor_false,
-        half_bit hQ hb (by omega) hj, pos_odd hm, hYlo b _ (by omega)]
+        half_bit hQ hb (by omega_arith) hj, pos_odd hm, hYlo b _ (by omega_arith)]
   intro b hb c hc j hj
   dsimp only
   rw [getLsbD_byteOf _ (pos_lt hc) hj]
-  obtain ⟨m, rfl | rfl⟩ : ∃ m, c = 2 * m ∨ c = 2 * m + 1 := ⟨c / 2, by omega⟩
-  · have hm : m < 4 := by omega
-    rw [h₂ j hj _ (by omega), oddAt_even hb, Bool.false_and, Bool.false_and, Bool.xor_false,
-      half_bit h₁r hb (by omega) hj, pos_even hm, hYhi b _ (by omega) (by omega)]
-  · have hm : m < 4 := by omega
-    rw [rot_bit h₁r hK h₂ hb hm hj, pos_odd hm, hYlo b _ (by omega), hYhi b _ (by omega) (by omega),
-      show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega,
-      getLsbD_flinv_lo (d b) k (n := 24 - 8 * m + j) (by omega)]
+  obtain ⟨m, rfl | rfl⟩ : ∃ m, c = 2 * m ∨ c = 2 * m + 1 := ⟨c / 2, by omega_arith⟩
+  · have hm : m < 4 := by omega_arith
+    rw [h₂ j hj _ (by omega_arith), oddAt_even hb, Bool.false_and, Bool.false_and, Bool.xor_false,
+      half_bit h₁r hb (by omega_arith) hj, pos_even hm, hYhi b _ (by omega_arith) (by omega_arith)]
+  · have hm : m < 4 := by omega_arith
+    rw [rot_bit h₁r hK h₂ hb hm hj, pos_odd hm, hYlo b _ (by omega_arith), hYhi b _ (by omega_arith) (by omega_arith),
+      show 56 - 8 * (4 + m) + j = 24 - 8 * m + j by omega_arith,
+      getLsbD_flinv_lo (d b) k (n := 24 - 8 * m + j) (by omega_arith)]
 
 end VG.Proof.Camellia

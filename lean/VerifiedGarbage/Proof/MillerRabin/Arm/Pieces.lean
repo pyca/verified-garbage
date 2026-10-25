@@ -141,14 +141,14 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
       have cR := pre.c_lt
       have hb' := h.arrs b hbL
       refine ⟨h.ready r0, ?_⟩
-      rw [pre.numAt_eq (by rw [hb']; have := hbv σ e; omega), hb',
+      rw [pre.numAt_eq (by rw [hb']; have := hbv σ e; omega_arith), hb',
         show numAt s.mem (State.addr P.ws) P.w 0 = cOf P s.mem from rfl, h.c_eq]
       exact hbv σ e
     refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s hs => ?_
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
       have len := hp.1.1.2.1.pre.len
       have ct := Arithmetic.product_ct fios (base := P.ws) (len := P.len) (w := P.w) opd.1 opd.1 opd.2
-        (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
+        (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
     · obtain ⟨ar, lt⟩ := rdy σ s hs
@@ -158,9 +158,9 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
       have hY := h.arrs aY (by simp)
       have hB := h.arrs b hbL
       have eY : numAt s.mem (State.addr P.ws) P.w aY = A σ aY := by
-        rw [pre.numAt_eq (by rw [hY]; have := hYv σ e; omega), hY]
+        rw [pre.numAt_eq (by rw [hY]; have := hYv σ e; omega_arith), hY]
       have eB : numAt s.mem (State.addr P.ws) P.w b = A σ b := by
-        rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega), hB]
+        rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega_arith), hB]
       have c0 : numAt s.mem (State.addr P.ws) P.w 0 = cOf P σ.mem := h.c_eq
       refine WP.mono (Arithmetic.product_ok fios s ar opd.1 opd.1 opd.2 (by decide) lt)
         fun t ⟨ar', _, lt', v, keeps, frame, rest⟩ => ?_
@@ -230,14 +230,14 @@ theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E 
       have cR := pre.c_lt
       have hb' := h.arrs aY hbL
       refine ⟨h.ready r0, ?_⟩
-      rw [pre.numAt_eq (by rw [hb']; have := hbv σ e; omega), hb',
+      rw [pre.numAt_eq (by rw [hb']; have := hbv σ e; omega_arith), hb',
         show numAt s.mem (State.addr P.ws) P.w 0 = cOf P s.mem from rfl, h.c_eq]
       exact hbv σ e
     refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s hs => ?_
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
       have len := hp.1.1.2.1.pre.len
       have ct := Arithmetic.square_ct fios (base := P.ws) (len := P.len) (w := P.w) opd opd
-        (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
+        (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
     · obtain ⟨ar, lt⟩ := rdy σ s hs
@@ -247,9 +247,9 @@ theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E 
       have hY := h.arrs aY (by simp)
       have hB := h.arrs aY hbL
       have eY : numAt s.mem (State.addr P.ws) P.w aY = A σ aY := by
-        rw [pre.numAt_eq (by rw [hY]; have := hYv σ e; omega), hY]
+        rw [pre.numAt_eq (by rw [hY]; have := hYv σ e; omega_arith), hY]
       have eB : numAt s.mem (State.addr P.ws) P.w aY = A σ aY := by
-        rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega), hB]
+        rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega_arith), hB]
       have c0 : numAt s.mem (State.addr P.ws) P.w 0 = cOf P σ.mem := h.c_eq
       refine WP.mono (Arithmetic.square_ok fios s ar opd opd (by decide) lt)
         fun t ⟨ar', _, lt', v, keeps, frame, rest⟩ => ?_

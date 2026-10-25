@@ -26,12 +26,12 @@ theorem args_ok {s0 s : State} (h : Base s0 s) {i : Nat} (hi : i + 1 < 12) {rest
       t.gpr .r6 = BitVec.ofNat 32 (stackArg s0 (i + 1)).toNat → WP isa (.block rest) t Q) :
     WP isa (.block (args (4 * i) (4 * (i + 1)) ++ rest)) s Q := by
   have sp := h.pre.sp48
-  refine wp_ldrSp h.rA_mem (by rw [h.sp]; exact sp) (by omega) fun s1 u1 => ?_
+  refine wp_ldrSp h.rA_mem (by rw [h.sp]; exact sp) (by omega_arith) fun s1 u1 => ?_
   have b1 := h.of_rest (u1.rest (ws := [.r4]) (by simp)) u1.mem
   refine wp_ldrSp b1.rA_mem (by rw [b1.sp]; exact sp) hi fun t u2 => ?_
   have b2 := b1.of_rest (u2.rest (ws := [.r6]) (by simp)) u2.mem
   exact k t b2 ((u1.rest (by simp)).trans (u2.rest (by simp))) (u2.mem.trans u1.mem)
-    (by rw [u2.other _ (by decide), u1.gpr, h.arg (by omega)])
+    (by rw [u2.other _ (by decide), u1.gpr, h.arg (by omega_arith)])
     (by rw [u2.gpr, b1.arg hi]; simp)
 
 theorem num_of_full {m : Mem} {B : BitVec 32} {w j : Nat} {bs : List Byte}
@@ -39,7 +39,7 @@ theorem num_of_full {m : Mem} {B : BitVec 32} {w j : Nat} {bs : List Byte}
     num m B w j = Spec.Rsa.os2ip bs := by
   have lt : Spec.Rsa.os2ip bs < 2 ^ (32 * w) :=
     Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs)
-      (by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))
+      (by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_arith))
   rw [← h] at lt ⊢
   exact val32_low2 lt
 
@@ -64,10 +64,10 @@ theorem setupZero_ok {s0 s : State} (h : Base s0 s) :
   refine ctx_ok h fun s1 b1 h1 r1 m1 => ?_
   refine wp_strSlot h1 (d := 16) (by decide) fun s2 u2 => ?_
   have h2 := h1.of_mupd u2
-  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) fits
+  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
   have o2 := writeW32_outside s1.mem (State.addr (cvB s0)) (d := 16) (s1.gpr .r9) (by decide)
   rw [← u2.mem] at o2
-  have b2 : Base s0 s2 := b1.outside o2 (by omega) (by omega) u2.sp u2.rd u2.wr
+  have b2 : Base s0 s2 := b1.outside o2 (by omega_arith) (by omega_arith) u2.sp u2.rd u2.wr
   have c2 : s2.mem.readW (off (State.addr (cvB s0)) 16) 32 = BitVec.ofNat 32 (cvW s0) := by
     rw [u2.mem, Mem.readW_writeW_self32, h1.r9]
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
@@ -89,24 +89,24 @@ theorem setupZero_ok {s0 s : State} (h : Base s0 s) :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_mul, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     simp only [nArr, S]
-    rw [Nat.mod_eq_of_lt (a := 25) (by decide), Nat.mod_eq_of_lt (a := 4 * (cvW s0 + 2)) (by omega),
-      Nat.mod_eq_of_lt (a := 25 * (4 * (cvW s0 + 2))) (by omega), Nat.mod_eq_of_lt (a := 25 * (cvW s0 + 2)) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := 25) (by decide), Nat.mod_eq_of_lt (a := 4 * (cvW s0 + 2)) (by omega_arith),
+      Nat.mod_eq_of_lt (a := 25 * (4 * (cvW s0 + 2))) (by omega_arith), Nat.mod_eq_of_lt (a := 25 * (cvW s0 + 2)) (by omega_arith)]
+    omega_arith
   have nfit : hdr + 4 * (nArr * (cvW s0 + 2)) ≤ cvZ s0 := by
-    have := fits; simp only [arr, S, nArr] at this ⊢; omega
+    have := fits; simp only [arr, S, nArr] at this ⊢; omega_arith
   refine WP.mono (zero_ok u (base := cvB s0) (size := cvZ s0) (o := hdr) (n := nArr * (cvW s0 + 2))
     ⟨h.pre.fS, nfit, ⟨rS s0, by rw [bu.wr, pre.wr]; simp, Region.contains_self _ _⟩⟩
-    (by simp only [nArr]; omega) p0 plr (by rw [u7.gpr])) fun t inv => ?_
-  have bt := bu.outside inv.outside (by simp only [hdr]; omega) nfit inv.rest.sp inv.rest.rd inv.rest.wr
+    (by simp only [nArr]; omega_arith) p0 plr (by rw [u7.gpr])) fun t inv => ?_
+  have bt := bu.outside inv.outside (by simp only [hdr]; omega_arith) nfit inv.rest.sp inv.rest.rd inv.rest.wr
   refine ⟨bt, hu.rest inv.rest, ?_, fun j hj => ?_⟩
-  · have e := inv.outside.w32 (d := 16) (by simp only [hdr]; omega) (by omega)
+  · have e := inv.outside.w32 (d := 16) (by simp only [hdr]; omega_arith) (by omega_arith)
     apply BitVec.eq_of_toNat_eq
     rw [show (t.mem.readW (off (State.addr (cvB s0)) 16) 32).toNat = w32 t.mem (State.addr (cvB s0)) 16 from rfl,
       e, show w32 u.mem (State.addr (cvB s0)) 16 = (u.mem.readW (off (State.addr (cvB s0)) 16) 32).toNat from rfl,
       mu, c2]
   · have := val32_zero_part inv.value (a := j * (cvW s0 + 2)) (c := cvW s0 + 2) (by
-      have := Nat.mul_le_mul_right (cvW s0 + 2) (show j + 1 ≤ nArr by omega)
-      rw [Nat.succ_mul] at this; omega)
+      have := Nat.mul_le_mul_right (cvW s0 + 2) (show j + 1 ≤ nArr by omega_arith)
+      rw [Nat.succ_mul] at this; omega_arith)
     simpa only [arr, S, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using this
 
 theorem argsLoad_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW s0) nArr)
@@ -123,7 +123,7 @@ theorem argsLoad_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) 
   refine WP.mono (load_ok bu (hw.rest ru) hj inp p4 p6) fun t ⟨bt, ht, kt, vt, _⟩ => k t bt ht (mu ▸ kt) vt
 
 theorem input_n {s0 : State} (h : CvPre s0) : Input s0 (rN s0) (stackArg s0 2) (stackArg s0 3).toNat :=
-  ⟨rfl, by rw [h.rd]; simp, h.nS, h.fN, by have := h.kb; simp only [cvK] at this; omega, Nat.le_refl _⟩
+  ⟨rfl, by rw [h.rd]; simp, h.nS, h.fN, by have := h.kb; simp only [cvK] at this; omega_arith, Nat.le_refl _⟩
 theorem input_p {s0 : State} (h : CvPre s0) : Input s0 (rP s0) (stackArg s0 4) (stackArg s0 5).toNat :=
   ⟨rfl, by rw [h.rd]; simp, h.pS, h.fP, h.pl1, Nat.le_of_lt h.pl2⟩
 theorem input_q {s0 : State} (h : CvPre s0) : Input s0 (rQ s0) (stackArg s0 6) (stackArg s0 7).toNat :=
@@ -135,7 +135,7 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) : WP isa loads s (StA s0) := by
   have pre := h.pre
   have w16 := pre.w16
   have kb := pre.kb
-  have hk : ∀ k, k ≤ cvK s0 → k ≤ 4 * cvW s0 := fun k hk => by simp only [cvW] at *; omega
+  have hk : ∀ k, k ≤ cvK s0 → k ≤ 4 * cvW s0 := fun k hk => by simp only [cvW] at *; omega_arith
   unfold loads
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (WP.seq_iff.mp (setupZero_ok h)) fun u hu => ?_
@@ -178,9 +178,9 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) : WP isa loads s (StA s0) := by
     rw [k5.full (by decide) (by simp) (fit _ (by decide)), v4]
   · exact num_of_full v5 (by rw [bytesAt_length]; exact hk _ pre.dl2)
   · simp only [zeroArrs, List.mem_cons, List.not_mem_nil, or_false] at hj
-    have hj' : j < nArr := by simp only [nArr]; omega
+    have hj' : j < nArr := by simp only [nArr]; omega_arith
     have hn : j ∉ [aDQ, aP, aQ, aD] := by
-      simp only [aDQ, aP, aQ, aD, List.mem_cons, List.not_mem_nil, or_false]; omega
+      simp only [aDQ, aP, aQ, aD, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
     rw [full j hj' hn, z1 j hj']
 
 end VG.Proof.Rsa.Arm.CrtValues

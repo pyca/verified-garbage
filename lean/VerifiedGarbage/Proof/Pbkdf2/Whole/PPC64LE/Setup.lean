@@ -41,10 +41,10 @@ theorem framed_frame {s : State} (r : Reg) : Frame [below s.sp 48] s.mem (framed
   have c : ∀ off, off + 8 ≤ 48 → (below s.sp 48).Contains (s.sp - 48 + BitVec.ofNat 64 off) 8 := fun off ho => by
     simp only [Region.Contains]
     rw [show s.sp - 48 + BitVec.ofNat 64 off - (s.sp - BitVec.ofNat 64 48) = BitVec.ofNat 64 off by
-      bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega
-  exact Frame.write (Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ (by simpa using c 0 (by omega)))
-    (List.mem_singleton_self _) _ (c 32 (by omega))
+      bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
+  exact Frame.write (Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ (by simpa using c 0 (by omega_arith)))
+    (List.mem_singleton_self _) _ (c 32 (by omega_arith))
 
 /-- The state the frame's body starts in. -/
 abbrev entry (s₀ : State) : State := framed .r0 (s₀.write .r0 s₀.lr)
@@ -71,14 +71,14 @@ theorem prologue_ok : WP isa (.block F.prologue) (entry s₀) (Pro F hF.X s₀) 
   have hz := sizes hF
   have hl := layout (F := F)
   have hb := hz.reach
-  have hsp : 48 ≤ s₀.sp.toNat := by have := hp.sp; omega
+  have hsp : 48 ≤ s₀.sp.toNat := by have := hp.sp; omega_arith
   unfold Fns.prologue
   refine save_ok (so := 0) ⟨rfl, by decide⟩ (b := .r10) (by decide)
-    (fun d _ hd => by rw [entry_gpr s₀ (by decide)]; exact in_sc hp hz.reach rfl (by omega))
+    (fun d _ hd => by rw [entry_gpr s₀ (by decide)]; exact in_sc hp hz.reach rfl (by omega_arith))
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
   refine wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ => wp_mov fun s₆ u₆ =>
     wp_mov fun s₇ u₇ => wp_mov fun s₈ u₈ => wp_mov fun s₉ u₉ =>
-    wp_addi (by omega) fun s₁₀ u₁₀ => wp_addi (by omega) fun s₁₁ u₁₁ => WP.block_nil ?_
+    wp_addi (by omega_arith) fun s₁₀ u₁₀ => wp_addi (by omega_arith) fun s₁₁ u₁₁ => WP.block_nil ?_
   have e : ∀ r, r ≠ .r0 → s₁.gpr r = s₀.gpr r := fun r h => by rw [g₁]; exact entry_gpr s₀ h
   have mm : s₁₁.mem = s₁.mem := by
     rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]
@@ -145,11 +145,11 @@ theorem prologue_ok : WP isa (.block F.prologue) (entry s₀) (Pro F hF.X s₀) 
     refine (f1.sub fun r hr => ?_).trans ((saveMem_frame (so := 0) ⟨rfl, by decide⟩ _ _ _).sub
       fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨stk hF.X s₀, by simp, below_sub (by omega) (by have := hp.sp; have := s₀.sp.isLt; omega)⟩
+      exact ⟨stk hF.X s₀, by simp, below_sub (by omega_arith) (by have := hp.sp; have := s₀.sp.isLt; omega_arith)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨scR F s₀, by simp, ?_⟩
       rw [entry_gpr s₀ (by decide)]
-      exact Region.sub_prefix (by omega)
+      exact Region.sub_prefix (by omega_arith)
 
 end
 
@@ -168,23 +168,23 @@ include hp
 
 theorem sp_toNat : (s₀.sp - 48).toNat = s₀.sp.toNat - 48 := by
   have := hp.sp
-  rw [BitVec.toNat_sub_of_le (BitVec.le_def.2 (by simp; omega))]; rfl
+  rw [BitVec.toNat_sub_of_le (BitVec.le_def.2 (by simp; omega_arith))]; rfl
 
 theorem sA_toNat {o : Nat} (h : o < F.bytes) : (sA s₀ o).toNat = (scr s₀).toNat + o := by
   have := hp.nsc
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 omit hp in
 /-- The key's states survive writes apart from them. -/
 theorem States.keep {m m' : Mem} (h : States hF s₀ m) {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint (sR s₀ F.st0O (2 * F.H.S)) r) : States hF s₀ m' := by
   have hz := sizes hF
-  have hS : F.H.S ≤ 256 := by have := hz.N; have := hz.B; rw [hz.S]; omega
+  have hS : F.H.S ≤ 256 := by have := hz.N; have := hz.B; rw [hz.S]; omega_arith
   refine ⟨hF.hH.congr m m' _ _ (fun i hi => ?_) h.1, hF.hH.congr m m' _ _ (fun i hi => ?_) h.2⟩
-  · exact hf.bytes (R := sR s₀ F.st0O F.H.S) (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega)))
-      (by show F.H.S ≤ 2 ^ 64; omega) hi
-  · have := hf.bytes (R := sR s₀ F.st0O (2 * F.H.S)) (hd · ·) (by show 2 * F.H.S ≤ 2 ^ 64; omega)
-      (i := F.H.S + i) (by show F.H.S + i < 2 * F.H.S; omega)
+  · exact hf.bytes (R := sR s₀ F.st0O F.H.S) (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega_arith)))
+      (by show F.H.S ≤ 2 ^ 64; omega_arith) hi
+  · have := hf.bytes (R := sR s₀ F.st0O (2 * F.H.S)) (hd · ·) (by show 2 * F.H.S ≤ 2 ^ 64; omega_arith)
+      (i := F.H.S + i) (by show F.H.S + i < 2 * F.H.S; omega_arith)
     rwa [VG.Proof.Hmac.Stream.PPC64LE.add_off, show sA s₀ F.st0O + BitVec.ofNat 64 F.H.S = sA s₀ F.st1O by
       rw [← VG.Proof.Hmac.Stream.PPC64LE.add_off]; rfl] at this
 
@@ -208,26 +208,26 @@ theorem hi_args {s : State} (h : Pro F hF.X s₀ s) :
   have hsp := sp_toNat hp
   have hX := hF.hX
   have bsub : Region.Sub (below s.sp (hF.X + 96)) (stk hF.X s₀) := by
-    rw [h.kr.sp]; exact below_stk hp (by omega)
-  have p0 : Region.Sub (sR s₀ F.st0O F.H.S) (scR F s₀) := part_sub (by omega)
-  have p1 : Region.Sub (sR s₀ F.st1O F.H.S) (scR F s₀) := part_sub (by omega)
-  refine ⟨h.r3, h.r4, h.r5, by rw [h.r6], by rw [h.kr.sp, hsp]; have := hp.sp; omega,
-    part_disj hb (.inl (by omega)) (by omega) (by omega), (hp.pw_s.sub_right p0).symm,
+    rw [h.kr.sp]; exact below_stk hp (by omega_arith)
+  have p0 : Region.Sub (sR s₀ F.st0O F.H.S) (scR F s₀) := part_sub (by omega_arith)
+  have p1 : Region.Sub (sR s₀ F.st1O F.H.S) (scR F s₀) := part_sub (by omega_arith)
+  refine ⟨h.r3, h.r4, h.r5, by rw [h.r6], by rw [h.kr.sp, hsp]; have := hp.sp; omega_arith,
+    part_disj hb (.inl (by omega_arith)) (by omega_arith) (by omega_arith), (hp.pw_s.sub_right p0).symm,
     (hp.pw_s.sub_right p1).symm, hp.b_s.sub_left bsub |>.sub_right p0, hp.b_s.sub_left bsub |>.sub_right p1,
-    hp.b_pw.sub_left bsub, by rw [sA_toNat hp (by omega)]; have := hp.nsc; omega,
-    by rw [sA_toNat hp (by omega)]; have := hp.nsc; omega, hp.npw, ?_, ?_⟩
+    hp.b_pw.sub_left bsub, by rw [sA_toNat hp (by omega_arith)]; have := hp.nsc; omega_arith,
+    by rw [sA_toNat hp (by omega_arith)]; have := hp.nsc; omega_arith, hp.npw, ?_, ?_⟩
   · rw [h.kr.rd, h.kr.wr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨pwR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨scR F s₀, by simp, F.st0O, rfl, by show F.st0O + F.H.S ≤ F.bytes; omega⟩
-    · exact ⟨scR F s₀, by simp, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.bytes; omega⟩
+    · exact ⟨scR F s₀, by simp, F.st0O, rfl, by show F.st0O + F.H.S ≤ F.bytes; omega_arith⟩
+    · exact ⟨scR F s₀, by simp, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.bytes; omega_arith⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨scR F s₀, sc_wr hp h.kr.wr, F.st0O, rfl, by show F.st0O + F.H.S ≤ F.bytes; omega⟩
-    · exact ⟨scR F s₀, sc_wr hp h.kr.wr, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.bytes; omega⟩
+    · exact ⟨scR F s₀, sc_wr hp h.kr.wr, F.st0O, rfl, by show F.st0O + F.H.S ≤ F.bytes; omega_arith⟩
+    · exact ⟨scR F s₀, sc_wr hp h.kr.wr, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.bytes; omega_arith⟩
 
 theorem hi_ok {s : State} (h : Pro F hF.X s₀ s) : WP isa F.callHi s (Keyed hF s₀) := by
   have hz := sizes hF; have hl := layout (F := F); have hb := hz.reach
@@ -236,9 +236,9 @@ theorem hi_ok {s : State} (h : Pro F hF.X s₀ s) : WP isa F.callHi s (Keyed hF 
   have kr' := h.kr.call hp hb a.rd a.wr a.sp a.cs a.frame fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inl ⟨_, _, rfl, by omega, by omega⟩
-    · exact .inl ⟨_, _, rfl, by omega, by omega⟩
-    · exact .inr ⟨_, by rw [h.kr.sp], by omega⟩
+    · exact .inl ⟨_, _, rfl, by omega_arith, by omega_arith⟩
+    · exact .inl ⟨_, _, rfl, by omega_arith, by omega_arith⟩
+    · exact .inr ⟨_, by rw [h.kr.sp], by omega_arith⟩
   rw [h.kr.pwBytes hp] at hI hO
   exact ⟨kr', by rw [a.cs _ (by decide), h.r23], by rw [a.cs _ (by decide), h.r24], hI, hO⟩
 

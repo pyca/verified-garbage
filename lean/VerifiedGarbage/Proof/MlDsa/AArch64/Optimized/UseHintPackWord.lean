@@ -31,7 +31,7 @@ def value (g : Nat) (a h : BitVec 32) : BitVec 32 :=
   by_cases h : a.toNat<m.toNat
   · rw [ite_eq_left (by bv_omega),ite_eq_left h]
   · rw [ite_eq_right (by bv_omega),ite_eq_right h,BitVec.toNat_sub]
-    omega
+    omega_arith
 
  theorem sub_sign {x y : BitVec 32} (hx : x.toNat<2^31) (hy : y.toNat<2^31) :
     (x-y) >>> 31=if x.toNat<y.toNat then 1 else 0 := by
@@ -58,25 +58,25 @@ def value (g : Nat) (a h : BitVec 32) : BitVec 32 :=
   have hm44 : hbM g≤44 := by rcases hg with rfl|rfl <;> decide
   have hg2 : 2*g≤523776 := by rcases hg with rfl|rfl <;> decide
   have hd : (BitVec.ofNat 32 (dMod g)).toNat=hbM g := by
-    rw [BitVec.toNat_ofNat,dMod_eq hg]; omega
+    rw [BitVec.toNat_ofNat,dMod_eq hg]; omega_arith
   have hp : (HighPack.raw g a * BitVec.ofNat 32 (2*g)).toNat=hbF g a.toNat*(2*g) := by
-    rw [BitVec.toNat_mul,hf,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 2*g<2^32 by omega)]
+    rw [BitVec.toNat_mul,hf,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 2*g<2^32 by omega_arith)]
     have := Nat.mul_le_mul (Nat.le_trans hb hm44) hg2
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
   have hq : q=8380417 := rfl
   have hpbound := Nat.mul_le_mul (Nat.le_trans hb hm44) hg2
   dsimp only [before]
   by_cases hh : h=0
   · rw [ite_eq_left hh,ite_eq_right (by exact not_not_intro hh),BitVec.toNat_add,BitVec.toNat_add,hf,hd]
     change ((hbF g a.toNat+0)%2^32+hbM g)%2^32=_
-    omega
+    omega_arith
   · rw [ite_eq_right hh,ite_eq_left hh]
     have hsign := sub_sign (x:=HighPack.raw g a * BitVec.ofNat 32 (2*g)) (y:=a)
-      (by rw [hp]; omega) (by omega)
+      (by rw [hp]; omega_arith) (by omega_arith)
     rw [hp] at hsign
     rw [hsign]
     have hh := signed_adjust (f:=HighPack.raw g a) (m:=BitVec.ofNat 32 (dMod g))
-      (by rw [hf]; omega) (by rw [hd]; omega) (by rw [hd]; omega)
+      (by rw [hf]; omega_arith) (by rw [hd]; omega_arith) (by rw [hd]; omega_arith)
       (decide (hbF g a.toNat*(2*g)<a.toNat))
     simp only [decide_eq_true_eq] at hh
     rw [hf,hd] at hh
@@ -94,23 +94,23 @@ def value (g : Nat) (a h : BitVec 32) : BitVec 32 :=
   have hm16 : 16≤hbM g := by rcases hg with rfl|rfl <;> decide
   have hm44 : hbM g≤44 := by rcases hg with rfl|rfl <;> decide
   have hd : (BitVec.ofNat 32 (dMod g)).toNat=hbM g := by
-    rw [BitVec.toNat_ofNat,dMod_eq hg]; omega
-  have hb : (before g a h).toNat<3*hbM g := by rw [hv]; (repeat' split) <;> omega
+    rw [BitVec.toNat_ofNat,dMod_eq hg]; omega_arith
+  have hb : (before g a h).toNat<3*hbM g := by rw [hv]; (repeat' split) <;> omega_arith
   have hc := csub_toNat (m:=BitVec.ofNat 32 (dMod g)) (a:=before g a h)
-    (by rw [hd]; omega) (by omega)
+    (by rw [hd]; omega_arith) (by omega_arith)
   rw [hd] at hc
   have hc2 := csub_toNat (m:=BitVec.ofNat 32 (dMod g))
     (a:=csub (BitVec.ofNat 32 (dMod g)) (before g a h))
-    (by rw [hd]; omega) (by rw [hc]; split <;> omega)
+    (by rw [hd]; omega_arith) (by rw [hc]; split <;> omega_arith)
   rw [hd,hc] at hc2
   change (csub _ (csub _ _)).toNat=_
   rw [hc2,←hv]
   by_cases h1 : (before g a h).toNat<hbM g
   · simp only [ite_eq_left h1,Nat.mod_eq_of_lt h1]
-  · rw [ite_eq_right h1,Nat.mod_eq_sub_mod (by omega)]
+  · rw [ite_eq_right h1,Nat.mod_eq_sub_mod (by omega_arith)]
     by_cases h2 : (before g a h).toNat-hbM g<hbM g
     · rw [ite_eq_left h2,Nat.mod_eq_of_lt h2]
-    · rw [ite_eq_right h2,Nat.mod_eq_sub_mod (by omega),Nat.mod_eq_of_lt (by omega)]
+    · rw [ite_eq_right h2,Nat.mod_eq_sub_mod (by omega_arith),Nat.mod_eq_of_lt (by omega_arith)]
 
  theorem value_spec {g : Nat} (hg : IsG g) {a h : BitVec 32} (ha : a.toNat<q) :
     (value g a h).toNat=(useHint g (decide (h≠0)) ⟨a.toNat,ha⟩).toNat := by

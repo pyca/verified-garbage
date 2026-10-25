@@ -81,10 +81,10 @@ theorem call_pre {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : Call
     rw [argAddr_withRegions, argAddr_callEntry, esp_ptr h (by decide)]
   have hlow : off (rLow s₀) 20 - 108#64 = (s₀.gpr .esp).setWidth 64 - 232#64 := by
     unfold off rLow
-    bv_omega
+    bv_omega_arith
   have relow : rLow s₀ = ((s₀.gpr .esp).setWidth 64 - 232#64) + 88#64 := by
     unfold rLow
-    bv_omega
+    bv_omega_arith
   have d_key_arg : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨off (rLow s₀) 24, 24⟩ :=
     A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega))
   have d_key_ret : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨off (rLow s₀) 20, 4⟩ :=

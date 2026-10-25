@@ -76,10 +76,10 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
   have hbits₅ : ∀ t < 4 * K.J, s₅.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
       have := hL.bits
-      rw [S₅.unch.byte (fun w hw => by have := winWX_bits hL hAcc w hw; omega) (by have := S₅.scr.nowrap; omega)]
+      rw [S₅.unch.byte (fun w hw => by have := winWX_bits hL hAcc w hw; omega_arith) (by have := S₅.scr.nowrap; omega_arith)]
       exact hF.bits t ht
   refine WP.seq (WP.mono (winEntry_ok hL hAcc hC (P := P) hpn hone_lt hone S₅.scr S₅.mod
-    (i := j - 1) (by omega) hx₅ hbits₅ hz₅ S₅.tbl) fun s₆ h₆ => WP.seq (WP.mono h₆ fun s₇ E₇ => ?_))
+    (i := j - 1) (by omega_arith) hx₅ hbits₅ hz₅ S₅.tbl) fun s₆ h₆ => WP.seq (WP.mono h₆ fun s₇ E₇ => ?_))
   have hn := S₅.scr.nowrap
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
       (K.M.tmp, 8 * K.M.n), (wk, 64 * K.M.n), Mont.outW], w ∈ loopWX K wk := by
@@ -103,7 +103,7 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> win_mem)
     refine E₇.unch.wordsVal (fun w hw => ?_) (by
-      have := hL.lay.le x (winWs_slots K x hxw); omega)
+      have := hL.lay.le x (winWs_slots K x hxw); omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     have hne : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.neg], x ≠ y := fun y hy e => hRo x hx (by
       rw [e]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
@@ -116,7 +116,7 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
     · exact hL.lay.tmp x (winWs_slots K x hxw)
     · exact Or.inl (hAcc.acc.sl x (winWs_slots K x hxw))
     · have := hAcc.acc.sl x (winWs_slots K x hxw); have := hAcc.wk_le
-      exact Or.inl (by dsimp only [Mont.outW]; omega)
+      exact Or.inl (by dsimp only [Mont.outW]; omega_arith)
   have lt₇ : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₇.mem base x K.M.n < C.p := fun x hx => by
     rw [eR x hx]; exact l₅ x hx
   have rep₇ : Rep C (tmv C K.M.n base s₇ K.R.x) (tmv C K.M.n base s₇ K.R.y)
@@ -126,12 +126,12 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
     rw [e _ (by simp), e _ (by simp), e _ (by simp)]; exact r₅
   refine WP.seq (WP.mono (sumStep_ok hL hAcc hp hC hM3 hF S₇ (hC.onCurve_mul hP _)
     (onCurve_winPt hC hP k (j - 1)) lt₇ E₇.lt rep₇ E₇.rep) fun s₈ ⟨S₈, x₈, l₈, r₈⟩ => ?_)
-  have hadd := win_add hC hP (k := k) (J := K.J) (j := j - 1) hk8 (by omega)
+  have hadd := win_add hC hP (k := k) (J := K.J) (j := j - 1) hk8 (by omega_arith)
   rw [Nat.sub_add_cancel hj] at hadd
   rw [hadd] at r₈
   have hx₇ : s₇.gpr .esi = BitVec.ofNat 32 (j - 1) := by rw [E₇.keep.gpr _ (esi_not_clob), hx₅]
   have hx₈ : s₈.gpr .esi = BitVec.ofNat 32 (j - 1) := by rw [x₈, hx₇]
-  refine WP.mono (winTest_ok s₈ (by omega) hx₈) fun s₉ ⟨z₉, k₉⟩ => ⟨?_, z₉⟩
+  refine WP.mono (winTest_ok s₈ (by omega_arith) hx₈) fun s₉ ⟨z₉, k₉⟩ => ⟨?_, z₉⟩
   have S₉ := S₈.next hL hAcc (S₈.scr.of_keeps k₉.keeps (by decide)) ((k₉.keeps).mono (by simp))
     (by rw [k₉.2.1]; exact Unch.refl _ _ _)
   refine ⟨S₉, by rw [k₉.1 _ (by simp), hx₈], by rw [k₉.2.1]; exact l₈, ?_⟩
@@ -202,7 +202,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL :
     ((((k₂.mono c1).trans (k₃.mono c1)).trans (k₄.mono c1)).trans
       ((k₅.keeps).mono (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [powClob]))) hU
   have b64 : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
-    have := le x hx; omega
+    have := le x hx; omega_arith
   have vx : wordsVal s₅.mem base K.R.x K.M.n = 0 := by
     rw [k₅.2.1, O₄.wordsVal axz (b64 _ (by simp)), O₃.wordsVal axy (b64 _ (by simp)), e₂]
   have vy : wordsVal s₅.mem base K.R.y K.M.n = K.one := by

@@ -69,13 +69,13 @@ theorem entry_held {s : State} (h : signCachedLocal.pre s) :
 
 theorem lay_base {s : State} (h : signCachedLocal.pre s) :
     (lay s).E.setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 256 :=
-  Taint.sub_setWidth (by have := (entry_bounds h).1; omega)
+  Taint.sub_setWidth (by have := (entry_bounds h).1; omega_arith)
 
 theorem lay_args {s : State} (h : signCachedLocal.pre s) :
     (lay s).ARGS = ⟨argAddr s 0, 24⟩ := by
   rw [Lay.ARGS, lay_base h]
   have ha : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-    addr_eq (by have := (entry_bounds h).2; omega)
+    addr_eq (by have := (entry_bounds h).2; omega_arith)
   rw [ha]
   congr 1
   change _ - 256#64 + 260#64 = _ + 4#64
@@ -99,12 +99,12 @@ theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
     ks, kp, km, kc, no, ns, np, nm, nc, nb, na, _⟩ := h₀
   have top : (lay s).E.toNat + 284 ≤ 2 ^ 32 := by
     change (s.gpr .esp - BitVec.ofNat 32 256).toNat + 284 ≤ _
-    rw [sub_toNat (by omega)]
-    omega
+    rw [sub_toNat (by omega_arith)]
+    omega_arith
   refine ⟨?_, top, ?_, oc, ?_, ?_, no, ?_, ?_, ?_, ?_, ?_, np, nm, ns, nc, held.2.1⟩
   · change 24 ≤ (s.gpr .esp - BitVec.ofNat 32 256).toNat
-    rw [sub_toNat (by omega)]
-    omega
+    rw [sub_toNat (by omega_arith)]
+    omega_arith
   · intro r hr
     simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -160,20 +160,20 @@ theorem lay_arguments {s : State} (h : signCachedLocal.pre s) : Arguments (lay s
   refine ⟨fun j hj => ?_, (entry_held h).1⟩
   have hb := lay_ok h
   have e : (lay s).E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j) = argAddr s j := by
-    rw [← addr_eq (by have := hb.top; omega)]
+    rw [← addr_eq (by have := hb.top; omega_arith)]
     simp only [addr, lay, argAddr]
-    rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega, BitVec.ofNat_add,
+    rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega_arith, BitVec.ofNat_add,
       ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rw [e]
   change arg s j = (lay s).value j
-  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_arith
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem push_ctx {s : State} (h : signCachedLocal.pre s) :
     Ctx (lay s) s.gpr s.mem (pushed (List.replicate 64 .eax) s) := by
   have hn := (entry_bounds h).1
   have hf := pushed_frame (s := s) (rs := List.replicate 64 .eax) (by simp)
-    (by simp only [List.length_replicate]; omega)
+    (by simp only [List.length_replicate]; omega_arith)
   refine ⟨?_, ?_, ?_, fun r _ hn => pushed_gpr _ _ hn, ?_⟩
   · rw [pushed_rd, h.1]
     rw [Lay.inputs, lay_args h]

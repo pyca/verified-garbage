@@ -47,7 +47,7 @@ theorem mul_halves (d v : Nat) (hd : d < 2 ^ 64) (hv : v < 2 ^ 64) :
     (BitVec.ofNat 64 (d * v)).toNat = d * v % 2 ^ 64 ∧ (BitVec.ofNat 64 (d * v / 2 ^ 64)).toNat = d * v / 2 ^ 64 := by
   have : d * v < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul'' hd hv
   refine ⟨BitVec.toNat_ofNat _ _, ?_⟩
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
 
 theorem foldA_ok (s : State) :
     WP isa (.block foldA) s fun t =>
@@ -72,7 +72,7 @@ theorem foldA_ok (s : State) :
     generalize decide (H1.toNat < H2.toNat + b.toNat) = b' at sbb
     have := Bool.toNat_le b; have := Bool.toNat_le b'
     have := (L1 - L2).isLt; have := (H1 - H2 - (BitVec.ofBool b).setWidth 64).isLt
-    omega
+    omega_arith
   · exact maskW_eq _
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3, h4, h5⟩ := hr
@@ -105,22 +105,22 @@ theorem foldB_arith (lo Q4 c r13 r14 S c3 F c3' fix : Nat) (hlo : lo < 2 ^ 256) 
     F = foldV (lo + 2 ^ 256 * Q4) c := by
   unfold foldV
   dsimp only
-  have q1 : (lo + 2 ^ 256 * Q4) % 2 ^ 256 = lo := by omega
-  have q2 : (lo + 2 ^ 256 * Q4) / 2 ^ 256 = Q4 := by omega
+  have q1 : (lo + 2 ^ 256 * Q4) % 2 ^ 256 = lo := by omega_arith
+  have q2 : (lo + 2 ^ 256 * Q4) / 2 ^ 256 = Q4 := by omega_arith
   rw [q1, q2]
   -- No `%` and no truncating subtraction but the goal's: `omega`'s problems stay small.
   obtain ⟨k, hk, hW'⟩ : ∃ k, k ≤ 1 ∧ 38 * Q4 + 2 ^ 128 = r13 + 2 ^ 64 * r14 + 2 ^ 128 * k + 37 * c :=
-    ⟨(38 * Q4 + 2 ^ 128 - 37 * c) / 2 ^ 128, by omega, by omega⟩
+    ⟨(38 * Q4 + 2 ^ 128 - 37 * c) / 2 ^ 128, by omega_arith, by omega_arith⟩
   clear hW
   generalize hR : lo + 38 * Q4 + 2 ^ 256 - 37 * c = R
-  have hR' : R + 37 * c = lo + 38 * Q4 + 2 ^ 256 := by omega
+  have hR' : R + 37 * c = lo + 38 * Q4 + 2 ^ 256 := by omega_arith
   clear hR
   by_cases hn : 2 ^ 63 ≤ r14 <;> simp only [hn, ↓reduceIte] at e1 hfix <;>
-    rcases (by omega : c3 = 0 ∨ c3 = 1) with rfl | rfl <;>
+    rcases (by omega_arith : c3 = 0 ∨ c3 = 1) with rfl | rfl <;>
     simp only [Nat.mul_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reducePow, Nat.reduceAdd,
       Nat.reduceSub, Nat.reduceMod] at hfix e1 <;> subst hfix <;>
     simp only [Nat.reducePow, Nat.reduceLeDiff, ↓reduceIte, Nat.reduceSub, Nat.reduceAdd, Nat.add_zero] at e2 <;>
-    (split <;> (try split)) <;> omega
+    (split <;> (try split)) <;> omega_arith
 
 /-- Four `add`/`adc` of registers into `r8–r11`, the carry out in `CF`. -/
 theorem add4_ok (s : State) (b0 b1 b2 b3 : Reg) (h1 : b1 ≠ .r8)
@@ -153,7 +153,7 @@ theorem fixC_ok (s : State) {c : Bool} (hc : s.cf = some c) :
   refine ⟨?_, maskW_eq _, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [BitVec.toNat_sub, mask38]
     have := (s.gpr .rax &&& BitVec.signExtend 64 (38 : BitVec 32)).isLt
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨g1, g2, g3⟩ := hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, g1, g2, g3, ↓reduceIte]
@@ -169,12 +169,12 @@ theorem foldB_eq : foldB = ([.alu .add .r8 (.reg .r13), .alu .adc .r9 (.reg .r14
 theorem val4_ext (a b : BitVec 64) :
     val4 a b (maskW b) (maskW b) = a.toNat + 2 ^ 64 * b.toNat + (if 2 ^ 63 ≤ b.toNat then 2 ^ 256 - 2 ^ 128 else 0) := by
   simp only [val4, maskW_toNat]
-  split <;> omega
+  split <;> omega_arith
 
 theorem val4_ext3 (a : BitVec 64) :
     val4 a (maskW a) (maskW a) (maskW a) = a.toNat + (if 2 ^ 63 ≤ a.toNat then 2 ^ 256 - 2 ^ 64 else 0) := by
   simp only [val4, maskW_toNat]
-  split <;> omega
+  split <;> omega_arith
 
 /-- `r8–r11 = foldV (r8–r12) rbx`. -/
 theorem foldP_ok (s : State) :
@@ -210,11 +210,11 @@ theorem foldP_ok (s : State) :
     refine foldB_arith _ _ _ _ _ _ c.toNat _ c'.toNat (s₃.gpr .rdx).toNat ?_ (s.gpr .r12).isLt (s.gpr .rbx).isLt
       (s₁.gpr .r13).isLt (s₁.gpr .r14).isLt hW ?_ (Bool.toNat_le c) e1 hf ?_ (Bool.toNat_le c') e2
     · simp only [val4]; have := (s.gpr .r8).isLt; have := (s.gpr .r9).isLt; have := (s.gpr .r10).isLt
-      have := (s.gpr .r11).isLt; omega
+      have := (s.gpr .r11).isLt; omega_arith
     · simp only [val4]; have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
-      have := (s₂.gpr .r11).isLt; omega
+      have := (s₂.gpr .r11).isLt; omega_arith
     · simp only [val4]; have := (t.gpr .r8).isLt; have := (t.gpr .r9).isLt; have := (t.gpr .r10).isLt
-      have := (t.gpr .r11).isLt; omega
+      have := (t.gpr .r11).isLt; omega_arith
   · exact ((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide)) |>.trans
       (k4.mono (by decide))
 
@@ -222,12 +222,12 @@ theorem fe_lt (m : Mem) (base : Addr) (x : Nat) : fe m base x < 2 ^ 256 := by
   simp only [fe, val4]
   have := (word m base x).isLt; have := (word m base (x + 8)).isLt
   have := (word m base (x + 16)).isLt; have := (word m base (x + 24)).isLt
-  omega
+  omega_arith
 
 theorem prodN_le (w : BitVec 64) {X : Nat} (hX : X < 2 ^ 256) :
     absN w * flipN w X ≤ 2 ^ 63 * (2 ^ 256 - 1) := by
   have h1 := absN_le w
-  have h2 : flipN w X ≤ 2 ^ 256 - 1 := by unfold flipN; split <;> omega
+  have h2 : flipN w X ≤ 2 ^ 256 - 1 := by unfold flipN; split <;> omega_arith
   exact Nat.mul_le_mul h1 h2
 
 theorem aRow_eq (m₁ m₂ dst : Nat) :
@@ -263,17 +263,17 @@ theorem aRow_ok {s : State} {base : Addr} (hs : Scr s base) {m₁ m₂ dst : Nat
   rw [WP.block_append_iff]
   refine WP.mono (foldP_ok s₅) fun s₆ ⟨v6, K6⟩ => ?_
   have hs₆ := hs₅.of_keeps K6 (by decide)
-  refine WP.mono (store4_ok hs₆ (by unfold Slot; omega)) fun t ⟨mt, gt, rt, wt⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
+  refine WP.mono (store4_ok hs₆ (by unfold Slot; omega_arith)) fun t ⟨mt, gt, rt, wt⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
   · have M4 : s₄.mem = s.mem := K4.2.1.trans (K3.2.1.trans K2.2.1)
     have B5 : s₅.gpr .rbx = s₃.gpr .rbx := (K5.1 _ (by decide)).trans (K4.1 _ (by decide))
     rw [R4 .rcx (by simp), R4 .r13 (by simp), R4 .r14 (by simp), R4 .r15 (by simp), k1, k2, a1, a2, z4, M4,
       feX_mask, feX_mask] at v5
-    rw [mt, fe_st4 _ _ (by omega), v6, v5, B5, c3, k1, k2, cSum_val _ _ _ _ a1 a2]
+    rw [mt, fe_st4 _ _ (by omega_arith), v6, v5, B5, c3, k1, k2, cSum_val _ _ _ _ a1 a2]
     unfold aRowV
     have z : (0 : BitVec 64).toNat = 0 := rfl
     rw [z, Nat.zero_add]
   · rw [mt, K6.2.1, K5.2.1, K4.2.1, K3.2.1, K2.2.1]
-    exact st4_outside _ _ (by omega) _ _ _ _
+    exact st4_outside _ _ (by omega_arith) _ _ _ _
   · intro r hr
     have sub : ∀ L : List Reg, (∀ x ∈ L, x ∈ rowClob) → r ∉ L := fun L hL h => hr (hL r h)
     rw [gt r, K6.1 r (sub _ (by decide)), K5.1 r (sub _ (by decide)), K4.1 r (sub _ (by decide)),

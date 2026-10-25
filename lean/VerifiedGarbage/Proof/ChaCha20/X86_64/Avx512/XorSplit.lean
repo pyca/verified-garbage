@@ -162,13 +162,13 @@ theorem vmem_dst (s₀ : State) {k : Nat} (hk : k < sL s₀) :
   have h := sL_lt s₀
   have e : (sdp s₀ + BitVec.ofNat 64 k - sdp s₀).toNat = k := by
     rw [show sdp s₀ + BitVec.ofNat 64 k - sdp s₀ = BitVec.ofNat 64 k by bv_omega, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_arith)]
   simp only [vmem, e, hk, ite_true]
 
 theorem vmem_out (s₀ : State) {a : Addr} (ha : ¬ (sdR s₀).Contains a 1) : vmem s₀ a = s₀.mem a := by
   simp only [Region.Contains] at ha
   simp only [vmem, ite_eq_right_iff]
-  intro h; exact absurd (by omega) ha
+  intro h; exact absurd (by omega_arith) ha
 
 /-- `vmem` is the memory on entry outside `dst`. -/
 theorem vmem_frame (s₀ : State) : Frame [sdR s₀] (vmem s₀) s₀.mem := fun _ hx =>
@@ -213,7 +213,7 @@ theorem V_frame {s₀ : State} {m : Mem} (hf : Frame [stR s₀, sdR s₀, bufR s
 theorem src_frame {s₀ : State} (hp : APre s₀) {m : Mem} (hf : Frame [stR s₀, sdR s₀, bufR s₀] s₀.mem m) {k : Nat}
     (hk : k < sS s₀) : m (ssp s₀ + BitVec.ofNat 64 k) = s₀.mem (ssp s₀ + BitVec.ofNat 64 k) := by
   have c : (srR s₀).Contains (ssp s₀ + BitVec.ofNat 64 k) 1 :=
-    Offset.contains_base _ (by omega) (by have := hp.wrap_s; omega)
+    Offset.contains_base _ (by omega_arith) (by have := hp.wrap_s; omega_arith)
   refine hf _ fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -262,12 +262,12 @@ theorem subSat_ok (s : State) {n c : Nat} (hn : n < 2 ^ 31) (hc : c < 2 ^ 64)
     Option.map_some, Option.some.injEq, exists_eq_left', Avx512.signExtend_ofNat hn, reduceCtorEq,
     ↓reduceIte, hr]
   have ec : (BitVec.ofNat 64 c).toNat = c := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc]
-  have en : (BitVec.ofNat 64 n).toNat = n := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have en : (BitVec.ofNat 64 n).toNat = n := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   simp only [ec, en]
   by_cases hcn : c < n
   · simp only [hcn, decide_true, ↓reduceIte]
     refine ⟨?_, fun r h₁ h₂ => by simp [h₁, h₂], trivial, trivial, trivial, fun _ _ => rfl⟩
-    rw [Nat.sub_eq_zero_of_le (by omega)]; rfl
+    rw [Nat.sub_eq_zero_of_le (by omega_arith)]; rfl
   · simp only [hcn, decide_false, Bool.false_eq_true, ↓reduceIte]
     exact ⟨by bv_omega, fun r h₁ h₂ => by simp [h₁, h₂], trivial, trivial, trivial, fun _ _ => rfl⟩
 
@@ -305,9 +305,9 @@ theorem src_contains {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C)
   have hS := sS_lt s₀
   simp only [Region.Contains] at h ⊢
   have e : (a - ssp s₀).toNat = (a - (ssp s₀ + BitVec.ofNat 64 (1024 * t))).toNat + 1024 * t := by
-    have : 1024 * t < 2 ^ 64 := by omega
+    have : 1024 * t < 2 ^ 64 := by omega_arith
     bv_omega
-  omega
+  omega_arith
 
 theorem selOk_of {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {t : Nat} (hw : 1024 * t + 1024 ≤ sL s₀)
     {s : State} (hrcx : s.gpr .rcx = sbp s₀) (hrsi : s.gpr .rsi = sdp s₀ + BitVec.ofNat 64 (1024 * t))
@@ -315,7 +315,7 @@ theorem selOk_of {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {t 
     (hrd : s.rd = s₀.rd) : SelOk s := by
   have hS := sS_lt s₀
   have e10 : (s.gpr .r10).toNat = C - 1024 * t := by
-    rw [hr10, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hC.le; omega)]
+    rw [hr10, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hC.le; omega_arith)]
   have sr : srcR s = ⟨ssp s₀ + BitVec.ofNat 64 (1024 * t), min (C - 1024 * t) 1024⟩ := by
     simp only [srcR, hr8, e10]
   have sub : Region.Sub (srcR s) (srR s₀) := fun a ha => by
@@ -325,7 +325,7 @@ theorem selOk_of {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {t 
     exact ⟨srR s₀, by simp, src_contains hp hC hn ha⟩
   · simp only [wregs, hrcx, hrsi, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (hp.s_b.sub_left sub).sub_right (Region.sub_prefix (by omega))
+    · exact (hp.s_b.sub_left sub).sub_right (Region.sub_prefix (by omega_arith))
     · exact (hp.s_d.sub_left sub).sub_right (win_sub (s₀ := V s₀) hw)
 
 theorem bodySel_eq : bodySel = .seq (.block setup) (.seq (rounds 10) (.seq (pieces finishSel)
@@ -345,13 +345,13 @@ theorem sel_byte {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {t 
   have hS := sS_lt s₀
   have hCS := hC.le
   have hC64 := hC.dvd
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), add_ofNat, add_ofNat]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), add_ofNat, add_ofNat]
   split
   · rename_i hb
-    rw [src_frame hp h.frame (by omega)]
-    simp only [I, show 1024 * t + k < sS s₀ by omega, ite_true]
+    rw [src_frame hp h.frame (by omega_arith)]
+    simp only [I, show 1024 * t + k < sS s₀ by omega_arith, ite_true]
   · rename_i hb
-    exact h.todo _ hkL (by omega) (by omega)
+    exact h.todo _ hkL (by omega_arith) (by omega_arith)
 
 theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {t : Nat}
     (hge : 1024 ≤ sL s₀ - 1024 * t) {s : State} (h : SInv s₀ C t s) :
@@ -361,7 +361,7 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
   have hL := sL_lt s₀
   have hS := sS_lt s₀
   have hCS := hC.le
-  have hw : 1024 * t + 1024 ≤ sL s₀ := by omega
+  have hw : 1024 * t + 1024 ≤ sL s₀ := by omega_arith
   have sw := win_sub (s₀ := V s₀) hw
   have dsd := hV.st_d.sub_right sw
   have dbd := hV.d_b.symm.sub_right sw
@@ -384,7 +384,7 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
   rw [ws, m₂] at f₃
   simp only [g₂, m₂, h.rsi, h.rdi, h.r8, h.r10] at d₃
   have g₃' : s₃.gpr = s.gpr := g₃.trans g₂
-  refine WP.block_append (WP.mono (advSel_ok s₃ (n := 1024) (c := C - 1024 * t) (by decide) (by omega)
+  refine WP.block_append (WP.mono (advSel_ok s₃ (n := 1024) (c := C - 1024 * t) (by decide) (by omega_arith)
     (by rw [g₃']; exact h.r10)) fun s₄ ⟨r8₄, r10₄, g₄, m₄, rd₄, wr₄, _⟩ => ?_)
   have gk₄ : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → s₄.gpr r = s.gpr r := fun r a b c => by
     rw [g₄ r a b c, g₃']
@@ -422,24 +422,24 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
   refine ⟨by rw [gk _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.rdi,
     by rw [gk _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.rcx, e₁, e₂,
     by rw [e₃ _ (by decide) (by decide) (by decide), r8₄, g₃', h.r8, add_ofNat, Nat.mul_succ],
-    by rw [e₃ _ (by decide) (by decide) (by decide), r10₄, Nat.sub_sub, Nat.mul_succ], by omega,
+    by rw [e₃ _ (by decide) (by decide) (by decide), r10₄, Nat.sub_sub, Nat.mul_succ], by omega_arith,
     fun r hr => ?_, by rw [rd₅, rd₄, rd₃, rd₂, h.rd], by rw [wr₅, wr₄, wr₃, wr₂, h.wr], ?_,
     fun k hk => ?_, fun k hk h₁ h₂ => ?_, ?_, ?_, ?_⟩
   · obtain ⟨a, b, c, d, e⟩ := calleeSaved_ne hr
     rw [gk r a b c d e]; exact h.keep r hr
   · have e₄' : stateAt s₅.mem (sst s₀) = (stateAt s₃.mem (sst s₀)).set 12 ((stateAt s₃.mem (sst s₀))[12] + 16) := e₄
-    rw [e₄', hS₃, h.cnt, show 16 * (t + 1) = 16 * t + 16 by omega]
+    rw [e₄', hS₃, h.cnt, show 16 * (t + 1) = 16 * t + 16 by omega_arith]
     exact Avx2.ctr_add _ _ 16
   · by_cases hin : 1024 * t ≤ k
     · have ea : sdp s₀ + BitVec.ofNat 64 k =
           sdp s₀ + BitVec.ofNat 64 (1024 * t) + BitVec.ofNat 64 (k - 1024 * t) := by
         rw [add_ofNat, Nat.add_sub_cancel' hin]
-      have x₃ := d₃ (k - 1024 * t) (by omega)
-      rw [sel_byte hp hC h (k := k - 1024 * t) (by omega) (by omega), ← ea, Nat.add_sub_cancel' hin] at x₃
-      rw [f₅ _ (by simpa using n_st k (by omega)), x₃, Avx2.plus_block, h.cnt,
-        ks_shift _ (by omega) hin]
-    · rw [keep₅ k (by omega) (.inl (by omega)), h.done k (by omega)]
-  · rw [keep₅ k hk (.inr (by omega)), h.todo k hk (by omega) h₂]
+      have x₃ := d₃ (k - 1024 * t) (by omega_arith)
+      rw [sel_byte hp hC h (k := k - 1024 * t) (by omega_arith) (by omega_arith), ← ea, Nat.add_sub_cancel' hin] at x₃
+      rw [f₅ _ (by simpa using n_st k (by omega_arith)), x₃, Avx2.plus_block, h.cnt,
+        ks_shift _ (by omega_arith) hin]
+    · rw [keep₅ k (by omega_arith) (.inl (by omega_arith)), h.done k (by omega_arith)]
+  · rw [keep₅ k hk (.inr (by omega_arith)), h.todo k hk (by omega_arith) h₂]
   · refine Avx512.incs_frame (s₀ := V s₀) h.incs FA ?_
     intro r hr'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -448,11 +448,11 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
     · exact dbd.sub_left (inc_sub _)
     · exact (hV.st_b.sub_right (inc_sub _)).symm
   · refine Avx512Tail.incs_frame (s₀ := V s₀) h.tincs FA ?_
-    have ti : Region.Sub ⟨sbp s₀ + BitVec.ofNat 64 192, 128⟩ (Avx2.bufR (sbp s₀)) := Offset.sub_base _ (by omega)
+    have ti : Region.Sub ⟨sbp s₀ + BitVec.ofNat 64 192, 128⟩ (Avx2.bufR (sbp s₀)) := Offset.sub_base _ (by omega_arith)
     intro r hr'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
-    · exact Offset.base_disjoint _ (by omega) (by omega) |>.symm
+    · exact Offset.base_disjoint _ (by omega_arith) (by omega_arith) |>.symm
     · exact dbd.sub_left ti
     · exact (hV.st_b.sub_right ti).symm
   · refine h.frame.trans (FA.sub fun r hr' => ?_)
@@ -471,7 +471,7 @@ theorem loop_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {s�
       ∃ t, sL s₀ - 1024 * t < 1024 ∧ SInv s₀ C t s := by
   refine WP.ite (decide (sL s₀ < 1024)) (by simp [eval, hc]) (fun h => ?_) (fun h => ?_)
   · simp only [decide_eq_true_eq] at h
-    exact WP.block_nil (M := isa) ⟨0, by omega, h₁⟩
+    exact WP.block_nil (M := isa) ⟨0, by omega_arith, h₁⟩
   · simp only [decide_eq_false_iff_not] at h
     let Inv : Nat → State → Prop := fun n s =>
       ∃ t, n = sL s₀ - 1024 * t ∧ 1024 ≤ sL s₀ - 1024 * t ∧ SInv s₀ C t s
@@ -482,7 +482,7 @@ theorem loop_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {s�
       refine WP.mono (bodySel_ok hp hC ht hI) fun s' ⟨h', hc'⟩ => ?_
       by_cases hl : sL s₀ - 1024 * (t + 1) < 1024
       · exact .inl ⟨by simp [eval, hc', hl], t + 1, hl, h'⟩
-      · exact .inr ⟨by simp [eval, hc', hl], sL s₀ - 1024 * (t + 1), by omega, t + 1, rfl, by omega, h'⟩
-    exact WP.loop (M := isa) Inv hstep (sL s₀ - 1024 * 0) s₁ ⟨0, rfl, by omega, h₁⟩
+      · exact .inr ⟨by simp [eval, hc', hl], sL s₀ - 1024 * (t + 1), by omega_arith, t + 1, rfl, by omega_arith, h'⟩
+    exact WP.loop (M := isa) Inv hstep (sL s₀ - 1024 * 0) s₁ ⟨0, rfl, by omega_arith, h₁⟩
 
 end VG.Proof.ChaCha20.X86_64.Avx512Split

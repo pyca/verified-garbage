@@ -28,7 +28,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 def prodRegs : List Reg := [.x1, .x2, .x3, .x4, .x5, .x7, .x8, .x9, .x11, .x12, .x13, .x14, .x16, .x17]
 
 theorem slot_aM1 (w : Nat) : slot w (aM + 1) = slot w aM + 8 * (w + 2) := by
-  simp only [slot, hdrBytes, aM]; omega
+  simp only [slot, hdrBytes, aM]; omega_arith
 
 /-- `prod`'s block: the bases of `e`, `d` and `M`, `w`, and the words of
 `e`. -/
@@ -58,7 +58,7 @@ theorem prodBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat
   refine WP.mono (WP.keep [.x11, .x3, .x13, .x7] (Q := fun t => t.gpr .x11 = off B (slot w aE) ∧
       t.gpr .x13 = BitVec.ofNat 64 ((el + 7) / 8) ∧ t.gpr .x7 = 0 ∧ t.mem = s₄.mem) (by
     brun [h5, h0₄, hdr_enc (show Public.sElen < 32 by decide), hs₄.ld (d := 8 * Public.sElen) (by
-      simp only [Public.sElen, sFn]; omega), m₄, m₃, hel, shr3_w el hel'])
+      simp only [Public.sElen, sFn]; omega_arith), m₄, m₃, hel, shr3_w el hel'])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h11₅, h13₅, h7₅, m₅⟩, k₅⟩ => ?_
   exact ⟨⟨(k₅.gpr .x0 (by decide)).trans h0₄, h11₅, (k₅.gpr .x9 (by decide)).trans h9,
     (k₅.gpr .x8 (by decide)).trans h8, ((k₄.trans k₅).gpr .x12 (by decide)).trans h12, h13₅, h7₅,
@@ -80,31 +80,31 @@ theorem prodLoop_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Na
   have sD := slot_lt (w := w) (show aD < 16 by decide)
   have sM := slot_lt (w := w) (show aM + 1 < 16 by decide)
   have eM1 := slot_aM1 w
-  have eDM : slot w aD + 8 * (w + 2) = slot w aM := by simp only [slot, hdrBytes, aD, aM]; omega
-  have eEM : slot w aE + 8 * (w + 2) = slot w aD := by simp only [slot, hdrBytes, aE, aD]; omega
-  refine WP.seq (WP.mono (prodBlk_ok h hel (by omega)) fun s₅ ⟨⟨_, h11₅, h9, h8, h12₅, h13₅, h7₅, m₅⟩, k₅⟩ => ?_)
+  have eDM : slot w aD + 8 * (w + 2) = slot w aM := by simp only [slot, hdrBytes, aD, aM]; omega_arith
+  have eEM : slot w aE + 8 * (w + 2) = slot w aD := by simp only [slot, hdrBytes, aE, aD]; omega_arith
+  refine WP.seq (WP.mono (prodBlk_ok h hel (by omega_arith)) fun s₅ ⟨⟨_, h11₅, h9, h8, h12₅, h13₅, h7₅, m₅⟩, k₅⟩ => ?_)
   have hs₅ := h.scr.congr k₅.wr
-  have hew : (el + 7) / 8 ≤ w := by omega
+  have hew : (el + 7) / 8 ≤ w := by omega_arith
   have eD : wv s₅.mem B (slot w aD) w = wv s.mem B (slot w aD) w := by rw [m₅]
   have eE : wv s₅.mem B (slot w aE) ((el + 7) / 8) = wv s.mem B (slot w aE) w := by
     rw [m₅]; exact wv_low_of_lt hew hE
   have eA : wv s₅.mem B (slot w aM) ((el + 7) / 8 + w + 2) = 0 := by
     rw [m₅]
     have := wv_add s.mem B (slot w aM) ((el + 7) / 8 + w + 2) (2 * (w + 2) - ((el + 7) / 8 + w + 2))
-    rw [show (el + 7) / 8 + w + 2 + (2 * (w + 2) - ((el + 7) / 8 + w + 2)) = 2 * (w + 2) by omega, hz] at this
-    omega
-  refine WP.mono (mulRows_ok (wa := (el + 7) / 8) (wb := w) hs₅ h11₅ h9 h13₅ h12₅ h8 h7₅ (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (Or.inl (by omega)) (Or.inl (by omega))
+    rw [show (el + 7) / 8 + w + 2 + (2 * (w + 2) - ((el + 7) / 8 + w + 2)) = 2 * (w + 2) by omega_arith, hz] at this
+    omega_arith
+  refine WP.mono (mulRows_ok (wa := (el + 7) / 8) (wb := w) hs₅ h11₅ h9 h13₅ h12₅ h8 h7₅ (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (Or.inl (by omega_arith)) (Or.inl (by omega_arith))
     (by rw [eA]; exact Nat.two_pow_pos _)) fun t ⟨hv, o, k₆⟩ => ?_
   have o' : Outside B (slot w aM) (16 * (w + 2)) s.mem t.mem := fun x hx => by
-    rw [o x (by omega), m₅]
+    rw [o x (by omega_arith), m₅]
   refine ⟨?_, o', (k₅.trans k₆).mono (by decide)⟩
   -- The words above the product are still zero.
   have hz' : ∀ q < 2 * (w + 2), word s.mem B (slot w aM + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz
   have e2 := wv_add t.mem B (slot w aM) ((el + 7) / 8 + w + 2) (2 * (w + 2) - ((el + 7) / 8 + w + 2))
-  rw [show (el + 7) / 8 + w + 2 + (2 * (w + 2) - ((el + 7) / 8 + w + 2)) = 2 * (w + 2) by omega] at e2
+  rw [show (el + 7) / 8 + w + 2 + (2 * (w + 2) - ((el + 7) / 8 + w + 2)) = 2 * (w + 2) by omega_arith] at e2
   rw [e2, wv_zero (n := 2 * (w + 2) - ((el + 7) / 8 + w + 2)) fun q hq => by
-      rw [o.word (by omega) (by omega), m₅, Nat.add_assoc, ← Nat.mul_add]; exact hz' _ (by omega),
+      rw [o.word (by omega_arith) (by omega_arith), m₅, Nat.add_assoc, ← Nat.mul_add]; exact hz' _ (by omega_arith),
     hv, eA, eE, eD]
   simp [Nat.mul_comm]
 
@@ -121,8 +121,8 @@ theorem prod_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
   have sD := slot_lt (w := w) (show aD < 16 by decide)
   have sM := slot_lt (w := w) (show aM + 1 < 16 by decide)
   have eM1 := slot_aM1 w
-  have eDM : slot w aD + 8 * (w + 2) = slot w aM := by simp only [slot, hdrBytes, aD, aM]; omega
-  have eEM : slot w aE + 8 * (w + 2) = slot w aD := by simp only [slot, hdrBytes, aE, aD]; omega
+  have eDM : slot w aD + 8 * (w + 2) = slot w aM := by simp only [slot, hdrBytes, aD, aM]; omega_arith
+  have eEM : slot w aE + 8 * (w + 2) = slot w aD := by simp only [slot, hdrBytes, aE, aD]; omega_arith
   have h20 : 8 * Public.sElen + 8 ≤ slot w aM := hdr_lt_slot w aM (show Public.sElen < 32 by decide)
   rw [prod_eq]
   simp only [seqs]
@@ -134,14 +134,14 @@ theorem prod_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact Mut.ofSlot _ _ _) k₂ (by decide)
   -- Memory but `M` as on entry.
   have o12 : Outside B (slot w aM) (16 * (w + 2)) s.mem s₂.mem := fun x hx => by
-    rw [o₂ x (by omega), o₁ x (by omega)]
+    rw [o₂ x (by omega_arith), o₁ x (by omega_arith)]
   have hel₂ : word s₂.mem B (8 * Public.sElen) = BitVec.ofNat 64 el := by
-    rw [o12.word (Or.inl h20) (by omega)]; exact hel
+    rw [o12.word (Or.inl h20) (by omega_arith)]; exact hel
   have hz : wv s₂.mem B (slot w aM) (2 * (w + 2)) = 0 := by
-    rw [show 2 * (w + 2) = (w + 2) + (w + 2) by omega, wv_add, ← eM1, z₂,
-      o₂.wv (Or.inl (by omega)) (by omega), z₁, Nat.mul_zero]
-  refine WP.mono (prodLoop_ok h₂ hel₂ he1 he2 (by rw [o12.wv (Or.inl (by omega)) (by omega)]; exact hE) hz)
-    fun t ⟨hv, o, k₃⟩ => ⟨by rw [hv, o12.wv (Or.inl (by omega)) (by omega), o12.wv (Or.inl (by omega)) (by omega)],
+    rw [show 2 * (w + 2) = (w + 2) + (w + 2) by omega_arith, wv_add, ← eM1, z₂,
+      o₂.wv (Or.inl (by omega_arith)) (by omega_arith), z₁, Nat.mul_zero]
+  refine WP.mono (prodLoop_ok h₂ hel₂ he1 he2 (by rw [o12.wv (Or.inl (by omega_arith)) (by omega_arith)]; exact hE) hz)
+    fun t ⟨hv, o, k₃⟩ => ⟨by rw [hv, o12.wv (Or.inl (by omega_arith)) (by omega_arith), o12.wv (Or.inl (by omega_arith)) (by omega_arith)],
       fun x hx => by rw [o x hx, o12 x hx], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 end VG.Proof.Rsa.AArch64

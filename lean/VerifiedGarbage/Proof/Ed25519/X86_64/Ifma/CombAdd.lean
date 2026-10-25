@@ -45,11 +45,11 @@ theorem eload_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
       · exact lt64 _) (fun _ _ _ => Nat.zero_le _)
   have e : Sym.init.run eload = some eloadS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, eloadS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr l hl => h.keep (by omega) hl (eloadS_keep r hr)⟩
+    fun r hr l hl => h.keep (by omega_arith) hl (eloadS_keep r hr)⟩
   obtain ⟨o, b⟩ := eloadS_ok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
   simp only [lanes] at e ⊢
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_arith⟩
   rw [e, eloadS_regs _ i hi l hl, envOf_m hs, hk.km l hl]
 
 /-! ## The negation -/
@@ -70,9 +70,9 @@ theorem vneg_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
       (∀ r < 5, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
   have e : Sym.init.run vneg = some vnegS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vnegS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr l hl => h.keep (by omega) hl (vnegS_keep r hr)⟩
+    fun r hr l hl => h.keep (by omega_arith) hl (vnegS_keep r hr)⟩
   have hq := h.reg (xr (5 + i)) l hl
-  rw [xi_xr _ (by omega), vnegS_regs i hi] at hq
+  rw [xi_xr _ (by omega_arith), vnegS_regs i hi] at hq
   simp only [lanes]
   rw [hq]
   simp only [T.eval, ↓reduceIte, hm, xor_mask]
@@ -109,7 +109,7 @@ theorem addB_env {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hk : CConst
   refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun d l hl => ?_)
   · simp only [addB]
     split
-    · have := hx l hl r (by omega); simp only [lanes, Nat.zero_add] at this; omega
+    · have := hx l hl r (by omega_arith); simp only [lanes, Nat.zero_add] at this; omega_arith
     · exact lt64 _
   · simp only [addB]
     split
@@ -134,9 +134,9 @@ theorem vaddA_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vaddAS_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 h2 l hl => h.keep hr hl (vaddAS_keep r hr h1 h2)⟩
   obtain ⟨o, b⟩ := vaddAS_ok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
   simp only [lanes, Nat.zero_add] at e ⊢
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_arith⟩
   rw [e, vaddAS_nat _ i hi l hl]
   rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;>
     simp only [aNat, aOp, lanes, Nat.zero_add, envOf_v, envOf_m hs, kb_m hk (show 0 < 4 by decide)]
@@ -192,11 +192,11 @@ theorem vaddB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vaddBS_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 l hl => h.keep hr hl (vaddBS_keep r hr h1)⟩
   obtain ⟨o1, b1, o2, b2⟩ := vaddBS_ok i hi l hl
-  obtain ⟨e1, be1⟩ := h.out hE (by omega) hl o1
-  obtain ⟨e2, be2⟩ := h.out hE (by omega) hl o2
+  obtain ⟨e1, be1⟩ := h.out hE (by omega_arith) hl o1
+  obtain ⟨e2, be2⟩ := h.out hE (by omega_arith) hl o2
   obtain ⟨n1, n2⟩ := vaddBS_nat (envOf s) i hi l hl
   simp only [lanes, Nat.zero_add] at e1 e2 ⊢
-  refine ⟨?_, by omega, ?_, by omega⟩
+  refine ⟨?_, by omega_arith, ?_, by omega_arith⟩
   · rw [e1, n1]
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;>
       simp only [bOp1, wNat, bO1, wOp, lanes, Nat.zero_add, envOf_v, envOf_m hs,
@@ -223,15 +223,15 @@ def vAddPt (P e : Spec.Ed25519.Point) : Spec.Ed25519.Point :=
 theorem aOp_fe (x : Nat → Nat → Nat) (hx : ∀ l < 4, ∀ i < 5, x l i < 2 ^ 61) :
     fe5 (aOp x 0) = fe5 (x 1) - fe5 (x 0) ∧ fe5 (aOp x 1) = fe5 (x 1) + fe5 (x 0) ∧
     fe5 (aOp x 2) = fe5 (x 3) ∧ fe5 (aOp x 3) = fe5 (x 2) :=
-  ⟨fe5_sub (fun _ _ => rfl) (fun i hi => by have := hx 0 (by decide) i hi; have := kbv_ge i; omega),
+  ⟨fe5_sub (fun _ _ => rfl) (fun i hi => by have := hx 0 (by decide) i hi; have := kbv_ge i; omega_arith),
     fe5_add fun _ _ => rfl, fe5_congr fun _ _ => Nat.add_zero _, fe5_congr fun _ _ => Nat.add_zero _⟩
 
 theorem wOp_fe (x : Nat → Nat → Nat) (hx : ∀ l < 4, ∀ i < 5, x l i < 2 ^ 61) :
     fe5 (wOp x 0) = fe5 (x 1) - fe5 (x 0) ∧ fe5 (wOp x 1) = fe5 (x 3) + fe5 (x 2) ∧
     fe5 (wOp x 2) = fe5 (x 3) - fe5 (x 2) ∧ fe5 (wOp x 3) = fe5 (x 1) + fe5 (x 0) :=
-  ⟨fe5_sub (fun _ _ => rfl) (fun i hi => by have := hx 0 (by decide) i hi; have := kbv_ge i; omega),
+  ⟨fe5_sub (fun _ _ => rfl) (fun i hi => by have := hx 0 (by decide) i hi; have := kbv_ge i; omega_arith),
     fe5_add fun _ _ => rfl,
-    fe5_sub (fun _ _ => rfl) (fun i hi => by have := hx 2 (by decide) i hi; have := kbv_ge i; omega),
+    fe5_sub (fun _ _ => rfl) (fun i hi => by have := hx 2 (by decide) i hi; have := kbv_ge i; omega_arith),
     fe5_add fun _ _ => rfl⟩
 
 /-- `vadd`: the entry in the lanes of `ymm5–ymm9` added to the point in those of `ymm0–ymm4`. -/
@@ -248,7 +248,7 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
   have hc₁ : Ctx s₁ := by intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
   have hk₁ : EConsts s₁.mem base := by rw [m₁]; exact hk
   have l₁ := lanes_keep (r := 5) (s := s) (t := s₁) (by decide) fun q hq h1 h2 l hl =>
-    k₁ q hq h1 (by omega) l hl
+    k₁ q hq h1 (by omega_arith) l hl
   -- carried
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs₁ hc₁ hk₁.toCConsts fun l hl i hi => (u₁ l hl i hi).2)
@@ -256,10 +256,10 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
   have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
   have hc₂ : Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
   have l₂ := lanes_keep (r := 5) (s := s₁) (t := s₂) (by decide) fun q hq h1 h2 l hl =>
-    k₂ q hq (by omega) (by omega) l hl
+    k₂ q hq (by omega_arith) (by omega_arith) l hl
   have p₂ : ∀ l < 4, fe5 (lanes s₂ 0 l) = fe5 (aOp (lanes s 0) l) := fun l hl => by
     rw [fe5_congr (fun i hi => (u₂ l hl i hi).1),
-      fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2; omega),
+      fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2; omega_arith),
       fe5_congr (fun i hi => (u₁ l hl i hi).1)]
   -- to `OPL`
   rw [WP.block_append_iff]
@@ -297,14 +297,14 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
   have hc₆ : Ctx s₆ := by intro d hd; rw [vm_gpr v₆, vm_wr v₆]; exact hc₅ d hd
   have hk₆ : EConsts s₆.mem base := by rw [m₆]; exact hk₅
   have l₆ := lanes_keep (r := 0) (s := s₅) (t := s₆) (by decide) fun q hq h1 h2 l hl =>
-    k₆ q hq (by omega) (by omega) l hl
+    k₆ q hq (by omega_arith) (by omega_arith) l hl
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs₆ hc₆ hk₆.toCConsts fun l hl i hi => by
       rw [l₆ l hl i hi]; exact (u₅ l hl i hi).2.1) fun s₇ ⟨v₇, m₇, u₇, k₇⟩ => ?_
   have hs₇ : s₇.gpr .rdi = base := by rw [vm_gpr v₇]; exact hs₆
   have hc₇ : Ctx s₇ := by intro d hd; rw [vm_gpr v₇, vm_wr v₇]; exact hc₆ d hd
   have l₇ := lanes_keep (r := 5) (s := s₆) (t := s₇) (by decide) fun q hq h1 h2 l hl =>
-    k₇ q hq (by omega) (by omega) l hl
+    k₇ q hq (by omega_arith) (by omega_arith) l hl
   -- the first operand to `OPV`
   rw [WP.block_append_iff]
   refine WP.mono (dblC_wp hs₇ hc₇) fun s₈ ⟨v₈, o₈, u₈, k₈⟩ => ?_
@@ -329,14 +329,14 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
       fe5_mul (fun i hi => by rw [u₈ l hl i hi]; exact (u₇ l hl i hi).2)
         (fun i hi => by rw [l₈ l hl i hi, l₇ l hl i hi]; exact (u₆ l hl i hi).2),
       fe5_congr (fun i hi => u₈ l hl i hi), fe5_congr (fun i hi => (u₇ l hl i hi).1),
-      fe5_carry _ (by rw [l₆ l hl 4 (by decide)]; have := (u₅ l hl 4 (by decide)).2.1; omega),
+      fe5_carry _ (by rw [l₆ l hl 4 (by decide)]; have := (u₅ l hl 4 (by decide)).2.1; omega_arith),
       fe5_congr (fun i hi => (l₆ l hl i hi).trans (u₅ l hl i hi).1),
       fe5_congr (fun i hi => (l₈ l hl i hi).trans (l₇ l hl i hi)),
       fe5_congr (fun i hi => (u₆ l hl i hi).1),
-      fe5_carry _ (by have := (u₅ l hl 4 (by decide)).2.2.2; omega),
+      fe5_carry _ (by have := (u₅ l hl 4 (by decide)).2.2.2; omega_arith),
       fe5_congr (fun i hi => (u₅ l hl i hi).2.2.1)]
   obtain ⟨w0, w1, w2, w3⟩ := wOp_fe (lanes s₄ 0) fun l hl i hi => (u₄ l hl i hi).2
-  obtain ⟨a0, a1, a2, a3⟩ := aOp_fe (lanes s 0) fun l hl i hi => by have := hx l hl i hi; omega
+  obtain ⟨a0, a1, a2, a3⟩ := aOp_fe (lanes s 0) fun l hl i hi => by have := hx l hl i hi; omega_arith
   have hA := p₄ 0 (by decide); have hB := p₄ 1 (by decide); have hC := p₄ 2 (by decide)
   have hD := p₄ 3 (by decide)
   rw [a0] at hA; rw [a1] at hB; rw [a2] at hC; rw [a3] at hD
@@ -403,7 +403,7 @@ theorem ventry_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s
       rfl
   rw [WP.block_append_iff]
   refine WP.mono (vneg_wp hs₁ hc₁ hk₁.toCConsts (b := b) (by rw [vm_gpr v₁]; exact hm)
-    fun l hl i hi => by have := (u₁ l hl i hi).2; have := kbv_ge i; omega) fun s₂ ⟨v₂, m₂, u₂, k₂⟩ => ?_
+    fun l hl i hi => by have := (u₁ l hl i hi).2; have := kbv_ge i; omega_arith) fun s₂ ⟨v₂, m₂, u₂, k₂⟩ => ?_
   have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
   have hc₂ : Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
   have hk₂ : EConsts s₂.mem base := by rw [m₂]; exact hk₁
@@ -412,10 +412,10 @@ theorem ventry_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s
     have h0 := (u₁ 0 (by decide) i hi).2; have h1 := (u₁ 1 (by decide) i hi).2
     have h3 := (u₁ 3 (by decide) i hi).2; have := (u₁ l hl i hi).2
     have := kbv_ge i
-    have : kbv i < 2 ^ 63 := by simp only [kbv]; split <;> omega
+    have : kbv i < 2 ^ 63 := by simp only [kbv]; split <;> omega_arith
     split
-    · rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp only [negL] <;> omega
-    · omega
+    · rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp only [negL] <;> omega_arith
+    · omega_arith
   have f₂ : ∀ l < 4, fe5 (lanes s₂ 5 l) = [(negIf b (entryOf s)).X, (negIf b (entryOf s)).Y,
       (negIf b (entryOf s)).Z, (negIf b (entryOf s)).T].getD l 0 := fun l hl => by
     rw [fe5_congr (fun i hi => u₂ l hl i hi)]
@@ -428,7 +428,7 @@ theorem ventry_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s
       · exact f₁ 0 (by decide)
       · rw [show fe5 (fun i => negL (lanes s₁ 5) 2 i) = fe5 (fun _ => 0) - fe5 (lanes s₁ 5 2) from
           fe5_sub (fun i _ => (Nat.zero_add _).symm)
-            (fun i hi => by have := (u₁ 2 (by decide) i hi).2; have := kbv_ge i; omega),
+            (fun i hi => by have := (u₁ 2 (by decide) i hi).2; have := kbv_ge i; omega_arith),
           f₁ 2 (by decide)]
         rfl
       · exact f₁ 3 (by decide)
@@ -439,7 +439,7 @@ theorem ventry_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s
   have hk₃ : EConsts s₃.mem base := by rw [m₃]; exact hk₂
   have l₃ : ∀ l < 4, ∀ i < 5, lanes s₃ 0 l i = lanes s 0 l i := fun l hl i hi => by
     simp only [lanes, Nat.zero_add]
-    rw [k₃ i (by omega) (by omega) (by omega) l hl, k₂ i (by omega) l hl, k₁ i (by omega) l hl]
+    rw [k₃ i (by omega_arith) (by omega_arith) (by omega_arith) l hl, k₂ i (by omega_arith) l hl, k₁ i (by omega_arith) l hl]
   refine WP.mono (vadd_wp hs₃ hc₃ hk₃ (fun l hl i hi => by rw [l₃ l hl i hi]; exact hx l hl i hi)
     (fun l hl i hi => (u₃ l hl i hi).2)) fun t ⟨tg, trd, twr, ho, tsm, tp⟩ => ?_
   refine ⟨by rw [tg, vm_gpr v₃, vm_gpr v₂, vm_gpr v₁], by rw [trd, vm_rd v₃, vm_rd v₂, vm_rd v₁],

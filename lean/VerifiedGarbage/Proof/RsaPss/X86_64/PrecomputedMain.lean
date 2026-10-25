@@ -76,7 +76,7 @@ theorem main_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
   refine WP.mono_mx (rest_mx hH K) (vpadding_done hH K lk hp.toVPre L3 R1 (wr3.trans hw) (rd3.trans hrd)
     (fun r hr => (cs3 r hr).trans (hcs r hr)) hM3 x hxl hV1
     (by rw [g1 17 (by decide) (by decide) (by decide) (by decide), h17]) h23
-    (by rw [h24]; congr 1; omega)
+    (by rw [h24]; congr 1; omega_arith)
     (by rw [g1 25 (by decide) (by decide) (by decide) (by decide), h25])
     (by rw [g1 26 (by decide) (by decide) (by decide) (by decide), h26])
     (by rw [g1 35 (by decide) (by decide) (by decide) (by decide), h35])

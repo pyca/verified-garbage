@@ -25,11 +25,11 @@ theorem hintAt_original (m : Mem) (B : BitVec 32) (p a h : Addr)
     hintAt B (hintRun m B p a h j).mem p a h j e=
       hintWord B (reduceWord (coeffAt m a (4*j+e))+coeffAt m p (4*j+e)) (coeffAt m h (4*j+e)) := by
   rw [hintAt_coeff _ _ _ _ _ _ he,
-    hintRun_prefix m p a h B hd hh (by omega) (4*j+e) (by omega),ite_eq_right (by omega)]
-  have fa := coeffAt_frame (hintRun_frame m p a h B (j:=j) (by omega))
-    (by simpa using hd.symm) (show 4*j+e<n by change 4*j+e<256; omega)
-  have fh := coeffAt_frame (hintRun_frame m p a h B (j:=j) (by omega))
-    (by simpa using hh.symm) (show 4*j+e<n by change 4*j+e<256; omega)
+    hintRun_prefix m p a h B hd hh (by omega_arith) (4*j+e) (by omega_arith),ite_eq_right (by omega_arith)]
+  have fa := coeffAt_frame (hintRun_frame m p a h B (j:=j) (by omega_arith))
+    (by simpa using hd.symm) (show 4*j+e<n by change 4*j+e<256; omega_arith)
+  have fh := coeffAt_frame (hintRun_frame m p a h B (j:=j) (by omega_arith))
+    (by simpa using hh.symm) (show 4*j+e<n by change 4*j+e<256; omega_arith)
   rw [fa,fh]
 
 theorem hintCount_next (m : Mem) (B : BitVec 32) (p a h : Addr) (j : Nat) :
@@ -39,7 +39,7 @@ theorem hintCount_next (m : Mem) (B : BitVec 32) (p a h : Addr) (j : Nat) :
       (hintAt B (hintRun m B p a h j).mem p a h j 2).toNat+
       (hintAt B (hintRun m B p a h j).mem p a h j 3).toNat := by
   simp only [hintCount,hintLaneCount]
-  omega
+  omega_arith
 
 theorem hintCount_ones (m : Mem) (B : BitVec 32) (p a h : Addr) (out : Vector Bool n)
     (hd : (pR p).Disjoint (pR a)) (hh : (pR p).Disjoint (pR h))
@@ -50,12 +50,12 @@ theorem hintCount_ones (m : Mem) (B : BitVec 32) (p a h : Addr) (out : Vector Bo
     induction j with
     | zero => rfl
     | succ j ih =>
-      rw [hintCount_next,ih (by omega)]
+      rw [hintCount_next,ih (by omega_arith)]
       have lane (e : Nat) (he : e<4) :
           (hintAt B (hintRun m B p a h j).mem p a h j e).toNat=out[4*j+e]!.toNat := by
-        rw [hintAt_original m B p a h hd hh (by omega) he,ho _ (by omega)]
+        rw [hintAt_original m B p a h hd hh (by omega_arith) he,ho _ (by omega_arith)]
       rw [lane 0 (by decide),lane 1 (by decide),lane 2 (by decide),lane 3 (by decide)]
-      rw [show 4*(j+1)=((4*j+1)+1)+1+1 by omega]
+      rw [show 4*(j+1)=((4*j+1)+1)+1+1 by omega_arith]
       rw [VG.Proof.MlDsa.Round.onesTo_succ,VG.Proof.MlDsa.Round.onesTo_succ,
         VG.Proof.MlDsa.Round.onesTo_succ,VG.Proof.MlDsa.Round.onesTo_succ]
       simp only [Nat.add_zero]
@@ -84,15 +84,15 @@ theorem hintFailure_false (m : Mem) (B : BitVec 32) (p a h : Addr)
     hintLaneFailure_false m B p a h hd (by decide) (by decide)]
   constructor
   · rintro ⟨⟨⟨h0,h1⟩,h2⟩,h3⟩ k hk
-    have he : k%4=0 ∨ k%4=1 ∨ k%4=2 ∨ k%4=3 := by omega
+    have he : k%4=0 ∨ k%4=1 ∨ k%4=2 ∨ k%4=3 := by omega_arith
     rcases he with he | he | he | he
-    · simpa only [show 4*(k/4)+0=k by omega] using h0 (k/4) (by omega)
-    · simpa only [show 4*(k/4)+1=k by omega] using h1 (k/4) (by omega)
-    · simpa only [show 4*(k/4)+2=k by omega] using h2 (k/4) (by omega)
-    · simpa only [show 4*(k/4)+3=k by omega] using h3 (k/4) (by omega)
+    · simpa only [show 4*(k/4)+0=k by omega_arith] using h0 (k/4) (by omega_arith)
+    · simpa only [show 4*(k/4)+1=k by omega_arith] using h1 (k/4) (by omega_arith)
+    · simpa only [show 4*(k/4)+2=k by omega_arith] using h2 (k/4) (by omega_arith)
+    · simpa only [show 4*(k/4)+3=k by omega_arith] using h3 (k/4) (by omega_arith)
   · intro h
-    exact ⟨⟨⟨fun i hi => h _ (by omega),fun i hi => h _ (by omega)⟩,
-      fun i hi => h _ (by omega)⟩,fun i hi => h _ (by omega)⟩
+    exact ⟨⟨⟨fun i hi => h _ (by omega_arith),fun i hi => h _ (by omega_arith)⟩,
+      fun i hi => h _ (by omega_arith)⟩,fun i hi => h _ (by omega_arith)⟩
 
 theorem hintFailure_field (m : Mem) (B : Nat) (p a h : Addr)
     (hd : (pR p).Disjoint (pR a)) (hB : 1≤B) (hB' : B≤524288)
@@ -144,14 +144,14 @@ theorem hintBody_ok {B : BitVec 32} {s : State} {m : Mem} {p a l : Addr} {u : Na
     · simpa only [hk.keep.rd,hk.keep.wr,hk.keep.get .x2] using hl i hi
     · simpa only [hk.keep.wr,hk.keep.get .x0] using hw i hi
     · refine ⟨(hk.trans hv).mono (by decide),hrv,?_,?_,?_⟩
-      · rw [show 4*u+(i+1)=4*u+i+1 by omega,hintRun]
+      · rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,hintRun]
         with_reducible exact hmv
-      · rw [show 4*u+(i+1)=4*u+i+1 by omega,hintRun]
+      · rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,hintRun]
         with_reducible exact hfv
-      · rw [show 4*u+(i+1)=4*u+i+1 by omega,hintRun]
+      · rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,hintRun]
         with_reducible exact hcv
   have h := fourGroups_ok (hintGroup) I hinit hstep
-  simpa only [I,hintBody,show 4*u+4=4*(u+1) by omega] using h
+  simpa only [I,hintBody,show 4*u+4=4*(u+1) by omega_arith] using h
 
 theorem hintLoop_ok {B : BitVec 32} {s : State} (hr : HintReady B s)
     (hc : s.gpr .x10=16) (hf : s.v .v31=0) (hcount : s.v .v30=0)
@@ -177,22 +177,22 @@ theorem hintLoop_ok {B : BitVec 32} {s : State} (hr : HintReady B s)
     refine WP.mono (hintBody_ok hready hm hf hcounts h0 h1 h2 ?_ ?_ ?_ ?_) fun v ⟨hv,hrv,hmv,hfv,hcv⟩ => ?_
     · intro i hi
       simp only [hk.rd,hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact ha _ (by omega)
+      exact ha _ (by omega_arith)
     · intro i hi
       simp only [hk.rd,hk.wr,h1,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hb _ (by omega)
+      exact hb _ (by omega_arith)
     · intro i hi
       simp only [hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hw _ (by omega)
+      exact hw _ (by omega_arith)
     · intro i hi
       simp only [hk.rd,hk.wr,h2,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hl _ (by omega)
+      exact hl _ (by omega_arith)
     · refine WP.mono (advance3_ok v) fun w ⟨⟨⟨hw0,hw1,hw2,hw10,hwm⟩,hkw⟩,hvw⟩ => ?_
       refine ⟨⟨((hk.trans hv.keep).trans hkw).mono,?_,?_,?_,?_,hwm.trans hmv,?_,?_⟩,?_⟩
       · exact hrv.frame (rs := []) (by intro r _; exact congrFun hvw r) (by simp)
-      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hw2,hv.keep.get .x2,h2,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw2,hv.keep.get .x2,h2,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hvw,hfv]
       · rw [hvw,hcv]
       · rw [hw10,hv.keep.get .x10]; rfl
@@ -273,7 +273,7 @@ theorem hintCount_bound (m : Mem) (B : BitVec 32) (p a h : Addr) : hintCount m B
   have h3 := hintRun_count_bound m B p a h (j:=64) (by decide) (e:=3) (by decide)
   rw [hintRun_count_value _ _ _ _ _ (by decide) (by decide)] at h0 h1 h2 h3
   unfold hintCount
-  omega
+  omega_arith
 
 /-- Caller-facing exact output: low 32 bits count hints, high 32 bits validate ct0.
 Rejected inputs still execute all coefficient writes and preserve the same frame. -/
@@ -301,7 +301,7 @@ theorem hintNorm_ok (s : State) (B : Nat) (out : Vector Bool n)
   simp only [hbreg] at hm hv
   have hc := hintCount_bound s.mem (BitVec.ofNat 32 B) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2)
   have hcval := hintCount_ones s.mem (BitVec.ofNat 32 B) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) out hd he
-    (by intro k hk; rw [ho k hk,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := out[k]!.toNat_le; omega)])
+    (by intro k hk; rw [ho k hk,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := out[k]!.toNat_le; omega_arith)])
   have hret := hintRun_packed_value s.mem (BitVec.ofNat 32 B) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) (j:=64) (by decide)
   rw [hcval] at hc hret
   have hvalid := hintFailure_field s.mem B (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) hd hB hB' hr
@@ -311,14 +311,14 @@ theorem hintNorm_ok (s : State) (B : Nat) (out : Vector Bool n)
     intro k hk
     rw [hm,hintRun_coeff _ _ _ _ _ hd he hk,ho k hk]
     rfl
-  · rw [hv,hret]; split <;> omega
+  · rw [hv,hret]; split <;> omega_arith
   · rw [hv,hret]
     cases hf : hintFailure s.mem (BitVec.ofNat 32 B) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) 64
     · simp only [hf,Bool.false_eq_true,ite_false] at *
-      exact iff_of_true (by omega) (hvalid.mp trivial)
+      exact iff_of_true (by omega_arith) (hvalid.mp trivial)
     · simp only [hf,ite_true] at *
-      exact iff_of_false (by omega) (by intro hn; have := hvalid.mpr hn; contradiction)
-  · rw [hv,hret]; split <;> omega
+      exact iff_of_false (by omega_arith) (by intro hn; have := hvalid.mpr hn; contradiction)
+  · rw [hv,hret]; split <;> omega_arith
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response
 

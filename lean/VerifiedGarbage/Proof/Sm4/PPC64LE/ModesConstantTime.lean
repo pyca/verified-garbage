@@ -3,12 +3,14 @@ module
 public import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Modes
 import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
+import VerifiedGarbage.Proof.Sm4.PPC64LE.CallSum
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Impl.Sm4.PPC64LE.Modes
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
+meta import VerifiedGarbage.Proof.Sm4.PPC64LE.CallSum
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
@@ -22,7 +24,8 @@ steps left and the data pointer) in `r29`–`r31`, which the prepared functions
 save in their working space (the scratch buffer, the third writable region,
 whose base is `r7` on entry) and restore from there, and the analysis knows
 that those slots survive the functions' stores, all at known offsets of the
-working space. The prepared functions are analysed at their calls.
+working space. The prepared functions are analysed once, as summaries of
+their calls (`CallSum.lean`).
 
 `modeContract st post` is the modes' contract with the working space as the
 fifth argument and `st` bytes of data a step: its precondition gives the
@@ -94,22 +97,27 @@ theorem modes_agree {st : Nat} {post : State → State → Prop} (s₁ s₂ : St
 
 theorem cbcEncryptChained_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cbcEncryptChained :=
-  VG.Taint.constantTime (A := slotTaint) modeTaint modes_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
+    (by taint_decide_sum [prepSum, cryptSum])
 
 theorem cbcDecryptChained_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cbcDecryptChained :=
-  VG.Taint.constantTime (A := slotTaint) modeTaint modes_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
+    (by taint_decide_sum [prepSum, cryptSum])
 
 theorem ofb_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub ofb :=
-  VG.Taint.constantTime (A := slotTaint) modeTaint modes_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
+    (by taint_decide_sum [prepSum, cryptSum])
 
 theorem cfbEncrypt_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cfbEncrypt :=
-  VG.Taint.constantTime (A := slotTaint) modeTaint modes_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
+    (by taint_decide_sum [prepSum, cryptSum])
 
 theorem cfbDecrypt_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cfbDecrypt :=
-  VG.Taint.constantTime (A := slotTaint) modeTaint modes_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
+    (by taint_decide_sum [prepSum, cryptSum])
 
 end VG.Proof.Sm4.PPC64LE

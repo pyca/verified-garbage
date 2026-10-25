@@ -16,10 +16,7 @@ open VG.Proof.X25519.Arm (Rest)
 theorem test_ok (s : State) (c : Choice) :
     WP isa (.block (test c)) s fun t =>
       (t.z = (s.gpr .r11 - c.bits.setWidth 32 == 0) ∧ t.mem = s.mem) ∧ Rest [.r12] s t := by
-  refine withRest [.r12] ?_ (by
-    intro r hr i hi
-    simp only [instrs, test, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl <;> cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+  refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold test
   ffrun []
 
@@ -27,10 +24,7 @@ theorem selected_ok (s : State) (c : Choice) :
     WP isa (.block (selected c)) s fun t =>
       (t.gpr .r6 = c.width.setWidth 32 ∧ t.gpr .r3 = c.mask.setWidth 32 ∧ t.mem = s.mem) ∧
       Rest [.r3, .r6] s t := by
-  refine withRest [.r3, .r6] ?_ (by
-    intro r hr i hi
-    simp only [instrs, selected, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl <;> cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+  refine withRest_all [.r3, .r6] ?_ (by rfl) (by rfl)
   unfold selected
   ffrun []
 

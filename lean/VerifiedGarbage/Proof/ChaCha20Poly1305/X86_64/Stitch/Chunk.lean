@@ -108,8 +108,8 @@ theorem addProd_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {s : State} (h
     WP isa (.block (addProd j)) s fun s' =>
       Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s.mem (p + BitVec.ofNat 64 (16 * j)) 16)) s' ∧
       Keeps absorbRegs s s' ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
-  have hq : R1.toNat / 4 < 2 ^ 58 := by have := hk.r1; omega
-  have hr1 : (s.gpr .r9).toNat = 4 * (R1.toNat / 4) := by rw [h.r9]; have := hk.r1_mod; omega
+  have hq : R1.toNat / 4 < 2 ^ 58 := by have := hk.r1; omega_arith
+  have hr1 : (s.gpr .r9).toNat = 4 * (R1.toNat / 4) := by rw [h.r9]; have := hk.r1_mod; omega_arith
   have i0 := hin 0 (by decide)
   have i8 := hin 8 (by decide)
   rw [Nat.add_zero] at i0
@@ -137,7 +137,7 @@ theorem carry1_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {Y : Nat} {s : State} (h 
     fun s' ⟨⟨hc, k⟩, vx, vy⟩ => ⟨?_, k, vx, vy⟩
   obtain ⟨m, hb⟩ := hc hP
   have hr : R0.toNat + 2 ^ 64 * (4 * (R1.toNat / 4)) = rN R0 R1 := by
-    have := hk.r1_mod; simp only [rN]; omega
+    have := hk.r1_mod; simp only [rN]; omega_arith
   refine ⟨by rw [k.gpr' (r := .r8), h.r8], by rw [k.gpr' (r := .r9), h.r9],
     by rw [k.gpr' (r := .r10), h.r10], hb, ?_⟩
   rw [m, hr, ea]
@@ -178,18 +178,18 @@ open VG.Proof.Poly1305 (absorbAll)
 theorem firstBlock_succ (pre : Bool) (n : Nat) : firstBlock pre (n + 1) = firstBlock pre n + blocks pre n := by
   unfold firstBlock blocks
   cases pre
-  · simp only [Bool.false_eq_true, ite_false]; split <;> split <;> omega
+  · simp only [Bool.false_eq_true, ite_false]; split <;> split <;> omega_arith
   · simp only [ite_true]
     by_cases h0 : n = 0
     · subst h0; rfl
-    · simp only [show n + 1 ≠ 0 by omega, h0, ite_false]; split <;> omega
+    · simp only [show n + 1 ≠ 0 by omega_arith, h0, ite_false]; split <;> omega_arith
 
 theorem firstBlock_ten (pre : Bool) : firstBlock pre 10 = total pre := by cases pre <;> rfl
 
 theorem total_le (pre : Bool) : total pre ≤ 32 := by cases pre <;> decide
 
 theorem firstBlock_le (pre : Bool) {n : Nat} (hn : n ≤ 10) : firstBlock pre n ≤ total pre := by
-  unfold firstBlock total; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;> split <;> omega
+  unfold firstBlock total; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;> split <;> omega_arith
 
 theorem blocks_cases (pre : Bool) (n : Nat) : blocks pre n = 4 ∨ blocks pre n = 3 ∨ blocks pre n = 0 := by
   unfold blocks; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;> split <;>
@@ -218,12 +218,12 @@ theorem bytes_frame {m m' : Mem} (hf : Frame [slotsR buf] m m') {B : Nat}
   | zero => rfl
   | succ n ih =>
     rw [VG.Proof.Poly1305.bytesAt_succ, VG.Proof.Poly1305.bytesAt_succ, BitVec.add_assoc,
-      show BitVec.ofNat 64 j + 1 = BitVec.ofNat 64 (j + 1) by rw [BitVec.ofNat_add]; rfl, ih (by omega)]
+      show BitVec.ofNat 64 j + 1 = BitVec.ofNat 64 (j + 1) by rw [BitVec.ofNat_add]; rfl, ih (by omega_arith)]
     congr 1
     refine hf _ ?_
     simp only [List.mem_singleton, forall_eq]
     intro hc
-    exact hd.symm _ hc (Offset.contains_base q (d := j) (n := 1) (k := B) (by omega) (by lit_omega))
+    exact hd.symm _ hc (Offset.contains_base q (d := j) (n := 1) (k := B) (by omega_arith) (by lit_omega))
 
 /-- Within a double round: the eight states `vs` in layout `p` and the
 kernel's registers as in `SR`, and Poly1305's registers satisfying `Q`. -/
@@ -303,11 +303,11 @@ theorem addProd_si {R0 R1 : BitVec 64} {X : Nat} (hk : Key R0 R1) (hrsi : s₁.g
     (h : SI buf s₁ p vs (AccTo q R0 R1 X s₁ j) s) :
     WP isa (.block (addProd j)) s (SI buf s₁ p vs (HalfTo q R0 R1 X s₁ j)) := by
   refine WP.mono (addProd_ok hk h.poly (p := q) (by rw [h.gpr _ (by decide), hrsi]) (j := j)
-    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega)) fun s' ⟨a, k, x, y⟩ => h.piece ?_ k x y
+    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega_arith)) fun s' ⟨a, k, x, y⟩ => h.piece ?_ k x y
   show Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * (j + 1)))) s'
   rw [Nat.mul_add, VG.Proof.Poly1305.bytesAt_add,
-    VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega),
-    ← bytes_frame h.frame hd (by omega) (j := 16 * j) (n := 16) (by omega)]
+    VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega_arith),
+    ← bytes_frame h.frame hd (by omega_arith) (j := 16 * j) (n := 16) (by omega_arith)]
   exact a
 
 theorem carry_si {R0 R1 : BitVec 64} {X : Nat} (hk : Key R0 R1) {j : Nat} {p : Bool}
@@ -328,27 +328,27 @@ theorem sround4_ok {j : Nat} (hj : j + 4 ≤ T) {vs : Nat → CState} {s : State
   unfold sround4
   refine WP.seq (WP.mono (quarter_si (x := 0) (y := 4) (z := 8) (w := 12) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h) fun t₁ h₁ => ?_)
-  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega) h₁) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega_arith) h₁) fun t₂ h₂ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₂) fun t₃ h₃ => ?_)
   refine WP.seq (WP.mono (carry_si hk h₃) fun t₄ h₄ => ?_)
   refine WP.seq (WP.mono (swap_si (p := false) acc_gpr hrcx hb h₄) fun t₅ h₅ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₅) fun t₆ h₆ => ?_)
-  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega) h₆) fun t₇ h₇ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega_arith) h₆) fun t₇ h₇ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₇) fun t₈ h₈ => ?_)
   refine WP.seq (WP.mono (carry_si hk h₈) fun t₉ h₉ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₉) fun t₁₀ h₁₀ => ?_)
-  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega) h₁₀) fun t₁₁ h₁₁ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega_arith) h₁₀) fun t₁₁ h₁₁ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₁₁) fun t₁₂ h₁₂ => ?_)
   refine WP.seq (WP.mono (carry_si hk h₁₂) fun t₁₃ h₁₃ => ?_)
   refine WP.seq (WP.mono (swap_si (p := true) acc_gpr hrcx hb h₁₃) fun t₁₄ h₁₄ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁₄) fun t₁₅ h₁₅ => ?_)
-  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega) h₁₅) fun t₁₆ h₁₆ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega_arith) h₁₅) fun t₁₆ h₁₆ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₁₆) fun t₁₇ h₁₇ => ?_)
   exact carry_si hk h₁₇
@@ -361,14 +361,14 @@ theorem sround3_ok {j : Nat} (hj : j + 3 ≤ T) {vs : Nat → CState} {s : State
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h) fun t₁ h₁ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁) fun t₂ h₂ => ?_)
-  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega) h₂) fun t₃ h₃ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega_arith) h₂) fun t₃ h₃ => ?_)
   refine WP.seq (WP.mono (swap_si (p := false) half_gpr hrcx hb h₃) fun t₄ h₄ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₄) fun t₅ h₅ => ?_)
   refine WP.seq (WP.mono (carry_si hk h₅) fun t₆ h₆ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₆) fun t₇ h₇ => ?_)
-  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega) h₇) fun t₈ h₈ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega_arith) h₇) fun t₈ h₈ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₈) fun t₉ h₉ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
@@ -377,7 +377,7 @@ theorem sround3_ok {j : Nat} (hj : j + 3 ≤ T) {vs : Nat → CState} {s : State
   refine WP.seq (WP.mono (swap_si (p := true) acc_gpr hrcx hb h₁₁) fun t₁₂ h₁₂ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁₂) fun t₁₃ h₁₃ => ?_)
-  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega) h₁₃) fun t₁₄ h₁₄ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hT hin (by omega_arith) h₁₃) fun t₁₄ h₁₄ => ?_)
   refine WP.seq (WP.mono (quarter_si (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₁₄) fun t₁₅ h₁₅ => ?_)
   exact carry_si hk h₁₅
@@ -412,12 +412,12 @@ theorem srounds_ok (pre : Bool) (htot : total pre ≤ T) : ∀ n, n ≤ 10 → S
     WP isa (srounds pre n) s₁ (SR pre buf q R0 R1 X V s₁ n)
   | 0, _, h => WP.block_nil h
   | n + 1, hn, h => by
-    refine WP.seq (WP.mono (srounds_ok pre htot n (by omega) h) fun s hs => ?_)
+    refine WP.seq (WP.mono (srounds_ok pre htot n (by omega_arith) h) fun s hs => ?_)
     have hs' : SI buf s₁ false (fun j => Nat.repeat innerBlock n (V j))
         (AccTo q R0 R1 X s₁ (firstBlock pre n)) s :=
       ⟨hs.holds, hs.m16, hs.frame, hs.gpr, hs.rd, hs.wr, hs.acc⟩
     have hb' : firstBlock pre n + blocks pre n ≤ T := by
-      rw [← firstBlock_succ]; exact Nat.le_trans (firstBlock_le pre (by omega)) htot
+      rw [← firstBlock_succ]; exact Nat.le_trans (firstBlock_le pre (by omega_arith)) htot
     have fin : ∀ {s'}, SI buf s₁ false (fun j => Nat.repeat innerBlock (n + 1) (V j))
         (AccTo q R0 R1 X s₁ (firstBlock pre n + blocks pre n)) s' → SR pre buf q R0 R1 X V s₁ (n + 1) s' :=
       fun h' => ⟨h'.holds, h'.m16, h'.frame, h'.gpr, h'.rd, h'.wr, by rw [firstBlock_succ]; exact h'.poly⟩
@@ -427,10 +427,10 @@ theorem srounds_ok (pre : Bool) (htot : total pre ≤ T) : ∀ n, n ≤ 10 → S
     · rw [ite_eq_left e]
       rw [e] at hb' fin
       exact WP.mono (sround4_ok hk hrcx hrsi hb h8 hd hT hin hb' hs') fun _ h' => fin h'
-    · rw [ite_eq_right (by omega), ite_eq_left e]
+    · rw [ite_eq_right (by omega_arith), ite_eq_left e]
       rw [e] at hb' fin
       exact WP.mono (sround3_ok hk hrcx hrsi hb h8 hd hT hin hb' hs') fun _ h' => fin h'
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+    · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
       rw [e, Nat.add_zero] at fin
       exact WP.mono (sround0_ok hrcx hb h8 hs') fun _ h' => fin h'
 
@@ -503,10 +503,10 @@ theorem addProdV_si (hk : Key R0 R1) (hrsi : s₁.gpr .rsi = q) {T : Nat}
     (h : SIV s₁ vs (AccTo q R0 R1 X s₁ j) s) :
     WP isa (.block (addProd j)) s (SIV s₁ vs (HalfTo q R0 R1 X s₁ j)) := by
   refine WP.mono (addProd_ok hk h.poly (p := q) (by rw [h.gpr _ (by decide), hrsi]) (j := j)
-    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega)) fun s' ⟨a, k, x, y⟩ => h.piece ?_ k x y
+    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega_arith)) fun s' ⟨a, k, x, y⟩ => h.piece ?_ k x y
   show Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * (j + 1)))) s'
   rw [Nat.mul_add, VG.Proof.Poly1305.bytesAt_add,
-    VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega)]
+    VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega_arith)]
   rw [h.mem] at a
   exact a
 
@@ -526,25 +526,25 @@ theorem sround4V_ok {j : Nat} (hj : j + 4 ≤ T) {vs : Nat → CState} {s : Stat
   unfold sround4V
   refine WP.seq (WP.mono (quarterV_siv (x := 0) (y := 4) (z := 8) (w := 12) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr h) fun t₁ h₁ => ?_)
-  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega) h₁) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega_arith) h₁) fun t₂ h₂ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr h₂) fun t₃ h₃ => ?_)
   refine WP.seq (WP.mono (carryV_si hk h₃) fun t₄ h₄ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr h₄) fun t₆ h₆ => ?_)
-  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega) h₆) fun t₇ h₇ => ?_)
+  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega_arith) h₆) fun t₇ h₇ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr h₇) fun t₈ h₈ => ?_)
   refine WP.seq (WP.mono (carryV_si hk h₈) fun t₉ h₉ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr h₉) fun t₁₀ h₁₀ => ?_)
-  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega) h₁₀) fun t₁₁ h₁₁ => ?_)
+  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega_arith) h₁₀) fun t₁₁ h₁₁ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr h₁₁) fun t₁₂ h₁₂ => ?_)
   refine WP.seq (WP.mono (carryV_si hk h₁₂) fun t₁₃ h₁₃ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr h₁₃) fun t₁₅ h₁₅ => ?_)
-  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega) h₁₅) fun t₁₆ h₁₆ => ?_)
+  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega_arith) h₁₅) fun t₁₆ h₁₆ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr h₁₆) fun t₁₇ h₁₇ => ?_)
   exact carryV_si hk h₁₇
@@ -557,13 +557,13 @@ theorem sround3V_ok {j : Nat} (hj : j + 3 ≤ T) {vs : Nat → CState} {s : Stat
     (by decide) (by decide) (by decide) acc_gpr h) fun t₁ h₁ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr h₁) fun t₂ h₂ => ?_)
-  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega) h₂) fun t₃ h₃ => ?_)
+  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega_arith) h₂) fun t₃ h₃ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr h₃) fun t₅ h₅ => ?_)
   refine WP.seq (WP.mono (carryV_si hk h₅) fun t₆ h₆ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr h₆) fun t₇ h₇ => ?_)
-  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega) h₇) fun t₈ h₈ => ?_)
+  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega_arith) h₇) fun t₈ h₈ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr h₈) fun t₉ h₉ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
@@ -571,7 +571,7 @@ theorem sround3V_ok {j : Nat} (hj : j + 3 ≤ T) {vs : Nat → CState} {s : Stat
   refine WP.seq (WP.mono (carryV_si hk h₁₀) fun t₁₁ h₁₁ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr h₁₁) fun t₁₃ h₁₃ => ?_)
-  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega) h₁₃) fun t₁₄ h₁₄ => ?_)
+  refine WP.seq (WP.mono (addProdV_si hk hrsi hin (by omega_arith) h₁₃) fun t₁₄ h₁₄ => ?_)
   refine WP.seq (WP.mono (quarterV_siv (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) half_gpr h₁₄) fun t₁₅ h₁₅ => ?_)
   exact carryV_si hk h₁₅
@@ -592,9 +592,9 @@ theorem sroundsV_ok (pre : Bool) (htot : total pre ≤ T) {V : Nat → CState} {
       (SIV s₁ (fun j => Nat.repeat innerBlock n (V j)) (AccTo q R0 R1 X s₁ (firstBlock pre n)))
   | 0, _ => WP.block_nil h
   | n + 1, hn => by
-    refine WP.seq (WP.mono (sroundsV_ok pre htot h n (by omega)) fun s hs => ?_)
+    refine WP.seq (WP.mono (sroundsV_ok pre htot h n (by omega_arith)) fun s hs => ?_)
     have hb' : firstBlock pre n + blocks pre n ≤ T := by
-      rw [← firstBlock_succ]; exact Nat.le_trans (firstBlock_le pre (by omega)) htot
+      rw [← firstBlock_succ]; exact Nat.le_trans (firstBlock_le pre (by omega_arith)) htot
     show WP isa (sroundV pre n) s _
     rw [firstBlock_succ]
     unfold sroundV
@@ -602,10 +602,10 @@ theorem sroundsV_ok (pre : Bool) (htot : total pre ≤ T) {V : Nat → CState} {
     · rw [ite_eq_left e]
       rw [e] at hb' ⊢
       exact sround4V_ok hk hrsi hin hb' hs
-    · rw [ite_eq_right (by omega), ite_eq_left e]
+    · rw [ite_eq_right (by omega_arith), ite_eq_left e]
       rw [e] at hb' ⊢
       exact sround3V_ok hk hrsi hin hb' hs
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega), e, Nat.add_zero]
+    · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), e, Nat.add_zero]
       exact sround0V_ok hs
 
 /-- A chunk's rounds with `vprold` end as `srounds` does. -/
@@ -704,7 +704,7 @@ theorem chunkMain_ok (vl pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : N
   have F₁ : Frame [slotsR buf] s.mem s₁.mem := by
     rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
   have q₁ : bytesAt s₁.mem q (16 * total pre) = bytesAt s.mem q (16 * total pre) := by
-    have := bytes_frame F₁ dqs (by decide) (j := 0) (n := 16 * total pre) (by omega)
+    have := bytes_frame F₁ dqs (by decide) (j := 0) (n := 16 * total pre) (by omega_arith)
     simpa using this
   have h0 : SR pre buf q R0 R1 X (fun j => ctr (stateAt s.mem st) j) s₁ 0 s₁ :=
     ⟨hh, h15, Frame.refl _ _, fun _ _ => rfl, rfl, rfl, by
@@ -743,7 +743,7 @@ theorem chunkMain_ok (vl pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : N
     simp only [List.mem_singleton, forall_eq]
     intro hc'
     exact dbd _ ((slotsR_sub buf) _ hc') (Offset.contains_base (q + tot pre) (d := k) (n := 1) (k := 512)
-      (by omega) (by lit_omega))
+      (by omega_arith) (by lit_omega))
   refine ⟨fun k hk' => by rw [d₄ k hk', hS, hq₃ k hk'], ?_, (F₃.mono (by simp)).trans f₄,
     fun r hr hs => by rw [g₄, gk r hr hs], by rw [g₄, rsi₃'], by rw [rd₄, rd₃, h₂.rd, rd₁],
     by rw [wr₄, wr₃']⟩
@@ -808,7 +808,7 @@ theorem next_ok {st buf : Addr} {s : State} (hrdi : s.gpr .rdi = st) (hrcx : s.g
     simp [stateAt]
   have e : BitVec.ofNat 64 n - BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 (n - 512) := by
     rw [show BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 by decide,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_arith)]
   simp only [Proof.ChaCha20.X86_64.Xor.off, slot, lenOff] at i₁ o₁ i₂ hsl hfs hv hr hS
   apply WP.of_runBlock
   simp only [next, runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -821,6 +821,6 @@ theorem next_ok {st buf : Addr} {s : State} (hrdi : s.gpr .rdi = st) (hrcx : s.g
   refine ⟨rfl, Mem.readW_writeW_self64 _ _ _, hS, hfs, fun r h₁ h₂ => by simp [h₁, h₂], trivial, trivial,
     trivial, trivial, ?_⟩
   rw [show BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 by decide,
-    Proof.Poly1305.X86_64.toNat_ofNat_lt (by omega), Proof.Poly1305.X86_64.toNat_ofNat_lt (by decide)]
+    Proof.Poly1305.X86_64.toNat_ofNat_lt (by omega_arith), Proof.Poly1305.X86_64.toNat_ofNat_lt (by decide)]
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

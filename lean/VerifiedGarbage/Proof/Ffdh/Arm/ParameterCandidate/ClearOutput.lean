@@ -22,14 +22,7 @@ theorem clearHead_ok {s : State} {dst usedPtr : BitVec 32} {n consumed : Nat}
     simpa only [resultValues] using h.saved.saved 4 (by simp [resultSlots])
   have count : s.mem.readW (State.addr (s.sp + 12#32)) 32 = BitVec.ofNat 32 n := by
     simpa only [resultValues] using h.saved.saved 12 (by simp [resultSlots])
-  refine withRest [.r0, .r2, .lr] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, h.saved.read (d := 4) (by decide), h.saved.read (d := 12) (by decide), out, count]
 
 theorem clearOutput_ok {s : State} {dst usedPtr : BitVec 32} {n consumed : Nat}

@@ -40,14 +40,7 @@ theorem decrementWords_ok (s : State) {n : Nat} (positive : 0 < n) (bound : n �
     · have full : n = 2 ^ 32 := by omega
       subst n
       rfl
-  refine withRest [.r9, .r10, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterSearch.decrementWords : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r9, .r10, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.decrementWords
   ffrun [low, high, lower, noborrow, upper,
     show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add,
@@ -68,14 +61,7 @@ theorem budgetGuard_ok (s : State) {n : Nat} (bound : n ≤ 2 ^ 32)
     · have full : n = 2 ^ 32 := by omega
       subst n
       rfl
-  refine withRest [.r9] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterSearch.budgetGuard : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r9] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.budgetGuard
   ffrun [low, high, show (0 : BitVec 32) = 0#32 from rfl, BitVec.sub_zero]
   exact zero

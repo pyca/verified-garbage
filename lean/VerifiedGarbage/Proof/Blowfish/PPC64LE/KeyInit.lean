@@ -36,7 +36,7 @@ theorem initStep_run (u : State) {S : Addr} {i : Nat} (hi : i < 521) (h5 : u.gpr
       t.mem = u.mem.writeW (S + BitVec.ofNat 64 (8 * i)) (Impl.Blowfish.initWord i) ∧ Keep [.r12] u t := by
   refine WP.mono (WP.keep [.r12] (Q := fun t =>
     t.mem = u.mem.writeW (S + BitVec.ofNat 64 (8 * i)) (Impl.Blowfish.initWord i)) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, initStep, movImm64, dstOf, tmp]) rfl)
+    (by rfl) rfl)
     fun t ⟨a, b⟩ => ⟨a, b⟩
   unfold initStep movImm64
   brun [h5, hw, show 8 * i < 32768 by omega, show 8 * i % 4 = 0 by omega]

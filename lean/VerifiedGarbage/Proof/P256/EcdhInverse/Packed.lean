@@ -54,7 +54,7 @@ theorem packed_low_ok (s : State) (d : Int)
   dsimp only
   rw [hfull,packed_eq,WP.block_append_iff]
   have haodd : a.f%2=1 := msteps_f_odd
-    (t:=MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat) (by dsimp only [MSt.init]; omega) 20
+    (t:=MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat) (by dsimp only [MSt.init]; omega_arith) 20
   have hbodd : b.f%2=1 := msteps_f_odd (t:=MSt.init a.d a.f a.g) haodd 20
   have hbd : |b.d|+38<2^62 := by
     have ha := msteps_d (MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat) 20
@@ -64,14 +64,14 @@ theorem packed_low_ok (s : State) (d : Int)
     -- `a` (`msteps 20 …`) first.
     rw [show ∀ x y z, (MSt.init x y z).d = x from fun _ _ _ => rfl] at hb
     change |b.d|≤|a.d|+2*20 at hb
-    omega
-  refine WP.mono (first40_ok s d hd hz hf (by omega))
+    omega_arith
+  refine WP.mono (first40_ok s d hd hz hf (by omega_arith))
     fun t ⟨td,tu,tv,tq,tr,bu,bv,bq,br,tf,tg,kt⟩ => ?_
   have tzero : t.gpr .x27=0 := by rw [kt.gpr _ (by decide)]; exact hz
   have todd : (t.gpr .x2).toNat%2=1 := by
     change ((t.gpr .x2).toNat:Int)%2^24=b.f%2^24 at tf
     norm_num at tf
-    omega
+    omega_arith
   have hc := third_input_cong (d:=b.d) hbodd tf tg
   obtain ⟨cd,cu,cv,cq,cr,_,_⟩ := hc
   change (lowMatrix19 t b.d).d=c.d at cd
@@ -108,10 +108,10 @@ theorem packed_ok (s : State) (d f g : Int)
     rw [hfword,toNat_ofInt64,Int.emod_emod]
   have hg : ((s.gpr .x3).toNat:Int)%2^64=g%2^64 := by
     rw [hgword,toNat_ofInt64,Int.emod_emod]
-  have ho : (s.gpr .x2).toNat%2=1 := by norm_num at hf; omega
+  have ho : (s.gpr .x2).toNat%2=1 := by norm_num at hf; omega_arith
   have hc : (MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat).cong (MSt.init d f g) 64 :=
     ⟨rfl,rfl,rfl,rfl,rfl,hf,hg⟩
-  have h := msteps_cong (show ((s.gpr .x2).toNat:Int)%2=1 by omega) hc 59 (by decide)
+  have h := msteps_cong (show ((s.gpr .x2).toNat:Int)%2=1 by omega_arith) hc 59 (by decide)
   obtain ⟨ed,eu,ev,eq,er,_,_⟩ := h
   refine WP.mono (packed_low_ok s d hd hz ho hbound) fun t ⟨td,tu,tv,tq,tr,kt⟩ => ?_
   exact ⟨td.trans (congrArg (BitVec.ofInt 64) ed),tu.trans (congrArg (BitVec.ofInt 64) eu),

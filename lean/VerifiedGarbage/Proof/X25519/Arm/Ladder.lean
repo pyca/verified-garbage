@@ -189,7 +189,7 @@ theorem xor_le_one {x y : Nat} (hx : x ≤ 1) (hy : y ≤ 1) : x ^^^ y ≤ 1 := 
 
 theorem ea2 {b : BitVec 32} (hfit : b.toNat + 4096 ≤ 2 ^ 32) {x d : Nat} (h : x + d < 4096) :
     State.addr (b + BitVec.ofNat 32 x + BitVec.ofNat 32 d) = State.addr b + BitVec.ofNat 64 (x + d) := by
-  rw [Offset.add_add]; exact addr_add (by omega)
+  rw [Offset.add_add]; exact addr_add (by omega_arith)
 
 /-- The loop invariant of the ladder from `sL`, before the iteration for the
 bit `n - 1`. -/
@@ -220,27 +220,27 @@ theorem head_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b
     rw [hcur.r11]
     apply BitVec.eq_of_toNat_eq
     have t1 : (1 : BitVec 32).toNat = 1 := rfl
-    rw [toNat_sub_le (by rw [toNat_imm (by omega), t1]; omega), toNat_imm (by omega), toNat_imm (by omega), t1]
+    rw [toNat_sub_le (by rw [toNat_imm (by omega_arith), t1]; omega_arith), toNat_imm (by omega_arith), toNat_imm (by omega_arith), t1]
   refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
   refine wp_ldrb (a := State.addr b + BitVec.ofNat 64 (n - 1 + BITS)) (by decide)
     (by rw [u2.gpr]; show State.addr (s1.gpr .r0 + s1.gpr .r11 + _) = _
-        rw [e11, u1.other _ (by decide), hc.r0, ea2 hfit (by omega)])
-    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hc.inR (by omega)) fun s3 u3 => ?_
+        rw [e11, u1.other _ (by decide), hc.r0, ea2 hfit (by omega_arith)])
+    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hc.inR (by omega_arith)) fun s3 u3 => ?_
   have e1 : s3.gpr .r1 = BitVec.ofNat 32 (bit k (n - 1)) := by
-    rw [u3.gpr, u2.mem, u1.mem, hcur.stp.frame _ fun r hr => ?_, Nat.add_comm, hbits _ (by omega)]
+    rw [u3.gpr, u2.mem, u1.mem, hcur.stp.frame _ fun r hr => ?_, Nat.add_comm, hbits _ (by omega_arith)]
     · apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, toNat_imm (by omega)]; omega
+      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, toNat_imm (by omega_arith)]; omega_arith
     · rw [List.mem_singleton.mp hr]
       exact fun h => by
         simp only [Region.Contains] at h
-        rw [Offset.sub_toNat _ (by omega) (by omega)] at h
+        rw [Offset.sub_toNat _ (by omega_arith) (by omega_arith)] at h
         have := ACC_eq
-        omega
+        omega_arith
   refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
   have e10 : s4.gpr .r10 = BitVec.ofNat 32 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
     rw [u4.gpr]; show s3.gpr .r10 ^^^ s3.gpr .r1 = _
     rw [e1, u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide), hcur.r10,
-      ofNat_xor (by omega) (by omega)]
+      ofNat_xor (by omega_arith) (by omega_arith)]
   refine wp_mov (op2_imm (by decide)) fun s5 u5 => wp_dp (op2_reg _ _) fun s6 u6 => ?_
   have e9 : s6.gpr .r9 = 0 - BitVec.ofNat 32 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
     rw [u6.gpr]; show s5.gpr .r9 - s5.gpr .r10 = _
@@ -284,14 +284,14 @@ theorem step_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b
   refine wp_cmp (op2_imm (by decide)) fun s3 u3 hz => WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · exact h2.ctx.of_rest (u3.rest []) (by decide)
   · exact h2.stp.trans (Stp.of_rest (u3.rest []) (by decide) u3.mem)
-  · rw [u3.gpr, h2.r10, ladderAfter_step k x1 (show n - 1 < 255 by omega), Nat.sub_add_cancel hn,
+  · rw [u3.gpr, h2.r10, ladderAfter_step k x1 (show n - 1 < 255 by omega_arith), Nat.sub_add_cancel hn,
       ladderStep_eq]
   · rw [u3.gpr, h2.r11]
   · rw [u3.mem]
     refine (h2.slots.mono (by decide)).congr fun q hq => ?_
-    rw [ladderAfter_step k x1 (show n - 1 < 255 by omega), Nat.sub_add_cancel hn]
+    rw [ladderAfter_step k x1 (show n - 1 < 255 by omega_arith), Nat.sub_add_cancel hn]
     exact ladOps_vals k x1 _ (n - 1) q hq
-  · rw [hz, h2.r11, sub0, ofNat_beq_zero (by omega)]
+  · rw [hz, h2.r11, sub0, ofNat_beq_zero (by omega_arith)]
 
 /-- The ladder, from the state with the bits of the scalar in `BITS` and the
 initial elements in `LQ`. -/
@@ -317,6 +317,6 @@ theorem ladder_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {s : State} (hc : Ctx b s)
   refine WP.mono (step_ok hbits2 h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_ne, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
-  · exact .inr ⟨by rw [eval_ne, hz]; simp [hm], m - 1, by omega, by omega, by omega, hl'⟩
+  · exact .inr ⟨by rw [eval_ne, hz]; simp [hm], m - 1, by omega_arith, by omega_arith, by omega_arith, hl'⟩
 
 end VG.Proof.X25519.Arm

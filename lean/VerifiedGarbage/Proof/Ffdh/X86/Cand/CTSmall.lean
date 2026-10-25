@@ -97,7 +97,7 @@ theorem bounds_run {j : Nat} (hj : j ≤ 27) {x : State} (R : Run Ex base bytes 
   have nw := h.scratch.nowrap
   have := bounds_ok (is := []) (Q := Bounded Ex base bytes len args sp j) h hj fun u mu Ku au cu => by
     have e : u.gpr .eax = slotPtr base len j := by
-      apply BitVec.eq_of_toNat_eq; rw [au, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      apply BitVec.eq_of_toNat_eq; rw [au, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     exact WP.block_nil ⟨⟨h.regs Ku mu, R.2.1.keep Ku, (Ku.1 _ (by decide)).trans R.2.2⟩, e, by rw [cu, e]⟩
   rwa [List.append_nil] at this
 
@@ -113,18 +113,18 @@ theorem divSetup_ok {j : Nat} (hj : j ≤ 27) {prime inv : Nat} {u : State} (B :
   have bw := bc_eq_cwc len .wide
   have spu : u.gpr .esp = sp := B.1.2.2
   have lw := h.lower'
-  have mwp : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega
+  have mwp : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega_arith
   have SC : StackContext (sp - BitVec.ofNat 32 20) (allocFrame 20 u) := by
     refine ⟨⟨?_, ?_⟩, by rw [allocFrame_esp, spu]⟩
     · rw [allocFrame_wr, spu]; exact List.mem_cons_self ..
-    · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (sp - BitVec.ofNat 32 20).isLt; omega),
-        VG.X86.sub_toNat (by rw [← spu]; omega)]
-      rw [← spu]; omega
+    · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (sp - BitVec.ofNat 32 20).isLt; omega_arith),
+        VG.X86.sub_toNat (by rw [← spu]; omega_arith)]
+      rw [← spu]; omega_arith
   have PA : (slotPtr base len j).setWidth 64 = off base (lo len (.slot .wide j)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := base.isLt
-    omega
+    omega_arith
   refine wp_mov fun a₁ U₁ => ?_
   refine (WP.block_append_iff (M := isa) (l₁ := [Instr.store (VG.Impl.RsaKeyGen.X86.Sieve.slot 4) .ecx])
     (l₂ := [.mov .ebx (.imm (BitVec.ofNat 32 prime)), .mov .esi (.imm (BitVec.ofNat 32 inv)), .mov .ebp (.imm 0)])).mpr
@@ -138,7 +138,7 @@ theorem divSetup_ok {j : Nat} (hj : j ≤ 27) {prime inv : Nat} {u : State} (B :
       rw [K.2.2, K₂.2.2, U₁.keeps.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ h.ws.wr, nw⟩
     show InRegions _ (off ((slotPtr base len j).setWidth 64) (4 * k)) 4
     rw [PA, off, VG.Offset.add_add, ← off]
-    exact ws_read Ws₅ (by have : k < 2 * mw len := hk; omega)
+    exact ws_read Ws₅ (by have : k < 2 * mw len := hk; omega_arith)
   · show a₅.mem.readW _ 32 = slotPtr base len j + BitVec.ofNat 32 (8 * mw len)
     rw [m, M₂, Mem.readW_writeW_self32, U₁.other _ (by decide), allocFrame_gpr _ _ (by decide), B.2.2]
     rfl
@@ -163,11 +163,11 @@ theorem divides_trace {j : Nat} (hj : j ≤ 27) {prime inv : Nat} (hc₁ : AChec
       have nw := h.scratch.nowrap
       have lw := h.lower'
       have up := h.upper'
-      have : 8 ≤ mw len ∧ mw len ≤ 128 := by simp only [mw, Spec.Rsa.modulusWords]; omega
-      refine ⟨by omega, this.2, ?_⟩
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have : bc len .wide = 8 * mw len := rfl; omega)]
+      have : 8 ≤ mw len ∧ mw len ≤ 128 := by simp only [mw, Spec.Rsa.modulusWords]; omega_arith
+      refine ⟨by omega_arith, this.2, ?_⟩
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have : bc len .wide = 8 * mw len := rfl; omega_arith)]
       have : bc len .wide = 8 * mw len := rfl
-      omega
+      omega_arith
   unfold divides
   refine RelCT.seq (aRel (F := Bounded Ex base bytes len args sp j) (fun x h => hP x h) hc₁
     fun x h => bounds_run hj (hP x h)) ?_

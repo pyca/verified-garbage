@@ -24,7 +24,7 @@ namespace VG.Proof.Seed.X86_64
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Seed.X86_64 VG.Impl.Aes.X86_64 VG.Proof.Seed
 
 theorem toNat_ofNat_le {m n : Nat} (hm : m ≤ n) (hn : 16 * n ≤ 2 ^ 64) : (BitVec.ofNat 64 m).toNat = m := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 16⟩ : Region).Disjoint r) : Spec.Seed.blockAt m' p = Spec.Seed.blockAt m p := by
@@ -40,7 +40,7 @@ theorem keysAt_frame {d : Spec.Seed.Direction} {rs : List Region} {m m' : Mem} (
   congr 1
   · exact hf.readW (contains_prefix (by decide)) hd (by decide)
   · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
-    exact hf.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega) (by omega)) hd (by decide)
+    exact hf.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_arith) (by omega_arith)) hd (by decide)
 
 /-! ## The loop of batches -/
 
@@ -88,11 +88,11 @@ theorem BatchesInv.batchPre {d : Spec.Seed.Direction} {s₀ : State} {n m : Nat}
   have scr : scratchR s = scratchR s₀ := by simp only [scratchR, r9]
   let D := s₀.gpr .rsi
   have hsub : Region.Sub ⟨s.gpr .rsi, 16 * min (s.gpr .rdx).toNat 16⟩ ⟨D, 16 * n⟩ := by
-    rw [h.rsi, hm]; exact Offset.sub_base _ (by omega)
-  refine ⟨room_congr E.room r9 h.wr, h.masks, by omega, fun b hb w hw => ?_, ?_, ?_, fun j hj => ?_⟩
+    rw [h.rsi, hm]; exact Offset.sub_base _ (by omega_arith)
+  refine ⟨room_congr E.room r9 h.wr, h.masks, by omega_arith, fun b hb w hw => ?_, ?_, ?_, fun j hj => ?_⟩
   · rw [h.wr, h.rsi, Offset.add_ofNat_add_ofNat]
     rw [hm] at hb
-    exact ⟨_, E.dataIn, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, E.dataIn, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · rw [scr]; exact E.dataSep.sub_left hsub
   · rw [rdi]
     intro j hj
@@ -113,8 +113,8 @@ theorem loop_ok (d : Spec.Seed.Direction) {s₀ : State} {n : Nat} (E : BatchesE
   obtain ⟨qdone, qrsi, qrdx, qzf, qregs, qmasks, qrd, qwr, qframe⟩ := q
   rw [hm] at qdone qrsi qrdx qzf qframe
   generalize hk : min m 16 = k at qdone qrsi qrdx qzf qframe
-  have hk1 : 1 ≤ k := by omega
-  have hkm : k ≤ m := by omega
+  have hk1 : 1 ≤ k := by omega_arith
+  have hkm : k ≤ m := by omega_arith
   let D := s₀.gpr .rsi
   let S := s₀.gpr .rdi
   have r9 : s.gpr .r9 = s₀.gpr .r9 := h.regs _ (by simp)
@@ -130,17 +130,17 @@ theorem loop_ok (d : Spec.Seed.Direction) {s₀ : State} {n : Nat} (E : BatchesE
       rcases hr with rfl | rfl
       · exact ⟨workR s₀, List.mem_cons_self, fun _ h => h⟩
       · exact ⟨⟨D, 16 * (n - (m - k))⟩, List.mem_cons_of_mem _ List.mem_cons_self,
-          Region.sub_prefix (by omega)⟩
+          Region.sub_prefix (by omega_arith)⟩
     have f₂ : Frame [workR s₀, ⟨D, 16 * (n - (m - k))⟩] s.mem s'.mem := qframe.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨workR s₀, List.mem_cons_self, fun _ h => h⟩
       · exact ⟨⟨D, 16 * (n - (m - k))⟩, List.mem_cons_of_mem _ List.mem_cons_self,
-          Offset.sub_base _ (by omega)⟩
+          Offset.sub_base _ (by omega_arith)⟩
     exact f₁.trans f₂
   have workSep : ∀ b, b < n → (⟨D + BitVec.ofNat 64 (16 * b), 16⟩ : Region).Disjoint (workR s₀) := fun b hb =>
-    (E.dataSep.sub_left (Offset.sub_base _ (by omega))).sub_right
-      (Region.sub_prefix (by unfold scratchSlots; omega))
+    (E.dataSep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right
+      (Region.sub_prefix (by unfold scratchSlots; omega_arith))
   have done' : ∀ b < n - (m - k), Spec.Seed.blockAt s'.mem (D + BitVec.ofNat 64 (16 * b)) =
       Spec.Seed.crypt (keysAt d s₀.mem S) (Spec.Seed.blockAt s₀.mem (D + BitVec.ofNat 64 (16 * b))) := by
     intro b hb
@@ -149,58 +149,58 @@ theorem loop_ok (d : Spec.Seed.Direction) {s₀ : State} {n : Nat} (E : BatchesE
       refine blockAt_frame qframe fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact workSep b (by omega)
-      · exact Offset.disjoint D (Or.inl (by omega)) (by omega) (by omega)
-    · obtain ⟨j, rfl⟩ : ∃ j, b = n - m + j := ⟨b - (n - m), by omega⟩
-      have e := qdone j (by omega)
-      rw [Offset.add_ofNat_add_ofNat, show 16 * (n - m) + 16 * j = 16 * (n - m + j) by omega] at e
+      · exact workSep b (by omega_arith)
+      · exact Offset.disjoint D (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+    · obtain ⟨j, rfl⟩ : ∃ j, b = n - m + j := ⟨b - (n - m), by omega_arith⟩
+      have e := qdone j (by omega_arith)
+      rw [Offset.add_ofNat_add_ofNat, show 16 * (n - m) + 16 * j = 16 * (n - m + j) by omega_arith] at e
       rw [e]
       have hK : ∀ i < 16, keysAt d s.mem S i = keysAt d s₀.mem S i := fun i hi =>
         keysAt_frame h.frame fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           obtain ⟨-, -, hdis⟩ := E.keys i hi
           rcases hr with rfl | rfl
-          · exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega))
-          · exact (E.keyData i hi).sub_right (Region.sub_prefix (by omega))
+          · exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega_arith))
+          · exact (E.keyData i hi).sub_right (Region.sub_prefix (by omega_arith))
       have hB : Spec.Seed.blockAt s.mem (D + BitVec.ofNat 64 (16 * (n - m + j))) =
           Spec.Seed.blockAt s₀.mem (D + BitVec.ofNat 64 (16 * (n - m + j))) :=
         blockAt_frame h.frame fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact workSep _ (by omega)
-          · exact Offset.disjoint_base D (by omega) (by omega)
+          · exact workSep _ (by omega_arith)
+          · exact Offset.disjoint_base D (by omega_arith) (by omega_arith)
       rw [hB]
       exact crypt_congr hK _
   have rdx' : s'.gpr .rdx = BitVec.ofNat 64 (m - k) := by
-    rw [qrdx, h.rdx, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) hkm]
+    rw [qrdx, h.rdx, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) hkm]
   have zf' : s'.zf = some (BitVec.ofNat 64 (m - k) == 0) := by
-    rw [qzf, h.rdx, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) hkm]
+    rw [qzf, h.rdx, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) hkm]
   have regs' : ∀ r ∈ [Reg.rdi, .r9, .rsp], s'.gpr r = s₀.gpr r := fun r hr =>
     (qregs r hr).trans (h.regs r hr)
   have rd' := qrd.trans h.rd
   have wr' := qwr.trans h.wr
   by_cases hend : m ≤ 16
-  · have hkm' : k = m := by omega
+  · have hkm' : k = m := by omega_arith
     left
     refine ⟨?_, regs', rd', wr', ?_, ?_⟩
     · show s'.zf.map (!·) = some false
       rw [zf', hkm', Nat.sub_self]; rfl
     · rw [hkm', Nat.sub_self, Nat.sub_zero] at done'; exact done'
     · rw [hkm', Nat.sub_self, Nat.sub_zero] at frame'; exact frame'
-  · have hk16 : k = 16 := by omega
+  · have hk16 : k = 16 := by omega_arith
     right
-    refine ⟨?_, m - k, by omega, ⟨by omega, by omega, rdx', ?_, regs', qmasks, rd', wr', done', frame'⟩⟩
+    refine ⟨?_, m - k, by omega_arith, ⟨by omega_arith, by omega_arith, rdx', ?_, regs', qmasks, rd', wr', done', frame'⟩⟩
     · show s'.zf.map (!·) = some true
       rw [zf']
       have : (BitVec.ofNat 64 (m - k) == 0) = false := by
         simp only [beq_eq_false_iff_ne, ne_eq]
         intro h0
         have := congrArg BitVec.toNat h0
-        rw [toNat_ofNat_le (show m - k ≤ n by omega) E.fit] at this
+        rw [toNat_ofNat_le (show m - k ≤ n by omega_arith) E.fit] at this
         have z : (0 : BitVec 64).toNat = 0 := rfl
-        omega
+        omega_arith
       rw [this]; rfl
-    · rw [qrsi, Offset.add_ofNat_add_ofNat]; congr 2; omega
+    · rw [qrsi, Offset.add_ofNat_add_ofNat]; congr 2; omega_arith
 
 /-! ## The keys -/
 
@@ -210,7 +210,7 @@ def keyOff : Spec.Seed.Direction → Nat → Nat
   | .decrypt, j => 8 * (15 - j)
 
 theorem keyOff_le (d : Spec.Seed.Direction) {j : Nat} (hj : j < 16) : keyOff d j + 8 ≤ 128 := by
-  cases d <;> simp only [keyOff] <;> omega
+  cases d <;> simp only [keyOff] <;> omega_arith
 
 theorem kp_start_const (d : Spec.Seed.Direction) :
     ∀ j < 16, BitVec.ofNat 64 (keyStart d) + BitVec.ofNat 64 j * stepW d = BitVec.ofNat 64 (keyOff d j) := by
@@ -235,7 +235,7 @@ theorem crypt_keysAt (d : Spec.Seed.Direction) (m : Mem) (S : Addr) (b : Spec.Se
     simp only [keyOff]
   · show _ = Spec.Seed.crypt (fun j => Spec.Seed.roundKey (Spec.Seed.scheduleAt m S) (15 - j)) b
     refine crypt_congr (fun j hj => ?_) b
-    rw [keysAt, kp_start _ _ hj, roundKey_readW _ _ (by omega)]
+    rw [keysAt, kp_start _ _ hj, roundKey_readW _ _ (by omega_arith)]
     simp only [keyOff]
 
 theorem ecb_blocks (K : Spec.Seed.Schedule) (d : Spec.Seed.Direction) (m m' : Mem) (D : Addr) (n : Nat)
@@ -361,7 +361,7 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
       Spec.Seed.blockAt s.mem (D + BitVec.ofNat 64 (16 * b)) := fun b hb =>
     blockAt_frame f₅ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact h.dataBuf.sub_left (Offset.sub_base _ (by omega))
+      exact h.dataBuf.sub_left (Offset.sub_base _ (by omega_arith))
   -- after the loop (or none), the registers restored
   have finish : ∀ s₆ : State, BatchesPost d s₅ n s₆ → WP isa (.block restore) s₆ (EcbPost d s) := by
     intro s₆ p
@@ -379,7 +379,7 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
       rcases hr with rfl | rfl
       · refine ⟨_, List.mem_cons_self, ?_⟩
         simp only [workR, r9₅]
-        exact Region.sub_prefix (by unfold scratchSlots; omega)
+        exact Region.sub_prefix (by unfold scratchSlots; omega_arith)
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
     refine ⟨⟨fun r hr => ?_, ?_⟩, fun b hb => ?_, frame⟩
     · have saved : ∀ q ∈ Impl.Seed.X86_64.savedRegs, s'.gpr q.1 = s.gpr q.1 := by
@@ -422,26 +422,26 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
     have hn0 : n = 0 := by
       have := congrArg BitVec.toNat (beq_iff_eq.mp hz)
       simpa [n] using this
-    refine finish s₅ ⟨fun _ _ => rfl, rfl, rfl, fun b hb => by omega, ?_⟩
+    refine finish s₅ ⟨fun _ _ => rfl, rfl, rfl, fun b hb => by omega_arith, ?_⟩
     rw [hn0]; exact Frame.refl _ _
   · intro hz
     have hn1 : 1 ≤ n := by
       have : s.gpr .rdx ≠ 0 := by simpa using hz
       have : (s.gpr .rdx).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
-      omega
+      omega_arith
     have E : BatchesEnv d s₅ n := by
       refine ⟨room₅, by rw [rsi₅, wr₅]; exact h.dataIn, by rw [rsi₅, scr₅]; exact h.dataBuf, hn,
         fun j hj => ?_, fun j hj => ?_⟩
       · rw [rdi₅, kp_start _ _ hj, rd₅, wr₅, scr₅]
         have hle := keyOff_le d hj
-        refine ⟨⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega) (by omega)⟩, ?_,
+        refine ⟨⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩, ?_,
           h.keyBuf.sub_left (Offset.sub_base _ hle)⟩
         rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_ofNat_add_ofNat]
-        exact ⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega) (by omega)⟩
+        exact ⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
       · rw [rdi₅, kp_start _ _ hj, rsi₅]
         exact h.keyData.sub_left (Offset.sub_base _ (keyOff_le d hj))
     have I : BatchesInv d s₅ n n s₅ := by
-      refine ⟨hn1, Nat.le_refl _, ?_, ?_, fun _ _ => rfl, masks₅, rfl, rfl, fun b hb => by omega,
+      refine ⟨hn1, Nat.le_refl _, ?_, ?_, fun _ _ => rfl, masks₅, rfl, rfl, fun b hb => by omega_arith,
         by rw [Nat.sub_self]; exact Frame.refl _ _⟩
       · rw [rdx₅]; exact BitVec.eq_of_toNat_eq (by simp [n])
       · rw [Nat.sub_self, Nat.mul_zero, ofNat_zero_add]

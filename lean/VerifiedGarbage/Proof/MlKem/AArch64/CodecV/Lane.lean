@@ -51,15 +51,15 @@ theorem lanes_uzp1 {x y : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (hy : L
     Lanes (VPermOp.eval .uzp1 .s4 x y) fun e => f (2 * e) := fun e he => by
   rw [vword_uzp1_s4 _ _ he]
   split
-  · exact hx _ (by omega)
-  · rw [hy _ (by omega)]; dsimp only; congr 1; omega
+  · exact hx _ (by omega_arith)
+  · rw [hy _ (by omega_arith)]; dsimp only; congr 1; omega_arith
 
 theorem lanes_uzp2 {x y : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (hy : Lanes y fun e => f (4 + e)) :
     Lanes (VPermOp.eval .uzp2 .s4 x y) fun e => f (2 * e + 1) := fun e he => by
   rw [vword_uzp2_s4 _ _ he]
   split
-  · exact hx _ (by omega)
-  · rw [hy _ (by omega)]; dsimp only; congr 1; omega
+  · exact hx _ (by omega_arith)
+  · rw [hy _ (by omega_arith)]; dsimp only; congr 1; omega_arith
 
 theorem lanes_get {s s' : State} {d : VReg} {x : BitVec 128} (h : VUpd s s' d x) {r : VReg} (hr : r ≠ d)
     {f : Nat → Nat} (hf : Lanes (s.v r) f) : Lanes (s'.v r) f := by rw [h.get r hr]; exact hf
@@ -93,9 +93,9 @@ theorem cmpV_ok {s : State} {v : VReg} {d M A : Nat} (hM : M ≤ 322542) (hA : A
   have := hf e he
   have hm : f e * M < 2 ^ 31 :=
     Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_of_lt this) hM) (by decide)
-  have h1 : f e * M < 2 ^ 32 := by omega
+  have h1 : f e * M < 2 ^ 32 := by omega_arith
   rw [Nat.mod_eq_of_lt h1]
-  have h2 : f e * M + A < 2 ^ 32 := by omega
+  have h2 : f e * M + A < 2 ^ 32 := by omega_arith
   rw [Nat.mod_eq_of_lt h2]
 
 /-- The lanes of `x` and `y`, less than `2ᵇ`, in pairs. -/
@@ -106,7 +106,7 @@ theorem pairV_ok {s : State} {b : Nat} {d x y : VReg} (hb : b < 16) (hx19 : x �
       Lanes (t.v d) fun e => f (2 * e) + f (2 * e + 1) * 2 ^ b := by
   unfold pairV
   refine wp_vop rfl fun s1 h1 => wp_vop rfl fun s2 h2 =>
-    wp_vop (eval_shift (by simp only [VShiftOp.ok, VArr.esize]; simp; omega)) fun s3 h3 => wp_vop rfl fun s4 h4 =>
+    wp_vop (eval_shift (by simp only [VShiftOp.ok, VArr.esize]; simp; omega_arith)) fun s3 h3 => wp_vop rfl fun s4 h4 =>
       wp_nil ⟨?_, ?_⟩
   · exact (((h1.chg.trans h2.chg).trans h3.chg).trans h4.chg).mono (by
       intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -119,11 +119,11 @@ theorem pairV_ok {s : State} {b : Nat} {d x y : VReg} (hb : b < 16) (hx19 : x �
   rw [← h3.v] at l3
   have l4 := lanes_or (lanes_get h3 hd19 l2) (k := b) (g := fun e => f (2 * e + 1))
     (l3.congr fun e he => Nat.mod_eq_of_lt (by
-      have := hf (2 * e + 1) (by omega)
+      have := hf (2 * e + 1) (by omega_arith)
       calc f (2 * e + 1) * 2 ^ b < 2 ^ b * 2 ^ b := Nat.mul_lt_mul_of_pos_right this (Nat.two_pow_pos b)
         _ = 2 ^ (b + b) := (Nat.pow_add 2 b b).symm
-        _ ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega)))
-    fun e he => hf _ (by omega)
+        _ ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega_arith)))
+    fun e he => hf _ (by omega_arith)
   rw [h4.v]
   exact l4
 
@@ -136,7 +136,7 @@ theorem decV_ok {s : State} {v : VReg} {d : Nat} (hd : 0 < d) (hd' : d ≤ 11)
       Lanes (t.v v) fun e => (3329 * f e + 2 ^ (d - 1)) / 2 ^ d := by
   unfold decV
   refine wp_vop rfl fun s1 h1 => wp_vop rfl fun s2 h2 =>
-    wp_vop (eval_shift (by simp only [VShiftOp.ok, VArr.esize]; simp; omega)) fun s3 h3 => wp_nil ⟨?_, ?_⟩
+    wp_vop (eval_shift (by simp only [VShiftOp.ok, VArr.esize]; simp; omega_arith)) fun s3 h3 => wp_nil ⟨?_, ?_⟩
   · exact ((h1.chg.trans h2.chg).trans h3.chg).mono (by intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_self] at hr ⊢; exact hr)
   have l1 := lanes_mul hx h16
   rw [← h1.v] at l1
@@ -147,9 +147,9 @@ theorem decV_ok {s : State} {v : VReg} {d : Nat} (hd : 0 < d) (hd' : d ≤ 11)
   refine l3.congr fun e he => ?_
   have := hf e he
   have h11 : 2 ^ d ≤ 2 ^ 11 := Nat.pow_le_pow_right (by decide) hd'
-  have h10 : 2 ^ (d - 1) ≤ 2 ^ 11 := Nat.pow_le_pow_right (by decide) (by omega)
+  have h10 : 2 ^ (d - 1) ≤ 2 ^ 11 := Nat.pow_le_pow_right (by decide) (by omega_arith)
   rw [show (2 : Nat) ^ 11 = 2048 from rfl] at h11 h10
-  have b0 : f e * 3329 ≤ 2048 * 3329 := Nat.mul_le_mul_right _ (by omega)
+  have b0 : f e * 3329 ≤ 2048 * 3329 := Nat.mul_le_mul_right _ (by omega_arith)
   have b1 : f e * 3329 < 2 ^ 32 := Nat.lt_of_le_of_lt b0 (by decide)
   rw [Nat.mod_eq_of_lt b1]
   have b2 : f e * 3329 + 2 ^ (d - 1) < 2 ^ 32 :=

@@ -109,18 +109,18 @@ theorem digD_sub (hDF : H.D ≤ H.FD) (p : Addr) :
 
 theorem w_dig (hW : H.W ≤ 1024) (hD : H.FD ≤ 64) (p : Addr) :
     Region.Disjoint ⟨p, H.W⟩ ⟨p + BitVec.ofNat 64 H.dig, H.FD⟩ :=
-  Offset.base_disjoint p (by simp [Hash.dig]) (by simp [Hash.dig]; omega)
+  Offset.base_disjoint p (by simp [Hash.dig]) (by simp [Hash.dig]; omega_arith)
 
 theorem sv_dig (hW : H.W ≤ 1024) (hD : H.FD ≤ 64) (p : Addr) :
     Region.Disjoint ⟨p + BitVec.ofNat 64 H.W, 48⟩ ⟨p + BitVec.ofNat 64 H.dig, H.FD⟩ :=
-  Offset.disjoint p (.inl (by simp [Hash.dig])) (by omega) (by simp [Hash.dig]; omega)
+  Offset.disjoint p (.inl (by simp [Hash.dig])) (by omega_arith) (by simp [Hash.dig]; omega_arith)
 
-theorem w_sub' (p : Addr) : Region.Sub ⟨p, H.W⟩ ⟨p, H.W + 48 + H.FD⟩ := Region.sub_prefix (by omega)
+theorem w_sub' (p : Addr) : Region.Sub ⟨p, H.W⟩ ⟨p, H.W + 48 + H.FD⟩ := Region.sub_prefix (by omega_arith)
 theorem sv_sub' (p : Addr) : Region.Sub ⟨p + BitVec.ofNat 64 H.W, 48⟩ ⟨p, H.W + 48 + H.FD⟩ :=
-  Offset.sub_base p (by omega)
+  Offset.sub_base p (by omega_arith)
 
 theorem contains_start {p : Addr} {n len : Nat} (h : n ≤ len) : (⟨p, len⟩ : Region).Contains p n := by
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
 
 /-- The hypotheses of `finalize`'s postcondition. -/
 def Hyp (s₀ : State) (k0 text : List Byte) : Prop :=
@@ -136,7 +136,7 @@ theorem correctMain (hp : Pre H s₀) :
   have hN : 0 < H.N ∧ H.N ≤ 64 := hH.dims.N
   have hW : H.W % 8 = 0 ∧ H.W ≤ 1024 := hH.dims.so
   have hB : H.B = 64 ∨ H.B = 128 := hH.dims.B
-  have hB' : H.B ≤ 128 := by omega
+  have hB' : H.B ≤ 128 := by omega_arith
   have hS : H.S = H.N + H.B := rfl
   have hD := hH.hD64
   have hFD := hH.hFD64
@@ -149,7 +149,7 @@ theorem correctMain (hp : Pre H s₀) :
   have out_keep : ∀ m, Frame all s₀.mem m → ∀ i < H.S,
       m (out s₀ + BitVec.ofNat 64 i) = s₀.mem (out s₀ + BitVec.ofNat 64 i) := by
     intro m hf i hi
-    refine hf.bytes (R := outR H s₀) ?_ (by simp only [Hash.S]; omega) hi
+    refine hf.bytes (R := outR H s₀) ?_ (by simp only [Hash.S]; omega_arith) hi
     simp only [all, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
     exacts [hp.i_o.symm, hp.o_m, hp.o_s, hp.so.symm]
@@ -164,11 +164,11 @@ theorem correctMain (hp : Pre H s₀) :
   -- Save our caller's registers, and set up ours and `finalize`'s arguments.
   refine WP.seq (save_ok hH.dims.so (b := .r7) (by decide)
     (fun d hd₁ hd₂ => ⟨scR H s₀, by simp [hp.wr], contains_offset
-      (show d + 8 ≤ H.W + 48 + H.FD by have : d + 8 ≤ H.W + 48 := hd₂; omega)
-      (by have : d + 8 ≤ H.W + 48 := hd₂; omega)⟩)
+      (show d + 8 ≤ H.W + 48 + H.FD by have : d + 8 ≤ H.W + 48 := hd₂; omega_arith)
+      (by have : d + 8 ≤ H.W + 48 := hd₂; omega_arith)⟩)
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_)
   refine wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ =>
-    wp_mov fun s₆ u₆ => wp_addi (by omega) fun s₇ u₇ => wp_mov fun s₈ u₈ => WP.block_nil ?_
+    wp_mov fun s₆ u₆ => wp_addi (by omega_arith) fun s₇ u₇ => wp_mov fun s₈ u₈ => WP.block_nil ?_
   have hr₈ : Regs s₀ s₈ :=
     ⟨by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁],
       by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁],
@@ -204,12 +204,12 @@ theorem correctMain (hp : Pre H s₀) :
   have f₈ : Frame all s₀.mem s₈.mem :=
     fS.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨scR H s₀, by simp [all], Region.sub_prefix (by omega)⟩
+      exact ⟨scR H s₀, by simp [all], Region.sub_prefix (by omega_arith)⟩
   have sv₈ : Saved H.W (scr s₀) s₀.gpr s₈.mem := by rw [m₈]; exact saveMem_saved hH.dims.so _ _ _
   have hrI₈ : ∀ k0 text, Hyp hH s₀ k0 text → hH.SH.Repr s₈.mem (inn s₀) (xorPad k0 ipad ++ text) :=
     fun k0 text h => hH.congr s₀.mem s₈.mem (inn s₀) _ (fun i hi => fS.bytes (R := inR H s₀) (by
-      simp only [List.mem_singleton]; rintro r rfl; exact hp.i_s.sub_right (Region.sub_prefix (by omega)))
-      (by simp only [Hash.S]; omega) hi) h.2.2.1
+      simp only [List.mem_singleton]; rintro r rfl; exact hp.i_s.sub_right (Region.sub_prefix (by omega_arith)))
+      (by simp only [Hash.S]; omega_arith) hi) h.2.2.1
   have hlen : ∀ k0 text, Hyp hH s₀ k0 text → (xorPad k0 ipad ++ text).length = H.B + text.length := by
     intro k0 text h; simp [xorPad, h.1, hH.hB]
   -- The inner digest into `scratch`.
@@ -225,7 +225,7 @@ theorem correctMain (hp : Pre H s₀) :
       rcases hr with rfl | rfl | rfl
       · exact cover_self (by simp)
       · exact cover_off (R := scR H s₀) (by simp) (by simp [Hash.dig])
-      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega))
+      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega_arith))
     (by
       rw [hr₈.wr, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -233,7 +233,7 @@ theorem correctMain (hp : Pre H s₀) :
       rcases hr with rfl | rfl | rfl
       · exact cover_self (by simp)
       · exact cover_off (R := scR H s₀) (by simp) (by simp [Hash.dig])
-      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega))
+      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega_arith))
     fun s₉ rd₉ wr₉ sp₉ f₉ cs₉ hfin₉ => ?_)
   rw [hr₈.sp] at f₉
   have hr₉ : Regs s₀ s₉ := ⟨rd₉.trans hr₈.rd, wr₉.trans hr₈.wr, sp₉.trans hr₈.sp⟩
@@ -259,21 +259,21 @@ theorem correctMain (hp : Pre H s₀) :
     rw [bytesAt_take _ _ hDF, hfin₉ _ (hrI₈ k0 text h) (by rw [hlen k0 text h, ← hH.hB, ← h.1]; exact h.2.1)
       (by rw [h4₈, hlen k0 text h, ← hH.hB]; exact h.2.2.2.1), hH.hashTake]
   -- The outer hash value over the inner one's.
-  have hN4 : 4 * (H.N / 4) = H.N := by have := hH.hN4; omega
+  have hN4 : 4 * (H.N / 4) = H.N := by have := hH.hN4; omega_arith
   refine WP.seq (copy32_ok (src := .r22) (dst := .r20) (by decide) (by decide) (by decide) (by decide) 0 0
-    (H.N / 4) ⟨by omega, by omega⟩ _ s₉ _
+    (H.N / 4) ⟨by omega_arith, by omega_arith⟩ _ s₉ _
     (fun k hk => ⟨outR H s₀, by simp [hr₉.rd, hr₉.wr, hp.rd], by
-      rw [v₉.r22, e0]; exact contains_offset (by simp only [Hash.S]; omega) (by omega)⟩)
+      rw [v₉.r22, e0]; exact contains_offset (by simp only [Hash.S]; omega_arith) (by omega_arith)⟩)
     (fun k hk => ⟨inR H s₀, by simp [hr₉.wr, hp.wr], by
-      rw [v₉.r20, e0]; exact contains_offset (by simp only [Hash.S]; omega) (by omega)⟩)
+      rw [v₉.r20, e0]; exact contains_offset (by simp only [Hash.S]; omega_arith) (by omega_arith)⟩)
     (by
       rw [v₉.r22, v₉.r20, e0, e0]
-      exact hp.i_o.symm.sep (contains_start (by simp only [Hash.S]; omega))
-        (contains_start (by simp only [Hash.S]; omega)))
+      exact hp.i_o.symm.sep (contains_start (by simp only [Hash.S]; omega_arith))
+        (contains_start (by simp only [Hash.S]; omega_arith)))
     fun s₁₀ g₁₀ rd₁₀ wr₁₀ sp₁₀ m₁₀ => ?_)
   rw [v₉.r20, v₉.r22, e0, e0, hN4] at m₁₀
-  refine wp_mov fun s₁₁ u₁₁ => wp_li (by omega) fun s₁₂ u₁₂ => wp_addi (by omega) fun s₁₃ u₁₃ =>
-    wp_li (by omega) fun s₁₄ u₁₄ => wp_mov fun s₁₅ u₁₅ => WP.block_nil ?_
+  refine wp_mov fun s₁₁ u₁₁ => wp_li (by omega_arith) fun s₁₂ u₁₂ => wp_addi (by omega_arith) fun s₁₃ u₁₃ =>
+    wp_li (by omega_arith) fun s₁₄ u₁₄ => wp_mov fun s₁₅ u₁₅ => WP.block_nil ?_
   have hr₁₅ : Regs s₀ s₁₅ :=
     ⟨by rw [u₁₅.rd, u₁₄.rd, u₁₃.rd, u₁₂.rd, u₁₁.rd, rd₁₀, hr₉.rd],
       by rw [u₁₅.wr, u₁₄.wr, u₁₃.wr, u₁₂.wr, u₁₁.wr, wr₁₀, hr₉.wr],
@@ -284,7 +284,7 @@ theorem correctMain (hp : Pre H s₀) :
   have fC : Frame [inR H s₀] s₉.mem s₁₀.mem := by
     rw [m₁₀]
     exact VG.WriteBytes.writeBytes_frame _ _ _ (by
-      rw [VG.Proof.Hmac.Common.bytesAt_length]; exact contains_start (by simp only [Hash.S]; omega))
+      rw [VG.Proof.Hmac.Common.bytesAt_length]; exact contains_start (by simp only [Hash.S]; omega_arith))
   have f₁₅ : Frame all s₀.mem s₁₅.mem := by
     rw [m₁₅]; exact f₉'.trans (fC.mono (by simp [all]))
   have sv₁₅ : Saved H.W (scr s₀) s₀.gpr s₁₅.mem := by
@@ -295,17 +295,17 @@ theorem correctMain (hp : Pre H s₀) :
     intro k0 text h
     refine hH.reloc s₀.mem s₁₅.mem (out s₀) (inn s₀) _ (by simp [xorPad, h.1, hH.hB]) (fun i hi => ?_) h.2.2.2.2
     rw [m₁₅, m₁₀, VG.Proof.Hmac.Common.writeBytes_at _ _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length]; exact hi)
-      (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega)]
+      (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega_arith)]
     rw [show (bytesAt s₉.mem (out s₀) H.N).getD i 0 = s₉.mem (out s₀ + BitVec.ofNat 64 i) by
       simp [bytesAt, List.getD_eq_getElem?_getD, hi]]
-    exact out_keep _ f₉' i (by simp only [Hash.S]; omega)
+    exact out_keep _ f₉' i (by simp only [Hash.S]; omega_arith)
   have hdg₁₅ : ∀ k0 text, Hyp hH s₀ k0 text →
       bytesAt s₁₅.mem (scr s₀ + BitVec.ofNat 64 H.dig) H.D = hH.SH.H.hash (xorPad k0 ipad ++ text) := by
     intro k0 text h
     rw [← hdg₉ k0 text h, m₁₅]
     exact Proof.Sha256.Stream.bytesAt_congr fun i hi => fC.bytes (R := digD H s₀) (by
       simp only [List.mem_singleton]; rintro r rfl; exact (dsDig.sub_right (digD_sub hDF _)).symm)
-      (by show H.D ≤ 2 ^ 64; omega) hi
+      (by show H.D ≤ 2 ^ 64; omega_arith) hi
   -- Absorb the inner digest.
   have dDigW : Region.Disjoint (digD H s₀) ⟨scr s₀, H.W⟩ :=
     ((w_dig hW.2 hFD _).sub_right (digD_sub hDF _)).symm
@@ -315,7 +315,7 @@ theorem correctMain (hp : Pre H s₀) :
       not_false_eq_true]; rw [g₁₀ _ (by decide), v₉.r20])
     (by simp only [u₁₅.other, u₁₄.other, u₁₃.gpr, ne_eq, reduceCtorEq, not_false_eq_true]
         rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), g₁₀ _ (by decide), v₉.r21])
-    (by rw [u₁₅.other _ (by decide), u₁₄.gpr]; exact Proof.MdStream.PPC64LE.toNat_ofNat_lt (by omega))
+    (by rw [u₁₅.other _ (by decide), u₁₄.gpr]; exact Proof.MdStream.PPC64LE.toNat_ofNat_lt (by omega_arith))
     (by rw [u₁₅.gpr, u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide),
       u₁₁.other _ (by decide), g₁₀ _ (by decide), v₉.r21])
     dsW (dsDig.sub_right (digD_sub hDF _)).symm dDigW (by rw [hr₁₅.sp]; exact hp.sp48)
@@ -327,16 +327,16 @@ theorem correctMain (hp : Pre H s₀) :
       refine Covers.of_sub fun r hr => ?_
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact cover_off (R := scR H s₀) (by simp) (by simp only [Hash.dig]; omega)
+      · exact cover_off (R := scR H s₀) (by simp) (by simp only [Hash.dig]; omega_arith)
       · exact cover_self (by simp)
-      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega))
+      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega_arith))
     (by
       rw [hr₁₅.wr, hp.wr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact cover_self (by simp)
-      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega))
+      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega_arith))
     fun s₁₆ rd₁₆ wr₁₆ sp₁₆ f₁₆ cs₁₆ hup₁₆ => ?_)
   rw [hr₁₅.sp] at f₁₆
   have hr₁₆ : Regs s₀ s₁₆ := ⟨rd₁₆.trans hr₁₅.rd, wr₁₆.trans hr₁₅.wr, sp₁₆.trans hr₁₅.sp⟩
@@ -356,7 +356,7 @@ theorem correctMain (hp : Pre H s₀) :
     · exact (w_sv hW.2 _).symm
     · exact hp.ss.symm.sub_left (sv_sub' _)
   -- The outer hash, into `scratch`.
-  refine WP.seq (wp_mov fun s₁₇ u₁₇ => wp_li (by omega) fun s₁₈ u₁₈ => wp_addi (by omega) fun s₁₉ u₁₉ =>
+  refine WP.seq (wp_mov fun s₁₇ u₁₇ => wp_li (by omega_arith) fun s₁₈ u₁₈ => wp_addi (by omega_arith) fun s₁₉ u₁₉ =>
     wp_mov fun s₂₀ u₂₀ => WP.block_nil ?_)
   have hr₂₀ : Regs s₀ s₂₀ :=
     ⟨by rw [u₂₀.rd, u₁₉.rd, u₁₈.rd, u₁₇.rd, hr₁₆.rd], by rw [u₂₀.wr, u₁₉.wr, u₁₈.wr, u₁₇.wr, hr₁₆.wr],
@@ -377,7 +377,7 @@ theorem correctMain (hp : Pre H s₀) :
       rcases hr with rfl | rfl | rfl
       · exact cover_self (by simp)
       · exact cover_off (R := scR H s₀) (by simp) (by simp [Hash.dig])
-      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega))
+      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega_arith))
     (by
       rw [hr₂₀.wr, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -385,7 +385,7 @@ theorem correctMain (hp : Pre H s₀) :
       rcases hr with rfl | rfl | rfl
       · exact cover_self (by simp)
       · exact cover_off (R := scR H s₀) (by simp) (by simp [Hash.dig])
-      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega))
+      · exact cover_pre (R := scR H s₀) (by simp) (by simp only; omega_arith))
     fun s₂₁ rd₂₁ wr₂₁ sp₂₁ f₂₁ cs₂₁ hfin₂₁ => ?_)
   rw [hr₂₀.sp] at f₂₁
   have hr₂₁ : Regs s₀ s₂₁ := ⟨rd₂₁.trans hr₂₀.rd, wr₂₁.trans hr₂₀.wr, sp₂₁.trans hr₂₀.sp⟩
@@ -395,7 +395,7 @@ theorem correctMain (hp : Pre H s₀) :
     intro k0 text h
     have hl : (xorPad k0 opad ++ hH.SH.H.hash (xorPad k0 ipad ++ text)).length = H.B + H.D := by
       simp [xorPad, h.1, hH.hB, hH.hashLen]
-    rw [bytesAt_take _ _ hDF, hfin₂₁ _ (by rw [m₂₀]; exact hrI₁₆ k0 text h) (by rw [hl]; omega)
+    rw [bytesAt_take _ _ hDF, hfin₂₁ _ (by rw [m₂₀]; exact hrI₁₆ k0 text h) (by rw [hl]; omega_arith)
       (by rw [hl, u₂₀.other _ (by decide), u₁₉.other _ (by decide), u₁₈.gpr]), ← hH.hashTake]
     rfl
   have sv₂₁ : Saved H.W (scr s₀) s₀.gpr s₂₁.mem := by
@@ -407,15 +407,15 @@ theorem correctMain (hp : Pre H s₀) :
     · exact (w_sv hW.2 _).symm
     · exact hp.ss.symm.sub_left (sv_sub' _)
   -- The digest, into `out`.
-  have hD44 : 4 * (H.D / 4) = H.D := by omega
+  have hD44 : 4 * (H.D / 4) = H.D := by omega_arith
   have dMD : (macR H s₀).Disjoint (digD H s₀) :=
     hp.m_s.sub_right (fun a h => dig_sub _ a (digD_sub hDF _ a h))
   refine copy32_ok (src := .r21) (dst := .r23) (by decide) (by decide) (by decide) (by decide) H.dig 0
-    (H.D / 4) ⟨by omega, by omega⟩ _ s₂₁ _
+    (H.D / 4) ⟨by omega_arith, by omega_arith⟩ _ s₂₁ _
     (fun k hk => ⟨scR H s₀, by simp [hr₂₁.rd, hr₂₁.wr, hp.wr], by
-      rw [v₂₁.r21, ← add_off]; exact contains_offset (by simp only [Hash.dig]; omega) (by omega)⟩)
+      rw [v₂₁.r21, ← add_off]; exact contains_offset (by simp only [Hash.dig]; omega_arith) (by omega_arith)⟩)
     (fun k hk => ⟨macR H s₀, by simp [hr₂₁.wr, hp.wr], by
-      rw [v₂₁.r23, e0]; exact contains_offset (by omega) (by omega)⟩)
+      rw [v₂₁.r23, e0]; exact contains_offset (by omega_arith) (by omega_arith)⟩)
     (by
       rw [v₂₁.r21, v₂₁.r23, e0, hD44]
       exact dMD.symm.sep (contains_start (Nat.le_refl _)) (contains_start (Nat.le_refl _)))
@@ -429,7 +429,7 @@ theorem correctMain (hp : Pre H s₀) :
     rw [← hmac₂₁ k0 text h, m₂₂]
     have := VG.Proof.Hmac.Common.bytesAt_writeBytes_self s₂₁.mem (mac s₀)
       (bytesAt s₂₁.mem (scr s₀ + BitVec.ofNat 64 H.dig) H.D)
-      (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega)
+      (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega_arith)
     rwa [VG.Proof.Hmac.Common.bytesAt_length] at this
   have sv₂₂ : Saved H.W (scr s₀) s₀.gpr s₂₂.mem := by
     rw [m₂₂]
@@ -439,8 +439,8 @@ theorem correctMain (hp : Pre H s₀) :
   -- Restore our caller's registers.
   refine restore_ok hH.dims.so (scr := scr s₀) v₂₂.r21
     (fun d hd₁ hd₂ => ⟨scR H s₀, by simp [hr₂₂.rd, hr₂₂.wr, hp.wr],
-      contains_offset (show d + 8 ≤ H.W + 48 + H.FD by have : d + 8 ≤ H.W + 48 := hd₂; omega)
-      (by have : d + 8 ≤ H.W + 48 := hd₂; omega)⟩)
+      contains_offset (show d + 8 ≤ H.W + 48 + H.FD by have : d + 8 ≤ H.W + 48 := hd₂; omega_arith)
+      (by have : d + 8 ≤ H.W + 48 := hd₂; omega_arith)⟩)
     s₀.gpr sv₂₂ fun s' hsv ho hmem _ _ hsp => ⟨preserved_of hsv fun r hr => ?_, by rw [hsp, hr₂₂.sp],
       fun k0 text h => by rw [hmem]; exact hmac k0 text h⟩
   rw [ho r (by simp only [Hash.savedAt, List.map_cons, List.map_nil]; revert r; decide)]
@@ -453,7 +453,7 @@ theorem finalizeMain_fdepth : H.finalizeMain.fdepth ≤ 1 := by
   have := hH.finFd
   have := hH.updFd
   simp only [Hash.finalizeMain, Hash.callFin, Hash.callUpd, Code.fdepth, Nat.max_le]
-  omega
+  omega_arith
 
 include hH in
 theorem finalizeMain_pf : pushFrames H.finalizeMain = true := by
@@ -473,10 +473,10 @@ theorem correct {s₀ : State} (hp : (finG hH.SH (H.W + 48 + H.FD) 96).pre s₀)
     WP isa H.finalize s₀ fun s' => abiPreserved s₀ s' ∧ (finG hH.SH (H.W + 48 + H.FD) 96).post s₀ s' := by
   have hpi := pre_inner hH hp
   obtain ⟨h1, h2, _, _, _, _, _, _, h9, h10, h11, h12, h13⟩ := hp
-  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega) (by omega)
+  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega_arith) (by omega_arith)
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
-    fun s' ⟨hk, hsp, hpost⟩ => ?_) (by have := finalizeMain_fdepth hH; omega) (finalizeMain_pf hH)
+  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
+    fun s' ⟨hk, hsp, hpost⟩ => ?_) (by have := finalizeMain_fdepth hH; omega_arith) (finalizeMain_pf hH)
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
     have hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 96) :=
       fun a h => hsub a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a h)
@@ -497,10 +497,10 @@ theorem correct {s₀ : State} (hp : (finG hH.SH (H.W + 48 + H.FD) 96).pre s₀)
       · refine hH.congr s₀.mem _ _ _ (fun i hi => ?_) hI
         exact inner_bytes (R := ⟨s₀.gpr .r3, H.S⟩) (by rw [← hH.hS]; exact h10.sub_left hsub)
           (by have h1 : 0 < H.N ∧ H.N ≤ 64 := hH.dims.N; have h2 : H.B = 64 ∨ H.B = 128 := hH.dims.B
-              simp only [Hash.S]; omega) hi
+              simp only [Hash.S]; omega_arith) hi
       · refine hH.congr s₀.mem _ _ _ (fun i hi => ?_) hO
         exact inner_bytes (R := ⟨s₀.gpr .r4, H.S⟩) (by rw [← hH.hS]; exact h11.sub_left hsub)
           (by have h1 : 0 < H.N ∧ H.N ≤ 64 := hH.dims.N; have h2 : H.B = 64 ∨ H.B = 128 := hH.dims.B
-              simp only [Hash.S]; omega) hi
+              simp only [Hash.S]; omega_arith) hi
 
 end VG.Proof.Hmac.Stream.PPC64LE.Finalize

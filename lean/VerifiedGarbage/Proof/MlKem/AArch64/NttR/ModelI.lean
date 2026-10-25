@@ -66,9 +66,9 @@ theorem modelI (W : Nat → BitVec 16) : Model (Li W) (Oi W) invRules := by
     rw [Li_succ, ite_eq_right (by rw [hr]; decide), ite_eq_right hs]
     generalize invLen st = len at hpos hm ⊢
     have h1 : (p + len) % (2 * len) = p % (2 * len) + len := by
-      rw [Nat.add_mod, Nat.mod_eq_of_lt (show len < 2 * len by omega)]
-      exact Nat.mod_eq_of_lt (by omega)
-    rw [ite_eq_right (by omega), Nat.add_sub_cancel]
+      rw [Nat.add_mod, Nat.mod_eq_of_lt (show len < 2 * len by omega_arith)]
+      exact Nat.mod_eq_of_lt (by omega_arith)
+    rw [ite_eq_right (by omega_arith), Nat.add_sub_cancel]
     rfl
   · rw [Li_succ, ite_eq_left hr]
   · rw [Li_succ, ite_eq_right (by decide), ite_eq_left rfl]
@@ -88,7 +88,7 @@ def vI (F : Poly) (st p : Nat) : Zq :=
 /-- A lane reduced to less than `q` in absolute value. -/
 theorem n1W_rep {a : BitVec 16} {X : Zq} {B : Nat} (h : LRep a X B) (hB : B ≤ 32768) : LRep (n1W a) X 3329 := by
   obtain ⟨a1, a2, a3⟩ := h
-  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok a (z := 1) (by omega) (by decide)
+  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok a (z := 1) (by omega_arith) (by decide)
   have e1 : n1W a = a - T * BitVec.ofNat 16 3329 := by
     unfold n1W qdW
     rw [show (BitVec.ofNat 16 10) = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw 1) from rfl, hT]
@@ -96,13 +96,13 @@ theorem n1W_rep {a : BitVec 16} {X : Zq} {B : Nat} (h : LRep a X B) (hB : B ≤ 
   rw [show a * BitVec.ofNat 16 1 = a from BitVec.mul_one _] at b1 b2 b3
   rw [e1]
   refine ⟨b1, b2, ?_⟩
-  omega
+  omega_arith
 
 /-- A lane times `z`, modulo `q`. -/
 theorem mmW_rep {a : BitVec 16} {X : Zq} {B z : Nat} (h : LRep a X B) (hB : B ≤ 32768) (hz : z < 3329) :
     LRep (mmW a z (twN z)) (X * ofNat z) 3329 := by
   obtain ⟨a1, a2, a3⟩ := h
-  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok a (z := z) (by omega) hz
+  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok a (z := z) (by omega_arith) hz
   rw [mmW_eq hT]
   refine ⟨b1, b2, ?_⟩
   have e : (X * ofNat z).val = X.val * z % 3329 := by
@@ -110,11 +110,11 @@ theorem mmW_rep {a : BitVec 16} {X : Zq} {B z : Nat} (h : LRep a X B) (hB : B �
   rw [e]
   generalize a * BitVec.ofNat 16 z - T * BitVec.ofNat 16 3329 = r at b1 b2 b3 ⊢
   obtain ⟨k, hk⟩ := Int.dvd_of_emod_eq_zero a3
-  have : a.toInt * z = X.val * z + 3329 * (k * z) := by rw [show a.toInt = X.val + 3329 * k by omega]; grind
+  have : a.toInt * z = X.val * z + 3329 * (k * z) := by rw [show a.toInt = X.val + 3329 * k by omega_arith]; grind
   rw [this] at b3
   generalize a.toInt * z = A at b3
   generalize k * (z : Int) = K at b3
-  omega
+  omega_arith
 
 /-- The facts about the levels with a layer. -/
 theorem gs_layers : ∀ st < 10, invRed st = false → st ≠ invScale →
@@ -143,11 +143,11 @@ theorem Li_rep (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F
     ∀ st ≤ 10, ∀ p < 256, LRep (Li W st p) (vI F st p) (bI st)
   | 0, _, p, hp => h p hp
   | st + 1, hs, p, hp => by
-    have ih := Li_rep W F h st (by omega)
-    have hv : ∀ p, vI F st p = (nttInvL (jI st) F)[p]! := fun p => by rw [vI, ite_eq_right (by omega)]
+    have ih := Li_rep W F h st (by omega_arith)
+    have hv : ∀ p, vI F st p = (nttInvL (jI st) F)[p]! := fun p => by rw [vI, ite_eq_right (by omega_arith)]
     rw [Li_succ]
     by_cases hr : invRed st = true
-    · obtain ⟨j1, b1, b0, h10⟩ := red_levels st (by omega) hr
+    · obtain ⟨j1, b1, b0, h10⟩ := red_levels st (by omega_arith) hr
       rw [ite_eq_left hr, vI, ite_eq_right h10, j1, b1, ← hv]
       exact n1W_rep (ih p hp) b0
     rw [ite_eq_right hr]
@@ -160,23 +160,23 @@ theorem Li_rep (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F
       exact mmW_rep (ih p hp) (by decide) (show 3303 < 3329 by decide)
     rw [ite_eq_right h9]
     obtain ⟨hpos, hlen, j1, hj, b1, hB, hB', h10, h128, hl⟩ :=
-      gs_levels (by omega) (Bool.eq_false_iff.2 hr) h9
+      gs_levels (by omega_arith) (Bool.eq_false_iff.2 hr) h9
     rw [vI, ite_eq_right h10, j1, nttInvL_succ_get F hj hp, ← hlen, b1]
     simp only [← hv]
     generalize invLen st = len at hpos h128 hl ⊢
     by_cases hm : p % (2 * len) < len
     · rw [ite_eq_left hm, ite_eq_left hm]
       have hp' : p + len < 256 := by
-        have := pair_lt hpos (show p < 2 * len * (128 / len) by omega) hm; omega
-      obtain ⟨_, _, l1, -⟩ := gs_lane (z := 0) (ih p hp) (ih (p + len) hp') (by decide) (by omega)
+        have := pair_lt hpos (show p < 2 * len * (128 / len) by omega_arith) hm; omega_arith
+      obtain ⟨_, _, l1, -⟩ := gs_lane (z := 0) (ih p hp) (ih (p + len) hp') (by decide) (by omega_arith)
       rw [← Nat.two_mul] at l1
       exact l1
     · rw [ite_eq_right hm, ite_eq_right hm]
       have hk : 256 / len - 1 - p / (2 * len) < 128 := by
         generalize 256 / len = A at h128
         generalize p / (2 * len) = B
-        omega
-      obtain ⟨T, hT, -, l2⟩ := gs_lane (ih (p - len) (by omega)) (ih p hp) (zeta_lt hk) (by omega)
+        omega_arith
+      obtain ⟨T, hT, -, l2⟩ := gs_lane (ih (p - len) (by omega_arith)) (ih p hp) (zeta_lt hk) (by omega_arith)
       unfold zi
       rw [show zetaN (256 / len - 1 - p / (2 * len)) = Impl.MlKem.AArch64.Ntt16.zeta (256 / len - 1 - p / (2 * len))
         from rfl, mmW_eq hT, ← ofNat_zeta hk]
@@ -191,10 +191,10 @@ theorem normL_val {x : BitVec 16} {X : Zq} (h : LRep x X 3329) : (normL x).toNat
   have hX : X.val < 3329 := X.isLt
   have hv : (x + (x.sshiftRight 15 &&& BitVec.ofNat 16 3329)).toInt = (X.val : Int) := by
     rw [hn]
-    split <;> omega
+    split <;> omega_arith
   generalize x + (x.sshiftRight 15 &&& BitVec.ofNat 16 3329) = y at hv ⊢
   rw [BitVec.toInt_eq_toNat_cond] at hv
-  split at hv <;> omega
+  split at hv <;> omega_arith
 
 /-- The reduced coefficients are those of `NTT⁻¹`. -/
 theorem Oi_nttInv (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F[p]! 3329) {p : Nat}

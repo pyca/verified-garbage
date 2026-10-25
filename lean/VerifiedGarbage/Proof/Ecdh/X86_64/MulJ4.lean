@@ -91,11 +91,11 @@ theorem invLayW (hc : CfgOk c) (h9 : c.n ≤ 9) (h4 : 4 ≤ c.n) :
   have h7 := hc.n10
   have hT : bitsAt c.n 2 + invTbl c.n ≤ size := by
     simp only [bitsAt_eq, invTbl]; show _ ≤ 8192
-    have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
-    omega
+    have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega_arith)
+    omega_arith
   have below : ∀ {i}, i < 45 → i ≠ TMP → c.sl i + 8 * c.n ≤ bitsAt c.n 2 := fun hi hT => by
-    have := sl_below_bits c hi 2 0 (.inl hT); omega
-  exact ⟨h4, show c.n < 10 by omega, sl_le c h7 (i := TX) (by decide), sl_le c h7 (i := RZ) (by decide), hT,
+    have := sl_below_bits c hi 2 0 (.inl hT); omega_arith
+  exact ⟨h4, show c.n < 10 by omega_arith, sl_le c h7 (i := TX) (by decide), sl_le c h7 (i := RZ) (by decide), hT,
     sl_le c h7 (i := MP) (by decide), sl_le c h7 (i := TMP) (by decide), sl_apart c (by decide),
     Or.inl (below (by decide) (by decide)), Or.inl (below (by decide) (by decide)), sl_apart c (by decide),
     (sl_apart_hi c (i := TMP) (by decide) (Nat.le_refl _) invW_below_tmp).symm, sl_apart c (by decide),
@@ -111,7 +111,7 @@ theorem invSpecQ (hc : CfgOk c) (h9 : c.n ≤ 9) {base : Addr} :
   obtain ⟨h4, sp, ip⟩ := hc.inv h9
   have h7 := hc.n10
   refine ⟨fun t ht hM hz => ?_, fun w hw => ?_, fun w hw => ?_⟩
-  · exact WP.mono (sp (invLayW hc h9 h4) (by have := hc.p_ge; omega) (unitMod_pow_two hc.p_odd (64 * c.n))
+  · exact WP.mono (sp (invLayW hc h9 h4) (by have := hc.p_ge; omega_arith) (unitMod_pow_two hc.p_odd (64 * c.n))
       ht hM.of_inl hz ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩) fun t' ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
   · simp only [invW, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
@@ -137,14 +137,14 @@ theorem invSpecQ (hc : CfgOk c) (h9 : c.n ≤ 9) {base : Addr} :
     · refine Or.inr ?_
       show bitsAt c.n 2 + invTbl c.n ≤ c.sl WB
       rw [bitsAt_eq]; simp (disch := sl_ne) only [sl_eq]; simp only [invTbl]; unfold WB
-      omega
+      omega_arith
     · by_cases h6 : c.n = 6
       · refine Or.inl ?_
         show c.sl WB + 4 * c.winJ ≤ c.sl TMP
         have hJle : c.winJ ≤ 16 * c.n + 1 := by
-          unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega
+          unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega_arith
         rw [sl_tmp6 c h6]; simp (disch := sl_ne) only [sl_eq]; unfold WB
-        omega
+        omega_arith
       · exact Or.inr (sl_lt c (show TMP < WB by decide) (.inr (.inr ⟨h6, by decide⟩)))
 
 /-! ## The window method -/
@@ -174,8 +174,8 @@ theorem winMulJ_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : PrimeOrd
     unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega_arith
   have hWK : c.sl WK + 16 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WK + 1) (by decide)
-    simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
-  have hKW := sl_lt c (show ks < WK by unfold WK; omega) (.inl hkT)
+    simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega_arith
+  have hKW := sl_lt c (show ks < WK by unfold WK; omega_arith) (.inl hkT)
   have h16 : (16 : Nat) ^ c.winJ ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega_arith)

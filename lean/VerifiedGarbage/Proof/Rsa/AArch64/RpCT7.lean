@@ -103,11 +103,11 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [ldh .x3 sC3, sth
     refine WP.mono (WP.keep [.x3] (Q := fun u => u.mem = s.mem.writeW (off I.B (8 * sMask))
         (mask res.isSome)) (by
       brun [hc.ws.x0, hdr_enc (show sC3 < 32 by decide), hdr_enc (show sMask < 32 by decide),
-        hc.ws.scr.ld (d := 8 * sC3) (by simp only [sC3, sFn]; omega),
-        hc.ws.scr.st (d := 8 * sMask) (by simp only [sMask, sFn]; omega), hc3])
+        hc.ws.scr.ld (d := 8 * sC3) (by simp only [sC3, sFn]; omega_arith),
+        hc.ws.scr.st (d := 8 * sMask) (by simp only [sMask, sFn]; omega_arith), hc3])
       (by decide) (by decide) (by decide +kernel)) fun u ⟨m₁, k₁⟩ => ?_
     have hf₁ : Frm I.B (rg (wk I.k) [] [sMask]) s.mem u.mem := by
-      rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sMask, sFn]; omega)) _ _
+      rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sMask, sFn]; omega_arith)) _ _
         (List.mem_singleton_self _)
     exact ⟨I, m₀, res.isSome, rfl, S.step hf₁ (by decide) (by decide) k₁ (by decide), L, O,
       by rw [m₁, word_writeW_self], minv, _, _, hc.congr hf₁ (by decide) (by decide) k₁ (by decide)⟩
@@ -117,9 +117,9 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [ldh .x3 sC3, sth
     obtain ⟨I, m₀, c, rfl, S, L, O, hmk, minv, r, t, hc⟩ := h'
     have hg := hc.good
     have hw2 := hc.ws.w2
-    exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega) (o := aY) (a := aY) (b := aOne) (by decide)
+    exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega_arith) (o := aY) (a := aY) (b := aOne) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.hinv
-      (by rw [hc.hone, hc.hn]; have := hc.n1; omega)) fun u ⟨_, _, _, ha, k⟩ =>
+      (by rw [hc.hone, hc.hn]; have := hc.n1; omega_arith)) fun u ⟨_, _, _, ha, k⟩ =>
       h.step (Frm.rg_of_arrays ha [aAcc, aTmp, aY] [] (by decide)) (by decide) (by simp) (by simp) k (by decide)
         fun _ _ _ => trivial
   refine RelCT.seq (R := Two (FX XU)) (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws)
@@ -143,17 +143,17 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [ldh .x3 sC3, sth
   have sY := hw.sl (j := aY) (by decide)
   have sO := hw.sl (j := aOne) (by decide)
   have sU := hw.sl (j := fU) (by decide)
-  refine WP.mono (subLoop_ok (hw.scr.congr k₄.wr) h16 h17 h13 h14 hc₄ (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by have := slot_sep (w := wk p.k) (show fU ≠ aY by decide); omega)
-    (by have := slot_sep (w := wk p.k) (show fU ≠ aOne by decide); omega)) fun u ⟨_, o₅, k₅⟩ => ?_
+  refine WP.mono (subLoop_ok (hw.scr.congr k₄.wr) h16 h17 h13 h14 hc₄ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by have := slot_sep (w := wk p.k) (show fU ≠ aY by decide); omega_arith)
+    (by have := slot_sep (w := wk p.k) (show fU ≠ aOne by decide); omega_arith)) fun u ⟨_, o₅, k₅⟩ => ?_
   rw [m₄] at o₅
-  have hf : Frm p.B (rg (wk p.k) [fU] []) s.mem u.mem := Frm.rg_of_out o₅ (by omega) _ _ (by decide)
+  have hf : Frm p.B (rg (wk p.k) [fU] []) s.mem u.mem := Frm.rg_of_out o₅ (by omega_arith) _ _ (by decide)
   refine h.step hf (by decide) (by simp) (by simp) (k₄.trans k₅) (by decide) fun I e z => ?_
   subst e
   dsimp only [RpIn.pub] at *
   show word u.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
-  rw [o₅.word (Or.inr (by omega)) (by omega)]
-  exact word_above_zero (n := wk I.k) (L := wk I.k + 2) (by omega) (by rw [z]; exact Nat.two_pow_pos _)
+  rw [o₅.word (Or.inr (by omega_arith)) (by omega_arith)]
+  exact word_above_zero (n := wk I.k) (L := wk I.k + 2) (by omega_arith) (by rw [z]; exact Nat.two_pow_pos _)
 
 /-! ## `p = gcd(u, n)` and `q = n / p` -/
 
@@ -174,8 +174,8 @@ theorem xv_keep {I : RpIn} {s t : State} (hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64) {j
   obtain ⟨ht, hv⟩ := h
   refine ⟨?_, ?_⟩
   · show word t.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
-    rw [hf.rg_wordA hZ16 (by simp) (by decide) hU (by omega)]; exact ht
-  · rw [hf.rg_wv hZ16 (by simp) (by decide) hV (by omega), hf.rg_wv hZ16 (by simp) (by decide) hN (by omega)]
+    rw [hf.rg_wordA hZ16 (by simp) (by decide) hU (by omega_arith)]; exact ht
+  · rw [hf.rg_wv hZ16 (by simp) (by decide) hV (by omega_arith), hf.rg_wv hZ16 (by simp) (by decide) hN (by omega_arith)]
     exact hv
 
 theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
@@ -184,7 +184,7 @@ theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     RelCT isa (Two (FX (XW true true))) (inverse fU fV fX₁ fX₂ aN fT) (Two (FX fun _ _ => True)) := by
   refine ws_ct RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun p s h => ?_
   have hw := h.ws
-  have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+  have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
   have h' := h
   obtain ⟨I, m₀, c, e, S, L, O, hmk, ⟨u0, vm⟩, -, x1, x2⟩ := h'
   subst e
@@ -192,7 +192,7 @@ theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
   have hw1 := hw.w1
   have hw2 := hw.w2
   have vX₂ : wv s.mem I.B (slot (wk I.k) fX₂) (wk I.k) = 0 := by
-    have := wv_add s.mem I.B (slot (wk I.k) fX₂) (wk I.k) 2; have := x2 rfl; omega
+    have := wv_add s.mem I.B (slot (wk I.k) fX₂) (wk I.k) 2; have := x2 rfl; omega_arith
   refine WP.mono (inverse_ok hw (iU := fU) (iV := fV) (iX₁ := fX₁) (iX₂ := fX₂) (iM := aN) (iT := fT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -200,10 +200,10 @@ theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
   have f : Frm I.B (rg (wk I.k) [fU, fV, fX₁, fX₂, fT] []) s.mem u.mem := f'.widen (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega)
+    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
+    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
+    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
+    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
     · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
   exact h.step f (by decide) (by simp) (by simp) k (by decide) fun _ _ _ => trivial
 
@@ -248,29 +248,29 @@ theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX
           subst e
           have hw := h.ws
           dsimp only [RpIn.pub] at o hw
-          have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+          have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
           show word u.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
           rw [(Frm.rg_of_out o (Nat.le_refl _) [fV] [] (by decide)).rg_wordA hZ16 (by simp) (by decide) (by decide)
-            (by omega)]
+            (by omega_arith)]
           exact ht) ?_
   refine RelCT.seq (R := Two (FX XV)) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _) (by taint_decide)
     fun p s h => ?_) ?_
   · have hw := h.ws
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
     refine WP.mono (copyA_ok hw (o := fV) (a := aN) (by decide) (by decide) (by decide))
       fun u ⟨cv, o, _, _, k⟩ => ?_
-    have hf : Frm p.B (rg (wk p.k) [fV] []) s.mem u.mem := Frm.rg_of_out o (by omega) _ _ (by decide)
+    have hf : Frm p.B (rg (wk p.k) [fV] []) s.mem u.mem := Frm.rg_of_out o (by omega_arith) _ _ (by decide)
     refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e ht => ?_
     subst e; dsimp only [RpIn.pub] at hf cv hZ16
     refine ⟨?_, ?_⟩
     · show word u.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
-      rw [hf.rg_wordA hZ16 (by simp) (by decide) (by decide) (by omega)]; exact ht
-    · rw [cv, hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]
+      rw [hf.rg_wordA hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact ht
+    · rw [cv, hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]
   -- `x₁ = 1`, `x₂ = 0`.
   refine RelCT.seq (R := Two (FX (XW false false))) (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _)
     (by taint_decide) fun p s h => ?_) ?_
   · have hw := h.ws
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
     refine WP.mono (zeroA_ok hw (j := fX₁) (by decide)) fun u ⟨z, o, _, _, _, k⟩ => ?_
     have hf : Frm p.B (rg (wk p.k) [fX₁] []) s.mem u.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
     refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e hv => ?_
@@ -283,29 +283,29 @@ theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX
     rw [← e]
     have hw := h.ws
     have hn := hw.scr.nowrap
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.hZ; omega
+    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.hZ; omega_arith
     have sX₁ := hw.sl (j := fX₁) (by decide)
     have hw1 := hw.w1
     refine WP.mono (setOneA_ok hw (j := fX₁) (by decide)) fun u ⟨m, k⟩ => ?_
     have hf : Frm p.B (rg (wk p.k) [fX₁] []) s.mem u.mem := by
-      rw [m]; exact Frm.rg_of_out (writeW_outside _ _ _ (by omega)) (by omega) _ _ (by decide)
+      rw [m]; exact Frm.rg_of_out (writeW_outside _ _ _ (by omega_arith)) (by omega_arith) _ _ (by decide)
     refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e hv => ?_
     subst e; dsimp only [RpIn.pub] at hf m hZ16 hn sX₁ hw1
     refine ⟨xv_keep hZ16 hf (by decide) (by decide) (by decide) hv.1, ?_, fun _ => ?_, ?_⟩
     · intro e; cases e
-    · rw [m]; exact wv_set_one (by omega) (hv.2.1 rfl) (by omega)
+    · rw [m]; exact wv_set_one (by omega_arith) (hv.2.1 rfl) (by omega_arith)
     · intro e; cases e
   refine RelCT.seq (R := Two (FX (XW true true))) (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _)
     (by taint_decide) fun p s h => ?_) ?_
   · have hw := h.ws
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
     refine WP.mono (zeroA_ok hw (j := fX₂) (by decide)) fun u ⟨z, o, _, _, _, k⟩ => ?_
     have hf : Frm p.B (rg (wk p.k) [fX₂] []) s.mem u.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
     refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e hv => ?_
     subst e; dsimp only [RpIn.pub] at hf z hZ16
     refine ⟨xv_keep hZ16 hf (by decide) (by decide) (by decide) hv.1, ?_, fun _ => ?_, fun _ => z⟩
     · intro e; cases e
-    rw [hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact hv.2.2.1 rfl
+    rw [hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact hv.2.2.1 rfl
   -- The inverse, and `q = n / v`.
   refine RelCT.seq (inverse_gct (by taint_decide)) (RelCT.seq (R := Two (FX fun _ _ => True))
     (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _) (by taint_decide) fun p s h =>
@@ -314,7 +314,7 @@ theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX
           fun _ _ _ => trivial) (RelCT.seq (R := Two (FX fun _ _ => True))
     (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _) (by taint_decide) fun p s h =>
       WP.mono (copyA_ok h.ws (o := fQ) (a := aN) (by decide) (by decide) (by decide)) fun u ⟨_, o, _, _, k⟩ =>
-        h.step (Frm.rg_of_out o (by omega) [fQ] [] (by decide)) (by decide) (by simp) (by simp) k (by decide)
+        h.step (Frm.rg_of_out o (by omega_arith) [fQ] [] (by decide)) (by decide) (by simp) (by simp) k (by decide)
           fun _ _ _ => trivial) (divmod_gct (by taint_decide) (by taint_decide))))
 
 /-! ## The larger first, and the stores -/
@@ -370,11 +370,11 @@ theorem storeR_ct {j sPtr : Nat} (hj : j < 16) (hP : sPtr < 32) (ptr : RpP → A
       have h256 := hw.h256
       have hk1 := L.k1
       have hk2 := L.k2
-      refine WP.mono (storeA_ws hw hj hP (by decide) hp ha.k hm (by omega) (by unfold wk; omega)
+      refine WP.mono (storeA_ws hw hj hP (by decide) hp ha.k hm (by omega_arith) (by unfold wk; omega_arith)
         (fun i hi => by rw [hW]; exact hwr i hi) hsep) fun t ⟨_, _, ht, hf, k⟩ => ?_
       have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
-        fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
-      exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold rArg at hi; omega), k.wr.trans hW, L, O,
+        fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith)) (by omega_arith)
+      exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold rArg at hi; omega_arith), k.wr.trans hW, L, O,
         (fw _ (by decide)).trans hm⟩
 
 /-- `fin` leaks the same in runs that agree on the public data. -/

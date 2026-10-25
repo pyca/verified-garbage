@@ -66,17 +66,17 @@ theorem AtABI.ws {s : State} (A : AtABI s) : Ws s (wsOf s) (lenOf s) :=
 theorem AtABI.entry {s : State} (A : AtABI s) : Entry s (wsOf s) (lenOf s) := by
   have hlo := A.stackLo
   have hhi := A.stackBound
-  refine ⟨hlo, by omega, A.ws, fun j hj => ofs_far fun hc => ?_⟩
+  refine ⟨hlo, by omega_arith, A.ws, fun j hj => ofs_far fun hc => ?_⟩
   have := (s.gpr .esp).isLt
   by_cases h56 : j < 56
   · refine A.stkScratch _ ?_ hc
     simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     rw [show (56 : BitVec 64).toNat = 56 from rfl]
-    omega
+    omega_arith
   · refine A.retScratch _ ?_ hc
     simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     rw [show (56 : BitVec 64).toNat = 56 from rfl]
-    omega
+    omega_arith
 
 /-- The width `N = 2 n` of 32-bit words. -/
 abbrev nAt (s : State) : Nat := 2 * (arg s 2).toNat
@@ -88,7 +88,7 @@ theorem AtABI.lay {s : State} (A : AtABI s) :
   have := A.smo; have := A.sinv; have := A.sa; have := A.sb; have := A.so; have := A.omo; have := A.oinv
   have := A.pos; have := A.bound
   simp only [scratchBytes, Apart] at *
-  constructor <;> simp only [nAt, lenOf] <;> omega
+  constructor <;> simp only [nAt, lenOf] <;> omega_arith
 
 /-- The arguments, read from the state after the registers' push. -/
 theorem AtABI.readArg {s : State} (A : AtABI s) {t : State} (hesp : t.gpr .esp = s.gpr .esp - 16)
@@ -103,14 +103,14 @@ theorem AtABI.readArg {s : State} (A : AtABI s) {t : State} (hesp : t.gpr .esp =
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     rw [show (16 : BitVec 32).toNat = 16 from rfl]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   have hin : InRegions (t.rd ++ t.wr) (argAddr s i) 4 := by
     rw [hrd, A.rd]
     refine ⟨_, List.mem_append_left _ (List.mem_singleton_self _), ?_⟩
     simp only [Region.Contains, argAddr, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_add,
       BitVec.toNat_ofNat]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   show t.load32 (t.ea (atArg i)) = _
   rw [ea, State.load32, ite_eq_left_iff.mpr fun h => absurd hin h]
   refine congrArg some (Mem.readW_congr fun j hj => hmem _ fun r hr h => ?_)
@@ -118,7 +118,7 @@ theorem AtABI.readArg {s : State} (A : AtABI s) {t : State} (hesp : t.gpr .esp =
   have := (s.gpr .esp).isLt
   simp only [Region.Contains, argAddr, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_add,
     BitVec.toNat_ofNat] at h
-  omega
+  omega_arith
 
 theorem upd_trans {t t₁ t₂ : State} {r : Reg} {v₁ v₂ : BitVec 32} (u₁ : Upd t t₁ r v₁) (u₂ : Upd t₁ t₂ r v₂) :
     Upd t t₂ r v₂ :=
@@ -143,7 +143,7 @@ theorem atParams_ok {s : State} (A : AtABI s) :
         (arg s 7).toNat (arg s 8).toNat ∧
       t.gpr .esp = s.gpr .esp - 16 ∧ t.mem = (pushed rs4 s).mem ∧ t.rd = s.rd ∧ t.wr = (pushed rs4 s).wr := by
   have hlo := A.stackLo
-  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   have F1 := pushed_frame (rs := rs4) (s := s) (by decide) h16
   rw [show 4 * rs4.length = 16 from rfl] at F1
   have e1 : (pushed rs4 s).gpr .esp = s.gpr .esp - 16 := by rw [pushed_esp]; rfl
@@ -177,7 +177,7 @@ theorem atParams_ok {s : State} (A : AtABI s) :
     rw [u10.other _ h, u9.other _ h, u8.other _ h, u7.other _ h]
   have hW := A.ws_toNat
   have hn8 : 8 * (arg s 2).toNat < 2 ^ 32 := by
-    have := A.s_le; have := A.bound; simp only [scratchBytes, lenOf] at *; omega
+    have := A.s_le; have := A.bound; simp only [scratchBytes, lenOf] at *; omega_arith
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, S10.1, S10.2.2.1, S10.2.1, S10.2.2.2⟩
   · show (t10.gpr .ebp).toNat = _
     rw [g _ (by decide), u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide),
@@ -199,6 +199,6 @@ theorem atParams_ok {s : State} (A : AtABI s) :
     simp only [BitVec.toNat_add]
     have := (arg s 2).isLt
     simp only [nAt]
-    omega
+    omega_arith
 
 end VG.Proof.Mont.X86.Sse2

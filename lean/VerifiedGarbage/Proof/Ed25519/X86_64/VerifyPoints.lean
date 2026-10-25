@@ -175,7 +175,7 @@ theorem skipLoad_ok {s : State} {base kp sp T : Addr} {A : EPoint dZ} (h : WinCt
   rw [WP.block_append_iff]
   refine WP.mono (digitByte_ok ha.scratch 7952 0 (by decide) (by decide) ha.kHeader j ac
     (by rw [off_zero]; exact ha.kRead j hj)) fun b ⟨bv, kb⟩ => ?_
-  have hm : a.mem (off kp j) = s.mem (off kp j) := am _ (by have := h.kFar j hj; omega)
+  have hm : a.mem (off kp j) = s.mem (off kp j) := am _ (by have := h.kFar j hj; omega_arith)
   rw [off_zero, hm] at bv
   refine WP.mono (testByte_ok b _ bv) fun t ⟨tz, kt⟩ => ?_
   refine ⟨tz, by rw [kt.2.1, kb.2.1]; exact ac, ka.trans ((CounterKeep.of_keeps kb (by decide)).trans
@@ -193,7 +193,7 @@ def skipOn (K j : Nat) : Bool := decide (K / 256 ^ (32 + j) % 256 = 0 ∧ j ≠ 
 def skipEnd (K j : Nat) : Nat := if K / 256 ^ (32 + j) % 256 = 0 then 32 else 32 + (j + 1)
 
 theorem skipEnd_range (K j : Nat) (hj : j < 32) : 32 ≤ skipEnd K j ∧ skipEnd K j ≤ 64 := by
-  unfold skipEnd; split <;> omega
+  unfold skipEnd; split <;> omega_arith
 
 theorem skipBody_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S j : Nat}
     (h : SkipInv s₀ base kp sp T A K S (j + 1) t) :
@@ -203,9 +203,9 @@ theorem skipBody_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S 
   obtain ⟨hl, hz, _, hn⟩ := h
   have hS : S < 256 ^ 32 := hl.sVal ▸ decodeLE_lt32 _ _
   have hb : (t.mem (off kp (32 + j))).toNat = K / 256 ^ (32 + j) % 256 := by
-    rw [scalar_byte (n := 64) (by omega), hl.kVal]
+    rw [scalar_byte (n := 64) (by omega_arith), hl.kVal]
   rw [skipBody]
-  refine WP.seq (WP.mono (skipLoad_ok hl.ctx (32 + j) (by omega) (by rw [hl.counter]; rfl))
+  refine WP.seq (WP.mono (skipLoad_ok hl.ctx (32 + j) (by omega_arith) (by rw [hl.counter]; rfl))
     fun a ⟨az, ac, ka⟩ => ?_)
   rw [hb] at az
   refine WP.ite (!decide (K / 256 ^ (32 + j) % 256 = 0)) (by simp only [eval, az, Option.map_some])
@@ -220,15 +220,15 @@ theorem skipBody_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S 
   · have h0 : K / 256 ^ (32 + j) % 256 = 0 := by simpa using hy
     have hK : K / 256 ^ (32 + j) = 0 := by
       have := div_split K (32 + j)
-      rw [show 32 + j + 1 = 32 + (j + 1) by omega, hz] at this
-      omega
-    have hw := hl.of_counter ka ac (by rw [hK, hz]) (by rw [high_zero hS (by omega), high_zero hS (by omega)])
+      rw [show 32 + j + 1 = 32 + (j + 1) by omega_arith, hz] at this
+      omega_arith
+    have hw := hl.of_counter ka ac (by rw [hK, hz]) (by rw [high_zero hS (by omega_arith), high_zero hS (by omega_arith)])
     have he : skipOn K j = decide (j ≠ 0) := by simp only [skipOn, h0, true_and]
     rw [counterCmp]
-    refine WP.mono (counterCmp_ok hw.ctx.scratch (32 + j) (by omega) hw.counter) fun u ⟨uz, ku⟩ => ?_
+    refine WP.mono (counterCmp_ok hw.ctx.scratch (32 + j) (by omega_arith) hw.counter) fun u ⟨uz, ku⟩ => ?_
     have hu := hw.of_counter (CounterKeep.of_keeps ku (by decide)) (by rw [ku.2.1]; exact hw.counter) rfl rfl
-    refine ⟨by rw [uz, he]; simp, fun hf => ?_, fun ht => ⟨hu, hK, by rw [he] at ht; have := of_decide_eq_true ht; omega,
-      by omega⟩⟩
+    refine ⟨by rw [uz, he]; simp, fun hf => ?_, fun ht => ⟨hu, hK, by rw [he] at ht; have := of_decide_eq_true ht; omega_arith,
+      by omega_arith⟩⟩
     have hj : j = 0 := by rw [he] at hf; simpa using hf
     subst hj
     have e : skipEnd K 0 = 32 := by simp only [skipEnd, h0, ↓reduceIte]
@@ -243,13 +243,13 @@ theorem skipZero_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S 
   rw [skipZero]
   apply WP.loop (SkipInv s₀ base kp sp T A K S) (n := 32)
   · intro n t ht
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := ht.2.2.1; omega : n ≠ 0)
-    have hj : j < 32 := by have := ht.2.2.2; omega
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := ht.2.2.1; omega_arith : n ≠ 0)
+    have hj : j < 32 := by have := ht.2.2.2; omega_arith
     refine WP.mono (skipBody_ok ht) fun u ⟨uz, uf, ut⟩ => ?_
     cases hs : skipOn K j
     · exact Or.inl ⟨by show u.zf.map (!·) = _; rw [uz, hs], skipEnd K j, (skipEnd_range K j hj).1,
         (skipEnd_range K j hj).2, (uf hs).1, (uf hs).2⟩
-    · exact Or.inr ⟨by show u.zf.map (!·) = _; rw [uz, hs], j, by omega, ut hs⟩
+    · exact Or.inr ⟨by show u.zf.map (!·) = _; rw [uz, hs], j, by omega_arith, ut hs⟩
   · exact ⟨h, hK, by decide, by decide⟩
 
 
@@ -288,7 +288,7 @@ theorem PowersKeep.of_all {base : Addr} {s t : State} (h : AllKeep base s t) :
   refine ⟨fun r hb hs hc => h.gpr r ?_, h.rd, h.wr, fun p _ hp => h.mem p ?_⟩
   · simp only [recRegs, List.mem_cons, List.not_mem_nil, or_false]
     rintro (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp_all [clob]
-  · omega
+  · omega_arith
 
 theorem WinCtx.of_all {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : WinCtx base kp sp T A s)
     (k : AllKeep base s t) : WinCtx base kp sp T A t := by
@@ -296,17 +296,17 @@ theorem WinCtx.of_all {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : W
   have word (d : Nat) (hd : 3216 ≤ d) (hd' : d + 8 ≤ 8192) :
       t.mem.readW (off base d) 64 = s.mem.readW (off base d) 64 :=
     Mem.readW_congr fun i hi => k.mem _ (Or.inr (Or.inr (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega)))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith)))
   refine ⟨⟨(k.gpr _ (by decide)).trans h.scratch.rdi, k.wr ▸ h.scratch.wr, hb⟩,
     (word 7952 (by decide) (by decide)).trans h.kHeader, (word 7944 (by decide) (by decide)).trans h.sHeader,
     fun i hi => by rw [k.rd, k.wr]; exact h.kRead i hi, fun i hi => by rw [k.rd, k.wr]; exact h.sRead i hi,
     h.kFar, h.sFar, fun i hi => by rw [k.rd, k.wr]; exact h.kRead8 i hi,
     fun i hi => by rw [k.rd, k.wr]; exact h.sRead8 i hi, fun e he => ?_,
     (word 7960 (by decide) (by decide)).trans h.bHeader,
-    h.bTab.of_mem k.rd k.wr fun p hp => k.mem p (Or.inr (Or.inr (by omega)))⟩
+    h.bTab.of_mem k.rd k.wr fun p hp => k.mem p (Or.inr (Or.inr (by omega_arith)))⟩
   obtain ⟨q, hq, hr⟩ := h.aTab e he
-  have tf : TableFrame base 56 3160 s.mem t.mem := fun p _ hp => k.mem p (by omega)
-  exact ⟨q, by rw [tf.point (by omega) (Or.inr (by omega)) (by omega)]; exact hq, hr⟩
+  have tf : TableFrame base 56 3160 s.mem t.mem := fun p _ hp => k.mem p (by omega_arith)
+  exact ⟨q, by rw [tf.point (by omega_arith) (Or.inr (by omega_arith)) (by omega_arith)]; exact hq, hr⟩
 
 theorem negR_eval (e : Env) :
     point (evalOps [.const 8 0, .sub 4 8 4, .sub 7 8 7] e) 0 1 2 3 = point e 0 1 2 3 ∧
@@ -327,7 +327,7 @@ theorem negR_ok {s : State} {base : Addr} (hs : Scratch s base) :
   have b_low : ∀ i : Slot, i.val < 4 → env b.mem base i = env s.mem base i := by
     intro i hi
     change Proof.X25519.X86_64.F b.mem base (offset i) = Proof.X25519.X86_64.F s.mem base (offset i)
-    rw [Outside_F kb.mem (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega)), ka.2.1]
+    rw [Outside_F kb.mem (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith)), ka.2.1]
   refine WP.mono (fieldCodeWide_ok ((hs.of_keep kae).of_keep kbe) _) fun t ⟨kt, vt⟩ => ?_
   refine ⟨(kae.trans kbe).trans kt, ?_, ?_⟩
   · rw [vt, (negR_eval _).1]
@@ -421,12 +421,12 @@ theorem skipAt_of_recode {s₀ f g : State} {base kp sp T : Addr} {A : EPoint dZ
     have w (d : Nat) (hd : 64 ≤ d) (hd' : d + 8 ≤ 2048) :
         Proof.X25519.X86_64.word g.mem base d = Proof.X25519.X86_64.word f.mem base d :=
       Mem.readW_congr fun j hj => k.mem _ (Or.inr (Or.inl ⟨by
-        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega, by
-        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega⟩))
+        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith, by
+        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith⟩))
     have hi := i.isLt
     simp only [offset]
-    rw [w _ (by omega) (by omega), w _ (by omega) (by omega), w _ (by omega) (by omega),
-      w _ (by omega) (by omega)]
+    rw [w _ (by omega_arith) (by omega_arith), w _ (by omega_arith) (by omega_arith), w _ (by omega_arith) (by omega_arith),
+      w _ (by omega_arith) (by omega_arith)]
   have h0 : Rep (point (env g.mem base) 0 1 2 3) 0 := by
     have v := hf.value
     rw [hK, Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hS (Nat.pow_le_pow_right (by decide) hc32)), zero_smul,
@@ -435,7 +435,7 @@ theorem skipAt_of_recode {s₀ f g : State} {base kp sp T : Addr} {A : EPoint dZ
   have htop : winVal A (Recode.digits 5 K (8 * c)) (Recode.digits 8 S (8 * 32)) (8 * c + 8) (8 * c + 8 + 1) = 0 := by
     simp only [winVal, hiVal, Nat.sub_self, Recode.hsum_zero, zero_smul, add_zero]
   refine ⟨⟨hf.ctx.of_all k, by rw [henv]; exact hf.d, by rw [hcount], hdig, by rw [htop]; exact h0.proj,
-    ByteKeep.refl _ _⟩, fun j h1 h2 => by omega, h0, by omega, le_refl _⟩
+    ByteKeep.refl _ _⟩, fun j h1 h2 => by omega_arith, h0, by omega_arith, le_refl _⟩
 
 theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra : EPoint dZ}
     (hs : Scratch s base)
@@ -475,7 +475,7 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
     fun p hp => ⟨gA p hp, gB p hp⟩
   have hg := skipAt_of_recode hf' hK hc32 hc64 kg gdig gc
   have hdg : Digits (Recode.digits 5 K (8 * c)) (Recode.digits 8 S (8 * 32)) (8 * c + 8) :=
-    ⟨by omega, fun p => Recode.digits_le (by decide) p, fun p => Recode.digits_le (by decide) p⟩
+    ⟨by omega_arith, fun p => Recode.digits_le (by decide) p, fun p => Recode.digits_le (by decide) p⟩
   -- The windows.
   refine WP.seq (WP.mono (EdWindows.ok hdg hg) fun h hh => ?_)
   have ksh := ((kse.trans (PowersKeep.of_byte hf'.keep)).trans (PowersKeep.of_all kg)).trans
@@ -491,9 +491,9 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
   have hSlt : S < 2 ^ (8 * 32) := hSd ▸ decodeLE_lt32 _ _
   have gv := hh.value
   simp only [winVal, hiVal, Nat.sub_zero] at gv
-  rw [Recode.digits_sum (by decide) hKlt (by omega), Recode.digits_sum (by decide) hSlt (by omega),
+  rw [Recode.digits_sum (by decide) hKlt (by omega_arith), Recode.digits_sum (by decide) hSlt (by omega_arith),
     natCast_zsmul, natCast_zsmul] at gv
-  have tf : TableFrame base 56 3160 f.mem g.mem := fun p _ hp => kg.mem p (by omega)
+  have tf : TableFrame base 56 3160 f.mem g.mem := fun p _ hp => kg.mem p (by omega_arith)
   have hR' : tablePoint h.mem base 7552 = tablePoint s.mem base 7552 := by
     rw [win_tablePoint hh.keep.mem (by decide) (by decide), tf.point (by decide) (Or.inr (by decide)) (by decide),
       win_tablePoint hf'.keep.mem (by decide) (by decide), eR]

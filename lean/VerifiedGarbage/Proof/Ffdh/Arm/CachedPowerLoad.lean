@@ -25,14 +25,7 @@ theorem load_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat}
   have read52 := h.locals.read (by decide : 52+4≤72)
   have context := h.saved 52 h52
   change s.mem.readW (off (State.addr s.sp) 52) 32=p.cachedContext at context
-  refine withRest [.r1,.r2,.r4] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.CachedPower.load : Prog isa)).all
-        (fun i=>!(clobbers i r))=true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hi' : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r1,.r2,.r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.CachedPower.load
   ffrun [addr 16 (by decide),addr 20 (by decide),addr 52 (by decide),read16,read20,read52,
     h.scalarStart,h.scalarWidth,context,off]

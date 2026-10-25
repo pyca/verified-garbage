@@ -117,7 +117,7 @@ theorem Two.sg_eq {i : Nat} {a b : State} (ha : Sg σ₁ i a) (hb : Sg σ₂ i b
   have hb' : (b.gpr .r1).toNat + 2 ^ 32 * (b.gpr .r4).toNat = Wn σ₂ / 2 ^ (i - i0 σ₂) := hb
   rw [← two.Wn_eq, show i0 σ₂ = i0 σ₁ by simp only [i0, two.tau_eq]] at hb'
   have := (a.gpr .r1).isLt; have := (b.gpr .r1).isLt
-  exact ⟨BitVec.eq_of_toNat_eq (by omega), BitVec.eq_of_toNat_eq (by omega)⟩
+  exact ⟨BitVec.eq_of_toNat_eq (by omega_arith), BitVec.eq_of_toNat_eq (by omega_arith)⟩
 
 /-! ## The loop -/
 
@@ -158,7 +158,7 @@ theorem set_ct {t : Nat} (ht : t < 264) :
       rw [h.1.2.z, ← two.St_eq, ← two.Xb_eq, ← h.1.1.z]; exact za
     have h1 := two.p₁.tau_le
     have h2 := two.p₂.tau_le
-    exact ⟨setOk two.p₁.ok (by omega) ht h.1.1 za, setOk two.p₂.ok (by omega) ht h.1.2 zb⟩
+    exact ⟨setOk two.p₁.ok (by omega_arith) ht h.1.1 za, setOk two.p₂.ok (by omega_arith) ht h.1.2 zb⟩
 
 omit two in
 theorem nil_ct {P : State → State → Prop} {Q₁ Q₂ : State → Prop} (hq : ∀ a b, P a b → Q₁ a ∧ Q₂ b) :
@@ -179,7 +179,7 @@ omit two in
 theorem full_of {σ : State} {t : Nat} (ht : t < 264) {s : State} (h : M1 σ t s) (e : s.z = true) :
     M2 σ t s := by
   have hl : (St σ t).2 = 256 := by
-    have := h.z; rw [e] at this; simp at this; have := St_le σ t; omega
+    have := h.z; rw [e] at this; simp at this; have := St_le σ t; omega_arith
   exact M2.of_same h.bat (by rw [St_succ σ ht, bStep_full hl])
 
 theorem body_ct {t : Nat} (ht : t < 264) :
@@ -216,7 +216,7 @@ theorem loop_ct : RelCT isa (fun a b => BAt σ₁ 0 a ∧ BAt σ₂ 0 b) (.loop 
       · have : t + 1 ≠ 264 := by
           have e' : (!a.z) = true := Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨264 - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨264 - (t + 1), by omega_arith, t + 1, by omega_arith, rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 
@@ -254,8 +254,8 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) Impl.MlDsa.Arm.S
   refine RelCT.seq (R := fun a b => ZDone σ₁ a ∧ ZDone σ₂ b) (relW (taintRel [.r5] (fun a b h r hr => by
       rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r5, h.2.env.r5, hP]) (by native_taint_decide))
     fun a b h => ⟨zero_ok two.p₁.ok h.1, zero_ok two.p₂.ok h.2⟩) ?_
-  have t₁ : tau σ₁ ≤ 256 := by have := two.p₁.tau_le; omega
-  have t₂ : tau σ₂ ≤ 256 := by have := two.p₂.tau_le; omega
+  have t₁ : tau σ₁ ≤ 256 := by have := two.p₁.tau_le; omega_arith
+  have t₂ : tau σ₂ ≤ 256 := by have := two.p₂.tau_le; omega_arith
   refine RelCT.seq (RelCT.seq (R := fun a b => BAt σ₁ 0 a ∧ BAt σ₂ 0 b) (relW (taintRel [.r6, .r7]
       (fun a b h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -277,7 +277,7 @@ theorem pre_of {s : State} (h : (Spec.MlDsa.sampleInBallContract Arm.abi 8).pre 
   simp only [Spec.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb
   exact ⟨⟨by rw [hrd]; exact List.mem_cons.mpr (.inl rfl), hwr, d1, d2, d3, b1, b2, b3, f1, (s.gpr .r1).isLt, f2, f3, h8⟩,
     ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_cons.mpr (.inr (List.mem_cons.mpr (.inl rfl)))),
-      Region.contains_self _ _⟩, by simp only [tau]; omega, by simp only [tau]; omega⟩
+      Region.contains_self _ _⟩, by simp only [tau]; omega_arith, by simp only [tau]; omega_arith⟩
 
 theorem post_of {s₀ s : State}
     (h0 : s.gpr .r0 = (if (ballFold (tau s₀) (X s₀)).2 = 256 then 1 else 0))

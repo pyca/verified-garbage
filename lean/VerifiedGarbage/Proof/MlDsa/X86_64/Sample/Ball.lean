@@ -58,24 +58,24 @@ def sbK : Contract isa where
 
 theorem readW64_getLsbD (m : Mem) (a : Addr) {k : Nat} (hk : k < 64) :
     (m.readW a 64).getLsbD k = (m (a + BitVec.ofNat 64 (k / 8))).getLsbD (k % 8) := by
-  rw [← Mem.extractLsb'_read m a (n := 8) (j := k / 8) (by omega), BitVec.getLsbD_extractLsb']
-  simp only [Mem.readW, BitVec.getLsbD_setWidth, show k % 8 < 8 by omega, decide_true, Bool.true_and, hk]
-  congr 1; omega
+  rw [← Mem.extractLsb'_read m a (n := 8) (j := k / 8) (by omega_arith), BitVec.getLsbD_extractLsb']
+  simp only [Mem.readW, BitVec.getLsbD_setWidth, show k % 8 < 8 by omega_arith, decide_true, Bool.true_and, hk]
+  congr 1; omega_arith
 
 /-- The `u64` at `p`, from the bytes there. -/
 theorem readW_leNat (m : Mem) (p : Addr) (L : List Byte) (h : ∀ k < 8, m (p + BitVec.ofNat 64 k) = L.getD k 0) :
     m.readW p 64 = BitVec.ofNat 64 (leNat (L.take 8)) := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  rw [readW64_getLsbD m p hk, h _ (by omega), BitVec.getLsbD_ofNat, testBit_leNat, List.getD_eq_getElem?_getD,
-    List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega)]
+  rw [readW64_getLsbD m p hk, h _ (by omega_arith), BitVec.getLsbD_ofNat, testBit_leNat, List.getD_eq_getElem?_getD,
+    List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega_arith)]
   simp [hk]
 
 namespace Ball
 
 theorem ballParams_le {len τ : Nat} (h : (len, τ) ∈ ballParams) : len ≤ 64 ∧ 39 ≤ τ ∧ τ ≤ 60 := by
   simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
-  omega
+  omega_arith
 
 /-- The call. -/
 abbrev spOf (σ : State) : Sp :=
@@ -107,7 +107,7 @@ theorem params : (σ.gpr .rsi).toNat ≤ 64 ∧ 39 ≤ tauOf σ ∧ tauOf σ ≤
 theorem spOk : SpOk (spOf σ) σ :=
   ⟨hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1, hp.2.2.2.2.1, hp.2.2.2.2.2.1, hp.2.2.2.2.2.2.1, hp.2.2.2.2.2.2.2.1,
     hp.2.2.2.2.2.2.2.2.1, hp.2.2.2.2.2.2.2.2.2.1, hp.2.2.2.2.2.2.2.2.2.2.1, hp.2.2.2.2.2.2.2.2.2.2.2.1,
-    by show (σ.gpr .rsi).toNat < 2 ^ 64; have := (params hp).1; omega⟩
+    by show (σ.gpr .rsi).toNat < 2 ^ 64; have := (params hp).1; omega_arith⟩
 
 theorem pro_ok : WP isa (.block (pro .r8 .rcx (.reg .rdx) (.reg .rsi))) σ (J0 (spOf σ) σ) := by
   refine WP.mono (WP.keep [.rbx, .rbp, .r12, .rcx, .r8] (Q := fun s =>
@@ -115,8 +115,8 @@ theorem pro_ok : WP isa (.block (pro .r8 .rcx (.reg .rdx) (.reg .rsi))) σ (J0 (
         ((spOf σ).at' 2040) (σ.gpr .r12) ∧ s.gpr .rbx = σ.gpr .r8 ∧ s.gpr .rbp = σ.gpr .rcx ∧
         s.gpr .r12 = BitVec.setWidth 64 ((σ.gpr .rdx).setWidth 32) ∧
         s.gpr .rcx = σ.gpr .rdi ∧ s.gpr .r8 = σ.gpr .rsi)
-    (by unfold pro; xrun [inScrσ (spOk hp) (a := 2024) (n := 8) (by omega),
-      inScrσ (spOk hp) (a := 2032) (n := 8) (by omega), inScrσ (spOk hp) (a := 2040) (n := 8) (by omega)])
+    (by unfold pro; xrun [inScrσ (spOk hp) (a := 2024) (n := 8) (by omega_arith),
+      inScrσ (spOk hp) (a := 2032) (n := 8) (by omega_arith), inScrσ (spOk hp) (a := 2040) (n := 8) (by omega_arith)])
     (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, hcx, h8⟩, k⟩ =>
       pro_J0 hm hbx hbp h12 hcx (by rw [h8]; simp) k
 
@@ -141,9 +141,9 @@ theorem zero_ok {s : State} (h : J6 136 272 (spOf σ) σ s) : WP isa bZero s (ZD
   refine ⟨⟨k'.2.1.trans h.env.rd, k'.2.2.trans h.env.wr, by rw [k'.gpr (by decide), h.env.rbx],
     by rw [k'.gpr (by decide), h.env.rbp], by rw [k'.gpr (by decide), h.env.r12],
     by rw [k'.gpr (by decide), h.env.rsp], fun r hr => by rw [k'.gpr (r13_not hr), h.env.cs r hr],
-    (by rw [hsv 2024 (by omega) (by omega), hsv 2032 (by omega) (by omega), hsv 2040 (by omega) (by omega)];
+    (by rw [hsv 2024 (by omega_arith) (by omega_arith), hsv 2032 (by omega_arith) (by omega_arith), hsv 2040 (by omega_arith) (by omega_arith)];
         exact h.env.saved), h.env.frame.trans (hf.mono (by simp))⟩, ?_, hst⟩
-  rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 272) (by omega)).symm) (by omega), h.out]
+  rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 272) (by omega_arith)).symm) (by omega_arith), h.out]
   exact (H_eq _ _).symm
 
 /-- At the start of iteration `t`. -/
@@ -171,13 +171,13 @@ theorem setup_ok {s : State} (h : ZDone σ s) :
       s'.gpr .r9 = s.mem.readW ((spOf σ).at' 840) 64 ∧ s'.gpr .rdi = BitVec.ofNat 64 (i0 σ) ∧
       s'.gpr .rsi = (spOf σ).at' 848) (by
         unfold bSetup
-        xrun [h.env.rbx, h.env.r12, inScrRd hp' h.env (a := 840) (n := 8) (by omega), sx840, sw32_64,
+        xrun [h.env.rbx, h.env.r12, inScrRd hp' h.env (a := 840) (n := 8) (by omega_arith), sx840, sw32_64,
           show BitVec.signExtend 64 (848 : BitVec 32) = BitVec.ofNat 64 848 by decide]
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, show (256 : BitVec 32).toNat = 256 from rfl]
         have := ((σ.gpr .rdx).setWidth 32).isLt
         simp only [i0, tauOf] at ht ⊢
-        omega) (by decide)) fun s1 ⟨⟨hm1, h91, hdi1, hsi1⟩, k1⟩ => ?_)
+        omega_arith) (by decide)) fun s1 ⟨⟨hm1, h91, hdi1, hsi1⟩, k1⟩ => ?_)
   refine WP.mono (WP.keep [.rcx] (Q := fun s' => s'.mem = s1.mem ∧ s'.gpr .rcx = BitVec.ofNat 64 264)
     (by xrun) (by decide)) fun s2 ⟨⟨hm2, hcx⟩, k2⟩ => ?_
   have he1 := h.env.keep hm1 (k1.mono (by decide))
@@ -186,7 +186,7 @@ theorem setup_ok {s : State} (h : ZDone σ s) :
     by rw [k2.gpr (by decide), hsi1]; simp, by rw [k2.gpr (by decide), hdi1, hSt], ?_, hcx,
     by rw [hm2, hm1, hSt]; exact h.st⟩
   rw [k2.gpr (by decide), h91, hSt, Nat.sub_self, BitVec.ushiftRight_zero]
-  exact readW_leNat _ _ _ fun k hk => out_getD h.out (by omega)
+  exact readW_leNat _ _ _ fun k hk => out_getD h.out (by omega_arith)
 
 /-! ## The loop -/
 
@@ -208,8 +208,8 @@ theorem sign_bit {i : Nat} (hi0 : i0 σ ≤ i) (hi : i < 256) :
   have ht := (params hp).2
   simp only [i0] at hi0
   rw [BitVec.getLsbD_ushiftRight, Nat.add_zero, signs_getD, BitVec.getLsbD_ofNat,
-    show i - (256 - tauOf σ) = i + tauOf σ - 256 by omega,
-    decide_eq_true (show i + tauOf σ - 256 < 64 by omega), Bool.true_and]
+    show i - (256 - tauOf σ) = i + tauOf σ - 256 by omega_arith,
+    decide_eq_true (show i + tauOf σ - 256 < 64 by omega_arith), Bool.true_and]
 
 /-- An iteration, from `BAt`. -/
 theorem bat_step {t : Nat} {s : State} (ht : t < 264) (h : BAt σ t s) :
@@ -220,14 +220,14 @@ theorem bat_step {t : Nat} {s : State} (ht : t < 264) (h : BAt σ t s) :
   have hge := St_ge (σ := σ) t
   refine WP.mono (bBody_ok s (τ := tauOf σ) (h := signs (X σ)) (c := (St σ t).1) (aP := σ.gpr .rcx) h.env.rbp h.rdi
     hle hw (List.mem_append_right _ hw) h.st
-    (by rw [h.rsi, at_add]; exact inScrRd hp' h.env (by omega))
+    (by rw [h.rsi, at_add]; exact inScrRd hp' h.env (by omega_arith))
     (fun hi => by rw [h.r9]; exact sign_bit hp hge hi)) fun s' ⟨hdi, hst, hf, h9, hsi, hcx, hz, hk⟩ => ?_
   have hb : s.mem (s.gpr .rsi) = ((X σ).drop 8).getD t 0 := by
-    rw [h.rsi, at_add, show 848 + t = 840 + (8 + t) by omega, ← at_add, out_getD h.out (by omega),
+    rw [h.rsi, at_add, show 848 + t = 840 + (8 + t) by omega_arith, ← at_add, out_getD h.out (by omega_arith),
       List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_drop]
   have ht1 : St σ (t + 1) = bStep (tauOf σ) (signs (X σ)) (St σ t) (((X σ).drop 8).getD t 0) := by
     simp only [St]
-    rw [take_succ'' _ (by rw [List.length_drop, X_length]; omega), bFold_snoc]
+    rw [take_succ'' _ (by rw [List.length_drop, X_length]; omega_arith), bFold_snoc]
   rw [hb, ← ht1] at hdi hst h9
   have hk' : Keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] s s' := hk.mono (by simp)
   have hsv : ∀ k, 2024 ≤ k → k + 8 ≤ 2048 →
@@ -236,11 +236,11 @@ theorem bat_step {t : Nat} {s : State} (ht : t < 264) (h : BAt σ t s) :
   refine ⟨⟨⟨hk'.2.1.trans h.env.rd, hk'.2.2.trans h.env.wr, by rw [hk'.gpr (by decide), h.env.rbx],
     by rw [hk'.gpr (by decide), h.env.rbp], by rw [hk'.gpr (by decide), h.env.r12],
     by rw [hk'.gpr (by decide), h.env.rsp], fun r hr => by rw [hk'.gpr (r13_not hr), h.env.cs r hr],
-    (by rw [hsv 2024 (by omega) (by omega), hsv 2032 (by omega) (by omega), hsv 2040 (by omega) (by omega)];
+    (by rw [hsv 2024 (by omega_arith) (by omega_arith), hsv 2032 (by omega_arith) (by omega_arith), hsv 2040 (by omega_arith) (by omega_arith)];
         exact h.env.saved), h.env.frame.trans (hf.mono (by simp))⟩,
-    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 272) (by omega)).symm)
-      (by omega)]; exact h.out, by rw [hsi, h.rsi, offAdd], hdi, ?_,
-    by rw [hcx, h.rcx, ofNat64_pred (by omega) (by omega)]; rfl, hst⟩, by rw [hz, h.rcx]⟩
+    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 272) (by omega_arith)).symm)
+      (by omega_arith)]; exact h.out, by rw [hsi, h.rsi, offAdd], hdi, ?_,
+    by rw [hcx, h.rcx, ofNat64_pred (by omega_arith) (by omega_arith)]; rfl, hst⟩, by rw [hz, h.rcx]⟩
   rw [h9, h.r9]
   have hs : (St σ (t + 1)).2 = (St σ t).2 ∨ (St σ (t + 1)).2 = (St σ t).2 + 1 := by
     rw [ht1]; unfold bStep; split
@@ -250,12 +250,12 @@ theorem bat_step {t : Nat} {s : State} (ht : t < 264) (h : BAt σ t s) :
     · exact .inl rfl
   rcases hs with e | e
   · rw [ifT e, e]
-  · rw [ifF (by omega), e, ← BitVec.shiftRight_add, show (St σ t).2 + 1 - i0 σ = (St σ t).2 - i0 σ + 1 by omega]
+  · rw [ifF (by omega_arith), e, ← BitVec.shiftRight_add, show (St σ t).2 + 1 - i0 σ = (St σ t).2 - i0 σ + 1 by omega_arith]
 
 theorem loop_ok {s : State} (h : ZDone σ s) : WP isa bLoop s (BAt σ 264) :=
   WP.seq (WP.mono (setup_ok hp h) fun _ h1 => WP.seq (WP.mono h1 fun _ h2 =>
     wp_countdown (N := 264) (by decide) (by decide) (BAt σ) (fun t ht s hI _ => WP.mono (bat_step hp ht hI)
-      fun s' ⟨hI', hz⟩ => ⟨hI', by rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega) (by omega)]; rfl,
+      fun s' ⟨hI', hz⟩ => ⟨hI', by rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega_arith) (by omega_arith)]; rfl,
         by rw [hz, hI.rcx]⟩) (fun _ h => h) h2 h2.rcx))
 
 /-- The end: the postcondition and the calling convention. -/

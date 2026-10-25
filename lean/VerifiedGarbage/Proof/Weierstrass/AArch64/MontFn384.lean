@@ -119,10 +119,10 @@ theorem finish384_ok {s : State} {po : Addr} (hpo : PtrW s (roF 6) po (8 * 6)) (
   rw [hp] at e₄
   have hsum : 2 ^ 384 * (regsVal s₅ P384Mul.lowRegs + 2 ^ 384 * (s₅.gpr .x21).toNat) =
       regsVal s P384Mul.accRegs + W * p384 := by
-    rw [e₅, Nat.mul_add, e₄, e₃']; omega
+    rw [e₅, Nat.mul_add, e₄, e₃']; omega_arith
   have hlt : regsVal s P384Mul.accRegs + W * p384 < 2 ^ 384 * (2 * p384) := by
     have h2 : W * p384 < 2 ^ 384 * p384 := Nat.mul_lt_mul_of_pos_right hW (by decide)
-    omega
+    omega_arith
   rw [← hsum] at hlt
   have hV := Nat.lt_of_mul_lt_mul_left hlt
   rw [← hT₆] at hV

@@ -60,7 +60,7 @@ theorem startCtr_ok {s : State} {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 32) (h31
   refine wp_step exec_logic (WP.block_nil ⟨((Kp.write _ _ (rs := [.r4, .r31]) (by decide)).trans
     (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide)), ?_, by simp only [write_mem]⟩)
   simp only [write_gpr, ite_true, reduceCtorEq, ite_false, h31]
-  rw [ctr_hi hj' (by decide), ofNat_pred64 hj, ctr_or hj' (by omega)]
+  rw [ctr_hi hj' (by decide), ofNat_pred64 hj, ctr_or hj' (by omega_arith)]
 
 theorem descentPower_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base) {j : Nat}
     (hj : 1 ≤ j) (hj' : j < 2 ^ 32) (h31 : s.gpr .r31 = ctr j 0) (hlt : sv c base s T0 < c.C.p) :
@@ -74,11 +74,11 @@ theorem descentPower_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s b
   refine WP.seq ?_
   rw [descentStart_eq]
   refine wp_append (WP.mono (copy_ok c.n hw.ws hw.at3 (o := c.sl T3) (a := c.sl T0) (sl_al c _) (sl_al c _)
-    (by omega) (by omega) (by have := sl_apart c (i := T3) (j := T0) (by decide); omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
+    (by omega_arith) (by omega_arith) (by have := sl_apart c (i := T3) (j := T0) (by decide); omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
   have r31₁ : s₁.gpr .r31 = ctr j 0 := by rw [k₁.gpr _ (by decide), h31]
   refine WP.mono (startCtr_ok hj hj' r31₁) fun s₂ ⟨K₂, r31₂, m₂⟩ => ?_
   have hw₂ := (hw.of_kp k₁).of_kp K₂
-  refine WP.mono (squarePower_ok hc hw₂ (j := j) (i := j - 1) (by omega) r31₂ (by
+  refine WP.mono (squarePower_ok hc hw₂ (j := j) (i := j - 1) (by omega_arith) r31₂ (by
     show wordsVal s₂.mem base (c.sl T3) c.n < c.C.p; rw [m₂, e₁]; exact hlt)) fun s' ⟨hw', r31', k', U', lt', v'⟩ =>
     ⟨hw', r31', ((k₁.rk (rs' := powClob)).trans (K₂.rk (rs' := powClob))).trans k', ?_, lt', ?_⟩
   · have U₁ : Unch base [(c.sl T3, 8 * c.n)] s.mem s₂.mem := by rw [m₂]; exact O₁.unch
@@ -124,14 +124,14 @@ theorem descentChoose_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s 
   have hp3 := hc.p_ge
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  have hOlt : sv c base s ONEP < c.C.p := by rw [hO]; exact Nat.mod_lt _ (by omega)
+  have hOlt : sv c base s ONEP < c.C.p := by rw [hO]; exact Nat.mod_lt _ (by omega_arith)
   refine WP.seq (WP.mono (slSub_ok hc.fp hc.fpk hc.fpm h7 hw (o := W0) (a := T3) (b := ONEP) (by decide)
     (by decide) (by decide) h3 hOlt) fun s₁ ⟨k₁, U₁, e₁⟩ => ?_)
   have hw₁ := hw.of_rk k₁
   have v₁ : ∀ {i}, i < 45 → i ≠ W0 → sv c base s₁ i = sv c base s i := fun hi h₁ =>
     sv_unch U₁ h7 hn hi (apart_callW h7 hi h₁)
   have hz : sv c base s₁ W0 = 0 ↔ fieldAt c base s T3 = 1 := by
-    rw [← toM_eq_zero_iff hpR (by rw [e₁]; exact Nat.mod_lt _ (by omega)), e₁, toM_sub (by omega), hO,
+    rw [← toM_eq_zero_iff hpR (by rw [e₁]; exact Nat.mod_lt _ (by omega_arith)), e₁, toM_sub (by omega_arith), hO,
       toM_one hpR]
     constructor <;> intro h <;> grind
   have hW0 := sl_le c h7 (i := W0) (by decide)
@@ -139,13 +139,13 @@ theorem descentChoose_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s 
   have hT1 := sl_le c h7 (i := T1) (by decide)
   have hON := sl_le c h7 (i := ONEP) (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (zeroMov_ok c hw₁.ws hw₁.at3 (sl_al c W0) h0 (by omega)) fun s₂ ⟨K₂, mem₂, m₂⟩ => ?_
+  refine WP.mono (zeroMov_ok c hw₁.ws hw₁.at3 (sl_al c W0) h0 (by omega_arith)) fun s₂ ⟨K₂, mem₂, m₂⟩ => ?_
   have hw₂ := hw₁.of_kp K₂
   refine WP.mono (sel_ok (decide (wordsVal s₁.mem base (c.sl W0) c.n = 0)) c.n hw₂.ws hw₂.at3
     (by rw [m₂]; simp only [mask64, decide_eq_true_eq])
-    (sl_al c _) (sl_al c _) (sl_al c _) (by omega) (by omega) (by omega)
-    (by have := sl_apart c (i := T4) (j := T1) (by decide); omega)
-    (by have := sl_apart c (i := T4) (j := ONEP) (by decide); omega)) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+    (sl_al c _) (sl_al c _) (sl_al c _) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by have := sl_apart c (i := T4) (j := T1) (by decide); omega_arith)
+    (by have := sl_apart c (i := T4) (j := ONEP) (by decide); omega_arith)) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [mem₂] at e₄
   have K : Rk fnClob s s₄ := k₁.trans ((K₂.rk (rs' := fnClob)).trans (k₄.rk (rs' := fnClob)))
   refine ⟨hw₂.of_kp k₄, K, ?_, ?_, ?_⟩

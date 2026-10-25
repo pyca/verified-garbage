@@ -107,16 +107,16 @@ theorem entry_pre {d : Dir} {s₀ σ₃ : State} (hs : (ecbCallArm d).pre s₀) 
     (Spec.Sm4.ecbDirContract Arm.abi 1472).pre (σ₃.callEntry.withRegions s₀.rd s₀.wr) := by
   obtain ⟨hsp, hrd, hwr, dKD, sK, sD, fitK, fitD⟩ := hs
   obtain ⟨g₃, -, r3₃, sp₃, -, -, -⟩ := e
-  have sp8 : (s₀.sp - BitVec.ofNat 32 8).toNat = s₀.sp.toNat - 8 := FrameStack.sub_toNat' (by omega)
+  have sp8 : (s₀.sp - BitVec.ofNat 32 8).toNat = s₀.sp.toNat - 8 := FrameStack.sub_toNat' (by omega_arith)
   sig_pre [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val]
   have e0 := g₃ .r0 (by decide) (by decide)
   have e1 := g₃ .r1 (by decide) (by decide)
   have e2 := g₃ .r2 (by decide) (by decide)
   have stS : Region.Sub (Argon2.Arm.stkR σ₃.sp 1472) ⟨State.addr s₀.sp - BitVec.ofNat 64 1480, 1480⟩ := by
-    rw [sp₃]; exact Argon2.Arm.stkR_inner (by omega) hsp
+    rw [sp₃]; exact Argon2.Arm.stkR_inner (by omega_arith) hsp
   rw [e0, e1, e2, r3₃]
-  exact ⟨by rw [sp₃, sp8]; omega, by have := σ₃.sp.isLt; omega, hrd, hwr, dKD, sK.sub_left stS,
+  exact ⟨by rw [sp₃, sp8]; omega_arith, by have := σ₃.sp.isLt; omega_arith, hrd, hwr, dKD, sK.sub_left stS,
     sD.sub_left stS, fitK, fitD, by cases d <;> decide⟩
 
 theorem entry_covers {d : Dir} {s₀ σ₃ : State} (e : Entry d s₀ σ₃) :
@@ -133,51 +133,51 @@ theorem ecbCall_correct (d : Dir) (s₀ : State) (hs : (ecbCallArm d).pre s₀) 
   obtain ⟨hsp, hrd, hwr, dKD, sK, sD, fitK, fitD⟩ := hs
   -- The frame's 8 bytes, below the stack the contract reserves.
   have frSub : Region.Sub (Argon2.Arm.stkR s₀.sp 8) ⟨State.addr s₀.sp - BitVec.ofNat 64 1480, 1480⟩ :=
-    Argon2.Arm.stkR_sub (by omega) hsp
+    Argon2.Arm.stkR_sub (by omega_arith) hsp
   have hfr : Frame [Argon2.Arm.stkR s₀.sp 8] s₀.mem (pushed [.r4, .lr] s₀).mem :=
-    Argon2.Arm.pushed_stk (rs := [.r4, .lr]) (by simp; omega)
+    Argon2.Arm.pushed_stk (rs := [.r4, .lr]) (by simp; omega_arith)
   have hsch : Spec.Sm4.scheduleAt (pushed [.r4, .lr] s₀).mem (State.addr (s₀.gpr .r0)) =
       Spec.Sm4.scheduleAt s₀.mem (State.addr (s₀.gpr .r0)) :=
     Proof.Sm4.scheduleAt_frame hfr fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact (sK.sub_left frSub).symm
   have hblk : Spec.Sm4.blocksAt (pushed [.r4, .lr] s₀).mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat =
       Spec.Sm4.blocksAt s₀.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat := by
-    have hfit : (s₀.gpr .r2).toNat * 16 ≤ 2 ^ 64 := by omega
+    have hfit : (s₀.gpr .r2).toNat * 16 ≤ 2 ^ 64 := by omega_arith
     exact Proof.Sm4.blocksAt_frame hfr (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
       simpa [State.addr] using (sD.sub_left frSub).symm) hfit
   rw [ecbCall_eq]
-  have hn8 : 4 * [Reg.r4, .lr].length ≤ s₀.sp.toNat := by simp; omega
+  have hn8 : 4 * [Reg.r4, .lr].length ≤ s₀.sp.toNat := by simp; omega_arith
   refine (WP.frame (rs := [.r4, .lr]) (r := .r4) (by decide) hn8 (by decide) ?_).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   refine WP.seq (WP.mono (movs_wp d s₀) fun σ₃ e => ?_)
   have ⟨pre₃, cov₃⟩ := And.intro (entry_pre ⟨hsp, hrd, hwr, dKD, sK, sD, fitK, fitD⟩ e) (entry_covers e)
   obtain ⟨g₃, r4₃, r3₃, sp₃, mem₃, rd₃, wr₃⟩ := e
-  have sp8 : (s₀.sp - BitVec.ofNat 32 8).toNat = s₀.sp.toNat - 8 := FrameStack.sub_toNat' (by omega)
+  have sp8 : (s₀.sp - BitVec.ofNat 32 8).toNat = s₀.sp.toNat - 8 := FrameStack.sub_toNat' (by omega_arith)
   refine WP.seq (FrameStack.WP.callF (k := Spec.Sm4.ecbDirContract Arm.abi 1472) ecbAny_framed.1
     (rd := s₀.rd) (wr := s₀.wr) ?_ ?_ ?_ ?_ ?_)
   · exact pre₃
   · exact cov₃.1
   · exact cov₃.2
-  · rw [sp₃, sp8]; have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega
+  · rw [sp₃, sp8]; have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega_arith
   · intro s' rd' wr' sp' fr' pres' post'
     refine VG.Proof.MdStream.Arm.wp_mov (VG.Proof.MdStream.Arm.op2_reg _ _) fun σ₄ u₄ => WP.block_nil ?_
     have r4' : s'.gpr .r4 = s₀.gpr .lr := by rw [pres' .r4 (by decide) (by decide), r4₃]
     have sp4 : σ₄.sp = s₀.sp - BitVec.ofNat 32 8 := by rw [u₄.sp, sp', sp₃]
-    have hsp8 : 8 ≤ s₀.sp.toNat := by omega
+    have hsp8 : 8 ≤ s₀.sp.toNat := by omega_arith
     -- The word `r4` was pushed to, in the frame below the stack the contract reserves.
     have hsub4 : Region.Sub ⟨State.addr (s₀.sp - BitVec.ofNat 32 8), 4⟩
         ⟨State.addr s₀.sp - BitVec.ofNat 64 1480, 1480⟩ := by
       refine fun x hx => frSub x ?_
       rw [FrameStack.addr_sub' hsp8] at hx
-      have := Offset.sub_base (State.addr s₀.sp - BitVec.ofNat 64 8) (d := 0) (n := 4) (k := 8) (by omega)
+      have := Offset.sub_base (State.addr s₀.sp - BitVec.ofNat 64 8) (d := 0) (n := 4) (k := 8) (by omega_arith)
       simp only [BitVec.add_zero] at this
       exact this x hx
     have hw4 : s'.mem.readW (State.addr (s₀.sp - BitVec.ofNat 32 8)) 32 = s₀.gpr .r4 := by
       rw [fr'.readW (r := ⟨State.addr (s₀.sp - BitVec.ofNat 32 8), 4⟩) (Region.contains_self _ _) ?_
         (by decide), mem₃]
       · have := Argon2.Arm.storeWords_readW s₀.mem (s₀.sp - BitVec.ofNat 32 8) [s₀.gpr .r4, s₀.gpr .lr]
-          (by rw [sp8]; have := s₀.sp.isLt; simp; omega) (i := 0) (by simp)
+          (by rw [sp8]; have := s₀.sp.isLt; simp; omega_arith) (i := 0) (by simp)
         simpa [pushed] using this
       · intro r hr
         rcases List.mem_append.mp hr with hr | hr
@@ -186,9 +186,9 @@ theorem ecbCall_correct (d : Dir) (s₀ : State) (hs : (ecbCallArm d).pre s₀) 
           rw [sp₃]
           simp only [FrameStack.belowA]
           rw [FrameStack.addr_sub' (x := s₀.sp - BitVec.ofNat 32 8)
-            (by rw [sp8]; have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega)]
+            (by rw [sp8]; have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega_arith)]
           exact Offset.base_disjoint_below _ (by
-            have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega)
+            have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega_arith)
     refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
     · by_cases h4 : r = .r4
       · subst h4

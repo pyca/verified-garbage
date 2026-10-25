@@ -69,7 +69,7 @@ theorem ofNat_sub_one {x : Nat} (h1 : 1 ≤ x) (h2 : x < 2 ^ 32) : BitVec.ofNat 
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
   have : (1 : BitVec 32).toNat = 1 := rfl
   rw [this]
-  omega
+  omega_arith
 
 /-- `CNT ← CNT - 1`, which sets `ZF` when the loop ends. -/
 theorem tail_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
@@ -101,29 +101,29 @@ theorem tail_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
       rw [show decide (t + 1 < NI p F s₀) = decide (t + 1 < 814) from decide_eq_decide.mpr hnext]
       by_cases e' : t + 1 < 814
       · rw [decide_eq_true e']
-        rw [ofNat_sub_one (by omega) (by omega)]
+        rw [ofNat_sub_one (by omega_arith) (by omega_arith)]
         have : (BitVec.ofNat 32 (814 - t - 1) == 0) = false := by
           apply beq_eq_false_iff_ne.mpr
           intro h0
           have := congrArg BitVec.toNat h0
-          rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-          exact absurd this (by show ¬ (814 - t - 1 = 0); omega)
+          rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
+          exact absurd this (by show ¬ (814 - t - 1 = 0); omega_arith)
         rw [this]; rfl
-      · rw [decide_eq_false e', show 814 - t = 1 by omega]; rfl
+      · rw [decide_eq_false e', show 814 - t = 1 by omega_arith]; rfl
   refine ⟨⟨hrun.1, ht, fun ht' => ?_, fun ht' => ?_⟩, hz⟩
   · have hc : contS p F t s₀ = true := (hnext.mp ht').1
     refine ⟨h.kd.keep hp ps c' (by decide) fr (by ofsd), ?_, ?_, (hnext.mp ht').2⟩
     · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.kap hc
     · rw [hcnt, h.cnt, hc]
       simp only [↓reduceIte]
-      rw [ofNat_sub_one (by omega) (by omega), Nat.sub_sub]
+      rw [ofNat_sub_one (by omega_arith) (by omega_arith), Nat.sub_sub]
   · rw [← ht', Nat.add_sub_cancel]
     refine ⟨c', hrun, ?_, fun hb hq => ?_, h.none⟩
     · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok
     · obtain ⟨f1, f2, f3⟩ := h.out hb hq
       have := ps.hcLen
-      exact ⟨f1.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofsd),
-        f2.keep hp ps (by decide) fr (by simp only [nS]; omega) (by ofsd),
+      exact ⟨f1.keep hp ps (by decide) fr (by simp only [nS, yB]; omega_arith) (by ofsd),
+        f2.keep hp ps (by decide) fr (by simp only [nS]; omega_arith) (by ofsd),
         by rw [keepB hp (by decide) fr (by ofsd) (by ofsd), f3]⟩
 
 /-- `OK ← 0` and `CNT ← 1`, when `SampleInBall` failed. -/
@@ -178,7 +178,7 @@ theorem signLoop_piece (F : PrimsOk P) (ps : PS p) :
   have kd₁ := h.1.keep hp ps c₁ (N := 80) (by decide) (fr0 hp (by decide) f₁) (by ofsd)
   have hpos := NI_pos (p := p) F s₀
   refine ⟨h.2, Nat.zero_le _, fun _ => ⟨kd₁.keep hp ps c₂ (N := 80) (by decide) (fr0 hp (by decide) f₂) (by ofsd),
-    ?_, v₂, by decide⟩, fun e => absurd e (by omega)⟩
+    ?_, v₂, by decide⟩, fun e => absurd e (by omega_arith)⟩
   rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) f₂) (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw,
     v₁]; rfl
 

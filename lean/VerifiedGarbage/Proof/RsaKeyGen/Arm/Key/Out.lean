@@ -51,14 +51,14 @@ variable {P : KP} {σ s t : State}
 
 theorem oR_eq (i : Nat) (hi : i < 7) :
     oR P i = [P.rN, P.rD, P.rP, P.rQ, P.rDp, P.rDq, P.rQi][i]'(by simpa using hi) := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem oR_mem (i : Nat) (hi : i < 7) : oR P i ∈ P.outs := by
   rw [oR_eq i hi]; exact List.getElem_mem _
 
 theorem In.fwO (pre : In P σ) (i : Nat) (hi : i < 7) : fw σ.mem P (oFw i) = oPtr P i := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact pre.wN
   · exact pre.wD
@@ -75,7 +75,7 @@ theorem In.flO (pre : In P σ) (i : Nat) : fw σ.mem P (oFl i) = BitVec.ofNat 32
   · exact pre.aPl
 
 theorem In.oFit (pre : In P σ) (i : Nat) (hi : i < 7) : (oPtr P i).toNat + oLen P i ≤ 2 ^ 32 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact pre.fN
   · exact pre.fD
@@ -86,7 +86,7 @@ theorem In.oFit (pre : In P σ) (i : Nat) (hi : i < 7) : (oPtr P i).toNat + oLen
   · exact pre.fQi
 
 theorem In.oS (pre : In P σ) (i : Nat) (hi : i < 7) : (oR P i).Disjoint P.rS := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact pre.sN.symm
   · exact pre.sD.symm
@@ -97,7 +97,7 @@ theorem In.oS (pre : In P σ) (i : Nat) (hi : i < 7) : (oR P i).Disjoint P.rS :=
   · exact pre.sQi.symm
 
 theorem In.oF (pre : In P σ) (i : Nat) (hi : i < 7) : (oR P i).Disjoint P.rF := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact pre.nF
   · exact pre.dF
@@ -111,29 +111,29 @@ theorem In.oO (pre : In P σ) (i k : Nat) (hi : i < 7) (hk : k < 7) (hik : i ≠
     (oR P i).Disjoint (oR P k) := by
   have l : ∀ a b : Nat, a < b → b < 7 → (oR P a).Disjoint (oR P b) := by
     intro a b hab hb
-    rcases (by omega : b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨ b = 5 ∨ b = 6) with
+    rcases (by omega_arith : b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨ b = 5 ∨ b = 6) with
       rfl | rfl | rfl | rfl | rfl | rfl
-    · obtain rfl : a = 0 := by omega
+    · obtain rfl : a = 0 := by omega_arith
       exact pre.nD
-    · rcases (by omega : a = 0 ∨ a = 1) with rfl | rfl
+    · rcases (by omega_arith : a = 0 ∨ a = 1) with rfl | rfl
       · exact pre.nP
       · exact pre.dP
-    · rcases (by omega : a = 0 ∨ a = 1 ∨ a = 2) with rfl | rfl | rfl
+    · rcases (by omega_arith : a = 0 ∨ a = 1 ∨ a = 2) with rfl | rfl | rfl
       · exact pre.nQ
       · exact pre.dQ
       · exact pre.pQ
-    · rcases (by omega : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3) with rfl | rfl | rfl | rfl
+    · rcases (by omega_arith : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3) with rfl | rfl | rfl | rfl
       · exact pre.nDp
       · exact pre.dDp
       · exact pre.pDp
       · exact pre.qDp
-    · rcases (by omega : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4) with rfl | rfl | rfl | rfl | rfl
+    · rcases (by omega_arith : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4) with rfl | rfl | rfl | rfl | rfl
       · exact pre.nDq
       · exact pre.dDq
       · exact pre.pDq
       · exact pre.qDq
       · exact pre.dpDq
-    · rcases (by omega : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+    · rcases (by omega_arith : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5) with rfl | rfl | rfl | rfl | rfl | rfl
       · exact pre.nQi
       · exact pre.dQi
       · exact pre.pQi
@@ -146,14 +146,14 @@ theorem In.oO (pre : In P σ) (i k : Nat) (hi : i < 7) (hk : k < 7) (hik : i ≠
 
 theorem In.oW (pre : In P σ) (i : Nat) (hi : i < 7) : oR P i ∈ σ.wr := by
   rw [pre.wr, oR_eq i hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 theorem oLen_pos (pre : In P σ) (i : Nat) : 0 < oLen P i := by
-  have := pre.k1; unfold oLen; split <;> omega
+  have := pre.k1; unfold oLen; split <;> omega_arith
 
 theorem oLen_le (pre : In P σ) (i : Nat) : oLen P i ≤ 4 * P.W := by
-  have := pre.k1; unfold oLen; simp only [KP.W]; split <;> omega
+  have := pre.k1; unfold oLen; simp only [KP.W]; split <;> omega_arith
 
 /-- A frame word keeps its value. -/
 theorem Bo.fwEq (h : Bo P σ s) {o : Nat} (ho' : o + 4 ≤ 112) : fw s.mem P o = fw σ.mem P o := by
@@ -176,8 +176,8 @@ theorem Bo.ldrSp (h : Bo P σ s) {o : Nat} (ho' : o + 4 ≤ 112) (h4 : o % 4 = 0
   have pre := h.pre
   have spf := pre.spFit
   have ea : State.addr (s.sp + BitVec.ofNat 32 o) = off (State.addr P.sp) o := by
-    rw [h.sp, pre.sp]; exact addr_add (by omega)
-  refine wp_loadStack (by omega) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho']; exact u)
+    rw [h.sp, pre.sp]; exact addr_add (by omega_arith)
+  refine wp_loadStack (by omega_arith) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho']; exact u)
   rw [h.rd, h.wr]
   exact pre.fwRead ho' h4
 

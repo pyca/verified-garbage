@@ -69,7 +69,7 @@ theorem copies_ok {s : State} (h : Room s) {n : Nat} (hn : n ≤ slots) :
       fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | p :: L, hL, hd, hnd => by
     have hp := hL p List.mem_cons_self
-    have hpd : p.2 < slots := by omega
+    have hpd : p.2 < slots := by omega_arith
     let s₁ := setMem (s.setReg t0 (slotW s p.1)) (s.mem.writeW (slotA s p.2) (slotW s p.1))
     have e₁ : runBlock isa [ldS t0 p.1, stS p.2 t0] s = some s₁ := by
       rw [runBlock_cons, exec_ldS h hp.1, runStep_some, runBlock_cons,
@@ -90,7 +90,7 @@ theorem copies_ok {s : State} (h : Room s) {n : Nat} (hn : n ≤ slots) :
       by rw [sp']; rfl, ?_⟩
     · rw [copiesCode, List.flatMap_cons, runBlock_append, e₁, Option.bind_some]; exact e'
     · rcases List.mem_cons.mp hq with rfl | hq
-      · rw [o' _ (by have := (hL q List.mem_cons_self).2; omega) hnd.1, sl₁ _ hpd, ite_eq_left rfl]
+      · rw [o' _ (by have := (hL q List.mem_cons_self).2; omega_arith) hnd.1, sl₁ _ hpd, ite_eq_left rfl]
       · rw [v' q hq, sl₁ _ (hL q (List.mem_cons_of_mem _ hq)).1,
           ite_eq_right (hd q (List.mem_cons_of_mem _ hq) p List.mem_cons_self)]
     · simp only [List.map_cons, List.mem_cons, not_or] at hjL
@@ -101,7 +101,7 @@ theorem copies_ok {s : State} (h : Room s) {n : Nat} (hn : n ≤ slots) :
       show Frame _ s.mem (s.mem.writeW (slotA s p.2) (slotW s p.1))
       refine (Frame.refl _ _).writeW List.mem_cons_self _ ?_
       rw [slots_eq] at hfit hn
-      exact Straight.slot_contains _ hp.2 (by omega)
+      exact Straight.slot_contains _ hp.2 (by omega_arith)
 
 /-! ## Stores to the schedule -/
 
@@ -132,24 +132,24 @@ theorem stores_ok {P : BitVec 32} :
     have hp := hL p List.mem_cons_self
     have hP := hs.fit
     have hA : State.addr (P + BitVec.ofNat 32 (4 * p.2)) = State.addr P + BitVec.ofNat 64 (4 * p.2) :=
-      addr_add (by omega)
+      addr_add (by omega_arith)
     let s₁ := s.setReg t0 (slotW s p.1)
     let s₂ := setMem s₁ (s.mem.writeW (State.addr P + BitVec.ofNat 64 (4 * p.2)) (slotW s p.1))
     have e₁ : runBlock isa [ldS t0 p.1, .str t0 kp (4 * p.2)] s = some s₂ := by
       rw [runBlock_cons, exec_ldS hs.room hp.1, runStep_some, runBlock_cons,
-        exec_str (by omega) (by
+        exec_str (by omega_arith) (by
           rw [show s₁.gpr kp = P by simp only [s₁, gpr_setReg_of_ne _ _ (show kp ≠ t0 by decide), hs.kp]]
-          exact in_off hs.mem hP (by omega) (by omega)),
+          exact in_off hs.mem hP (by omega_arith) (by omega_arith)),
         runStep_some, runBlock_nil]
       simp only [s₂, s₁, gpr_setReg_of_ne _ _ (show kp ≠ t0 by decide), hs.kp, gpr_setReg_self, mem_setReg, hA]
       rfl
     have hsep : ∀ j < slots, Region.Disjoint ⟨State.addr P + BitVec.ofNat 64 (4 * p.2), 4⟩ ⟨slotA s j, 4⟩ := by
       intro j hj
-      refine (hs.sep.sub_left (Offset.sub_base _ (by omega))).sub_right ?_
+      refine (hs.sep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right ?_
       have := hs.room.fit
       rw [slots_eq] at hj this
-      rw [slotA, slot_addr (by omega)]
-      exact Offset.sub_base _ (by rw [slots_eq]; omega)
+      rw [slotA, slot_addr (by omega_arith)]
+      exact Offset.sub_base _ (by rw [slots_eq]; omega_arith)
     have sl₂ : ∀ j < slots, slotW s₂ j = slotW s j := by
       intro j hj
       show (s.mem.writeW _ _).readW (wordAddr (s₁.gpr sb) j) 32 = _
@@ -170,7 +170,7 @@ theorem stores_ok {P : BitVec 32} :
       split
       · rename_i e; subst e; exact Mem.readW_writeW_self32 _ _ _
       · rename_i e
-        exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+        exact Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
     refine ⟨s', ?_, fun q hq => ?_, fun o ho hoL => ?_, fun j hj => by rw [sl' j hj, sl₂ j hj],
       fun r hr => ?_, by rw [rd']; rfl, by rw [wr']; rfl, by rw [sp']; rfl, ?_⟩
     · rw [storesCode, List.flatMap_cons, runBlock_append, e₁, Option.bind_some]; exact e'
@@ -182,7 +182,7 @@ theorem stores_ok {P : BitVec 32} :
     · rw [g' r hr]; exact gpr_setReg_of_ne _ _ hr
     · refine Frame.trans ?_ f'
       show Frame _ s.mem (s.mem.writeW _ (slotW s p.1))
-      exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+      exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
 
 /-! ## `G` of eight inputs, to the schedule -/
 
@@ -211,16 +211,16 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} (h : Room s) {P : BitVec 
   -- The inputs to `G`'s words.
   obtain ⟨s₁, e₁, v₁, o₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := copies_ok h (n := tailSlot) (by decide) (chunkIn c)
     (by intro p hp; simp only [chunkIn, List.mem_map, List.mem_range] at hp; obtain ⟨w, hw, rfl⟩ := hp
-        simp [uSlot, aSlot, tSlot, tailSlot, slots_eq]; omega)
+        simp [uSlot, aSlot, tSlot, tailSlot, slots_eq]; omega_arith)
     (by intro p hp q hq; simp only [chunkIn, List.mem_map, List.mem_range] at hp hq
-        obtain ⟨w, hw, rfl⟩ := hp; obtain ⟨w', hw', rfl⟩ := hq; simp [uSlot, aSlot, tSlot]; omega)
+        obtain ⟨w, hw, rfl⟩ := hp; obtain ⟨w', hw', rfl⟩ := hq; simp [uSlot, aSlot, tSlot]; omega_arith)
     (by simp only [chunkIn, List.map_map]
         exact nodup_map_range (fun a b hab => by simpa [tSlot] using hab) 8)
   have sb₁ : s₁.gpr sb = s.gpr sb := g₁ _ (by decide)
   have h₁ : Room s₁ := h.congr sb₁ wr₁
   have k₁ : ∀ j, 56 ≤ j → j < slots → slotW s₁ j = slotW s j := fun j h1 h2 => o₁ j h2 (by
     simp only [chunkIn, List.map_map, List.mem_map, List.mem_range, Function.comp, not_exists, not_and]
-    intro w hw he; simp [tSlot] at he; omega)
+    intro w hw he; simp [tSlot] at he; omega_arith)
   -- `G`.
   obtain ⟨s₂, e₂, gv₂, k₂, h₂, rd₂, wr₂, sp₂, g₂, f₂⟩ := g8_lanes h₁
   have sb₂ : s₂.gpr sb = s.gpr sb := by rw [g₂ _ (by decide), sb₁]
@@ -230,7 +230,7 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} (h : Room s) {P : BitVec 
   -- The stores.
   obtain ⟨s', e', v', o', sl', g', rd', wr', sp', f'⟩ := stores_ok (chunkOut c) s₂ hO
     (by intro p hp; simp only [chunkOut, List.mem_map, List.mem_range] at hp; obtain ⟨w, hw, rfl⟩ := hp
-        simp [tSlot, slots_eq]; omega)
+        simp [tSlot, slots_eq]; omega_arith)
     (by simp only [chunkOut, List.map_map]
         exact nodup_map_range (fun a b hab => by simpa using hab) 8)
   have sb' : s'.gpr sb = s.gpr sb := by rw [g' _ (by decide), sb₂]
@@ -245,11 +245,11 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} (h : Room s) {P : BitVec 
       v₁ (uSlot (8 * c + w), tSlot w) (by simp only [chunkIn, List.mem_map, List.mem_range]; exact ⟨w, hw, rfl⟩)]
   · rw [o' o ho (by
       simp only [chunkOut, List.map_map, List.mem_map, List.mem_range, Function.comp, not_exists, not_and]
-      intro w hw he; omega)]
+      intro w hw he; omega_arith)]
     refine fr₃.readW (r := ⟨State.addr P + BitVec.ofNat 64 (4 * o), 4⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hsep.sub_left (Offset.sub_base _ (by omega))).sub_right (workR_sub_scratch s)
+    exact (hsep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (workR_sub_scratch s)
   · rw [sl' j h2, k₂ j h1 h2, k₁ j h1 h2]
   · refine (fr₃.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
       (f'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
@@ -265,18 +265,18 @@ theorem keyChunks_ok {s : State} (h : Room s) {P : BitVec 32}
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [workR s, ⟨State.addr P, 128⟩] s.mem s'.mem := by
   intro n hn
   induction n with
-  | zero => exact ⟨s, runBlock_nil, fun o ho => by omega, fun _ _ _ => rfl, h, rfl, hp, rfl, rfl, rfl, Frame.refl _ _⟩
+  | zero => exact ⟨s, runBlock_nil, fun o ho => by omega_arith, fun _ _ _ => rfl, h, rfl, hp, rfl, rfl, rfl, Frame.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, e₁, v₁, k₁, h₁, sb₁, kp₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega)
-    obtain ⟨s₂, e₂, v₂, o₂, k₂, h₂, sb₂, kp₂, rd₂, wr₂, sp₂, f₂⟩ := keyChunk_ok (c := n) (by omega) h₁
+    obtain ⟨s₁, e₁, v₁, k₁, h₁, sb₁, kp₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega_arith)
+    obtain ⟨s₂, e₂, v₂, o₂, k₂, h₂, sb₂, kp₂, rd₂, wr₂, sp₂, f₂⟩ := keyChunk_ok (c := n) (by omega_arith) h₁
       kp₁ (by rw [wr₁]; exact hm) hf (by unfold scratchR; rw [sb₁]; exact hsep)
     refine ⟨s₂, ?_, fun o ho => ?_, fun j h1 h2 => by rw [k₂ j h1 h2, k₁ j h1 h2], h₂, by rw [sb₂, sb₁], kp₂,
       by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [sp₂, sp₁], f₁.trans (by simpa [workR, sb₁] using f₂)⟩
     · rw [List.range_succ, List.flatMap_append, runBlock_append, e₁, Option.bind_some, List.flatMap_singleton, e₂]
     · by_cases hlo : o < 8 * n
-      · rw [o₂ o (by omega) (.inl hlo), v₁ o hlo]
-      · rw [show o = 8 * n + (o - 8 * n) by omega, v₂ _ (by omega),
-          k₁ _ (by simp [uSlot, aSlot]) (uSlot_lt (by omega))]
+      · rw [o₂ o (by omega_arith) (.inl hlo), v₁ o hlo]
+      · rw [show o = 8 * n + (o - 8 * n) by omega_arith, v₂ _ (by omega_arith),
+          k₁ _ (by simp [uSlot, aSlot]) (uSlot_lt (by omega_arith))]
 
 /-! ## The key's words -/
 
@@ -291,10 +291,10 @@ theorem ldRev_ok {t : State} {K : BitVec 32} (d : Reg) (h0 : t.gpr .r0 = K)
       t'.gpr d = byteRev32 (t.mem.readW (State.addr K + BitVec.ofNat 64 o) 32) ∧
       (∀ r, r ≠ d → t'.gpr r = t.gpr r) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp := by
   have hin : InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r0 + BitVec.ofNat 32 o)) 4 := by
-    rw [h0]; exact in_off hK hfit (by omega) (by omega)
-  rw [runBlock_cons, exec_ldr (by omega) hin, runStep_some, runBlock_cons, exec_rev, runStep_some, runBlock_nil]
+    rw [h0]; exact in_off hK hfit (by omega_arith) (by omega_arith)
+  rw [runBlock_cons, exec_ldr (by omega_arith) hin, runStep_some, runBlock_cons, exec_rev, runStep_some, runBlock_nil]
   refine ⟨_, rfl, ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
-  · rw [gpr_setReg_self, gpr_setReg_self, h0, addr_add (by omega)]; rfl
+  · rw [gpr_setReg_self, gpr_setReg_self, h0, addr_add (by omega_arith)]; rfl
   · rw [gpr_setReg_of_ne _ _ hr, gpr_setReg_of_ne _ _ hr]
 
 theorem keyLoad_ok {s : State} {K : BitVec 32} (hr0 : s.gpr .r0 = K)
@@ -352,7 +352,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyArm.pre s₀) :
     apply Vector.ext; intro i hi
     simp only [Spec.Seed.blockAt, Vector.getElem_ofFn]
     exact f₀₃.bytes (R := ⟨State.addr K, 16⟩) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dKB) (by simp only; omega) hi
+      simp only [List.mem_singleton] at hr; subst hr; exact dKB) (by simp only; omega_arith) hi
   -- The key's words.
   obtain ⟨s₄, e₄, k₄, g₄, m₄, rd₄, wr₄, sp₄⟩ := keyLoad_ok (s := s₃) (K := K) (g₀₃ _ (by decide) (by decide))
     (by rw [rd₃, wr₃, rd₂, wr₂, rd₁, wr₁]; exact List.mem_append_left _ hrK) fitK'
@@ -374,11 +374,11 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyArm.pre s₀) :
   obtain ⟨s₇, e₇, r₇, o₇, m₇, rd₇, wr₇, sp₇⟩ := movR_ok s₆ .r12 sb
   have sv₆ : Saved s₀ b s₆.mem := by
     intro i hi
-    have hs : savedSlot + i < slots := by rw [savedSlot_eq, slots_eq]; omega
-    have := k₆ (savedSlot + i) (by rw [savedSlot_eq]; omega) hs
+    have hs : savedSlot + i < slots := by rw [savedSlot_eq, slots_eq]; omega_arith
+    have := k₆ (savedSlot + i) (by rw [savedSlot_eq]; omega_arith) hs
     simp only [slotW, sb₆, sb₅] at this
     rw [this, show s₅.mem.readW (wordAddr b (savedSlot + i)) 32 = slotW s₅ (savedSlot + i) by
-      simp only [slotW, sb₅], keep₅ _ hs (by simp [uSlot, aSlot, savedSlot_eq]; omega), slotW, sb₃, m₃, m₂]
+      simp only [slotW, sb₅], keep₅ _ hs (by simp [uSlot, aSlot, savedSlot_eq]; omega_arith), slotW, sb₃, m₃, m₂]
     exact sv₁ i hi
   obtain ⟨s₈, e₈, rg₈, -, m₈, -, -, -⟩ := restore_ok (s₀ := s₀) (b := b)
     (by rw [wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwS) (by rw [r₇, sb₆, sb₅]) (by rw [m₇]; exact sv₆)
@@ -391,6 +391,6 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyArm.pre s₀) :
   · show Spec.Seed.scheduleAt s₈.mem (State.addr P) = Spec.Seed.expandKey key
     rw [Proof.Seed.expandKey_eq]
     apply Vector.ext; intro i hi
-    rw [Proof.Seed.scheduleAt_readW _ _ i hi, Vector.getElem_ofFn, m₈, m₇, v₆ i (by omega), v₅ i (by omega)]
+    rw [Proof.Seed.scheduleAt_readW _ _ i hi, Vector.getElem_ofFn, m₈, m₇, v₆ i (by omega_arith), v₅ i (by omega_arith)]
 
 end VG.Proof.Seed.Arm

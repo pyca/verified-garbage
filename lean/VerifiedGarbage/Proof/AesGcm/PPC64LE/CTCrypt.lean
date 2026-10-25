@@ -73,7 +73,7 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
       (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr, hs.data.of_eq hk₁.rd hk₁.wr, hs.le, hs.rounds, h6,
       by rw [h7, hnb]⟩
   · refine CT.ite (decide (nb = 0)) (fun s ⟨_, _, _, _, _, _, hd, _, _, _, h7⟩ =>
-      eval_zero h7 (by have := hd.ok.lt; omega)) (fun _ => CT.skip) fun hb => ?_
+      eval_zero h7 (by have := hd.ok.lt; omega_arith)) (fun _ => CT.skip) fun hb => ?_
     have h0 : nb ≠ 0 := by simpa using hb
     let J₂ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
       Env V sp s ∧ DataW (V .r29) (V .r30) (V .r31) s D n ∧ j ≤ n ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧
@@ -94,10 +94,10 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
     · refine CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, he₁, hd₁, hj₁, hR, a3, a4, a5, a6, a7, a8⟩
         ⟨V₂, b29, b30, b31, he₂, hd₂, _, _, b3, b4, b5, b6, b7, b8⟩ => ?_
       have hn₁ := hd₁.ok.lt
-      have g₁ := ctrWhole_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 hR (by omega)
-        (hd₁.sub (j := j) (k := 16 * nb) (by omega) (by omega))
-      have g₂ := ctrWhole_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 hR (by omega)
-        (hd₂.sub (j := j) (k := 16 * nb) (by omega) (by omega))
+      have g₁ := ctrWhole_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 hR (by omega_arith)
+        (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
+      have g₂ := ctrWhole_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 hR (by omega_arith)
+        (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
       rw [a29, a30, a31] at g₁
       rw [b29, b30, b31] at g₂
       exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
@@ -105,7 +105,7 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
 theorem cryptTail_ct {R : Nat} {D : Addr} {n q j : Nat} :
     CT (CrM c st w sp R D n q j) cryptTail := by
   refine CT.ite (decide (n - j = 0)) (fun s ⟨_, _, _, _, _, _, _, _, hs⟩ =>
-    eval_zero hs.r25 (by have := hs.data.ok.lt; omega)) (fun _ => CT.skip) fun _ => ?_
+    eval_zero hs.r25 (by have := hs.data.ok.lt; omega_arith)) (fun _ => CT.skip) fun _ => ?_
   let J₁ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     Env V sp s ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ s.gpr .r3 = V .r29 ∧ s.gpr .r4 = BitVec.ofNat 64 R ∧
     s.gpr .r5 = V .r30 + BitVec.ofNat 64 48 ∧ s.gpr .r6 = V .r30 + BitVec.ofNat 64 64 ∧

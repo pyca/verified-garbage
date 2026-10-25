@@ -52,19 +52,19 @@ theorem step_arith (a v c t : BitVec 64) :
       t.toNat + c.toNat + a.toNat * v.toNat := by
   intro p lo hi r d
   have ha := a.isLt; have hv := v.isLt; have hc := c.isLt; have ht := t.isLt
-  have hp : p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+  have hp : p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have hlo : lo.toNat = p % 2 ^ 64 := BitVec.toNat_ofNat _ _
   have hhi : hi.toNat = p / 2 ^ 64 := by
     simp only [hi, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
-  have hdiv : p / 2 ^ 64 ≤ 2 ^ 64 - 2 := by omega
+    exact Nat.mod_eq_of_lt (by omega_arith)
+  have hdiv : p / 2 ^ 64 ≤ 2 ^ 64 - 2 := by omega_arith
   have hz : (0 : BitVec 64).toNat = 0 := rfl
   simp only [r, d, BitVec.toNat_add, toNat_ofBool, hz, Nat.add_zero, hlo, hhi] at *
   by_cases h1 : 2 ^ 64 ≤ p % 2 ^ 64 + c.toNat <;>
   simp only [h1, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
   [by_cases h2 : 2 ^ 64 ≤ t.toNat + (p % 2 ^ 64 + c.toNat) % 2 ^ 64;
     by_cases h2 : 2 ^ 64 ≤ t.toNat + (p % 2 ^ 64 + c.toNat) % 2 ^ 64] <;>
-  simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+  simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- A multiply-accumulate step: `t:c = t + c + ai · src`. -/
 theorem mulStep_ok (s : State) {t c ai : Reg} {src : Src} {v : BitVec 64}
@@ -95,8 +95,8 @@ theorem mulx_arith (d v : BitVec 64) :
         2 ^ 64 * (BitVec.ofNat 64 (d.toNat * v.toNat / 2 ^ 64)).toNat = d.toNat * v.toNat := by
   have hd := d.isLt; have hv := v.isLt
   have hp : d.toNat * v.toNat < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul'' hd hv
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega)]
-  omega
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega_arith)]
+  omega_arith
 
 /-! ## Carry chains -/
 
@@ -105,7 +105,7 @@ theorem add_carry (a b : BitVec 64) :
   have := a.isLt; have := b.isLt
   rw [BitVec.toNat_add]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem adc_carry (a b : BitVec 64) (c : Bool) :
     (a + b + (BitVec.ofBool c).setWidth 64).toNat +
@@ -114,14 +114,14 @@ theorem adc_carry (a b : BitVec 64) (c : Bool) :
   have := a.isLt; have := b.isLt; have := Bool.toNat_le c
   rw [BitVec.toNat_add, BitVec.toNat_add, toNat_ofBool]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat + c.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem sub_borrow (a b : BitVec 64) :
     (a - b).toNat + b.toNat = a.toNat + 2 ^ 64 * (decide (a.toNat < b.toNat)).toNat := by
   have := a.isLt; have := b.isLt
   rw [BitVec.toNat_sub]
   by_cases h : a.toNat < b.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem sbb_borrow (a b : BitVec 64) (c : Bool) :
     (a - b - (BitVec.ofBool c).setWidth 64).toNat + b.toNat + c.toNat =
@@ -129,7 +129,7 @@ theorem sbb_borrow (a b : BitVec 64) (c : Bool) :
   have := a.isLt; have := b.isLt; have := Bool.toNat_le c
   rw [BitVec.toNat_sub, BitVec.toNat_sub, toNat_ofBool]
   by_cases h : a.toNat < b.toNat + c.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- The value of four words. -/
 abbrev val4 (a0 a1 a2 a3 : BitVec 64) : Nat :=
@@ -161,7 +161,7 @@ theorem chain_add (a0 a1 a2 a3 b0 b1 b2 b3 : BitVec 64) :
   have e3 := adc_carry a3 b3 (decide (2 ^ 64 ≤ a2.toNat + b2.toNat + (decide (2 ^ 64 ≤ a1.toNat +
     b1.toNat + (decide (2 ^ 64 ≤ a0.toNat + b0.toNat)).toNat)).toNat))
   simp only [val4]
-  omega
+  omega_arith
 
 /-- `sub`, then three `sbb`: the difference of two four-word numbers, plus
 `2²⁵⁶` if it borrows. -/
@@ -179,7 +179,7 @@ theorem chain_sub (a0 a1 a2 a3 b0 b1 b2 b3 : BitVec 64) :
   have e3 := sbb_borrow a3 b3 (decide (a2.toNat < b2.toNat +
     (decide (a1.toNat < b1.toNat + (decide (a0.toNat < b0.toNat)).toNat)).toNat))
   simp only [val4]
-  omega
+  omega_arith
 
 /-- `sbb x, x` then `and 38`: 38 if the carry was set, else 0. -/
 theorem mask38 (x : BitVec 64) (c : Bool) :
@@ -217,11 +217,11 @@ theorem carry38_ok (s : State) (hx : (s.gpr .rax).toNat < 2 ^ 58) :
       cases c
       · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero]; exact h0
       · simp only [Bool.toNat_true, Nat.mul_one] at e ⊢
-        omega
+        omega_arith
     rw [Nat.mod_eq_of_lt hb]
     have hc := Bool.toNat_le c
     simp only [P]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2, ite_false]
@@ -240,7 +240,7 @@ theorem shl_shr_one (x : BitVec 64) :
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq]
   simp only [Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.reducePow, Nat.reduceSub]
   by_cases h : x.toNat / 9223372036854775808 % 2 = 1 <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> constructor <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> constructor <;> omega_arith
 
 open VG.Spec.X25519 (P) in
 /-- `carry19 m`: `r8–r11 + rax`, with bit 255 folded in as 19, is the same
@@ -266,7 +266,7 @@ theorem carry19_ok (s : State) {m : Reg} (h8 : m ≠ .r8) (h9 : m ≠ .r9) (h10 
     BitVec.signExtend 64 (19 : BitVec 32)) = k at hk ⊢
   have hc := Bool.toNat_le c
   have hr : (s.gpr .rax + k).toNat = (s.gpr .rax).toNat + 19 * c.toNat := by
-    rw [BitVec.toNat_add, hk]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_add, hk]; exact Nat.mod_eq_of_lt (by omega_arith)
   generalize s.gpr .rax + k = r at hr ⊢
   generalize s.gpr .r11 <<< 1 >>> 1 = u at hsh hu ⊢
   have e := chain_add (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) u r 0 0 0
@@ -280,8 +280,8 @@ theorem carry19_ok (s : State) {m : Reg} (h8 : m ≠ .r8) (h9 : m ≠ .r9) (h10 
   refine ⟨?_, ?_, fun x hx => ?_, rfl, rfl, rfl⟩
   · have key : ∀ A B k : Nat, A + P * k = B → A % P = B % P := fun A B k h => by
       rw [← h, Nat.add_mul_mod_self_left]
-    exact key _ _ c.toNat (by simp only [P]; omega)
-  · simp only [P]; omega
+    exact key _ _ c.toNat (by simp only [P]; omega_arith)
+  · simp only [P]; omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hx.1, hx.2.1,
       hx.2.2.1, hx.2.2.2.1, hx.2.2.2.2.1, hx.2.2.2.2.2, ite_false]

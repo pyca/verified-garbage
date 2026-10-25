@@ -49,8 +49,8 @@ theorem subLowNormAt_pre {s s1 : State} {w cs low : Ptr} {g B : Nat}
       (s1.callEntry.withRegions [polyRegion (pa s cs)] [polyRegion (pa s w),polyRegion (pa s low)]) := by
   sig_pre [subLowNormContract,subLowNormSig,abi,argRegs]
   simp only [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,Args.r4 h1,Args.mem h1,Arg.val]
-  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega
-  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega
+  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega_arith
+  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega_arith
   rw [hg,hB]
   exact ⟨trivial,trivial,h.wCs,h.wLow,h.csLow,h.wFit,h.csFit,h.lowFit,h.canonical,h.raw,h.gamma,h.boundPos,h.boundMax⟩
 
@@ -82,8 +82,8 @@ theorem subLowNormAt_ok {S : Nat} (hS : S<2^64) {nm : String} {s : State} {w cs 
     (fun s1 h1 _=>subLowNormAt_pre h h1) h.readable h.writable) fun t ⟨hP,s1,h1,hq⟩ => ?_
   sig_post [subLowNormContract,subLowNormSig,abi,argRegs] at hq
   rw [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,Args.r4 h1,Args.mem h1] at hq
-  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega
-  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega
+  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega_arith
+  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega_arith
   simpa only [SubLowNormPost,Arg.val,hg,hB] using And.intro hP hq
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

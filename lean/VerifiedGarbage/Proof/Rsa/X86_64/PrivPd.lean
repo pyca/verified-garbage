@@ -28,11 +28,11 @@ theorem arg_in {s t : State} (hp : PreF s) (he : Env s t) {j : Nat} (hj : j < 14
   ⟨⟨stackArgAddr s 0, 112⟩, List.mem_append_left _ (by
     rw [he.rd, hp.hrd]; simp only [List.mem_cons]
     exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl trivial))))))))),
-    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
     (m.writeW base v).readW (off base d') 64 = m.readW (off base d') 64 := by
-  have := word_wo m base v (d := 0) (d' := d') (.inl (by omega)) (by decide) hd'
+  have := word_wo m base v (d := 0) (d' := d') (.inl (by omega_arith)) (by decide) hd'
   simpa only [Bignum.word, off, BitVec.add_zero] using this
 
 theorem arg_wo0 {s : State} (m : Mem) (v : BitVec 64) {j : Nat} (hj : j < 14) :
@@ -66,14 +66,14 @@ theorem pdArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
       arg_in hp he (show 12 < 14 by decide), arg_in hp he (show 13 < 14 by decide),
       sx_ofNat (show oPre < 2 ^ 31 by decide), sx_ofNat (show oM < 2 ^ 31 by decide), word_wo, arg_wo, word_wo0, arg_wo0,
       he.sK, he.sOut, he.sE, he.sEl, he.arg hp (show 12 < 14 by decide), he.arg hp (show 13 < 14 by decide),
-      preWords_val (show (s.gpr .rcx).toNat ≤ 1024 by omega)]) rfl)
+      preWords_val (show (s.gpr .rcx).toNat ≤ 1024 by omega_arith)]) rfl)
     fun t' ⟨⟨hm, hdi, hsi, hdx, hcx, h8, h9⟩, k⟩ => ⟨⟨?_, k.2.1.trans he.rd, k.2.2.trans he.wr, ?_, ?_, ?_, ?_, ?_, ?_⟩,
       hm, hdi, hsi, hdx, hcx, h8, h9⟩
   · rw [k.gpr (by decide)]; exact he.rsp
   · have h0' : (⟨fb s, frameBytes⟩ : Region).Contains (fb s) 8 := by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
     have fr : ∀ {d : Nat}, d + 8 ≤ frameBytes → (⟨fb s, frameBytes⟩ : Region).Contains (off (fb s) d) 8 :=
-      fun hd => Offset.contains_base _ hd (by unfold frameBytes at hd; omega)
+      fun hd => Offset.contains_base _ hd (by unfold frameBytes at hd; omega_arith)
     rw [hm]
     refine frame_call he.mem (rs := [⟨fb s, frameBytes⟩]) ?_ fun r hr => ?_
     · exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (fr (d := oR3) (by decide))).writeW
@@ -96,7 +96,7 @@ theorem pdArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
 def mR (s : State) : Region := ⟨off (fb s) oM, (s.gpr .rcx).toNat⟩
 
 theorem mR_sub {s : State} (hp : PreF s) : Region.Sub (mR s) (stkR s) :=
-  frame_sub s (by have := hp.k2; unfold oM frameBytes; omega)
+  frame_sub s (by have := hp.k2; unfold oM frameBytes; omega_arith)
 
 /-- What the call reads: `n`'s values, `e`, `M` and its stack arguments. -/
 def pdRd (s : State) : List Region :=
@@ -118,9 +118,9 @@ theorem pd_pre {s t : State} (hp : PreF s) (he : Env s t)
     pdContract.pre (t.callEntry.withRegions (pdRd s) (pdWr s)) := by
   have hpw := preWords_le hp
   have hcxN : (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat)).toNat =
-      Spec.Rsa.precomputedWords (s.gpr .rcx).toNat := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+      Spec.Rsa.precomputedWords (s.gpr .rcx).toNat := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   have hE : ∀ i, i < 4 → stackArg (t.callEntry.withRegions (pdRd s) (pdWr s)) i = word t.mem (fb s) (8 * i) :=
-    fun i hi => stackArg_entry he.rsp _ _ (by omega)
+    fun i hi => stackArg_entry he.rsp _ _ (by omega_arith)
   simp only [pdContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.callEntry_rsp,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
@@ -140,20 +140,20 @@ theorem pd_pre {s t : State} (hp : PreF s) (he : Env s t)
   have rb : below (fb s) 8 = ⟨kb s, 8⟩ := by simp only [below]; rw [← fb_sub8]; rfl
   have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := by rw [← rb]; exact ret_sub s
   have dRP : (⟨kb s, 8⟩ : Region).Disjoint (preR s) := by
-    rw [← rb]; exact ret_disjoint s (by unfold oPre frameBytes; omega)
+    rw [← rb]; exact ret_disjoint s (by unfold oPre frameBytes; omega_arith)
   have dRM : (⟨kb s, 8⟩ : Region).Disjoint (mR s) := by
-    rw [← rb]; exact ret_disjoint s (by unfold oM frameBytes; omega)
+    rw [← rb]; exact ret_disjoint s (by unfold oM frameBytes; omega_arith)
   have dRA : (⟨kb s, 8⟩ : Region).Disjoint ⟨fb s, 32⟩ := by
-    rw [hfb]; exact Offset.base_disjoint _ (by decide) (by omega)
+    rw [hfb]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
   have dOut : ∀ {r : Region}, Region.Sub r (stkR s) →
       (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint r := fun h => by
     rw [← hsi']; exact (hp.dKo.sub_left h).symm
   have wFr : ∀ {d n : Nat}, d + n ≤ frameBytes → (off (fb s) d).toNat + n ≤ 2 ^ 64 := fun {d n} h => by
     unfold frameBytes at h hK1
-    rw [fb_off, ← off, toNat_off (by omega)]; omega
-  refine ⟨by omega, rfl, rfl, dOut sP, ?_, dOut sM, ?_, dOut sA, hp.dKs.sub_left sP, hp.des,
+    rw [fb_off, ← off, toNat_off (by omega_arith)]; omega_arith
+  refine ⟨by omega_arith, rfl, rfl, dOut sP, ?_, dOut sM, ?_, dOut sA, hp.dKs.sub_left sP, hp.des,
     hp.dKs.sub_left sM, (hp.dKs.sub_left sA).symm, ?_, dRP, hp.dKe.sub_left sR, dRM, hp.dKs.sub_left sR, dRA,
-    ?_, wFr (by unfold oPre frameBytes; omega), hp.wE, wFr (by unfold oM frameBytes; omega), hp.wS,
+    ?_, wFr (by unfold oPre frameBytes; omega_arith), hp.wE, wFr (by unfold oM frameBytes; omega_arith), hp.wS,
     ⟨hp.k1, hp.k2⟩, trivial, trivial, hp.L1, hp.L2,
     VG.Proof.Rsa.publicScratch_le ⟨hp.k1, hp.k2⟩ hp.hsl⟩
   · rw [← hsi']; exact hp.dOe
@@ -167,7 +167,7 @@ theorem entry_bytes {s t : State} (hsp : t.gpr .rsp = fb s) {d n : Nat} (h : d +
   simp only [Spec.Rsa.bytesAt]
   exact List.map_congr_left fun i hi => (callEntry_frame hsp).bytes (R := ⟨off (fb s) d, n⟩)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact (ret_disjoint s h).symm)
-    (by dsimp only; unfold frameBytes at h; omega) (List.mem_range.mp hi)
+    (by dsimp only; unfold frameBytes at h; omega_arith) (List.mem_range.mp hi)
 
 /-- Words of the frame at `d`, kept by a call's return address. -/
 theorem entry_words {s t : State} (hsp : t.gpr .rsp = fb s) {d n : Nat} (h : d + 8 * n ≤ frameBytes) :
@@ -178,7 +178,7 @@ theorem entry_words {s t : State} (hsp : t.gpr .rsp = fb s) {d n : Nat} (h : d +
   show t.callEntry.mem.readW (off (off (fb s) d) (8 * i)) 64 = t.mem.readW (off (off (fb s) d) (8 * i)) 64
   rw [off_off]
   exact (callEntry_frame hsp).readW (Region.contains_self _ _) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact (ret_disjoint s (by unfold frameBytes at *; omega)).symm) (by decide)
+    rw [List.mem_singleton.mp hr]; exact (ret_disjoint s (by unfold frameBytes at *; omega_arith)).symm) (by decide)
 
 /-- The regions `vg_rsa_public_precomputed_checked` is given. -/
 theorem pd_covers {s t : State} (hp : PreF s) (he : Env s t) :
@@ -197,11 +197,11 @@ theorem pd_covers {s t : State} (hp : PreF s) (he : Env s t) :
   have cr : Covers (pdRd s) (t.rd ++ t.wr) := Covers.of_sub fun r hr => by
     simp only [pdRd, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨_, List.mem_append_right _ hfr, oPre, rfl, by simp only [preR]; unfold oPre frameBytes; omega⟩
+    · exact ⟨_, List.mem_append_right _ hfr, oPre, rfl, by simp only [preR]; unfold oPre frameBytes; omega_arith⟩
     · exact ⟨⟨s.gpr .r8, (s.gpr .r9).toNat⟩, List.mem_append_left _ (by rw [he.rd, hp.hrd]; simp), 0, z _,
-        by dsimp only; omega⟩
-    · exact ⟨_, List.mem_append_right _ hfr, oM, rfl, by simp only [mR]; unfold oM frameBytes; omega⟩
-    · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega⟩
+        by dsimp only; omega_arith⟩
+    · exact ⟨_, List.mem_append_right _ hfr, oM, rfl, by simp only [mR]; unfold oM frameBytes; omega_arith⟩
+    · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega_arith⟩
   exact ⟨cr, cw⟩
 
 /-- The call of `vg_rsa_public_precomputed_checked`: `M^e mod n` to `out`,
@@ -244,16 +244,16 @@ theorem pd_call (P : PublicImpl) (name : String)
     frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
       rw [List.mem_singleton.mp hr]; exact .inl (below_sub s)
   have hcxN : (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat)).toNat =
-      Spec.Rsa.precomputedWords (s.gpr .rcx).toNat := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+      Spec.Rsa.precomputedWords (s.gpr .rcx).toNat := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   simp only [pdChkContract, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide),
     hdi, hsi, hdx, hcx, h8, h9, hcxN, hm₂, hg₂ .rax (by decide), stackArg_entry he.rsp _ _ (show 0 < 400 by decide),
-    Nat.mul_zero, hw0, entry_bytes he.rsp (show oM + (s.gpr .rcx).toNat ≤ frameBytes by unfold oM frameBytes; omega),
+    Nat.mul_zero, hw0, entry_bytes he.rsp (show oM + (s.gpr .rcx).toNat ≤ frameBytes by unfold oM frameBytes; omega_arith),
     entry_words he.rsp (show oPre + 8 * Spec.Rsa.precomputedWords (s.gpr .rcx).toNat ≤ frameBytes by
-      unfold oPre frameBytes; omega),
-    bytes_of_frame hfE hp.dKe hp.dOe (hp.des.symm) (by have := hp.wE; omega)] at hpost
+      unfold oPre frameBytes; omega_arith),
+    bytes_of_frame hfE hp.dKe hp.dOe (hp.des.symm) (by have := hp.wE; omega_arith)] at hpost
   have hapart : ∀ {d n : Nat}, d + n ≤ frameBytes → 32 ≤ d → ∀ r ∈ pdWr s ++ [below (fb s) 8],
       (⟨off (fb s) d, n⟩ : Region).Disjoint r := fun {d n} hdn h32 r hr => by
     simp only [pdWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -275,7 +275,7 @@ theorem pd_call (P : PublicImpl) (name : String)
   · rw [slot_keep hf (hapart (by decide) (by decide))]; exact he.sEl
   · simp only [Spec.Rsa.bytesAt]
     exact List.map_congr_left fun i hi => hf.bytes (R := ⟨off (fb s) oM, (s.gpr .rcx).toNat⟩)
-      (fun r hr => hapart (by unfold oM frameBytes; omega) (by decide) r hr) (by dsimp only; omega)
+      (fun r hr => hapart (by unfold oM frameBytes; omega_arith) (by decide) r hr) (by dsimp only; omega_arith)
       (List.mem_range.mp hi)
   · exact slot_keep hf (hapart (by decide) (by decide))
   · exact slot_keep hf (hapart (by decide) (by decide))

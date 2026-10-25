@@ -36,7 +36,7 @@ abbrev eOf (P : MP) (σ : State) : Nat := Spec.MillerRabin.exponent (cOf P σ.me
 /-- Word `i` of a number of `k` words. -/
 theorem val32_word' (m : Mem) (base : Addr) {d k i : Nat} (hi : i < k) :
     w32 m base (d + 4 * i) = val32 m base d k / 2 ^ (32 * i) % 2 ^ 32 := by
-  obtain ⟨r, rfl⟩ : ∃ r, k = i + (r + 1) := ⟨k - i - 1, by omega⟩
+  obtain ⟨r, rfl⟩ : ∃ r, k = i + (r + 1) := ⟨k - i - 1, by omega_arith⟩
   rw [val32_append m base d i (r + 1)]
   simp only [val32]
   have lo := val32_lt m base d i
@@ -64,13 +64,13 @@ theorem In.ew_low (h : In P σ) :
   simp only [VG.Proof.Mont.word, off] at ew2
   rw [e] at ew2
   have a1 : w32 σ.mem (State.addr P.ws) (arrAt P.w aE + 8 * P.w) = ew P σ (2 * P.w) := by
-    simp only [ew, w32]; rw [h.off_eq, ← h.arr_eq aE, show kOff + arr P.W aE + 8 * P.w = kOff + (arr P.W aE + 4 * (2 * P.w)) by omega]
+    simp only [ew, w32]; rw [h.off_eq, ← h.arr_eq aE, show kOff + arr P.W aE + 8 * P.w = kOff + (arr P.W aE + 4 * (2 * P.w)) by omega_arith]
   have a2 : w32 σ.mem (State.addr P.ws) (arrAt P.w aE + 8 * P.w + 4) = ew P σ (2 * P.w + 1) := by
     simp only [ew, w32]; rw [h.off_eq, ← h.arr_eq aE,
-      show kOff + arr P.W aE + 8 * P.w + 4 = kOff + (arr P.W aE + 4 * (2 * P.w + 1)) by omega]
+      show kOff + arr P.W aE + 8 * P.w + 4 = kOff + (arr P.W aE + 4 * (2 * P.w + 1)) by omega_arith]
   rw [a1, a2] at ew2
   have lt : ew P σ (2 * P.w) < 2 ^ 32 := (σ.mem.readW _ 32).isLt
-  omega
+  omega_arith
 
 end
 
@@ -106,16 +106,16 @@ theorem St.pwordLd {m : Nat} (hE : ∀ σ, E σ → In P σ) (hm : 1 ≤ m) (hm2
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_dp (op2_lsl (by decide)) fun s4 u4 => ?_
   have q3 : s3.gpr .r1 = BitVec.ofNat 32 (m - 1) := by
-    rw [u3.gpr, dpVal, u2.gpr, q1, ofNat_shr32 (by omega), show 8 * m / 2 ^ 3 = m by omega,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [u3.gpr, dpVal, u2.gpr, q1, ofNat_shr32 (by omega_arith), show 8 * m / 2 ^ 3 = m by omega_arith,
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
   have fitE := hw.arr_fit (j := aE) (by decide)
   have nw := hw.nowrap
   have hS : S P.W = 4 * (P.W + 2) := rfl
   have hW : P.W = 2 * P.w + 2 := rfl
   have sh : BitVec.ofNat 32 (m - 1) <<< 2 = BitVec.ofNat 32 (4 * (m - 1)) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, ofNat_toNat32 (by omega), ofNat_toNat32 (by omega)]
-    omega
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, ofNat_toNat32 (by omega_arith), ofNat_toNat32 (by omega_arith)]
+    omega_arith
   have q4 : s4.gpr .r0 = P.B + BitVec.ofNat 32 (arr P.W aE + 4 * (m - 1)) := by
     rw [u4.gpr, dpVal, u3.other _ (by decide), u2.other _ (by decide), p1, q3, sh, BitVec.add_assoc,
       BitVec.ofNat_add_ofNat]
@@ -124,8 +124,8 @@ theorem St.pwordLd {m : Nat} (hE : ∀ σ, E σ → In P σ) (hm : 1 ≤ m) (hm2
       (by decide) (by decide) (by decide)
   have ea : State.addr (s4.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr P.B) (arr P.W aE + 4 * (m - 1)) := by
     rw [q4, Offset.add_add, Nat.add_zero]
-    exact hw.addr (by omega)
-  refine wp_ldr (by decide) ea (hw4.read (by omega)) fun s5 u5 => ?_
+    exact hw.addr (by omega_arith)
+  refine wp_ldr (by decide) ea (hw4.read (by omega_arith)) fun s5 u5 => ?_
   have r5 : Rest [.r0, .r1, .r2] s s5 := (rr1.mono (by simp)).trans ((u2.rest (by simp)).trans
     ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (u5.rest (by simp)))))
   have m5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, u2.mem, m1]
@@ -135,7 +135,7 @@ theorem St.pwordLd {m : Nat} (hE : ∀ σ, E σ → In P σ) (hm : 1 ≤ m) (hm2
   have v : (s5.gpr .r2).toNat = ew P σ (m - 1) := by
     rw [u5.gpr, u4.mem, u3.mem, u2.mem, m1]
     show w32 s.mem (State.addr P.B) (arr P.W aE + 4 * (m - 1)) = _
-    exact h.keep.word (by omega) (fun k hk e' => by subst e'; revert hk; decide)
+    exact h.keep.word (by omega_arith) (fun k hk e' => by subst e'; revert hk; decide)
       (fun d hd => wDs_hdr d hd) (h.fit (by decide))
   rwa [v] at ht
 
@@ -170,33 +170,33 @@ theorem St.plowBits (hE : ∀ σ, E σ → In P σ) :
   have hW : P.W = 2 * P.w + 2 := rfl
   have sh : BitVec.ofNat 32 P.W <<< 2 = BitVec.ofNat 32 (4 * P.W) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, ofNat_toNat32 (by omega), ofNat_toNat32 (by omega)]
-    omega
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, ofNat_toNat32 (by omega_arith), ofNat_toNat32 (by omega_arith)]
+    omega_arith
   have q3 : s3.gpr .r0 = P.B + BitVec.ofNat 32 (arr P.W aE + 4 * (2 * P.w)) := by
     rw [u3.gpr, dpVal, u2.gpr, dpVal, p1, show s1.gpr .r9 = BitVec.ofNat 32 P.W by rw [rr1.gpr _ (by decide), hw.r9],
       sh, BitVec.add_assoc,
       BitVec.ofNat_add_ofNat, bv_add_sub, show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega),
-      show arr P.W aE + 4 * P.W - 8 = arr P.W aE + 4 * (2 * P.w) by omega]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith),
+      show arr P.W aE + 4 * P.W - 8 = arr P.W aE + 4 * (2 * P.w) by omega_arith]
   have hw3 : Ws s3 P.B P.Z P.W nArr :=
     (hw1.of_upd u2 (by decide) (by decide) (by decide)).of_upd u3 (by decide) (by decide) (by decide)
   have rd : ∀ i, i ≤ 1 → InRegions (s3.rd ++ s3.wr) (off (State.addr P.B) (arr P.W aE + 4 * (2 * P.w + i))) 4 :=
-    fun i hi => hw3.read (by omega)
+    fun i hi => hw3.read (by omega_arith)
   have a0 : State.addr (s3.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr P.B) (arr P.W aE + 4 * (2 * P.w + 0)) := by
     rw [q3, Offset.add_add, Nat.add_zero, Nat.add_zero]
-    exact hw.addr (by omega)
+    exact hw.addr (by omega_arith)
   refine wp_ldr (by decide) a0 (rd 0 (by decide)) fun s4 u4 => ?_
   have a1 : State.addr (s4.gpr .r0 + BitVec.ofNat 32 4) = off (State.addr P.B) (arr P.W aE + 4 * (2 * P.w + 1)) := by
     rw [u4.other _ (by decide), q3, Offset.add_add,
-      show arr P.W aE + 4 * (2 * P.w) + 4 = arr P.W aE + 4 * (2 * P.w + 1) by omega]
-    exact hw.addr (by omega)
+      show arr P.W aE + 4 * (2 * P.w) + 4 = arr P.W aE + 4 * (2 * P.w + 1) by omega_arith]
+    exact hw.addr (by omega_arith)
   refine wp_ldr (by decide) a1 (by rw [u4.rd, u4.wr]; exact rd 1 (by decide)) fun s5 u5 => ?_
   have mem : ∀ i, i ≤ 1 → (s3.mem.readW (off (State.addr P.B) (arr P.W aE + 4 * (2 * P.w + i))) 32) =
       BitVec.ofNat 32 (ew P σ (2 * P.w + i)) := fun i hi => by
     rw [u3.mem, u2.mem, m1]
     apply BitVec.eq_of_toNat_eq
     rw [ofNat_toNat32 (σ.mem.readW _ 32).isLt]
-    exact h.keep.word (by omega) (fun k hk e' => by subst e'; revert hk; decide)
+    exact h.keep.word (by omega_arith) (fun k hk e' => by subst e'; revert hk; decide)
       (fun d hd => wDs_hdr d hd) (h.fit (by decide))
   have g4 : s4.gpr .r1 = BitVec.ofNat 32 (ew P σ (2 * P.w)) := by rw [u4.gpr]; exact mem 0 (by decide)
   have g5 : s5.gpr .r2 = BitVec.ofNat 32 (ew P σ (2 * P.w + 1)) := by

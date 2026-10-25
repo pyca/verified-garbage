@@ -43,12 +43,12 @@ open VG.Proof.AesGcm.AArch64 (GcmImpl ofNat_add_ofNat in_off toNat_ofNat_of_lt c
 theorem pad_bytes (m : Mem) (c : Addr) (xs : List Byte) (hx : xs.length < 16) :
     bytesAt (writeBytes (Proof.Cmac.zero2 m c) c xs) c 16 = xs ++ Spec.GcmSiv.zeros (16 - xs.length) := by
   have hz := Proof.Cmac.zero2_bytes m c
-  rw [show 16 = xs.length + (16 - xs.length) by omega, Proof.AesGcm.AArch64.bytesAt_add] at hz
-  rw [show 16 = xs.length + (16 - xs.length) by omega, Proof.AesGcm.AArch64.bytesAt_add,
-    Proof.AesGcm.AArch64.bytesAt_writeBytes_self _ _ _ (by omega),
+  rw [show 16 = xs.length + (16 - xs.length) by omega_arith, Proof.AesGcm.AArch64.bytesAt_add] at hz
+  rw [show 16 = xs.length + (16 - xs.length) by omega_arith, Proof.AesGcm.AArch64.bytesAt_add,
+    Proof.AesGcm.AArch64.bytesAt_writeBytes_self _ _ _ (by omega_arith),
     Proof.AesGcm.AArch64.bytesAt_frame (Proof.AesGcm.AArch64.writeBytes_frame' _ rfl) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base c (Nat.le_refl _) (by omega)) (by omega)]
+      exact Offset.disjoint_base c (Nat.le_refl _) (by omega_arith)) (by omega_arith)]
   refine congrArg (xs ++ ·) ?_
   have := congrArg (List.drop xs.length) hz
   rw [List.drop_left' (length_bytesAt _ _ _)] at this
@@ -64,7 +64,7 @@ theorem zero2_eq (m : Mem) (W : Addr) :
 theorem srcB {p : Prm} (L : Lay p) {s : State} (P : Perm p s) : Src p s (p.W + BitVec.ofNat 64 224) 16 where
   rd := P.wCR (by decide)
   lt := by decide
-  wrap := by rw [L.toNat_W (by decide)]; have := L.ww; omega
+  wrap := by rw [L.toNat_W (by decide)]; have := L.ww; omega_arith
   y := L.w_w (.inr (by decide)) (by decide) (by decide)
   rev := L.w_w (.inl (by decide)) (by decide) (by decide)
 
@@ -114,11 +114,11 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : Addr}
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   have dB : (⟨P, r⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 224, r⟩ :=
-    (hd.sub_right (Lay.wSub (show 224 + 16 ≤ 3808 by decide))).sub_right (Region.sub_prefix (by omega))
+    (hd.sub_right (Lay.wSub (show 224 + 16 ≤ 3808 by decide))).sub_right (Region.sub_prefix (by omega_arith))
   have lp : LoopPre t₁ P (p.W + BitVec.ofNat 64 224) r :=
-    ⟨by omega, by rw [rd₁, wr₁]; exact hc, Proof.AesGcm.AArch64.covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 3808 by decide))
-      (by omega), dB⟩
-  refine WP.seq (WP.mono (copyLoop_ok t₁ x12₁ x11₁ x13₁ (by omega) lp) fun t₂ ⟨hm₂, _, _, ho₂, sp₂, rd₂, wr₂⟩ => ?_)
+    ⟨by omega_arith, by rw [rd₁, wr₁]; exact hc, Proof.AesGcm.AArch64.covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 3808 by decide))
+      (by omega_arith), dB⟩
+  refine WP.seq (WP.mono (copyLoop_ok t₁ x12₁ x11₁ x13₁ (by omega_arith) lp) fun t₂ ⟨hm₂, _, _, ho₂, sp₂, rd₂, wr₂⟩ => ?_)
   have E₂ : Env p t₂ := E₁.keep (fun q hq => ho₂ q (by
     simp only [envRegs, loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₂ rd₂ wr₂
@@ -128,16 +128,16 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : Addr}
     exact Proof.AesGcm.AArch64.bytesAt_frame (Proof.Cmac.frame_store2 _ _ _)
       (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact hd.sub_right (Lay.wSub (by decide)))
-      (by omega)
+      (by omega_arith)
   have hb₂ : bytesAt t₂.mem (p.W + BitVec.ofNat 64 224) 16 = bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r) := by
     have hl := length_bytesAt t.mem P r
-    rw [hm₂, hd₁, hm₁, pad_bytes _ _ _ (by omega), hl]
+    rw [hm₂, hd₁, hm₁, pad_bytes _ _ _ (by omega_arith), hl]
   have f₂ : Frame [⟨p.W + BitVec.ofNat 64 224, 16⟩] t.mem t₂.mem := by
     rw [hm₂, hm₁]
     exact (Proof.Cmac.frame_store2 _ _ _).trans
       ((Proof.AesGcm.AArch64.writeBytes_frame' _ (length_bytesAt _ _ _)).sub fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
   refine WP.run ⟨_, by grun [], rfl⟩ fun t₃ ht₃ => ?_
   subst ht₃
   exact ⟨E₂.keep (fun q hq => by
@@ -159,7 +159,7 @@ theorem absTail_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
   rw [T.bytes] at C
   have dHY : ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 224, 16⟩ : Region)], ∀ d, d + 16 ≤ 224 →
       (⟨p.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint q := fun q hq d hd => by
-    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega) (by decide)
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega_arith) (by decide)
   refine ⟨C.env, by rw [C.rd, T.rd], by rw [C.wr, T.wr],
     (T.frame.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self).trans
       (C.frame.mono fun q hq => List.mem_cons_of_mem _ hq), ?_⟩
@@ -175,7 +175,7 @@ theorem elems_pad16_bytesAt (m : Mem) (Q : Addr) (n : Nat) :
         [Spec.GcmSiv.ofBytes (bytesAt m (Q + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) ++
           Spec.GcmSiv.zeros (16 - n % 16))] := by
   have hs := Proof.AesGcm.AArch64.bytesAt_add m Q (16 * (n / 16)) (n % 16)
-  rw [show 16 * (n / 16) + n % 16 = n by omega] at hs
+  rw [show 16 * (n / 16) + n % 16 = n by omega_arith] at hs
   have hl := length_bytesAt m Q (16 * (n / 16))
   rw [GcmSiv.elems_pad16, length_bytesAt, hs, List.take_left' hl, List.drop_left' hl, GcmSiv.elems_bytesAt]
 
@@ -186,12 +186,12 @@ theorem absMid_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
     WP isa (.ite (.zero .x .x9) (.block []) (.loop (chunk v.callees) (.nonzero .x .x9))) t fun t₂ =>
       Absorbed p (absR p.W) (elemsAt t.mem Q (m / 16)) t t₂ ∧
         t₂.gpr .x27 = Q + BitVec.ofNat 64 (16 * (m / 16)) ∧ t₂.gpr .x28 = BitVec.ofNat 64 (m % 16) := by
-  refine WP.ite (decide (m / 16 = 0)) (eval_zero h9 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (m / 16 = 0)) (eval_zero h9 (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : m / 16 = 0 := by simpa using ht
     refine WP.block_nil ⟨⟨E, rfl, rfl, Frame.refl _ _, by simp [h0, elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
-      by rw [h27, h0, Nat.mul_zero, BitVec.add_zero], by rw [h28]; congr 1; omega⟩
+      by rw [h27, h0, Nat.mul_zero, BitVec.add_zero], by rw [h28]; congr 1; omega_arith⟩
   · have h0 : m / 16 ≠ 0 := by simpa using hf
-    exact chunks_ok v L E hm (by omega) (hQ.take (by omega)) h27 h28
+    exact chunks_ok v L E hm (by omega_arith) (hQ.take (by omega_arith)) h27 h28
 
 /-- `absorb`'s first block. -/
 theorem absHead_ok {t : State} {m : Nat} (hm : m < 2 ^ 64) (h28 : t.gpr .x28 = BitVec.ofNat 64 m) :
@@ -215,18 +215,18 @@ theorem absorb_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
   rw [m₁] at P₂
   have P₂' := P₂.of_eq m₁ rd₁ wr₁
   rw [elems_pad16_bytesAt]
-  refine WP.ite (decide (m % 16 = 0)) (eval_zero x28₂ (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (m % 16 = 0)) (eval_zero x28₂ (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : m % 16 = 0 := by simpa using ht
     simp only [h0, ite_true, List.append_nil]
     exact WP.block_nil (P₂'.sub (absR_sub p.W))
   · have h0 : m % 16 ≠ 0 := by simpa using hf
     simp only [h0, ite_false]
-    have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega)
+    have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith)
     have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
-      hd.sub_left (Offset.sub_base Q (by omega))
-    refine WP.mono (absTail_ok v L P₂'.env (by omega) (by omega) (by rw [P₂'.rd, P₂'.wr]; exact hs.rd) dT x27₂ x28₂)
+      hd.sub_left (Offset.sub_base Q (by omega_arith))
+    refine WP.mono (absTail_ok v L P₂'.env (by omega_arith) (by omega_arith) (by rw [P₂'.rd, P₂'.wr]; exact hs.rd) dT x27₂ x28₂)
       fun t₃ T => ?_
-    have e := Proof.AesGcm.AArch64.bytesAt_frame P₂'.frame (fun r hr => dT.sub_right ?_) (by omega)
+    have e := Proof.AesGcm.AArch64.bytesAt_frame P₂'.frame (fun r hr => dT.sub_right ?_) (by omega_arith)
     · rw [e] at T
       exact AbsPost.trans L (P₂'.sub (absR_sub p.W)) T
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -266,7 +266,7 @@ theorem lens_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   rw [hb] at C
   have dHY : ∀ d, d + 16 ≤ 224 → ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 224, 16⟩ : Region)],
       (⟨p.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint q := fun d hd q hq => by
-    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega) (by decide)
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega_arith) (by decide)
   refine ⟨C.env, by rw [C.rd, rd₁], by rw [C.wr, wr₁],
     (f₁.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self).trans
       (C.frame.mono fun q hq => List.mem_cons_of_mem _ hq), ?_⟩
@@ -337,7 +337,7 @@ theorem polyval_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
   refine WP.seq (WP.mono (absorb_ok v L ((P₂.env.write (by decide) _).write (by decide) _) (by simp only [rd_write, wr_write]; exact covers_left P₂.env.perm.d)
     L.n_lt L.dw L.d_w (by simp [gpr_write, P₂.env.x25]) (by simp [gpr_write, P₂.env.x26])) fun t₄ P₄ => ?_)
   simp only [mem_write] at P₄
-  rw [Proof.AesGcm.AArch64.bytesAt_frame P₂.frame (absorbR_buf L.d_w) (by have := L.n_lt; omega)] at P₄
+  rw [Proof.AesGcm.AArch64.bytesAt_frame P₂.frame (absorbR_buf L.d_w) (by have := L.n_lt; omega_arith)] at P₄
   have P₂₄ := AbsPost.trans L P₂' (P₄.of_eq rfl rfl rfl)
   -- The lengths.
   refine WP.seq (WP.mono (lens_ok v L P₂₄.env) fun t₅ P₅ => ?_)
@@ -353,7 +353,7 @@ theorem polyval_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
     exact (tagInMem_frame _ _ _).mono fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self
   · have hp : ∀ xs ys : List Byte, (Spec.GcmSiv.pad16 xs ++ Spec.GcmSiv.pad16 ys).length % 16 = 0 := fun xs ys => by
-      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega
+      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega_arith
     have nN : bytesAt t₅.mem p.N 12 = bytesAt t.mem p.N 12 :=
       Proof.AesGcm.AArch64.bytesAt_frame P₂₅.frame (absorbR_buf L.n_w) (by decide)
     rw [hm₆, tagInMem_bytes, nN, P₂₅.out, hG, hY, tagInputG, length_bytesAt, length_bytesAt,

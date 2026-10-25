@@ -72,11 +72,11 @@ variable {s : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p kb n)
 include h
 
 theorem BPre.inS {off w : Nat} (hw : off + w ≤ 256) : InRegions s.wr (State.addr c + BitVec.ofNat 64 off) w :=
-  ⟨_, h.scr, Offset.contains_base _ hw (by omega)⟩
+  ⟨_, h.scr, Offset.contains_base _ hw (by omega_arith)⟩
 
 theorem BPre.inS' {off w : Nat} (hw : off + w ≤ 256) :
     InRegions (s.rd ++ s.wr) (State.addr c + BitVec.ofNat 64 off) w :=
-  ⟨_, List.mem_append_right _ h.scr, Offset.contains_base _ hw (by omega)⟩
+  ⟨_, List.mem_append_right _ h.scr, Offset.contains_base _ hw (by omega_arith)⟩
 
 theorem BPre.inP {off w : Nat} (hw : off + w ≤ 8) : InRegions s.wr (State.addr p + BitVec.ofNat 64 off) w :=
   h.blk hw
@@ -87,7 +87,7 @@ theorem BPre.inP' {off w : Nat} (hw : off + w ≤ 8) :
 
 theorem BPre.inK {off w : Nat} (hw : off + w ≤ 128) :
     InRegions (s.rd ++ s.wr) (State.addr kb + BitVec.ofNat 64 off) w :=
-  ⟨_, h.sch, Offset.contains_base _ hw (by omega)⟩
+  ⟨_, h.sch, Offset.contains_base _ hw (by omega_arith)⟩
 
 theorem BPre.aS : ∀ off, off < 256 → State.addr (c + BitVec.ofNat 32 off) = State.addr c + BitVec.ofNat 64 off :=
   addr_off h.cfit
@@ -129,8 +129,8 @@ theorem key_at {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p kb n
     (hf : Frame [ctRegion c] s.mem u.mem) {i : Nat} (hi : 1 ≤ i ∧ i ≤ 16) {j : Nat} (hj : j = i - 1 ∨ j = 15 + i) :
     u.mem.readW (State.addr kb + BitVec.ofNat 64 (4 * j)) 32 =
       (Spec.Cast5.scheduleAt s.mem (State.addr kb)).getD j 0 := by
-  rw [Proof.Cast5.scheduleAt_getD _ _ (by omega)]
-  refine hf.readW (r := ⟨State.addr kb, 128⟩) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  rw [Proof.Cast5.scheduleAt_getD _ _ (by omega_arith)]
+  refine hf.readW (r := ⟨State.addr kb, 128⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith)) ?_ (by decide)
   intro r hr
   simp only [List.mem_singleton] at hr
   subst hr
@@ -141,7 +141,7 @@ theorem kp_addr {kb : BitVec 32} (hk : kb.toNat + 128 ≤ 2 ^ 32) {j : Nat} (off
     State.addr (kb + BitVec.ofNat 32 (4 * j) + BitVec.ofNat 32 off) =
       State.addr kb + BitVec.ofNat 64 (4 * j + off) := by
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact addr_add (by omega)
+  exact addr_add (by omega_arith)
 
 /-- A round, from the state of the rounds. -/
 theorem round_step {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p kb n) {lr : Spec.Cast5.Word × Spec.Cast5.Word}
@@ -153,18 +153,18 @@ theorem round_step {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p 
         (nextT up t) (left - 1) v ∧ v.z = (BitVec.ofNat 32 left - 1 == 0) := by
   have aS := h.aS
   have e0 : State.addr (u.gpr .lr + BitVec.ofNat 32 0) = State.addr kb + BitVec.ofNat 64 (4 * (i - 1)) := by
-    rw [hu.lr, kp_addr h.kfit 0 (by omega), Nat.add_zero]
+    rw [hu.lr, kp_addr h.kfit 0 (by omega_arith), Nat.add_zero]
   have e64 : State.addr (u.gpr .lr + BitVec.ofNat 32 64) = State.addr kb + BitVec.ofNat 64 (4 * (15 + i)) := by
-    rw [hu.lr, kp_addr h.kfit 64 (by omega)]; congr 2; omega
+    rw [hu.lr, kp_addr h.kfit 64 (by omega_arith)]; congr 2; omega_arith
   have es (off : Nat) (ho : off < 256) : slot u off = State.addr c + BitVec.ofNat 64 off := by
     rw [hu.r12, aS off ho]
   have pre : RoundPre u ((Spec.Cast5.scheduleAt s.mem (State.addr kb)).getD (i - 1) 0)
       ((Spec.Cast5.scheduleAt s.mem (State.addr kb)).getD (15 + i) 0) lr.1 lr.2 t (BitVec.ofNat 32 left) :=
     { r2 := hu.r2
       r3 := hu.r3
-      inM := by rw [e0, hu.rd, hu.wr]; exact h.inK (by omega)
+      inM := by rw [e0, hu.rd, hu.wr]; exact h.inK (by omega_arith)
       valM := by rw [e0]; exact key_at h hu.fr hi (.inl rfl)
-      inR := by rw [e64, hu.rd, hu.wr]; exact h.inK (by omega)
+      inR := by rw [e64, hu.rd, hu.wr]; exact h.inK (by omega_arith)
       valR := by rw [e64]; exact key_at h hu.fr hi (.inr rfl)
       ht := ht
       inT := by rw [es 20 (by decide), hu.wr]; exact h.inS (by decide)
@@ -172,7 +172,7 @@ theorem round_step {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p 
       inC := by rw [es 16 (by decide), hu.wr]; exact h.inS (by decide)
       valC := by rw [es 16 (by decide)]; exact hu.cnt
       sep := by rw [es 16 (by decide), es 20 (by decide)]; exact Offset.sep _ (by decide) (by decide) (by decide)
-      cfit := by rw [hu.r12]; have := h.cfit; omega
+      cfit := by rw [hu.r12]; have := h.cfit; omega_arith
       inS24 := by rw [hu.r12, hu.wr]; exact h.inS (by decide)
       inS28 := by rw [hu.r12, hu.wr]; exact h.inS (by decide)
       tfit := by rw [hu.syms]; exact h.tfit
@@ -197,7 +197,7 @@ theorem round_step {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p 
   · rw [vm, es 16 (by decide), es 20 (by decide), Mem.readW_writeW_self32]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_arith
   · rw [vm, es 16 (by decide), es 20 (by decide),
       Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide), Mem.readW_writeW_self32]
 
@@ -214,19 +214,19 @@ theorem rounds_ok {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p k
     WP isa (.loop (round up) .ne) u fun v => ∃ kp t, RInv s c (fold n) kp t 0 v := by
   have hn : n = 12 ∨ n = 16 := h.nv
   refine WP.loop (M := isa) (fun m (v : State) => ∃ i, m = n - i ∧ i < n ∧ RInv s c (fold i) (kpf i) (tf i) (n - i) v)
-    ?_ n u ⟨0, rfl, by omega, by rw [Nat.sub_zero]; exact h0⟩
+    ?_ n u ⟨0, rfl, by omega_arith, by rw [Nat.sub_zero]; exact h0⟩
   rintro m v ⟨i, rfl, hi, hv⟩
   rw [hkp i hi] at hv
-  refine WP.mono (round_step h hv up (ht i hi) (hti i hi) (hidx i hi) (by omega)) fun w ⟨hw, wz⟩ => ?_
+  refine WP.mono (round_step h hv up (ht i hi) (hti i hi) (hidx i hi) (by omega_arith)) fun w ⟨hw, wz⟩ => ?_
   rw [← hfold i hi, ← hkp i hi] at hw
   by_cases hlast : i + 1 = n
-  · refine .inl ⟨?_, _, _, by rw [hlast] at hw; rw [show n - i - 1 = 0 by omega] at hw; exact hw⟩
+  · refine .inl ⟨?_, _, _, by rw [hlast] at hw; rw [show n - i - 1 = 0 by omega_arith] at hw; exact hw⟩
     show some (!w.z) = _; rw [wz]
     congr 1
-    rw [show n - i = 1 by omega]
+    rw [show n - i = 1 by omega_arith]
     rfl
-  · obtain ⟨hk, htn⟩ := hnext i (by omega)
-    refine .inr ⟨?_, n - (i + 1), by omega, i + 1, rfl, by omega, ?_⟩
+  · obtain ⟨hk, htn⟩ := hnext i (by omega_arith)
+    refine .inr ⟨?_, n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, ?_⟩
     · show some (!w.z) = _; rw [wz]
       congr 1
       have : BitVec.ofNat 32 (n - i) - 1 ≠ 0 := by
@@ -234,18 +234,18 @@ theorem rounds_ok {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p k
         have := congrArg BitVec.toNat e
         rw [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl,
           show (0 : BitVec 32).toNat = 0 from rfl] at this
-        omega
+        omega_arith
       simpa using this
-    · rw [hk, htn, show n - (i + 1) = n - i - 1 by omega]
+    · rw [hk, htn, show n - (i + 1) = n - i - 1 by omega_arith]
       exact hw
 
 theorem nextT_up (i : Nat) : nextT true (i % 3 + 1) = (i + 1) % 3 + 1 := by
   simp only [nextT, ite_true]
-  split <;> omega
+  split <;> omega_arith
 
 theorem nextT_down {i : Nat} (hi : 1 ≤ i) : nextT false ((i - 1 + 1) % 3 + 1) = (i - 1) % 3 + 1 := by
   simp only [nextT, Bool.false_eq_true, ite_false]
-  split <;> omega
+  split <;> omega_arith
 
 /-! ## The block function -/
 
@@ -325,7 +325,7 @@ theorem finish_ok {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p k
       u.mem.readW (State.addr c + BitVec.ofNat 64 off) 32 = s.mem.readW (State.addr c + BitVec.ofNat 64 off) 32 :=
     hu.fr.readW (r := ⟨State.addr c + BitVec.ofNat 64 off, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by omega) (by omega) (by decide)) (by decide)
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by decide)) (by decide)
   have hd : u.mem.readW (State.addr c + BitVec.ofNat 64 0) 32 = p := (sl 0 (by decide)).trans h.data
   have inS' : ∀ {off w : Nat}, off + w ≤ 256 → InRegions (u.rd ++ u.wr) (State.addr c + BitVec.ofNat 64 off) w :=
     fun hw => by rw [hu.rd, hu.wr]; exact h.inS' hw
@@ -339,7 +339,7 @@ theorem finish_ok {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p k
   have ms (off : Nat) (ho : off + 4 ≤ 16) :
       m'.readW (State.addr c + BitVec.ofNat 64 off) 32 = u.mem.readW (State.addr c + BitVec.ofNat 64 off) 32 := by
     have dPC : Region.Disjoint ⟨State.addr p, 8⟩ ⟨State.addr c + BitVec.ofNat 64 off, 4⟩ :=
-      h.dPS.sub_right (Offset.sub_base _ (by omega))
+      h.dPS.sub_right (Offset.sub_base _ (by omega_arith))
     rw [← hm', Mem.readW_writeW_sep (dPC.symm.sep (Region.contains_self _ _)
         (Offset.contains_base _ (by decide) (by decide))) (by decide),
       Mem.readW_writeW_sep (dPC.symm.sep (Region.contains_self _ _)
@@ -373,15 +373,15 @@ theorem crypt_ok {s : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p kb n
     simp only [Bool.false_eq_true, ite_false]
     refine WP.seq (WP.mono (startDec_ok h) fun u hu => ?_)
     refine WP.seq (WP.mono (rounds_ok h false (fun i => n - i) (fun i => kb + BitVec.ofNat 32 (4 * (n - 1 - i)))
-      (fun i => (n - 1 - i) % 3 + 1) (fun i => decFold _ n i _) (fun i hi => by omega)
-      (fun i hi => by congr 2; omega) (fun i hi => by omega) (fun i hi => by omega)
+      (fun i => (n - 1 - i) % 3 + 1) (fun i => decFold _ n i _) (fun i hi => by omega_arith)
+      (fun i hi => by congr 2; omega_arith) (fun i hi => by omega_arith) (fun i hi => by omega_arith)
       (fun i hi => decFold_succ _ _ _ _) (fun i hi => ⟨?_, ?_⟩) hu) fun v ⟨kp, t, hv⟩ => ?_)
     · simp only [Bool.false_eq_true, ite_false]
-      rw [show n - 1 - i = n - 1 - (i + 1) + 1 by omega, Nat.mul_add, BitVec.ofNat_add, ← BitVec.add_assoc]
+      rw [show n - 1 - i = n - 1 - (i + 1) + 1 by omega_arith, Nat.mul_add, BitVec.ofNat_add, ← BitVec.add_assoc]
       exact (BitVec.add_sub_cancel _ _).symm
-    · rw [show n - 1 - i = n - 1 - (i + 1) + 1 by omega]
+    · rw [show n - 1 - i = n - 1 - (i + 1) + 1 by omega_arith]
       simp only [nextT, Bool.false_eq_true, ite_false]
-      split <;> omega
+      split <;> omega_arith
     refine WP.mono (finish_ok h hv) fun w hw => ?_
     rw [cipher, ite_eq_right Bool.false_ne_true, decryptBlock_eq]
     exact hw
@@ -389,8 +389,8 @@ theorem crypt_ok {s : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p kb n
     simp only [ite_true]
     refine WP.seq (WP.mono (startEnc_ok h) fun u hu => ?_)
     refine WP.seq (WP.mono (rounds_ok h true (fun i => i + 1) (fun i => kb + BitVec.ofNat 32 (4 * i))
-      (fun i => i % 3 + 1) (fun i => encFold _ i _) (fun i hi => by omega)
-      (fun i hi => by rw [Nat.add_sub_cancel]) (fun i hi => by omega) (fun i hi => by omega)
+      (fun i => i % 3 + 1) (fun i => encFold _ i _) (fun i hi => by omega_arith)
+      (fun i hi => by rw [Nat.add_sub_cancel]) (fun i hi => by omega_arith) (fun i hi => by omega_arith)
       (fun i hi => encFold_succ _ _ _) (fun i hi => ⟨?_, (nextT_up i).symm⟩) hu) fun v ⟨kp, t, hv⟩ => ?_)
     · simp only [ite_true]
       rw [Nat.mul_add, BitVec.ofNat_add, ← BitVec.add_assoc]

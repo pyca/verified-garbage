@@ -135,7 +135,7 @@ theorem PartPre.mid {enc : Bool} {j k : Nat} {s : State} (h : PartPre M Ctx St W
     PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧ s.gpr .rbp = BitVec.ofNat 64 k ∧
       s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16) := by
   obtain ⟨⟨H, icb, x₀, m₀, K, hx, I⟩, hk, h12, hbp, hbx, hdat, hlen, htl⟩ := h
-  exact ⟨⟨I.env, I.rounds K, (I.data.drop I.le).take (by have := I.le; omega), hdat, hlen, htl⟩, h12, hbp, hbx⟩
+  exact ⟨⟨I.env, I.rounds K, (I.data.drop I.le).take (by have := I.le; omega_arith), hdat, hlen, htl⟩, h12, hbp, hbx⟩
 
 omit L in
 theorem PartMid.crIn {j k : Nat} {s : State}
@@ -175,7 +175,7 @@ theorem partMid_crypt {cr : Prog isa} {j k : Nat} {s : State}
   refine WP.mono (WP.with_rdwr (hcr (PartMid.crIn h))) fun s' ⟨co, hrd, hwr⟩ => ?_
   have sl : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
-    co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_crFrame L hd.ok h₁ (by omega))
+    co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_crFrame L hd.ok h₁ (by omega_arith))
       (by decide)
   exact ⟨co.env, co.rounds, hd.of_eq hrd hwr, by rw [sl 200 (by decide) (by decide)]; exact h.1.2.2.2.1,
     by rw [sl 208 (by decide) (by decide)]; exact h.1.2.2.2.2.1, by rw [sl 192 (by decide) (by decide)]; exact h.1.2.2.2.2.2⟩
@@ -192,7 +192,7 @@ theorem partMid_absorb {ab : Prog isa} {j k : Nat} {s : State}
   refine WP.mono (WP.with_rdwr (hab (PartMid.absIn h))) fun s' ⟨ao, hrd, hwr⟩ => ?_
   have sl : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
-    ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_absFrame L h₁ (by omega))
+    ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_absFrame L h₁ (by omega_arith))
       (by decide)
   exact ⟨ao.env, rounds_frame ao.frame (slot_absFrame L (by decide) (by decide)) h.1.2.1, hd.of_eq hrd hwr,
     by rw [sl 200 (by decide) (by decide)]; exact h.1.2.2.2.1,
@@ -300,7 +300,7 @@ theorem blocks_rel (enc : Bool) {j : Nat} :
     obtain ⟨⟨H, icb, x₀, m₀, K, hx, I⟩, hdat, hlen, htl⟩ := h
     have hlt := I.data.ok.lt
     have hj := I.le
-    refine WP.mono (sb1_ok (L := n - j) (by omega) I.env hlen) fun s₁ ⟨r₁, z₁, g, m₁, rd₁, wr₁⟩ => ⟨z₁, ?_, fun hz => ?_⟩
+    refine WP.mono (sb1_ok (L := n - j) (by omega_arith) I.env hlen) fun s₁ ⟨r₁, z₁, g, m₁, rd₁, wr₁⟩ => ⟨z₁, ?_, fun hz => ?_⟩
     · exact I.env.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide)) rd₁ wr₁
@@ -313,8 +313,8 @@ theorem blocks_rel (enc : Bool) {j : Nat} :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by decide)) rd₂ wr₂
-    exact ⟨he₂, (I.data.drop hj).of_eq (rd₂.trans rd₁) (wr₂.trans wr₁), by omega, K.t_c, K.t_w,
-      K.t_d.sub_right (Offset.sub_base D (by omega)), K.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, K.rounds.2, K.t_s,
+    exact ⟨he₂, (I.data.drop hj).of_eq (rd₂.trans rd₁) (wr₂.trans wr₁), by omega_arith, K.t_c, K.t_w,
+      K.t_d.sub_right (Offset.sub_base D (by omega_arith)), K.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, K.rounds.2, K.t_s,
       (I.ext K).of_eq (rd₂.trans rd₁) (wr₂.trans wr₁) (m₂.trans m₁)⟩
   have a := rel_both (rel_envT (F := BPre M Ctx St W SP R P₀ enc D n j) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by
     cases h) ⟨_, by taint_decide⟩) g₁ g₁
@@ -478,7 +478,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     refine ⟨⟨_, _, _, _, t.K, ?_, I⟩, by rw [sl 200 (by decide) (by decide)]; exact t.dat,
       by rw [sl 208 (by decide) (by decide)]; exact t.len, by rw [sl 192 (by decide) (by decide)]; exact t.tlen⟩
     have := Proof.Gcm.length_pad_mod aL
-    simp only [List.length_append, List.length_replicate, Proof.Gcm.length_zeros]; omega
+    simp only [List.length_append, List.length_replicate, Proof.Gcm.length_zeros]; omega_arith
   have b := rel_both (start_rel v L (aL := aL) (F := F₀) hP (fun s h => ⟨h.1.1.env, h.1.1.tlen, h.1.1.alen⟩))
     g₂ g₂
   -- The data loaded.
@@ -507,7 +507,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   have cs := rel_both (rel_envT (F := G₃) [.rbp] (fun _ h => h.1.env) (fun _ _ h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.1, h₂.2.2.1]) ⟨_, by taint_decide⟩) g₃s g₃s
   have pp : ∀ s, G₃ s → PartPre M Ctx St W SP R P₀ enc D n 0 n s := fun s h =>
-    ⟨h.1, by omega, by simp [h.2.1], h.2.2.1, by rw [h.2.2.2.1, Nat.add_zero], by rw [h.2.2.2.2.1]; simp,
+    ⟨h.1, by omega_arith, by simp [h.2.1], h.2.2.1, by rw [h.2.2.2.1, Nat.add_zero], by rw [h.2.2.2.2.1]; simp,
       h.2.2.2.2.2.1, by rw [h.2.2.2.2.2.2, Nat.add_zero]⟩
   have gsm : ∀ s, PartPre M Ctx St W SP R P₀ enc D n 0 n s →
       WP isa (partWith enc (crypt v.callees) (absorb v.callees 16)) s (Env Ctx St W SP) :=
@@ -524,11 +524,11 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
         s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
       f.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact L.w_w (.inl (by omega)) (by omega) (by decide)) (by decide)
+        exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)) (by decide)
     refine ⟨⟨hs.slots (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide) (by decide)) hrd hwr (by decide) (by decide) f,
-      by omega, by simp [hg .r12 (by decide) (by decide), h12], hbp',
+      by omega_arith, by simp [hg .r12 (by decide) (by decide), h12], hbp',
       by rw [hg .rbx (by decide) (by decide), hbx, Nat.add_zero], by rw [rd 200 (by decide) (by decide), hdat]; simp, hl,
       by rw [rd 192 (by decide) (by decide), htl, Nat.add_zero]⟩, ha⟩
   have d := rel_both (rel_envT (F := G₃) [.rbx, .rbp] (fun _ h => h.1.env) (fun _ _ h₁ h₂ r hr => by
@@ -557,7 +557,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   have g₄t : ∀ s, G₄ s → WP isa (.block [.alu .test .rbx (.reg .rbx)]) s T₄ := fun s h => by
     obtain ⟨⟨hs, hk', h12, hbp, hbx, hdat, hlen, htl⟩, ha⟩ := h
     have hlt := Nat.mod_lt (P₀ + 0) (show 16 > 0 by decide)
-    obtain ⟨s', run, hz, hg, hm, hrd, hwr⟩ := test_ok s .rbx hbx (by omega)
+    obtain ⟨s', run, hz, hg, hm, hrd, hwr⟩ := test_ok s .rbx hbx (by omega_arith)
     rw [Nat.add_zero] at hz
     exact WP.of_runBlock ⟨s', run, ⟨⟨hs.regs (fun r _ => by rw [hg]) hm hrd hwr, hk', by rw [hg]; exact h12,
       by rw [hg]; exact hbp, by rw [hg]; exact hbx, hm ▸ hdat, hm ▸ hlen, hm ▸ htl⟩, hm ▸ ha⟩, hz⟩
@@ -571,7 +571,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     · exact RelCT.of_false fun _ _ h => by have := h.1.1.2.symm.trans h.2; simp [hz] at this
     have e' : headLen P₀ n = min (16 - P₀ % 16) n := by simp [headLen, hz]
     rw [hk] at e'
-    exact (headPart_rel v L enc (k := k) (by omega) hz (by omega)).mono (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩)
+    exact (headPart_rel v L enc (k := k) (by omega_arith) hz (by omega_arith)).mono (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩)
       fun _ _ h => h
   -- Past the head.
   have g₆ : ∀ s, G₅ s → WP isa (.block streamNext) s (BPre M Ctx St W SP R P₀ enc D n k) := fun s h => by
@@ -593,7 +593,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
       else B.dec)) s G₇ := fun s h => by
     obtain ⟨hs, hdat, hlen, htl⟩ := h
     obtain ⟨H, icb, x₀, m₀, K, hx, I⟩ := hs
-    exact WP.mono (blocks_ok B K enc I hx hdat hlen htl (fun hq => hkw.resolve_left (by omega)))
+    exact WP.mono (blocks_ok B K enc I hx hdat hlen htl (fun hq => hkw.resolve_left (by omega_arith)))
       fun s' ⟨I', d', l', t'⟩ => ⟨⟨H, icb, x₀, m₀, K, hx, I'⟩, d', l', t'⟩
   have g := rel_both (blocks_rel B L enc) g₇ g₇
   -- The rest.
@@ -602,7 +602,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     obtain ⟨hs, hdat, hlen, htl⟩ := h
     obtain ⟨s', run, h12, hbp, hbx, hg, hm, hrd, hwr⟩ := load_ok hs.env hdat hlen htl
     rw [toNat_mod16] at hbx
-    exact WP.of_runBlock ⟨s', run, hs.regs (load_env hg) hm hrd hwr, by omega, h12, hbp, hbx, hm ▸ hdat,
+    exact WP.of_runBlock ⟨s', run, hs.regs (load_env hg) hm hrd hwr, by omega_arith, h12, hbp, hbx, hm ▸ hdat,
       hm ▸ hlen, hm ▸ htl⟩
   have i := rel_both (rel_envT (F := G₇) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by cases h)
     ⟨_, by taint_decide⟩) g₈ g₈
@@ -625,7 +625,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq cs (RelCT.seq
       (RelCT.ite (M := isa) (c := .b) (fun _ _ h => by show _ = _; exact h.1.2.trans h.2.2.symm)
         (RelCT.of_false fun _ _ h => by have := h.1.1.2.symm.trans h.2; simp [hs] at this)
-        ((RelCT.seq d (RelCT.seq (e (by omega)) (RelCT.seq f (RelCT.seq g i)))).mono
+        ((RelCT.seq d (RelCT.seq (e (by omega_arith)) (RelCT.seq f (RelCT.seq g i)))).mono
           (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))
       j)))).mono
       (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)

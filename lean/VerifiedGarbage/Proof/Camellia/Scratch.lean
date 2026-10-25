@@ -75,7 +75,7 @@ theorem blocksAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   have := List.mem_range.mp hi
   congr 1
   funext j
-  have : 16 * i + j.val < 16 * n := by have := j.isLt; omega
+  have : 16 * i + j.val < 16 * n := by have := j.isLt; omega_arith
   rw [Offset.add_add]
   exact h _ this
 
@@ -87,13 +87,13 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_arith) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_arith
 
 theorem scheduleLength_rounds_le (k : Nat) : scheduleLength (rounds k) ≤ 34 := by
-  simp only [scheduleLength, rounds]; split <;> omega
+  simp only [scheduleLength, rounds]; split <;> omega_arith
 
 variable (pb : Nat)
 
@@ -118,7 +118,7 @@ theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig
   intro hk
   rw [bytesAt_congr fun i hi => hs i (by
     have := scheduleLength_rounds_le (kl.setWidth pb).toNat
-    omega)]
+    omega_arith)]
   exact h hk
 
 theorem expandKeyPre_local : ∀ vs m₁ m₂, vs.length = (expandKeySig.words pb).length →
@@ -182,7 +182,7 @@ theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hR
 
 theorem subkeysAt_congr {m₁ m₂ : Mem} {p : Addr} {R : Nat} (hR : scheduleLength R ≤ 34)
@@ -194,7 +194,7 @@ theorem subkeysAt_congr {m₁ m₂ : Mem} {p : Addr} {R : Nat} (hR : scheduleLen
   have := List.mem_range.mp hi
   simp only [wordAt]
   congr 1
-  exact bytesAt_congr fun j hj => by rw [Offset.add_add]; exact h _ (by omega)
+  exact bytesAt_congr fun j hj => by rw [Offset.add_add]; exact h _ (by omega_arith)
 
 theorem ecbPre_local : ∀ vs m₁ m₂, vs.length = (ecbSig.words pb).length →
     (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -234,9 +234,9 @@ theorem ecbPost_local (direction : Direction) : ∀ vs m₁ m₂ m' r,
   dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega),
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_arith) fun i hi => hs i (by omega_arith),
     blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hR
 
 end VG.Proof.Camellia

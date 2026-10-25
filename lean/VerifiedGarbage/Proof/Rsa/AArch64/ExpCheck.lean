@@ -39,10 +39,10 @@ open VG.WriteBytes (writeW8_apply)
 /-- `x`, saturated at `2^34 - 1` from `2^33`. -/
 def sat (x : Nat) : Nat := if x < 2 ^ 33 then x else 2 ^ 34 - 1
 
-theorem sat_lt (x : Nat) : sat x < 2 ^ 34 := by unfold sat; split <;> omega
+theorem sat_lt (x : Nat) : sat x < 2 ^ 34 := by unfold sat; split <;> omega_arith
 
 theorem sat_step (x b : Nat) (hb : b < 256) : sat (256 * sat x + b) = sat (256 * x + b) := by
-  unfold sat; split <;> (try split) <;> (try split) <;> omega
+  unfold sat; split <;> (try split) <;> (try split) <;> omega_arith
 
 theorem exponentValid_sat (x : Nat) : Spec.Rsa.exponentValid (sat x) = Spec.Rsa.exponentValid x := by
   unfold sat
@@ -65,13 +65,13 @@ theorem step_v {x : Nat} (hx : x < 2 ^ 34) (b : Byte) :
   have hx' := hx
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, byte_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
-  omega
+    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega_arith)]
+  omega_arith
 
 theorem shr33 {v : Nat} (hv : v < 2 ^ 64) : BitVec.ofNat 64 v >>> 33 = BitVec.ofNat 64 (v / 2 ^ 33) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem zero_test {q : Nat} (hq : q < 2 ^ 64) :
     decide (BitVec.ofNat 64 q + 0 + BitVec.ofNat 64 false.toNat = 0) = decide (q = 0) := by
@@ -92,7 +92,7 @@ theorem expStep_ok {t : State} {ep : Addr} {L j x : Nat} {b : Byte} (h4 : t.gpr 
     WP isa (.block expStep) t fun t' => t'.gpr .x10 = BitVec.ofNat 64 (sat (256 * x + b.toNat)) ∧
       t'.gpr .x11 = BitVec.ofNat 64 (j + 1) ∧ ((t'.gpr .x14).toNat ≠ 0 ↔ j + 1 ≠ L) ∧ t'.mem = t.mem ∧
       Keep [.x10, .x11, .x12, .x13, .x14] t t' := by
-  have hv : 256 * sat x + b.toNat < 2 ^ 64 := by have := sat_lt x; have := b.isLt; omega
+  have hv : 256 * sat x + b.toNat < 2 ^ 64 := by have := sat_lt x; have := b.isLt; omega_arith
   rw [show expStep = ([.lsl .x .x10 .x10 8, .add .x .x12 .x4 .x11, .ldrb .x12 .x12 0, .add .x .x10 .x10 .x12,
       .lsr .x .x13 .x10 33] : List Instr) ++ ([.adds .x .x13 .x13 .x17] : List Instr) ++
       ([.cselc .x .x10 .x10 .x16 .eq] : List Instr) ++ ([.addImm .x .x11 .x11 1, .sub .x .x14 .x5 .x11] : List Instr)
@@ -105,7 +105,7 @@ theorem expStep_ok {t : State} {ep : Addr} {L j x : Nat} {b : Byte} (h4 : t.gpr 
   refine WP.mono (WP.keep [.x13] (Q := fun t₂ =>
       t₂.zf = decide ((256 * sat x + b.toNat) / 2 ^ 33 = 0) ∧ t₂.mem = t₁.mem) (by
     brun [h13₁, (k₁.gpr .x17 (by decide)).trans h17, zf_awc, zero_test (show (256 * sat x + b.toNat) / 2 ^ 33 < 2 ^ 64
-      by omega)]) (by decide) (by decide) (by decide +kernel))
+      by omega_arith)]) (by decide) (by decide) (by decide +kernel))
     fun t₂ ⟨⟨hz₂, hm₂⟩, k₂⟩ => ?_
   refine WP.mono (WP.keep [.x10] (Q := fun t₃ =>
       t₃.gpr .x10 = BitVec.ofNat 64 (sat (256 * x + b.toNat)) ∧ t₃.mem = t₂.mem) (by
@@ -115,9 +115,9 @@ theorem expStep_ok {t : State} {ep : Addr} {L j x : Nat} {b : Byte} (h4 : t.gpr 
     generalize 256 * sat x + b.toNat = v at *
     unfold sat
     by_cases h : v < 2 ^ 33
-    · have h' : v / 2 ^ 33 = 0 := by omega
+    · have h' : v / 2 ^ 33 = 0 := by omega_arith
       simp only [h', decide_true, ite_true, h]
-    · have h' : ¬ v / 2 ^ 33 = 0 := by omega
+    · have h' : ¬ v / 2 ^ 33 = 0 := by omega_arith
       simp only [h', decide_false, Bool.false_eq_true, ite_false, h]) (by decide) (by decide) (by decide +kernel))
     fun t₃ ⟨⟨h10₃, hm₃⟩, k₃⟩ => ?_
   have k13 := (k₁.trans k₂).trans k₃
@@ -126,7 +126,7 @@ theorem expStep_ok {t : State} {ep : Addr} {L j x : Nat} {b : Byte} (h4 : t.gpr 
     brun [(k13.gpr .x11 (by decide)).trans h11, (k13.gpr .x5 (by decide)).trans h5, BitVec.ofNat_add_ofNat])
     (by decide) (by decide) (by decide +kernel))
     fun t' ⟨⟨h11', h14', hm'⟩, k₄⟩ => ⟨(k₄.gpr .x10 (by decide)).trans h10₃, h11',
-      by rw [h14']; exact ofNat_sub_ne (by omega) (by omega), by rw [hm', hm₃, hm₂, hm₁],
+      by rw [h14']; exact ofNat_sub_ne (by omega_arith) (by omega_arith), by rw [hm', hm₃, hm₂, hm₁],
       (k13.trans k₄).mono (by decide)⟩
 
 theorem exec_movk_x' (s : State) {d : Reg} {imm : BitVec 16} {hw : Nat} (h : 16 * hw < 64) :
@@ -145,7 +145,7 @@ theorem expTest_ok {t : State} {v : Nat} (hv : v < 2 ^ 64) (h10 : t.gpr .x10 = B
       ([.logic .and .x .x9 .x13 .x14, .logic .and .x .x9 .x9 .x12] : List Instr) from rfl,
     WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.x13] (Q := fun t₁ => t₁.zf = decide (v / 2 ^ 33 = 0) ∧ t₁.mem = t.mem) (by
-    brun [h10, h17, shr33 hv, zf_awc, zero_test (show v / 2 ^ 33 < 2 ^ 64 by omega)])
+    brun [h10, h17, shr33 hv, zf_awc, zero_test (show v / 2 ^ 33 < 2 ^ 64 by omega_arith)])
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hz₁, hm₁⟩, k₁⟩ => ?_
   have h15₁ := (k₁.gpr .x15 (by decide)).trans h15
   have h17₁ := (k₁.gpr .x17 (by decide)).trans h17
@@ -154,9 +154,9 @@ theorem expTest_ok {t : State} {v : Nat} (hv : v < 2 ^ 64) (h10 : t.gpr .x10 = B
       t₂.mem = t₁.mem) (by
     brun [exec_cselc_x', CondCode.holds, hz₁, h15₁, h17₁]
     by_cases h : v < 2 ^ 33
-    · have h' : v / 2 ^ 33 = 0 := by omega
+    · have h' : v / 2 ^ 33 = 0 := by omega_arith
       simp only [h', decide_true, ite_true, h]; rfl
-    · have h' : ¬ v / 2 ^ 33 = 0 := by omega
+    · have h' : ¬ v / 2 ^ 33 = 0 := by omega_arith
       simp only [h', decide_false, Bool.false_eq_true, ite_false, h]; rfl)
     (by decide) (by decide) (by decide +kernel)) fun t₂ ⟨⟨h13₂, hm₂⟩, k₂⟩ => ?_
   refine WP.mono (WP.keep [.x12, .x14] (Q := fun t₃ => t₃.gpr .x14 = BitVec.ofNat 64 (v % 2) ∧
@@ -203,19 +203,19 @@ theorem expCheck_ok {s : State} {ep : Addr} {L : Nat} {eb : List Byte} (h4 : s.g
     brun [exec_movk_x' _ (show 16 * 1 < 64 by decide), exec_movk_x' _ (show 16 * 2 < 64 by decide)])
     (by decide) (by decide) (by decide +kernel))
     fun t₀ ⟨⟨h10, h11, h15, h16, h17, hm⟩, k₀⟩ => ?_)
-  refine WP.seq (WP.mono (count_loop (cr := .x14) (n := L) (by omega) (ExpInv s ep L eb) ?_
+  refine WP.seq (WP.mono (count_loop (cr := .x14) (n := L) (by omega_arith) (ExpInv s ep L eb) ?_
     ⟨(k₀.gpr .x4 (by decide)).trans h4, (k₀.gpr .x5 (by decide)).trans h5, h11, by rw [h10]; rfl, h15, h16, h17,
       hm, k₀.mono (by decide)⟩) fun t₁ hI => ?_)
   · intro j hj t hI
-    have hb : t.mem (ep + BitVec.ofNat 64 j) = eb[j]'(by omega) := by
+    have hb : t.mem (ep + BitVec.ofNat 64 j) = eb[j]'(by omega_arith) := by
       rw [hI.mem]; subst heb; simp [Spec.Rsa.bytesAt]
     refine WP.mono (expStep_ok hI.x4 hI.x5 hI.x11 hI.x10 hI.x16 hI.x17 hj hL
       (by rw [hI.keep.rd, hI.keep.wr]; exact hrd j hj) hb)
       fun t' ⟨h10', h11', h14', hm', k'⟩ => ⟨⟨(k'.gpr .x4 (by decide)).trans hI.x4, (k'.gpr .x5 (by decide)).trans hI.x5,
         h11', ?_, (k'.gpr .x15 (by decide)).trans hI.x15, (k'.gpr .x16 (by decide)).trans hI.x16,
         (k'.gpr .x17 (by decide)).trans hI.x17, hm'.trans hI.mem, (hI.keep.trans k').mono (by decide)⟩, h14'⟩
-    rw [h10', pre_succ eb (by omega)]
-  · have hv : sat (pre eb L) < 2 ^ 64 := by have := sat_lt (pre eb L); omega
+    rw [h10', pre_succ eb (by omega_arith)]
+  · have hv : sat (pre eb L) < 2 ^ 64 := by have := sat_lt (pre eb L); omega_arith
     refine WP.mono (expTest_ok hv hI.x10 hI.x15 hI.x17) fun t ⟨h9, hm', k⟩ => ⟨?_, hm'.trans hI.mem,
       (hI.keep.trans k).mono (by decide)⟩
     rw [h9, exponentValid_sat, ← hlen, pre_len]
@@ -249,10 +249,10 @@ theorem fStep_ok {s₀ : State} {op : Addr} {N : Nat} (hN : N < 2 ^ 63) (h12 : s
   · rw [hm', hm, writeW8_apply]
     by_cases hij : i = j
     · subst hij; simp
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-      exact hI.bytes i (by omega)
-  · rw [hm', hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-    exact hI.frame x fun i hi => hx i (by omega)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_arith) (by omega_arith) hij))]
+      exact hI.bytes i (by omega_arith)
+  · rw [hm', hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_arith)))]
+    exact hI.frame x fun i hi => hx i (by omega_arith)
 
 /-- `failOut`: zeros to the `k` (at least 1) bytes of `out` (`x0`, `k` in
 `x1`), and 0 returned. -/
@@ -265,8 +265,8 @@ theorem failOut_ok {s : State} {op : Addr} {k : Nat} (h0 : s.gpr .x0 = op) (h1 :
   refine WP.seq (WP.mono (WP.keep [.x10, .x11, .x12] (Q := fun t => t.gpr .x10 = op + BitVec.ofNat 64 0 ∧
       t.gpr .x11 = BitVec.ofNat 64 k ∧ t.gpr .x12 = 0 ∧ t.mem = s.mem) (by brun [h0, h1])
       (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h10, h11, h12, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega) (by omega) (FInv s₁ op)
-    (fun j hj t hI _ => fStep_ok (by omega) h12 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
+  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega_arith) (by omega_arith) (FInv s₁ op)
+    (fun j hj t hI _ => fStep_ok (by omega_arith) h12 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
     ⟨Keep.refl _ _, h10, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ _ => rfl⟩ h11) fun t₂ hI => ?_)
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = 0 ∧ t.mem = t₂.mem) (by brun) (by decide) (by decide)
     (by decide +kernel)) fun t ⟨⟨hx, hm⟩, k₃⟩ => ⟨?_, hx, fun x hx' => ?_, ((k₁.trans hI.keep).trans k₃).mono

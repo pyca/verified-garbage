@@ -109,12 +109,12 @@ theorem loopInv_public {σ τ s t : State} {η d : Nat} {table p q : Addr}
     · rw [hs.input,ht.input]
     · rw [hs.output,ht.output,h.parsed_length]
     · rw [hs.consts.table,ht.consts.table]
-  · rw [hs.input,ht.input,hs.stream h.left (by omega),ht.stream h.right (by omega)]
-    exact h.byte (by omega)
+  · rw [hs.input,ht.input,hs.stream h.left (by omega_arith),ht.stream h.right (by omega_arith)]
+    exact h.byte (by omega_arith)
   · have ea : q+BitVec.ofNat 64 d+1=q+BitVec.ofNat 64 (d+1) := by
       rw [BitVec.add_assoc,BitVec.ofNat_add]; rfl
-    rw [hs.input,ht.input,ea,hs.stream h.left (by omega),ht.stream h.right (by omega)]
-    exact h.byte (by omega)
+    rw [hs.input,ht.input,ea,hs.stream h.left (by omega_arith),ht.stream h.right (by omega_arith)]
+    exact h.byte (by omega_arith)
 
 theorem vectorLoopStep_relCT {σ τ : State} {η d : Nat} (hη : η=2∨η=4)
     {table p q : Addr} {L M : List Zq} {X Y : List Byte}
@@ -155,7 +155,7 @@ theorem vectorLoop_relCT {σ τ : State} {η d : Nat} (hη : η=2∨η=4)
         (isa.eval (.nonzero .x .x8) s=some true→∃m<rank,I m s t)) := by
     intro s t a b u v hp es et
     obtain ⟨j,rfl,hs,ht,hj,hL⟩:=hp
-    have hj2 : j+2≤X.length:=by have:=h.left.even; have:=hs.even; omega
+    have hj2 : j+2≤X.length:=by have:=h.left.even; have:=hs.even; omega_arith
     obtain ⟨he,hu,hv⟩:=vectorLoopStep_relCT hη h hj2 hL _ _ _ _ _ _ ⟨hs,ht⟩ es et
     have eu:=loopGuard_eval h.left hu
     have ev:=loopGuard_eval h.right hv
@@ -166,12 +166,12 @@ theorem vectorLoop_relCT {σ τ : State} {η d : Nat} (hη : η=2∨η=4)
       rw [eu] at hz
       have hn : ¬(j+2<X.length ∧ (parsed η L X (j+2)).length≤252) := by
         simpa only [Option.some.injEq,decide_eq_false_iff_not] using hz
-      exact ⟨j+2,hu,hv,by have:=hu.bound; omega⟩
+      exact ⟨j+2,hu,hv,by have:=hu.bound; omega_arith⟩
     · intro hn
       rw [eu] at hn
       have hc : j+2<X.length ∧ (parsed η L X (j+2)).length≤252 := by
         simpa only [Option.some.injEq,decide_eq_true_eq] using hn
-      exact ⟨X.length-(j+2),by omega,j+2,rfl,hu,hv,hc⟩
+      exact ⟨X.length-(j+2),by omega_arith,j+2,rfl,hu,hv,hc⟩
   exact (RelCT.loop I step (X.length-d)).mono
     (fun _ _ hh=>⟨d,rfl,hh.1,hh.2,hd,hl⟩) (fun _ _ hh=>hh)
 
@@ -202,8 +202,8 @@ theorem vectorPhase_relCT {σ τ : State} {η d : Nat} (hη : η=2∨η=4)
     rw [loopGuard_zero h.left hh.1.1] at hz
     have hn : ¬(d=X.length ∨ 252<(parsed η L X d).length) := by
       simpa only [Option.some.injEq,decide_eq_false_iff_not] using hz
-    have hd : d<X.length:=by have:=hh.1.1.bound; omega
-    exact vectorLoop_relCT hη h hd (by omega) _ _ _ _ _ _ hh.1 es et
+    have hd : d<X.length:=by have:=hh.1.1.bound; omega_arith
+    exact vectorLoop_relCT hη h hd (by omega_arith) _ _ _ _ _ _ hh.1 es et
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 
@@ -295,12 +295,12 @@ theorem scalarLoop_relCT {σ τ : State} {η d : Nat} (hη : η=2∨η=4)
       rw [eu] at hz
       have hn : ¬(j+1<X.length ∧ (parsed η L X (j+1)).length<256) := by
         simpa only [Option.some.injEq,decide_eq_false_iff_not] using hz
-      exact ⟨j+1,hu,hv,by have:=hu.bound; have:=parsed_bound (η := η) (X := X) hL0 (j+1); omega⟩
+      exact ⟨j+1,hu,hv,by have:=hu.bound; have:=parsed_bound (η := η) (X := X) hL0 (j+1); omega_arith⟩
     · intro hn
       rw [eu] at hn
       have hc : j+1<X.length ∧ (parsed η L X (j+1)).length<256 := by
         simpa only [Option.some.injEq,decide_eq_true_eq] using hn
-      exact ⟨X.length-(j+1),by omega,j+1,rfl,hu,hv,hc⟩
+      exact ⟨X.length-(j+1),by omega_arith,j+1,rfl,hu,hv,hc⟩
   exact (RelCT.loop I step (X.length-d)).mono
     (fun _ _ hh=>⟨d,rfl,hh.1,hh.2,hd,hl⟩) (fun _ _ hh=>hh)
 
@@ -333,8 +333,8 @@ theorem scalarPhase_relCT {σ τ : State} {η d : Nat} (hη : η=2∨η=4)
     rw [scalarGuard_zero hL0 sx hh.1.1] at hz
     have hn : ¬(d=X.length ∨ (parsed η L X d).length=256) := by
       simpa only [Option.some.injEq,decide_eq_false_iff_not] using hz
-    have hd : d<X.length:=by have:=hh.1.1.bound; omega
-    exact scalarLoop_relCT hη h sx sy hL0 hd (by have:=parsed_bound (η := η) (X := X) hL0 d; omega) _ _ _ _ _ _ hh.1 es et
+    have hd : d<X.length:=by have:=hh.1.1.bound; omega_arith
+    exact scalarLoop_relCT hη h sx sy hL0 hd (by have:=parsed_bound (η := η) (X := X) hL0 d; omega_arith) _ _ _ _ _ _ hh.1 es et
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

@@ -93,19 +93,19 @@ theorem step_ok {z : Spec.Idea.Schedule} {A : Addr} {n : Nat} {m₀ : Mem} {o : 
   have hrd : t.rd = o.rd := hi.keep.rd
   have hwr : t.wr = o.wr := hi.keep.wr
   have hr0 : t.gpr .r0 = o.gpr .r0 := hi.keep.reg .r0 (by decide)
-  have hj : n - r < n := by have := hi.pos; have := hi.le; omega
-  have hb64 : 8 * n ≤ 2 ^ 64 := by have := hc.fit1; omega
-  have hfit : (o.gpr .r1).toNat + 8 * (n - r) < 2 ^ 32 := by have := hc.fit1; omega
+  have hj : n - r < n := by have := hi.pos; have := hi.le; omega_arith
+  have hb64 : 8 * n ≤ 2 ^ 64 := by have := hc.fit1; omega_arith
+  have hfit : (o.gpr .r1).toNat + 8 * (n - r) < 2 ^ 32 := by have := hc.fit1; omega_arith
   have hr1n : (t.gpr .r1).toNat = (o.gpr .r1).toNat + 8 * (n - r) := by
-    rw [hi.r1, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * (n - r)) (by omega),
+    rw [hi.r1, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * (n - r)) (by omega_arith),
       Nat.mod_eq_of_lt hfit]
   have hat : BlockAt t (A + BitVec.ofNat 64 (8 * (n - r))) :=
-    ⟨by rw [hi.r1, addr_add hfit, hc.addr], by rw [hr1n]; have := hc.fit1; omega⟩
+    ⟨by rw [hi.r1, addr_add hfit, hc.addr], by rw [hr1n]; have := hc.fit1; omega_arith⟩
   have hread : BlockRead t (A + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
     ⟨_, by rw [hrd, hwr]; exact List.mem_append_right _ hc.data,
-      block_contains hj (by omega) (by decide) hb64⟩
+      block_contains hj (by omega_arith) (by decide) hb64⟩
   have hwrite : BlockWrite t (A + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
-    ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega) (by decide) hb64⟩
+    ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega_arith) (by decide) hb64⟩
   have hk : KeyOk z t := by
     refine ⟨by rw [hr0, hrd, hwr]; exact hc.sched, by rw [hr0]; exact hc.fit0, ?_⟩
     rw [hr0, ← hc.z]
@@ -128,7 +128,7 @@ theorem step_ok {z : Spec.Idea.Schedule} {A : Addr} {n : Nat} {m₀ : Mem} {o : 
     rw [mem₂]
     refine hi.frame.trans (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.sub_base A (by omega)
+    exact Offset.sub_base A (by omega_arith)
   have other (j : Nat) (hjn : j < n) (hne : j ≠ n - r) :
       Spec.Idea.blockAt t₂.mem (A + BitVec.ofNat 64 (8 * j)) =
         Spec.Idea.blockAt t.mem (A + BitVec.ofNat 64 (8 * j)) := by
@@ -142,15 +142,15 @@ theorem step_ok {z : Spec.Idea.Schedule} {A : Addr} {n : Nat} {m₀ : Mem} {o : 
     by_cases he : j = n - r
     · subst he
       rw [mem₂, b₁, hi.todo _ (Nat.le_refl _) hj]
-    · rw [other j (by omega) he]
-      exact hi.done j (by have := hi.pos; omega)
-  have hn32 : n < 2 ^ 32 := by have := hc.fit1; omega
+    · rw [other j (by omega_arith) he]
+      exact hi.done j (by have := hi.pos; omega_arith)
+  have hn32 : n < 2 ^ 32 := by have := hc.fit1; omega_arith
   have hr2 : t₂.gpr .r2 = BitVec.ofNat 32 (r - 1) := by
     rw [r2₂, g₁ .r2 (by decide), hi.r2]
     apply BitVec.eq_of_toNat_eq
     have := hi.pos; have := hi.le
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_arith
   have hev : isa.eval .ne t₂ = some (decide (r - 1 ≠ 0)) := by
     show some (!t₂.z) = _
     rw [z₂, ← r2₂, hr2]
@@ -159,31 +159,31 @@ theorem step_ok {z : Spec.Idea.Schedule} {A : Addr} {n : Nat} {m₀ : Mem} {o : 
     · simp only [h0]; rfl
     · have hne : BitVec.ofNat 32 (r - 1) ≠ 0 := fun h => h0 (by
         have := congrArg BitVec.toNat h
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hi.le; omega)] at this
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hi.le; omega_arith)] at this
         exact this)
       rw [show (BitVec.ofNat 32 (r - 1) == 0) = false from by simpa using hne]
       simp [h0]
   by_cases hlast : r = 1
   · subst hlast
     left
-    exact ⟨hev, keep₂, frame₂, fun j hjn => done₂ j (by omega)⟩
+    exact ⟨hev, keep₂, frame₂, fun j hjn => done₂ j (by omega_arith)⟩
   · right
-    refine ⟨by rw [hev]; simp only [ne_eq, Option.some.injEq, decide_eq_true_eq]; omega,
-      r - 1, by have := hi.pos; omega, ?_⟩
-    refine ⟨by have := hi.pos; omega, by have := hi.le; omega, ?_, hr2, keep₂, frame₂, done₂, ?_⟩
+    refine ⟨by rw [hev]; simp only [ne_eq, Option.some.injEq, decide_eq_true_eq]; omega_arith,
+      r - 1, by have := hi.pos; omega_arith, ?_⟩
+    refine ⟨by have := hi.pos; omega_arith, by have := hi.le; omega_arith, ?_, hr2, keep₂, frame₂, done₂, ?_⟩
     · rw [r1₂, g₁ .r1 (by decide), hi.r1]
       apply BitVec.eq_of_toNat_eq
       have := hi.pos; have := hi.le; have := hc.fit1
       rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-        show (8 : BitVec 32).toNat = 8 from rfl, Nat.mod_eq_of_lt (a := 8 * (n - r)) (by omega),
-        Nat.mod_eq_of_lt (a := 8 * (n - (r - 1))) (by omega), Nat.mod_eq_of_lt hfit,
-        show 8 * (n - (r - 1)) = 8 * (n - r) + 8 by omega, Nat.add_assoc]
+        show (8 : BitVec 32).toNat = 8 from rfl, Nat.mod_eq_of_lt (a := 8 * (n - r)) (by omega_arith),
+        Nat.mod_eq_of_lt (a := 8 * (n - (r - 1))) (by omega_arith), Nat.mod_eq_of_lt hfit,
+        show 8 * (n - (r - 1)) = 8 * (n - r) + 8 by omega_arith, Nat.add_assoc]
     · intro j hj₁ hj₂
       have := hi.pos
       have := hi.le
-      have hne : j ≠ n - r := by omega
+      have hne : j ≠ n - r := by omega_arith
       rw [other j hj₂ hne]
-      exact hi.todo j (by omega) hj₂
+      exact hi.todo j (by omega_arith) hj₂
 
 end VG.Proof.Idea.Arm
 
@@ -199,7 +199,7 @@ theorem loop_ok {z : Spec.Idea.Schedule} {A : Addr} {n : Nat} {m₀ : Mem} {o : 
       .ne) o (LoopPost z A n m₀ o) := by
   refine WP.loop (M := isa) (LoopInv z A n m₀ o) (fun r t hi => step_ok hc r t hi) n o
     ⟨hn, Nat.le_refl _, ?_, hr2, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, Frame.refl _ _,
-      fun j hj => by omega, fun j _ hj => htodo j hj⟩
+      fun j hj => by omega_arith, fun j _ hj => htodo j hj⟩
   rw [Nat.sub_self, Nat.mul_zero]; exact (BitVec.add_zero _).symm
 
 /-! ## The function -/
@@ -229,10 +229,10 @@ structure Mid (z : Spec.Idea.Schedule) (A : Addr) (n : Nat) (m₀ : Mem) (o t : 
 theorem ecb_wp (s : State) (hs : contract.pre s) :
     WP isa ecb s (fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ contract.post s s') := by
   obtain ⟨hrd, hwr, dSD, dSS, dDS, fit0, fit1, fit3⟩ := hs
-  have hb64 : 8 * (s.gpr .r2).toNat ≤ 2 ^ 64 := by omega
+  have hb64 : 8 * (s.gpr .r2).toNat ≤ 2 ^ 64 := by omega_arith
   have hslots : Slots 0 32 ecbSaved := by decide
   have hinS : ∀ d, 0 ≤ d → d + 4 ≤ 32 → InRegions s.wr (State.addr (s.gpr .r3) + BitVec.ofNat 64 d) 4 :=
-    fun d _ h => ⟨⟨State.addr (s.gpr .r3), 32⟩, by rw [hwr]; simp, Offset.contains_base _ h (by omega)⟩
+    fun d _ h => ⟨⟨State.addr (s.gpr .r3), 32⟩, by rw [hwr]; simp, Offset.contains_base _ h (by omega_arith)⟩
   unfold ecb
   refine WP.seq (save_slots_ok hslots fit3 hinS ?_)
   -- After saving.
@@ -260,7 +260,7 @@ theorem ecb_wp (s : State) (hs : contract.pre s) :
     rw [mem₂]
     exact blockAt_congr (frame_bytes hf₁ (by
       intro q hq; simp only [List.mem_singleton] at hq; subst hq
-      exact dDS.sub_left (Offset.sub_base A (by omega))) (by decide))
+      exact dDS.sub_left (Offset.sub_base A (by omega_arith))) (by decide))
   refine WP.seq (WP.mono (Q := Mid z A n s.mem s₂) ?_ fun t ht => ?_)
   · -- The blocks.
     have hz : isa.eval .eq s₂ = some (decide (n = 0)) := by
@@ -269,7 +269,7 @@ theorem ecb_wp (s : State) (hs : contract.pre s) :
       congr 1
     refine WP.ite _ hz (fun h0 => ?_) (fun h0 => ?_)
     · have h0 : n = 0 := by simpa using h0
-      exact WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, Frame.refl _ _, fun j hj => by omega⟩
+      exact WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, Frame.refl _ _, fun j hj => by omega_arith⟩
     · have h0 : n ≠ 0 := by simpa using h0
       have ctx : LoopCtx z A n s₂ := by
         refine ⟨?_, by rw [g₂]; exact fit0, by rw [wr₂, hwr]; simp [A, n], ?_, ?_, by rw [g₂],

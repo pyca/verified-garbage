@@ -23,7 +23,7 @@ abbrev nafVal5 (a b c d e : BitVec 64) : Nat :=
 theorem nafVal5_lt (a b c d e : BitVec 64) : nafVal5 a b c d e<2^320 := by
   have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt; have := e.isLt
   dsimp only [nafVal5]
-  omega
+  omega_arith
 
 theorem nafVal5_inj {a b c d e f g h i j : BitVec 64}
     (hv : nafVal5 a b c d e=nafVal5 f g h i j) :
@@ -31,7 +31,7 @@ theorem nafVal5_inj {a b c d e f g h i j : BitVec 64}
   have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt; have := e.isLt
   have := f.isLt; have := g.isLt; have := h.isLt; have := i.isLt; have := j.isLt
   dsimp only [nafVal5] at hv
-  refine ⟨?_,?_,?_,?_,?_⟩ <;> apply BitVec.eq_of_toNat_eq <;> omega
+  refine ⟨?_,?_,?_,?_,?_⟩ <;> apply BitVec.eq_of_toNat_eq <;> omega_arith
 
 def nafSub5 (a b c d e x mask : BitVec 64) : BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 :=
   let c0 := decide (a.toNat < x.toNat)
@@ -55,19 +55,19 @@ theorem nafSub5_value (a b c d e x mask : BitVec 64) :
       (decide (a.toNat < x.toNat)).toNat)).toNat)).toNat))
   have hb := nafVal5_lt a b c d e
   dsimp only [nafSub5,nafVal5] at hb ⊢
-  omega
+  omega_arith
 
 /-- One more word below a bound: `a + 2⁶⁴ y < 2⁶⁴ B` for `y < B`. -/
-theorem horner_lt {a y B : Nat} (ha : a<2^64) (hy : y<B) : a+2^64*y<2^64*B := by omega
+theorem horner_lt {a y B : Nat} (ha : a<2^64) (hy : y<B) : a+2^64*y<2^64*B := by omega_arith
 
 /-- One word of a borrow chain below the words above it: `o = i - s - c`
 with borrow `c'`, and the words above with borrow-in `c'`. -/
 theorem sbb_chain {o s c i c' vo vs vi top : Nat} (h : o+s+c=i+2^64*c') (ih : vo+vs+c'=vi+top) :
-    (o+2^64*vo)+(s+2^64*vs)+c=(i+2^64*vi)+2^64*top := by omega
+    (o+2^64*vo)+(s+2^64*vs)+c=(i+2^64*vi)+2^64*top := by omega_arith
 
 theorem mod_of_chain {A S I T M c : Nat} (h : A+S+0=I+T) (hI : I<M) (hT : T=M*c) :
     (A+S)%M=I := by
-  rw [show A+S=I+M*c by omega,Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt hI]
+  rw [show A+S=I+M*c by omega_arith,Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt hI]
 
 /-- Seven words: a scalar of six words and its top word (with no numeral
 exponent above 256, which Lean would not evaluate). -/
@@ -198,13 +198,13 @@ abbrev nafValN (n : Nat) (s : State) : Nat := VG.Proof.Mont.X86_64.regsVal s (Na
 theorem nafValN_four (s : State) :
     nafValN 4 s=nafVal5 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12) := by
   simp only [nafValN,Naf.sregs,List.take,VG.Proof.Mont.X86_64.regsVal,nafVal5]
-  omega
+  omega_arith
 
 theorem nafValN_six (s : State) :
     nafValN 6 s=nafVal7 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)
       (s.gpr .r13) (s.gpr .r14) := by
   simp only [nafValN,Naf.sregs,List.take,VG.Proof.Mont.X86_64.regsVal,nafVal7]
-  omega
+  omega_arith
 
 theorem nafValN_nine (s : State) :
     nafValN 9 s=nafVal10 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)
@@ -226,10 +226,10 @@ theorem regsVal_inj {s t : State} : ∀ {rs : List Reg},
   | q::qs,h,r,hr => by
     simp only [VG.Proof.Mont.X86_64.regsVal] at h
     have := (s.gpr q).isLt; have := (t.gpr q).isLt
-    have hq : s.gpr q=t.gpr q := BitVec.eq_of_toNat_eq (by omega)
+    have hq : s.gpr q=t.gpr q := BitVec.eq_of_toNat_eq (by omega_arith)
     rcases List.mem_cons.mp hr with rfl|hr
     · exact hq
-    · exact regsVal_inj (by omega) r hr
+    · exact regsVal_inj (by omega_arith) r hr
 
 theorem nafWord_toNat (k j : Nat) :
     (BitVec.ofInt 64 (Naf5.digit k j)).toNat =
@@ -239,11 +239,11 @@ theorem nafWord_toNat (k j : Nat) :
   cases hn : Naf5.negative k j
   · simp only [Bool.false_eq_true,ite_false]
     change ((Naf5.magnitude k j:Int)%18446744073709551616).toNat=_
-    omega
+    omega_arith
   · have hp := Naf5.negative_magnitude_pos k j hn
     simp only [ite_true]
     change ((-(Naf5.magnitude k j:Int))%18446744073709551616).toNat=_
-    omega
+    omega_arith
 
 theorem nafSign_toNat (k j : Nat) :
     (0#64-(BitVec.ofInt 64 (Naf5.digit k j)>>>63)).toNat =
@@ -252,9 +252,9 @@ theorem nafSign_toNat (k j : Nat) :
   have hp := Naf5.negative_magnitude_pos k j
   simp only [BitVec.toNat_sub,BitVec.toNat_zero,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,nafWord_toNat]
   cases hn : Naf5.negative k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_arith
   · have hp := hp hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 theorem nafSub5_next (a b c d e : BitVec 64) (k j : Nat)
     (hv : nafVal5 a b c d e=Naf5.residual k j) (hb : Naf5.residual k j≤2^256) :
@@ -279,12 +279,12 @@ theorem nafSub5_next (a b c d e : BitVec 64) (k j : Nat)
       if Naf5.negative k j then 2^320-Naf5.magnitude k j else Naf5.magnitude k j := by
     simp only [nafVal5,nafWord_toNat,nafSign_toNat]
     cases hn : Naf5.negative k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
-    · omega
-    · have := Naf5.magnitude_le k j; omega
+    · omega_arith
+    · have := Naf5.magnitude_le k j; omega_arith
   rw [he] at hs
   have hr := Naf5.recurrence k j
   have hm := Naf5.magnitude_le k j
-  cases hn : Naf5.negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega
+  cases hn : Naf5.negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega_arith
 
 
 /-- The adjacent-word shifts preserve all bits of the five-word scalar. -/
@@ -296,12 +296,12 @@ theorem nafShift5_value (a b c d e : BitVec 64) :
     have hlo : (lo>>>1).toNat<2^63 := BitVec.toNat_ushiftRight_lt lo 1 (by decide)
     have hhi : (hi<<<63).toNat=(hi.toNat%2)<<<63 := by
       simp only [BitVec.toNat_shiftLeft,Nat.shiftLeft_eq]
-      omega
+      omega_arith
     rw [BitVec.toNat_or,hhi,Nat.or_comm,←Nat.shiftLeft_add_eq_or_of_lt hlo]
     simp only [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,Nat.shiftLeft_eq]
-    omega
+    omega_arith
   simp only [nafVal5,join,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem subtractDigit_ok (s : State) (k j : Nat)
     (hx : s.gpr .rcx=BitVec.ofInt 64 (Naf5.digit k j))

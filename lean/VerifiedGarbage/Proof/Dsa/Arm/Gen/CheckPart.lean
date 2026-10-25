@@ -41,11 +41,11 @@ theorem cargs_vp (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) :
     fun σ s ⟨h, x⟩ => ?_
   have big := h.gi.scrBig
   have hLv := h.lens
-  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega
-  have hsK : sA ≤ sK G.pLen := by simp only [sK]; omega
+  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hsK : sA ≤ sK G.pLen := by simp only [sK]; omega_arith
   simp only [List.append_assoc, List.cons_append, List.nil_append]
-  refine scr_ok (d := .r0) h.r8 rfl hLv (by simp only [sPacked, sK, sA]; omega) fun s₁ v₁ R₁ M₁ => ?_
-  refine wp_movw fun s₂ u₂ => wp_movw fun s₃ u₃ => wp_mov (op2_imm (encodable_lt (by omega))) fun s₄ u₄ => ?_
+  refine scr_ok (d := .r0) h.r8 rfl hLv (by simp only [sPacked, sK, sA]; omega_arith) fun s₁ v₁ R₁ M₁ => ?_
+  refine wp_movw fun s₂ u₂ => wp_movw fun s₃ u₃ => wp_mov (op2_imm (encodable_lt (by omega_arith))) fun s₄ u₄ => ?_
   have h4 : SS G σ c s₄ := ((((h.of_rest R₁ M₁).of_rest (u₂.rest (ws := [.r1]) (by simp)) u₂.mem).of_rest
     (u₃.rest (ws := [.r2]) (by simp)) u₃.mem).of_rest (u₄.rest (ws := [.r3]) (by simp)) u₄.mem)
   refine scr_ok (d := .r4) h4.r8 rfl hLv hsK fun s₅ v₅ R₅ M₅ => wp_movw fun t u => WP.block_nil ?_
@@ -53,11 +53,11 @@ theorem cargs_vp (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) :
   · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), v₁]
   · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
-      setWidth_ofNat16 (by omega)]
-  · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.other _ (by decide), u₃.gpr, setWidth_ofNat16 (by omega)]
+      setWidth_ofNat16 (by omega_arith)]
+  · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.other _ (by decide), u₃.gpr, setWidth_ofNat16 (by omega_arith)]
   · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.gpr]
   · rw [u.other _ (by decide), v₅]
-  · rw [u.gpr, setWidth_ofNat16 (by simp only [wa]; omega)]
+  · rw [u.gpr, setWidth_ofNat16 (by simp only [wa]; omega_arith)]
 
 /-- p‖q‖g. -/
 abbrev pkOf (pB qB gB : List Byte) : List Byte := pB ++ qB ++ gB
@@ -76,52 +76,52 @@ theorem checkPart_vp {g : Geo} (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen)
       (St G (ckCfg c (pkOf pB qB gB) (Spec.Dsa.checkParametersBytes G.pLen G.qLen (pkOf pB qB gB))) X) := by
   unfold Geo.checkPart
   rw [hp, hq, hck]
-  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega
-  have hp384 : G.pLen ≤ 384 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega
-  have hp0 : 0 < G.pLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega
-  have hq0 : 0 < G.qLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega
+  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hp384 : G.pLen ≤ 384 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hp0 : 0 < G.pLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hq0 : 0 < G.qLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
   have e1 : sPacked = 2112 := rfl
   have e2 : sPBE = 576 := rfl
   have e3 : sQ = 128 := rfl
   have e4 : sG = 1728 := rfl
   have e5 : sA = 4096 := rfl
-  have hK : ∀ n, n ≤ 4096 → n ≤ sK G.pLen := fun n hn => by simp only [sK, sA] at *; omega
+  have hK : ∀ n, n ≤ 4096 → n ≤ sK G.pLen := fun n hn => by simp only [sK, sA] at *; omega_arith
   -- The copies.
-  refine VP.seq (G := St G { c with cl := (sPacked, pB) :: c.cl } X) (copyS_vp (c := fun _ => c) (fun σ s h => h.1) rfl hp0 (by omega)
-    (hK _ (by omega)) (hK _ (by omega)) (.inr (by omega)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
+  refine VP.seq (G := St G { c with cl := (sPacked, pB) :: c.cl } X) (copyS_vp (c := fun _ => c) (fun σ s h => h.1) rfl hp0 (by omega_arith)
+    (hK _ (by omega_arith)) (hK _ (by omega_arith)) (.inr (by omega_arith)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
   · have b := h.sb _ hP
-    refine h.of_scr R (o := sPacked) (n := G.pLen) (hK _ (by omega)) (f.mono (by simp))
+    refine h.of_scr R (o := sPacked) (n := G.pLen) (hK _ (by omega_arith)) (f.mono (by simp))
       (cl' := (sPacked, pB) :: c.cl) fun y hy => ?_
     rcases List.mem_cons.mp hy with rfl | hy
-    · exact .inr ⟨by rw [hPl, e, ← hPl]; exact b, by rw [hPl]; exact hK _ (by omega)⟩
+    · exact .inr ⟨by rw [hPl, e, ← hPl]; exact b, by rw [hPl]; exact hK _ (by omega_arith)⟩
     · exact .inl ⟨hy, .inl (hcl y hy)⟩
   refine VP.seq (G := St G { c with cl := (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl } X)
-    (copyS_vp (c := fun _ => { c with cl := (sPacked, pB) :: c.cl }) (fun σ s h => h.1) rfl hq0 (by omega)
-    (hK _ (by omega)) (hK _ (by omega)) (.inr (by omega)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
+    (copyS_vp (c := fun _ => { c with cl := (sPacked, pB) :: c.cl }) (fun σ s h => h.1) rfl hq0 (by omega_arith)
+    (hK _ (by omega_arith)) (hK _ (by omega_arith)) (.inr (by omega_arith)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
   · have b := h.sb _ (show (sQ, qB) ∈ (sPacked, pB) :: c.cl from List.mem_cons_of_mem _ hQ)
-    refine h.of_scr R (o := sPacked + G.pLen) (n := G.qLen) (hK _ (by omega)) (f.mono (by simp))
+    refine h.of_scr R (o := sPacked + G.pLen) (n := G.qLen) (hK _ (by omega_arith)) (f.mono (by simp))
       (cl' := (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl) fun y hy => ?_
     rcases List.mem_cons.mp hy with rfl | hy
     swap
     rcases List.mem_cons.mp hy with rfl | hy
     · exact .inl ⟨List.mem_cons_self, .inl (by rw [hPl])⟩
-    · exact .inl ⟨List.mem_cons_of_mem _ hy, .inl (by have := hcl y hy; omega)⟩
-    · exact .inr ⟨by rw [hQl, e, ← hQl]; exact b, by rw [hQl]; exact hK _ (by omega)⟩
+    · exact .inl ⟨List.mem_cons_of_mem _ hy, .inl (by have := hcl y hy; omega_arith)⟩
+    · exact .inr ⟨by rw [hQl, e, ← hQl]; exact b, by rw [hQl]; exact hK _ (by omega_arith)⟩
   refine VP.seq (G := St G { c with cl := (sPacked + G.pLen + G.qLen, gB) :: (sPacked + G.pLen, qB) ::
       (sPacked, pB) :: c.cl } X)
-    (copyS_vp (c := fun _ => { c with cl := (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl }) (fun σ s h => h.1) rfl hp0 (by omega)
-    (hK _ (by omega)) (hK _ (by omega)) (.inr (by omega)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
+    (copyS_vp (c := fun _ => { c with cl := (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl }) (fun σ s h => h.1) rfl hp0 (by omega_arith)
+    (hK _ (by omega_arith)) (hK _ (by omega_arith)) (.inr (by omega_arith)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
   · have b := h.sb _ (show (sG, gB) ∈ (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl from
       List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hG))
-    refine h.of_scr R (o := sPacked + G.pLen + G.qLen) (n := G.pLen) (hK _ (by omega)) (f.mono (by simp))
+    refine h.of_scr R (o := sPacked + G.pLen + G.qLen) (n := G.pLen) (hK _ (by omega_arith)) (f.mono (by simp))
       (cl' := (sPacked + G.pLen + G.qLen, gB) :: (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl) fun y hy => ?_
     rcases List.mem_cons.mp hy with rfl | hy
-    · exact .inr ⟨by rw [hGl, e, ← hGl]; exact b, by rw [hGl]; exact hK _ (by omega)⟩
+    · exact .inr ⟨by rw [hGl, e, ← hGl]; exact b, by rw [hGl]; exact hK _ (by omega_arith)⟩
     rcases List.mem_cons.mp hy with rfl | hy
     · exact .inl ⟨List.mem_cons_self, .inl (by rw [hQl])⟩
     rcases List.mem_cons.mp hy with rfl | hy
-    · exact .inl ⟨List.mem_cons_of_mem _ List.mem_cons_self, .inl (by rw [hPl]; omega)⟩
-    · exact .inl ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hy), .inl (by have := hcl y hy; omega)⟩
+    · exact .inl ⟨List.mem_cons_of_mem _ List.mem_cons_self, .inl (by rw [hPl]; omega_arith)⟩
+    · exact .inl ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hy), .inl (by have := hcl y hy; omega_arith)⟩
   -- p‖q‖g, as one claim.
   have join : ∀ σ s, SS G σ { c with cl := (sPacked + G.pLen + G.qLen, gB) :: (sPacked + G.pLen, qB) ::
       (sPacked, pB) :: c.cl } s → SS G σ { c with cl := (sPacked, pkOf pB qB gB) :: c.cl } s := fun σ s h => by
@@ -135,7 +135,7 @@ theorem checkPart_vp {g : Geo} (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen)
         have offe : ∀ o n, VG.Proof.Bignum.off (G.sa o) n = G.sa (o + n) := fun o n => by
           simp only [VG.Proof.Bignum.off, GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
         simp only at bp bq bg
-        refine ⟨?_, by simp only [pkOf, List.length_append, hPl, hQl, hGl]; exact hK _ (by omega)⟩
+        refine ⟨?_, by simp only [pkOf, List.length_append, hPl, hQl, hGl]; exact hK _ (by omega_arith)⟩
         show Spec.Rsa.bytesAt s.mem (G.sa sPacked) (pB ++ qB ++ gB).length = pB ++ qB ++ gB
         rw [List.length_append, List.length_append, VG.Proof.Dsa.Generation.bytesAt_append,
           VG.Proof.Dsa.Generation.bytesAt_append, offe, offe, ← Nat.add_assoc, bp, hPl, bq, hQl, bg]
@@ -146,13 +146,13 @@ theorem checkPart_vp {g : Geo} (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen)
       (sPacked, pB) :: c.cl }) (X := X) hlq).mono (G' := fun σ s => St G { c with cl := (sPacked, pkOf pB qB gB) ::
         c.cl } X σ s ∧ CArgs G s) (fun _ _ h => h) fun σ s ⟨⟨h, x⟩, a⟩ => ⟨⟨join σ s h, x⟩, a⟩) ?_
   -- The check.
-  have hpkl : (pkOf pB qB gB).length = nPk G := by simp only [pkOf, List.length_append, hPl, hQl, hGl, nPk]; omega
+  have hpkl : (pkOf pB qB gB).length = nPk G := by simp only [pkOf, List.length_append, hPl, hQl, hGl, nPk]; omega_arith
   refine VP.seq (checkCall_vp (c := { c with cl := (sPacked, pkOf pB qB gB) :: c.cl })
     (cl' := (sPacked, pkOf pB qB gB) :: c.cl) hlq (by simp) hpkl h88 h92 fun y hy =>
     ⟨hy, .inl (by
       rcases List.mem_cons.mp hy with rfl | hy
-      · rw [hpkl]; simp only [nPk, sPacked, sA]; omega
-      · have := hcl y hy; simp only [sPacked, sA] at *; omega)⟩) ?_
+      · rw [hpkl]; simp only [nPk, sPacked, sA]; omega_arith
+      · have := hcl y hy; simp only [sPacked, sA] at *; omega_arith)⟩) ?_
   generalize hb : Spec.Dsa.checkParametersBytes G.pLen G.qLen (pkOf pB qB gB) = b
   refine VP.seq (G := fun σ s => St G { c with cl := (sPacked, pkOf pB qB gB) :: c.cl } X σ s ∧ isa.eval .eq s = some b)
     (VP.taint [.r0] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0]) (.block [.cmp .r0 (.imm 1)]), rfl⟩

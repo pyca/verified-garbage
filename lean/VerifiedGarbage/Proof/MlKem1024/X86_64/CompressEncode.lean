@@ -44,17 +44,17 @@ theorem ce_seg {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (F : Poly) {
   have hd0 : 0 < d := by rcases widths1024 hd with rfl | rfl <;> decide
   have hL := map_toList_lt F (compress_lt d)
   have hk : d * i + j < 32 * d := by
-    have := Nat.mul_le_mul_left d (show i + 1 ≤ 32 by omega); rw [Nat.mul_succ] at this
-    rw [Nat.mul_comm 32 d]; omega
+    have := Nat.mul_le_mul_left d (show i + 1 ≤ 32 by omega_arith); rw [Nat.mul_succ] at this
+    rw [Nat.mul_comm 32 d]; omega_arith
   rw [compressEncode, byteEncode_getElem hd0 hL hk]
   apply ofNat8_eq
   have e : (List.range c).map (fun t => compress d F[8 * i + (o + t)]!) =
       ((F.map (compress d)).toList.drop (8 * i + o)).take c := by
-    rw [take_drop_eq _ 0 (by rw [map_toList_length]; omega)]
+    rw [take_drop_eq _ 0 (by rw [map_toList_length]; omega_arith)]
     refine List.map_congr_left fun t ht => ?_
-    rw [map_toList_getD _ _ (by have := List.mem_range.mp ht; omega), Nat.add_assoc]
+    rw [map_toList_getD _ _ (by have := List.mem_range.mp ht; omega_arith), Nat.add_assoc]
   have ex : d * (8 * i + o) + s + p = 8 * (d * i + j) := by
-    rw [Nat.mul_add, Nat.mul_left_comm, Nat.mul_add 8]; omega
+    rw [Nat.mul_add, Nat.mul_left_comm, Nat.mul_add 8]; omega_arith
   rw [e, show (256 : Nat) = 2 ^ 8 from rfl, chunk_eq hL (8 * i + o) c s p 8 hp, ex]
 
 theorem shr10_ok (n : Nat) (hn : 1 ≤ n) (hn' : n ≤ 63) (s : State) :
@@ -74,7 +74,7 @@ theorem grp5_ok (F : Poly) {i : Nat} (hi : i < 32) {s : State} (h : CE.GrpIn 261
       rw [k₁.2.2, k₁.gpr (by decide), Nat.zero_add]; exact h.wr k hk)) fun s₂ ⟨w₂, k₂⟩ => ⟨?_, (k₁.trans k₂).mono (by decide)⟩
   rw [k₁.gpr (by decide), add_ofNat_zero, m₁, r₁] at w₂
   refine w₂.congr fun k hk => ?_
-  rw [← ce_seg (o := 0) (c := 8) (s := 0) (p := 8 * k) (by decide) F hi (by decide) (by omega) (by omega) hk,
+  rw [← ce_seg (o := 0) (c := 8) (s := 0) (p := 8 * k) (by decide) F hi (by decide) (by omega_arith) (by omega_arith) hk,
     Nat.pow_zero, Nat.div_one]
 
 theorem grp11_ok (F : Poly) {i : Nat} (hi : i < 32) {s : State} (h : CE.GrpIn 261888 11 8 11 F i s) :
@@ -84,10 +84,10 @@ theorem grp11_ok (F : Poly) {i : Nat} (hi : i < 32) {s : State} (h : CE.GrpIn 26
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   -- Values 0–4, and bytes 0–5.
   refine WP.mono (ceAcc_ok (o := 0) (c := 5) (by decide) (by decide) (by decide) (by decide) s
-    (fun j hj => by rw [Nat.zero_add]; exact h.rd j (by omega)) (fun j => compress 11 F[8 * i + (0 + j)]!)
-    (fun j hj => by rw [Nat.zero_add]; exact h.v j (by omega)) (fun _ _ => compress_lt 11 _)) fun s₁ ⟨r₁, m₁, k₁⟩ => ?_
+    (fun j hj => by rw [Nat.zero_add]; exact h.rd j (by omega_arith)) (fun j => compress 11 F[8 * i + (0 + j)]!)
+    (fun j hj => by rw [Nat.zero_add]; exact h.v j (by omega_arith)) (fun _ _ => compress_lt 11 _)) fun s₁ ⟨r₁, m₁, k₁⟩ => ?_
   refine WP.mono (ceSt_ok (k0 := 0) (nb := 6) (by decide) s₁ (fun k hk => by
-      rw [k₁.2.2, k₁.gpr (by decide), Nat.zero_add]; exact h.wr k (by omega))) fun s₂ ⟨w₂, k₂⟩ => ?_
+      rw [k₁.2.2, k₁.gpr (by decide), Nat.zero_add]; exact h.wr k (by omega_arith))) fun s₂ ⟨w₂, k₂⟩ => ?_
   rw [k₁.gpr (by decide), add_ofNat_zero, m₁, r₁] at w₂
   -- Values 4–7, shifted, and bytes 6–10.
   have di₂ : s₂.gpr .rdi = s.gpr .rdi := by rw [k₂.gpr (by decide), k₁.gpr (by decide)]
@@ -98,23 +98,23 @@ theorem grp11_ok (F : Poly) {i : Nat} (hi : i < 32) {s : State} (h : CE.GrpIn 26
   have hf₂ : Frame [⟨s.gpr .r8, 6⟩] s.mem s₂.mem := w₂.frame (Region.contains_self _ _)
   have hv₂ : ∀ j < 8, s₂.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (4 * j)) 32 =
       s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (4 * j)) 32 := fun j hj =>
-    hf₂.readW (r := ⟨s.gpr .rdi, 32⟩) (contains_offset' (by omega) (by decide)) (fun r' hr' => by
+    hf₂.readW (r := ⟨s.gpr .rdi, 32⟩) (contains_offset' (by omega_arith) (by decide)) (fun r' hr' => by
       rw [List.mem_singleton] at hr'; subst hr'; exact h.dj.sub_right (Region.sub_prefix (by decide))) (by decide)
   refine WP.mono (ceAcc_ok (o := 4) (c := 4) (by decide) (by decide) (by decide) (by decide) s₂
-    (fun j hj => by rw [rw₂, di₂]; exact h.rd _ (by omega)) (fun j => compress 11 F[8 * i + (4 + j)]!)
-    (fun j hj => by rw [di₂, r9₂, hv₂ _ (by omega)]; exact h.v _ (by omega)) (fun _ _ => compress_lt 11 _))
+    (fun j hj => by rw [rw₂, di₂]; exact h.rd _ (by omega_arith)) (fun j => compress 11 F[8 * i + (4 + j)]!)
+    (fun j hj => by rw [di₂, r9₂, hv₂ _ (by omega_arith)]; exact h.v _ (by omega_arith)) (fun _ _ => compress_lt 11 _))
     fun s₃ ⟨r₃, m₃, k₃⟩ => ?_
   refine WP.mono (shr10_ok 4 (by decide) (by decide) s₃) fun s₄ ⟨⟨r₄, m₄⟩, k₄⟩ => ?_
   refine WP.mono (ceSt_ok (k0 := 6) (nb := 5) (by decide) s₄ (fun k hk => by
-      rw [k₄.2.2, k₃.2.2, ww₂, k₄.gpr (by decide), k₃.gpr (by decide), r8₂]; exact h.wr _ (by omega)))
+      rw [k₄.2.2, k₃.2.2, ww₂, k₄.gpr (by decide), k₃.gpr (by decide), r8₂]; exact h.wr _ (by omega_arith)))
     fun s₅ ⟨w₅, k₅⟩ => ⟨?_, ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)⟩
   rw [k₄.gpr (by decide), k₃.gpr (by decide), r8₂, m₄, m₃, r₄, shr_toNat, r₃] at w₅
   refine (Written.append w₂ w₅ (by decide)).congr fun k hk => ?_
   by_cases hk6 : k < 6
-  · rw [ifp hk6, ← ce_seg (o := 0) (c := 5) (s := 0) (p := 8 * k) (by decide) F hi (by decide) (by omega) (by omega) (by omega),
+  · rw [ifp hk6, ← ce_seg (o := 0) (c := 5) (s := 0) (p := 8 * k) (by decide) F hi (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
       Nat.pow_zero, Nat.div_one]
-  · rw [ifn hk6, ← ce_seg (o := 4) (c := 4) (s := 4) (p := 8 * (k - 6)) (j := k) (by decide) F hi (by decide) (by omega)
-      (by omega) hk]
+  · rw [ifn hk6, ← ce_seg (o := 4) (c := 4) (s := 4) (p := 8 * (k - 6)) (j := k) (by decide) F hi (by decide) (by omega_arith)
+      (by omega_arith) hk]
 
 /-- The loop for the width `d`, from a state with `f` in `rdi` and `out` in `r8`. -/
 theorem ceLoop_ok {s₀ : State} (hp : compressEncode1024K.pre s₀) {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths)
@@ -126,7 +126,7 @@ theorem ceLoop_ok {s₀ : State} (hp : compressEncode1024K.pre s₀) {d : Nat} (
       bytesAt s'.mem (CE.oP s₀) (32 * d) = compressEncode d (CE.F s₀) ∧
         Frame [⟨CE.oP s₀, 32 * d⟩] s₀.mem s'.mem := by
   have hd11 : 1 ≤ d ∧ d ≤ 11 := by rcases widths1024 hd with rfl | rfl <;> decide
-  exact CE.loop_ok (c := 8) (b := d) (r := 261888) hp hd11 (by decide) (by decide) (by omega) (by omega) (by decide)
+  exact CE.loop_ok (c := 8) (b := d) (r := 261888) hp hd11 (by decide) (by decide) (by omega_arith) (by omega_arith) (by decide)
     hdd (fun x => ⟨compress1024_arg_lt hd x, compress1024_eq hd x⟩) hgrp
     (by rcases widths1024 hd with rfl | rfl <;> decide) hdi h8 hrd hwr hm
 

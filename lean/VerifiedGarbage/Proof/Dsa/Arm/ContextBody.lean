@@ -40,10 +40,10 @@ theorem slots_fit {n size : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (hz : contextByt
   intro x hx
   simp only [slots_eq, List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    constructor <;> simp only [resS, contextBytes, slot, stride] at * <;> omega
+    constructor <;> simp only [resS, contextBytes, slot, stride] at * <;> omega_arith
 
 theorem slots_apart (n : Nat) : Pow.Apart (slots n) := by
-  simp [Pow.Apart, slots_eq] <;> omega
+  simp [Pow.Apart, slots_eq] <;> omega_arith
 
 theorem slots_r12 (n : Nat) : ∀ x ∈ slots n, x.1 ≠ .r12 := by simp [slots_eq]
 theorem slots_nodup (n : Nat) : ((slots n).map (·.1)).Nodup := by simp [slots_eq]
@@ -51,7 +51,7 @@ theorem slots_nodup (n : Nat) : ((slots n).map (·.1)).Nodup := by simp [slots_e
 theorem slots_words {n : Nat} : ∀ r ∈ Pow.words (slots n), resS n ≤ r.1 ∧ r.1 + r.2 ≤ resS n + 32 := by
   simp only [Pow.words, slots_eq, List.map_cons, List.map_nil, List.forall_mem_cons, List.not_mem_nil,
     false_imp_iff, implies_true, and_true]
-  omega
+  omega_arith
 
 theorem body_ok {s : State} {base : Addr} {size n m : Nat} (E : Pow.Entry s base size)
     (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48)
@@ -67,11 +67,11 @@ theorem body_ok {s : State} {base : Addr} {size n m : Nat} (E : Pow.Entry s base
   refine WP.mono (Pow.stores_ok (slots n) W₁ (slots_fit hn hn48 hz) (slots_apart n)) fun s₂ ⟨S, O, R⟩ => ?_
   have W₂ := W₁.of_rest R (by decide)
   have V₂ : val32 s₂.mem base (slot n 0) (2 * n) = m := by
-    rw [O.val32 (fun r hr => .inl (by have := slots_words r hr; simp only [resS, slot, stride] at *; omega))
-      (by have := E.nowrap; simp only [contextBytes, slot, stride] at *; omega), U.mem]
+    rw [O.val32 (fun r hr => .inl (by have := slots_words r hr; simp only [resS, slot, stride] at *; omega_arith))
+      (by have := E.nowrap; simp only [contextBytes, slot, stride] at *; omega_arith), U.mem]
     exact hv
   refine WP.seq (WP.mono (contextSetup_ok W₂ hn hz
-    (by simp only [contextBytes, slot, stride]; omega) (by omega) V₂ hm1 hodd)
+    (by simp only [contextBytes, slot, stride]; omega_arith) (by omega_arith) V₂ hm1 hodd)
     fun s₃ ⟨C, One, RR, O₃, R₃⟩ => ?_)
   refine WP.mono (Pow.loads_ok (slots n) C.ws (slots_fit hn hn48 hz) (slots_r12 n) (slots_nodup n))
     fun t ⟨L, R₄, M⟩ => ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -97,8 +97,8 @@ theorem body_ok {s : State} {base : Addr} {size n m : Nat} (E : Pow.Entry s base
           have := slots_words (x.2, 4) (List.mem_map_of_mem (f := fun x => (x.2, 4)) hx)
           simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at ha
           rcases ha with rfl | rfl | rfl | rfl | rfl <;>
-            simp only [resS, slot, stride] at * <;> omega)
-        (by have := (slots_fit hn hn48 hz) x hx; have := E.nowrap; omega), S x hx,
+            simp only [resS, slot, stride] at * <;> omega_arith)
+        (by have := (slots_fit hn hn48 hz) x hx; have := E.nowrap; omega_arith), S x hx,
         U.other _ (slots_r12 n x hx)]
   · rw [R₄.sp, R₃.sp, R.sp, U.sp]
   · rw [R₄.rd, R₃.rd, R.rd, U.rd]
@@ -125,7 +125,7 @@ theorem setupK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h :
     ∃ tr t, Exec isa (body n) s tr t ∧ abiPreserved s t ∧ (setupK n).post s t := by
   obtain ⟨-, hwr, hnw, hz, ho, hm⟩ := h
   have E : Pow.Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) :=
-    ⟨rfl, ⟨_, Nat.le_refl _, by omega, by rw [hwr]; exact List.mem_singleton_self _⟩,
+    ⟨rfl, ⟨_, Nat.le_refl _, by omega_arith, by rw [hwr]; exact List.mem_singleton_self _⟩,
       by rw [VG.Proof.X25519.Arm.addr_toNat]; exact hnw⟩
   obtain ⟨tr, t, Ex, C, One, RR, O, P, SP, -, -⟩ := body_ok E hz hn hn48 rfl hm ho
   exact ⟨tr, t, Ex, ⟨P, SP⟩, C.inverse, One, RR, O⟩

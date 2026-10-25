@@ -88,8 +88,8 @@ theorem mul2_val (fa fb r : Nat → Nat) (hr : ∀ k < 16, (r k : Int) = kara (l
 
 theorem carries_lt {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) :
     cval r 0 7 / 2 ^ 28 < 2 ^ 36 ∧ cval r 8 7 / 2 ^ 28 < 2 ^ 36 :=
-  ⟨cin_le (b := 0) (r := r) (fun k hk => hr (0 + k) (by omega)) 8 (by omega),
-    cin_le (b := 8) (r := r) (fun k hk => hr (8 + k) (by omega)) 8 (by omega)⟩
+  ⟨cin_le (b := 0) (r := r) (fun k hk => hr (0 + k) (by omega_arith)) 8 (by omega_arith),
+    cin_le (b := 8) (r := r) (fun k hk => hr (8 + k) (by omega_arith)) 8 (by omega_arith)⟩
 
 theorem limbs28_lt {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) {k : Nat} (hk : k < 16) :
     limbs28 r k < 2 ^ 28 + (if k = 0 then 2 ^ 36 else 0) + (if k = 8 then 2 ^ 37 else 0) := by
@@ -106,10 +106,10 @@ theorem limbs28_lt {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) {k
 theorem limbs28_bound {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) :
     (∀ i < 8, limbs28 r (2 * i + 1) < 2 ^ 28) ∧ (∀ i < 8, limbs28 r (2 * i) < 2 ^ 40) := by
   refine ⟨fun i hi => ?_, fun i hi => ?_⟩
-  · have := limbs28_lt hr (k := 2 * i + 1) (by omega)
-    rw [ite_eq_right (by omega), ite_eq_right (by omega)] at this; omega
-  · have := limbs28_lt hr (k := 2 * i) (by omega)
-    split at this <;> split at this <;> omega
+  · have := limbs28_lt hr (k := 2 * i + 1) (by omega_arith)
+    rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)] at this; omega_arith
+  · have := limbs28_lt hr (k := 2 * i) (by omega_arith)
+    split at this <;> split at this <;> omega_arith
 
 theorem out56_bound {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) : ∀ i < 8, out56 (limbs28 r) i < Mb := by
   have l : ∀ k < 16, limbs28 r k < 2 ^ 28 + (if k = 0 then 2 ^ 36 else 0) + (if k = 8 then 2 ^ 37 else 0) :=
@@ -120,11 +120,11 @@ theorem out56_bound {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) :
   have l11 := l 11 (by decide); have l12 := l 12 (by decide); have l13 := l 13 (by decide)
   have l14 := l 14 (by decide); have l15 := l 15 (by decide)
   simp at l0 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14 l15
-  have d0 : (limbs28 r 0 + 2 ^ 28 * limbs28 r 1) / 2 ^ 56 < 2 := Nat.div_lt_of_lt_mul (by omega)
-  have d4 : (limbs28 r 8 + 2 ^ 28 * limbs28 r 9) / 2 ^ 56 < 2 := Nat.div_lt_of_lt_mul (by omega)
+  have d0 : (limbs28 r 0 + 2 ^ 28 * limbs28 r 1) / 2 ^ 56 < 2 := Nat.div_lt_of_lt_mul (by omega_arith)
+  have d4 : (limbs28 r 8 + 2 ^ 28 * limbs28 r 9) / 2 ^ 56 < 2 := Nat.div_lt_of_lt_mul (by omega_arith)
   intro i hi
   simp only [Mb, out56, w56]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith)
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [ite_true, ite_false, Nat.mul_zero,
       Nat.zero_add, Nat.mul_one, Nat.reduceMul, Nat.reduceAdd, show (1 : Nat) ≠ 0 by decide,
       show (2 : Nat) ≠ 0 by decide, show (2 : Nat) ≠ 1 by decide, show (3 : Nat) ≠ 0 by decide,
@@ -136,6 +136,6 @@ theorem out56_bound {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) :
       show (7 : Nat) ≠ 4 by decide, show (7 : Nat) ≠ 5 by decide] <;>
     first
     | exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
-    | (simp only [Nat.reducePow] at d0 d4 ⊢; omega)
+    | (simp only [Nat.reducePow] at d0 d4 ⊢; omega_arith)
 
 end VG.Proof.Curve448.AArch64.Neon

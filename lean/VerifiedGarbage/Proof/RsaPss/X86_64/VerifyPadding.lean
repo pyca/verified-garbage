@@ -35,9 +35,9 @@ theorem list_eq_iff_getD {a b : List Byte} {n : Nat} (ha : a.length = n) (hb : b
   constructor
   · rintro rfl _ _; rfl
   · intro h
-    apply List.ext_getElem (by omega)
+    apply List.ext_getElem (by omega_arith)
     intro i h₁ h₂
-    have := h i (by omega)
+    have := h i (by omega_arith)
     rwa [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁,
       List.getElem?_eq_getElem h₂] at this
 
@@ -61,10 +61,10 @@ theorem vlogic (G : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid G) (x mHash : List By
       ∀ i < G.len, (G.hash (Spec.RsaPss.zeros 8 ++ mHash ++ dbL.drop (pos + 1))).getD i 0 = (vH G em L).getD i 0) ↔
     ((lo = 1 → x.getD 0 0 = 0) ∧ EncOk G mHash em (k - lo) z sLen) := by
   dsimp only
-  have hvH : (vH G (x.drop lo) (k - lo - G.len - 1)).length = G.len := by simp [vH]; omega
+  have hvH : (vH G (x.drop lo) (k - lo - G.len - 1)).length = G.len := by simp [vH]; omega_arith
   rw [acc1V_eq_zero, acc0V_eq_zero _ _ _ _ hlo]
   have e1 : x.getD (k - 1) 0 = (x.drop lo).getD (k - lo - 1) 0 := by
-    simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]; congr 2; omega
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]; congr 2; omega_arith
   have e2 : x.getD lo 0 = (x.drop lo).getD 0 0 := by
     simp only [List.getD_eq_getElem?_getD, List.getElem?_drop, Nat.add_zero]
   rw [e1, e2]
@@ -72,21 +72,21 @@ theorem vlogic (G : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid G) (x mHash : List By
   rw [← list_eq_iff_getD (hG.2 _) hvH]
   generalize vDb G (x.drop lo) (k - lo - G.len - 1) z = dbL
   by_cases hf : lz dbL < k - lo - G.len - 1
-  · rw [ifp hf, ifp hf, decide_eq_true hf, ofNat_eq_iff (by omega)]
+  · rw [ifp hf, ifp hf, decide_eq_true hf, ofNat_eq_iff (by omega_arith)]
     subst hsl
     constructor
     · rintro ⟨⟨⟨hA, hP, hB⟩, hC, -, hS⟩, hH⟩
       refine ⟨hP, hA, hB, hf, hC, ?_, hH⟩
       cases fixed
       · exact .inl rfl
-      · exact .inr (by rw [ifp rfl]; congr 1; have := hS rfl; omega)
+      · exact .inr (by rw [ifp rfl]; congr 1; have := hS rfl; omega_arith)
     · rintro ⟨hP, hA, hB, -, hC, hS, hH⟩
       refine ⟨⟨⟨hA, hP, hB⟩, hC, rfl, fun hfx => ?_⟩, hH⟩
       subst hfx
       rw [ifp rfl] at hS
       rcases hS with h | h
       · cases h
-      · have := Option.some.inj h; omega
+      · have := Option.some.inj h; omega_arith
   · rw [decide_eq_false hf]
     constructor
     · rintro ⟨⟨_, _, h, _⟩, _⟩; cases h
@@ -149,7 +149,7 @@ theorem ite_setWidth {p : Prop} [Decidable p] {b : Bool} (h : p ↔ b = true) :
 
 theorem map_range_drop {x : List Byte} {lo n : Nat} (hn : lo + n ≤ x.length) {f : Nat → Byte}
     (hf : ∀ i < n, f i = x.getD (lo + i) 0) : (List.range n).map f = (x.drop lo).take n := by
-  rw [list_eq_iff_getD (n := n) (by simp) (by simp; omega)]
+  rw [list_eq_iff_getD (n := n) (by simp) (by simp; omega_arith)]
   intro i hi
   rw [getD_map_range, ifp hi, hf i hi]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_take, ifp hi, List.getElem?_drop]

@@ -139,20 +139,20 @@ theorem keyArgs_of {s : State} (h : keyContract.pre s) : KeyArgs s := by
   have hs : Scr s (stackArg s 10) ((stackArg s 11).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   have hargs : (⟨stackArgAddr s 0, 96⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  refine ⟨hk1, hk2, hel1, hel2, hdl1, hdl2, hpl1, hpl2, hql1, hql2, by omega, hs,
-    fun j hj => ⟨_, hargs, by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+  refine ⟨hk1, hk2, hel1, hel2, hdl1, hdl2, hpl1, hpl2, hql1, hql2, by omega_arith, hs,
+    fun j hj => ⟨_, hargs, by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 96) (by omega) (by omega))
-      rw [← stackArgAddr_add' s j b] at this; omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    src_of_region (by rw [hrd]; simp) (by omega) dps,
-    src_of_region (by rw [hrd]; simp) (by omega) dqs,
-    src_of_region (by rw [hrd, ← hdpl]; simp) (by omega) (by rw [← hdpl]; exact ddps),
-    src_of_region (by rw [hrd, ← hdql]; simp) (by omega) (by rw [← hdql]; exact ddqs),
-    src_of_region (by rw [hrd, ← hqil]; simp) (by omega) (by rw [← hqil]; exact dqis),
-    fun b hb => out_scr dRs (contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega))⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 96) (by omega_arith) (by omega_arith))
+      rw [← stackArgAddr_add' s j b] at this; omega_arith)),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) des,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dds,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dps,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dqs,
+    src_of_region (by rw [hrd, ← hdpl]; simp) (by omega_arith) (by rw [← hdpl]; exact ddps),
+    src_of_region (by rw [hrd, ← hdql]; simp) (by omega_arith) (by rw [← hdql]; exact ddqs),
+    src_of_region (by rw [hrd, ← hqil]; simp) (by omega_arith) (by rw [← hqil]; exact dqis),
+    fun b hb => out_scr dRs (contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith))⟩
 
 /-! ## The exits -/
 
@@ -160,7 +160,7 @@ theorem keyArgs_of {s : State} (h : keyContract.pre s) : KeyArgs s := by
 theorem failK_ok {t : State} {B : Addr} {Z : Nat} (hs : Scr t B Z) (hdi : t.gpr .rdi = B) (hZ : 8 * 32 ≤ Z) :
     WP isa (.block fail) t fun t' => t'.gpr .rax = BitVec.ofNat 64 (false).toNat ∧
       (∀ i < 6, t'.gpr (saved.getD i .rax) = word t.mem B (8 * i)) ∧ t'.mem = t.mem ∧ Keep mmRegs t t' := by
-  have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   unfold fail
   rw [exit_eq]
   refine WP.mono (WP.keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun t' =>
@@ -173,7 +173,7 @@ theorem failK_ok {t : State} {B : Addr} {Z : Nat} (hs : Scr t B Z) (hdi : t.gpr 
       hl 4 (by decide), hl 5 (by decide)]) rfl)
     fun t' ⟨⟨hax, h0, h1, h2, h3, h4, h5, hm⟩, k⟩ => ⟨hax, ?_, hm, k.mono (by decide)⟩
   intro i hi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2
@@ -230,9 +230,9 @@ theorem expK_ok {s t₁ : State} (c : KeyArgs s) (h₁ : EntryPost s (stackArg s
   have := c.k1
   have := c.k2
   have in₁ : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₁.mem :=
-    InScr.of_outside h₁.out (by omega)
+    InScr.of_outside h₁.out (by omega_arith)
   have eb₁ := c.eb.congrK in₁ h₁.keep
-  exact expCheckR_ok (s := t₁) (eb := keyE s) h₁.r8 (by rw [h₁.r9, ofNat_toNat64]) c.el1 (by omega)
+  exact expCheckR_ok (s := t₁) (eb := keyE s) h₁.r8 (by rw [h₁.r9, ofNat_toNat64]) c.el1 (by omega_arith)
     (fun i hi => eb₁.rd i (by rw [bytesAt_length]; exact hi))
     (by have := bytesAt_of_src eb₁; rw [bytesAt_length] at this; exact this.symm)
 
@@ -258,15 +258,15 @@ theorem storesK_ok {s t₁ t₂ : State} (c : KeyArgs s) (h : AfterExp s t₁ t�
   have hZ := c.hZ
   have := c.k1
   have hs₂ := h.scr c
-  have hEv := hs₂.st (d := 8 * sEv) (by unfold sEv sFn; omega)
+  have hEv := hs₂.st (d := 8 * sEv) (by unfold sEv sFn; omega_arith)
   have hN₃ : word (t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)) (stackArg s 10) (8 * sN) =
       s.gpr .rdi := by rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), h.mem, h.h₁.hN]
   have hK₃ : word (t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)) (stackArg s 10) (8 * sK) =
       s.gpr .rsi := by rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), h.mem, h.h₁.hK]
   exact WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .rdi ∧ t.gpr .rcx = s.gpr .rsi ∧
       t.mem = t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)) (by
-    xrun [State.ea, hdr, h.rdi, hdrOff, hEv, hs₂.ld (d := 8 * sN) (by unfold sN sFn; omega),
-      hs₂.ld (d := 8 * sK) (by unfold sK sFn; omega), hN₃, hK₃]) rfl) fun t ⟨⟨a, b, m⟩, k⟩ => ⟨a, b, m, k⟩
+    xrun [State.ea, hdr, h.rdi, hdrOff, hEv, hs₂.ld (d := 8 * sN) (by unfold sN sFn; omega_arith),
+      hs₂.ld (d := 8 * sK) (by unfold sK sFn; omega_arith), hN₃, hK₃]) rfl) fun t ⟨⟨a, b, m⟩, k⟩ => ⟨a, b, m, k⟩
 
 /-- After the modulus' check. -/
 structure AfterInv (s t₁ t₂ t₃ t₄ : State) : Prop where
@@ -281,8 +281,8 @@ theorem AfterInv.inScr {s t₁ t₂ t₃ t₄ : State} (c : KeyArgs s) (h : Afte
   have hZ := c.hZ
   have := c.k1
   rw [h.m₄, h.m₃, h.e.mem]
-  exact (InScr.of_outside h.e.h₁.out (by omega)).trans
-    (InScr.of_outside (writeW_outside (d := 8 * sEv) _ _ _ (by unfold sEv sFn; omega)) (by unfold sEv sFn; omega))
+  exact (InScr.of_outside h.e.h₁.out (by omega_arith)).trans
+    (InScr.of_outside (writeW_outside (d := 8 * sEv) _ _ _ (by unfold sEv sFn; omega_arith)) (by unfold sEv sFn; omega_arith))
 
 theorem AfterInv.keep {s t₁ t₂ t₃ t₄ : State} (h : AfterInv s t₁ t₂ t₃ t₄) :
     Keep [.r11, .rax, .rdi, .r8, .r9, .rax, .r10, .r11, .rdx, .rcx, .rax, .rbp, .rsi] s t₄ :=
@@ -300,7 +300,7 @@ theorem AfterInv.hw {s t₁ t₂ t₃ t₄ : State} (h : AfterInv s t₁ t₂ t�
 
 theorem AfterInv.saved {s t₁ t₂ t₃ t₄ : State} (h : AfterInv s t₁ t₂ t₃ t₄) :
     ∀ i < 6, word t₄.mem (stackArg s 10) (8 * i) = word t₁.mem (stackArg s 10) (8 * i) :=
-  fun i hi => h.hw (by omega) (by unfold sEv sFn; omega)
+  fun i hi => h.hw (by omega_arith) (by unfold sEv sFn; omega_arith)
 
 theorem invalidK_ok {s t₁ t₂ t₃ : State} (c : KeyArgs s) (h : AfterExp s t₁ t₂) (hdx : t₃.gpr .rdx = s.gpr .rdi)
     (hcx : t₃.gpr .rcx = s.gpr .rsi) (hm₃ : t₃.mem = t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11))
@@ -346,12 +346,12 @@ theorem AfterInv.mainPre {s t₁ t₂ t₃ t₄ : State} (c : KeyArgs s) (h : Af
       k1 := c.k1
       k2 := c.k2
       nl := bytesAt_length _ _ _
-      dl1 := by rw [bytesAt_length]; omega
-      dl2 := by rw [bytesAt_length]; omega
-      pl1 := by rw [bytesAt_length]; omega
-      pl2 := by rw [bytesAt_length]; omega
-      ql1 := by rw [bytesAt_length]; omega
-      ql2 := by rw [bytesAt_length]; omega
+      dl1 := by rw [bytesAt_length]; omega_arith
+      dl2 := by rw [bytesAt_length]; omega_arith
+      pl1 := by rw [bytesAt_length]; omega_arith
+      pl2 := by rw [bytesAt_length]; omega_arith
+      ql1 := by rw [bytesAt_length]; omega_arith
+      ql2 := by rw [bytesAt_length]; omega_arith
       dpl := by rw [bytesAt_length, bytesAt_length]
       qil := by rw [bytesAt_length, bytesAt_length]
       dql := by rw [bytesAt_length, bytesAt_length]
@@ -367,7 +367,7 @@ theorem AfterInv.mainPre {s t₁ t₂ t₃ t₄ : State} (c : KeyArgs s) (h : Af
       hDQ := by rw [h.hw (i := sDQ) (by decide) (by decide), h₁.hDQ]
       hQI := by rw [h.hw (i := sQI) (by decide) (by decide), h₁.hQI]
       hEv := by
-          rw [h.m₄, h.m₃, word_writeW_self, h.e.r11, sat_of_valid hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+          rw [h.m₄, h.m₃, word_writeW_self, h.e.r11, sat_of_valid hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
       srN := src c.nb
       srD := src c.db
       srP := src c.pb
@@ -389,16 +389,16 @@ theorem keyCode_correct (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (
   have hZ := c.hZ
   have hn := c.hs.nowrap
   have := c.k1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 10) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 10) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   unfold code
   refine WP.seq (WP.mono (keyEntry_ok rfl hw c.ha c.hsep) fun t₁ h₁ => ?_)
   refine WP.seq (WP.mono (expK_ok c h₁) fun t₂ ⟨hz₂, hm₂, h11₂, k₂⟩ => ?_)
   have e : AfterExp s t₁ t₂ := ⟨h₁, hm₂, h11₂, k₂⟩
   have in₁ : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₁.mem :=
-    InScr.of_outside h₁.out (by omega)
+    InScr.of_outside h₁.out (by omega_arith)
   refine WP.ite (!Spec.Rsa.exponentValid (Spec.Rsa.os2ip (keyE s))) (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
   · have hv : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (keyE s)) = false := by simpa using hb
-    refine WP.mono (failK_ok (e.scr c) e.rdi (by omega)) fun t ⟨hax, hsv, hm, k⟩ =>
+    refine WP.mono (failK_ok (e.scr c) e.rdi (by omega_arith)) fun t ⟨hax, hsv, hm, k⟩ =>
       keyFin c h₁ hax (fun i hi => (hsv i hi).trans (by rw [hm₂])) ((k.gpr (by decide)).trans
         ((h₁.keep.trans k₂).gpr (by decide))) (by rw [hm, hm₂]; exact in₁) ?_
     simp only [keyOf, Spec.Rsa.checkKey, Spec.Rsa.keyValid, hv, Bool.and_false, Bool.false_and]
@@ -411,7 +411,7 @@ theorem keyCode_correct (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (
     refine WP.ite (!Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat) (by simp [eval, hz₄])
       (fun hb => ?_) (fun hb => ?_)
     · have hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat = false := by simpa using hb
-      refine WP.mono (failK_ok (h₄.scr c) h₄.rdi (by omega)) fun t ⟨hax, hsv, hmt, k⟩ =>
+      refine WP.mono (failK_ok (h₄.scr c) h₄.rdi (by omega_arith)) fun t ⟨hax, hsv, hmt, k⟩ =>
         keyFin c h₁ hax (fun i hi => (hsv i hi).trans (h₄.saved i hi)) ((k.gpr (by decide)).trans rsp₄)
           (by rw [hmt]; exact h₄.inScr c) ?_
       simp only [keyOf, Spec.Rsa.checkKey, Spec.Rsa.keyValid, bytesAt_length, hm, Bool.false_and]

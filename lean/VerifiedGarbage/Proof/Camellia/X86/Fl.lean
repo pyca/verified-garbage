@@ -123,7 +123,7 @@ theorem slot_writeW {s : State} (hok : Ok layerCfg s) {k k' : Nat} (hk : k < tai
     (s.mem.writeW (wordAddr (s.gpr sb) k) v).readW (wordAddr (s.gpr sb) k') 32 = slotW s k' := by
   have := hok.fit
   simp only [layerCfg, tailSlot] at this hk hk'
-  exact Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hne) (by decide)
+  exact Mem.readW_writeW_sep (slot_sep _ (by omega_arith) (by omega_arith) hne) (by decide)
 
 theorem slot_writeW_self {s : State} (k : Nat) (v : BitVec 32) :
     (s.mem.writeW (wordAddr (s.gpr sb) k) v).readW (wordAddr (s.gpr sb) k) 32 = v :=
@@ -188,9 +188,9 @@ theorem flRotStep_ok {s : State} (hok : Ok layerCfg s) {d off j : Nat} (hd : d +
       StorePost s s' (d + 8 + j)
         (slotW s (d + 8 + j) ^^^ rotV (half s d) (fun i => keyW s (off + i)) j) := by
   have hi : (j + 7) % 8 < 8 := Nat.mod_lt _ (by decide)
-  obtain ⟨t₁, r₁, k₁, v₁⟩ := step_ldK hok (d := .eax) (w := off + (j + 7) % 8) (by omega)
+  obtain ⟨t₁, r₁, k₁, v₁⟩ := step_ldK hok (d := .eax) (w := off + (j + 7) % 8) (by omega_arith)
   have ok₁ := k₁.ok (by decide) (by decide) hok
-  obtain ⟨t₂, r₂, k₂, v₂⟩ := step_andS ok₁ (d := .eax) (k := d + (j + 7) % 8) (by omega)
+  obtain ⟨t₂, r₂, k₂, v₂⟩ := step_andS ok₁ (d := .eax) (k := d + (j + 7) % 8) (by omega_arith)
   have k₁₂ := k₁.trans k₂
   -- The rotation, for plane 0.
   have pre : ∃ t, (∀ is, runBlock isa ((if j = 0 then [rorI .eax 8] else []) ++ is) t₂ = runBlock isa is t) ∧
@@ -207,8 +207,8 @@ theorem flRotStep_ok {s : State} (hok : Ok layerCfg s) {d off j : Nat} (hd : d +
       · rw [hv]; simp only [rotV, h0, ↓reduceIte, half]
   obtain ⟨t₃, r₃, k₃, v₃⟩ := pre
   have ok₃ := k₃.ok (by decide) (by decide) hok
-  obtain ⟨t₄, r₄, k₄, v₄⟩ := step_xorS ok₃ (d := .eax) (k := d + 8 + j) (by omega)
-  obtain ⟨s', r₅, p₅⟩ := store_post hok (k₃.trans k₄) (k := d + 8 + j) (by omega) []
+  obtain ⟨t₄, r₄, k₄, v₄⟩ := step_xorS ok₃ (d := .eax) (k := d + 8 + j) (by omega_arith)
+  obtain ⟨s', r₅, p₅⟩ := store_post hok (k₃.trans k₄) (k := d + 8 + j) (by omega_arith) []
   refine ⟨s', ?_, ?_⟩
   · simp only [flRotStep, List.cons_append, List.nil_append]
     rw [r₁, r₂, r₃, r₄, r₅, runBlock_nil]
@@ -219,13 +219,13 @@ theorem flOrStep_ok {s : State} (hok : Ok layerCfg s) {d off j : Nat} (hd : d + 
     (hj : j < 8) (hw : off + 16 ≤ 32) :
     ∃ s', runBlock isa (flOrStep d off j) s = some s' ∧
       StorePost s s' (d + j) (slotW s (d + j) ^^^ (keyW s (off + 8 + j) ||| slotW s (d + 8 + j))) := by
-  obtain ⟨t₁, r₁, k₁, v₁⟩ := step_ldK hok (d := .eax) (w := off + 8 + j) (by omega)
+  obtain ⟨t₁, r₁, k₁, v₁⟩ := step_ldK hok (d := .eax) (w := off + 8 + j) (by omega_arith)
   have ok₁ := k₁.ok (by decide) (by decide) hok
-  obtain ⟨t₂, r₂, k₂, v₂⟩ := step_orS ok₁ (d := .eax) (k := d + 8 + j) (by omega)
+  obtain ⟨t₂, r₂, k₂, v₂⟩ := step_orS ok₁ (d := .eax) (k := d + 8 + j) (by omega_arith)
   have ok₂ := k₂.ok (by decide) (by decide) ok₁
-  obtain ⟨t₃, r₃, k₃, v₃⟩ := step_xorS ok₂ (d := .eax) (k := d + j) (by omega)
+  obtain ⟨t₃, r₃, k₃, v₃⟩ := step_xorS ok₂ (d := .eax) (k := d + j) (by omega_arith)
   have k₁₃ := k₁.trans (k₂.trans k₃)
-  obtain ⟨s', r₄, p₄⟩ := store_post hok k₁₃ (k := d + j) (by omega) []
+  obtain ⟨s', r₄, p₄⟩ := store_post hok k₁₃ (k := d + j) (by omega_arith) []
   refine ⟨s', ?_, ?_⟩
   · simp only [flOrStep]
     rw [r₁, r₂, r₃, r₄, runBlock_nil]
@@ -260,30 +260,30 @@ theorem flRot_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 �
       StepsPost s s' fun k => if d + 8 ≤ k ∧ k < d + 8 + n then
         some (slotW s k ^^^ rotV (half s d) (fun i => keyW s (off + i)) (k - (d + 8))) else none
   | 0, _ => ⟨s, runBlock_nil, hok, fun _ _ => rfl,
-      fun k _ => by simp only [show ¬ (d + 8 ≤ k ∧ k < d + 8 + 0) by omega, ↓reduceIte, Option.getD_none],
+      fun k _ => by simp only [show ¬ (d + 8 ≤ k ∧ k < d + 8 + 0) by omega_arith, ↓reduceIte, Option.getD_none],
       fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
-    obtain ⟨s₁, h₁, p₁⟩ := flRot_ok hok hd hw n (by omega)
-    obtain ⟨s₂, h₂, p₂⟩ := flRotStep_ok p₁.ok (d := d) (off := off) (j := n) hd (by omega) hw
+    obtain ⟨s₁, h₁, p₁⟩ := flRot_ok hok hd hw n (by omega_arith)
+    obtain ⟨s₂, h₂, p₂⟩ := flRotStep_ok p₁.ok (d := d) (off := off) (j := n) hd (by omega_arith) hw
     have hrv : rotV (half s₁ d) (fun i => keyW s₁ (off + i)) n =
         rotV (half s d) (fun i => keyW s (off + i)) n := by
       have hi : (n + 7) % 8 < 8 := Nat.mod_lt _ (by decide)
-      simp only [rotV, half, p₁.keys _ (show off + (n + 7) % 8 < 32 by omega),
-        p₁.slots _ (show d + (n + 7) % 8 < tailSlot by omega),
-        iteNeg (show ¬ (d + 8 ≤ d + (n + 7) % 8 ∧ d + (n + 7) % 8 < d + 8 + n) by omega), Option.getD_none]
+      simp only [rotV, half, p₁.keys _ (show off + (n + 7) % 8 < 32 by omega_arith),
+        p₁.slots _ (show d + (n + 7) % 8 < tailSlot by omega_arith),
+        iteNeg (show ¬ (d + 8 ≤ d + (n + 7) % 8 ∧ d + (n + 7) % 8 < d + 8 + n) by omega_arith), Option.getD_none]
     refine ⟨s₂, by rw [runBlock_range_succ, h₁, Option.bind_some, h₂], p₂.ok,
       fun r h => (p₂.gpr r h).trans (p₁.gpr r h), fun k hk => ?_,
       fun w hw' => (p₂.keys w hw').trans (p₁.keys w hw'), p₂.rd.trans p₁.rd, p₂.wr.trans p₁.wr, ?_⟩
     · rw [p₂.slots k hk]
       split
       · rename_i h; subst h
-        rw [p₁.slots _ hk, iteNeg (by omega), Option.getD_none, hrv, itePos (by omega), Option.getD_some,
-          show d + 8 + n - (d + 8) = n by omega]
+        rw [p₁.slots _ hk, iteNeg (by omega_arith), Option.getD_none, hrv, itePos (by omega_arith), Option.getD_some,
+          show d + 8 + n - (d + 8) = n by omega_arith]
       · rename_i h
         rw [p₁.slots k hk]
         by_cases h' : d + 8 ≤ k ∧ k < d + 8 + n
-        · rw [itePos h', itePos (by omega)]
-        · rw [iteNeg h', iteNeg (by omega)]
+        · rw [itePos h', itePos (by omega_arith)]
+        · rw [iteNeg h', iteNeg (by omega_arith)]
     · have e : slotRegion layerCfg s₁ = slotRegion layerCfg s := by
         simp only [slotRegion, layerCfg, p₁.gpr sb (by decide)]
       exact p₁.frame.trans (e ▸ p₂.frame)
@@ -295,25 +295,25 @@ theorem flOr_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤
       StepsPost s s' fun k => if d ≤ k ∧ k < d + n then
         some (slotW s k ^^^ (keyW s (off + 8 + (k - d)) ||| slotW s (k + 8))) else none
   | 0, _ => ⟨s, runBlock_nil, hok, fun _ _ => rfl,
-      fun k _ => by simp only [show ¬ (d ≤ k ∧ k < d + 0) by omega, ↓reduceIte, Option.getD_none],
+      fun k _ => by simp only [show ¬ (d ≤ k ∧ k < d + 0) by omega_arith, ↓reduceIte, Option.getD_none],
       fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
-    obtain ⟨s₁, h₁, p₁⟩ := flOr_ok hok hd hw n (by omega)
-    obtain ⟨s₂, h₂, p₂⟩ := flOrStep_ok p₁.ok (d := d) (off := off) (j := n) hd (by omega) hw
+    obtain ⟨s₁, h₁, p₁⟩ := flOr_ok hok hd hw n (by omega_arith)
+    obtain ⟨s₂, h₂, p₂⟩ := flOrStep_ok p₁.ok (d := d) (off := off) (j := n) hd (by omega_arith) hw
     refine ⟨s₂, by rw [runBlock_range_succ, h₁, Option.bind_some, h₂], p₂.ok,
       fun r h => (p₂.gpr r h).trans (p₁.gpr r h), fun k hk => ?_,
       fun w hw' => (p₂.keys w hw').trans (p₁.keys w hw'), p₂.rd.trans p₁.rd, p₂.wr.trans p₁.wr, ?_⟩
     · rw [p₂.slots k hk]
       split
       · rename_i h; subst h
-        rw [p₁.slots _ hk, p₁.slots _ (show d + 8 + n < tailSlot by omega), p₁.keys _ (by omega),
-          iteNeg (by omega), iteNeg (by omega), Option.getD_none, Option.getD_none, itePos (by omega),
-          Option.getD_some, show d + n - d = n by omega, show d + n + 8 = d + 8 + n by omega]
+        rw [p₁.slots _ hk, p₁.slots _ (show d + 8 + n < tailSlot by omega_arith), p₁.keys _ (by omega_arith),
+          iteNeg (by omega_arith), iteNeg (by omega_arith), Option.getD_none, Option.getD_none, itePos (by omega_arith),
+          Option.getD_some, show d + n - d = n by omega_arith, show d + n + 8 = d + 8 + n by omega_arith]
       · rename_i h
         rw [p₁.slots k hk]
         by_cases h' : d ≤ k ∧ k < d + n
-        · rw [itePos h', itePos (by omega)]
-        · rw [iteNeg h', iteNeg (by omega)]
+        · rw [itePos h', itePos (by omega_arith)]
+        · rw [iteNeg h', iteNeg (by omega_arith)]
     · have e : slotRegion layerCfg s₁ = slotRegion layerCfg s := by
         simp only [slotRegion, layerCfg, p₁.gpr sb (by decide)]
       exact p₁.frame.trans (e ▸ p₂.frame)
@@ -322,9 +322,9 @@ theorem getLsbD_ror8 (x : BitVec 32) {p : Nat} (hp : p < 32) :
     (x.rotateRight 8).getLsbD p = x.getLsbD ((p + 8) % 32) := by
   rw [BitVec.getLsbD_rotateRight]
   split
-  · congr 1; omega
+  · congr 1; omega_arith
   · rename_i h; simp only [Nat.reduceMod, Nat.not_lt] at h; simp only [hp, decide_true, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_arith
 
 theorem rotV_bit {L K : Nat → BitVec 32} {j p : Nat} (hp : p < 32) :
     (rotV L K j).getLsbD p =
@@ -343,14 +343,14 @@ theorem flRot_step {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 
   obtain ⟨s', h, p⟩ := flRot_ok hok hd hw 8 (Nat.le_refl _)
   refine ⟨s', h, ⟨fun j hj => ?_, fun j hj p' hp => ?_⟩, ⟨p.ok, p.gpr, fun k hk => ?_, p.keys, p.rd, p.wr,
     p.frame⟩⟩
-  · simp only [half]; rw [p.slots _ (by omega), iteNeg (by omega), Option.getD_none]
+  · simp only [half]; rw [p.slots _ (by omega_arith), iteNeg (by omega_arith), Option.getD_none]
   · simp only [half]
-    rw [p.slots _ (by omega), itePos (by omega), Option.getD_some, BitVec.getLsbD_xor, rotV_bit hp,
-      show d + (8 + j) - (d + 8) = j by omega]
+    rw [p.slots _ (by omega_arith), itePos (by omega_arith), Option.getD_some, BitVec.getLsbD_xor, rotV_bit hp,
+      show d + (8 + j) - (d + 8) = j by omega_arith]
     rfl
   · split
     · rfl
-    · rw [p.slots k hk, iteNeg (by omega), Option.getD_none]
+    · rw [p.slots k hk, iteNeg (by omega_arith), Option.getD_none]
 
 /-- The OR step, as `W32.OrStep`. -/
 theorem flOr_step {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤ tailSlot)
@@ -361,14 +361,14 @@ theorem flOr_step {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 �
   obtain ⟨s', h, p⟩ := flOr_ok hok hd hw 8 (Nat.le_refl _)
   refine ⟨s', h, ⟨fun j hj => ?_, fun j hj p' hp => ?_⟩, ⟨p.ok, p.gpr, fun k hk => ?_, p.keys, p.rd, p.wr,
     p.frame⟩⟩
-  · simp only [half]; rw [p.slots _ (by omega), iteNeg (by omega), Option.getD_none]
+  · simp only [half]; rw [p.slots _ (by omega_arith), iteNeg (by omega_arith), Option.getD_none]
   · simp only [half]
-    rw [p.slots _ (by omega), itePos (by omega), Option.getD_some, BitVec.getLsbD_xor, BitVec.getLsbD_or,
-      Bool.or_comm, show d + j - d = j by omega, show d + j + 8 = d + (8 + j) by omega,
-      show off + 8 + j = off + (8 + j) by omega]
+    rw [p.slots _ (by omega_arith), itePos (by omega_arith), Option.getD_some, BitVec.getLsbD_xor, BitVec.getLsbD_or,
+      Bool.or_comm, show d + j - d = j by omega_arith, show d + j + 8 = d + (8 + j) by omega_arith,
+      show off + 8 + j = off + (8 + j) by omega_arith]
   · split
     · rfl
-    · rw [p.slots k hk, iteNeg (by omega), Option.getD_none]
+    · rw [p.slots k hk, iteNeg (by omega_arith), Option.getD_none]
 
 /-- What FL and FLINV keep and change. -/
 structure FlPost (s s' : State) (d : Nat) : Prop where
@@ -383,14 +383,14 @@ structure FlPost (s s' : State) (d : Nat) : Prop where
 theorem StepsPost.slot_out {s s' : State} {lo hi : Nat}
     (p : StepsPost s s' fun k => if lo ≤ k ∧ k < hi then some (slotW s' k) else none)
     {k : Nat} (hk : k < tailSlot) (h : k < lo ∨ hi ≤ k) : slotW s' k = slotW s k := by
-  rw [p.slots k hk, iteNeg (by omega), Option.getD_none]
+  rw [p.slots k hk, iteNeg (by omega_arith), Option.getD_none]
 
 theorem flPost_trans {s s₁ s₂ : State} {d : Nat} {lo₁ hi₁ lo₂ hi₂ : Nat}
     (p₁ : StepsPost s s₁ fun k => if lo₁ ≤ k ∧ k < hi₁ then some (slotW s₁ k) else none)
     (p₂ : StepsPost s₁ s₂ fun k => if lo₂ ≤ k ∧ k < hi₂ then some (slotW s₂ k) else none)
     (h₁ : d ≤ lo₁ ∧ hi₁ ≤ d + 16) (h₂ : d ≤ lo₂ ∧ hi₂ ≤ d + 16) : FlPost s s₂ d where
   ok := p₂.ok
-  slots k hk h := by rw [p₂.slot_out hk (by omega), p₁.slot_out hk (by omega)]
+  slots k hk h := by rw [p₂.slot_out hk (by omega_arith), p₁.slot_out hk (by omega_arith)]
   keys w hw := (p₂.keys w hw).trans (p₁.keys w hw)
   gpr r h := (p₂.gpr r h).trans (p₁.gpr r h)
   rd := p₂.rd.trans p₁.rd
@@ -405,11 +405,11 @@ theorem fl_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤ t
     (hK : W32.HalfRel (fun i => keyW s (off + i)) fun _ => k) :
     ∃ s', runBlock isa (flCode d off) s = some s' ∧
       W32.HalfRel (half s' d) (fun b => Spec.Camellia.fl (x b) k) ∧ FlPost s s' d := by
-  obtain ⟨s₁, h₁, r₁, p₁⟩ := flRot_step hok hd (off := off) (by omega)
+  obtain ⟨s₁, h₁, r₁, p₁⟩ := flRot_step hok hd (off := off) (by omega_arith)
   obtain ⟨s₂, h₂, r₂, p₂⟩ := flOr_step p₁.ok hd hw
   have hr := W32.fl_rel hQ hK r₁ ⟨r₂.1, fun j hj p hp => by
-    rw [r₂.2 j hj p hp]; dsimp only; rw [p₁.keys _ (by omega)]⟩
-  refine ⟨s₂, ?_, hr, flPost_trans p₁ p₂ (by omega) (by omega)⟩
+    rw [r₂.2 j hj p hp]; dsimp only; rw [p₁.keys _ (by omega_arith)]⟩
+  refine ⟨s₂, ?_, hr, flPost_trans p₁ p₂ (by omega_arith) (by omega_arith)⟩
   rw [flCode, runBlock_app, h₁, Option.bind_some, h₂]
 
 theorem flinv_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 ≤ tailSlot) (hw : off + 16 ≤ 32)
@@ -418,11 +418,11 @@ theorem flinv_ok {s : State} (hok : Ok layerCfg s) {d off : Nat} (hd : d + 16 �
     ∃ s', runBlock isa (flinvCode d off) s = some s' ∧
       W32.HalfRel (half s' d) (fun b => Spec.Camellia.flinv (x b) k) ∧ FlPost s s' d := by
   obtain ⟨s₁, h₁, r₁, p₁⟩ := flOr_step hok hd hw
-  obtain ⟨s₂, h₂, r₂, p₂⟩ := flRot_step p₁.ok hd (off := off) (by omega)
+  obtain ⟨s₂, h₂, r₂, p₂⟩ := flRot_step p₁.ok hd (off := off) (by omega_arith)
   have hr := W32.flinv_rel hQ hK r₁ ⟨r₂.1, fun j hj p hp => by
     have hi : (j + 7) % 8 < 8 := Nat.mod_lt _ (by decide)
-    rw [r₂.2 j hj p hp]; dsimp only; rw [p₁.keys _ (by omega)]⟩
-  refine ⟨s₂, ?_, hr, flPost_trans p₁ p₂ (by omega) (by omega)⟩
+    rw [r₂.2 j hj p hp]; dsimp only; rw [p₁.keys _ (by omega_arith)]⟩
+  refine ⟨s₂, ?_, hr, flPost_trans p₁ p₂ (by omega_arith) (by omega_arith)⟩
   rw [flinvCode, runBlock_app, h₁, Option.bind_some, h₂]
 
 end VG.Proof.Camellia.X86

@@ -45,7 +45,7 @@ theorem KS.heldNow {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec
   intro i hi
   have hl : s5678.length = 512 := table_length _ _ _ _
   rw [hl] at hi
-  rw [h.mem.fr.readW (Offset.contains_base _ (by omega) (by omega)) h.dT (by decide)]
+  rw [h.mem.fr.readW (Offset.contains_base _ (by omega_arith) (by omega_arith)) h.dT (by decide)]
   exact h.held i (by rw [hl]; exact hi)
 
 theorem KS.ws {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
@@ -77,7 +77,7 @@ theorem extras_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.
     WP isa (extras a b c' d) s fun u => KS m0 c K u st ws ∧ u.v .v6 = L (exVal st a b c' d) ∧
       u.syms = s.syms ∧ Keep [.x0, .x9, .x10, .x11] s u := by
   have hin (q : Pos) (hq : q.2 < 16) : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (srcOff q)) 1 :=
-    CallLay.inRegions_sub h.ws (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega)
+    CallLay.inRegions_sub h.ws (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega_arith)
       (by decide)
   unfold extras
   refine WP.seq (WP.mono_syms (WP.keep [.x9] (gather_ok s ha hb hc hd (hin _ ha) (hin _ hb) (hin _ hc)
@@ -108,7 +108,7 @@ theorem extras_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.
     rw [w6, v1]
     refine L_congr fun k hk => ?_
     rw [hl k hk]
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
       simp only [tableEnt, gIdx, exVal, ofNat_setWidth8, hm.pos ha, hm.pos hb, hm.pos hc, hm.pos hd]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [wk.gpr r (List.not_mem_nil), g r (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact hr.2.1)
@@ -121,7 +121,7 @@ theorem storeQuad_ok (u : State) (a : Arr) {q : Nat} (hq : q < 4) {v : Spec.Cast
       w.mem = u.mem.writeW (u.gpr .x3 + BitVec.ofNat 64 (off a + 4 * q)) (byteRev32 v) ∧
       (∀ r, r ≠ .x9 → w.gpr r = u.gpr r) ∧ w.rd = u.rd ∧ w.wr = u.wr ∧ w.v = u.v := by
   have ho : (off a + 4 * q) % 4 = 0 ∧ off a + 4 * q < 16384 := by
-    cases a <;> simp only [off, xOff, zOff] <;> omega
+    cases a <;> simp only [off, xOff, zOff] <;> omega_arith
   unfold storeQuad
   crun [hax, hw, ho, rev32_eq]
   exact fun r hr => ite_eq_right hr
@@ -132,7 +132,7 @@ theorem storeKey_ok (u : State) {k : Nat} (hk : k < 32) {v : Spec.Cast5.Word}
     WP isa (.block (storeKey k)) u fun w =>
       w.mem = u.mem.writeW (u.gpr .x2 + BitVec.ofNat 64 (4 * k)) v ∧ w.gpr = u.gpr ∧ w.rd = u.rd ∧
         w.wr = u.wr ∧ w.v = u.v := by
-  have ho : (4 * k) % 4 = 0 ∧ 4 * k < 16384 := ⟨by omega, by omega⟩
+  have ho : (4 * k) % 4 = 0 ∧ 4 * k < 16384 := ⟨by omega_arith, by omega_arith⟩
   unfold storeKey
   crun [hax, hw, ho]
 
@@ -149,7 +149,7 @@ theorem lineS_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.C
   have he := lineOk_extra hl
   have hm : HoldsXZ s.mem (s.gpr .x3) st := by rw [h.rc]; exact h.mem.xz
   have hx' : vword (s.v .v6) (8 - l.extra.1) = sbox l.extra.1 (st.get l.extra.2) := by
-    rw [hE, vword_L _ (by omega), hx]
+    rw [hE, vword_L _ (by omega_arith), hx]
   refine WP.mono (line_ok s st l hl h.ws hm h.tab h.heldNow hx') fun u ⟨ux0, um, urd, uwr, usy, uv6, uk⟩ => ?_
   exact ⟨ux0, h.update (uk.gpr _ (by decide)) (by rw [um]; exact h.mem) h.len urd uwr usy, by rw [uv6, hE],
     usy, uk⟩
@@ -165,7 +165,7 @@ theorem lineQ_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.C
   refine WP.mono (lineS_ok h hE hl hx) fun u ⟨ux0, hu, uE, usy, uk⟩ => ?_
   have := off_lt a
   have hw : InRegions u.wr (u.gpr .x3 + BitVec.ofNat 64 (off a + 4 * q)) 4 := by
-    rw [hu.rc]; exact CallLay.inRegions_sub hu.wS (by omega) (by decide)
+    rw [hu.rc]; exact CallLay.inRegions_sub hu.wS (by omega_arith) (by decide)
   refine WP.mono_syms (WP.keep [.x9] (storeQuad_ok u a hq ux0 hw) rfl rfl rfl)
     fun v ⟨⟨vm, vg, vrd, vwr, vv⟩, vk⟩ vsy => ?_
   rw [hu.rc] at vm
@@ -185,12 +185,12 @@ theorem lineK_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.C
   have hadr : u.gpr .x2 + BitVec.ofNat 64 (4 * k) = K + BitVec.ofNat 64 (4 * ws.length) := by
     rw [uk.gpr _ (by decide), hdx, Proof.Cast5.add_ofNat_add, hb]
   have hw : InRegions u.wr (u.gpr .x2 + BitVec.ofNat 64 (4 * k)) 4 := by
-    rw [hadr]; exact CallLay.inRegions_sub hu.wK (by omega) (by decide)
+    rw [hadr]; exact CallLay.inRegions_sub hu.wK (by omega_arith) (by decide)
   refine WP.mono_syms (WP.keep [] (storeKey_ok u hk ux0 hw) rfl rfl rfl)
     fun v ⟨⟨vm, vg, vrd, vwr, vv⟩, vk⟩ vsy => ?_
   rw [hadr] at vm
   refine ⟨hu.update (by rw [vg]) (by rw [vm]; exact hu.mem.key hu.dKS hlen _)
-      (by rw [List.length_append, List.length_singleton]; omega) vrd vwr vsy,
+      (by rw [List.length_append, List.length_singleton]; omega_arith) vrd vwr vsy,
     by rw [vv, uE], by rw [vsy, usy], keep_same uk (vk.mono)⟩
 
 /-- A group of lines: its extra lookups, then each line and its store. -/
@@ -243,9 +243,9 @@ theorem groupK_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.
   obtain ⟨hok, hex, _⟩ := hg.1 k hk
   have he := lineOk_extra hok
   have hl : (ws ++ (keys4 ls st).take k).length = ws.length + k := by
-    rw [List.length_append, List.length_take, show (keys4 ls st).length = 4 from rfl, Nat.min_eq_left (by omega)]
-  refine WP.mono (lineK_ok hu uE hok ?_ (k := b + k) (b := 64 * hh) (by omega) (by rw [uk.gpr _ (by decide), hdx])
-      (by rw [hl, hlen]; omega) (by rw [hl]; omega)) fun v hv => WP.mono hv fun w ⟨hw, wE, wsy, wk⟩ => ?_
+    rw [List.length_append, List.length_take, show (keys4 ls st).length = 4 from rfl, Nat.min_eq_left (by omega_arith)]
+  refine WP.mono (lineK_ok hu uE hok ?_ (k := b + k) (b := 64 * hh) (by omega_arith) (by rw [uk.gpr _ (by decide), hdx])
+      (by rw [hl, hlen]; omega_arith) (by rw [hl]; omega_arith)) fun v hv => WP.mono hv fun w ⟨hw, wE, wsy, wk⟩ => ?_
   · rw [exVal_sbox _ _ he.1 he.2, hex]
   · rw [take_keys4 _ _ hk, ← List.append_assoc]
     exact ⟨hw, wE, by rw [wsy, usy], keep_same uk wk⟩

@@ -48,14 +48,7 @@ private theorem prepareHead_ok {s : State} {base src : BitVec 32} {capacity k : 
   have read12 := h.stack.read (d := 12) (by decide)
   have addr12 : State.addr (s.sp + 12#32) = off (State.addr s.sp) 12 :=
     VG.Arm.addr_add (by have := h.stack.nowrap; omega)
-  refine withRest [.r0, .r6] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.ldrSp .r0 0, .ldrSp .r6 12] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have x := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r6] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, addr12, read0, read12, h.stack.savedBase, h.stack.savedCount]
 
 theorem montPrep_ok {s : State} {base src : BitVec 32} {capacity k : Nat}

@@ -43,7 +43,7 @@ theorem sumLanes_ok (s : State) :
     refine WP.block_cons_iff.mpr ⟨_, rfl, ?_⟩
     gstep
   refine WP.block_nil_iff.mpr ⟨fun i hi => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl <;>
       gstep <;> simp only [BitVec.toNat_add, ln] <;> rfl
   · simp only [limbRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h9, h10, h11, h12, h13, h14⟩ := hr
@@ -77,25 +77,25 @@ theorem pack_ok (s : State) :
     have h3 : (s.gpr .x12).toNat < 2 ^ 28 := h 3 (by decide)
     have h4 : (s.gpr .x13).toNat < 2 ^ 28 := h 4 (by decide)
     have ea : (s.gpr .x9 + s.gpr .x10 <<< 26).toNat = (s.gpr .x9).toNat + (s.gpr .x10).toNat * 2 ^ 26 := by
-      rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega_arith
     have eb : (s.gpr .x11 <<< 52).toNat = (s.gpr .x11).toNat * 2 ^ 52 % 2 ^ 64 := by
       rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
     have ec : (s.gpr .x11 >>> 12 + s.gpr .x12 <<< 14).toNat =
         (s.gpr .x11).toNat / 2 ^ 12 + (s.gpr .x12).toNat * 2 ^ 14 := by
       rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ushiftRight,
-        Nat.shiftRight_eq_div_pow]; omega
+        Nat.shiftRight_eq_div_pow]; omega_arith
     have ed : (s.gpr .x13 <<< 40).toNat = (s.gpr .x13).toNat * 2 ^ 40 % 2 ^ 64 := by
       rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
     have ee : (s.gpr .x13 >>> 24).toNat = (s.gpr .x13).toNat / 2 ^ 24 := by
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have e := add3_toNat (s.gpr .x9 + s.gpr .x10 <<< 26) (s.gpr .x11 <<< 52)
       (s.gpr .x11 >>> 12 + s.gpr .x12 <<< 14) (s.gpr .x13 <<< 40) (s.gpr .x13 >>> 24) 0#64
-      (by rw [ea, eb, ec, ed, ee, show (0#64).toNat = 0 from rfl]; omega)
+      (by rw [ea, eb, ec, ed, ee, show (0#64).toNat = 0 from rfl]; omega_arith)
     simp only [BitVec.add_zero] at e
     rw [e, ea, eb, ec, ed, ee, show (0#64).toNat = 0 from rfl]
     simp only [val, show X 0 = Reg.x9 from rfl, show X 1 = Reg.x10 from rfl, show X 2 = Reg.x11 from rfl,
       show X 3 = Reg.x12 from rfl, show X 4 = Reg.x13 from rfl]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_write, gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
@@ -115,18 +115,18 @@ theorem fold6_ok (s : State) :
   · have w4 := (s.gpr .x4).isLt; have w5 := (s.gpr .x5).isLt
     have eT : (s.gpr .x6 >>> 2 + s.gpr .x6 >>> 2 <<< 2).toNat = 5 * ((s.gpr .x6).toNat / 4) := by
       rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ushiftRight,
-        Nat.shiftRight_eq_div_pow]; omega
+        Nat.shiftRight_eq_div_pow]; omega_arith
     have eE : (s.gpr .x6 &&& BitVec.setWidth 64 3#16).toNat = (s.gpr .x6).toNat % 4 := by
       rw [BitVec.toNat_and, show (BitVec.setWidth 64 3#16).toNat = 2 ^ 2 - 1 from rfl,
         Nat.and_two_pow_sub_one_eq_mod]
     have e := add3_toNat (s.gpr .x4) (s.gpr .x6 >>> 2 + s.gpr .x6 >>> 2 <<< 2) (s.gpr .x5) 0#64
       (s.gpr .x6 &&& BitVec.setWidth 64 3#16) 0#64
-      (by rw [eT, eE, show (0#64).toNat = 0 from rfl]; omega)
+      (by rw [eT, eE, show (0#64).toNat = 0 from rfl]; omega_arith)
     simp only [BitVec.add_zero] at e
     have z : (0#64).toNat = 0 := rfl
     refine ⟨?_, ?_⟩
-    · rw [e, Limbs26.P_eq]; omega
-    · omega
+    · rw [e, Limbs26.P_eq]; omega_arith
+    · omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_write, gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
@@ -199,7 +199,7 @@ theorem finish_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → 
   refine WP.block_append (WP.mono (group_ok mul1 (fun e he => by rw [nS _ (by decide)]; exact hL.mask e he)
       (fun e he => by rw [nS _ (by decide)]; exact hL.pad e he) fun j' hj' => by
         rw [gAddr, x2s1, rd1, wr1, hL.rd, hL.wr, BitVec.add_assoc, ← BitVec.ofNat_add]
-        exact hd _ (by simp only [nq] at hq ⊢; omega)) fun s2 ⟨hg, gk⟩ => ?_)
+        exact hd _ (by simp only [nq] at hq ⊢; omega_arith)) fun s2 ⟨hg, gk⟩ => ?_)
   -- `x2`, `x3`
   refine WP.block_append (WP.mono (adv_ok s2) fun s3 ⟨a2, a3, ag, av, am, ard, awr, _⟩ => ?_)
   refine WP.block_append (WP.mono (sumLanes_ok s3) fun s4 ⟨l4, g4, v4, m4, rd4, wr4, _⟩ => ?_)
@@ -232,7 +232,7 @@ theorem finish_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → 
     by rw [rm, mem6], by rw [rrd, rd6], by rw [rwr, wr6], fun k hk => ?_, ?_, fun h6 => ?_⟩
   · rw [gt _ (by decide), k6.1 _ (by decide), k5.1 _ (by decide), g4 _ (by decide), a2, congrFun gk.gpr .x2, x2s1,
       BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2; omega
+    congr 2; omega_arith
   · rw [gt _ (by decide), k6.1 _ (by decide), k5.1 _ (by decide), g4 _ (by decide), a3, congrFun gk.gpr .x3, g1,
       hL.x3]
   · rw [rv k hk, mem6, gpr0 .x0 (by decide)]; exact hS.slots k hk
@@ -260,10 +260,10 @@ theorem finish_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → 
     have x4v : ∀ i < 5, (s4.gpr (X i)).toNat = hl s2 0 i + hl s2 1 i := fun i hi => by
       rw [l4 i hi, av]
       have := lt2 0 (by decide) i hi; have := lt2 1 (by decide) i hi
-      exact Nat.mod_eq_of_lt (by simp only [hl] at *; omega)
+      exact Nat.mod_eq_of_lt (by simp only [hl] at *; omega_arith)
     have hv5 : hval s5 = val (hl s2 0) + val (hl s2 1) := by
       rw [p5 fun i hi => by
-        rw [x4v i hi]; have := lt2 0 (by decide) i hi; have := lt2 1 (by decide) i hi; omega,
+        rw [x4v i hi]; have := lt2 0 (by decide) i hi; have := lt2 1 (by decide) i hi; omega_arith,
         ← val_add]
       exact val_congr x4v
     have b5 : (s5.gpr .x6).toNat < 2 ^ 20 := by
@@ -274,7 +274,7 @@ theorem finish_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → 
       have := h1 0 (by decide); have := h1 1 (by decide); have := h1 2 (by decide)
       have := h1 3 (by decide); have := h1 4 (by decide)
       simp only [hval, val] at hv5
-      omega
+      omega_arith
     obtain ⟨ef, bf⟩ := f6 b5
     have ht : hval t = hval s6 := by
       simp only [hval, gt .x4 (by decide), gt .x5 (by decide), gt .x6 (by decide)]
@@ -283,8 +283,8 @@ theorem finish_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → 
       rw [ht, ← ef, Nat.add_mul_mod_self_left]
     rw [e1, hv5]
     refine hlast.trans ?_
-    rw [← Poly1305.absorbAll_append (by rw [Poly1305.length_bytesAt]; omega),
-      show 64 * nq s₀ = 64 * (nq s₀ - 1 + 1) from by omega, group_bytes]
+    rw [← Poly1305.absorbAll_append (by rw [Poly1305.length_bytesAt]; omega_arith),
+      show 64 * nq s₀ = 64 * (nq s₀ - 1 + 1) from by omega_arith, group_bytes]
     simp only [gbytes, gAddr, x2s1, m1, hL.mem, List.append_assoc]
     rfl
 

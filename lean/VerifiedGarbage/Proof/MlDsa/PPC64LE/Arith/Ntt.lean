@@ -84,9 +84,9 @@ theorem polyIs_bfly {m : Mem} {F : Addr} {f : Poly} (h : PolyIs m F f) {j len : 
     (h₂ : v₂.toNat = (f[j]! + z * f[j + len]!).val) :
     PolyIs ((m.writeW (coeffAddr F (j + len)) v₁).writeW (coeffAddr F j) v₂) F (bfly f j len z) := by
   have e1 := polyIs_writeW h hj _ h₁
-  have e2 := polyIs_writeW e1 (j := j) (by omega) (f[j]! + z * f[j + len]!) h₂
+  have e2 := polyIs_writeW e1 (j := j) (by omega_arith) (f[j]! + z * f[j + len]!) h₂
   simp only [bfly]
-  rwa [getElem!_set!_ne _ (by omega) (by omega)]
+  rwa [getElem!_set!_ne _ (by omega_arith) (by omega_arith)]
 
 /-! ## The butterfly -/
 
@@ -179,11 +179,11 @@ theorem fstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {Q : Poly} {len k st t
       FInv s₀ m₁ Q len k st (t + 1) s' ∧ (s'.gpr .r11 != 0) = decide (t + 1 ≠ len) := by
   have ea : F s₀ + BitVec.ofNat 64 (4 * (st + t)) = coeffAddr (F s₀) (st + t) := rfl
   have eb : F s₀ + BitVec.ofNat 64 (4 * (st + len + t)) = coeffAddr (F s₀) (st + t + len) := by
-    rw [show st + len + t = st + t + len by omega]
-  have ca := coeff_contains (F s₀) (i := st + t) (by rw [n_eq]; omega)
-  have cb := coeff_contains (F s₀) (i := st + t + len) (by rw [n_eq]; omega)
-  have va := polyIs_toNat h.poly (i := st + t) (by rw [n_eq]; omega)
-  have vb := polyIs_toNat h.poly (i := st + t + len) (by rw [n_eq]; omega)
+    rw [show st + len + t = st + t + len by omega_arith]
+  have ca := coeff_contains (F s₀) (i := st + t) (by rw [n_eq]; omega_arith)
+  have cb := coeff_contains (F s₀) (i := st + t + len) (by rw [n_eq]; omega_arith)
+  have va := polyIs_toNat h.poly (i := st + t) (by rw [n_eq]; omega_arith)
+  have vb := polyIs_toNat h.poly (i := st + t + len) (by rw [n_eq]; omega_arith)
   refine WP.mono (bfly_ok h.r5 h.r6 h.r7 h.env.r8 h.env.r9 h.r11
     (by rw [ea]; exact h.env.inR hp ca) (by rw [eb]; exact h.env.inR hp cb)
     (by rw [ea]; exact h.env.inW hp ca) (by rw [eb]; exact h.env.inW hp cb))
@@ -198,11 +198,11 @@ theorem fstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {Q : Poly} {len k st t
   · rw [r11]; exact count_sub ht
   · have hv : ∀ {v : BitVec 32} {x : Zq}, v.toNat = x.val → v.setWidth 64 = BitVec.ofNat 64 x.val := fun hv => by
       apply BitVec.eq_of_toNat_eq
-      rw [toNat_setWidth64, hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt ‹Zq›; omega)]
+      rw [toNat_setWidth64, hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt ‹Zq›; omega_arith)]
     rw [m, ea, eb, ← coeffAt_eq, ← coeffAt_eq, hv va, hv vb, blockN_succ]
-    exact polyIs_bfly h.poly hl (by rw [n_eq]; omega) _ (bfly_vals _ _ _).1 (bfly_vals _ _ _).2
+    exact polyIs_bfly h.poly hl (by rw [n_eq]; omega_arith) _ (bfly_vals _ _ _).1 (bfly_vals _ _ _).2
   · rw [r11, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub ht]
-    exact count_nz ht (by omega)
+    exact count_nz ht (by omega_arith)
 
 /-! ## Blocks -/
 
@@ -249,14 +249,14 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
   have e2 : 2 * len * c = 2 * (len * c) := Nat.mul_assoc _ _ _
   have hk : nb + c < 256 := by
     have : nb ≤ len * nb := Nat.le_mul_of_pos_left nb hl
-    omega
+    omega_arith
   have cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * (nb + c))) 4 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have vz : (s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * (nb + c))) 32).setWidth 64 =
       BitVec.ofNat 64 (zetas (128 / len + c)).val := by
     have ez : zetaTab (nb + c) = (zetas (nb + c)).val := zetaNat_eq (nb + c)
     rw [h.env.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj.symm)
-      (by decide), hm.tab _ hk, hdiv, ez, setWidth64_ofNat (by have := val_lt (zetas (nb + c)); omega)]
+      (by decide), hm.tab _ hk, hdiv, ez, setWidth64_ofNat (by have := val_lt (zetas (nb + c)); omega_arith)]
   refine WP.seq (WP.mono (bpre_ok h.r4 h.r5 h.r10 (h.env.inRS hp cS))
     fun s₁ ⟨r7, r4, r6, r11, r5, r10, r3, r8, r9, kp, lr, m, rd, wr, sp⟩ => WP.seq ?_)
   have h₁ : FInv s₀ m₁ (layerN bfly Q len (fun c => zetas (128 / len + c)) c) len (128 / len + c)
@@ -266,24 +266,24 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
       wr.trans h.env.wr, m ▸ h.env.frame⟩, ?_, ?_, ?_, ?_, r10, ?_,
       m ▸ h.poly⟩
     · rw [r4, hdiv]
-      exact (ptr_add _ _ 4).trans (by rw [show 4 * (nb + c) + 4 = 4 * (nb + c + 1) by omega])
+      exact (ptr_add _ _ 4).trans (by rw [show 4 * (nb + c) + 4 = 4 * (nb + c + 1) by omega_arith])
     · rw [r5, Nat.add_zero]
-    · rw [r6, ptr_add, show 4 * (2 * len * c) + 4 * len = 4 * (2 * len * c + len + 0) by omega]
+    · rw [r6, ptr_add, show 4 * (2 * len * c) + 4 * len = 4 * (2 * len * c + len + 0) by omega_arith]
     · rw [r7, vz]
-    · rw [r11, lsr2 (by omega)]
+    · rw [r11, lsr2 (by omega_arith)]
   refine wp_loop_nz (FInv s₀ m₁ (layerN bfly Q len (fun c => zetas (128 / len + c)) c) len (128 / len + c)
-    (2 * len * c)) hl (fun t ht s h => fstep hp hl (by omega) ht h) (fun s₂ h₂ => ?_) h₁
+    (2 * len * c)) hl (fun t ht s h => fstep hp hl (by omega_arith) ht h) (fun s₂ h₂ => ?_) h₁
   refine WP.mono (bpost_ok h₂.r6) fun s' ⟨r5, r0, r3, r4, r8, r9, r10, kp, lr, m, rd, wr, sp⟩ =>
     ⟨⟨⟨r3.trans h₂.env.r3, r8.trans h₂.env.r8, r9.trans h₂.env.r9,
       fun r hr => (kp r hr).trans (h₂.env.kept r hr), lr.trans h₂.env.lr, rd.trans h₂.env.rd,
       wr.trans h₂.env.wr, m ▸ h₂.env.frame⟩, ?_, ?_, r10.trans h₂.r10, ?_⟩, ?_⟩
   · rw [r4, h₂.r4, hdiv, Nat.add_assoc]
-  · rw [r5]; congr 2; rw [Nat.mul_succ]; omega
+  · rw [r5]; congr 2; rw [Nat.mul_succ]; omega_arith
   · rw [m, layerN_succ]; exact h₂.poly
-  · rw [r0, h₂.env.r3, ptr_ne _ (by omega) (by omega)]
+  · rw [r0, h₂.env.r3, ptr_ne _ (by omega_arith) (by omega_arith)]
     refine decide_eq_decide.mpr ⟨fun e e' => e ?_, fun e e' => e ?_⟩
-    · subst e'; rw [Nat.mul_add, Nat.mul_one] at *; omega
-    · have : len * (c + 1) = len * nb := by rw [Nat.mul_add, Nat.mul_one]; omega
+    · subst e'; rw [Nat.mul_add, Nat.mul_one] at *; omega_arith
+    · have : len * (c + 1) = len * nb := by rw [Nat.mul_add, Nat.mul_one]; omega_arith
       exact Nat.eq_of_mul_eq_mul_left hl this
 
 /-! ## Layers -/
@@ -292,10 +292,10 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
 def nttL (ℓ : Nat) (w : Poly) : Poly := (nttLens.take ℓ).foldl nttLayer w
 
 theorem nttL_succ (w : Poly) {ℓ : Nat} (hℓ : ℓ < 8) : nttL (ℓ + 1) w = nttLayer (nttL ℓ w) (128 >>> ℓ) := by
-  have e : nttLens[ℓ]'(by simp [nttLens]; omega) = 128 >>> ℓ := by
+  have e : nttLens[ℓ]'(by simp [nttLens]; omega_arith) = 128 >>> ℓ := by
     revert ℓ; decide
   unfold nttL
-  rw [List.take_add_one, List.foldl_append, List.getElem?_eq_getElem (by simp [nttLens]; omega), e]
+  rw [List.take_add_one, List.foldl_append, List.getElem?_eq_getElem (by simp [nttLens]; omega_arith), e]
   rfl
 
 theorem ntt_eq_nttL (w : Poly) : ntt w = nttL 8 w := by
@@ -364,7 +364,7 @@ theorem lstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
 /-! ## Setup -/
 
 theorem sub_low (p : Addr) {k L : Nat} (h : k ≤ L) : Region.Sub ⟨p, k⟩ ⟨p, L⟩ := fun a ha => by
-  simp only [Region.Contains] at ha ⊢; omega
+  simp only [Region.Contains] at ha ⊢; omega_arith
 
 theorem zetaTab_lt (k : Nat) : zetaTab k < 2 ^ 23 := by
   have := zetaNat_lt k; rw [q_eq] at this; exact Nat.lt_trans this (by decide)
@@ -376,7 +376,7 @@ theorem table_base {s₀ : State} (hp : Pre s₀) {s : State} (hs : BodyStart s�
         s'.lr = s₀.lr := by
   have fS := hp.fitS
   refine WP.mono (table_ok zetaTab zetaTab_lt (b := .r4) (by decide) (by decide) (by rw [hs.gpr])
-    fun k hk => by rw [hs.wr, hp.wr]; exact ⟨polyRegion (S s₀), by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+    fun k hk => by rw [hs.wr, hp.wr]; exact ⟨polyRegion (S s₀), by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     fun s₂ h₂ => ?_
   have fr : Frame [below s₀.sp 96, polyRegion (S s₀)] s₀.mem s₂.mem :=
     (hs.frame.mono (by simp)).trans (h₂.frame.sub fun r hr => ⟨polyRegion (S s₀), by simp, by

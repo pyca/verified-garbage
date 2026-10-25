@@ -42,9 +42,9 @@ theorem target_ok (hw : P.Wf) (hr : Noise.Room P) {N : Nat} (hN : N ≤ 2 * P.k)
   · rename_i h; refine ⟨by lom, by lom, by lom, .inl (by lom), by lom⟩
   · split
     · rename_i h h'
-      have hf := Noise.noise_fits hr (i := N - P.k) (by omega)
+      have hf := Noise.noise_fits hr (i := N - P.k) (by omega_arith)
       have hs := Noise.noise_past_kem hr (N - P.k)
-      refine ⟨by lom, hf, by omega, .inr hs, by lom⟩
+      refine ⟨by lom, hf, by omega_arith, .inr hs, by lom⟩
     · refine ⟨by lom, by lom, by lom, .inl (by lom), by lom⟩
 
 /-- Two PRF outputs' polynomials are apart. -/
@@ -70,7 +70,7 @@ theorem outBuf_ok {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h : 
   have hw := hp.wf
   obtain ⟨tN, tS, t64, tB, tY⟩ := target_ok hw hr hN
   generalize ht : Impl.MlKem.AArch64.Kem16P.target P N = T at tN tS t64 tB tY
-  have hN9 : N ≤ 8 := by have := hw.facts; omega
+  have hN9 : N ≤ 8 := by have := hw.facts; omega_arith
   have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
   have hfs : T + 1024 ≤ L.len L.sc := by rw [hp.scl]; exact tS
@@ -82,7 +82,7 @@ theorem outBuf_ok {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h : 
     rw [bR (by decide)]
     exact hp.args.rdisj hp.scb hp.scb (hp.fs (by lom)) hfs (.inl rfl) (.inr (by
       rcases tB with h | h
-      · exact .inr (by omega)
+      · exact .inr (by omega_arith)
       · exact .inl (by lom)))
   have dTN : (polyRegion (sA L s₀ T)).Disjoint (polyRegion (sA L s₀ NS)) :=
     hp.args.rdisj hp.scb hp.scb hfs (hp.fs (by lom)) (.inl rfl) (.inr (.inr tN))
@@ -167,7 +167,7 @@ theorem target_sub (hw : P.Wf) (hr : Noise.Room P) {s₀ : State} {N : Nat} (hN 
     · rename_i h h'
       have := hr.size
       refine ⟨R (kA s₀) L.sc (Impl.MlKem.AArch64.Noise.noiseOff P 0) (1024 * P.k), by simp, R.sub2 ?_ ?_⟩ <;>
-        simp only [Impl.MlKem.AArch64.Noise.noiseOff] <;> omega
+        simp only [Impl.MlKem.AArch64.Noise.noiseOff] <;> omega_arith
     · exact ⟨_, List.mem_cons_self .., R.sub2 (by lom) (by lom)⟩
 
 /-- What the noise writes misses a region below `YH` or between `TP` and `SV`. -/
@@ -181,9 +181,9 @@ theorem noiseW_far {s₀ : State} (hp : Pre P L s₀) (hr : Noise.Room P) {o l :
   · exact sdisj hp hf (by lom) (by rcases ho with h | h | h <;> lom)
   · exact sdisj hp hf (by lom) (by rcases ho with h | h | h <;> lom)
   · have hs := Noise.noise_past_kem hr 0
-    have hz := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega)
-    refine hp.args.rdisj hp.scb hp.scb (hp.fs hf) ?_ (.inl rfl) (.inr (.inl (by omega)))
-    rw [hp.scl]; simp only [Impl.MlKem.AArch64.Noise.noiseOff] at hz ⊢; have := hw.facts; omega
+    have hz := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega_arith)
+    refine hp.args.rdisj hp.scb hp.scb (hp.fs hf) ?_ (.inl rfl) (.inr (.inl (by omega_arith)))
+    rw [hp.scl]; simp only [Impl.MlKem.AArch64.Noise.noiseOff] at hz ⊢; have := hw.facts; omega_arith
 
 /-- **The noise** from the buffers of the first `n ≥ 2k` PRF outputs. -/
 theorem noiseP_ok {prf : Nat → Nat → Prog isa} {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P)
@@ -194,21 +194,21 @@ theorem noiseP_ok {prf : Nat → Nat → Prog isa} {s₀ s : State} (hp : Pre P 
       (NInv P L s₀ s rv (min n (Impl.MlKem.AArch64.Kem16P.prfs P))) := by
   have hw := hp.wf
   have hc : min n (Impl.MlKem.AArch64.Kem16P.prfs P) ≤ 2 * P.k + 1 := by
-    simp only [Impl.MlKem.AArch64.Kem16P.prfs]; omega
+    simp only [Impl.MlKem.AArch64.Kem16P.prfs]; omega_arith
   have hnil : (List.range (2 * P.k)).filter (n ≤ ·) = [] :=
-    List.filter_eq_nil_iff.mpr fun x hx => by simp only [List.mem_range] at hx; simp; omega
+    List.filter_eq_nil_iff.mpr fun x hx => by simp only [List.mem_range] at hx; simp; omega_arith
   unfold Impl.MlKem.AArch64.Kem16P.noiseP
   rw [hnil, List.map_nil, List.append_nil]
   have hne : 0 < min n (Impl.MlKem.AArch64.Kem16P.prfs P) := by
-    simp only [Impl.MlKem.AArch64.Kem16P.prfs]; have := hw.facts; omega
+    simp only [Impl.MlKem.AArch64.Kem16P.prfs]; have := hw.facts; omega_arith
   apply WPs.seqs (map_range_ne_nil hne _)
   refine WPs.range (fun j hj t ht => ?_) ⟨h, rfl, rfl, Frame.refl _ _, fun N hN => absurd hN (Nat.not_lt_zero _)⟩
-  have hjk : j ≤ 2 * P.k := by omega
+  have hjk : j ≤ 2 * P.k := by omega_arith
   have cW : Covers (noiseW P L s₀) s.wr := by
     refine Covers.cons (cov_s hp h (by lom)) (Covers.cons (cov_s hp h (by lom)) (Covers.cons ?_ Covers.nil))
     refine cov_w hp h ⟨hp.scw, hp.scb⟩ ?_
-    rw [hp.scl]; have := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega)
-    simp only [Impl.MlKem.AArch64.Noise.noiseOff] at this ⊢; have := hw.facts; omega
+    rw [hp.scl]; have := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega_arith)
+    simp only [Impl.MlKem.AArch64.Noise.noiseOff] at this ⊢; have := hw.facts; omega_arith
   have tt := htr.frame ht.syms (ht.kb.rd.trans h.rd.symm) (ht.kb.wr.trans h.wr.symm) (ht.kb.sp.trans h.sp.symm)
     ht.fr cW
   refine WP.mono (outBuf_ok hp hr ht.kb tt hjk) fun u ⟨ku, fu, xu, su, pu⟩ => ?_
@@ -225,19 +225,19 @@ theorem noiseP_ok {prf : Nat → Nat → Prog isa} {s₀ s : State} (hp : Pre P 
     rw [show sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) j) = sA L s₀ (TP P + 168 * j) from rfl,
       bytesAt_frame ht.fr (noiseW_far hp hr (o := TP P + 168 * j) (l := 128) (by lom) (.inr (.inr (by lom))))
         (by decide), ← hrv]
-    exact Noise.output_prf (by have := hw.facts; omega) (hprf j hj)
+    exact Noise.output_prf (by have := hw.facts; omega_arith) (hprf j hj)
   refine ⟨ku, xu.trans ht.x24, su.trans ht.syms, ht.fr.trans (fu.sub dS), fun N hN => ?_⟩
-  rcases (by omega : N < j ∨ N = j) with hN | rfl
+  rcases (by omega_arith : N < j ∨ N = j) with hN | rfl
   · refine polyIsW_frame_poly (w16 := true) fu (fun r hr' => ?_) (ht.done N hN)
-    obtain ⟨tN', tS', t64', tB', tY'⟩ := target_ok hw hr (N := N) (by omega)
+    obtain ⟨tN', tS', t64', tB', tY'⟩ := target_ok hw hr (N := N) (by omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     have hfs : ∀ {M : Nat}, M ≤ 2 * P.k →
         Impl.MlKem.AArch64.Kem16P.target P M + 1024 ≤ L.len L.sc := fun hM => by
       rw [hp.scl]; exact (target_ok hw hr hM).2.1
     rcases hr' with rfl | rfl
-    · exact hp.args.rdisj hp.scb hp.scb (hfs (by omega)) (hfs hjk) (.inl rfl)
-        (.inr (target_apart hw hr (by omega) hjk (by omega)))
-    · exact hp.args.rdisj hp.scb hp.scb (hfs (by omega)) (hp.fs (by lom)) (.inl rfl) (.inr (.inr tN'))
+    · exact hp.args.rdisj hp.scb hp.scb (hfs (by omega_arith)) (hfs hjk) (.inl rfl)
+        (.inr (target_apart hw hr (by omega_arith) hjk (by omega_arith)))
+    · exact hp.args.rdisj hp.scb hp.scb (hfs (by omega_arith)) (hp.fs (by lom)) (.inl rfl) (.inr (.inr tN'))
   · rw [hb] at pu
     exact pu
 

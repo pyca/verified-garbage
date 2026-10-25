@@ -40,25 +40,25 @@ theorem fold_nat (r w : Nat) (hr : r < L) (hw : w < 2 ^ 64) :
     ((r * 2 ^ 64 + w) % 2 ^ 252 + (L - (r * 2 ^ 64 + w) / 2 ^ 252 * cL)) % L = (r * 2 ^ 64 + w) % L := by
   rw [L_eq] at hr ⊢
   generalize hv : r * 2 ^ 64 + w = v
-  have hv' : v < 2 ^ 317 := by rw [← hv]; simp only [cL] at hr; omega
-  have hh : v / 2 ^ 252 < 2 ^ 65 := by omega
+  have hv' : v < 2 ^ 317 := by rw [← hv]; simp only [cL] at hr; omega_arith
+  have hh : v / 2 ^ 252 < 2 ^ 65 := by omega_arith
   have hc : v / 2 ^ 252 * cL < 2 ^ 65 * cL := Nat.mul_lt_mul_of_pos_right hh (by decide)
   have hd := Nat.div_add_mod v (2 ^ 252)
   simp only [cL] at hc ⊢
-  refine ⟨by omega, by omega, ?_⟩
+  refine ⟨by omega_arith, by omega_arith, ?_⟩
   generalize v / 2 ^ 252 = h at hc hd
   generalize v % 2 ^ 252 = l at hd ⊢
   subst hd
   have e : l + (2 ^ 252 + 27742317777372353535851937790883648493 - h * 27742317777372353535851937790883648493) +
       h * (2 ^ 252 + 27742317777372353535851937790883648493) =
       2 ^ 252 * h + l + (2 ^ 252 + 27742317777372353535851937790883648493) := by
-    rw [Nat.mul_add]; omega
+    rw [Nat.mul_add]; omega_arith
   rw [← Nat.add_mul_mod_self_right _ h, e, Nat.add_mod_right]
 
 /-! ## The blocks -/
 
 theorem or_mul16 {a b : Nat} (h : a < 2 ^ 4) : a ||| 16 * b = a + 16 * b := by
-  rw [show 16 * b = b * 2 ^ 4 by omega, Nat.or_comm, ← Nat.shiftLeft_eq,
+  rw [show 16 * b = b * 2 ^ 4 by omega_arith, Nat.or_comm, ← Nat.shiftLeft_eq,
     ← Nat.shiftLeft_add_eq_or_of_lt h, Nat.shiftLeft_eq, Nat.add_comm]
 
 theorem sixteen (x : BitVec 64) :
@@ -66,7 +66,7 @@ theorem sixteen (x : BitVec 64) :
       16 * (x.toNat % 2 ^ 60) := by
   have := x.isLt
   simp only [BitVec.toNat_add]
-  omega
+  omega_arith
 
 theorem foldPrep_ok (s : State) :
     WP isa (.block foldPrep) s fun t =>
@@ -82,7 +82,7 @@ theorem foldPrep_ok (s : State) :
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, trivial, trivial, trivial, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [BitVec.toNat_or, sixteen, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    exact or_mul16 (by have := (s.gpr .r10).isLt; omega)
+    exact or_mul16 (by have := (s.gpr .r10).isLt; omega_arith)
   · rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   · rw [BitVec.toNat_and, show (1152921504606846975 : BitVec 64).toNat = 2 ^ 60 - 1 from rfl,
       Nat.and_two_pow_sub_one_eq_mod]
@@ -108,7 +108,7 @@ theorem foldMul_ok (s : State) :
     have hb : (s.gpr .rbp).toNat * orderHi.toNat < 2 ^ 64 * 2 ^ 61 :=
       Nat.mul_lt_mul'' (s.gpr .rbp).isLt (by decide : orderHi.toNat < 2 ^ 61)
     have hz : (BitVec.ofNat 64 ((s.gpr .rbp).toNat * orderHi.toNat / 2 ^ 64)).toNat < 2 ^ 61 := by
-      rw [BitVec.toNat_ofNat]; omega
+      rw [BitVec.toNat_ofNat]; omega_arith
     have ac := add_carry (BitVec.ofNat 64 ((s.gpr .rbp).toNat * orderLo.toNat / 2 ^ 64))
       (BitVec.ofNat 64 ((s.gpr .rbp).toNat * orderHi.toNat))
     have az := adc_carry (BitVec.ofNat 64 ((s.gpr .rbp).toNat * orderHi.toNat / 2 ^ 64)) 0
@@ -119,21 +119,21 @@ theorem foldMul_ok (s : State) :
         (BitVec.ofNat 64 ((s.gpr .rbp).toNat * orderHi.toNat)).toNat)) = cy at ac az ⊢
     have hcy := Bool.toNat_le cy
     rw [show (0 : BitVec 64).toNat = 0 from rfl] at az
-    rw [decide_eq_false (by omega), Bool.toNat_false] at az
-    omega
+    rw [decide_eq_false (by omega_arith), Bool.toNat_false] at az
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1,
       hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false]
 
 theorem mask_and (h : BitVec 64) (hh : h.toNat ≤ 1) (v : BitVec 64) :
     (v &&& BitVec.setWidth 64 (0 : BitVec 32) - h).toNat = h.toNat * v.toNat := by
-  rcases (by omega : h.toNat = 0 ∨ h.toNat = 1) with e | e
+  rcases (by omega_arith : h.toNat = 0 ∨ h.toNat = 1) with e | e
   · rw [show h = 0#64 from BitVec.eq_of_toNat_eq (by rw [e]; rfl)]
     simp
   · rw [show h = 1#64 from BitVec.eq_of_toNat_eq (by rw [e]; rfl)]
     simp only [show BitVec.setWidth 64 (0 : BitVec 32) - 1#64 = BitVec.allOnes 64 by decide,
       BitVec.and_allOnes, BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 theorem foldMask_ok (s : State) (h1 : (s.gpr .r12).toNat ≤ 1) (h15 : (s.gpr .r15).toNat < 2 ^ 62) :
     WP isa (.block foldMask) s fun t => t.gpr .r13 = s.gpr .r13 ∧
@@ -153,16 +153,16 @@ theorem foldMask_ok (s : State) (h1 : (s.gpr .r12).toNat ≤ 1) (h15 : (s.gpr .r
       rw [← c_limbs, Nat.mul_add, Nat.mul_left_comm]
     have hH : orderHi.toNat < 2 ^ 61 := by decide
     have hy : (s.gpr .r12).toNat * orderHi.toNat < 2 ^ 61 := by
-      rcases (by omega : (s.gpr .r12).toNat = 0 ∨ (s.gpr .r12).toNat = 1) with e | e <;> rw [e] <;> omega
+      rcases (by omega_arith : (s.gpr .r12).toNat = 0 ∨ (s.gpr .r12).toNat = 1) with e | e <;> rw [e] <;> omega_arith
     generalize orderLo &&& BitVec.setWidth 64 (0 : BitVec 32) - s.gpr .r12 = X at mx ⊢
     generalize orderHi &&& BitVec.setWidth 64 (0 : BitVec 32) - s.gpr .r12 = Y at my ⊢
     have ac := add_carry (s.gpr .r14) X
     generalize decide (2 ^ 64 ≤ (s.gpr .r14).toNat + X.toNat) = cy at ac ⊢
     have az := adc_carry (s.gpr .r15) Y cy
     have hcy := Bool.toNat_le cy
-    rw [decide_eq_false (by omega), Bool.toNat_false] at az
+    rw [decide_eq_false (by omega_arith), Bool.toNat_false] at az
     rw [hc]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2, ite_false]
@@ -171,10 +171,10 @@ theorem eq_sub_of_chain {u T c : Nat} (hu : u < 2 ^ 256) (hT : T < L)
     (e : u + T = L + 2 ^ 256 * c) : u = L - T := by
   have := order_bound
   rcases Nat.lt_or_ge c 1 with h | h
-  · obtain rfl : c = 0 := by omega
-    omega
+  · obtain rfl : c = 0 := by omega_arith
+    omega_arith
   · have : 2 ^ 256 ≤ 2 ^ 256 * c := Nat.le_mul_of_pos_right _ h
-    omega
+    omega_arith
 
 theorem foldSub_ok (s : State)
     (ht : (s.gpr .r13).toNat + 2 ^ 64 * (s.gpr .r14).toNat + 2 ^ 128 * (s.gpr .r15).toNat < L) :
@@ -195,7 +195,7 @@ theorem foldSub_ok (s : State)
     rw [hL] at e
     have hT : val4 (s.gpr .r13) (s.gpr .r14) (s.gpr .r15) 0 =
         (s.gpr .r13).toNat + 2 ^ 64 * (s.gpr .r14).toNat + 2 ^ 128 * (s.gpr .r15).toNat := by
-      simp only [val4, show (0 : BitVec 64).toNat = 0 from rfl]; omega
+      simp only [val4, show (0 : BitVec 64).toNat = 0 from rfl]; omega_arith
     rw [hT] at e
     exact eq_sub_of_chain (val4_bound _ _ _ _) ht e
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -203,10 +203,10 @@ theorem foldSub_ok (s : State)
 
 theorem eq_of_chain {u x c : Nat} (hx : x < 2 ^ 256) (e : u + 2 ^ 256 * c = x) : u = x := by
   rcases Nat.lt_or_ge c 1 with h | h
-  · obtain rfl : c = 0 := by omega
-    omega
+  · obtain rfl : c = 0 := by omega_arith
+    omega_arith
   · have : 2 ^ 256 ≤ 2 ^ 256 * c := Nat.le_mul_of_pos_right _ h
-    omega
+    omega_arith
 
 theorem foldAdd_ok (s : State)
     (hs : scalarValue s + val4 (s.gpr .rax) (s.gpr .rcx) (s.gpr .rdx) (s.gpr .rbp) < 2 ^ 256) :
@@ -238,16 +238,16 @@ theorem wordFold_ok (s : State) (hr : scalarValue s < L) :
   have h0 := (s.gpr .r8).isLt; have h1 := (s.gpr .r9).isLt; have h2 := (s.gpr .r10).isLt
   have h3 : (s.gpr .r11).toNat < 2 ^ 61 := by
     have hL : L < 2 ^ 253 := by decide
-    have := hr; simp only [scalarValue, val4] at this; omega
+    have := hr; simp only [scalarValue, val4] at this; omega_arith
   -- `h` and `l` from the words
   have eh : (scalarValue s * 2 ^ 64 + (s.gpr .rax).toNat) / 2 ^ 252 =
       ((s.gpr .r10).toNat / 2 ^ 60 + 16 * ((s.gpr .r11).toNat % 2 ^ 60)) +
         2 ^ 64 * ((s.gpr .r11).toNat / 2 ^ 60) := by
-    simp only [scalarValue, val4]; omega
+    simp only [scalarValue, val4]; omega_arith
   have el : (scalarValue s * 2 ^ 64 + (s.gpr .rax).toNat) % 2 ^ 252 =
       (s.gpr .rax).toNat + 2 ^ 64 * (s.gpr .r8).toNat + 2 ^ 128 * (s.gpr .r9).toNat +
         2 ^ 192 * ((s.gpr .r10).toNat % 2 ^ 60) := by
-    simp only [scalarValue, val4]; omega
+    simp only [scalarValue, val4]; omega_arith
   rw [eh] at hlt hlt2 hmod
   rw [el] at hlt2 hmod
   simp only [wordFold, List.append_assoc]
@@ -256,11 +256,11 @@ theorem wordFold_ok (s : State) (hr : scalarValue s < L) :
   rw [WP.block_append_iff]
   refine WP.mono (foldMul_ok a) fun b ⟨bt, kb⟩ => ?_
   have b12 : (b.gpr .r12).toNat ≤ 1 := by
-    rw [kb.1 _ (by decide), a12]; omega
+    rw [kb.1 _ (by decide), a12]; omega_arith
   have b15 : (b.gpr .r15).toNat < 2 ^ 62 := by
     have : (a.gpr .rbp).toNat * cL < 2 ^ 64 * cL :=
       Nat.mul_lt_mul_of_pos_right (a.gpr .rbp).isLt (by decide)
-    simp only [cL] at this bt; omega
+    simp only [cL] at this bt; omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (foldMask_ok b b12 b15) fun c ⟨c13, ct, kc⟩ => ?_
   have hT : (c.gpr .r13).toNat + 2 ^ 64 * (c.gpr .r14).toNat + 2 ^ 128 * (c.gpr .r15).toNat =
@@ -268,7 +268,7 @@ theorem wordFold_ok (s : State) (hr : scalarValue s < L) :
         2 ^ 64 * ((s.gpr .r11).toNat / 2 ^ 60)) * cL := by
     have e12 : b.gpr .r12 = a.gpr .r12 := kb.1 _ (by decide)
     rw [c13, Nat.add_mul, ← abp, ← a12, ← e12, Nat.mul_assoc]
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (foldSub_ok c (by rw [hT]; exact hlt)) fun d ⟨du, kd⟩ => ?_
   have hl : scalarValue d = (s.gpr .rax).toNat + 2 ^ 64 * (s.gpr .r8).toNat + 2 ^ 128 * (s.gpr .r9).toNat +
@@ -279,7 +279,7 @@ theorem wordFold_ok (s : State) (hr : scalarValue s < L) :
       kb.1 .r8 (by decide), kb.1 .r9 (by decide), kb.1 .r10 (by decide), kb.1 .r11 (by decide),
       a8, a9, a10, a11]
   rw [hT] at du
-  refine WP.mono (foldAdd_ok d (by rw [hl, du]; have := order_bound; omega)) fun t ⟨tv, kt⟩ => ?_
+  refine WP.mono (foldAdd_ok d (by rw [hl, du]; have := order_bound; omega_arith)) fun t ⟨tv, kt⟩ => ?_
   refine ⟨by rw [tv, hl, du]; exact hlt2, by rw [tv, hl, du]; exact hmod, ?_⟩
   exact (((ka.mono (by simp [foldClob])).trans (kb.mono (by simp [foldClob]))).trans
     ((kc.mono (by simp [foldClob])).trans (kd.mono (by simp [foldClob])))).trans (kt.mono (by simp [foldClob]))

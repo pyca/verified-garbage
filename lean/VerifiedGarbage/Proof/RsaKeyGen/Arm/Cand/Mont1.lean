@@ -55,20 +55,20 @@ section
 variable {P : CP} {σ : State}
 
 theorem In.oM_le (pre : In P σ) : arr P.W 15 ≤ P.oM := by
-  have := pre.oM_eq; have := pre.W_eq; have := pre.w4; simp only [arr, S, hdr, mBase] at *; omega
+  have := pre.oM_eq; have := pre.W_eq; have := pre.w4; simp only [arr, S, hdr, mBase] at *; omega_arith
 
-theorem In.S_eq (pre : In P σ) : S P.W = 8 * (P.w + 2) := by have := pre.W_eq; simp only [S]; omega
+theorem In.S_eq (pre : In P σ) : S P.W = 8 * (P.w + 2) := by have := pre.W_eq; simp only [S]; omega_arith
 
 theorem In.M0_toNat (pre : In P σ) : P.M0.toNat = P.B.toNat + P.oM := by
   have := pre.fits; have := pre.fS; have := pre.oM_eq
   have := arr_mono (w := P.W) (show mBase ≤ nArr by decide)
   simp only [CP.M0, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := P.oM) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (a := P.oM) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem In.M0_addr (pre : In P σ) : State.addr P.M0 = off (State.addr P.B) P.oM := by
   have := pre.fits; have := pre.fS; have := pre.oM_eq
   have := arr_mono (w := P.W) (show mBase ≤ nArr by decide)
-  exact addr_add (by omega)
+  exact addr_add (by omega_arith)
 
 /-- Montgomery multiplication's offsets are those of the key working space, past `oM`. -/
 theorem In.oM_arrAt (pre : In P σ) (j : Nat) : P.oM + arrAt P.w j = arr P.W (mBase + j) := by
@@ -77,7 +77,7 @@ theorem In.oM_arrAt (pre : In P σ) (j : Nat) : P.oM + arrAt P.w j = arr P.W (mB
   simp only [arrAt, Spec.Rsa.Mont.hdrBytes, arr] at *
   rw [s] at e ⊢
   rw [Nat.add_mul]
-  omega
+  omega_arith
 
 theorem In.M0_off (pre : In P σ) (d : Nat) : off (State.addr P.M0) d = off (State.addr P.B) (P.oM + d) := by
   rw [pre.M0_addr]; exact Offset.add_add _ _ _
@@ -86,7 +86,7 @@ theorem In.numAt_val32 (pre : In P σ) (m : Mem) (j : Nat) :
     numAt m (State.addr P.M0) P.w j = val32 m (State.addr P.B) (arr P.W (mBase + j)) (P.W - 2) := by
   unfold numAt
   rw [show State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w j) = off (State.addr P.M0) (arrAt P.w j) from rfl,
-    pre.M0_off, pre.oM_arrAt, show 8 * P.w = 4 * (P.W - 2) by have := pre.W_eq; omega, read_eq_val32]
+    pre.M0_off, pre.oM_arrAt, show 8 * P.w = 4 * (P.W - 2) by have := pre.W_eq; omega_arith, read_eq_val32]
 
 /-- A key number below `2^(64 w)` is Montgomery multiplication's number of the same array. -/
 theorem In.numAt_eq (pre : In P σ) {m : Mem} {j : Nat} (h : num m P.B P.W (mBase + j) < 2 ^ (64 * P.w)) :
@@ -94,15 +94,15 @@ theorem In.numAt_eq (pre : In P σ) {m : Mem} {j : Nat} (h : num m P.B P.W (mBas
   rw [pre.numAt_val32]
   have hW := pre.W_eq
   have e := val32_append m (State.addr P.B) (arr P.W (mBase + j)) (P.W - 2) 2
-  rw [show P.W - 2 + 2 = P.W by omega] at e
+  rw [show P.W - 2 + 2 = P.W by omega_arith] at e
   simp only [num] at h ⊢
   rw [e] at h ⊢
-  have p : 2 ^ (32 * (P.W - 2)) = 2 ^ (64 * P.w) := by congr 1; omega
+  have p : 2 ^ (32 * (P.W - 2)) = 2 ^ (64 * P.w) := by congr 1; omega_arith
   rw [p] at h ⊢
   have : val32 m (State.addr P.B) (arr P.W (mBase + j) + 4 * (P.W - 2)) 2 = 0 := by
     rcases Nat.eq_zero_or_pos (val32 m (State.addr P.B) (arr P.W (mBase + j) + 4 * (P.W - 2)) 2) with z | z
     · exact z
-    · have := Nat.le_mul_of_pos_right (2 ^ (64 * P.w)) z; omega
+    · have := Nat.le_mul_of_pos_right (2 ^ (64 * P.w)) z; omega_arith
   rw [this, Nat.mul_zero, Nat.add_zero]
 
 theorem In.rM_sub (pre : In P σ) : Region.Sub P.rM P.rS := by
@@ -120,7 +120,7 @@ theorem In.workspaceM (pre : In P σ) {s : State} (wr : s.wr = σ.wr) : Workspac
   rw [pre.M0_toNat, Nat.add_assoc, pre.endM]
   have := Nat.le_trans (arr_mono (w := P.W) (show mBase + 8 ≤ nArr by decide)) pre.fits
   have := pre.fS
-  simp only [CP.Z] at *; omega
+  simp only [CP.Z] at *; omega_arith
 
 /-! ## Frames -/
 
@@ -138,27 +138,27 @@ theorem keep_of_frameN (pre : In P σ) {n k : Nat} (hn : P.oM + n ≤ arr P.W (1
   simp only [Region.Contains] at hc
   rw [hM] at hc
   have hc' : (x - (State.addr P.B + BitVec.ofNat 64 P.oM)).toNat < n := by
-    simp only [off] at hc; omega
+    simp only [off] at hc; omega_arith
   have hin := (Offset.lt_iff x (State.addr P.B) (d := P.oM) (n := n) hlt).mp hc'
   generalize hXe : (x - State.addr P.B).toNat = X at hin
-  have hS : 0 < S P.W := by simp only [S]; omega
+  have hS : 0 < S P.W := by simp only [S]; omega_arith
   have hd := Nat.div_add_mod (X - hdr) (S P.W)
   have hr := Nat.mod_lt (X - hdr) hS
   generalize (X - hdr) / S P.W = q at hd
   generalize (X - hdr) % S P.W = r at hd hr
   have h15 : hdr + 15 * S P.W ≤ P.oM := l
   have hk' : P.oM + n ≤ hdr + (15 + k) * S P.W := hn
-  have hq : X = hdr + q * S P.W + r := by rw [Nat.mul_comm] at hd; omega
-  have h1 : 15 * S P.W < (q + 1) * S P.W := by rw [Nat.add_mul]; omega
-  have h2 : q * S P.W < (15 + k) * S P.W := by omega
+  have hq : X = hdr + q * S P.W + r := by rw [Nat.mul_comm] at hd; omega_arith
+  have h1 : 15 * S P.W < (q + 1) * S P.W := by rw [Nat.add_mul]; omega_arith
+  have h2 : q * S P.W < (15 + k) * S P.W := by omega_arith
   have qa := Nat.lt_of_mul_lt_mul_right h1
   have qk := Nat.lt_of_mul_lt_mul_right h2
   have := hx (arr P.W q, S P.W) (by
     simp only [ranges, List.mem_append, List.mem_map, List.mem_range'_1]
-    exact .inl ⟨q, ⟨by omega, by omega⟩, rfl⟩)
+    exact .inl ⟨q, ⟨by omega_arith, by omega_arith⟩, rfl⟩)
   simp only [arr, ofs] at this
   rw [hXe] at this
-  omega
+  omega_arith
 
 /-- Memory that changed within Montgomery multiplication's eight arrays changed
 within the key arrays 15–28. -/
@@ -180,7 +180,7 @@ theorem frame_of_outs {rs : List (Nat × Nat)} {n : Nat} {m m' : Mem}
   simp only [Region.Contains] at hc
   refine o x fun r hr => .inr ?_
   have := hrs r hr
-  simp only [ofs]; omega
+  simp only [ofs]; omega_arith
 
 /-- A Montgomery multiplication writes, of the key arrays, only its own two
 and its result's. -/
@@ -193,13 +193,13 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
   intro x hx
   have hM := pre.M0_addr
   by_cases hin : P.oM ≤ ofs (State.addr P.B) x ∧ ofs (State.addr P.B) x < P.oM + 8 * P.lenM
-  · obtain ⟨i, hi⟩ : ∃ i, ofs (State.addr P.B) x = P.oM + i := ⟨ofs (State.addr P.B) x - P.oM, by omega⟩
+  · obtain ⟨i, hi⟩ : ∃ i, ofs (State.addr P.B) x = P.oM + i := ⟨ofs (State.addr P.B) x - P.oM, by omega_arith⟩
     have ex : x = State.addr P.M0 + BitVec.ofNat 64 i := by
       rw [hM, Offset.add_add, ← hi]
       simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       rw [BitVec.add_comm, BitVec.sub_add_cancel]
     rw [ex]
-    refine keeps i (by omega) fun j hj => ?_
+    refine keeps i (by omega_arith) fun j hj => ?_
     have hj' : (arr P.W (mBase + j), S P.W) ∈ ranges P.W [mBase + 2, mBase + 3, mBase + o] [] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       simp only [ranges, List.map_cons, List.map_nil, List.append_nil, List.mem_cons, List.not_mem_nil,
@@ -210,9 +210,9 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
       · exact .inr (.inr rfl)
     have := hx _ hj'
     rw [← pre.oM_arrAt j] at this
-    have : 8 * (P.w + 2) = S P.W := by have := pre.W_eq; simp only [S]; omega
+    have : 8 * (P.w + 2) = S P.W := by have := pre.W_eq; simp only [S]; omega_arith
     dsimp only at *
-    omega
+    omega_arith
   · refine frame x fun r hr hc => hin ?_
     simp only [List.mem_singleton] at hr
     subst hr
@@ -221,7 +221,7 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
     have hlt : P.oM + 8 * P.lenM ≤ 2 ^ 64 :=
       Nat.le_trans (by rw [e]; exact hfit) (Nat.le_trans pre.Z_le (by decide))
     have hc' : (x - (State.addr P.B + BitVec.ofNat 64 P.oM)).toNat < 8 * P.lenM := by
-      simp only [off] at hc; omega
+      simp only [off] at hc; omega_arith
     exact (Offset.lt_iff x (State.addr P.B) (d := P.oM) (n := 8 * P.lenM) hlt).mp hc'
 
 end

@@ -40,8 +40,8 @@ structure Env (s : State) : Prop where
 theorem len_lt_of_disjoint {r₁ r₂ : Region} (h : r₁.Disjoint r₂) (h2 : 0 < r₂.len) : r₁.len < 2 ^ 64 := by
   by_contra hc
   refine h r₂.base ?_ ?_
-  · simp only [Region.Contains]; have := (r₂.base - r₁.base).isLt; omega
-  · simp only [Region.Contains, BitVec.sub_self]; simp; omega
+  · simp only [Region.Contains]; have := (r₂.base - r₁.base).isLt; omega_arith
+  · simp only [Region.Contains, BitVec.sub_self]; simp; omega_arith
 
 theorem Env.len {s : State} (E : Env s) : 8 * (s.gpr .x2).toNat < 2 ^ 64 :=
   len_lt_of_disjoint E.dataBuf (by simp)
@@ -49,7 +49,7 @@ theorem Env.len {s : State} (E : Env s) : 8 * (s.gpr .x2).toNat < 2 ^ 64 :=
 theorem Env.sched {s : State} (E : Env s) : SchedIn s .x0 := by
   intro off n h
   rw [E.rd]
-  exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 8⟩ : Region).Disjoint r) : blockAt m' p = blockAt m p := by
@@ -79,7 +79,7 @@ theorem eval_zero (s : State) (r : Reg) {m : Nat} (h : s.gpr r = BitVec.ofNat 64
       intro e
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm] at this
-      simp at this; omega
+      simp at this; omega_arith
     change (BitVec.ofNat 64 m == (0 : BitVec 64)) = (m == 0)
     simp only [beq_eq_false_iff_ne.mpr this, beq_eq_false_iff_ne.mpr h0]
 
@@ -87,7 +87,7 @@ theorem lsr4 (m : Nat) (hm : 8 * m < 2 ^ 64) :
     BitVec.ofNat 64 m >>> 4 = BitVec.ofNat 64 (m / 16) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 /-! ## The batches of sixteen blocks -/
 
@@ -148,7 +148,7 @@ theorem loop_ok (up : Bool) {s₀ : State} (E : Env s₀) {n : Nat}
   have dataR : (⟨D, 8 * n⟩ : Region) ∈ s₁.wr := by
     show _ ∈ s.wr; rw [h.wr, E.wr, hn]; exact List.mem_cons_self
   have hW₁ : ∀ k < 8, InRegions s₁.wr (s₁.gpr .x4 + BitVec.ofNat 64 (16 * k)) 16 := fun k hk =>
-    ⟨_, dataR, by rw [x4₁, wAt, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, dataR, by rw [x4₁, wAt, Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hS₁ : SchedIn s₁ .x0 := fun off n' h' => by
     rw [g₁ _ (by decide), hx0]
     show InRegions (s.rd ++ s.wr) _ n'
@@ -178,11 +178,11 @@ theorem loop_ok (up : Bool) {s₀ : State} (E : Env s₀) {n : Nat}
       ite_true]
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide), h.x1, wAt, BitVec.add_assoc,
       BitVec.ofNat_add_ofNat]
-    exact congrArg (fun i => D + BitVec.ofNat 64 i) (by omega)
+    exact congrArg (fun i => D + BitVec.ofNat 64 i) (by omega_arith)
   have x8₅ : s₅.gpr .x8 = BitVec.ofNat 64 ((m - 16) / 16) := by
     simp only [s₅, State.write, State.read, BitVec.setWidth_eq, ite_true]
     have : s₄.gpr .x2 = s₅.gpr .x2 := by simp [s₅, State.write]
-    rw [this, x2₅, lsr4 _ (by omega)]
+    rw [this, x2₅, lsr4 _ (by omega_arith)]
   have g₅ : ∀ r, WideRegs r → s₅.gpr r = s₀.gpr r := by
     intro r ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇⟩
     simp only [s₅, s₄, s₃, State.write, BitVec.setWidth_eq, a₇, a₂, a₁, ite_false]
@@ -191,12 +191,12 @@ theorem loop_ok (up : Bool) {s₀ : State} (E : Env s₀) {n : Nat}
   have frame' : Frame [⟨D, 8 * (n - (m - 16))⟩] s₀.mem s₅.mem := by
     have f₁ : Frame [⟨D, 8 * (n - (m - 16))⟩] s₀.mem s.mem := h.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self, Region.sub_prefix (by omega)⟩
+      exact ⟨_, List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
     have f₂ : Frame [⟨D, 8 * (n - (m - 16))⟩] s.mem s₂.mem := q.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self, by
         show Region.Sub ⟨s₁.gpr .x4, 128⟩ _
-        rw [x4₁]; exact Offset.sub_base _ (by omega)⟩
+        rw [x4₁]; exact Offset.sub_base _ (by omega_arith)⟩
     rw [mem₅]; exact f₁.trans f₂
   have done' : ∀ b < n - (m - 16), blockAt s₅.mem (wAt D b) =
       blockOut (scheduleAt s₀.mem S) up (blockAt s₀.mem (wAt D b)) := by
@@ -208,20 +208,20 @@ theorem loop_ok (up : Bool) {s₀ : State} (E : Env s₀) {n : Nat}
       simp only [List.mem_singleton] at hr; subst hr
       show Region.Disjoint _ ⟨s₁.gpr .x4, 128⟩
       rw [x4₁]
-      exact Offset.disjoint D (Or.inl (by omega)) (by omega) (by omega)
-    · obtain ⟨j, rfl⟩ : ∃ j, b = n - m + j := ⟨b - (n - m), by omega⟩
-      have e := q.out j (by omega)
+      exact Offset.disjoint D (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+    · obtain ⟨j, rfl⟩ : ∃ j, b = n - m + j := ⟨b - (n - m), by omega_arith⟩
+      have e := q.out j (by omega_arith)
       rw [x4₁] at e
       rw [show wAt D (n - m + j) = wAt D (n - m) + BitVec.ofNat 64 (8 * j) by rw [← wAt_wAt], e,
         g₁ _ (by decide), hx0]
       have hK : scheduleAt s.mem S = scheduleAt s₀.mem S :=
         scheduleAt_eq_of_frame S h.frame fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact (hn ▸ E.keyData).sub_right (Region.sub_prefix (by omega))
+          exact (hn ▸ E.keyData).sub_right (Region.sub_prefix (by omega_arith))
       have hB : blockAt s.mem (wAt D (n - m + j)) = blockAt s₀.mem (wAt D (n - m + j)) :=
         blockAt_frame h.frame fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint_base D (by omega) (by omega)
+          exact Offset.disjoint_base D (by omega_arith) (by omega_arith)
       show blockOut (scheduleAt s₁.mem S) up (blockAt s₁.mem _) = _
       rw [show s₁.mem = s.mem from rfl, hK, show wAt D (n - m) + BitVec.ofNat 64 (8 * j) = wAt D (n - m + j)
         by rw [← wAt_wAt], hB]
@@ -229,15 +229,15 @@ theorem loop_ok (up : Bool) {s₀ : State} (E : Env s₀) {n : Nat}
   have rd₅ : s₅.rd = s₀.rd := q.rd.trans h.rd
   have sp₅ : s₅.sp = s₀.sp := q.sp.trans h.sp
   have v₅ : ∀ r, r ∉ roundRegs → s₅.v r = s₀.v r := fun r hr => (q.v r hr).trans (h.v r hr)
-  have flag := eval_nonzero s₅ .x8 x8₅ (by omega)
+  have flag := eval_nonzero s₅ .x8 x8₅ (by omega_arith)
   by_cases hend : m - 16 < 16
   · left
-    have e : m - 16 = n % 16 := by have := h.mod; omega
-    refine ⟨by rw [flag]; simp; omega, by rw [x2₅, e], by rw [x1₅, e], g₅, rd₅, wr₅, sp₅, v₅,
+    have e : m - 16 = n % 16 := by have := h.mod; omega_arith
+    refine ⟨by rw [flag]; simp; omega_arith, by rw [x2₅, e], by rw [x1₅, e], g₅, rd₅, wr₅, sp₅, v₅,
       by rw [← e]; exact done', by rw [← e]; exact frame'⟩
   · right
-    refine ⟨by rw [flag]; simp; omega, m - 16, by omega,
-      ⟨by omega, by omega, by have := h.mod; omega, x2₅, x1₅, g₅, rd₅, wr₅, sp₅, v₅, done', frame'⟩⟩
+    refine ⟨by rw [flag]; simp; omega_arith, m - 16, by omega_arith,
+      ⟨by omega_arith, by omega_arith, by have := h.mod; omega_arith, x2₅, x1₅, g₅, rd₅, wr₅, sp₅, v₅, done', frame'⟩⟩
 
 theorem wide_ok (up : Bool) {s : State} (E : Env s) :
     WP isa (wide up) s (WidePost up s (s.gpr .x2).toNat) := by
@@ -252,17 +252,17 @@ theorem wide_ok (up : Bool) {s : State} (E : Env s) :
     simp only [s₁, State.write, State.read, BitVec.setWidth_eq, ite_true]
     rw [show s.gpr .x2 = BitVec.ofNat 64 n by simp [n], lsr4 _ hl]
   have g₁ : ∀ r, r ≠ .x8 → s₁.gpr r = s.gpr r := fun r hr => by simp [s₁, State.write, hr]
-  apply WP.ite _ (eval_zero s₁ .x8 x8₁ (by omega))
+  apply WP.ite _ (eval_zero s₁ .x8 x8₁ (by omega_arith))
   · intro hz
-    have hz' : n < 16 := by simp at hz; omega
+    have hz' : n < 16 := by simp at hz; omega_arith
     apply WP.block_nil
     have e : n % 16 = n := Nat.mod_eq_of_lt hz'
-    refine ⟨?_, ?_, fun r hr => g₁ r hr.2.2.2.2.2.2, rfl, rfl, rfl, fun _ _ => rfl, fun b hb => by omega, ?_⟩
+    refine ⟨?_, ?_, fun r hr => g₁ r hr.2.2.2.2.2.2, rfl, rfl, rfl, fun _ _ => rfl, fun b hb => by omega_arith, ?_⟩
     · rw [g₁ _ (by decide), e]; simp [n]
     · rw [g₁ _ (by decide), e, Nat.sub_self]; simp [wAt]
     · rw [e, Nat.sub_self]; exact Frame.refl _ _
   · intro hnz
-    have hge : 16 ≤ n := by simp at hnz; omega
+    have hge : 16 ≤ n := by simp at hnz; omega_arith
     have E₁ : Env s₁ := by
       have h0 := g₁ .x0 (by decide); have h1 := g₁ .x1 (by decide)
       have h2 := g₁ .x2 (by decide); have h3 := g₁ .x3 (by decide)
@@ -271,7 +271,7 @@ theorem wide_ok (up : Bool) {s : State} (E : Env s) :
         by rw [h1, h2, h3]; exact E.dataBuf, by rw [h1, h2]; exact E.fit, E.consts⟩
     have hn₁ : (s₁.gpr .x2).toNat = n := by rw [g₁ _ (by decide)]
     have I : WideInv up s₁ n n s₁ := ⟨hge, Nat.le_refl _, rfl, by rw [g₁ _ (by decide)]; simp [n],
-      by simp [wAt], fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, fun b hb => by omega,
+      by simp [wAt], fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, fun b hb => by omega_arith,
       by rw [Nat.sub_self]; exact Frame.refl _ _⟩
     apply WP.mono (loop_ok up E₁ hn₁ n s₁ I)
     intro s₂ p

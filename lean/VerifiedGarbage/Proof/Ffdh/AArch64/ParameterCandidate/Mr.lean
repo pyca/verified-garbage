@@ -36,7 +36,7 @@ theorem cw_short {N mb n : Nat} (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (h
   have hw : Spec.Ffdh.witnessOctets N = mLen mb := by simp only [Spec.Ffdh.witnessOctets, hbl]
   have hd : Spec.Ffdh.drawWitness N (r.drop u) = none := by
     rw [drawWitness_eq (by rw [hw]; simp only [mLen]; omega_using [hm]), hw]
-    have : ¬(mLen mb ≤ (r.drop u).length) := by rw [List.length_drop]; simp only [mLen] at h ⊢; omega
+    have : ¬(mLen mb ≤ (r.drop u).length) := by rw [List.length_drop]; simp only [mLen] at h ⊢; omega_arith
     simp only [this, ↓reduceIte]
   simp only [checkWitnesses, hd, Option.bind_eq_bind, Option.bind_none]
 
@@ -48,7 +48,7 @@ theorem cw_step {N mb n : Nat} (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (hm
           else some (false, r.drop (u + mLen mb)))
       else checkWitnesses N (n + 1) (r.drop (u + mLen mb)) := by
   have hw : Spec.Ffdh.witnessOctets N = mLen mb := by simp only [Spec.Ffdh.witnessOctets, hbl]
-  have hl : mLen mb ≤ (r.drop u).length := by rw [List.length_drop]; simp only [mLen] at h ⊢; omega
+  have hl : mLen mb ≤ (r.drop u).length := by rw [List.length_drop]; simp only [mLen] at h ⊢; omega_arith
   have hd := drawWitness_eq (w := N) (by rw [hw]; simp only [mLen]; omega_using [hm]) (r.drop u)
   rw [hw, hbl] at hd
   simp only [hl, ↓reduceIte, List.drop_drop] at hd
@@ -114,14 +114,14 @@ theorem mrIter_ok (M : Mont) (R : Kernel) {p : PP} {w N mb K : Nat} (d : MrDims 
   have hK := d.k
   have hik := h.ik
   have hul := h.ul
-  have hl1 : 1 ≤ mLen mb := by simp only [mLen]; omega
+  have hl1 : 1 ≤ mLen mb := by simp only [mLen]; omega_arith
   have hws := h.fix.st.ws
   have hrl := h.fix.st.dims.rl
-  obtain ⟨n, hn⟩ : ∃ n, K - i = n + 1 := ⟨K - i - 1, by omega⟩
+  obtain ⟨n, hn⟩ : ∃ n, K - i = n + 1 := ⟨K - i - 1, by omega_arith⟩
   have hres := h.rest
   rw [hn] at hres
   simp only [seqs]
-  refine WP.seq (WP.mono (roomHead_ok hws (len := mLen mb) (by simp only [mLen]; omega) hrl hul h.fix.len
+  refine WP.seq (WP.mono (roomHead_ok hws (len := mLen mb) (by simp only [mLen]; omega_arith) hrl hul h.fix.len
     h.fix.st.args.rlen h.used) fun s₁ ⟨hz₁, hm₁, k₁⟩ => ?_)
   have h₁ := h.fix.same hEZ hm₁ k₁ (by decide)
   refine WP.seq (WP.ite (decide (p.r.length < u + mLen mb)) hz₁ (fun hb => ?_) (fun hb => ?_))
@@ -131,13 +131,13 @@ theorem mrIter_ok (M : Mont) (R : Kernel) {p : PP} {w N mb K : Nat} (d : MrDims 
     have h256 := h₁.st.ws.h256
     refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s₁.mem.writeW (off p.B (8 * kStat)) (BitVec.ofNat 64 0)) (by
       brun [h₁.st.ws.x0, hdr_enc (show kStat < 32 by decide),
-        hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega)]
+        hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith)]
       rfl) (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨hm₂, k₂⟩ => ?_
     have ft : Frm p.B [(8 * kStat, 8)] s₁.mem s₂.mem := by
       rw [hm₂]; exact Frm.of_outside (writeW_outside _ _ _ (by decide)) (by simp)
     have h₂ : MrFix p w N mb K s₂ := h₁.of_frm hEZ ft (by kmut)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; omega)
+      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; omega_arith)
       k₂ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
@@ -146,19 +146,19 @@ theorem mrIter_ok (M : Mont) (R : Kernel) {p : PP} {w N mb K : Nat} (d : MrDims 
     refine WP.mono (statCmp_ok h₂.st.ws (v := 0) (by decide) (by rw [hm₂, word_writeW_self]))
       fun t ⟨hz, hm, k⟩ => Or.inl ⟨hz.trans rfl, ⟨h₂.same hEZ hm k (by decide), ?_⟩,
         fun f => by simp only [mrIters, hb, ↓reduceIte]⟩
-    have hnone : res = none := hres.symm.trans (cw_short d.bl (by omega) hb)
+    have hnone : res = none := hres.symm.trans (cw_short d.bl (by omega_arith) hb)
     refine ⟨fun _ => by rw [hm, hm₂, word_writeW_self], fun b rest h' => ?_, ?_,
       (((h.keep.trans k₁).trans k₂).trans k).mono (by decide)⟩
     · rw [hnone] at h'; cases h'
     · rw [hm]
       exact (h.isc.trans (by rw [hm₁]; exact InScr.refl _ _ _)).trans (InScr.of_frm ft fun r hr => by
-        rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; omega)
+        rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; omega_arith)
   · -- A draw.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
-    have hnb : ¬ p.r.length < u + mLen mb := by omega
-    refine WP.mono (draw_ok (i := i) (u := u) M R d h₁ (by rw [hm₁]; exact h.used) (by rw [hm₁]; exact h.idx) (by omega) hb)
+    have hnb : ¬ p.r.length < u + mLen mb := by omega_arith
+    refine WP.mono (draw_ok (i := i) (u := u) M R d h₁ (by rw [hm₁]; exact h.used) (by rw [hm₁]; exact h.idx) (by omega_arith) hb)
       fun s₂ ⟨h₂, hu₂, hst₂, hix₂, hi₂, k₂⟩ => ?_
-    have hstep := cw_step (n := n) d.bl (by omega) hb
+    have hstep := cw_step (n := n) d.bl (by omega_arith) hb
     rw [hres] at hstep
     have hit0 : ∀ f, mrIters N K mb p.r (f + 1) i u = if 2 ≤ wA mb p.r u ∧ wA mb p.r u < N - 1 then
         (if Spec.Ffdh.mrRound N (wA mb p.r u) = true ∧ i + 1 < K then mrIters N K mb p.r f (i + 1) (u + mLen mb) + 1
@@ -183,10 +183,10 @@ theorem mrIter_ok (M : Mont) (R : Kernel) {p : PP} {w N mb K : Nat} (d : MrDims 
             fun f => by rw [hit0]; simp only [hr, hpass, hlast, and_self, ↓reduceIte]⟩
           · rw [hit]; simp only [dIdx, hr, hpass, and_self, ↓reduceIte]
           · simp only [hr, hpass, and_self, ↓reduceIte] at hstep
-            rw [show K - (i + 1) = n by omega]; exact hstep.symm
+            rw [show K - (i + 1) = n by omega_arith]; exact hstep.symm
         · -- The last check passed.
           have h1 : dStat N K i a = 1 := by simp only [dStat, hr, hpass, hlast, and_self, ↓reduceIte]
-          have hn0 : n = 0 := by omega
+          have hn0 : n = 0 := by omega_arith
           subst hn0
           simp only [hr, hpass, and_self, ↓reduceIte, checkWitnesses] at hstep
           refine Or.inl ⟨hz.trans (by rw [h1]; rfl), ⟨ht, (fun h0 => by rw [h0] at hstep; cases hstep),
@@ -228,26 +228,26 @@ theorem millerRabin_ok (M : Mont) (R : Kernel) {p : PP} {w N mb K : Nat} (d : Mr
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off p.B (8 * fIdx)) (BitVec.ofNat 64 0))
     (by
-      brun [h.st.ws.x0, hdr_enc (show fIdx < 32 by decide), hs.st (d := 8 * fIdx) (by simp only [fIdx]; omega)]
+      brun [h.st.ws.x0, hdr_enc (show fIdx < 32 by decide), hs.st (d := 8 * fIdx) (by simp only [fIdx]; omega_arith)]
       rfl) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨hm₁, k₁⟩ => ?_)
   have ft : Frm p.B [(8 * fIdx, 8)] s.mem s₁.mem := by
     rw [hm₁]; exact Frm.of_outside (writeW_outside _ _ _ (by decide)) (by simp)
   have h₁ : MrFix p w N mb K s₁ := h.of_frm hEZ ft (by kmut)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega)
+    (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega_arith)
     k₁ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
     (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
   have hst : MrSt p w N mb K s (checkWitnesses N K (p.r.drop u)) 0 u s₁ :=
-    ⟨h₁, by rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega)]; exact hU,
-      by rw [hm₁, word_writeW_self], hul, by omega, by rw [Nat.sub_zero],
-      InScr.of_frm ft fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega, k₁.mono (by decide)⟩
+    ⟨h₁, by rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_arith)]; exact hU,
+      by rw [hm₁, word_writeW_self], hul, by omega_arith, by rw [Nat.sub_zero],
+      InScr.of_frm ft fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega_arith, k₁.mono (by decide)⟩
   exact WP.loop (fun n t => ∃ i u', n = p.r.length - u' ∧ MrSt p w N mb K s (checkWitnesses N K (p.r.drop u)) i u' t)
     (fun n t ⟨i, u', hn, hI⟩ => WP.mono (mrIter_ok M R d hI) fun t' h' => h'.imp (fun h'' => ⟨h''.1, h''.2.1⟩)
       fun ⟨he, i', hI', _⟩ => ⟨he, p.r.length - (u' + mLen mb), by
-        have := hI'.ul; have := d.mb1; simp only [mLen] at *; omega, i', u' + mLen mb, rfl, hI'⟩)
+        have := hI'.ul; have := d.mb1; simp only [mLen] at *; omega_arith, i', u' + mLen mb, rfl, hI'⟩)
     (p.r.length - u) s₁ ⟨0, u, rfl, hst⟩
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

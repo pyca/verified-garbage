@@ -46,7 +46,7 @@ theorem incs_frame {buf : Addr} {m m' : Mem} {rs : List Region} (h : Incs m buf)
     (hd : ∀ r ∈ rs, (hiR buf).Disjoint r) : Incs m' buf := by
   intro k hk p hp
   rw [← h k hk p hp]
-  exact hf.readW (hiR_contains buf (by omega) (by omega)) hd (by decide)
+  exact hf.readW (hiR_contains buf (by omega_arith) (by omega_arith)) hd (by decide)
 
 /-! ## The kernel's checks -/
 
@@ -92,23 +92,23 @@ theorem inT_eval (hi : Incs s.mem (s.gpr .r9)) {k i l : Nat} (hk : k < 2) (hi16 
     T.eval D s (inT k i l) = (ctr (S0 s) (2 * k + l))[i] := by
   rw [ctr_get _ _ _ hi16]
   simp only [inT]
-  have e := hi k hk (4 * l + i % 4) (by omega)
-  rw [show 56 + 8 * k + (4 * l + i % 4) = 56 + 8 * k + 4 * l + i % 4 by omega,
-    show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega] at e
+  have e := hi k hk (4 * l + i % 4) (by omega_arith)
+  rw [show 56 + 8 * k + (4 * l + i % 4) = 56 + 8 * k + 4 * l + i % 4 by omega_arith,
+    show (4 * l + i % 4) / 4 = l by omega_arith, show (4 * l + i % 4) % 4 = i % 4 by omega_arith] at e
   split
   · simp only [T.eval, regn, baseR, e, stateAt_get _ _ hi16]
     by_cases h12 : i = 12
     · subst h12; simp
-    · rw [ite_eq_right (by omega), ite_eq_right h12]; exact BitVec.add_zero _
+    · rw [ite_eq_right (by omega_arith), ite_eq_right h12]; exact BitVec.add_zero _
   · simp only [T.eval, regn, baseR, stateAt_get _ _ hi16]
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_arith)]
 
 theorem outT_eval {S : Nat} {vs : Nat → CState} (hz : HB S vs s) (hi : Incs s.mem (s.gpr .r9)) {k i l : Nat}
     (hk : k < S) (hk2 : k < 2) (hi16 : i < 16) (hl : l < 2) :
     T.eval D s (outT k i l) = (plus vs (S0 s) (2 * k + l))[i] := by
   simp only [outT, plus, Vector.getElem_zipWith]
   rw [← inT_eval (D := D) hi hk2 hi16 hl]
-  simp only [T.eval, yw, show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega]
+  simp only [T.eval, yw, show (4 * l + i % 4) / 4 = l by omega_arith, show (4 * l + i % 4) % 4 = i % 4 by omega_arith]
   rw [hz k hk l hl i hi16]
 
 end
@@ -123,19 +123,19 @@ theorem lane_of {D : Nat} {σ : Sym} {s s' : State} (h : SRel D σ s s') (r : XR
     intro l hl
     have dq : ∀ q < 4, dword (s'.lane r l) q = dword x q := by
       intro q hq
-      rw [← yw_lk s' r hq, h.reg r _ (by omega), hr _ (by omega)]
+      rw [← yw_lk s' r hq, h.reg r _ (by omega_arith), hr _ (by omega_arith)]
       simp only [T.eval, regn, baseR]
-      have d := dword_read256 s.mem (s.gpr .r9 + BitVec.ofNat 64 (4 * o)) (p := 4 * l + q) (by omega)
-      rw [show (4 * l + q) / 4 = l by omega, show (4 * l + q) % 4 = q by omega, add_ofNat',
-        show 4 * o + 4 * (4 * l + q) = 4 * (o + (4 * l + q)) by omega] at d
+      have d := dword_read256 s.mem (s.gpr .r9 + BitVec.ofNat 64 (4 * o)) (p := 4 * l + q) (by omega_arith)
+      rw [show (4 * l + q) / 4 = l by omega_arith, show (4 * l + q) % 4 = q by omega_arith, add_ofNat',
+        show 4 * o + 4 * (4 * l + q) = 4 * (o + (4 * l + q)) by omega_arith] at d
       rw [← d]
-      rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+      rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
       · rw [Nat.mul_zero, h0]
       · rw [Nat.mul_one, h1]
     exact ext_dword (dq 0 (by decide)) (dq 1 (by decide)) (dq 2 (by decide)) (dq 3 (by decide))
   intro l
   by_cases h0 : l = 0
-  · exact hl l (by omega)
+  · exact hl l (by omega_arith)
   · rw [show s'.lane r l = s'.lane r 1 by simp [State.lane, h0]]; exact hl 1 (by decide)
 
 /-- The masks in `ymm8`, `ymm9`, from the terms the setup leaves there. -/
@@ -160,10 +160,10 @@ theorem setup_ok {s : State} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9))
     simp only [Bool.and_eq_true, Bool.not_eq_true', List.all_eq_true, List.mem_range, beq_iff_eq] at e
     refine WP.mono (srun_ok hc setup (SRel.init 0 s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
       ym_of h e.1.2 hm, h.clean e.1.1, h.gpr, h.rd, h.wr⟩
-    have r := h.reg (zreg (4 * k + i / 4)) (4 * l + i % 4) (by omega)
-    rw [xidx_zreg _ (by omega), e.2 k hk _ (by omega) _ (by omega)] at r
-    simp only [yw, show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega,
-      show 4 * (i / 4) + i % 4 = i by omega] at r
+    have r := h.reg (zreg (4 * k + i / 4)) (4 * l + i % 4) (by omega_arith)
+    rw [xidx_zreg _ (by omega_arith), e.2 k hk _ (by omega_arith) _ (by omega_arith)] at r
+    simp only [yw, show (4 * l + i % 4) / 4 = l by omega_arith, show (4 * l + i % 4) % 4 = i % 4 by omega_arith,
+      show 4 * (i / 4) + i % 4 = i by omega_arith] at r
     rw [r, inT_eval hi hk hi16 hl]
   · cases e
 
@@ -178,11 +178,11 @@ theorem setup1_ok {s : State} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9)) (hi
     simp only [Bool.and_eq_true, Bool.not_eq_true', List.all_eq_true, List.mem_range, beq_iff_eq] at e
     refine WP.mono (srun_ok hc setup1 (SRel.init 0 s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
       ym_of h e.1.2 hm, h.clean e.1.1, h.gpr, h.rd, h.wr⟩
-    obtain rfl : k = 0 := by omega
-    have r := h.reg (zreg (4 * 0 + i / 4)) (4 * l + i % 4) (by omega)
-    rw [xidx_zreg _ (by omega), e.2 _ (by omega) _ (by omega)] at r
-    simp only [yw, show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega,
-      show 4 * (4 * 0 + i / 4) + i % 4 = i by omega] at r
+    obtain rfl : k = 0 := by omega_arith
+    have r := h.reg (zreg (4 * 0 + i / 4)) (4 * l + i % 4) (by omega_arith)
+    rw [xidx_zreg _ (by omega_arith), e.2 _ (by omega_arith) _ (by omega_arith)] at r
+    simp only [yw, show (4 * l + i % 4) / 4 = l by omega_arith, show (4 * l + i % 4) % 4 = i % 4 by omega_arith,
+      show 4 * (4 * 0 + i / 4) + i % 4 = i by omega_arith] at r
     rw [r, inT_eval hi (by decide) hi16 hl]
   · cases e
 
@@ -200,12 +200,12 @@ theorem last_ok {s : State} (hc : Ctx 0 s) (hi : Incs s.mem (s.gpr .r9)) {vs : N
     refine WP.mono (srun_ok hc _ (SRel.init 0 s) hr) fun s' h => ⟨fun k hk => ?_, h.frame, h.gpr,
       h.rd, h.wr⟩
     refine byte_out ?_
-    have d := h.mem 1 (k / 4) (by decide) (by simp only [bsize]; omega)
-    rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega, e _ (by omega) _ (by omega),
-      outT_eval hz hi (by omega) (by omega) (by omega) (by omega),
-      show 2 * (k / 64 / 2) + k / 64 % 2 = k / 64 by omega] at d
+    have d := h.mem 1 (k / 4) (by decide) (by simp only [bsize]; omega_arith)
+    rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega_arith, e _ (by omega_arith) _ (by omega_arith),
+      outT_eval hz hi (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+      show 2 * (k / 64 / 2) + k / 64 % 2 = k / 64 by omega_arith] at d
     simp only [regn, baseR] at d
-    rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega] at d
+    rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega_arith] at d
     exact d
   · cases e
 
@@ -222,11 +222,11 @@ theorem last1_ok {s : State} (hc : Ctx 0 s) (hi : Incs s.mem (s.gpr .r9)) {vs : 
     refine WP.mono (srun_ok hc _ (SRel.init 0 s) hr) fun s' h => ⟨fun k hk => ?_, h.frame, h.gpr,
       h.rd, h.wr⟩
     refine byte_out ?_
-    have d := h.mem 1 (k / 4) (by decide) (by simp only [bsize]; omega)
-    rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega, e _ (by omega) _ (by omega),
-      outT_eval hz hi (by decide) (by decide) (by omega) (by omega)] at d
+    have d := h.mem 1 (k / 4) (by decide) (by simp only [bsize]; omega_arith)
+    rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega_arith, e _ (by omega_arith) _ (by omega_arith),
+      outT_eval hz hi (by decide) (by decide) (by omega_arith) (by omega_arith)] at d
     simp only [regn, baseR] at d
-    rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega, Nat.mul_zero, Nat.zero_add] at d
+    rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega_arith, Nat.mul_zero, Nat.zero_add] at d
     exact d
   · cases e
 

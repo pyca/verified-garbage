@@ -316,7 +316,7 @@ theorem addrOf_some {τ : T} {n : Reg} {off i d : Nat} (h : addrOf τ n off = so
   exact ⟨by rw [← hb]; exact hm, rfl⟩
 
 theorem lens_ne {τ : T} {i n : Nat} (h : 0 < n) (hn : n ≤ τ.lens.getD i 0) : τ.lens ≠ [] := by
-  rintro h'; simp [h'] at hn; omega
+  rintro h'; simp [h'] at hn; omega_arith
 
 theorem forall₂_length {rs : List Region} {ls : List Nat}
     (h : List.Forall₂ (fun r l => l ≤ r.len) rs ls) : rs.length = ls.length := by
@@ -341,7 +341,7 @@ theorem region_mem {τ : T} {s : State} (hw : Wf τ s) (hne : τ.lens ≠ []) {i
   have hl := forall₂_length (hw.lens hne).1
   have : i < τ.lens.length := by
     by_contra h'
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)] at hi; simp at hi
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_arith)] at hi; simp at hi
   have hi' : i < s.wr.length := hl ▸ this
   exact ⟨hi', by simp [region, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi']⟩
 
@@ -353,18 +353,18 @@ theorem region_bound {τ : T} {s : State} (hw : Wf τ s) {i : Nat} (hi : 0 < τ.
   have hl := region_len hw hne i
   have hb := (hw.lens hne).2.2 _ (List.getElem_mem hi')
   rw [← hr] at hb
-  omega
+  omega_arith
 
 theorem ea_of_addrOf {τ : T} {s : State} (hw : Wf τ s) {n : Reg} {off i d : Nat}
     (h : addrOf τ n off = some (i, d)) (hd : d < τ.lens.getD i 0) :
     State.addr (s.gpr n + BitVec.ofNat 32 off) = byteAddr s i d := by
   obtain ⟨hb, rfl⟩ := addrOf_some h
-  have hbd := region_bound hw (i := i) (by omega)
+  have hbd := region_bound hw (i := i) (by omega_arith)
   have e := hw.bases _ hb
   simp only at e
   have hn : (s.gpr n).toNat = (region s i).base.toNat := by
-    rw [← e, State.addr, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr n).isLt; omega)]
-  rw [addr_add (by omega), e]
+    rw [← e, State.addr, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr n).isLt; omega_arith)]
+  rw [addr_add (by omega_arith), e]
   rfl
 
 theorem byteAddr_add (s : State) (i d k : Nat) :
@@ -377,7 +377,7 @@ theorem Agree.byteAddr_eq {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
     (h : sl ∈ τ.slots) {k : Nat} (hk : k < sl.2.1 + sl.2.2) :
     byteAddr s₁ sl.1 k = byteAddr s₂ sl.1 k := by
   have := ha.ok sl h
-  simp only [byteAddr, region, ha.wr (lens_ne (n := sl.2.1 + sl.2.2) (by omega) this)]
+  simp only [byteAddr, region, ha.wr (lens_ne (n := sl.2.1 + sl.2.2) (by omega_arith) this)]
 
 /-- A load of a word from a public slot. -/
 theorem Agree.readW {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {n : Reg} {off : Nat}
@@ -390,12 +390,12 @@ theorem Agree.readW {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {n : 
   simp only [List.any_eq_true, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hp
   obtain ⟨sl, hsl, ⟨rfl, ho⟩, hd⟩ := hp
   have hok := ha.ok sl hsl
-  rw [ea_of_addrOf ha.wf₁ h (by omega), ea_of_addrOf ha.wf₂ h (by omega),
-    ha.byteAddr_eq hsl (k := d) (by omega)]
+  rw [ea_of_addrOf ha.wf₁ h (by omega_arith), ea_of_addrOf ha.wf₂ h (by omega_arith),
+    ha.byteAddr_eq hsl (k := d) (by omega_arith)]
   refine Mem.readW_congr fun k hk => ?_
   rw [byteAddr_add]
-  have := ha.slots sl hsl (d + k) (by omega) (by omega)
-  rwa [ha.byteAddr_eq hsl (k := d + k) (by omega)] at this
+  have := ha.slots sl hsl (d + k) (by omega_arith) (by omega_arith)
+  rwa [ha.byteAddr_eq hsl (k := d + k) (by omega_arith)] at this
 
 /-! ### Stores -/
 
@@ -405,14 +405,14 @@ theorem write_other {τ : T} {s : State} (hw : Wf τ s) {i d n j k : Nat} (hn : 
     (hd : d + n ≤ τ.lens.getD i 0) (hk : k < τ.lens.getD j 0) (hsep : j ≠ i ∨ k < d ∨ d + n ≤ k)
     (V : BitVec (8 * n)) :
     s.mem.write (byteAddr s i d) n V (byteAddr s j k) = s.mem (byteAddr s j k) := by
-  have hne := lens_ne (n := d + n) (by omega) hd
+  have hne := lens_ne (n := d + n) (by omega_arith) hd
   obtain ⟨-, hdisj, -⟩ := hw.lens hne
-  obtain ⟨hi, hri⟩ := region_mem hw hne (i := i) (by omega)
-  obtain ⟨hj, hrj⟩ := region_mem hw hne (i := j) (by omega)
+  obtain ⟨hi, hri⟩ := region_mem hw hne (i := i) (by omega_arith)
+  obtain ⟨hj, hrj⟩ := region_mem hw hne (i := j) (by omega_arith)
   have hli := region_len hw hne i
   have hlj := region_len hw hne j
-  have hbi := region_bound hw (i := i) (by omega)
-  have hbj := region_bound hw (i := j) (by omega)
+  have hbi := region_bound hw (i := i) (by omega_arith)
+  have hbj := region_bound hw (i := j) (by omega_arith)
   apply Mem.write_apply
   intro hlt
   by_cases hji : j = i
@@ -420,15 +420,15 @@ theorem write_other {τ : T} {s : State} (hw : Wf τ s) {i d n j k : Nat} (hn : 
     have hsep := hsep.resolve_left (· rfl)
     have h : byteAddr s j k - byteAddr s j d = BitVec.ofNat 64 k - BitVec.ofNat 64 d :=
       Offset.add_sub_add_left _ _ _
-    exact Offset.not_lt_sub_ofNat hsep (by omega) hn (by omega) (h ▸ hlt)
+    exact Offset.not_lt_sub_ofNat hsep (by omega_arith) hn (by omega_arith) (h ▸ hlt)
   · have hA : (region s i).Contains (byteAddr s i d) n := by
       simp only [Region.Contains, byteAddr]
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
     have hX : (region s j).Contains (byteAddr s j k) 1 := by
       simp only [Region.Contains, byteAddr]
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
     have hXi := hA.byte hlt
     rw [List.pairwise_iff_getElem] at hdisj
     rcases Nat.lt_or_gt_of_ne hji with h | h
@@ -456,21 +456,21 @@ theorem storeSlots_ok {τ : T} (hok : SlotsOk τ) (n : Reg) (off w : Nat) (p : B
 /-- A write within a writable region leaves the stack arguments alone. -/
 theorem write_arg {τ : T} {s : State} (hw : Wf τ s) {A : Addr} {n : Nat} (hA : InRegions s.wr A n)
     (V : BitVec (8 * n)) {k : Nat} (hk : k < τ.argLen) : s.mem.write A n V (argByte s k) = s.mem (argByte s k) := by
-  obtain ⟨hsp, hd⟩ := hw.args (by omega)
+  obtain ⟨hsp, hd⟩ := hw.args (by omega_arith)
   obtain ⟨r, hr, hc⟩ := hA
   apply Mem.write_apply
   intro hlt
   refine hd r hr _ ?_ (hc.byte hlt)
   simp only [Region.Contains, argByte]
   rw [Offset.add_sub_cancel_left,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 /-- The stack argument word at offset `o`, byte by byte. -/
 theorem argWord {τ : T} {s : State} (hw : Wf τ s) {o : Nat} (ho : o + 4 ≤ τ.argLen) (k : Nat) :
     State.addr (s.sp + BitVec.ofNat 32 o) + BitVec.ofNat 64 k = argByte s (o + k) := by
-  have := (hw.args (by omega)).1
-  rw [addr_add (by omega), argByte, BitVec.ofNat_add, BitVec.add_assoc]
+  have := (hw.args (by omega_arith)).1
+  rw [addr_add (by omega_arith), argByte, BitVec.ofNat_add, BitVec.add_assoc]
 
 theorem Wf.store {τ : T} {s : State} (hw : Wf τ s) {A : Addr} {n : Nat} (hA : InRegions s.wr A n)
     (V : BitVec (8 * n)) (τ' : T) (hl : τ'.lens = τ.lens) (hb : τ'.bases = τ.bases)
@@ -488,7 +488,7 @@ theorem Wf.store {τ : T} {s : State} (hw : Wf τ s) {A : Addr} {n : Nat} (hA : 
     refine congrArg State.addr ?_
     refine Mem.readW_congr fun k hk => ?_
     rw [argWord hw hp]
-    exact write_arg hw hA V (by omega)
+    exact write_arg hw hA V (by omega_arith)
 
 /-- A store of `n` bytes at `[r, #off]`, of the same value in both runs if `p`. -/
 theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {r : Reg} {off : Nat}
@@ -527,8 +527,8 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {r : 
     · rename_i i d had
       split at hsl
       · rename_i hfit
-        have e₁ := ea_of_addrOf ha.wf₁ had (by omega)
-        have e₂ := ea_of_addrOf ha.wf₂ had (by omega)
+        have e₁ := ea_of_addrOf ha.wf₁ had (by omega_arith)
+        have e₂ := ea_of_addrOf ha.wf₂ had (by omega_arith)
         have hsl' : (p = true ∧ sl = (i, d, n)) ∨ (sl ∈ τ.slots ∧
             (p = true ∨ sl.1 ≠ i ∨ d + n ≤ sl.2.1 ∨ sl.2.1 + sl.2.2 ≤ d)) := by
           split at hsl
@@ -543,9 +543,9 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {r : 
         · simp only at hk₁ hk₂
           simp only [e₁, e₂, Mem.write, hv hp]
           have hd : ∀ s : State, byteAddr s i k - byteAddr s i d = BitVec.ofNat 64 (k - d) :=
-            fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega))
+            fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega_arith))
           have hlt : (BitVec.ofNat 64 (k - d)).toNat < n := by
-            rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega)
+            rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega_arith)
           rw [hd, hd]; simp only [hlt, ite_true]
         · by_cases hp : p = true
           · exact same h hp
@@ -553,11 +553,11 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {r : 
             rcases hsep with h' | h' | h' | h'
             · exact absurd h' hp
             · exact .inl h'
-            · exact .inr (.inr (by omega))
-            · exact .inr (.inl (by omega))
+            · exact .inr (.inr (by omega_arith))
+            · exact .inr (.inl (by omega_arith))
           have hk := ha.ok sl h
-          rw [e₁, e₂, write_other ha.wf₁ hn hfit (by omega) hsep,
-            write_other ha.wf₂ hn hfit (by omega) hsep]
+          rw [e₁, e₂, write_other ha.wf₁ hn hfit (by omega_arith) hsep,
+            write_other ha.wf₂ hn hfit (by omega_arith) hsep]
           exact ha.slots sl h k hk₁ hk₂
       · split at hsl <;> [exact same hsl ‹_›; cases hsl]
     · split at hsl <;> [exact same hsl ‹_›; cases hsl]
@@ -614,12 +614,12 @@ theorem ldrSp_sound {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {t : 
     Agree { τ with regs := set τ t true, bases := spBases τ t off }
       (s₁.setReg t (s₁.mem.readW (State.addr (s₁.sp + BitVec.ofNat 32 off)) 32))
       (s₂.setReg t (s₂.mem.readW (State.addr (s₂.sp + BitVec.ofNat 32 off)) 32)) := by
-  have hsp := ha.sp (by omega)
+  have hsp := ha.sp (by omega_arith)
   have hv : s₁.mem.readW (State.addr (s₁.sp + BitVec.ofNat 32 off)) 32 =
       s₂.mem.readW (State.addr (s₂.sp + BitVec.ofNat 32 off)) 32 := by
     rw [hsp]
     refine Mem.readW_congr fun k hk => ?_
-    have := ha.argMem (off + k) (by omega)
+    have := ha.argMem (off + k) (by omega_arith)
     simp only [argByte, hsp] at this
     rw [argWord ha.wf₂ ho]
     exact this
@@ -791,7 +791,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i ho; cases hs
-    have hsp := ha.sp (by omega)
+    have hsp := ha.sp (by omega_arith)
     refine ⟨by simp only [addrs, hsp], ?_⟩
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
@@ -1266,7 +1266,7 @@ theorem mem_mergeSlot : ∀ (l : List (Nat × Nat × Nat)) (x y : Nat × Nat × 
       rcases mem_mergeSlot l (joinSlot s x) y h with h | ⟨e, hw, hk⟩
       · exact .inl (List.mem_cons_of_mem _ h)
       · simp only [joinSlot] at e hw hk ⊢
-        refine .inr ⟨e.trans hi, by omega, fun k h₁ h₂ => ?_⟩
+        refine .inr ⟨e.trans hi, by omega_arith, fun k h₁ h₂ => ?_⟩
         rcases hk k h₁ h₂ with ⟨-, h₃, h₄⟩ | ⟨z, hz, hk⟩
         · dsimp only at h₃ h₄
           by_cases hx : x.2.1 ≤ k ∧ k < x.2.1 + x.2.2
@@ -1307,17 +1307,17 @@ theorem mem_cutSlots {i d w : Nat} : ∀ {l : List (Nat × Nat × Nat)} {y : Nat
           · rw [hl, Bool.cond_true, List.mem_singleton] at h
             subst h
             simp only [Nat.blt_eq] at hl
-            exact ⟨.inr (.inr (by dsimp only; omega)),
-              .inr ⟨sl, List.mem_cons_self .., by dsimp only; omega, hi.symm, by dsimp only; omega,
-                by dsimp only; omega⟩⟩
+            exact ⟨.inr (.inr (by dsimp only; omega_arith)),
+              .inr ⟨sl, List.mem_cons_self .., by dsimp only; omega_arith, hi.symm, by dsimp only; omega_arith,
+                by dsimp only; omega_arith⟩⟩
         · cases hl : Nat.blt (d + w) (sl.2.1 + sl.2.2)
           · rw [hl, Bool.cond_false] at h; exact (List.not_mem_nil h).elim
           · rw [hl, Bool.cond_true, List.mem_singleton] at h
             subst h
             simp only [Nat.blt_eq] at hl
-            exact ⟨.inr (.inl (by dsimp only; omega)),
-              .inr ⟨sl, List.mem_cons_self .., by dsimp only; omega, hi.symm, by dsimp only; omega,
-                by dsimp only; omega⟩⟩
+            exact ⟨.inr (.inl (by dsimp only; omega_arith)),
+              .inr ⟨sl, List.mem_cons_self .., by dsimp only; omega_arith, hi.symm, by dsimp only; omega_arith,
+                by dsimp only; omega_arith⟩⟩
       · rw [hc, Bool.cond_true, List.mem_singleton] at h
         subst h
         simp only [Bool.or_eq_true, Bool.not_eq_true', Nat.ble_eq] at hc
@@ -1392,10 +1392,10 @@ theorem bound_of_cover {ls : List Nat} {l : List (Nat × Nat × Nat)}
     (hl : ∀ z ∈ l, z.2.1 + z.2.2 ≤ ls.getD z.1 0) {y : Nat × Nat × Nat} (hw : 0 < y.2.2)
     (hc : ∀ k, y.2.1 ≤ k → k < y.2.1 + y.2.2 → ∃ z ∈ l, InSlot z y.1 k) :
     y.2.1 + y.2.2 ≤ ls.getD y.1 0 := by
-  obtain ⟨z, hz, e, h₁, h₂⟩ := hc (y.2.1 + y.2.2 - 1) (by omega) (by omega)
+  obtain ⟨z, hz, e, h₁, h₂⟩ := hc (y.2.1 + y.2.2 - 1) (by omega_arith) (by omega_arith)
   have := hl z hz
   rw [e] at this
-  omega
+  omega_arith
 
 /-- The bytes of `y` agree if they are in slots that agree. -/
 theorem agree_of_cover {s₁ s₂ : State} {l : List (Nat × Nat × Nat)}
@@ -1463,7 +1463,7 @@ theorem cutT_cover (τ : T) (n : Reg) (off w : Nat) : Cover (cutT τ n off w) τ
   split at hy
   · rcases (mem_cutSlots hy).2 with h | ⟨z, hz, h₀, e, h₁, h₂⟩
     · exact .inl h
-    · exact .inr ⟨h₀, fun k h₃ h₄ => ⟨z, hz, e.symm, by omega, by omega⟩⟩
+    · exact .inr ⟨h₀, fun k h₃ h₄ => ⟨z, hz, e.symm, by omega_arith, by omega_arith⟩⟩
   · exact .inl hy
 
 theorem storeSlotsKM_cover (τ : T) (n : Reg) (off w : Nat) (hw : 0 < w)
@@ -1490,7 +1490,7 @@ theorem storeSlotsKM_cover (τ : T) (n : Reg) (off w : Nat) (hw : 0 < w)
       simp only [hb, Bool.cond_true, hb', ite_true, Bool.true_or, filter_true_eq] at hy ⊢
       rcases mem_mergeSlot τ.slots (i, d, w) y hy with h | ⟨e, hw', hk⟩
       · exact .inl (List.mem_cons_of_mem _ h)
-      · refine .inr ⟨by simp only at hw'; omega, fun k h₁ h₂ => ?_⟩
+      · refine .inr ⟨by simp only at hw'; omega_arith, fun k h₁ h₂ => ?_⟩
         rw [e]
         rcases hk k h₁ h₂ with h | ⟨z, hz, h⟩
         · exact ⟨_, List.mem_cons_self .., h⟩
@@ -1643,10 +1643,10 @@ theorem meetC_of {τ₁ τ₂ τ : T} {s₁ s₂ : State} (hm : Agree (meet τ�
     obtain ⟨z, hz, -, e, -, h₂⟩ := hs y hy
     rw [hl he, e]
     have := h.ok z hz
-    omega
+    omega_arith
   · split at hy <;> [skip; cases hy]
     obtain ⟨z, hz, -, e, h₁, h₂⟩ := hs y hy
-    exact agree_of_cover h.slots fun k h₃ h₄ => ⟨z, hz, e.symm, by omega, by omega⟩
+    exact agree_of_cover h.slots fun k h₃ h₄ => ⟨z, hz, e.symm, by omega_arith, by omega_arith⟩
 
 theorem meet_lens_of {τ₁ τ₂ : T} (he : τ₁.lens = τ₂.lens) :
     (meet τ₁ τ₂).lens = τ₁.lens ∧ (meet τ₁ τ₂).lens = τ₂.lens := by

@@ -43,9 +43,9 @@ theorem step_ok {fP : Addr} {len st u k : Nat} (hl : 0 < len) (hl4 : len%4 = 0)
       Frame [pR fP] s.mem s'.mem ∧ VConsts s' ∧ s'.v .v18 = s.v .v18 ∧
       s'.gpr .x2 = coeffAddr fP (st+4*(u+1)) ∧ s'.gpr .x5 = s.gpr .x5 - 1 ∧
       Keep [.x2,.x5] s s' := by
-  have j0 : st+4*u+4 ≤ 256 := by omega
-  have j1 : st+4*u+len+4 ≤ 256 := by omega
-  have off : 4*len%16 = 0 ∧ 4*len < 4096*16 := ⟨by omega, by omega⟩
+  have j0 : st+4*u+4 ≤ 256 := by omega_arith
+  have j1 : st+4*u+len+4 ≤ 256 := by omega_arith
+  have off : 4*len%16 = 0 ∧ 4*len < 4096*16 := ⟨by omega_arith, by omega_arith⟩
   have a1 : coeffAddr fP (st+4*u) + BitVec.ofNat 64 (4*len) = coeffAddr fP (st+4*u+len) := coeffAddr_add _ _ _
   have r0 : InRegions (s.rd++s.wr) (coeffAddr fP (st+4*u)) 16 :=
     ⟨_,List.mem_append_right _ hw,vector_contains _ j0⟩
@@ -83,22 +83,22 @@ theorem step_ok {fP : Addr} {len st u k : Nat} (hl : 0 < len) (hl4 : len%4 = 0)
       by rw [hv6,h₅.v,h₄.v,h₃.get .v18,h₂.get .v18,h₁.get .v18], ?_, ?_,
       (((((h₁.keep.trans h₂.keep).trans h₃.keep).trans h₄.keep).trans h₅.keep).trans h₆).mono⟩
   · rw [hm6,mem₅]
-    refine polyIs_write2 hP j0 j1 (by omega) la lb fun i hi => ?_
-    rw [show 4*(u+1) = 4*u+4 by omega,hblk.add,hblk.get _ _ _ _ _ hl (by omega)
-      (by rw [n_eq]; omega) _ (by rw [n_eq]; exact hi)]
+    refine polyIs_write2 hP j0 j1 (by omega_arith) la lb fun i hi => ?_
+    rw [show 4*(u+1) = 4*u+4 by omega_arith,hblk.add,hblk.get _ _ _ _ _ hl (by omega_arith)
+      (by rw [n_eq]; omega_arith) _ (by rw [n_eq]; exact hi)]
     by_cases c1 : st+4*u ≤ i ∧ i < st+4*u+4
     · rw [ite_eq_left c1,ite_eq_left c1,
-        show st+4*u+(i-(st+4*u)) = i by omega,
-        show st+4*u+len+(i-(st+4*u)) = i+len by omega]
+        show st+4*u+(i-(st+4*u)) = i by omega_arith,
+        show st+4*u+len+(i-(st+4*u)) = i+len by omega_arith]
     · rw [ite_eq_right c1,ite_eq_right c1]
       by_cases c2 : st+4*u+len ≤ i ∧ i < st+4*u+len+4
-      · rw [ite_eq_left c2,ite_eq_left (by omega),
-          show st+4*u+(i-(st+4*u+len)) = i-len by omega,
-          show st+4*u+len+(i-(st+4*u+len)) = i by omega]
-      · rw [ite_eq_right c2,ite_eq_right (by omega)]
+      · rw [ite_eq_left c2,ite_eq_left (by omega_arith),
+          show st+4*u+(i-(st+4*u+len)) = i-len by omega_arith,
+          show st+4*u+len+(i-(st+4*u+len)) = i by omega_arith]
+      · rw [ite_eq_right c2,ite_eq_right (by omega_arith)]
   · rw [hm6,mem₅]; exact frame_write2 (Frame.refl _ _) j0 j1 _ _
   · rw [hx6,h₅.gpr,h₄.gpr,g₃,hx,show (16 : BitVec 64) = BitVec.ofNat 64 (4*4) from rfl,
-      coeffAddr_add,show st+4*u+4 = st+4*(u+1) by omega]
+      coeffAddr_add,show st+4*u+4 = st+4*(u+1) by omega_arith]
   · rw [hcnt6,h₅.gpr,h₄.gpr,g₃]
 end
 end VG.Proof.MlDsa.AArch64.Arith.Neon

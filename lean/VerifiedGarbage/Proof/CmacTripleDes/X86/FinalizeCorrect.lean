@@ -40,7 +40,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
   have rdwr₁ : s₁.rd ++ s₁.wr = [keyR s₀, lastR s₀, argsR s₀, fstR s₀, fscrR s₀] := by
     rw [h₁.rd, h₁.wr, hp.rd, hp.wr]; rfl
   have stIn : ∀ d, d + 4 ≤ 8 → InRegions (s₁.rd ++ s₁.wr) ((FSt s₀).setWidth 64 + BitVec.ofNat 64 d) 4 :=
-    fun d hd => by rw [rdwr₁]; exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega))
+    fun d hd => by rw [rdwr₁]; exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega_arith))
   have mnS : ∀ r ∈ [mnR s₀], Region.Sub r (fstR s₀) ∨ Region.Sub r (fscrR s₀) := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact Or.inr (Offset.sub_base _ (by decide))
   -- `finMid`.
@@ -51,7 +51,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
   refine wp_xorma (a := (FSt s₀).setWidth 64) (by rw [u₂.gpr, addr_zero])
     (by rw [u₂.rd, u₂.wr]; simpa [add0] using stIn 0 (by decide)) fun s₃ u₃ => ?_
   refine wp_xorma (a := (FSt s₀).setWidth 64 + BitVec.ofNat 64 4)
-    (by rw [u₃.other .ecx (by decide), u₂.gpr]; exact addr_eq (by omega))
+    (by rw [u₃.other .ecx (by decide), u₂.gpr]; exact addr_eq (by omega_arith))
     (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr]; exact stIn 4 (by decide)) fun s₄ u₄ => ?_
   refine wp_bswap fun s₅ u₅ => wp_bswap fun s₆ u₆ => WP.block_nil ?_
   have g₆ : ∀ r, r ∉ [Reg.eax, .ecx, .edx] → s₆.gpr r = s₁.gpr r := fun r hr => by
@@ -94,11 +94,11 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
     fun s₈ u₈ => wp_bswap fun s₉ u₉ => wp_bswap fun s₁₀ u₁₀ => ?_
   have stW : ∀ d, d + 4 ≤ 8 → InRegions s₁₀.wr ((FSt s₀).setWidth 64 + BitVec.ofNat 64 d) 4 := fun d hd => by
     rw [u₁₀.wr, u₉.wr, u₈.wr, wr₇, hp.wr]
-    exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega))
+    exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega_arith))
   refine wp_store (a := (FSt s₀).setWidth 64) (by rw [ea_at', u₁₀.other _ (by decide), u₉.other _ (by decide),
     u₈.gpr, addr_zero]) (by simpa [add0] using stW 0 (by decide)) fun s₁₁ w₁₁ => ?_
   refine wp_store (a := (FSt s₀).setWidth 64 + BitVec.ofNat 64 4)
-    (by rw [ea_at', w₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr]; exact addr_eq (by omega))
+    (by rw [ea_at', w₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr]; exact addr_eq (by omega_arith))
     (by rw [w₁₁.wr]; exact stW 4 (by decide)) fun s₁₂ w₁₂ => WP.block_nil ?_
   have ebp₁₂ : s₁₂.gpr .ebp = FS s₀ := by
     rw [w₁₂.gpr, w₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), ebp₇]
@@ -111,7 +111,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
   have c0 : (fstR s₀).Contains ((FSt s₀).setWidth 64) (32 / 8) := by
     simpa [add0] using Offset.contains_base ((FSt s₀).setWidth 64) (d := 0) (n := 4) (k := 8) (by decide) (by decide)
   have c4 : (fstR s₀).Contains ((FSt s₀).setWidth 64 + BitVec.ofNat 64 4) (32 / 8) :=
-    Offset.contains_base _ (by decide) (by omega)
+    Offset.contains_base _ (by decide) (by omega_arith)
   have F₁₂ : Frame [mnR s₀, ⟨A, 84⟩, fstR s₀] (savedMem s₀ (FS s₀)) s₁₂.mem := by
     rw [mem₁₂]
     exact ((F₇.mono (by simp)).writeW (r := fstR s₀) (by simp) _ c0).writeW (r := fstR s₀) (by simp) _ c4
@@ -122,9 +122,9 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
     refine F₁₂.readW (r := ⟨A + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    · exact Offset.disjoint_base _ (by omega) (by omega)
-    · exact (hp.st_scr.sub_right (Offset.sub_base _ (by omega))).symm
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · exact (hp.st_scr.sub_right (Offset.sub_base _ (by omega_arith))).symm
   have ret : s₁₂.mem.readW ((s₀.gpr .esp).setWidth 64) 32 = s₀.mem.readW ((s₀.gpr .esp).setWidth 64) 32 := by
     rw [F₁₂.readW (r := retR s₀) (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
     · exact (savedMem_frame s₀ (FS s₀)).readW (r := retR s₀) (Region.contains_self _ _) (fun r hr => by
@@ -135,8 +135,8 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
       · exact hp.ret_scr.sub_right (Offset.sub_base _ (by decide))
       · exact hp.ret_scr.sub_right (Region.sub_prefix (by decide))
       · exact hp.ret_st
-  refine WP.mono (restore_ok ebp₁₂ (by omega) (fun d h₁' h₂' => by
-      rw [rdwr₁₂]; exact in_rw (r := fscrR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+  refine WP.mono (restore_ok ebp₁₂ (by omega_arith) (fun d h₁' h₂' => by
+      rw [rdwr₁₂]; exact in_rw (r := fscrR s₀) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
       (saved_of slots))
     fun s' r' => ⟨restored r' (by
       rw [w₁₂.gpr, w₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide),

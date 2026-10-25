@@ -21,14 +21,7 @@ theorem counterLoads_ok (s : State) {base : BitVec 32} (h : Controller base s) :
     WP isa (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 0, .ldr .r10 .r4 4]) s fun t =>
       (t.gpr .r9 = lowWord s.mem base 0 ∧ t.gpr .r10 = s.mem.readW (off (State.addr base) 4) 32 ∧ t.mem = s.mem) ∧
       Rest [.r9, .r10] s t := by
-  refine withRest [.r9, .r10] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 0, .ldr .r10 .r4 4] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r9, .r10] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord
   ffrun [controllerAddr h 0 (by decide), controllerAddr h 4 (by decide),
     h.space.read (off := 0) (by decide), h.space.read (off := 4) (by decide)]
@@ -57,10 +50,7 @@ theorem decrement_ok (s : State) {base : BitVec 32} {n : Nat} (h : Controller ba
     ⟨h.space.congr restUV.wr, (restUV.gpr .r4 (by simp)).trans h.ptr⟩
   have raw : WP isa (.block [VG.Impl.Ffdh.Arm.ParameterSearch.stf .r9 0, .str .r10 .r4 4]) v fun t =>
       t.mem = s.mem.writeW (State.addr base) (BitVec.ofNat 64 (n - 1)) ∧ Rest [] v t := by
-    refine withRest [] ?_ (by
-      intro r _ i hi
-      simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
-      rcases hi with rfl | rfl <;> rfl) (by rfl)
+    refine withRest_all [] ?_ (by rfl) (by rfl)
     unfold VG.Impl.Ffdh.Arm.ParameterSearch.stf
     ffrun [controllerAddr context 0 (by decide), controllerAddr context 4 (by decide),
       context.space.write (off := 0) (by decide), context.space.write (off := 4) (by decide),

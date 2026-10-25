@@ -79,13 +79,13 @@ theorem tagArgs_ok {p : Prm} {t : State} (E : Env p t) {o : Nat} (ho : o = 0 ∨
   have r₈ := E.perm.wR (show 104 + 8 ≤ 3808 by decide)
   have w₀ := E.perm.wW (show 112 + 8 ≤ 3808 by decide)
   have w₈ := E.perm.wW (show 120 + 8 ≤ 3808 by decide)
-  have z₀ := E.perm.wW (show o + 8 ≤ 3808 by omega)
-  have z₈ := E.perm.wW (show o + 8 + 8 ≤ 3808 by omega)
-  have o₁ : o % 8 = 0 := by omega
-  have o₂ : o < 32768 := by omega
-  have o₃ : (o + 8) % 8 = 0 := by omega
-  have o₄ : o + 8 < 32768 := by omega
-  have o₅ : o < 4096 := by omega
+  have z₀ := E.perm.wW (show o + 8 ≤ 3808 by omega_arith)
+  have z₈ := E.perm.wW (show o + 8 + 8 ≤ 3808 by omega_arith)
+  have o₁ : o % 8 = 0 := by omega_arith
+  have o₂ : o < 32768 := by omega_arith
+  have o₃ : (o + 8) % 8 = 0 := by omega_arith
+  have o₄ : o + 8 < 32768 := by omega_arith
+  have o₅ : o < 4096 := by omega_arith
   refine ⟨_, by simp only [copy16, zero16, ctrArgs]; grun [E.x19, E.x22, r₀, r₈, w₀, w₈, z₀, z₈, o₁, o₂, o₃, o₄, o₅],
     ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, by others_tac, (by rfl), (by rfl), (by rfl)⟩
@@ -106,19 +106,19 @@ theorem tagCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {o : Na
   have hw := L.ww
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, x5 := x5
     rounds := L.rounds3
-    wrap := by rw [L.toNat_W (by omega)]; omega
+    wrap := by rw [L.toNat_W (by omega_arith)]; omega_arith
     n_lt := by decide
     kc := L.w_w (.inr (by decide)) (by decide) (by decide)
-    kd := L.w_w (.inr (by omega)) (by decide) (by omega)
+    kd := L.w_w (.inr (by omega_arith)) (by decide) (by omega_arith)
     ks := L.w_w (.inl (by decide)) (by decide) (by decide)
-    cd := (L.w_w (by omega) (by omega) (by decide) :
+    cd := (L.w_w (by omega_arith) (by omega_arith) (by decide) :
       (⟨p.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 112, 16⟩).symm
     cs := L.w_w (.inl (by decide)) (by decide) (by decide)
-    ds := L.w_w (.inl (by omega)) (by omega) (by decide)
+    ds := L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
     reads := covers_append (covers_cons (E₁.perm.wCR (by decide)) covers_nil)
-      (covers_cons (E₁.perm.wCR (by decide)) (covers_cons (E₁.perm.wCR (by omega))
+      (covers_cons (E₁.perm.wCR (by decide)) (covers_cons (E₁.perm.wCR (by omega_arith))
         (covers_cons (E₁.perm.wCR (by decide)) covers_nil)))
-    writes := covers_cons (E₁.perm.wC (by decide)) (covers_cons (E₁.perm.wC (by omega))
+    writes := covers_cons (E₁.perm.wC (by decide)) (covers_cons (E₁.perm.wC (by omega_arith))
         (covers_cons (E₁.perm.wC (by decide)) covers_nil)) }
 
 theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat}
@@ -130,7 +130,7 @@ theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o 
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   have dO : (⟨p.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 112, 16⟩ :=
-    L.w_w (by omega) (by omega) (by decide)
+    L.w_w (by omega_arith) (by omega_arith) (by decide)
   have cc := tagCall L E₁ ho x0 x1 x2 x3 x4 x5
   have fZ := Proof.Cmac.frame_store2 (m := copyMem t.mem p.W) (p.W + BitVec.ofNat 64 o) 0 0
   have f₁ : Frame [⟨p.W + BitVec.ofNat 64 112, 16⟩, ⟨p.W + BitVec.ofNat 64 o, 16⟩] t.mem t₁.mem := by
@@ -148,8 +148,8 @@ theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl
       · exact (L.w_w (.inr (by decide)) (by decide) (by decide)).sub_left (Region.sub_prefix L.rounds_le)
-      · exact (L.w_w (.inr (by omega)) (by decide) (by omega)).sub_left (Region.sub_prefix L.rounds_le))
-      (by have := L.rounds_le; omega)]
+      · exact (L.w_w (.inr (by omega_arith)) (by decide) (by omega_arith)).sub_left (Region.sub_prefix L.rounds_le))
+      (by have := L.rounds_le; omega_arith)]
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (ctr_call v.ctr cc) fun t₂ P => ?_
   have fc := P.frame

@@ -73,7 +73,7 @@ theorem reduceTopK_ct {sl : Nat} {top : List Instr} (fl fc : KPub → Nat) (hsl 
     rw [WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 ((fl p + 7) / 8) ∧ t.mem = s.mem)
       (by xrun [Impl.Rsa.X86_64.CheckCrtKey.lenWords, State.ea, hdr, hdi, hdrOff, hl sl hsl, hLs,
-        shr3_w (fl p) (by omega)]) rfl) fun s₂ ⟨⟨h12₂, hm₂⟩, k₂⟩ => ?_
+        shr3_w (fl p) (by omega_arith)]) rfl) fun s₂ ⟨⟨h12₂, hm₂⟩, k₂⟩ => ?_
     have hK₂ : KK p s₂ := KK.keep ⟨s₀, minv, N, c, hs⟩ hm₂ (k₂.mono (by decide))
     refine WP.mono (htop p s₂ hK₂) fun s₃ ⟨h13₃, hm₃, k₃⟩ => ?_
     have hK₃ : KK p s₃ := KK.keep hK₂ hm₃ (k₃.mono (by decide))
@@ -98,18 +98,18 @@ theorem reduceTopK_ct {sl : Nat} {top : List Instr} (fl fc : KPub → Nat) (hsl 
     have hZ := c.hZ
     have := c.w2
     have := hfc p s₀ hs
-    have eAcc : slot p.w aAcc = 256 + 16 * (p.w + 2) := by unfold slot hdrBytes aAcc; omega
-    have eR : slot p.w aR = 256 + 48 * (p.w + 2) := by unfold slot hdrBytes aR; omega
-    have e8 : slot p.w 8 = 256 + 64 * (p.w + 2) := by unfold slot hdrBytes; omega
+    have eAcc : slot p.w aAcc = 256 + 16 * (p.w + 2) := by unfold slot hdrBytes aAcc; omega_arith
+    have eR : slot p.w aR = 256 + 48 * (p.w + 2) := by unfold slot hdrBytes aR; omega_arith
+    have e8 : slot p.w 8 = 256 + 64 * (p.w + 2) := by unfold slot hdrBytes; omega_arith
     have hsi : s.gpr .rsi = off p.B (slot p.w aAcc + 8 * fc p) := hr (.rsi, off p.B (slot p.w aAcc + 8 * fc p)) (by simp)
     have hbx : s.gpr .rbx = off p.B (slot p.w aR) := hr (.rbx, kb p aR) (by simp)
     have h12 : s.gpr .r12 = BitVec.ofNat 64 ((fl p + 7) / 8) := hr (.r12, BitVec.ofNat 64 ((fl p + 7) / 8)) (by simp)
     have h13 : s.gpr .r13 = BitVec.ofNat 64 (fc p) := hr (.r13, BitVec.ofNat 64 (fc p)) (by simp)
-    refine WP.mono (copyWords_ok hsi hbx h12 (by omega) (by omega) (by omega)
-      (fun i hi => c.good.scr.ld (by omega)) (fun i hi => c.good.scr.st (by omega))
-      (fun i hi b hb => by rw [ofs_off p.B (by omega)]; omega)) fun t ⟨_, _, ho, k⟩ => ?_
+    refine WP.mono (copyWords_ok hsi hbx h12 (by omega_arith) (by omega_arith) (by omega_arith)
+      (fun i hi => c.good.scr.ld (by omega_arith)) (fun i hi => c.good.scr.st (by omega_arith))
+      (fun i hi b hb => by rw [ofs_off p.B (by omega_arith)]; omega_arith)) fun t ⟨_, _, ho, k⟩ => ?_
     have ha : Arrays p.B p.w [aR] s.mem t.mem :=
-      Arrays.of_outside (j := aR) (by simp) ho (Nat.le_refl _) (by omega)
+      Arrays.of_outside (j := aR) (by simp) ho (Nat.le_refl _) (by omega_arith)
     exact ⟨⟨s₀, minv, N, c.arr ha (by decide) (by decide) (by decide) (k.mono (by decide)), hs⟩,
       (k.gpr (by decide)).trans h12, (k.gpr (by decide)).trans h13⟩
   refine hdr_ct (Φ := RT2 fl fc) (pins_of (fun p _ => p.B) fun _ _ h r hr => by
@@ -142,13 +142,13 @@ theorem ckModChecks_ct {sX sXlen sDX : Nat} (hsXl : sXlen < 32) (nXl : sXlen ≠
   unfold Impl.Rsa.X86_64.CheckCrtKey.modChecks
   have hR : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sXlen
       Impl.Rsa.X86_64.CheckCrtKey.topE)) (Two KK) :=
-    reduceTopK_ct fl (fun _ => 1) hsXl nXl hX (fun p s h => by have := (hX p s h).2.2; omega) (fun _ t _ => topE_ok t)
+    reduceTopK_ct fl (fun _ => 1) hsXl nXl hX (fun p s h => by have := (hX p s h).2.2; omega_arith) (fun _ t _ => topE_ok t)
       (fun p s h => by
         obtain ⟨s₀, minv, N, c, hs⟩ := h
         obtain ⟨a, c1, c2⟩ := hX p s₀ hs
         have := c.w2
-        exact WP.mono (reduceTopK c (Nx := p.w + 2) hsXl nXl a c1 c2 (fun t _ _ => topE_ok t) (Nat.le_refl _) (by omega)
-          (by omega)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hT
+        exact WP.mono (reduceTopK c (Nx := p.w + 2) hsXl nXl a c1 c2 (fun t _ _ => topE_ok t) (Nat.le_refl _) (by omega_arith)
+          (by omega_arith)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hT
   refine kk_app (by simp [loadNum]) (by simp [eqOne])
     (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
     (kk_app (by simp [loadNum]) (by simp [mulE]) (kk_app (by simp [loadNum]) (by simp [ltMask])
@@ -161,12 +161,12 @@ theorem topQK_ok {p : KPub} {t : State} (h : KK p t) :
   obtain ⟨s₀, minv, N, c, hs⟩ := h
   have := c.w2
   have := hs.ql2
-  exact topQ_ok c.good c.hZ (by rw [c.hdr sQlen (by decide) (by decide)]; exact hs.hQl) (by omega)
+  exact topQ_ok c.good c.hZ (by rw [c.hdr sQlen (by decide) (by decide)]; exact hs.hQl) (by omega_arith)
 
 theorem reduceTopQK_ct : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sPlen
     Impl.Rsa.X86_64.CheckCrtKey.topQ)) (Two KK) :=
   reduceTopK_ct (·.pl) (fun p => (p.ql + 7) / 8) (by decide) (by decide) (fun _ _ h => ⟨h.hPl, h.pl1, h.pl2⟩)
-    (fun _ _ h => by have := h.pl2; have := h.ql2; omega) (fun _ _ h => topQK_ok h)
+    (fun _ _ h => by have := h.pl2; have := h.ql2; omega_arith) (fun _ _ h => topQK_ok h)
     (fun p s h => by
       obtain ⟨s₀, minv, N, c, hs⟩ := h
       have := c.w2
@@ -177,7 +177,7 @@ theorem reduceTopQK_ct : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.r
           word t.mem p.B (8 * sQlen) = BitVec.ofNat 64 p.ql := fun t hh => by
         rw [hh _ (by decide), c.hdr sQlen (by decide) (by decide)]; exact hs.hQl
       exact WP.mono (reduceTopK c (Nx := 2 * p.w + 2) (by decide) (by decide) hs.hPl hs.pl1 hs.pl2
-        (fun t hg hh => topQ_ok hg c.hZ (hq t hh) (by omega)) (by omega) (by omega) (by omega))
+        (fun t hg hh => topQ_ok hg c.hZ (hq t hh) (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith))
         fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) (by taint_decide)
 
 end VG.Proof.Rsa.X86_64.Key

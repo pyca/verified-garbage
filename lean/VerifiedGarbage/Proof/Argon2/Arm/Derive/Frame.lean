@@ -53,18 +53,18 @@ include hlo
 
 theorem sp1 : (pushed argRegs s₀).sp.toNat = (E0 s₀).toNat - 16 := by
   have h : 200 ≤ s₀.sp.toNat := hlo
-  rw [pushed_sp_toNat (by simp only [List.length_cons, List.length_nil]; omega)]; rfl
+  rw [pushed_sp_toNat (by simp only [List.length_cons, List.length_nil]; omega_arith)]; rfl
 
 theorem sp2 : (pushed savedRegs (pushed argRegs s₀)).sp.toNat = (E0 s₀).toNat - 56 := by
-  rw [pushed_sp_toNat (by rw [sp1 hlo]; simp only [List.length_cons, List.length_nil]; omega), sp1 hlo]; rfl
+  rw [pushed_sp_toNat (by rw [sp1 hlo]; simp only [List.length_cons, List.length_nil]; omega_arith), sp1 hlo]; rfl
 
 theorem E_toNat : (E s₀).toNat = (E0 s₀).toNat - 200 := sub_toNat' hlo
 
 theorem entry_sp : (entry s₀).sp = E s₀ := by
   apply BitVec.eq_of_toNat_eq
   simp only [entry, allocated]
-  rw [sub_toNat' (by rw [sp2 hlo]; omega), sp2 hlo, E_toNat hlo]
-  omega
+  rw [sub_toNat' (by rw [sp2 hlo]; omega_arith), sp2 hlo, E_toNat hlo]
+  omega_arith
 
 end
 
@@ -98,21 +98,21 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     WP isa derive s₀ fun u => abiPreserved s₀ u ∧ Q u := by
   have hE := (E0 s₀).isLt
   have e0 : (E0 s₀).toNat = s₀.sp.toNat := rfl
-  have h1 := sp1 (s₀ := s₀) (by omega)
-  have h2 := sp2 (s₀ := s₀) (by omega)
+  have h1 := sp1 (s₀ := s₀) (by omega_arith)
+  have h2 := sp2 (s₀ := s₀) (by omega_arith)
   unfold derive
-  refine WP.frame (rs := argRegs) (r := .r0) (by decide) (by simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.frame (rs := argRegs) (r := .r0) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by decide) ?_
   refine WP.frame (rs := savedRegs) (r := .r3) (by decide)
-    (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega) (by decide) ?_
-  refine WP.seq (WP.alloc (by decide) (by rw [h2]; show 144 ≤ _; omega) (hb.mono fun t ⟨d, w, q⟩ => ?_))
+    (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega_arith) (by decide) ?_
+  refine WP.seq (WP.alloc (by decide) (by rw [h2]; show 144 ≤ _; omega_arith) (hb.mono fun t ⟨d, w, q⟩ => ?_))
   -- The restores.
   set S2 := pushed savedRegs (pushed argRegs s₀) with hS2
   have spS2 : (freed 144 t).sp = S2.sp := by
     simp only [freed, d.sp]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_add, E_toNat (by omega), h2, BitVec.toNat_ofNat]
-    omega
+    rw [BitVec.toNat_add, E_toNat (by omega_arith), h2, BitVec.toNat_ofNat]
+    omega_arith
   have wS2 : (freed 144 t).wr = S2.wr := by simp only [freed, w, entry, allocated, List.tail_cons, hS2]
   have S2sp : S2.sp.toNat = (E0 s₀).toNat - 56 := h2
   have hS2v : ∀ i (hi : i < 10), S2.mem.readW (State.addr (S2.sp + BitVec.ofNat 32 (4 * i))) 32 =
@@ -121,14 +121,14 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
       ((pushed argRegs s₀).sp - BitVec.ofNat 32 (4 * savedRegs.length))
       (savedRegs.map (pushed argRegs s₀).gpr) (by
         simp only [List.length_map, List.length_cons, List.length_nil]
-        rw [sub_toNat' (by rw [h1]; omega), h1]; omega) (i := i) (by simpa using hi)
+        rw [sub_toNat' (by rw [h1]; omega_arith), h1]; omega_arith) (i := i) (by simpa using hi)
     rw [List.getElem_map] at this
     exact this
   have inS2 : ∀ d, d + 4 ≤ 40 → InRegions ((freed 144 t).rd ++ (freed 144 t).wr)
       (State.addr ((freed 144 t).sp + BitVec.ofNat 32 d)) 4 := fun d hd => by
     have hw : ⟨State.addr S2.sp, 40⟩ ∈ S2.wr := by simp [hS2, pushed]
-    rw [wS2, spS2, addr_add (by rw [S2sp]; omega)]
-    exact ⟨⟨State.addr S2.sp, 40⟩, List.mem_append_right _ hw, Offset.contains_base _ hd (by omega)⟩
+    rw [wS2, spS2, addr_add (by rw [S2sp]; omega_arith)]
+    exact ⟨⟨State.addr S2.sp, 40⟩, List.mem_append_right _ hw, Offset.contains_base _ hd (by omega_arith)⟩
   show WP isa (.block (Impl.Argon2.Arm.Derive.savedSlots.map fun p => Instr.ldrSp p.1 p.2)) (freed 144 t) _
   rw [← List.append_nil (List.map _ _)]
   refine restoreSp_ok _ _ _ (by decide) (fun p hpm => ⟨?_, inS2 p.2 ?_⟩) fun u hu ho hm hrd hwr hsp => WP.block_nil ?_
@@ -141,9 +141,9 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
       State.addr (E s₀ + BitVec.ofNat 32 (148 + 4 * j)) := fun j hj => by
     congr 1
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_add, BitVec.toNat_add, S2sp, E_toNat (by omega), BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := 4 * (j + 1)) (by omega), Nat.mod_eq_of_lt (a := 148 + 4 * j) (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_add, S2sp, E_toNat (by omega_arith), BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := 4 * (j + 1)) (by omega_arith), Nat.mod_eq_of_lt (a := 148 + 4 * j) (by omega_arith)]
+    omega_arith
   have tv : ∀ j (hj : j < 9), t.mem.readW (State.addr (S2.sp + BitVec.ofNat 32 (4 * (j + 1)))) 32 =
       s₀.gpr (savedRegs[j + 1]?.getD .r0) := fun j hj => by
     rw [key j hj]; exact d.saved j hj

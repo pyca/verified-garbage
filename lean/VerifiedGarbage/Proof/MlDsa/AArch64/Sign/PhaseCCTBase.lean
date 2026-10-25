@@ -96,15 +96,15 @@ theorem setKappa_post {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : L
   have e65 : pa s (sc (oMS + 65)) = pa s (sc (oMS + 64)) + 1 := (pa_sc_add s (oMS + 64) 1).symm
   have w2 := L.inW h2
   have c0 : (⟨pa s (sc (oMS + 64)), 2⟩ : Region).Contains (pa s (sc (oMS + 64))) 1 := by
-    have := Offset.contains_base (pa s (sc (oMS + 64))) (d := 0) (n := 1) (k := 2) (by omega) (by decide)
+    have := Offset.contains_base (pa s (sc (oMS + 64))) (d := 0) (n := 1) (k := 2) (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
   have c1 : (⟨pa s (sc (oMS + 64)), 2⟩ : Region).Contains (pa s (sc (oMS + 65))) 1 := by
-    rw [e65]; exact Offset.contains_base _ (d := 1) (by omega) (by decide)
+    rw [e65]; exact Offset.contains_base _ (d := 1) (by omega_arith) (by decide)
   have i0 : InRegions s.wr (pa s (sc (oMS + 64))) 1 := by
-    have := inRegions_sub (off := 0) (l := 1) w2 (by omega) (by decide)
+    have := inRegions_sub (off := 0) (l := 1) w2 (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
   have i1 : InRegions s.wr (pa s (sc (oMS + 65))) 1 := by
-    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega) (by decide)
+    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega_arith) (by decide)
   refine WP.mono (setKappa_run r hr s (L.inR h1) i0 i1) fun s' ⟨hm, k⟩ => ⟨_, (postB_of_keep k (by decide)
     (W := [⟨pa s (sc (oMS + 64)), 2⟩]) ?_)⟩
   rw [hm]
@@ -142,7 +142,7 @@ theorem rowW_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t i : Na
     fun I j hj => by
       have := I.l.k.d.im.A (p.ℓ * i + j) (by
         have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
-        rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega)
+        rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega_arith)
       rw [aP_ij]; exact this.1
   let J : State → Prop := fun s => (∃ σ, ICw p D σ t i s) ∧ Reduced s.mem (pa s (wP p i))
   unfold rowW
@@ -154,16 +154,16 @@ theorem rowW_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t i : Na
       ⟨⟨_, hP'⟩, ⟨σ, I.step hP' c1⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩
   · refine RelCT.mono (seqR_tr (Q := fun _ x y => LRel D (sgR p) (sgW p) x y ∧ J x ∧ J y) (p.ℓ - 1) 1
       fun j hj1 hj => stepSelf ?_ ?_) (fun _ _ h => h) fun _ _ _ => trivial
-    · refine RelCT.mono (mulAddAt_tr hP.mulAdd (cm j (by omega))) (fun x y ⟨R, ⟨⟨σ₁, I₁⟩, r₁⟩, ⟨⟨σ₂, I₂⟩, r₂⟩⟩ =>
-        ⟨R, ⟨r₁, hA I₁ j (by omega), (I₁.yh j (by omega)).1⟩, ⟨r₂, hA I₂ j (by omega), (I₂.yh j (by omega)).1⟩⟩)
+    · refine RelCT.mono (mulAddAt_tr hP.mulAdd (cm j (by omega_arith))) (fun x y ⟨R, ⟨⟨σ₁, I₁⟩, r₁⟩, ⟨⟨σ₂, I₂⟩, r₂⟩⟩ =>
+        ⟨R, ⟨r₁, hA I₁ j (by omega_arith), (I₁.yh j (by omega_arith)).1⟩, ⟨r₂, hA I₂ j (by omega_arith), (I₂.yh j (by omega_arith)).1⟩⟩)
         fun _ _ h => h
     · rintro x L ⟨⟨σ, I⟩, r⟩
-      refine WP.mono (mulAddAt_ok hP.mulAdd L (cm j (by omega)) r (hA I j (by omega)) (I.yh j (by omega)).1)
+      refine WP.mono (mulAddAt_ok hP.mulAdd L (cm j (by omega_arith)) r (hA I j (by omega_arith)) (I.yh j (by omega_arith)).1)
         fun x' ⟨hP', _, hq⟩ => ⟨⟨_, hP'⟩, ⟨σ, I.step hP' c1⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩
   · rintro x L ⟨I, r⟩
     exact WP.mono (seqR_ok (I := fun _ s => ∃ W, PostB D x s W ∧ J s) (p.ℓ - 1) 1
-      (fun j hj1 hj s ⟨W, hW, ⟨σ, I'⟩, r'⟩ => WP.mono (mulAddAt_ok hP.mulAdd I'.l.st.lay (cm j (by omega)) r'
-        (hA I' j (by omega)) (I'.yh j (by omega)).1) fun x' ⟨hP', _, hq⟩ =>
+      (fun j hj1 hj s ⟨W, hW, ⟨σ, I'⟩, r'⟩ => WP.mono (mulAddAt_ok hP.mulAdd I'.l.st.lay (cm j (by omega_arith)) r'
+        (hA I' j (by omega_arith)) (I'.yh j (by omega_arith)).1) fun x' ⟨hP', _, hq⟩ =>
           ⟨_, hW.trans hP' (fun _ h => List.mem_append_left _ h) (fun _ h => List.mem_append_right _ h),
             ⟨σ, I'.step hP' c1⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩) x ⟨[], PostB.refl x [], I, r⟩)
       fun x' ⟨W, hW, j⟩ => ⟨⟨W, hW⟩, j⟩

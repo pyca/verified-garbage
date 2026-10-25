@@ -74,18 +74,18 @@ theorem RP.wst {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl
   · rw [R.2.one]; exact hM
-  · rw [R.2.r2]; exact Nat.mod_lt _ (by omega)
+  · rw [R.2.r2]; exact Nat.mod_lt _ (by omega_arith)
 
 /-- A copy into slot 5 to 8 keeps the modulus prepared. -/
 theorem copyRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) {j d : Nat} (hj9 : 9 ≤ j)
     (hj : j ≤ 17) (hd5 : 5 ≤ d) (hd : d ≤ 8) :
     WP isa (copy (.slot .wide j) (.slot .wide d) (one .wide)) x (RP Ex base bytes len args sp w) := by
   have h := R.1.1
-  have f := h.slot_fit .wide (j := d) (by omega)
+  have f := h.slot_fit .wide (j := d) (by omega_arith)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  refine WP.mono (copyDown_ok h hj9 hj (by omega)) fun u ⟨O, _, K⟩ => ⟨R.1.keep K (O.mono (Nat.zero_le _) (by omega)), ?_⟩
-  exact R.2.keep (R.2.toReady.slot (a := d) hd5 (by omega) K (by decide) (by decide) O) (kept_slot h O) (by decide)
-    ⟨by simp; omega, by simp; omega, by simp; omega⟩
+  refine WP.mono (copyDown_ok h hj9 hj (by omega_arith)) fun u ⟨O, _, K⟩ => ⟨R.1.keep K (O.mono (Nat.zero_le _) (by omega_arith)), ?_⟩
+  exact R.2.keep (R.2.toReady.slot (a := d) hd5 (by omega_arith) K (by decide) (by decide) O) (kept_slot h O) (by decide)
+    ⟨by simp; omega_arith, by simp; omega_arith, by simp; omega_arith⟩
 
 /-- A power, with the modulus still prepared. -/
 theorem powerRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) :
@@ -96,7 +96,7 @@ theorem powerRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) 
   have G := stR_widen F (pwR_in h .wide 0)
   refine ⟨⟨⟨C.inp, R.1.2.1.keep K, (K.1 _ (by decide)).trans R.1.2.2⟩,
     R.2.keep ⟨C, by rw [pwR_sv3 h F h.room, R.2.one], by rw [pwR_sv4 h F h.room, R.2.r2]⟩
-      (kept_ops h G h.room) (by decide)⟩, by rw [Y]; exact Nat.mod_lt _ (by omega)⟩
+      (kept_ops h G h.room) (by decide)⟩, by rw [Y]; exact Nat.mod_lt _ (by omega_arith)⟩
 
 /-- A multiplication into slot 6, with the modulus still prepared. -/
 theorem mulRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) {a b : Nat} (ha3 : 3 ≤ a) (ha : a ≤ 8)
@@ -139,7 +139,7 @@ theorem sv_hdr {s : State} (h : In Ex base bytes len args s) {d : Nat} (hd : Hdr
   have f := slot_fit1 h hj
   rw [cb1] at f
   have bw := bc_eq_cwc len .wide
-  exact O.val32 (.inr (by rcases hd.1 with e | e <;> omega)) (by omega)
+  exact O.val32 (.inr (by rcases hd.1 with e | e <;> omega_arith)) (by omega_arith)
 
 /-- The squarings' state, `j` of them done: the hit mask a mask, and `s − 1 − j` to go. -/
 abbrev SQ (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
@@ -164,7 +164,7 @@ theorem squareStep_trace {w sn j : Nat} (hj : j < sn - 1) :
   refine VG.RelCT.seq (mul_both sp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     mul664_check (fun _ Q => (Q.1.wst6 Q.2.1).mulIn (by simp))
     fun x Q => WP.mono (mulRP_ok Q.1 (a := 6) (b := 4) (by decide) (by decide) (by decide) (by decide)
-      (by rw [Q.1.2.r2]; exact Nat.mod_lt _ (by have := Q.1.2.ctx.gt; omega)))
+      (by rw [Q.1.2.r2]; exact Nat.mod_lt _ (by have := Q.1.2.ctx.gt; omega_arith)))
       fun u ⟨R, h6, k⟩ => Q.kept R h6 k) ?_
   refine VG.RelCT.seq (aRel (F := fun u => SQ Ex base bytes len args sp w sn j u ∧ ∃ c, u.gpr .ecx = cmask c)
     (fun _ Q => Q.1.1) eq615_check fun x Q =>
@@ -172,8 +172,8 @@ theorem squareStep_trace {w sn j : Nat} (hj : j < sn - 1) :
         ⟨Q.kept (Q.1.regs K m) (by rw [m]; exact Q.2.1) (by rw [m]; exact Kept.refl _), _, e⟩) ?_
   refine aRel (fun _ Q => Q.1.1.1) tallyJ_check fun x ⟨Q, c, e⟩ => ?_
   obtain ⟨old, ho⟩ := Q.2.2.1
-  refine WP.mono (tally_ok Q.1.2 hdr_j (by decide) Q.2.2.2 (by omega) ho e) fun u ⟨S, P, H, J, Z, k, s6⟩ => ?_
-  refine ⟨⟨⟨run_step Q.1.1 S, P⟩, by rw [s6]; exact Q.2.1, ⟨_, H⟩, by rw [J]; omega⟩, by rw [Z]; congr 1; exact decide_eq_decide.mpr ⟨fun _ => by omega, fun _ => by omega⟩⟩
+  refine WP.mono (tally_ok Q.1.2 hdr_j (by decide) Q.2.2.2 (by omega_arith) ho e) fun u ⟨S, P, H, J, Z, k, s6⟩ => ?_
+  refine ⟨⟨⟨run_step Q.1.1 S, P⟩, by rw [s6]; exact Q.2.1, ⟨_, H⟩, by rw [J]; omega_arith⟩, by rw [Z]; congr 1; exact decide_eq_decide.mpr ⟨fun _ => by omega_arith, fun _ => by omega_arith⟩⟩
 
 /-- A round's runs for the same prepared modulus. -/
 theorem round_trace {w : Nat} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
@@ -208,7 +208,7 @@ theorem round_trace {w : Nat} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
   refine ite_fixed (b := decide (sn = 1)) (fun _ h => h.2)
     (fun _ => (aRel (F := fun _ => True) (fun _ h => h.1.1.1) nilR_check fun _ _ => WP.block_nil trivial).mono
       (fun _ _ h => h) fun _ _ _ => trivial) fun e => ?_
-  have hN : 0 < sn - 1 := by simp at e; omega
+  have hN : 0 < sn - 1 := by simp at e; omega_arith
   exact (relCT_countLoop hN (SQ Ex base bytes len args sp w sn) fun j hj => squareStep_trace hj).mono
     (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ _ => trivial
 

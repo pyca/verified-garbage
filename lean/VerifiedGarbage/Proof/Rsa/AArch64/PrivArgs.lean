@@ -41,34 +41,34 @@ theorem six_ok (B : Addr) (_hB : B.toNat + 128 ≤ 2 ^ 64) (m : Mem) (a b c d e 
       m'.readW (B + BitVec.ofNat 64 120) 64 = f := by
   have sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 128 → y + 8 ≤ 128 →
       Mem.Sep (B + BitVec.ofNat 64 x) (64 / 8) (B + BitVec.ofNat 64 y) (64 / 8) :=
-    fun x y h h₁ h₂ => Offset.sep B h (by omega) (by omega)
+    fun x y h h₁ h₂ => Offset.sep B h (by omega_arith) (by omega_arith)
   have ct : ∀ x, 80 ≤ x → x + 8 ≤ 128 →
       (⟨B + BitVec.ofNat 64 80, 48⟩ : Region).Contains (B + BitVec.ofNat 64 x) (64 / 8) :=
-    fun x h₁ h₂ => Offset.contains B h₁ (by omega) (by omega)
-  refine ⟨((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (ct 80 (by omega) (by omega))).writeW
-    (List.mem_singleton_self _) _ (ct 88 (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-    (ct 96 (by omega) (by omega))).writeW (List.mem_singleton_self _) _ (ct 104 (by omega) (by omega))).writeW
-    (List.mem_singleton_self _) _ (ct 112 (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-    (ct 120 (by omega) (by omega)), ?_, ?_, ?_, ?_, ?_, Mem.readW_writeW_self64 _ _ _⟩
-  · rw [Mem.readW_writeW_sep (sep 80 120 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 80 112 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 80 104 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 80 96 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 80 88 (by omega) (by omega) (by omega)) (by decide),
+    fun x h₁ h₂ => Offset.contains B h₁ (by omega_arith) (by omega_arith)
+  refine ⟨((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (ct 80 (by omega_arith) (by omega_arith))).writeW
+    (List.mem_singleton_self _) _ (ct 88 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+    (ct 96 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _ (ct 104 (by omega_arith) (by omega_arith))).writeW
+    (List.mem_singleton_self _) _ (ct 112 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+    (ct 120 (by omega_arith) (by omega_arith)), ?_, ?_, ?_, ?_, ?_, Mem.readW_writeW_self64 _ _ _⟩
+  · rw [Mem.readW_writeW_sep (sep 80 120 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 80 112 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 80 104 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 80 96 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 80 88 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [Mem.readW_writeW_sep (sep 88 120 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 88 112 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 88 104 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 88 96 (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (sep 88 120 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 88 112 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 88 104 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 88 96 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [Mem.readW_writeW_sep (sep 96 120 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 96 112 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 96 104 (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (sep 96 120 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 96 112 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 96 104 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [Mem.readW_writeW_sep (sep 104 120 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 104 112 (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (sep 104 120 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 104 112 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [Mem.readW_writeW_sep (sep 112 120 (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (sep 112 120 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
 
 section
@@ -100,7 +100,7 @@ theorem saveSlots_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hr : Regs
     RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, Option.bind_some, reduceCtorEq, ite_false,
     ite_true, hc.sp, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, w80, w88, w96,
     w104, w112, w120, write8, Option.some.injEq, exists_eq_left', BitVec.add_zero]
-  obtain ⟨f, k80, k88, k96, k104, k112, k120⟩ := six_ok L.B (by omega) t.mem (t.gpr .x0) (t.gpr .x2)
+  obtain ⟨f, k80, k88, k96, k104, k112, k120⟩ := six_ok L.B (by omega_arith) t.mem (t.gpr .x0) (t.gpr .x2)
     (t.gpr .x3) (t.gpr .x4) (t.gpr .x5) (t.gpr .x6)
   refine ⟨hc.store hL rfl rfl (hc.sp.symm ▸ rfl) rfl
     (by priv_cs_tac) (Frame.sub f fun r hr => ?_), ⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, f⟩
@@ -124,33 +124,33 @@ theorem copyArg_ok (hL : L.Ok) {t₀ t : State} {j : Nat} (hj : j < 10) (hI : Co
     WP isa (.block (copyArg j)) t (CopyInv L g vv m₀ t₀ (j + 1)) := by
   have hnB := hL.nB
   have hc := hI.ctx
-  have la := hc.inArgs hL (j := j + 2) (by omega)
-  have aw := hc.argW hL (j := j + 2) (by omega)
-  have w := hc.inFrW hL (d := 8 * j) (n := 8) (by simp only [frameBytes]; omega)
+  have la := hc.inArgs hL (j := j + 2) (by omega_arith)
+  have aw := hc.argW hL (j := j + 2) (by omega_arith)
+  have w := hc.inFrW hL (d := 8 * j) (n := 8) (by simp only [frameBytes]; omega_arith)
   apply WP.of_runBlock
   simp only [copyArg, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
     State.read, Size.bits, Size.bytes, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write,
     RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, Option.map_some, Option.bind_some, reduceCtorEq,
     ite_false, ite_true, hc.sp, hI.x15, la, w, read8, aw, write8, Option.some.injEq, exists_eq_left',
-    show 8 * j % 8 = 0 by omega, show 8 * j < 4096 * 8 by omega, show arg (j + 2) % 8 = 0 by
-      simp only [arg, frameBytes]; omega, show arg (j + 2) < 32768 by simp only [arg, frameBytes]; omega,
+    show 8 * j % 8 = 0 by omega_arith, show 8 * j < 4096 * 8 by omega_arith, show arg (j + 2) % 8 = 0 by
+      simp only [arg, frameBytes]; omega_arith, show arg (j + 2) < 32768 by simp only [arg, frameBytes]; omega_arith,
     and_self]
   have hfr : Frame [L.FR] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 (8 * j))
       (m₀.readW (L.B + BitVec.ofNat 64 (arg (j + 2))) 64)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by simp only [frameBytes]; omega) (by omega))
+      (Offset.contains_base _ (by simp only [frameBytes]; omega_arith) (by omega_arith))
   have hf80 : Frame [⟨L.B, 80⟩] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 (8 * j))
       (m₀.readW (L.B + BitVec.ofNat 64 (arg (j + 2))) 64)) :=
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   refine ⟨hc.store hL rfl rfl hc.sp.symm rfl (by priv_cs_tac) hfr, hI.slots.frame hf80 (fun R hR => by
       simp only [List.mem_singleton] at hR; subst hR
-      have := Offset.disjoint_base L.B (d := oOut) (n := 48) (k := 80) (by decide) (by simp only [oOut]; omega)
-      exact this) (by omega), ?_, ?_, hI.frame.trans hf80, fun i hi => ?_⟩
+      have := Offset.disjoint_base L.B (d := oOut) (n := 48) (k := 80) (by decide) (by simp only [oOut]; omega_arith)
+      exact this) (by omega_arith), ?_, ?_, hI.frame.trans hf80, fun i hi => ?_⟩
   · have r := hI.regs
     exact ⟨r.x0, r.x2, r.x3, r.x4, r.x5, r.x6⟩
   · exact hI.x15
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
       exact hI.args i hi
     · exact Mem.readW_writeW_self64 _ _ _
 
@@ -160,7 +160,7 @@ theorem copyArgs_upto (hL : L.Ok) {t₀ : State} :
   | 0, _, _, h => WP.block_nil h
   | n + 1, hn, t, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (copyArgs_upto hL n (by omega) t h) fun t' h' => copyArg_ok hL (by omega) h'
+    exact WP.mono (copyArgs_upto hL n (by omega_arith) t h) fun t' h' => copyArg_ok hL (by omega_arith) h'
 
 /-- The arguments of the CRT in registers, and on the stack at `B`. -/
 structure CrtArgs (L : Lay) (t : State) : Prop where
@@ -178,10 +178,10 @@ theorem crtRegs_ok (hL : L.Ok) {t₀ t : State} (ha : ArgsAt L m₀) (hI : CopyI
     WP isa (.block crtRegs) t fun t' => Ctx L g vv m₀ t' ∧ Slots L t'.mem ∧ CrtArgs L t' ∧
       Frame [⟨L.B, 80⟩] t₀.mem t'.mem := by
   have hc := hI.ctx
-  have l0 := hc.inArgs hL (j := 0) (by omega)
-  have l1 := hc.inArgs hL (j := 1) (by omega)
-  have a0 := (hc.argW hL (j := 0) (by omega)).trans (ha 0 (by omega))
-  have a1 := (hc.argW hL (j := 1) (by omega)).trans (ha 1 (by omega))
+  have l0 := hc.inArgs hL (j := 0) (by omega_arith)
+  have l1 := hc.inArgs hL (j := 1) (by omega_arith)
+  have a0 := (hc.argW hL (j := 0) (by omega_arith)).trans (ha 0 (by omega_arith))
+  have a1 := (hc.argW hL (j := 1) (by omega_arith)).trans (ha 1 (by omega_arith))
   apply WP.of_runBlock
   simp only [crtRegs, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read, Size.bits,
     BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write,
@@ -191,7 +191,7 @@ theorem crtRegs_ok (hL : L.Ok) {t₀ t : State} (ha : ArgsAt L m₀) (hI : CopyI
     show (0 : Nat) < 4096 by decide]
   have r := hI.regs
   refine ⟨hc.regs rfl rfl rfl rfl rfl (by priv_cs_tac), hI.slots, ⟨?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl,
-    fun i hi => (hI.args i hi).trans (ha _ (by omega))⟩, hI.frame⟩
+    fun i hi => (hI.args i hi).trans (ha _ (by omega_arith))⟩, hI.frame⟩
   all_goals simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, BitVec.setWidth_eq,
     BitVec.add_zero, r.x2, r.x3, r.x6]
 

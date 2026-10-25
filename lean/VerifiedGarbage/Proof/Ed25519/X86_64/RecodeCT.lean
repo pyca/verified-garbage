@@ -140,14 +140,14 @@ theorem recodeStep_ct {base : Addr} {src nb X w dst : Nat} {bound : List Instr} 
       WP isa (.block (recodeBits src ++ recodeTest)) x F1 := by
     obtain ⟨s₀, h₀, ht⟩ := h
     have hs : Scratch x base := ht.keep.scratch h₀.scratch
-    have hX : Copied x.mem base src nb X := h₀.copied.of_keep hsrc hfit fun y hy => ht.keep.mem y (by omega)
+    have hX : Copied x.mem base src nb X := h₀.copied.of_keep hsrc hfit fun y hy => ht.keep.mem y (by omega_arith)
     have hc1 := ht.good.c
     rw [WP.block_append_iff]
-    refine WP.mono (recodeBits_ok hs hfit hX hi ht.rsi (by omega)) fun a ⟨ab, ka⟩ => ?_
+    refine WP.mono (recodeBits_ok hs hfit hX hi ht.rsi (by omega_arith)) fun a ⟨ab, ka⟩ => ?_
     have hbit : (a.gpr .rbx).toNat % 2 = X / 2 ^ st.i % 2 := by
       rw [ab]; exact bits_mod X st.i 1 (by decide)
     have hwin : (a.gpr .rbx).toNat % 2 ^ w = W := by
-      rw [ab]; exact bits_mod X st.i w (by omega)
+      rw [ab]; exact bits_mod X st.i w (by omega_arith)
     refine WP.mono (recodeTest_ok a hbit hc1 (by rw [ka.1 _ (by decide)]; exact ht.r8)) fun b ⟨bz, kb⟩ => ?_
     have kab : Keeps [.rax, .rbx, .rcx, .rdx] x b := ka.trans (kb.mono (by decide))
     refine ⟨bz, ⟨hs.of_keeps kab (by decide), by rw [kab.1 _ (by decide)]; exact ht.rsi⟩,
@@ -170,7 +170,7 @@ theorem recodeStep_ct {base : Addr} {src nb X w dst : Nat} {bound : List Instr} 
   have w2 (x : State) (h : F1' x) : WP isa (.block [.alu .and .rbx (.imm (BitVec.ofNat 32 (2 ^ w - 1))),
       .alu .add .rbx (.reg .r8), .alu .cmp .rbx (.imm (BitVec.ofNat 32 (2 ^ (w - 1))))]) x F2 := by
     obtain ⟨⟨_, ⟨hs, hr⟩, h8', hb, hc1⟩, _⟩ := h
-    refine WP.mono (recodeW_ok x (by omega) hb hc1 h8') fun c ⟨cb, ccf, kc⟩ => ?_
+    refine WP.mono (recodeW_ok x (by omega_arith) hb hc1 h8') fun c ⟨cb, ccf, kc⟩ => ?_
     exact ⟨ccf, ⟨hs.of_keeps kc (by decide), by rw [kc.1 _ (by decide)]; exact hr⟩, cb, hc1⟩
   refine seq_same (recodeW_ct hp) w2 ?_
   have e2 (x : State) (h : F2 x) : isa.eval .b x = some (decide (W + st.c < 2 ^ (w - 1))) := by
@@ -185,7 +185,7 @@ theorem recodeStep_ct {base : Addr} {src nb X w dst : Nat} {bound : List Instr} 
       (fun _ _ h => h) (fun _ _ h => h.2))
   · have wn (x : State) (h : F2 x) : WP isa (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (2 ^ w + 1))),
         .alu .sub .rax (.reg .rbx), .mov .rbx (.reg .rax), .mov32 .r8 (.imm 1)]) x (AtBit base st.i) :=
-      WP.mono (recodeNeg_ok x (W := W + st.c) (by omega) (by have := h.2.2.2; omega) h.2.2.1)
+      WP.mono (recodeNeg_ok x (W := W + st.c) (by omega_arith) (by have := h.2.2.2; omega_arith) h.2.2.1)
         fun u ⟨_, _, ku⟩ => ⟨h.2.1.1.of_keeps ku (by decide), by rw [ku.1 _ (by decide)]; exact h.2.1.2⟩
     exact ((VG.RelCT.wp (recodeNeg_ct hp) fun x y h => ⟨wn x h.1.1, wn y h.1.2⟩).mono
       (fun _ _ h => h) (fun _ _ h => h.2))
@@ -201,7 +201,7 @@ theorem recode_ct {P : State → Prop} {base : Addr} {src nb X w dst : Nat} {bou
       (RecRun base src nb X w dst bound init) := by
     obtain ⟨h₀, hz⟩ := hP x h
     refine WP.mono (recodeStart_ok x) fun a ⟨arsi, ar8, ka⟩ => ⟨x, h₀, ?_⟩
-    exact ⟨reach_init w X _, init_good w X, by simp only [init]; omega, arsi, ar8,
+    exact ⟨reach_init w X _, init_good w X, by simp only [init]; omega_arith, arsi, ar8,
       fun j hj => by rw [ka.2.1]; exact hz j hj, RecKeep.of_keeps ka (by decide)⟩
   rw [recode]
   refine seq_same (noMem_ct _ ⟨_, by taint_decide⟩) w0 ?_
@@ -211,14 +211,14 @@ theorem recode_ct {P : State → Prop} {base : Addr} {src nb X w dst : Nat} {bou
     RecRun base src nb X w dst bound F y) ?_ ?_
   · refine (VG.RelCT.loop (M := isa) (fun m x y => ∃ st, st.i < 8 * nb ∧ m = 8 * nb - st.i ∧
       RecRun base src nb X w dst bound st x ∧ RecRun base src nb X w dst bound st y) ?_ (8 * nb - init.i)).mono
-      (fun x y h => ⟨init, by simp only [init]; omega, rfl, h⟩) (fun _ _ h => h)
+      (fun x y h => ⟨init, by simp only [init]; omega_arith, rfl, h⟩) (fun _ _ h => h)
     intro m
     refine VG.RelCT.exists_ fun st => ?_
     refine (VG.RelCT.exists_ (P := fun (hh : st.i < 8 * nb ∧ m = 8 * nb - st.i) x y =>
       RecRun base src nb X w dst bound st x ∧ RecRun base src nb X w dst bound st y) fun hh => ?_).mono
       (fun x y h => ⟨⟨h.1, h.2.1⟩, h.2.2⟩) (fun _ _ h => h)
     obtain ⟨hi, hm⟩ := hh
-    have hsi := step_i (K := X) (by omega : 1 ≤ w) st
+    have hsi := step_i (K := X) (by omega_arith : 1 ≤ w) st
     have wb (x : State) (h : RecRun base src nb X w dst bound st x) :
         WP isa (.seq (recodeStep src w dst) (.block bound)) x fun v =>
           RecRun base src nb X w dst bound (step w X st) v ∧
@@ -232,7 +232,7 @@ theorem recode_ct {P : State → Prop} {base : Addr} {src nb X w dst : Nat} {bou
         (fun x h => by
           obtain ⟨s₀, h₀, ht⟩ := h
           exact WP.mono (recodeStep_ok (ht.keep.scratch h₀.scratch) hw hdst hfit
-            (h₀.copied.of_keep hsrc hfit fun y hy => ht.keep.mem y (by omega)) hi hnb.2 ht.good.c ht.rsi ht.r8
+            (h₀.copied.of_keep hsrc hfit fun y hy => ht.keep.mem y (by omega_arith)) hi hnb.2 ht.good.c ht.rsi ht.r8
             ht.dig) fun u ⟨_, _, _, ku⟩ => (ku.scratch (ht.keep.scratch h₀.scratch)).rdi)
         (rdi_ct (fun _ h => h) hbct)
     refine (VG.RelCT.wp bodyCT fun x y h => ⟨wb x h.1, wb y h.2⟩).mono (fun x y h => h) ?_
@@ -243,12 +243,12 @@ theorem recode_ct {P : State → Prop} {base : Addr} {src nb X w dst : Nat} {bou
       show eval .b y = _; simp only [eval, yc]
     refine ⟨ex.trans ey.symm, fun he => ?_, fun he => ?_⟩
     · have hlt : ¬ (step w X st).i < 8 * nb := by rw [ex] at he; simpa using he
-      have e := reach_end (by obtain ⟨_, _, ht⟩ := xr; exact ht.reach) (by omega : 8 * nb ≤ (step w X st).i)
+      have e := reach_end (by obtain ⟨_, _, ht⟩ := xr; exact ht.reach) (by omega_arith : 8 * nb ≤ (step w X st).i)
       show RecRun base src nb X w dst bound (run w X (8 * nb) (8 * nb) init) x ∧ RecRun base src nb X w dst bound (run w X (8 * nb) (8 * nb) init) y
       rw [← e]
       exact ⟨xr, yr⟩
     · have hlt : (step w X st).i < 8 * nb := by rw [ex] at he; simpa using he
-      exact ⟨8 * nb - (step w X st).i, by omega, step w X st, hlt, rfl, xr, yr⟩
+      exact ⟨8 * nb - (step w X st).i, by omega_arith, step w X st, hlt, rfl, xr, yr⟩
   -- The last carry.
   rw [recodeEnd]
   let G : State → Prop := fun u => u.zf = some (decide (F.c = 0)) ∧ AtBit base F.i u
@@ -308,7 +308,7 @@ theorem recodeCopy_ct {P : State → Prop} {base kp sp : Addr}
     have aread (d : Nat) (hd : 3104 ≤ d) (hd' : d + 8 ≤ 8192) :
         a.mem.readW (off base d) 64 = x.mem.readW (off base d) 64 :=
       Mem.readW_congr fun i hi => ao _ (Or.inr (by
-        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
     refine WP.mono (loadSc_ok ha .rsi 7952 (by decide)) fun u ⟨up, ku⟩ => ?_
     refine ⟨⟨ha.of_keeps ku (by decide), by rw [up, aread 7952 (by decide) (by decide)]; exact c.kPtr⟩,
       by rw [ku.2.1, aread 7944 (by decide) (by decide)]; exact c.sPtr,
@@ -330,7 +330,7 @@ theorem recodeCopy_ct {P : State → Prop} {base kp sp : Addr}
       fun j hj => by rw [br, bw]; exact hsr j hj⟩
     rw [← hsp]
     exact Mem.readW_congr fun i hi => bo _ (Or.inr (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
   apply RelCT.block_append
   refine seq_same (atPtr_ct (fun x h => h.1) (taintFld (Taint.ofRegs [.rdi, .rsi])
     (fun _ _ h => agree_rdi_rsi h) ⟨_, by taint_decide⟩)) w2 ?_
@@ -376,19 +376,19 @@ theorem recodeAll_ct {P : State → Prop} {base kp sp : Addr} {c K S : Nat} (hc3
     Copied u.mem base 3176 32 S ∧ ∀ j < 528, dig u.mem base 1 j = 0
   have w2 (x : State) (h : Copies base c K S x) : WP isa (recode 3104 5 0 boundK) x F2 := by
     have hb := h.scratch.nowrap
-    refine WP.mono (recode_ok h.scratch (by decide) (by decide) (by decide) (by omega) h.cK (by omega)
+    refine WP.mono (recode_ok h.scratch (by decide) (by decide) (by decide) (by omega_arith) h.cK (by omega_arith)
       (boundK_spec h.scratch hc64 h.counter 0) (h.zero 0 (by decide))) fun d ⟨_, kd⟩ => ?_
-    refine ⟨kd.scratch h.scratch, ?_, h.cS.of_keep (by decide) (by decide) fun y hy => kd.mem y (by omega),
+    refine ⟨kd.scratch h.scratch, ?_, h.cS.of_keep (by decide) (by decide) fun y hy => kd.mem y (by omega_arith),
       fun j hj => ?_⟩
     · rw [← h.counter]
       exact Mem.readW_congr fun i hi => kd.mem _ (Or.inl (by
-        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
     · simp only [dig]
-      rw [kd.mem _ (Or.inr (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)]; omega)))]
+      rw [kd.mem _ (Or.inr (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]; omega_arith)))]
       exact h.zero 1 (by decide) j hj
   have boundK_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (.block boundK) (fun _ _ => True) :=
     taintFld (Taint.ofRegs [.rdi]) (fun _ _ h => agree_rdi h) ⟨_, by taint_decide⟩
-  refine seq_same (recode_ct (Or.inl ⟨rfl, rfl, rfl⟩) (by decide) (by decide) (by decide) (by omega) (by omega)
+  refine seq_same (recode_ct (Or.inl ⟨rfl, rfl, rfl⟩) (by decide) (by decide) (by decide) (by omega_arith) (by omega_arith)
     (fun x h => ⟨⟨h.scratch, h.cK, boundK_spec h.scratch hc64 h.counter 0⟩, h.zero 0 (by decide)⟩) boundK_ct)
     w2 ?_
   -- `S`'s digits.

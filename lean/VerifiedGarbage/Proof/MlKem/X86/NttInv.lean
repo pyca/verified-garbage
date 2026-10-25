@@ -50,8 +50,8 @@ theorem lay (len B : Nat) (hB : len * B = 128) (hBp : 0 < B) (hk : 256 / len - 1
     (t₄ : (VG.X86.taint.check (τr [.esp]) (.block (blockEnd zDown)) h₄).isSome = true) :
     Piece Pre Pub (fun s₀ s => LB s₀ (P s₀) (kf len 0) s)
       (fun s₀ s => LB s₀ (layerN bflyInv kf (P s₀) len B) (kf len B) s) (layerCode ibflyBody zDown len) :=
-  layer_piece bf kf P false len B hB hBp (fun c _ => by simp only [kf, Bool.false_eq_true, ite_false]; omega)
-    (fun c hc => by simp only [kf]; omega) (fun _ c hc => by simp only [kf]; omega) t₁ t₂ t₃ t₄
+  layer_piece bf kf P false len B hB hBp (fun c _ => by simp only [kf, Bool.false_eq_true, ite_false]; omega_arith)
+    (fun c hc => by simp only [kf]; omega_arith) (fun _ c hc => by simp only [kf]; omega_arith) t₁ t₂ t₃ t₄
 
 theorem nttInvLayer_eq (f : Poly) (len : Nat) :
     nttInvLayer f len = layerN bflyInv kf f len (128 / len) := rfl
@@ -106,11 +106,11 @@ theorem scaled_succ (G : Poly) (t : Nat) :
   ext_getElem! fun i hi => by
     rw [scaled_get _ _ hi]
     by_cases e : t = i
-    · subst e; rw [getElem!_set!_self _ hi, ite_eq_left (by omega)]
+    · subst e; rw [getElem!_set!_self _ hi, ite_eq_left (by omega_arith)]
     · rw [getElem!_set!_ne _ hi e, scaled_get _ _ hi]
       by_cases h : i < t
-      · rw [ite_eq_left (by omega), ite_eq_left h]
-      · rw [ite_eq_right (by omega), ite_eq_right h]
+      · rw [ite_eq_left (by omega_arith), ite_eq_left h]
+      · rw [ite_eq_right (by omega_arith), ite_eq_right h]
 
 theorem scaled_all (G : Poly) : scaled G 256 = G.map (· * 3303) :=
   ext_getElem! fun i hi => by rw [scaled_get _ _ hi, ite_eq_left (by rw [n_eq] at hi; exact hi), map_mul_get _ hi]
@@ -131,22 +131,22 @@ theorem scale_step {s₀ : State} (hp : Pre s₀) {G : Poly} {t : Nat} (ht : t <
   have ff := hp.f_fit
   have ht' : t < n := by rw [n_eq]; exact ht
   have ea : (s.gpr .esi + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (fA s₀) t := by
-    rw [h.esi, ea_add (by omega), Nat.add_zero]
+    rw [h.esi, ea_add (by omega_arith), Nat.add_zero]
   have inF := hp.in_f h.wr ht
   have ha := polyIs_coeffAt h.poly ht'
   rw [coeffAt_eq] at ha
   have la := val_lt (scaled G t)[t]!
   generalize ea' : (scaled G t)[t]!.val = a at ha la
-  have ha' : (BitVec.ofNat 32 a).toNat = a := toNat_ofNat32 (by omega)
+  have ha' : (BitVec.ofNat 32 a).toNat = a := toNat_ofNat32 (by omega_arith)
   rw [scaleBody]
   refine wp_movm (by rw [State.ea, at_, ea]; exact inRd inF) (wp_cons rfl (wp_mul (wp_movr
     (red_spec (r := .ebx) (by decide) (by decide) _ _ _ (x := a * 3303) ?_ ?_ fun s₂ o₂ v₂ => ?_))))
   · simp only [State.setReg, execMul_eax, ite_true, ite_false, State.ea, at_, ea, ha, reduceCtorEq]
     simp only [ha', show (3303 : BitVec 32).toNat = 3303 from rfl]
-    exact toNat_ofNat32 (by omega)
+    exact toNat_ofNat32 (by omega_arith)
   · simp only [State.setReg, execMul_eax, ite_true, ite_false, State.ea, at_, ea, ha, reduceCtorEq]
     simp only [ha', show (3303 : BitVec 32).toNat = 3303 from rfl]
-    exact toNat_ofNat32 (by omega)
+    exact toNat_ofNat32 (by omega_arith)
   have g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [o₂.gpr r (by simp [h1, h2, h3])]
     simp only [State.setReg, h3, ite_false]
@@ -174,7 +174,7 @@ theorem scale_step {s₀ : State} (hp : Pre s₀) {G : Poly} {t : Nat} (ht : t <
   · rw [hv, scaled_succ]
     exact polyIs_writeW h.poly ht' _
   · simp only [eval, h.ecx]
-    exact cnt_ne ht (by omega)
+    exact cnt_ne ht (by omega_arith)
 
 /-- The polynomial after the layers. -/
 abbrev G (s₀ : State) : Poly := nttInvLens.foldl nttInvLayer (F s₀)
@@ -230,7 +230,7 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) (fun s₀ s => SI
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => SI s₀ (G s₀) 256 s) s₀ s') Impl.MlKem.X86.nttInv :=
-  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_arith⟩)
     (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
     (body_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -258,7 +258,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.nttInv (nttInvContract X86
         | (rw [show BitVec.setWidth 64 (arg st 0) = BitVec.ofNat 64 0 by decide]
            refine reduced_below (fun a ha => ?_) 0 (by decide)
            simp only [NttFwd.satMem]
-           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)])
+           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_arith)])
         | decide +kernel
 
 end VG.Proof.MlKem.X86.NttInvP

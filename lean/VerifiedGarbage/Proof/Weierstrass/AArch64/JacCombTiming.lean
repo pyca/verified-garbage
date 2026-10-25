@@ -47,16 +47,16 @@ theorem jacComb_address_ok {K : TCombCfg} {s : State} {base T : Addr} {size k i 
         BitVec.ofNat 64 (16*K.M.n*(magH K.H (combWin K.w k i)-1)) := by
   have hw := hL.w
   have hHle : K.H≤128 := Nat.le_trans
-    (Nat.pow_le_pow_right (by decide) (show K.w-1≤7 by omega)) (by decide)
+    (Nat.pow_le_pow_right (by decide) (show K.w-1≤7 by omega_arith)) (by decide)
   have hmag : magH K.H (combWin K.w k i)≤K.H := by
     apply magH_le
     have e : 2^K.w=2*K.H := by
-      unfold TCombCfg.H; rw [←Nat.pow_succ']; congr 1; omega
+      unfold TCombCfg.H; rw [←Nat.pow_succ']; congr 1; omega_arith
     rw [←e]; exact combWin_lt _ _ _
   rw [WP.block_append_iff]
   refine WP.mono (selSetup_ok K hx hT hL.tbl.2) fun c ⟨c16,c7,c5,_,kc⟩ => ?_
   refine WP.mono (directAddress_ok K (a:=magH K.H (combWin K.w k i))
-    (by omega) (by have := hL.n8; omega) c16 (by rw [kc.gpr _ (by decide),hm]) c5 c7)
+    (by omega_arith) (by have := hL.n8; omega_arith) c16 (by rw [kc.gpr _ (by decide),hm]) c5 c7)
     fun t ⟨t16,_,kt⟩ => ?_
   exact ⟨by rw [kt.gpr _ (by decide),kc.gpr _ (by decide),hs.x0],
     by rw [kt.gpr _ (by decide),kc.gpr _ (by decide),hx],kt.sp.trans kc.sp,t16⟩
@@ -150,15 +150,15 @@ theorem jacComb_digit_ok {K : TCombCfg} {base : Addr} {size k j : Nat}
   have hJ := hL.comb.J
   rw [TCombCfg.toComb_J] at hJ
   rw [←List.singleton_append,WP.block_append_iff]
-  refine WP.mono_syms (decCounter_ok s hj (by omega) hx) fun d ⟨bd,kd⟩ syd => ?_
+  refine WP.mono_syms (decCounter_ok s hj (by omega_arith) hx) fun d ⟨bd,kd⟩ syd => ?_
   have hwi : K.w*(j-1)+K.w≤K.w*K.J := by
-    rw [←Nat.mul_succ,show (j-1).succ=j by omega]
+    rw [←Nat.mul_succ,show (j-1).succ=j by omega_arith]
     exact Nat.mul_le_mul_left K.w hjn
   have hbsize : K.bits+K.w*K.J≤size := by
-    have := hL.bits; have := hL.kbytes; unfold TCombCfg.zw at *; omega
+    have := hL.bits; have := hL.kbytes; unfold TCombCfg.zw at *; omega_arith
   refine WP.mono_syms (digitW_ok K (hs.of_keeps kd (by decide)) (k:=k)
-    (j:=j-1) (N:=K.w*K.J) (by have := hL.w; omega) (by have := hL.w; omega)
-    hwi hbsize (by have := hL.bitsw; omega) bd (fun q hq => by rw [kd.mem]; exact hb q hq))
+    (j:=j-1) (N:=K.w*K.J) (by have := hL.w; omega_arith) (by have := hL.w; omega_arith)
+    hwi hbsize (by have := hL.bitsw; omega_arith) bd (fun q hq => by rw [kd.mem]; exact hb q hq))
     fun t ⟨mag,kt⟩ syt => ?_
   exact ⟨(kd.mono (by simp)).trans (kt.mono (by simp)),syt.trans syd,
     by rw [kt.gpr _ (by decide),bd],mag⟩
@@ -177,7 +177,7 @@ theorem jacComb_entry_words {K : TCombCfg} {C : Curve} {base : Addr} {size k i :
     {x : Nat} (hx : x∈jacCombLive K) : wordsVal t.mem base x K.M.n=wordsVal s.mem base x K.M.n := by
   have hn := h.scr.nowrap
   have hsize : x+8*K.M.n≤size := hL.comb.lay.le x (jacCombLive_slots hx)
-  apply h.unch.wordsVal _ (by omega)
+  apply h.unch.wordsVal _ (by omega_arith)
   intro w hw
   rcases List.mem_append.mp hx with hx | hx
   · exact combW_ro hL.comb hx w (entryW_sub w hw)
@@ -297,7 +297,7 @@ theorem JacCombInv.field {K : TCombCfg} {C : Curve} {base T : Addr} {size k j : 
   intro x hx
   rcases List.mem_append.mp hx with hx | hx
   · have hb : x+8*K.M.n≤size := hL.comb.lay.le x (combRo_slots x hx)
-    rw [hi.unch.wordsVal (tcombW_ro hL hx) (by have := hi.scr.nowrap; omega)]
+    rw [hi.unch.wordsVal (tcombW_ro hL hx) (by have := hi.scr.nowrap; omega_arith)]
     exact hf.ro_lt x hx
   · exact hi.lt x hx
 
@@ -355,12 +355,12 @@ theorem jacComb_step_relCT {K : TCombCfg} {C : Curve} {base T : Addr} {size k j 
     · refine ⟨xa,ma,fun q hq => by rw [ka.mem]; exact ia.bits q hq,?_,by rw [sa]; exact ia.tsym,?_⟩
       · have hb : K.zero+8*K.M.n≤size := hL.comb.lay.le _ (by tcomb_mem)
         rw [ka.mem,ia.unch.wordsVal (tcombW_ro hL (by simp [combRo,TCombCfg.toComb]))
-          (by have := ia.scr.nowrap; omega),hfs.zero]
+          (by have := ia.scr.nowrap; omega_arith),hfs.zero]
       · exact ia.tbl.unch (by rw [ka.rd,ka.wr]) (fun _ _ _ _ => by rw [ka.mem])
     · refine ⟨xb,mb,fun q hq => by rw [kb.mem]; exact ib.bits q hq,?_,by rw [sb]; exact ib.tsym,?_⟩
       · have hb : K.zero+8*K.M.n≤size := hL.comb.lay.le _ (by tcomb_mem)
         rw [kb.mem,ib.unch.wordsVal (tcombW_ro hL (by simp [combRo,TCombCfg.toComb]))
-          (by have := ib.scr.nowrap; omega),hft.zero]
+          (by have := ib.scr.nowrap; omega_arith),hft.zero]
       · exact ib.tbl.unch (by rw [kb.rd,kb.wr]) (fun _ _ _ _ => by rw [kb.mem]))
   unfold Jacobian.jacCombStep
   apply hd'.seq
@@ -370,10 +370,10 @@ theorem jacComb_step_relCT {K : TCombCfg} {C : Curve} {base T : Addr} {size k j 
   · intro s t ts tt s' t' ⟨⟨E,p,a,b⟩,hb⟩ es et
     have hmag : 1≤magH K.H (combWin K.w k (j-1)) := by
       by_contra h
-      have hz : magH K.H (combWin K.w k (j-1))=0 := by omega
+      have hz : magH K.H (combWin K.w k (j-1))=0 := by omega_arith
       simp only [eval,State.read,a.digit,hz] at hb
       cases hb
-    have he := jacComb_entry_relCT (E:=E) hL hA hC hV hpn hc (by omega) hmag hfs.out
+    have he := jacComb_entry_relCT (E:=E) hL hA hC hV hpn hc (by omega_arith) hmag hfs.out
     have hsum := RelCT.exists_ (fun E' => jacComb_sum_relCT (base:=base) (E:=E') hL hA hm hn hV.one_lt hc)
     have hall := he.seq hsum
     obtain ⟨htrace,_,hp⟩ := hall _ _ _ _ _ _ ⟨p,a,b⟩ es et
@@ -418,10 +418,10 @@ theorem jacComb_countLoop_relCT {K : TCombCfg} {C : Curve} {base T : Addr} {size
           have hb : K.zero+8*K.M.n≤size := hL.comb.lay.le _ (by tcomb_mem)
           change toM _ _ _=0
           rw [a.unch.wordsVal (tcombW_ro hL (by simp [combRo,TCombCfg.toComb]))
-            (by have := a.scr.nowrap; omega),hfs.zero,toM_zero]
+            (by have := a.scr.nowrap; omega_arith),hfs.zero,toM_zero]
         · have hz : j-1≠0 := by
             intro hz; simp only [eval,State.read,xa,hz] at he; cases he
-          exact ⟨j-1,by omega,by omega,by omega,a,b,same⟩
+          exact ⟨j-1,by omega_arith,by omega_arith,by omega_arith,a,b,same⟩
       · exact RelCT.of_false (fun _ _ h => hjn h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   exact (RelCT.loop I step K.J).mono (fun _ _ ⟨a,b,same⟩ =>
@@ -443,8 +443,8 @@ theorem jacComb_init_shared {K : TCombCfg} {C : Curve} {base T : Addr} {size k :
   rcases List.mem_append.mp hx with hx | hx
   · have hb : x+8*K.M.n≤size := hL.comb.lay.le x (combRo_slots x hx)
     change toM _ _ _=toM _ _ _
-    rw [hs.unch.wordsVal (tcombW_ro hL hx) (by have := hs.scr.nowrap; omega),
-      ht.unch.wordsVal (tcombW_ro hL hx) (by have := ht.scr.nowrap; omega)]
+    rw [hs.unch.wordsVal (tcombW_ro hL hx) (by have := hs.scr.nowrap; omega_arith),
+      ht.unch.wordsVal (tcombW_ro hL hx) (by have := ht.scr.nowrap; omega_arith)]
     simp only [combRo,TCombCfg.toComb,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl
     · exact hfs.a.trans hft.a.symm

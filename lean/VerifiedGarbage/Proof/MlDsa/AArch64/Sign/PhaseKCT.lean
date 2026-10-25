@@ -76,9 +76,9 @@ theorem zR_trL {t r : Nat} (hc : zChk p r = true) :
     exact WP.mono (ipAt_ok (t := nttInv) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.step hP' z2 y2⟩, by rw [hP'.pa (pS_bases 1)]; exact hq.1⟩
   · exact RelCT.mono (addAt_tr hP ca) (fun x y ⟨R, ⟨⟨_, I₁⟩, r₁⟩, ⟨⟨_, I₂⟩, r₂⟩⟩ =>
-      ⟨R, ⟨(I₁.y 0 (by omega)).1, r₁⟩, ⟨(I₂.y 0 (by omega)).1, r₂⟩⟩) fun _ _ h => h
+      ⟨R, ⟨(I₁.y 0 (by omega_arith)).1, r₁⟩, ⟨(I₂.y 0 (by omega_arith)).1, r₂⟩⟩) fun _ _ h => h
   · rintro x L ⟨⟨σ, I⟩, r1⟩
-    exact WP.mono (addAt_ok hP L ca (I.y 0 (by omega)).1 r1) fun x' ⟨hP', _, hq⟩ =>
+    exact WP.mono (addAt_ok hP L ca (I.y 0 (by omega_arith)).1 r1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩
 
 /-! ## `r₀` -/
@@ -104,9 +104,9 @@ theorem r0R_trL {t i : Nat} (hc : rChk p i = true) :
     exact WP.mono (ipAt_ok (t := nttInv) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.step hP' z2 y2⟩, by rw [hP'.pa (pS_bases 1)]; exact hq.1⟩
   · exact RelCT.mono (subAt_tr hP ca) (fun x y ⟨R, ⟨⟨_, I₁⟩, r₁⟩, ⟨⟨_, I₂⟩, r₂⟩⟩ =>
-      ⟨R, ⟨(I₁.w 0 (by omega)).1, r₁⟩, ⟨(I₂.w 0 (by omega)).1, r₂⟩⟩) fun _ _ h => h
+      ⟨R, ⟨(I₁.w 0 (by omega_arith)).1, r₁⟩, ⟨(I₂.w 0 (by omega_arith)).1, r₂⟩⟩) fun _ _ h => h
   · rintro x L ⟨⟨σ, I⟩, r1⟩
-    exact WP.mono (subAt_ok hP L ca (I.w 0 (by omega)).1 r1) fun x' ⟨hP', _, hq⟩ =>
+    exact WP.mono (subAt_ok hP L ca (I.w 0 (by omega_arith)).1 r1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩
   · exact lowBitsAt_tr hP hγ cl
   · intro x L r1
@@ -123,7 +123,7 @@ theorem hR_trL {t i : Nat} (hc : hChk2 p i = true) :
     _⟩, _⟩, o1⟩, o2⟩, o3⟩, o4⟩, _⟩, _⟩, t3⟩, t4⟩, u5⟩, _⟩, _⟩, _⟩, hγ'⟩, hγ⟩, hi⟩, _⟩ := hc
   have f6 : keepB (sgR p) (sgW p) [(t4P, 1024)] (wP p i) 1024 = true := by
     simp only [hfam, Bool.and_eq_true] at g6
-    exact famChk_one (b := wBase p) g6.1.1.2 (show i < i + 1 by omega)
+    exact famChk_one (b := wBase p) g6.1.1.2 (show i < i + 1 by omega_arith)
   let J : State → Prop := fun s => (∃ σ, IHb p D σ t i i s) ∧ Reduced s.mem (pa s t3P)
   unfold hR
   refine seqL (J := J) ?_ ?_ (seqL (J := J) ?_ ?_ (seqL (J := J) ?_ ?_
@@ -146,11 +146,11 @@ theorem hR_trL {t i : Nat} (hc : hChk2 p i = true) :
   · exact copy_tr (.inl rfl) rfl fun x y h => h.1
   · rintro x L ⟨⟨σ, I⟩, r3⟩
     exact WP.mono (copy_ok L cc) fun x' ⟨hP', _, hb⟩ => ⟨⟨_, hP'⟩, ⟨⟨σ, I.step hP' g4 o4⟩, L.keepRed hP' t4 r3⟩,
-      by rw [hP'.pa (pS_bases 4)]; exact reduced_congr₂ (bytes_of_bytesAt hb) (I.w' 0 (by omega)).1⟩
+      by rw [hP'.pa (pS_bases 4)]; exact reduced_congr₂ (bytes_of_bytesAt hb) (I.w' 0 (by omega_arith)).1⟩
   · exact RelCT.mono (addAt_tr hP ca) (fun x y ⟨R, ⟨⟨⟨_, I₁⟩, r₁⟩, _⟩, ⟨⟨⟨_, I₂⟩, r₂⟩, _⟩⟩ =>
-      ⟨R, ⟨(I₁.w' 0 (by omega)).1, r₁⟩, ⟨(I₂.w' 0 (by omega)).1, r₂⟩⟩) fun _ _ h => h
+      ⟨R, ⟨(I₁.w' 0 (by omega_arith)).1, r₁⟩, ⟨(I₂.w' 0 (by omega_arith)).1, r₂⟩⟩) fun _ _ h => h
   · rintro x L ⟨⟨⟨σ, I⟩, r3⟩, r4⟩
-    exact WP.mono (addAt_ok hP L ca (I.w' 0 (by omega)).1 r3) fun x' ⟨hP', _, hq⟩ =>
+    exact WP.mono (addAt_ok hP L ca (I.w' 0 (by omega_arith)).1 r3) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, L.keepRed hP' u5 r4, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩
   · exact RelCT.mono (subAt_tr hP cs) (fun x y ⟨R, ⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩ => ⟨R, ⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩) fun _ _ h => h
   · rintro x L ⟨r4, rw⟩
@@ -188,15 +188,15 @@ theorem checks_tr (hc : ksChk p = true) {E : State → State → Prop} {t : Nat}
     (liftT (fun _ _ h => h.b.l.st) (fun _ _ _ h => kInit_ok hc h) (lrel_tr (fun x y h => h) (by taint_decide))) ?_
   refine RelCT.seq (R := RS p D E fun σ s => IR p D σ t 0 s) (RelCT.mono (seqR_tr (Q := fun r => RS p D E
     fun σ s => IZ p D σ t r s) p.ℓ 0 fun r _ hr => liftL (T := fun s => ∃ σ, IZ p D σ t r s)
-      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => zR_ok hP (hz r (by omega)) h) (zR_trL hP (hz r (by omega))))
+      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => zR_ok hP (hz r (by omega_arith)) h) (zR_trL hP (hz r (by omega_arith))))
     (fun _ _ h => h) fun x y h => by rw [Nat.zero_add] at h; exact h.mono (fun _ _ h => h) fun _ _ h => h.ir) ?_
   refine RelCT.seq (R := RS p D E fun σ s => IH p D σ t 0 s) (RelCT.mono (seqR_tr (Q := fun i => RS p D E
     fun σ s => IR p D σ t i s) p.k 0 fun i _ hi => liftL (T := fun s => ∃ σ, IR p D σ t i s)
-      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => r0R_ok hP (hr i (by omega)) h) (r0R_trL hP (hr i (by omega))))
+      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => r0R_ok hP (hr i (by omega_arith)) h) (r0R_trL hP (hr i (by omega_arith))))
     (fun _ _ h => h) fun x y h => by rw [Nat.zero_add] at h; exact h.mono (fun _ _ h => h) fun _ _ h => h.ih) ?_
   refine RelCT.seq (R := RS p D E fun σ s => IH p D σ t p.k s) (RelCT.mono (seqR_tr (Q := fun i => RS p D E
     fun σ s => IH p D σ t i s) p.k 0 fun i _ hi => liftL (T := fun s => ∃ σ, IH p D σ t i s)
-      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => hR_ok hP (hh i (by omega)) h) (hR_trL hP (hh i (by omega))))
+      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => hR_ok hP (hh i (by omega_arith)) h) (hR_trL hP (hh i (by omega_arith))))
     (fun _ _ h => h) fun x y h => by rwa [Nat.zero_add] at h) ?_
   refine RelCT.seq (R := RS p D E fun σ s => KO p D σ t s)
     (liftT (fun _ _ h => h.1.b.l.st) (fun _ _ _ h => onesOk_ok hc h) (lrel_tr (fun x y h => h) (onesOk_taint p))) ?_

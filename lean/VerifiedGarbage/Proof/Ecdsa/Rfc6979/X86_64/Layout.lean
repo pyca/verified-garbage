@@ -121,7 +121,7 @@ theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨
 /-- A region of the frame. -/
 theorem within_fr (B : Addr) {d n x : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 240 + x) :
     Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 24, 216 + x⟩ :=
-  ⟨d - 24, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega⟩
+  ⟨d - 24, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega_arith⟩
 
 theorem covers_of {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Within r R) : Covers rs rs' :=
   Covers.of_sub fun r hr => by
@@ -179,28 +179,28 @@ theorem stk_d (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 240 + 8 * L.e) :
 theorem ptrs_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 208, 32⟩ r := by
   rcases hs with hs | hs | hs | hs
-  · exact (h.stk_OUT (by omega)).sub_right hs
-  · exact (h.stk_SCR (by omega)).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
+  · exact (h.stk_OUT (by omega_arith)).sub_right hs
+  · exact (h.stk_SCR (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
   · have := L.he
-    exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
+    exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
 
 /-- The buffers that are only read are apart from every safe region. -/
 theorem d_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.D.Disjoint r := by
   rcases hs with hs | hs | hs | hs
   · exact h.od.symm.sub_right hs
   · exact h.dc.sub_right hs
-  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
+  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
   · have := L.he
-    exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+    exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
   rcases hs with hs | hs | hs | hs
   · exact h.og.symm.sub_right hs
   · exact h.gc.sub_right hs
-  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
+  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
   · have := L.he
-    exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+    exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 end Lay.Ok
 
@@ -226,8 +226,8 @@ theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
   rcases h with h | h | h | h
   · exact ⟨_, by simp, h⟩
   · exact ⟨_, by simp, h⟩
-  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega) a (h a ha)⟩
-  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base (p := L.B) (d := 240) (n := 8 * L.e) (by omega) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega_arith) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base (p := L.B) (d := 240) (n := 8 * L.e) (by omega_arith) a (h a ha)⟩
 
 namespace Ctx
 
@@ -242,10 +242,10 @@ theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr
   have keep : ∀ d, 208 ≤ d → d + 8 ≤ 240 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 208, 32⟩)
-      (Offset.contains _ h₁ (by omega) (by omega)) (fun r hr => hL.ptrs_safe (hs r hr)) (by decide)
+      (Offset.contains _ h₁ (by omega_arith) (by omega_arith)) (fun r hr => hL.ptrs_safe (hs r hr)) (by decide)
   exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.rsp, fun r hr hr' => (hcs r hr hr').trans (hc.cs r hr hr'),
-    (keep 208 (by omega) (by omega)).trans hc.pScr, (keep 216 (by omega) (by omega)).trans hc.pDg,
-    (keep 224 (by omega) (by omega)).trans hc.pD, (keep 232 (by omega) (by omega)).trans hc.pOut,
+    (keep 208 (by omega_arith) (by omega_arith)).trans hc.pScr, (keep 216 (by omega_arith) (by omega_arith)).trans hc.pDg,
+    (keep 224 (by omega_arith) (by omega_arith)).trans hc.pD, (keep 232 (by omega_arith) (by omega_arith)).trans hc.pOut,
     hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), by rw [hsy]; exact hc.sy, hc.held⟩
 
 /-- Code that writes only caller-saved registers. -/
@@ -263,7 +263,7 @@ theorem d_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.q) :
     rcases hr with rfl | rfl | rfl
     · exact hL.od.symm
     · exact hL.dc
-    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega) hi
+    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega_arith) hi
 
 /-- A byte of `digest`, as on entry. -/
 theorem dg_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < dn) :
@@ -274,33 +274,33 @@ theorem dg_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < dn) :
     rcases hr with rfl | rfl | rfl
     · exact hL.og.symm
     · exact hL.gc
-    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega) hi
+    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega_arith) hi
 
 theorem inFr (hc : Ctx L g m₀ t) {d : Nat} (h₁ : 24 ≤ d) (h₂ : d + 8 ≤ 240 + 8 * L.e) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
   have := L.he
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
 
 theorem inFrW (hc : Ctx L g m₀ t) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 240 + 8 * L.e) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) n :=
   have := L.he
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
 
 theorem inScr (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions (t.rd ++ t.wr) (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inScrW (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions t.wr (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inD (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ L.q) (ho : o ≤ 64) :
     InRegions (t.rd ++ t.wr) (L.d + BitVec.ofNat 64 o) n :=
-  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inDg (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ dn) (ho : o ≤ 64) :
     InRegions (t.rd ++ t.wr) (L.dg + BitVec.ofNat 64 o) n :=
-  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 /-- Regions within the buffers and the frame are permitted. -/
 theorem mem_regions {R : Region} (h : R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR]) :
@@ -328,7 +328,7 @@ end Ctx
 abbrev pushRs (e : Nat) : List Reg := List.replicate e .rax ++ ([.rdi, .rsi, .rdx, .rcx] : List Reg) ++ List.replicate 23 .rax
 
 theorem pushRs_length (e : Nat) : (pushRs e).length = 27 + e := by
-  simp only [pushRs, List.length_append, List.length_replicate, List.length_cons, List.length_nil]; omega
+  simp only [pushRs, List.length_append, List.length_replicate, List.length_cons, List.length_nil]; omega_arith
 
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
 `q`, `e` words above the pointers, and the tables `cs` (the statics'
@@ -357,9 +357,9 @@ theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.
     show (⟨_ + BitVec.ofNat 64 (240 + 8 * e), 8⟩ : Region) = _; rw [lay_ret]
   refine ⟨od, og, oc, dc, gc, ko, kd, kg, kc, e' ▸ ro, e' ▸ rd, e' ▸ rg, e' ▸ rc, no, nd, ng, nc, ?_, ?_⟩
   · show (s.gpr .rsp - BitVec.ofNat 64 (240 + 8 * e)).toNat + (240 + 8 * e) ≤ 2 ^ 64
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat]
     have := (s.gpr .rsp).isLt
-    omega
+    omega_arith
   · intro T hT
     rw [lay_tbls] at hT
     obtain ⟨hn, hd⟩ := ht T hT
@@ -368,40 +368,40 @@ theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.
 
 theorem push_base (sp : Addr) (e : Nat) :
     sp - BitVec.ofNat 64 (8 * (27 + e)) = sp - BitVec.ofNat 64 (240 + 8 * e) + BitVec.ofNat 64 24 := by
-  rw [show 8 * (27 + e) = 240 + 8 * e - 24 by omega, ← Offset.ofNat_sub_ofNat (by omega), Offset.sub_sub_eq]
+  rw [show 8 * (27 + e) = 240 + 8 * e - 24 by omega_arith, ← Offset.ofNat_sub_ofNat (by omega_arith), Offset.sub_sub_eq]
 
 theorem push_slot (sp : Addr) (e j : Nat) (hj : j < 4) :
     sp - BitVec.ofNat 64 (8 * (e + j + 1)) = sp - BitVec.ofNat 64 (240 + 8 * e) + BitVec.ofNat 64 (232 - 8 * j) := by
-  rw [show 8 * (e + j + 1) = 240 + 8 * e - (232 - 8 * j) by omega, ← Offset.ofNat_sub_ofNat (by omega),
+  rw [show 8 * (e + j + 1) = 240 + 8 * e - (232 - 8 * j) by omega_arith, ← Offset.ofNat_sub_ofNat (by omega_arith),
     Offset.sub_sub_eq]
 
 theorem push_ctx {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {e : Nat}
     (he : e ≤ 18) {s : State} (h : (rfcX86_64 cs I (240 + 8 * e)).pre s) :
     Ctx (lay I.hashLen I.ecdsa.curve.len e he cs s) s.gpr s.mem (pushed (pushRs e) s) := by
-  have hn : 8 * (pushRs e).length ≤ (s.gpr .rsp).toNat := by rw [pushRs_length]; have := h.1; omega
+  have hn : 8 * (pushRs e).length ≤ (s.gpr .rsp).toNat := by rw [pushRs_length]; have := h.1; omega_arith
   obtain ⟨hf, hw⟩ := pushRegs_mem s (pushRs e) (by simp [pushRs]) hn
   have hw' : ∀ j (hj : j < 4), (pushed (pushRs e) s).mem.readW
       ((lay I.hashLen I.ecdsa.curve.len e he cs s).B + BitVec.ofNat 64 (232 - 8 * j)) 64 =
         s.gpr ([Reg.rdi, .rsi, .rdx, .rcx][j]'hj) :=
     fun j hj => by
-      have hj' : e + j < (pushRs e).length := by rw [pushRs_length]; omega
+      have hj' : e + j < (pushRs e).length := by rw [pushRs_length]; omega_arith
       have hr : (pushRs e)[e + j]'hj' = [Reg.rdi, .rsi, .rdx, .rcx][j]'hj := by
         simp only [pushRs, List.append_assoc]
-        rw [List.getElem_append_right (by simp <;> omega)]
+        rw [List.getElem_append_right (by simp <;> omega_arith)]
         simp only [List.length_replicate, Nat.add_sub_cancel_left]
-        rw [List.getElem_append_left (by simp <;> omega)]
+        rw [List.getElem_append_left (by simp <;> omega_arith)]
       rw [← hr, ← hw (e + j) hj']; simp only [lay]; rw [push_slot _ e j hj]; rfl
   have ht := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   refine ⟨by rw [pushed_rd, h.2.1, lay_tbls]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr,
-    hw' 3 (by omega), hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_,
+    hw' 3 (by omega_arith), hw' 2 (by omega_arith), hw' 1 (by omega_arith), hw' 0 (by omega_arith), ?_,
     fun c hc => (congrFun (pushRegs_syms s _) c.1).trans (lay_sy I.hashLen I.ecdsa.curve.len e he (cs := cs) s c hc).symm, fun c hc i hi => ?_⟩
-  · rw [pushed_wr, h.2.2.1, pushRs_length, push_base, show 8 * (27 + e) = 216 + 8 * e by omega]; rfl
+  · rw [pushed_wr, h.2.2.1, pushRs_length, push_base, show 8 * (27 + e) = 216 + 8 * e by omega_arith]; rfl
   · rw [pushed_rsp, pushRs_length, push_base]; rfl
   · refine Frame.sub hf fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     refine ⟨(lay I.hashLen I.ecdsa.curve.len e he cs s).STK, by simp, ?_⟩
     rw [pushRs_length, push_base]
-    exact Offset.sub_base (n := 8 * (27 + e)) (k := 240 + 8 * e) _ (by omega)
+    exact Offset.sub_base (n := 8 * (27 + e)) (k := 240 + 8 * e) _ (by omega_arith)
   · rw [lay_sy I.hashLen I.ecdsa.curve.len e he (cs := cs) s c hc]
     exact ht c hc i hi
 

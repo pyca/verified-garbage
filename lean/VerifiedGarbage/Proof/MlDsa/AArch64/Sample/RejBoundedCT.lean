@@ -129,7 +129,7 @@ theorem body_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ s => etaOf σ = η ∧ 
       rw [eval_x4 h₁.x4 (Lt_le σ₁ t)] at hc
       have hl : (Lt σ₁ t).length ≠ 256 := by simpa using hc
       have := Lt_le σ₁ t
-      exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨⟨e₁, h₁⟩, by omega⟩, ⟨⟨e₂, h₂⟩, by rw [← len_eq hq]; omega⟩⟩)
+      exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨⟨e₁, h₁⟩, by omega_arith⟩, ⟨⟨e₂, h₂⟩, by rw [← len_eq hq]; omega_arith⟩⟩)
     fun _ _ h => h
   refine RelCT.seq (relTaintStep (J' := fun σ s => etaOf σ = η ∧ (Lt σ t).length < 256 ∧ LM σ t s) [.x3]
     (fun σ s hp ⟨⟨he, h⟩, hl⟩ => by
@@ -140,7 +140,7 @@ theorem body_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ s => etaOf σ = η ∧ 
     have := hbTry_length (etaOf σ) (Lt σ t) ((Z σ t).toNat % 16)
     have := halfByteOk_le (etaOf σ) ((Z σ t).toNat % 16)
     simp only [Lm]
-    omega
+    omega_arith
   refine RelCT.ite (fun s₁ s₂ ⟨σ₁, σ₂, _, _, hq, ⟨_, l₁, h₁⟩, ⟨_, l₂, h₂⟩⟩ => by
       rw [eval_x4 h₁.x4 (hml σ₁ l₁), eval_x4 h₂.x4 (hml σ₂ l₂), lm_eq hq ht])
     (RelCT.mono (P := Rel2 rbK.pre rbK.pub fun σ s =>
@@ -164,7 +164,7 @@ theorem body_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ s => etaOf σ = η ∧ 
         rw [eval_x4 h₁.x4 (hml σ₁ l₁)] at hc
         have hm : (Lm σ₁ t).length ≠ 256 := by simpa using hc
         have := hml σ₁ l₁
-        exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨⟨e₁, l₁, h₁⟩, by omega⟩, ⟨⟨e₂, l₂, h₂⟩, by rw [← lm_eq hq ht]; omega⟩⟩)
+        exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨⟨e₁, l₁, h₁⟩, by omega_arith⟩, ⟨⟨e₂, l₂, h₂⟩, by rw [← lm_eq hq ht]; omega_arith⟩⟩)
       fun _ _ h => h)
 
 end
@@ -179,14 +179,14 @@ theorem iters_ct {η : Nat} (hη : η = 2 ∨ η = 4) :
     (fun s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, ⟨e₁, h₁⟩, ⟨e₂, h₂⟩⟩ =>
       ⟨σ₁, σ₂, p₁, p₂, hq, ⟨e₁, by decide, Nat.le_refl _, h₁⟩, ⟨e₂, by decide, Nat.le_refl _, h₂⟩⟩) fun _ _ h => h
   by_cases hn : 0 < n ∧ n ≤ 544
-  · have ht : 544 - n < 544 := by omega
+  · have ht : 544 - n < 544 := by omega_arith
     refine RelCT.mono (body_ct hη ht) (fun s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, ⟨e₁, _, _, h₁⟩, ⟨e₂, _, _, h₂⟩⟩ =>
       ⟨σ₁, σ₂, p₁, p₂, hq, ⟨e₁, h₁⟩, ⟨e₂, h₂⟩⟩) ?_
     intro s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, ⟨e₁, h₁⟩, ⟨e₂, h₂⟩⟩
     have c : ∀ {u : State}, (u.gpr .x5).toNat = 544 - (544 - n + 1) →
         isa.eval (.nonzero .x .x5) u = some (decide (n ≠ 1)) := fun h5 => by
       rw [eval_nonzero, ne_zero_iff, h5]
-      exact congrArg some (decide_eq_decide.mpr (by omega))
+      exact congrArg some (decide_eq_decide.mpr (by omega_arith))
     refine ⟨by rw [c h₁.x5, c h₂.x5], fun hf => ?_, fun htr => ?_⟩
     · rw [c h₁.x5] at hf
       have : n = 1 := by simpa using hf
@@ -194,9 +194,9 @@ theorem iters_ct {η : Nat} (hη : η = 2 ∨ η = 4) :
       exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨e₁, h₁⟩, ⟨e₂, h₂⟩⟩
     · rw [c h₁.x5] at htr
       have : n ≠ 1 := by simpa using htr
-      refine ⟨n - 1, by omega, σ₁, σ₂, p₁, p₂, hq, ⟨e₁, by omega, by omega, ?_⟩, ⟨e₂, by omega, by omega, ?_⟩⟩
-      · rw [show 544 - (n - 1) = 544 - n + 1 by omega]; exact h₁
-      · rw [show 544 - (n - 1) = 544 - n + 1 by omega]; exact h₂
+      refine ⟨n - 1, by omega_arith, σ₁, σ₂, p₁, p₂, hq, ⟨e₁, by omega_arith, by omega_arith, ?_⟩, ⟨e₂, by omega_arith, by omega_arith, ?_⟩⟩
+      · rw [show 544 - (n - 1) = 544 - n + 1 by omega_arith]; exact h₁
+      · rw [show 544 - (n - 1) = 544 - n + 1 by omega_arith]; exact h₂
   · exact RelCT.of_false fun s₁ s₂ ⟨_, _, _, _, _, ⟨_, h1, h2, _⟩, _⟩ => hn ⟨h1, h2⟩
 
 theorem rbLoop_ct {η : Nat} (hη : η = 2 ∨ η = 4) :

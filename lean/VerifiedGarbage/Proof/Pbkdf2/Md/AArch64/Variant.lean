@@ -198,10 +198,10 @@ theorem hmacInitAnyF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchCon
   AArch64.Verified.stackScratchWiped (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
     (n := I.initAnyKeyScratch) (post := Spec.Hmac.initPost I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := anyFrame I) (words := I.initAnyKeyScratch) (hmacInitAny_of hH C hSH hW A hsI hs)
-    (by exact (by decide : 4 < 8)) (by simp only [anyFrame, Elem.size]; omega) (by simp only [Elem.size]; omega)
+    (by exact (by decide : 4 < 8)) (by simp only [anyFrame, Elem.size]; omega_arith) (by simp only [Elem.size]; omega_arith)
     (Proof.Hmac.initPostOut_local I.S _ hR (by
       rw [← hSH, hH.hS]; have := hH.N_le; have := hH.B_le
-      omega)) hsat
+      omega_arith)) hsat
 
 theorem hmacShortF_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
@@ -212,7 +212,7 @@ theorem hmacShortF_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s
     (n := I.scratch) (pre := Spec.Hmac.initPre I.S AArch64.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := hmacFrame I) (hmacInit_of hH C hSH hW hsI) (by exact (by decide : 4 < 8))
-    (by simp only [hmacFrame, Elem.size]; omega) hsat
+    (by simp only [hmacFrame, Elem.size]; omega_arith) hsat
 
 theorem hmacInitF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
@@ -223,7 +223,7 @@ theorem hmacInitF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchContra
     (hsat : ∃ s, (I.initAnyKeyContract AArch64.abi (16 + anyFrame I)).pre s) :
     Verified AArch64.target (initCode H I) (I.initAnyKeyContract AArch64.abi (16 + anyFrame I)) :=
   initEntry_verified (hmacShortF_of hH C hSH hW hsI hs hsIF) (hmacInitAnyF_of hH C hSH hW A hsI hsA ha hR hsat)
-    (by omega) (by simp only [hmacFrame, anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega) hB hsat
+    (by omega_arith) (by simp only [hmacFrame, anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega_arith) hB hsat
 
 theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
@@ -233,7 +233,7 @@ theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre
   AArch64.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
     (n := I.scratch) (post := Spec.Hmac.finalizePost I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := hmacFrame I) (hmacFin_of hH C hSH hW hsF) (by exact (by decide : 4 < 8))
-    (by simp only [hmacFrame, Elem.size]; omega) hsat
+    (by simp only [hmacFrame, Elem.size]; omega_arith) hsat
 
 theorem pbkdf2F_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
@@ -247,7 +247,7 @@ theorem pbkdf2F_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (n := I.pbkdf2Scratch) (pre := Spec.Pbkdf2.pbkdf2Pre I.S AArch64.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := pbkdf2Frame I) (pbkdf2_of hH C hSH hW hsI hsF hsT hsP) (by exact (by decide : 7 < 8))
-    (by simp only [pbkdf2Frame, Elem.size]; omega) hsat
+    (by simp only [pbkdf2Frame, Elem.size]; omega_arith) hsat
 
 end MdHash
 

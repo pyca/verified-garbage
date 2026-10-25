@@ -84,9 +84,9 @@ theorem ghSetup_ok {W : Addr} {g : Nat} (s : State) (h15 : s.gpr .r15 = W)
       .mov .r11 (.reg .r9), .shift .shl .r11 6, .alu .add .r11 (.reg .r15), .alu .add .r11 (imm (tbO - 192))]) ++
       [.zop (.zbin .vpxord .xmm8 .xmm8 .xmm8), .zop (.zbin .vpxord .xmm9 .xmm9 .xmm9),
        .zop (.zbin .vpxord .xmm10 .xmm10 .xmm10)] from rfl, WP.block_append_iff]
-  have e₁ : BitVec.ofNat 64 (4 * g) >>> 2 = BitVec.ofNat 64 g := by rw [shr2 _ (by omega)]; congr 1; omega
+  have e₁ : BitVec.ofNat 64 (4 * g) >>> 2 = BitVec.ofNat 64 g := by rw [shr2 _ (by omega_arith)]; congr 1; omega_arith
   have e₂ : BitVec.ofNat 64 g <<< 6 = BitVec.ofNat 64 (64 * g) := by
-    rw [shl_ofNat (by omega)]; congr 1; omega
+    rw [shl_ofNat (by omega_arith)]; congr 1; omega_arith
   apply WP.of_runBlock
   refine ⟨_, by xrun [execShift, h15, hmp, r288, mpO, gO, tbO, e₁, e₂], ?_⟩
   refine WP.mono (clear3_ok _) fun t ⟨p, f⟩ => ⟨?_, ?_, ?_, p, fun r h₁ h₂ h₃ => ?_, f.mem, f.rd, f.wr,
@@ -117,10 +117,10 @@ theorem ghStep_ok {W : Addr} {g j : Nat} (t : State) (hj : j < g)
       t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       ZKeep [.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11] t t' := by
   have ea₁ : t.gpr .rdx + BitVec.ofInt 64 ((64 * 2 : Nat) : Int) = W + BitVec.ofNat 64 (512 + 64 * j) := by
-    rw [hrdx, BitVec.ofInt_natCast, add_ofNat_ofNat, show 384 + 64 * j + 64 * 2 = 512 + 64 * j by omega]
+    rw [hrdx, BitVec.ofInt_natCast, add_ofNat_ofNat, show 384 + 64 * j + 64 * 2 = 512 + 64 * j by omega_arith]
   have ea₂ : t.gpr .r11 + BitVec.ofInt 64 ((64 * 2 : Nat) : Int) = W + BitVec.ofNat 64 (1472 + 64 * (g - j)) := by
     rw [hr11, BitVec.ofInt_natCast, add_ofNat_ofNat,
-      show 1344 + 64 * (g - j) + 64 * 2 = 1472 + 64 * (g - j) by omega]
+      show 1344 + 64 * (g - j) + 64 * 2 = 1472 + 64 * (g - j) by omega_arith]
   rw [ghBody, WP.block_append_iff]
   refine WP.mono (VG.Proof.Gcm.X86_64.StitchZ.ghLoad_ok (k := 2) (by decide) t h0 (by rw [ea₁]; exact hin) (by rw [ea₂]; exact hpin))
     fun t₁ ⟨p₁, f₁⟩ => ?_
@@ -131,12 +131,12 @@ theorem ghStep_ok {W : Addr} {g j : Nat} (t : State) (hj : j < g)
     rw [p₁ l hl, gacc_succ, ← hp l hl, ea₁, ea₂, add_ofNat_ofNat, add_ofNat_ofNat]
     simp only [show (2 : Nat) ≠ VG.Impl.Gcm.X86_64.StitchZ.ord 0 by decide, ite_false,
       show (2 : Nat) ≠ 0 by decide, VG.Proof.Gcm.X86_64.Stitch.zero_xor_b]
-    rw [show 512 + 64 * j + 16 * l = 512 + (64 * j + 16 * l) by omega, ← add_ofNat_ofNat,
-      show 1472 + 64 * (g - j) + 16 * l = 1536 + (64 * (g - 1 - j) + 16 * l) by omega, ← add_ofNat_ofNat W 1536]
+    rw [show 512 + 64 * j + 16 * l = 512 + (64 * j + 16 * l) by omega_arith, ← add_ofNat_ofNat,
+      show 1472 + 64 * (g - j) + 16 * l = 1536 + (64 * (g - 1 - j) + 16 * l) by omega_arith, ← add_ofNat_ofNat W 1536]
   · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ite_false, ite_true]
     rw [f₁.gpr, hrdx, add_ofNat_ofNat]; congr 1
   · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ite_false, ite_true]
-    rw [f₁.gpr, hr11, show 1344 + 64 * (g - j) = (1344 + 64 * (g - (j + 1))) + 64 by omega,
+    rw [f₁.gpr, hr11, show 1344 + 64 * (g - j) = (1344 + 64 * (g - (j + 1))) + 64 by omega_arith,
       ← add_ofNat_ofNat]
     exact BitVec.add_sub_cancel _ _
   · simp [gpr_setReg, gpr_arithFlags, f₁.gpr]
@@ -182,12 +182,12 @@ theorem ghash_ok {W : Addr} {g : Nat} (s : State) (h15 : s.gpr .r15 = W)
         z₁.mono (by simp)⟩
     rintro n t ⟨j, rfl, hj, dxt, r11t, r9t, pt, gt, mt, rdt, wrt, zt⟩
     have h0t : ∀ l < 4, t.zlane .xmm0 l = revMask := fun l hl => by rw [zt _ (by decide) l hl, h0 l hl]
-    refine WP.mono (ghStep_ok t hj h0t dxt r11t (by rw [rdt, wrt]; exact wR (by omega))
-      (by rw [rdt, wrt]; exact wR (by omega)) (fun l hl => by rw [pt l hl, mt]))
+    refine WP.mono (ghStep_ok t hj h0t dxt r11t (by rw [rdt, wrt]; exact wR (by omega_arith))
+      (by rw [rdt, wrt]; exact wR (by omega_arith)) (fun l hl => by rw [pt l hl, mt]))
       fun t' ⟨p', dx', r11', r9', zf', g', m', rd', wr', z'⟩ => ?_
     have hz : t'.zf = some (decide (g - j = 1)) := by
-      rw [zf', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (a := g - j) (b := 1) (by omega)
-        (by omega)]
+      rw [zf', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (a := g - j) (b := 1) (by omega_arith)
+        (by omega_arith)]
     have gg : ∀ r, r ≠ .rdx → r ≠ .r9 → r ≠ .r11 → t'.gpr r = s.gpr r := fun r a b c => by
       rw [g' r a b c, gt r a b c]
     have pp : ∀ l < 4, prod (t'.zproj l) =
@@ -195,12 +195,12 @@ theorem ghash_ok {W : Addr} {g : Nat} (s : State) (h15 : s.gpr .r15 = W)
       rw [p' l hl, mt]
     by_cases he : j + 1 = g
     · left
-      exact ⟨by simp [eval, hz]; omega, fun l hl => by rw [pp l hl, he], gg, by rw [m', mt], by rw [rd', rdt],
+      exact ⟨by simp [eval, hz]; omega_arith, fun l hl => by rw [pp l hl, he], gg, by rw [m', mt], by rw [rd', rdt],
         by rw [wr', wrt], zt.trans (z'.mono (by simp))⟩
     · right
-      refine ⟨by simp [eval, hz]; omega, g - (j + 1), by omega, j + 1, rfl, by omega, dx', r11', ?_, pp, gg,
+      refine ⟨by simp [eval, hz]; omega_arith, g - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, dx', r11', ?_, pp, gg,
         by rw [m', mt], by rw [rd', rdt], by rw [wr', wrt], zt.trans (z'.mono (by simp))⟩
-      rw [r9', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_sub (by omega) (by omega)]; congr 1
+      rw [r9', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_sub (by omega_arith) (by omega_arith)]; congr 1
   · have h1t : ∀ l < 4, t.zlane .xmm1 l = poly := fun l hl => by rw [zt _ (by decide) l hl, h1 l hl]
     refine WP.mono (VG.Proof.Gcm.X86_64.StitchZ.fin_ok t h1t) fun t' ⟨y0, y1, f'⟩ => ⟨?_, y1, ?_, ?_, ?_, ?_, ?_⟩
     · rw [y0, pt 0 (by decide), pt 1 (by decide), pt 2 (by decide), pt 3 (by decide)]

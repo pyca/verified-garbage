@@ -36,8 +36,8 @@ def mv (m : Mem) (base : Addr) : Nat → Nat → Nat
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
   refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n)
-    (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+    (by omega_arith) (by omega_arith)) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_arith
 
 /-- A word of a buffer disjoint from the working space, after writes inside it. -/
 theorem readW_far {base p : Addr} {n o k d : Nat} {m m' : Mem} (h : Outside base o k m m')
@@ -45,7 +45,7 @@ theorem readW_far {base p : Addr} {n o k d : Nat} {m m' : Mem} (h : Outside base
     (hn : n ≤ 2 ^ 64) :
     m'.readW (p + BitVec.ofNat 64 d) 64 = m.readW (p + BitVec.ofNat 64 d) 64 :=
   (Mem.readW_congr fun i hi => (h _ (Or.inr (by
-    rw [Offset.add_add]; have := far hd (i := d + i) (by omega) hn; omega))).symm).symm
+    rw [Offset.add_add]; have := far hd (i := d + i) (by omega_arith) hn; omega_arith))).symm).symm
 
 /-- One word copied from `src + 8i` to `x4 + o + 8i`. -/
 def copyPair (src : Reg) (o i : Nat) : List Instr :=
@@ -89,15 +89,15 @@ theorem copyPair_ok {s : State} {base p : Addr} {src : Reg} {o : Nat} (h : CopyP
       t.mem = s.mem.writeW (off base (o + 8 * i)) (s.mem.readW (p + BitVec.ofNat 64 (8 * i)) 64) ∧
       CopyKeeps s t := by
   rw [copyPair, WP.block_cons_iff]
-  refine ⟨_, exec_ldr_x ⟨by omega, by omega⟩ (by
-    rw [h.hsrc]; exact ⟨_, h.rd, Offset.contains_base p (by omega) (by omega)⟩), ?_⟩
+  refine ⟨_, exec_ldr_x ⟨by omega_arith, by omega_arith⟩ (by
+    rw [h.hsrc]; exact ⟨_, h.rd, Offset.contains_base p (by omega_arith) (by omega_arith)⟩), ?_⟩
   rw [WP.block_cons_iff]
   have hw : InRegions (s.write .x .x5 (s.mem.readW (s.gpr src + BitVec.ofNat 64 (8 * i)) 64)).wr
       ((s.write .x .x5 (s.mem.readW (s.gpr src + BitVec.ofNat 64 (8 * i)) 64)).gpr .x4 +
         BitVec.ofNat 64 (o + 8 * i)) 8 := by
     rw [RegUpd.wr_write, RegUpd.gpr_write_of_ne _ _ _ (by decide), h.x4]
-    exact ⟨_, h.wr, contains_sc (by have := h.olt; omega)⟩
-  refine ⟨_, exec_str_x ⟨by have := h.o8; omega, by have := h.olt; omega⟩ hw, WP.block_nil ?_⟩
+    exact ⟨_, h.wr, contains_sc (by have := h.olt; omega_arith)⟩
+  refine ⟨_, exec_str_x ⟨by have := h.o8; omega_arith, by have := h.olt; omega_arith⟩ hw, WP.block_nil ?_⟩
   refine ⟨?_, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl, rfl⟩⟩
   simp only [RegUpd.mem_write, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ _
     (show Reg.x4 ≠ .x5 by decide), BitVec.setWidth_eq, h.x4, h.hsrc]
@@ -111,22 +111,22 @@ theorem copyWords_ok {s : State} {base p : Addr} {src : Reg} {o : Nat} (h : Copy
       ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyWords_ok h n (by omega)) fun a ⟨wa, oa, ka⟩ => ?_
+    refine WP.mono (copyWords_ok h n (by omega_arith)) fun a ⟨wa, oa, ka⟩ => ?_
     have olt := h.olt
-    refine WP.mono (copyPair_ok (h.of_keeps ka) n (by omega)) fun t ⟨mt, kt⟩ => ?_
+    refine WP.mono (copyPair_ok (h.of_keeps ka) n (by omega_arith)) fun t ⟨mt, kt⟩ => ?_
     have rp : a.mem.readW (p + BitVec.ofNat 64 (8 * n)) 64 =
         s.mem.readW (p + BitVec.ofNat 64 (8 * n)) 64 :=
-      readW_far oa (by omega) h.disj (by omega) (by omega)
+      readW_far oa (by omega_arith) h.disj (by omega_arith) (by omega_arith)
     refine ⟨fun j hj => ?_, ?_, ka.trans kt⟩
     · rw [mt, rp]
       rcases Nat.lt_or_ge j n with hj' | hj'
-      · rw [Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega)]
+      · rw [Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
         exact wa j hj'
-      · obtain rfl : j = n := by omega
+      · obtain rfl : j = n := by omega_arith
         exact word_writeW_self _ _ _ _
     · rw [mt]
-      exact oa.mono (Nat.le_refl _) (by omega) |>.trans
-        ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))
+      exact oa.mono (Nat.le_refl _) (by omega_arith) |>.trans
+        ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 theorem mv8 (m : Mem) (base : Addr) (o : Nat) : mv m base o 8 =
     (word m base o).toNat + 2 ^ 64 * ((word m base (o + 8)).toNat + 2 ^ 64 *
@@ -139,7 +139,7 @@ theorem toNat_byte64 (b : Byte) :
     (BitVec.setWidth (8 * 8) ((b.setWidth 32).setWidth 64)).toNat = b.toNat := by
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_arith
 
 /-- A 57-byte input copied as eight words. -/
 theorem copy57_ok {s : State} {base p : Addr} {src : Reg} {o : Nat} (h : CopyPre s base p src o) :
@@ -152,36 +152,36 @@ theorem copy57_ok {s : State} {base p : Addr} {src : Reg} {o : Nat} (h : CopyPre
   have olt := h.olt
   have o8 := h.o8
   have hb : InRegions (a.rd ++ a.wr) (a.gpr src + BitVec.ofNat 64 56) 1 := by
-    rw [ha.hsrc]; exact ⟨_, ha.rd, Offset.contains_base p (d := 56) (n := 1) (by omega) (by omega)⟩
+    rw [ha.hsrc]; exact ⟨_, ha.rd, Offset.contains_base p (d := 56) (n := 1) (by omega_arith) (by omega_arith)⟩
   have hw : InRegions a.wr (a.gpr .x4 + BitVec.ofNat 64 (o + 56)) 8 := by
-    rw [ha.x4]; exact ⟨_, ha.wr, contains_sc (by omega)⟩
+    rw [ha.x4]; exact ⟨_, ha.wr, contains_sc (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store, read_x,
     Size.bytes, show (56 : Nat) % 1 = 0 from rfl, show (56 : Nat) < 4096 * 1 from by decide, and_self,
-    hb, show (o + 56) % 8 = 0 by omega, show o + 56 < 4096 * 8 by omega, hw,
+    hb, show (o + 56) % 8 = 0 by omega_arith, show o + 56 < 4096 * 8 by omega_arith, hw,
     RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
     ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some, Option.some.injEq,
     exists_eq_left']
   rw [ha.x4, ha.hsrc, Ed25519.AArch64.write64_eq_writeW]
-  refine ⟨?_, oa.mono (Nat.le_refl _) (by omega) |>.trans
-    ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)),
+  refine ⟨?_, oa.mono (Nat.le_refl _) (by omega_arith) |>.trans
+    ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)),
     ka.trans ⟨fun r hr => by simp only [RegUpd.gpr_write, hr, ite_false], rfl, rfl, rfl⟩⟩
   have byte : (a.mem.read (p + BitVec.ofNat 64 56) 1) = s.mem (p + BitVec.ofNat 64 56) := by
     rw [Ed25519.AArch64.read_byte]
-    exact oa _ (Or.inr (by have := far h.disj (i := 56) (by omega) (by omega); omega))
+    exact oa _ (Or.inr (by have := far h.disj (i := 56) (by omega_arith) (by omega_arith); omega_arith))
   rw [mv8, decode57]
-  have w0 := wa 0 (by omega); have w1 := wa 1 (by omega); have w2 := wa 2 (by omega)
-  have w3 := wa 3 (by omega); have w4 := wa 4 (by omega); have w5 := wa 5 (by omega)
-  have w6 := wa 6 (by omega)
+  have w0 := wa 0 (by omega_arith); have w1 := wa 1 (by omega_arith); have w2 := wa 2 (by omega_arith)
+  have w3 := wa 3 (by omega_arith); have w4 := wa 4 (by omega_arith); have w5 := wa 5 (by omega_arith)
+  have w6 := wa 6 (by omega_arith)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.reduceMul] at w0 w1 w2 w3 w4 w5 w6
   simp only [Ed25519.AArch64.word_writeW_self]
-  rw [Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
-    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
-    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
-    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
-    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
-    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
-    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
+  rw [Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+    Ed25519.AArch64.word_writeW_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
     w0, w1, w2, w3, w4, w5, w6, byte, toNat_byte64]
 
 theorem Outside.mv_eq {base : Addr} {o k : Nat} {m m' : Mem} (h : Outside base o k m m') :
@@ -190,7 +190,7 @@ theorem Outside.mv_eq {base : Addr} {o k : Nat} {m m' : Mem} (h : Outside base o
   | n + 1, d, hd, hl => by
     show (word m' base d).toNat + 2 ^ 64 * mv m' base (d + 8) n =
       (word m base d).toNat + 2 ^ 64 * mv m base (d + 8) n
-    rw [Outside.mv_eq h n (d + 8) (by omega) (by omega), h.word (by omega) (by omega)]
+    rw [Outside.mv_eq h n (d + 8) (by omega_arith) (by omega_arith), h.word (by omega_arith) (by omega_arith)]
 
 /-- The bytes of a buffer disjoint from the working space, after writes
 inside it only. -/
@@ -200,7 +200,7 @@ theorem bytesAt_outside {m m' : Mem} {p base : Addr} {n o k : Nat} (h : Outside 
   apply List.map_congr_left
   intro i hi
   have hi := List.mem_range.mp hi
-  exact h _ (Or.inr (by have := far hd hi hn; omega))
+  exact h _ (Or.inr (by have := far hd hi hn; omega_arith))
 
 /-- The operands: `k` then `r` at `XK`, `s` then one at `YS`. -/
 theorem operands_ok {s : State} {base : Addr} (hb : s.gpr .x4 = base)

@@ -78,13 +78,13 @@ theorem sqRaw_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hZ : slot 
   have hA : A + 8 * (2 * w + 2) ≤ Z := by
     have := slot_le (w := w) (show aTmp < 8 by decide)
     unfold A slot aAcc aTmp at *
-    omega
-  have hb : eb + 8 * w ≤ Z := by have := slot_le (w := w) ha; omega
+    omega_arith
+  have hb : eb + 8 * w ≤ Z := by have := slot_le (w := w) ha; omega_arith
   have sb : eb + 8 * w ≤ A ∨ A + 8 * (2 * w + 2) ≤ eb := by
     have := slot_sep (w := w) ha1
     have := slot_sep (w := w) ha2
     unfold A eb slot aAcc aTmp at *
-    omega
+    omega_arith
   unfold raw
   -- The stash, and the cross products' registers.
   have pS : WP isa (.block (stash ++ ([.mov .rbx (.reg .r12), .alu .add .r8 (.imm 16)] : List Instr))) s fun t =>
@@ -105,16 +105,16 @@ theorem sqRaw_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hZ : slot 
   have h9₁ : s₁.gpr .r9 = off B eb := (k₁.gpr (by decide)).trans h9
   -- The cross products.
   refine WP.seq (WP.mono (WP.vecKeep (by decide) (AdxSquare.crossWith_ok row_rowOk (hs.congr k₁.2.2) h8₁ h9₁ hbx₁
-    hw (by omega) hA hb sb)) fun s₂ ⟨⟨hv₂, ho₂, hz₂, k₂⟩, hx₂, _⟩ => ?_)
+    hw (by omega_arith) hA hb sb)) fun s₂ ⟨⟨hv₂, ho₂, hz₂, k₂⟩, hx₂, _⟩ => ?_)
   rw [hm₁] at hv₂ ho₂
   have k12 := k₁.trans k₂
   have h9₂ : s₂.gpr .r9 = off B eb := (k₂.gpr (by decide)).trans h9₁
   have read₂ : ∀ j < w, word s₂.mem B (eb + 8 * j) = word s.mem B (eb + 8 * j) :=
-    fun j hj => ho₂.word (by omega) (by omega)
+    fun j hj => ho₂.word (by omega_arith) (by omega_arith)
   have lo₂ : wv s₂.mem B A (2 * w) = AdxSquare.crossValue s.mem B eb w := by
     have zero₂ : wv s₂.mem B (A + 8 * (2 * w)) 2 = 0 := wv_zero fun k hk => by
-      rw [show A + 8 * (2 * w) + 8 * k = A + 8 * (2 * w + k) by omega]
-      exact hz₂ _ (by omega) (by omega)
+      rw [show A + 8 * (2 * w) + 8 * k = A + 8 * (2 * w + k) by omega_arith]
+      exact hz₂ _ (by omega_arith) (by omega_arith)
     rw [wv_add, zero₂, Nat.mul_zero, Nat.add_zero] at hv₂
     exact hv₂
   -- The diagonal's registers.
@@ -128,32 +128,32 @@ theorem sqRaw_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hZ : slot 
   have k13 := k12.trans k₃
   -- The diagonal.
   refine WP.mono (WP.vecKeep (by decide) (AdxSquare.diagonalWith_ok core_coreOk (hs.congr k13.2.2) h8₃
-    ((k₃.gpr (by decide)).trans h9₂) h10₃ (by omega) (by omega) (by omega) hb (by omega)))
+    ((k₃.gpr (by decide)).trans h9₂) h10₃ (by omega_arith) (by omega_arith) (by omega_arith) hb (by omega_arith)))
     fun t ⟨⟨hv, ho, kt⟩, hxt, _⟩ => ?_
   rw [hm₃] at hv ho
   rw [lo₂, AdxSquare.diagonalValue_congr read₂, AdxSquare.square_decomposition] at hv
   have bound : wv s.mem B eb w * wv s.mem B eb w < 2 ^ (128 * w) := by
     have hl := wv_lt s.mem B eb w
     have hp := Nat.mul_lt_mul'' hl hl
-    rw [← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega] at hp
+    rw [← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_arith] at hp
     exact hp
   have carry : (t.gpr .r15).toNat = 0 := by
     by_contra hc
-    have hc' : 1 ≤ (t.gpr .r15).toNat := by omega
+    have hc' : 1 ≤ (t.gpr .r15).toNat := by omega_arith
     have hm := Nat.mul_le_mul_left (2 ^ (128 * w)) hc'
     simp only [Nat.mul_one] at hm
-    omega
+    omega_arith
   have hxs : t.xmm = s₁.xmm := by rw [hxt, hx₃, hx₂]
-  refine ⟨?_, ?_, ho₂.trans (ho.mono (o' := A) (n' := 8 * (2 * w + 2)) (Nat.le_refl _) (by omega)),
+  refine ⟨?_, ?_, ho₂.trans (ho.mono (o' := A) (n' := 8 * (2 * w + 2)) (Nat.le_refl _) (by omega_arith)),
     (kt.gpr (by decide)).trans h8₃, by rw [hxs]; exact x14, by rw [hxs]; exact x15, by rw [hxs]; exact x0,
     by rw [hxs]; exact x1, by rw [hxs]; exact x2, by rw [hxs]; exact x3, fun x hx => by rw [hxs]; exact xo x hx,
     (k13.trans kt).mono (by decide)⟩
   · rw [carry, Nat.mul_zero, Nat.add_zero] at hv
     exact hv
   · exact wv_zero fun k hk => by
-      rw [ho.word (by omega) (by omega)]
-      rw [show A + 8 * (2 * w) + 8 * k = A + 8 * (2 * w + k) by omega]
-      exact hz₂ _ (by omega) (by omega)
+      rw [ho.word (by omega_arith) (by omega_arith)]
+      rw [show A + 8 * (2 * w) + 8 * k = A + 8 * (2 * w + k) by omega_arith]
+      exact hz₂ _ (by omega_arith) (by omega_arith)
 
 theorem unstash_ok {s : State} {B : Addr} {o e : Nat} {w : Nat} {eN : Nat}
     (x0 : s.xmm .xmm0 = (0 : BitVec 64) ++ BitVec.ofNat 64 w) (x1 : s.xmm .xmm1 = (0 : BitVec 64) ++ off B e)
@@ -286,10 +286,10 @@ theorem cmpBases_ok {s : State} {B : Addr} {Z w a b : Nat} (hs : Scr s B Z) (hZ 
     · subst h; simp
     · have := slot_sep (w := w) h
       simp only [h, decide_false, decide_eq_false_iff_not]
-      omega
+      omega_arith
   refine WP.mono (WP.keep [.r11] (Q := fun t => t.zf = some (decide (a = b)) ∧ t.gpr .r11 = off B (slot w a) ∧
     t.mem = s.mem) ?_ rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
-  xrun [h11, h9, off_sub_beq B (show slot w a < 2 ^ 64 by omega) (show slot w b < 2 ^ 64 by omega), hab]
+  xrun [h11, h9, off_sub_beq B (show slot w a < 2 ^ 64 by omega_arith) (show slot w b < 2 ^ 64 by omega_arith), hab]
 
 /-- `mulTail`: what `mmTailLazy_ok` says of `montMul`'s rounds, by the rounds or,
 for `a = b`, the square, which writes no vector register but `stashed`. -/

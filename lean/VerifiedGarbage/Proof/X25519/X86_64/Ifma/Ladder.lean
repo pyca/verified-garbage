@@ -37,13 +37,13 @@ theorem vloop_ok {s₀ : State} {base : Addr} {k : Nat} {u : Fe} {x1 : Nat → N
     (Q := fun s' => VInv base k u x1 s₀ s' 0)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 255 ∧ VInv base k u x1 s₀ s m) ?_ n s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (vstep_ok (by omega) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_arith⟩
+  refine WP.mono (vstep_ok (by omega_arith) hbits hi) fun s' ⟨hi', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, hi'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬m = 0), Bool.not_false], m, by omega_arith,
+      by omega_arith, by omega_arith, hi'⟩
 
 /-! ## MXCSR -/
 
@@ -69,10 +69,10 @@ theorem outside_mx (m : Mem) (base : Addr) {d : Nat} (hd : MX ≤ d ∧ d + 4 �
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by simp only [MX] at hd ⊢; omega)]
+  rw [Offset.lt_iff x base (by simp only [MX] at hd ⊢; omega_arith)]
   simp only [ofs] at hx
   simp only [MX] at hd hx ⊢
-  omega
+  omega_arith
 
 /-- The save: MXCSR (its reserved bits cleared) into `r11`. -/
 theorem save_wp {s : State} {base : Addr} (hs : Scr s base) :
@@ -85,7 +85,7 @@ theorem save_wp {s : State} {base : Addr} (hs : Scr s base) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, State.load32, readSrc32, ea_sc,
     hs.rdi, h1, h2, ite_true, Option.bind_some, Option.map_some, Mem.readW_writeW_self32, execAlu32,
     State.setReg32, Option.some.injEq, exists_eq_left']
-  refine ⟨fun r hr => ?_, ?_, ⟨rfl, rfl, outside_mx _ _ (by simp only [MX]; omega) _, rfl, rfl⟩⟩
+  refine ⟨fun r hr => ?_, ?_, ⟨rfl, rfl, outside_mx _ _ (by simp only [MX]; omega_arith) _, rfl, rfl⟩⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
   · simp only [RegUpd.gpr_setReg_self, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide),
       BitVec.setWidth_eq]
@@ -102,7 +102,7 @@ theorem load_wp {s : State} {base : Addr} (hs : Scr s base) :
     RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.rd_setReg, hs.rdi, h1, h2, ite_true, ite_false, reduceCtorEq,
     Option.bind_some, Option.map_some, Mem.readW_writeW_self32, State.setReg32, e, Option.some.injEq,
     exists_eq_left']
-  refine ⟨fun r hr => ?_, ⟨rfl, rfl, outside_mx _ _ (by simp only [MX]; omega) _, rfl, rfl⟩⟩
+  refine ⟨fun r hr => ?_, ⟨rfl, rfl, outside_mx _ _ (by simp only [MX]; omega_arith) _, rfl, rfl⟩⟩
   simp only [hr, ite_false]
 
 /-- MXCSR back from `r11`, through `[MX]`. -/
@@ -115,7 +115,7 @@ theorem restore_wp {s : State} {base : Addr} (hs : Scr s base)
   have h2 := mx_in' hs (show MX + 4 ≤ 4096 by decide)
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, State.load32, ea_sc, hs.rdi, h1,
     h2, ite_true, Option.bind_some, Mem.readW_writeW_self32, h11, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, ⟨rfl, rfl, outside_mx _ _ (by simp only [MX]; omega) _, rfl, rfl⟩⟩
+  exact ⟨trivial, ⟨rfl, rfl, outside_mx _ _ (by simp only [MX]; omega_arith) _, rfl, rfl⟩⟩
 
 theorem and_ffff (v : BitVec 32) : (v &&& 0xFFFF).extractLsb' 16 16 = 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -170,14 +170,14 @@ theorem vladder_ok {s₀ : State} {base : Addr} {k : Nat} {u : Fe} (hs : Scr s�
   have O₁₄ : Outside base MX 8 s₁.mem s₄.mem := by rw [m₄]; exact k₂.mem.trans k₃.mem
   have hk₄ : Consts s₄.mem base (xl s₀.mem base) := hk₁.of_word fun d h1 h2 => by
     rw [mq_eq_word, mq_eq_word]
-    exact O₁₄.word (by simp only [MX]; omega) (by omega)
+    exact O₁₄.word (by simp only [MX]; omega_arith) (by omega_arith)
   have lan₄ : ∀ l < 4, ∀ i < 5, lanes s₄ 0 l i =
       if l = 2 then xl s₀.mem base i else if i = 0 ∧ (l = 0 ∨ l = 3) then 1 else 0 := fun l hl i hi => by
     rw [lanes_of_vec x₄ y₄, k₃.lanes, k₂.lanes, l₁ l hl i hi]
   have bits₄ : ∀ t < 255, s₄.mem (off base (BITS + t)) = BitVec.ofNat 8 (bit k t) := fun t ht => by
     have ho : ofs base (off base (BITS + t)) = BITS + t :=
-      VG.Proof.X25519.X86_64.ofs_off' base (by simp only [BITS]; omega)
-    rw [O₁₄ _ (by rw [ho]; simp only [BITS, MX]; omega), o₁ _ (by rw [ho]; simp only [BITS]; omega)]
+      VG.Proof.X25519.X86_64.ofs_off' base (by simp only [BITS]; omega_arith)
+    rw [O₁₄ _ (by rw [ho]; simp only [BITS, MX]; omega_arith), o₁ _ (by rw [ho]; simp only [BITS]; omega_arith)]
     exact hbits t ht
   have fx1 : fe5 (xl s₀.mem base) = u := by
     rw [← hx1]
@@ -188,9 +188,9 @@ theorem vladder_ok {s₀ : State} {base : Addr} {k : Nat} {u : Fe} (hs : Scr s�
   have I : VInv base k u (xl s₀.mem base) s₄ s₄ 255 := by
     refine ⟨hs₄, fun _ _ => rfl, b₄, rfl, rfl, VFrame.refl _ _, hk₄, fx1, ?_, fun l hl i hi => ?_, ?_, ?_, ?_, ?_⟩
     · show word s₄.mem base SWAP = BitVec.ofNat 64 0
-      rw [O₁₄.word (by simp only [SWAP, MX]; omega) (by simp only [SWAP]; omega),
-        o₁.word (by simp only [SWAP]; omega) (by simp only [SWAP]; omega), hsw]; rfl
-    · rw [lan₄ l hl i hi]; have := hk₄.x1 i hi; split <;> [omega; split <;> omega]
+      rw [O₁₄.word (by simp only [SWAP, MX]; omega_arith) (by simp only [SWAP]; omega_arith),
+        o₁.word (by simp only [SWAP]; omega_arith) (by simp only [SWAP]; omega_arith), hsw]; rfl
+    · rw [lan₄ l hl i hi]; have := hk₄.x1 i hi; split <;> [omega_arith; split <;> omega_arith]
     · rw [fe5_congr (fun i hi => lan₄ 0 (by decide) i hi)]; exact fe5_one'
     · rw [fe5_congr (fun i hi => lan₄ 1 (by decide) i hi)]; simp only [Nat.one_ne_zero, false_or,
         show (1 : Nat) ≠ 3 by decide, and_false, ite_false]; exact fe5_zero
@@ -205,13 +205,13 @@ theorem vladder_ok {s₀ : State} {base : Addr} {k : Nat} {u : Fe} (hs : Scr s�
   have r11₇ : s₇.gpr .r11 = s₂.gpr .r11 := by
     rw [g₆, V.gpr _ (by decide), g₄ _ (by decide), g₃ _ (by decide)]
   refine WP.mono (restore_wp hs₆ (by rw [r11₇, r11₂]; exact and_ffff _)) fun s₈ ⟨g₈, k₈⟩ => ?_
-  have fe8 : ∀ m (hm : m < 4), E s₈.mem base ⟨3 + m, by omega⟩ = fe5 (lanes s₅ 0 m) := fun m hm => by
+  have fe8 : ∀ m (hm : m < 4), E s₈.mem base ⟨3 + m, by omega_arith⟩ = fe5 (lanes s₅ 0 m) := fun m hm => by
     show toFe (fe s₈.mem base (32 * (3 + m))) = _
     have hm' : m < 4 := hm
-    rw [k₈.mem.fe (d := 32 * (3 + m)) (by simp only [MX]; left; omega) (by omega)]
+    rw [k₈.mem.fe (d := 32 * (3 + m)) (by simp only [MX]; left; omega_arith) (by omega_arith)]
     have := f₆ m hm
     simp only [X2] at this
-    rw [show 32 * (3 + m) = 96 + 32 * m by omega]
+    rw [show 32 * (3 + m) = 96 + 32 * m by omega_arith]
     exact this
   refine LPost.of ⟨by rw [g₈]; exact hs₆.rdi, by rw [k₈.wr]; exact hs₆.wr, hs.nowrap⟩
     (fun r hr hb => ?_) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
@@ -229,14 +229,14 @@ theorem vladder_ok {s₀ : State} {base : Addr} {k : Nat} {u : Fe} (hs : Scr s�
     rw [g₈, g₆, V.gpr r h4, g₄ r hb, g₃ r h3, g₂ r h2, g₁ r h1]
   · rw [k₈.rd, rd₆, V.rd, rd₄, k₃.rd, k₂.rd, rd₁]
   · rw [k₈.wr, wr₆, V.wr, wr₄, k₃.wr, k₂.wr, wr₁]
-  · have F₅ : Outside base 64 2152 s₄.mem s₅.mem := fun x hx => V.mem x (by omega)
+  · have F₅ : Outside base 64 2152 s₄.mem s₅.mem := fun x hx => V.mem x (by omega_arith)
     exact ((O₄.trans F₅).trans (o₆.mono (by decide) (by decide))).trans (k₈.mem.mono (by decide) (by decide))
   · exact (fe8 0 (by decide)).trans V.x2
   · exact (fe8 1 (by decide)).trans V.z2
   · exact (fe8 2 (by decide)).trans V.x3
   · exact (fe8 3 (by decide)).trans V.z3
-  · rw [k₈.mem.word (by simp only [SWAP, MX]; omega) (by simp only [SWAP]; omega),
-      o₆.word (by simp only [SWAP]; omega) (by simp only [SWAP]; omega)]
+  · rw [k₈.mem.word (by simp only [SWAP, MX]; omega_arith) (by simp only [SWAP]; omega_arith),
+      o₆.word (by simp only [SWAP]; omega_arith) (by simp only [SWAP]; omega_arith)]
     exact V.swap
 
 end VG.Proof.X25519.X86_64.Ifma

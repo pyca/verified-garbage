@@ -30,17 +30,17 @@ theorem vword_bytes' (x : BitVec 128) (j : Nat) :
   simp only [vword, vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hb, decide_true, Bool.true_and]
   by_cases h0 : b < 8
   · simp only [h0, ite_true, decide_true, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_arith
   by_cases h1 : b < 16
-  · simp only [h0, ite_false, show b-8<8 by omega, ite_true, decide_true, Bool.true_and]
-    congr 1; omega
+  · simp only [h0, ite_false, show b-8<8 by omega_arith, ite_true, decide_true, Bool.true_and]
+    congr 1; omega_arith
   by_cases h2 : b < 24
-  · simp only [h0, ite_false, show ¬ b-8<8 by omega, show b-8-8<8 by omega,
+  · simp only [h0, ite_false, show ¬ b-8<8 by omega_arith, show b-8-8<8 by omega_arith,
       ite_true, decide_true, Bool.true_and]
-    congr 1 <;> omega
-  · simp only [h0, ite_false, show ¬ b-8<8 by omega, show ¬ b-8-8<8 by omega,
-      show b-8-8-8<8 by omega, decide_true, Bool.true_and]
-    congr 1; omega
+    congr 1 <;> omega_arith
+  · simp only [h0, ite_false, show ¬ b-8<8 by omega_arith, show ¬ b-8-8<8 by omega_arith,
+      show b-8-8-8<8 by omega_arith, decide_true, Bool.true_and]
+    congr 1; omega_arith
 
 /-- A bit of a broadcast byte, as `Decompress₁` computes it. -/
 theorem bit1665 : ∀ n < 256, ∀ i < 8,
@@ -49,7 +49,7 @@ theorem bit1665 : ∀ n < 256, ∀ i < 8,
   decide +kernel
 
 theorem vword_not' (x : BitVec 128) (e : Nat) (he : e < 4) : vword (~~~x) e = ~~~vword x e := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [vword, hi, show 32 * e + i < 128 by omega]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [vword, hi, show 32 * e + i < 128 by omega_arith]
 
 /-- A word of the result of `dd1Byte`. -/
 theorem lane1665 {x m c z : BitVec 128} {e : Nat} (he : e < 4) {i : Nat} (hi : i < 8) {b : BitVec 8}
@@ -92,8 +92,8 @@ theorem dd1Byte_ok {s : State} {p : Addr} {m₀ : Mem} {t : Nat} {Gf old : Nat �
       hu.v r h0 h1' h2']
   have hb : ∀ e < 4, vword (a1.v .v0) e = vbyte (s.v .v22) j ++ vbyte (s.v .v22) j ++ vbyte (s.v .v22) j ++
       vbyte (s.v .v22) j := fun e he => by
-    rw [h1.v, vword_bytes', Rc4.AArch64.vbyte_map2 _ _ _ (by omega), Rc4.AArch64.vbyte_map2 _ _ _ (by omega),
-      Rc4.AArch64.vbyte_map2 _ _ _ (by omega), Rc4.AArch64.vbyte_map2 _ _ _ (by omega),
+    rw [h1.v, vword_bytes', Rc4.AArch64.vbyte_map2 _ _ _ (by omega_arith), Rc4.AArch64.vbyte_map2 _ _ _ (by omega_arith),
+      Rc4.AArch64.vbyte_map2 _ _ _ (by omega_arith), Rc4.AArch64.vbyte_map2 _ _ _ (by omega_arith),
       hu.v .v22 (by decide) (by decide) (by decide)]
     rfl
   have z0 : ∀ e < 4, vword (a3.v .v21) e = 0#32 := fun e _ => by
@@ -105,7 +105,7 @@ theorem dd1Byte_ok {s : State} {p : Addr} {m₀ : Mem} {t : Nat} {Gf old : Nat �
         h4.get .v20 (by decide), h3'.get .v1 (by decide), h3'.get .v20 (by decide), h2.v,
         h2.get .v20 (by decide), h1.get .v18 (by decide), h1.get .v20 (by decide)]
       dsimp only
-      exact lane1665 he (by omega) (hb e he) (by rw [hu.v .v18 (by decide) (by decide) (by decide)]; exact h18 e he)
+      exact lane1665 he (by omega_arith) (hb e he) (by rw [hu.v .v18 (by decide) (by decide) (by decide)]; exact h18 e he)
         (by rw [hu.v .v20 (by decide) (by decide) (by decide)]; exact h20 e he) (z0 e he)
   have w2 : ∀ e < 4, (vword (a7.v .v2) e).toNat = 1665 * ((vbyte (s.v .v22) j).toNat / 2 ^ (4 + e) % 2) :=
     fun e he => by
@@ -114,7 +114,7 @@ theorem dd1Byte_ok {s : State} {p : Addr} {m₀ : Mem} {t : Nat} {Gf old : Nat �
         h3'.get .v20 (by decide), h2.get .v0 (by decide), h2.get .v19 (by decide), h2.get .v20 (by decide),
         h1.get .v19 (by decide), h1.get .v20 (by decide)]
       dsimp only
-      exact lane1665 he (by omega) (hb e he)
+      exact lane1665 he (by omega_arith) (hb e he)
         (by rw [hu.v .v19 (by decide) (by decide) (by decide)]; exact h19 e he)
         (by rw [hu.v .v20 (by decide) (by decide) (by decide)]; exact h20 e he) (z0 e he)
   have g7 : a7.gpr = s.gpr := by
@@ -123,13 +123,13 @@ theorem dd1Byte_ok {s : State} {p : Addr} {m₀ : Mem} {t : Nat} {Gf old : Nat �
     rw [h7.mem, h6.mem, h5.mem, h4.mem, h3'.mem, h2.mem, h1.mem]
   have wr7 : a7.wr = s.wr := by
     rw [h7.wr, h6.wr, h5.wr, h4.wr, h3'.wr, h2.wr, h1.wr, hu.wr]
-  refine wp_strq2 (o := 32 * j) (by rw [wr7]; exact hw) (by rw [g7]; exact h3 j) ⟨by omega, by omega⟩
-    (by omega) (by rw [m7]; exact hu.out) (by rw [m7]; exact hu.frame)
-    (vword_G w1 fun e he => by rw [hG j hj e (by omega)])
-    (vword_G w2 fun e he => by rw [Nat.add_assoc, hG j hj (4 + e) (by omega)])
+  refine wp_strq2 (o := 32 * j) (by rw [wr7]; exact hw) (by rw [g7]; exact h3 j) ⟨by omega_arith, by omega_arith⟩
+    (by omega_arith) (by rw [m7]; exact hu.out) (by rw [m7]; exact hu.frame)
+    (vword_G w1 fun e he => by rw [hG j hj e (by omega_arith)])
+    (vword_G w2 fun e he => by rw [Nat.add_assoc, hG j hj (4 + e) (by omega_arith)])
     fun s' st o f => wp_nil ⟨by rw [st.gpr, g7], by rw [st.rd, h7.rd, h6.rd, h5.rd, h4.rd, h3'.rd, h2.rd,
       h1.rd, hu.rd], by rw [st.wr, wr7], by rw [st.sp, h7.sp, h6.sp, h5.sp, h4.sp, h3'.sp, h2.sp, h1.sp, hu.sp],
-      fun r a b c => by rw [st.v, uv r a b c], by rw [show t + 8 * (j + 1) = t + 8 * j + 8 by omega]; exact o, f⟩
+      fun r a b c => by rw [st.v, uv r a b c], by rw [show t + 8 * (j + 1) = t + 8 * j + 8 by omega_arith]; exact o, f⟩
 
 end VG.Proof.MlKem.AArch64.DD
 
@@ -154,13 +154,13 @@ theorem K1.of_v {s t : State} (h : K1 s) (hv : ∀ r, r ≠ .v0 → r ≠ .v1 �
 /-- Coefficient `8 g + e` of the output for `d = 1`. -/
 theorem G1 (s₀ : State) {g e : Nat} (hg : g < 32) (he : e < 8) :
     DD.G width1 s₀ (8 * g + e) = BitVec.ofNat 32 (1665 * (byte width1 s₀ g / 2 ^ e % 2)) := by
-  rw [show 8 * g + e = width1.c * g + e from rfl, G_eq width1_ok s₀ (by simp [width1]; omega) he,
+  rw [show 8 * g + e = width1.c * g + e from rfl, G_eq width1_ok s₀ (by simp [width1]; omega_arith) he,
     show width1.nb = 1 from rfl, num1 rfl]
   simp only [show width1.d = 1 from rfl, Nat.one_mul, Nat.sub_self, Nat.pow_zero, Nat.pow_one]
   have : byte width1 s₀ g / 2 ^ e % 2 < 2 := Nat.mod_lt _ (by decide)
   congr 1
   show (3329 * _ + 1) / 2 = _
-  omega
+  omega_arith
 
 theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 2) {s : State}
     (h : DInv width1 16 K1 s₀ k s) :
@@ -170,12 +170,12 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 2) {s : 
     rw [ptr_zero, h.x0]; rfl
   unfold dd1Body
   simp only [List.cons_append]
-  refine wp_ldrq (by decide) e0 (h.in16 width1_ok hp (by simp [width1]; omega)) fun s1 h1 => ?_
+  refine wp_ldrq (by decide) e0 (h.in16 width1_ok hp (by simp [width1]; omega_arith)) fun s1 h1 => ?_
   have b1 : ∀ j < 16, (vbyte (s1.v .v22) j).toNat = byte width1 s₀ (16 * k + j) := fun j hj => by
-    rw [h1.v]; exact vbyte_input width1_ok hp h.frame (by simp [width1]; omega) hj
+    rw [h1.v]; exact vbyte_input width1_ok hp h.frame (by simp [width1]; omega_arith) hj
   have x3 : ∀ j, s1.gpr .x3 + BitVec.ofNat 64 (32 * j) = coeffAddr (fP s₀) (128 * k + 8 * j) := fun j => by
     rw [h1.gpr, h.x3, show width1.c * 16 * k = 128 * k by simp [width1],
-      show 32 * j = 4 * (8 * j) by omega, coeffAddr_off]
+      show 32 * j = 4 * (8 * j) by omega_arith, coeffAddr_off]
   have K : K1 s1 := ⟨by rw [h1.get .v18 (by decide)]; exact h.K.1, by rw [h1.get .v19 (by decide)]; exact h.K.2.1,
     by rw [h1.get .v20 (by decide)]; exact h.K.2.2.1, by rw [h1.get .v21 (by decide)]; exact h.K.2.2.2⟩
   have out0 : CoeffsUpTo s1.mem (fP s₀) (128 * k + 8 * 0) (DD.G width1 s₀) (old s₀) := by
@@ -183,12 +183,12 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 2) {s : 
     exact h.out
   rw [WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa) (BInv s1 (fP s₀) s₀.mem (128 * k) (DD.G width1 s₀) (old s₀))
-    (fun j u hj hu => dd1Byte_ok (fun i hi => by rw [h1.wr]; exact h.out16 hp hi) x3 (by omega) K.1 K.2.1
+    (fun j u hj hu => dd1Byte_ok (fun i hi => by rw [h1.wr]; exact h.out16 hp hi) x3 (by omega_arith) K.1 K.2.1
       K.2.2.1 K.2.2.2 (fun j hj e he => by
-        rw [b1 j hj, show 128 * k + 8 * j + e = 8 * (16 * k + j) + e by omega, G1 s₀ (by omega) he]) hj hu)
+        rw [b1 j hj, show 128 * k + 8 * j + e = 8 * (16 * k + j) + e by omega_arith, G1 s₀ (by omega_arith) he]) hj hu)
     16 (Nat.le_refl _) s1 ⟨rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl, out0, by rw [h1.mem]; exact h.frame⟩)
     fun s2 b2 => ?_
-  have k4 : k < 256 / (width1.c * 16) := by simp [width1]; omega
+  have k4 : k < 256 / (width1.c * 16) := by simp [width1]; omega_arith
   refine WP.mono (dtail_ok (w := width1) (Ng := 16) (s₀ := s₀) k4 (by rw [b2.gpr, h1.gpr, h.x0])
     (by rw [b2.gpr, h1.gpr, h.x3]) (by rw [b2.gpr, h1.gpr, h.x11]) (by decide) (by decide))
     fun u ⟨o, uv, u0, u3, u11, uc⟩ => ?_
@@ -199,7 +199,7 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 2) {s : 
     by rw [show 256 / (width1.c * 16) = 2 from rfl] at uc; exact uc⟩
   · exact ⟨by rw [hv .v16 (by decide) (by decide) (by decide) (by decide)]; exact h.cs.q,
       by rw [hv .v17 (by decide) (by decide) (by decide) (by decide)]; exact h.cs.h⟩
-  · rw [o.mem, show width1.c * 16 * (k + 1) = 128 * k + 8 * 16 by simp [width1]; omega]
+  · rw [o.mem, show width1.c * 16 * (k + 1) = 128 * k + 8 * 16 by simp [width1]; omega_arith]
     exact b2.out
   · rw [o.mem]; exact b2.frame
 

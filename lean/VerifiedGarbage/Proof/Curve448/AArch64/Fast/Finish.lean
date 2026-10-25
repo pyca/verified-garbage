@@ -31,7 +31,7 @@ theorem word_writeW (m : Mem) (base : Addr) {d d' : Nat} (hd : d + 8 ≤ 8192) (
   by_cases e : d' = d
   · rw [ite_eq_left e, e, word, Mem.readW_writeW_self64]
   · rw [ite_eq_right e]
-    exact Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep base (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 theorem readW_writeW' (m : Mem) (base : Addr) {d d' : Nat} (hd : d + 8 ≤ 8192)
     (hd' : d' + 8 ≤ 8192) (h : d' = d ∨ d' + 8 ≤ d ∨ d + 8 ≤ d') (v : BitVec 64) :
@@ -44,7 +44,7 @@ theorem st_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {d : Nat}
     WP isa (.block [st r d]) s fun t =>
       t.mem = s.mem.writeW (off base d) (s.gpr r) ∧ Keeps [] s t := by
   have w := hs.write (d := d) (n := 8) hd
-  have oe : d % 8 = 0 ∧ d < 32768 := ⟨h8, by omega⟩
+  have oe : d % 8 = 0 ∧ d < 32768 := ⟨h8, by omega_arith⟩
   refine WP.of_runBlock ⟨_, by
     simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, read_x,
       State.store, oe, and_self, hs.x3, w, ite_true, Option.bind_some]; rfl, ?_⟩
@@ -80,15 +80,15 @@ theorem finA_ok (s : State) (hm : s.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1))
   · rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_add, h1, h0, hh,
       Nat.mod_eq_of_lt c0, Nat.shiftRight_eq_div_pow]
     simp only [radix]
-    omega
+    omega_arith
   · rw [m56, BitVec.toNat_add, BitVec.toNat_add, h4, hh, hl,
-      Nat.mod_eq_of_lt (by omega : l4 + ch < 2 ^ 64), Nat.mod_eq_of_lt (by omega : l4 + ch + cl < 2 ^ 64)]
-    congr 1; omega
+      Nat.mod_eq_of_lt (by omega_arith : l4 + ch < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith : l4 + ch + cl < 2 ^ 64)]
+    congr 1; omega_arith
   · rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_add, h5, h4,
-      hh, hl, Nat.mod_eq_of_lt (by omega : l4 + ch < 2 ^ 64),
-      Nat.mod_eq_of_lt (by omega : l4 + ch + cl < 2 ^ 64), Nat.shiftRight_eq_div_pow]
+      hh, hl, Nat.mod_eq_of_lt (by omega_arith : l4 + ch < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega_arith : l4 + ch + cl < 2 ^ 64), Nat.shiftRight_eq_div_pow]
     simp only [radix]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [RegUpd.gpr_write, hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2, ite_false]
 

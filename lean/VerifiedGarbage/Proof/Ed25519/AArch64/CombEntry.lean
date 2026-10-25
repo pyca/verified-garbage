@@ -42,7 +42,7 @@ theorem combDigitS_ok {s : State} {base : Addr} (hs : Scr s base) {S i : Nat} (h
   refine WP.mono (combIndex_ok s hs hi hc) fun a ⟨a8, ka⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (combNibble_ok hsa (S := S) (i := i) hi a8 (by omega) (by decide)
+  refine WP.mono (combNibble_ok hsa (S := S) (i := i) hi a8 (by omega_arith) (by decide)
     (by rw [ka.mem]; exact hb)) fun b ⟨b2, kb⟩ => ?_
   refine WP.mono (combSign_ok b hn b2) fun t ⟨t2, t1, kt⟩ => ⟨t2, t1, ?_⟩
   exact ((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kt.mono (by decide))
@@ -56,12 +56,12 @@ theorem tblAddrS_ok (s : State) {T : Addr} (hT : s.syms combSym = T) {j : Nat} (
   have hsh : BitVec.ofNat 64 j <<< 8 = BitVec.ofNat 64 (256 * j) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    rw [Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 256 * j < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show j * 2 ^ 8 < 2 ^ 64 by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show 256 * j < 2 ^ 64 by omega_arith),
+      Nat.mod_eq_of_lt (show j * 2 ^ 8 < 2 ^ 64 by omega_arith)]
+    omega_arith
   have h3 : T + BitVec.ofNat 64 (256 * j) + BitVec.ofNat 64 (256 * j) + BitVec.ofNat 64 (256 * j) =
       T + BitVec.ofNat 64 (768 * j) := by
-    rw [tbl_add T _ _, tbl_add T _ _, show 256 * j + 256 * j + 256 * j = 768 * j by omega]
+    rw [tbl_add T _ _, tbl_add T _ _, show 256 * j + 256 * j + 256 * j = 768 * j by omega_arith]
   apply WP.of_runBlock
   simp only [tblAddrS, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     show 8 < 64 from by decide, ite_true, RegUpd.gpr_write, BitVec.setWidth_eq, ite_false,
@@ -138,10 +138,10 @@ theorem tblWord {s : State} {base T : Addr} (h : TblAt s base T) {j c m w : Nat}
     (hc : c < 3) (hm : m < 8) (hw : w < 4) :
     s.mem.readW (T + BitVec.ofNat 64 (768 * j + (256 * c + 32 * m + 8 * w))) 64 = ew j (m + 1) c w ∧
       InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (768 * j + (256 * c + 32 * m + 8 * w))) 8 := by
-  have e : 768 * j + (256 * c + 32 * m + 8 * w) = 8 * (96 * j + 32 * c + 4 * m + w) := by omega
+  have e : 768 * j + (256 * c + 32 * m + 8 * w) = 8 * (96 * j + 32 * c + 4 * m + w) := by omega_arith
   rw [e]
-  exact ⟨(h.val _ (by omega)).trans (combWord_eq hc hm hw),
-    VG.CallLay.inRegions_sub h.rd (by omega) (by decide)⟩
+  exact ⟨(h.val _ (by omega_arith)).trans (combWord_eq hc hm hw),
+    VG.CallLay.inRegions_sub h.rd (by omega_arith) (by decide)⟩
 
 /-- A pair of words of candidate `m + 1`, coordinate `q + c`, words `2 h` and `2 h + 1`, from
 `x9` at table `j`'s coordinate `q`. -/
@@ -157,14 +157,14 @@ theorem pairT_ok {s : State} {base T : Addr} (htb : TblAt s base T) {j q c h m o
   have a0 : s.gpr .x9 + BitVec.ofNat 64 (o + 32 * m) =
       T + BitVec.ofNat 64 (768 * j + (256 * (q + c) + 32 * m + 8 * (2 * h))) := by
     rw [hx9, tbl_add, ho, show 768 * j + 256 * q + (256 * c + 16 * h + 32 * m) =
-      768 * j + (256 * (q + c) + 32 * m + 8 * (2 * h)) by omega]
+      768 * j + (256 * (q + c) + 32 * m + 8 * (2 * h)) by omega_arith]
   have a1 : s.gpr .x9 + BitVec.ofNat 64 (o + 32 * m) + 8 =
       T + BitVec.ofNat 64 (768 * j + (256 * (q + c) + 32 * m + 8 * (2 * h + 1))) := by
     rw [a0, VG.Proof.X25519.AArch64.Alt.eight, tbl_add, show 768 * j + (256 * (q + c) + 32 * m +
-      8 * (2 * h)) + 8 = 768 * j + (256 * (q + c) + 32 * m + 8 * (2 * h + 1)) by omega]
-  have w0 := tblWord htb hj hc hm (w := 2 * h) (by omega)
-  have w1 := tblWord htb hj hc hm (w := 2 * h + 1) (by omega)
-  refine WP.mono (pair_ok h12 h1 h2 ⟨by omega, hr⟩ (by rw [a0]; exact w0.2) (by rw [a1]; exact w1.2))
+      8 * (2 * h)) + 8 = 768 * j + (256 * (q + c) + 32 * m + 8 * (2 * h + 1)) by omega_arith]
+  have w0 := tblWord htb hj hc hm (w := 2 * h) (by omega_arith)
+  have w1 := tblWord htb hj hc hm (w := 2 * h + 1) (by omega_arith)
+  refine WP.mono (pair_ok h12 h1 h2 ⟨by omega_arith, hr⟩ (by rw [a0]; exact w0.2) (by rw [a1]; exact w1.2))
     fun t ⟨t1, t2, tz, kt⟩ => ⟨?_, ?_, tz, kt⟩
   · rw [t1, a0, w0.1]
   · rw [t2, a1, w1.1]
@@ -177,8 +177,8 @@ theorem sel_succ (a n : Nat) : (if a = n + 1 then n + 1 else sel a n) = sel a (n
   by_cases h : a = n + 1
   · simp [h]
   · by_cases h' : a ≤ n
-    · simp [h, h', show a ≤ n + 1 by omega]
-    · simp [h, h', show ¬ a ≤ n + 1 by omega]
+    · simp [h, h', show a ≤ n + 1 by omega_arith]
+    · simp [h, h', show ¬ a ≤ n + 1 by omega_arith]
 
 theorem sel_ite (a n : Nat) (x : Nat → BitVec 64) :
     (if decide (a = n + 1) = true then x (n + 1) else x (sel a n)) = x (sel a (n + 1)) := by
@@ -212,21 +212,21 @@ theorem cand1_ok {s : State} {base T : Addr} (htb : TblAt s base T) {j a m : Nat
   have b9 : b.gpr .x9 = T + BitVec.ofNat 64 (768 * j + 256 * 0) := by rw [kb.gpr _ (by decide)]; exact hx9
   have htb1 : TblAt b base T := htb.of_far (by rw [kb.rd, kb.wr]) fun x _ => by rw [kb.mem]
   rw [WP.block_append_iff]
-  refine WP.mono (pairT_ok htb1 hj b9 (c := 0) (h := 0) (by omega) (by omega) hm rfl (by omega)
+  refine WP.mono (pairT_ok htb1 hj b9 (c := 0) (h := 0) (by omega_arith) (by omega_arith) hm rfl (by omega_arith)
     (r1 := .x3) (r2 := .x4) (by decide) (by decide) (by decide)) fun c ⟨c3, c4, cz, kc⟩ => ?_
   have c9 : c.gpr .x9 = T + BitVec.ofNat 64 (768 * j + 256 * 0) := by rw [kc.gpr _ (by decide)]; exact b9
   have htb2 : TblAt c base T := htb1.of_far (by rw [kc.rd, kc.wr]) fun x _ => by rw [kc.mem]
   rw [WP.block_append_iff]
-  refine WP.mono (pairT_ok htb2 hj c9 (c := 0) (h := 1) (by omega) (by omega) hm rfl (by omega)
+  refine WP.mono (pairT_ok htb2 hj c9 (c := 0) (h := 1) (by omega_arith) (by omega_arith) hm rfl (by omega_arith)
     (r1 := .x5) (r2 := .x6) (by decide) (by decide) (by decide)) fun d ⟨d5, d6, dz, kd⟩ => ?_
   have d9 : d.gpr .x9 = T + BitVec.ofNat 64 (768 * j + 256 * 0) := by rw [kd.gpr _ (by decide)]; exact c9
   have htb3 : TblAt d base T := htb2.of_far (by rw [kd.rd, kd.wr]) fun x _ => by rw [kd.mem]
   rw [WP.block_append_iff]
-  refine WP.mono (pairT_ok htb3 hj d9 (c := 1) (h := 0) (by omega) (by omega) hm rfl (by omega)
+  refine WP.mono (pairT_ok htb3 hj d9 (c := 1) (h := 0) (by omega_arith) (by omega_arith) hm rfl (by omega_arith)
     (r1 := .x7) (r2 := .x8) (by decide) (by decide) (by decide)) fun e ⟨e7, e8, ez, ke⟩ => ?_
   have e9 : e.gpr .x9 = T + BitVec.ofNat 64 (768 * j + 256 * 0) := by rw [ke.gpr _ (by decide)]; exact d9
   have htb4 : TblAt e base T := htb3.of_far (by rw [ke.rd, ke.wr]) fun x _ => by rw [ke.mem]
-  refine WP.mono (pairT_ok htb4 hj e9 (c := 1) (h := 1) (by omega) (by omega) hm rfl (by omega)
+  refine WP.mono (pairT_ok htb4 hj e9 (c := 1) (h := 1) (by omega_arith) (by omega_arith) hm rfl (by omega_arith)
     (r1 := .x10) (r2 := .x11) (by decide) (by decide) (by decide)) fun t ⟨t10, t11, tz, kt⟩ => ?_
   obtain ⟨a3, a4, a5, a6, a7, a8, a10, a11⟩ := hA
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -261,11 +261,11 @@ theorem cand2_ok {s : State} {base T : Addr} (htb : TblAt s base T) {j a m : Nat
   have b9 : b.gpr .x9 = T + BitVec.ofNat 64 (768 * j + 256 * 2) := by rw [kb.gpr _ (by decide)]; exact hx9
   have htb1 : TblAt b base T := htb.of_far (by rw [kb.rd, kb.wr]) fun x _ => by rw [kb.mem]
   rw [WP.block_append_iff]
-  refine WP.mono (pairT_ok htb1 hj b9 (c := 0) (h := 0) (by omega) (by omega) hm rfl (by omega)
+  refine WP.mono (pairT_ok htb1 hj b9 (c := 0) (h := 0) (by omega_arith) (by omega_arith) hm rfl (by omega_arith)
     (r1 := .x12) (r2 := .x13) (by decide) (by decide) (by decide)) fun c ⟨c12, c13, cz, kc⟩ => ?_
   have c9 : c.gpr .x9 = T + BitVec.ofNat 64 (768 * j + 256 * 2) := by rw [kc.gpr _ (by decide)]; exact b9
   have htb2 : TblAt c base T := htb1.of_far (by rw [kc.rd, kc.wr]) fun x _ => by rw [kc.mem]
-  refine WP.mono (pairT_ok htb2 hj c9 (c := 0) (h := 1) (by omega) (by omega) hm rfl (by omega)
+  refine WP.mono (pairT_ok htb2 hj c9 (c := 0) (h := 1) (by omega_arith) (by omega_arith) hm rfl (by omega_arith)
     (r1 := .x14) (r2 := .x15) (by decide) (by decide) (by decide)) fun t ⟨t14, t15, tz, kt⟩ => ?_
   obtain ⟨a12, a13, a14, a15⟩ := hA
   refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
@@ -290,9 +290,9 @@ theorem scan1_ok {s : State} {base T : Addr} (htb : TblAt s base T) {j a : Nat} 
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨ta, kt⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨ta, kt⟩ => ?_
     refine WP.mono (cand1_ok (htb.of_far (by rw [kt.rd, kt.wr]) fun x _ => by rw [kt.mem]) hj ha
-      (by omega) (by rw [kt.gpr _ (by decide)]; exact hx9) (by rw [kt.gpr _ (by decide)]; exact h2) ta)
+      (by omega_arith) (by rw [kt.gpr _ (by decide)]; exact hx9) (by rw [kt.gpr _ (by decide)]; exact h2) ta)
       fun u ⟨ua, ku⟩ => ⟨ua, kt.trans ku⟩
 
 /-- The candidates `k ≤ n` of the second pass. -/
@@ -306,9 +306,9 @@ theorem scan2_ok {s : State} {base T : Addr} (htb : TblAt s base T) {j a : Nat} 
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨ta, kt⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨ta, kt⟩ => ?_
     refine WP.mono (cand2_ok (htb.of_far (by rw [kt.rd, kt.wr]) fun x _ => by rw [kt.mem]) hj ha
-      (by omega) (by rw [kt.gpr _ (by decide)]; exact hx9) (by rw [kt.gpr _ (by decide)]; exact h2) ta)
+      (by omega_arith) (by rw [kt.gpr _ (by decide)]; exact hx9) (by rw [kt.gpr _ (by decide)]; exact h2) ta)
       fun u ⟨ua, ku⟩ => ⟨ua, kt.trans ku⟩
 
 /-! ## The identity -/
@@ -324,7 +324,7 @@ theorem scanInit_ok (s : State) (j a : Nat) :
     WP isa (.block scanInit) s fun t => Acc1 j a 0 t ∧ Acc2 j a 0 t ∧ Keeps scanRegs s t := by
   have e : ∀ c w, ew j (sel a 0) c w = ew j 0 c w := fun c w => by
     unfold sel; split
-    · rename_i h; rw [show a = 0 by omega]
+    · rename_i h; rw [show a = 0 by omega_arith]
     · rfl
   obtain ⟨i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11⟩ := ident_words j
   apply WP.of_runBlock
@@ -343,7 +343,7 @@ theorem scanInit_ok (s : State) (j a : Nat) :
 /-! ## The sign -/
 
 private theorem neg_val {R v P c : Nat} (hR : R < 2 ^ 256) (hv : v ≤ P) (hP : P < 2 ^ 256) (_hc : c ≤ 1)
-    (e : R + v + (1 - 1) = P + 2 ^ 256 * (1 - c)) : R = P - v := by omega
+    (e : R + v + (1 - 1) = P + 2 ^ 256 * (1 - c)) : R = P - v := by omega_arith
 
 /-- `p - v` for the `2dT` words `v ≤ p` in `x12`–`x15`, into `x20`–`x23`. -/
 theorem scanNeg_ok (s : State) {v : Nat}
@@ -421,7 +421,7 @@ theorem addImm512_ok (s : State) :
   exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
 
 theorem sel_8 {a : Nat} (ha : a < 9) : sel a 8 = a := by
-  unfold sel; simp [show a ≤ 8 by omega]
+  unfold sel; simp [show a ≤ 8 by omega_arith]
 
 theorem toFe_neg (x : Spec.X25519.Fe) : VG.Proof.X25519.toFe (Spec.X25519.P - x.val) = 0 - x := by
   apply Fin.ext

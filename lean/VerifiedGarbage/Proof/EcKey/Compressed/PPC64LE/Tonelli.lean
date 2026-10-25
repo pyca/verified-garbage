@@ -48,8 +48,8 @@ theorem tonelliPowers_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s 
   have hn := hw.nowrap
   have hsz : size = 8192 := rfl
   have hpl := hc.p_lt
-  have hq : rootQ c < 2 ^ (64 * c.n) := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega)
-  have hq' : (rootQ c + 1) / 2 < 2 ^ (64 * c.n) := by omega
+  have hq : rootQ c < 2 ^ (64 * c.n) := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_arith)
+  have hq' : (rootQ c + 1) / 2 < 2 ^ (64 * c.n) := by omega_arith
   have hT5 := sl_le c h7 (i := T5) (by decide)
   have hA := sl_le c h7 (i := ACC) (by decide)
   change WP isa (.seq (Impl.EcKey.Compressed.PPC64LE.rootPower c ((rootQ c + 1) / 2) 1)
@@ -67,10 +67,10 @@ theorem tonelliPowers_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s 
   have e₁ : ∀ {i}, i < 45 → i ∉ [EXPP, ACC, PT] → sv c base s₁ i = sv c base s i := fun hi hl =>
     sv_unch U₁ h7 hn hi (ap hi hl (by decide))
   refine WP.seq (WP.mono (copy_ok c.n hw₁.ws hw₁.at3 (o := c.sl T5) (a := c.sl ACC) (sl_al c _) (sl_al c _)
-    (by omega) (by omega) (by have := sl_apart c (i := T5) (j := ACC) (by decide); omega)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_)
+    (by omega_arith) (by omega_arith) (by have := sl_apart c (i := T5) (j := ACC) (by decide); omega_arith)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_kp k₂
   have f₂ : ∀ {i}, i < 45 → i ≠ T5 → sv c base s₂ i = sv c base s₁ i := fun hi h =>
-    O₂.wordsVal (sl_apart c h) (by have := sl_le c h7 hi; omega)
+    O₂.wordsVal (sl_apart c h) (by have := sl_le c h7 hi; omega_arith)
   refine WP.mono (rootPower_ok hc (by decide) hq hw₂
     (by rw [f₂ (by decide) (by decide), e₁ (by decide) (by decide)]; exact hB)
     (by rw [f₂ (by decide) (by decide), e₁ (by decide) (by decide)]; exact hO)) fun s₃ ⟨hw₃, k₃, U₃, lt₃, v₃⟩ => ?_
@@ -105,14 +105,14 @@ theorem tonelliSetup_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s b
   have hT1 := sl_le c h7 (i := T1) (by decide)
   rw [Impl.EcKey.Compressed.PPC64LE.tonelliSetup, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (copy_ok c.n hw.ws hw.at3 (o := c.sl T0) (a := c.sl ACC) (sl_al c _) (sl_al c _)
-    (by omega) (by omega) (by have := sl_apart c (i := T0) (j := ACC) (by decide); omega)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
+    (by omega_arith) (by omega_arith) (by have := sl_apart c (i := T0) (j := ACC) (by decide); omega_arith)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok c.n (k₁.ws hw.ws) (k₁.at hw.at3) (o := c.sl ACC) (a := c.sl T5) (sl_al c _) (sl_al c _)
-    (by omega) (by omega) (by have := sl_apart c (i := ACC) (j := T5) (by decide); omega)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
+    (by omega_arith) (by omega_arith) (by have := sl_apart c (i := ACC) (j := T5) (by decide); omega_arith)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
   let z := Spec.Weierstrass.pow (Fin.ofNat c.C.p 11) (rootQ c)
-  have zR : c.mont z.val < 2 ^ (64 * c.n) := Nat.lt_trans (Nat.mod_lt _ (by omega)) hc.p_lt
+  have zR : c.mont z.val < 2 ^ (64 * c.n) := Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hc.p_lt
   rw [WP.block_append_iff]
-  refine WP.mono (setConst_ok ((k₁.trans k₂).ws hw.ws) ((k₁.trans k₂).at hw.at3) (o := c.sl T1) (by omega) zR)
+  refine WP.mono (setConst_ok ((k₁.trans k₂).ws hw.ws) ((k₁.trans k₂).at hw.at3) (o := c.sl T1) (by omega_arith) zR)
     fun s₃ ⟨O₃, v₃, k₃⟩ => ?_
   rw [← wordsVal_eq_val32] at v₃
   refine wp_step (exec_li (by decide)) ?_
@@ -122,14 +122,14 @@ theorem tonelliSetup_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s b
     (((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans (k₃.mono (by decide))).trans
       ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide)))
   have e₃ : ∀ {i}, i < 45 → i ≠ T1 → sv c base s₃ i = sv c base s₂ i := fun hi h =>
-    O₃.wordsVal (sl_apart c h) (by have := sl_le c h7 hi; omega)
+    O₃.wordsVal (sl_apart c h) (by have := sl_le c h7 hi; omega_arith)
   have r₃ : sv c base s₃ ACC = sv c base s T5 := by
     rw [e₃ (by decide) (by decide)]; show wordsVal s₂.mem base (c.sl ACC) c.n = _; rw [v₂]
-    exact O₁.wordsVal (sl_apart c (i := T5) (j := T0) (by decide)) (by omega)
+    exact O₁.wordsVal (sl_apart c (i := T5) (j := T0) (by decide)) (by omega_arith)
   have t₃ : sv c base s₃ T0 = sv c base s ACC := by
     rw [e₃ (by decide) (by decide)]
     show wordsVal s₂.mem base (c.sl T0) c.n = _
-    rw [O₂.wordsVal (sl_apart c (i := T0) (j := ACC) (by decide)) (by omega), v₁]
+    rw [O₂.wordsVal (sl_apart c (i := T0) (j := ACC) (by decide)) (by omega_arith), v₁]
   have c₃ : sv c base s₃ T1 = c.mont z.val := v₃
   refine ⟨hw.of_kp K, ?_, K, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [write_gpr, ite_true]; exact ctr_init 95
@@ -144,7 +144,7 @@ theorem tonelliSetup_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s b
     rcases hi with rfl | rfl | rfl
     · rw [show wordsVal s₃.mem base (c.sl ACC) c.n = sv c base s₃ ACC from rfl, r₃]; exact h5
     · rw [show wordsVal s₃.mem base (c.sl T0) c.n = sv c base s₃ T0 from rfl, t₃]; exact hA
-    · rw [show wordsVal s₃.mem base (c.sl T1) c.n = sv c base s₃ T1 from rfl, c₃]; exact Nat.mod_lt _ (by omega)
+    · rw [show wordsVal s₃.mem base (c.sl T1) c.n = sv c base s₃ T1 from rfl, c₃]; exact Nat.mod_lt _ (by omega_arith)
   · show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₃ ACC) = _; rw [r₃]
   · show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₃ T0) = _; rw [t₃]
   · show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₃ T1) = _

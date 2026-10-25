@@ -111,14 +111,14 @@ theorem vregs {s₀ : State} (h₀ : VPre p s₀) (hL : (vlay p s₀).Ok) : VReg
   have hsp := h₀.sp
   have hE : 116 ≤ (vlay p s₀).E1.toNat := by
     show 116 ≤ (s₀.gpr .esp - BitVec.ofNat 32 16).toNat
-    rw [sub_toNat (by omega)]; omega
+    rw [sub_toNat (by omega_arith)]; omega_arith
   have hk : ∀ {R : Region}, (sStk s₀ 132).Disjoint R → (vlay p s₀).STK.Disjoint R := fun h =>
     (stk_eq hsp ▸ h).sub_left hL.stk_sub
   have scrSub : Region.Sub ⟨(arg s₀ 6).setWidth 64, sScr p⟩ (vlay p s₀).SC :=
-    (within_base _ (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega)).sub
+    (within_base _ (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega_arith)).sub
   have muSub : Region.Sub ⟨((vlay p s₀).X32 + BitVec.ofNat 32 840).setWidth 64, 64⟩ (vlay p s₀).SC := by
-    rw [mu_eq hL]; exact hL.sub_sc (e := 840) (k := 64) (by omega)
-  refine ⟨hE, scrSub, below_sub (by show 16 ≤ 132 - 16; decide) (by show 132 - 16 ≤ _; omega), muSub, hk h₀.kPk,
+    rw [mu_eq hL]; exact hL.sub_sc (e := 840) (k := 64) (by omega_arith)
+  refine ⟨hE, scrSub, below_sub (by show 16 ≤ 132 - 16; decide) (by show 132 - 16 ≤ _; omega_arith), muSub, hk h₀.kPk,
     by rw [mu_eq hL]; exact k_mu hL, hk h₀.kSig, hL.kSC.sub_right scrSub, ?_⟩
   have hx := hL.x_eq
   have := h₀.nScr
@@ -128,7 +128,7 @@ theorem vregs {s₀ : State} (h₀ : VPre p s₀) (hL : (vlay p s₀).Ok) : VReg
     rw [mu_eq hL, Lay.MU, hx, add_add]; rfl
   rw [e]
   have d := Offset.disjoint ((arg s₀ 6).setWidth 64) (d := oE p + 840) (n := 64) (e := 0) (k := sScr p)
-    (.inr (by simp only [oE, sScr]; omega)) (by omega) (by simp only [oE, sScr] at *; omega)
+    (.inr (by simp only [oE, sScr]; omega_arith)) (by omega_arith) (by simp only [oE, sScr] at *; omega_arith)
   rwa [BitVec.add_zero] at d
 
 /-- The callee's precondition. -/
@@ -141,7 +141,7 @@ theorem verify_callPre {s₀ s s₁ : State} (h₀ : VPre p s₀) (hc : CtxO (vl
   have hE := R.hE
   have hsp1 : s₁.gpr .esp = (vlay p s₀).E1 := hc1.esp
   have fit : 4 * rs4.length + 4 ≤ (s₁.gpr .esp).toNat := by
-    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega_arith
   have a0 : arg (pushed rs4 s₁).callEntry 0 = arg s₀ 0 := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact v0
   have a1 : arg (pushed rs4 s₁).callEntry 1 = (vlay p s₀).X32 + BitVec.ofNat 32 840 := by
@@ -159,29 +159,29 @@ theorem verify_callPre {s₀ s s₁ : State} (h₀ : VPre p s₀) (hc : CtxO (vl
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact withinRW hc1 ⟨_, List.mem_append_left _ hL.inKey, within_self _⟩
-    · exact withinRW hc1 (by rw [mu_eq hL]; exact cov_x hL (e := 840) (k := 64) (by omega))
+    · exact withinRW hc1 (by rw [mu_eq hL]; exact cov_x hL (e := 840) (k := 64) (by omega_arith))
     · exact withinRW hc1 ⟨_, List.mem_append_left _ (by show _ ∈ s₀.rd; rw [h₀.rd]; simp), within_self _⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inr (withinW hc1 ⟨_, hL.inSC, within_base _
-        (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega)⟩)
+        (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega_arith)⟩)
     · exact .inl (by rw [hsp1])
   refine ⟨?_, cv.1, cv.2⟩
-  obtain ⟨rPk₁, rPk₂, rPk₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega) R.kPk
-  obtain ⟨rMu₁, rMu₂, rMu₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega) R.kMu
-  obtain ⟨rSig₁, rSig₂, rSig₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega) R.kSig
-  obtain ⟨rScr₁, rScr₂, rScr₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega) R.kScr
-  obtain ⟨rA₂, rA₃⟩ := entry_self (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega)
+  obtain ⟨rPk₁, rPk₂, rPk₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega_arith) R.kPk
+  obtain ⟨rMu₁, rMu₂, rMu₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega_arith) R.kMu
+  obtain ⟨rSig₁, rSig₂, rSig₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega_arith) R.kSig
+  obtain ⟨rScr₁, rScr₂, rScr₃⟩ := entry_regions (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega_arith) R.kScr
+  obtain ⟨rA₂, rA₃⟩ := entry_self (E := (vlay p s₀).E1) (k := 4) (K := 96) (by omega_arith)
   generalize he : (pushed rs4 s₁).callEntry = e at a0 a1 a2 a3 eA eSp ⊢
   sig_pre [verifyContract, verifySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
   subst he
   simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp]
   have hX := hL.x32_lt
-  refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (vlay p s₀).E1.isLt; omega,
+  refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (vlay p s₀).E1.isLt; omega_arith,
     trivial, trivial, h₀.pkScr.sub_right R.scrSub, rPk₁, R.muScr, rMu₁, h₀.sigScr.sub_right R.scrSub, rSig₁, rScr₁,
     rPk₂, rMu₂, rSig₂, rScr₂, rA₂, rPk₃, rMu₃, rSig₃, rScr₃, rA₃, h₀.nPk,
-    by rw [hL.x32_toNat (by omega)]; omega, h₀.nSig,
-    by have := h₀.nScr; simp only [mScrLen, messageScratchWords] at this ⊢; omega⟩
+    by rw [hL.x32_toNat (by omega_arith)]; omega_arith, h₀.nSig,
+    by have := h₀.nScr; simp only [mScrLen, messageScratchWords] at this ⊢; omega_arith⟩
 
 
 /-- What the verification function on `μ` sees on entry. -/
@@ -206,11 +206,11 @@ theorem verify_view {s₀ s s₁ : State} (h₀ : VPre p s₀) (hc : CtxO (vlay 
   have hE := R.hE
   have hsp1 : s₁.gpr .esp = (vlay p s₀).E1 := hc1.esp
   have fit : 4 * rs4.length + 4 ≤ (s₁.gpr .esp).toNat := by
-    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega_arith
   have fr := callEntry_frame fit (by decide : Reg.esp ∉ rs4)
   rw [hsp1] at fr
   have b20 : Region.Sub (below (vlay p s₀).E1 (4 * rs4.length + 4)) (vlay p s₀).STK :=
-    below_sub (by show 20 ≤ 132 - 16; decide) (by show 132 - 16 ≤ _; omega)
+    below_sub (by show 20 ≤ 132 - 16; decide) (by show 132 - 16 ≤ _; omega_arith)
   have ent : ∀ {a : Addr} {n : Nat}, (vlay p s₀).STK.Disjoint ⟨a, n⟩ → n ≤ 2 ^ 64 →
       bytesAt (pushed rs4 s₁).callEntry.mem a n = bytesAt s₁.mem a n :=
     fun {a n} hR hn => Proof.MlKem.bytesAt_congr fun _ hi => fr.bytes (R := ⟨a, n⟩) (fun r hr => by
@@ -225,11 +225,11 @@ theorem verify_view {s₀ s s₁ : State} (h₀ : VPre p s₀) (hc : CtxO (vlay 
     by rw [callEntry_arg fit (by decide) (by decide)]; exact v2,
     by rw [callEntry_arg fit (by decide) (by decide)]; exact v3,
     by rw [callEntry_esp', hsp1]; rfl, ?_, ?_, ?_⟩
-  · rw [ent R.kPk (by have := h₀.nPk; omega)]
-    exact p0 h₀.kPk h₀.pkScr.symm (by have := h₀.nPk; omega)
+  · rw [ent R.kPk (by have := h₀.nPk; omega_arith)]
+    exact p0 h₀.kPk h₀.pkScr.symm (by have := h₀.nPk; omega_arith)
   · rw [ent R.kMu (by decide), hs.2.mem, mu_eq hL]; exact hμ
-  · rw [ent R.kSig (by have := h₀.nSig; omega)]
-    exact p0 h₀.kSig h₀.sigScr.symm (by have := h₀.nSig; omega)
+  · rw [ent R.kSig (by have := h₀.nSig; omega_arith)]
+    exact p0 h₀.kSig h₀.sigScr.symm (by have := h₀.nSig; omega_arith)
 
 /-- Two runs with the same public data have the same `μ`, and the same inputs. -/
 theorem vInputs_pub {s₀ s₀' : State} (hq : VPub p s₀ s₀') :
@@ -258,9 +258,9 @@ theorem verifyCall_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : V
   · have := hf.su
     have := h₀.sp
     show _ ≤ (s₀.gpr .esp - BitVec.ofNat 32 16).toNat
-    rw [sub_toNat (by omega)]
+    rw [sub_toNat (by omega_arith)]
     simp only [List.length_cons, List.length_nil]
-    omega
+    omega_arith
   · obtain ⟨hc, hμ⟩ := ha
     obtain ⟨hc', hμ'⟩ := ha'
     have hp' := (vShape hp).pubL s₀ s₀' h₀ h₀' hq
@@ -290,8 +290,8 @@ theorem verifyCall_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : V
       · refine ⟨(vlay p s₀).STK, by simp, ?_⟩
         rw [hsp1]
         have := hf.su
-        exact below_sub (by show _ ≤ 132 - 16; simp only [List.length_cons, List.length_nil]; omega)
-          (by show 132 - 16 ≤ _; omega)
+        exact below_sub (by show _ ≤ 132 - 16; simp only [List.length_cons, List.length_nil]; omega_arith)
+          (by show 132 - 16 ≤ _; omega_arith)
     · have v := verify_view h₀ hc hμ hs
       obtain ⟨s₂, -, g₂, post⟩ := post
       obtain ⟨a0, a1, a2, -, -, bPk, bMu, bSig⟩ := v

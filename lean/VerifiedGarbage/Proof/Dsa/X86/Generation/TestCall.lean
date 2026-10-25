@@ -45,7 +45,7 @@ theorem ret32 (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt b.isLt, Nat.shiftLeft_eq]
   have := b.isLt
-  omega
+  omega_arith
 
 /-- The low word of a 64-bit word in memory. -/
 theorem readW_low (m : Mem) (a : Addr) : m.readW a 32 = (m.readW a 64).setWidth 32 := by
@@ -69,10 +69,10 @@ theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.g
   simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false, forall_eq_or_imp, forall_eq] at hx
   obtain ⟨hPP, hUO, hS⟩ := hx
-  have hS' : ∀ k ≤ 200, ¬ (below E.sp k).Contains x 1 := fun k hk h => hS (below_sub hk (by omega) x h)
+  have hS' : ∀ k ≤ 200, ¬ (below E.sp k).Contains x 1 := fun k hk h => hS (below_sub hk (by omega_arith) x h)
   by_cases hw : (⟨off E.base sPP, 8 * ppWords⟩ : Region).Contains x 1
   · -- In the working space but not its scratch: the test kept it.
-    have hi : (x - off E.base sPP).toNat < 8 * ppWords := by simp only [Region.Contains] at hw; omega
+    have hi : (x - off E.base sPP).toNat < 8 * ppWords := by simp only [Region.Contains] at hw; omega_arith
     have hx : x = off E.base sPP + BitVec.ofNat 64 (x - off E.base sPP).toNat := by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
     have k := K (x - off E.base sPP).toNat hi (by
@@ -80,7 +80,7 @@ theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.g
       by_contra h
       apply hPP
       simp only [Region.Contains]
-      omega)
+      omega_arith)
     rw [← hx] at k
     rw [k]
     exact Fm x (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hS' 24 (by decide))
@@ -133,19 +133,19 @@ theorem testCallPre {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : Base
       · exact ⟨E.witRegion, List.mem_append_left _ (A.rd ▸ B.tapes.2.2), 0, by simp [randAddr, h0, Env.witRegion],
           by simp [h0]⟩
       · exact ⟨E.witRegion, List.mem_append_left _ (A.rd ▸ B.tapes.2.2), used, by simp [randAddr, h0, Env.witRegion],
-          by simp only [Env.witRegion]; omega⟩
+          by simp only [Env.witRegion]; omega_arith⟩
     · exact ⟨E.tableRegion, List.mem_append_left _ (A.rd ▸ B.table), 0, by simp, by simp⟩
     · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ hsT.wr)), sPP, rfl,
-        by simp only [Env.scratchRegion, sPP, ppWords]; omega⟩
+        by simp only [Env.scratchRegion, sPP, ppWords]; omega_arith⟩
     · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ hsT.wr)), fUsedOut, rfl,
-        by simp only [Env.scratchRegion, fUsedOut, hdr]; omega⟩
+        by simp only [Env.scratchRegion, fUsedOut, hdr]; omega_arith⟩
     · exact ⟨below (t.gpr .esp) (4 * testRegs.length), List.mem_append_right _ (.head _), 0, by simp, by simp⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [testWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨E.scratchRegion, .tail _ hsT.wr, sPP, rfl, by simp only [Env.scratchRegion, sPP, ppWords]; omega⟩
+    · exact ⟨E.scratchRegion, .tail _ hsT.wr, sPP, rfl, by simp only [Env.scratchRegion, sPP, ppWords]; omega_arith⟩
     · exact ⟨E.scratchRegion, .tail _ hsT.wr, fUsedOut, rfl,
-        by simp only [Env.scratchRegion, fUsedOut, hdr]; omega⟩
+        by simp only [Env.scratchRegion, fUsedOut, hdr]; omega_arith⟩
     · exact ⟨below (t.gpr .esp) (4 * testRegs.length), .head _, 0, by simp, by simp⟩
 
 /-- What the callee sees: its arguments, the candidate and the witnesses. -/
@@ -170,12 +170,12 @@ theorem testEntry_facts {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : 
   have spT : t.gpr .esp = E.sp := by
     rw [A.other _ (by decide) (by decide) (by decide) (by decide) (by decide), B.sp]
   have low := v.low
-  have fitT : 24 ≤ (t.gpr .esp).toNat := by rw [spT]; omega
+  have fitT : 24 ≤ (t.gpr .esp).toNat := by rw [spT]; omega_arith
   obtain ⟨e0, e1, e2, e3, e4⟩ := testEntry_arg (E := E) (used := used) fitT
   have Fm := testEntry_mem (E := E) (used := used) fitT
   rw [A.eax] at e0; rw [A.ecx] at e1; rw [A.edx] at e2; rw [A.ebx] at e3; rw [A.ebp] at e4
-  have wsW := Scr.wide B.scr (d := sPP) (by simp only [sPP]; omega)
-  have uoW := Scr.wide B.scr (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega)
+  have wsW := Scr.wide B.scr (d := sPP) (by simp only [sPP]; omega_arith)
+  have uoW := Scr.wide B.scr (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega_arith)
   have lenLt := v.lens.2.2
   rw [spT] at Fm
   have cw := cand_frame v lay (k := 24) (by decide) Fm
@@ -188,14 +188,14 @@ theorem testEntry_facts {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : 
   · show ((pushed testRegs t).callEntry).syms = s.syms
     rw [← A.syms]
     exact pushRegs_syms _ _
-  · rw [e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   · rw [← rand_bytes (m := t.mem) (by rw [A.mem]; exact B.wit)]
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     simp only [List.mem_range] at hi
-    refine Frame.bytes Fm (R := ⟨randAddr E used, E.witLen - used⟩) ?_ (by show E.witLen - used ≤ 2 ^ 64; omega) hi
+    refine Frame.bytes Fm (R := ⟨randAddr E used, E.witLen - used⟩) ?_ (by show E.witLen - used ≤ 2 ^ 64; omega_arith) hi
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact (wk.sub_left (randAddr_sub hu)).sub_right (below_sub (by decide) (by omega))
+    exact (wk.sub_left (randAddr_sub hu)).sub_right (below_sub (by decide) (by omega_arith))
 
 /-- The test's call. -/
 theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
@@ -214,23 +214,23 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     rw [A.other _ (by decide) (by decide) (by decide) (by decide) (by decide), B.sp]
   have low := v.low
   have cp := testCallPre v B A hu lay odd len
-  have fitT : 24 ≤ (t.gpr .esp).toNat := by rw [spT]; omega
+  have fitT : 24 ≤ (t.gpr .esp).toNat := by rw [spT]; omega_arith
   obtain ⟨e0, e1, e2, e3, e4⟩ := testEntry_arg (E := E) (used := used) fitT
   have Fm := testEntry_mem (E := E) (used := used) fitT
   simp only [testEntry] at e0 e1 e2 e3 e4 Fm
   rw [A.eax] at e0; rw [A.ecx] at e1; rw [A.edx] at e2; rw [A.ebx] at e3; rw [A.ebp] at e4
   refine WP.of_syms (WP.callWithReturn verified.1 noSp (by decide) (by decide)
-    (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega) cp fun u rdu wru csu Fu post usy => ?_)
+    (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega_arith) cp fun u rdu wru csu Fu post usy => ?_)
   obtain ⟨s₂, m₂, ax₂, post⟩ := post
   generalize ew : (pushed testRegs t).callEntry.withRegions (testRd E used) (testWr E t) = w at e0 e1 e2 e3 e4 Fm post
   sig_post [ppContract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow] at post
   simp only [e0, e1, e2, e3, e4, ret32] at post
-  have wsW := Scr.wide B.scr (d := sPP) (by simp only [sPP]; omega)
-  have uoW := Scr.wide B.scr (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega)
+  have wsW := Scr.wide B.scr (d := sPP) (by simp only [sPP]; omega_arith)
+  have uoW := Scr.wide B.scr (d := fUsedOut) (by simp only [fUsedOut, hdr]; omega_arith)
   have lenLt := v.lens.2.2
   have lenN : (BitVec.ofNat 32 (E.witLen - used)).toNat = E.witLen - used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have ppN : (BitVec.ofNat 32 ppWords).toNat = ppWords := by decide
   rw [spT] at Fm
   have cw := cand_frame v lay (k := 24) (by decide) Fm
@@ -242,9 +242,9 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     simp only [List.mem_range] at hi
-    refine Frame.bytes Fm (R := ⟨randAddr E used, E.witLen - used⟩) ?_ (by show E.witLen - used ≤ 2 ^ 64; omega) hi
+    refine Frame.bytes Fm (R := ⟨randAddr E used, E.witLen - used⟩) ?_ (by show E.witLen - used ≤ 2 ^ 64; omega_arith) hi
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact (wk.sub_left (randAddr_sub hu)).sub_right (below_sub (by decide) (by omega))
+    exact (wk.sub_left (randAddr_sub hu)).sub_right (below_sub (by decide) (by omega_arith))
   simp only [wsW, uoW, randPtr_wide v hu, lenN, ppN, cw, rw'] at post
   obtain ⟨P1, P2, P3⟩ := post
   rw [m₂] at P2 P3
@@ -258,13 +258,13 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     rdu.trans A.rd, wru.trans A.wr, usy.trans A.syms, ?_, ?_⟩
   · rw [hres, ← ax₂]; exact BitVec.eq_of_toNat_eq (by rw [P1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt stLt])
   · rw [← A.mem]
-    exact call_chg v spT Fm (by simp only [List.length_cons, List.length_nil]; omega) Fu P2
+    exact call_chg v spT Fm (by simp only [List.length_cons, List.length_nil]; omega_arith) Fu P2
   · intro b rest hr
     have hr' : res = some (b, rest) := hres.symm.trans hr
     have wl : E.witT.length = E.witLen := by rw [← B.wit]; simp [Spec.Rsa.bytesAt]
     have restLe : rest.length ≤ E.witLen - used := by
       have := (VG.Proof.Dsa.Generation.probablePrime_suffix hr).length_le
-      simp only [List.length_drop, wl] at this; omega
+      simp only [List.length_drop, wl] at this; omega_arith
     rw [readW_low]
     have h := P3 b rest hr'
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero,
@@ -272,7 +272,7 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     rw [h]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
     (verified : Verified target callee (ppContract bits)) (noSp : NoSp callee) (stack : stackUse callee ≤ 152)
@@ -288,7 +288,7 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
   have sz := v.size_ge
   unfold test
   simp only [seqs]
-  refine testArgs_ok B.scr (by simp only [sPP]; omega) B.witW B.witLenW hU hu v.lens.2.2 fun t A =>
+  refine testArgs_ok B.scr (by simp only [sPP]; omega_arith) B.witW B.witLenW hU hu v.lens.2.2 fun t A =>
     WP.seq (WP.mono (testCall_ok verified noSp stack v B A hu lay odd len) fun u R => ?_)
   have hsU : Scr u E.base E.size := Scr.of_eq B.scr R.edi (R.esp.trans B.sp.symm) R.wr
   generalize hres : Spec.Dsa.probablePrime (Spec.Dsa.ProbablePrime.candidateAt
@@ -301,28 +301,28 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
     intro o ho
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl <;>
-      simp only [sPP, ppWords, fRes, fUsed, fUsedOut, fOut, fWitLen, hdr] at lay' ⊢ <;> omega
+      simp only [sPP, ppWords, fRes, fUsed, fUsedOut, fOut, fWitLen, hdr] at lay' ⊢ <;> omega_arith
   have CH' : E.Chg [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
       (fRes, 4), (fUsed, 4), (fUsedOut, 8)] s.mem u.mem :=
     R.chg.mono fun o ho => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho ⊢
       rcases ho with h | h <;> simp only [h, true_or, or_true]
   have usedU : u.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used := by
-    rw [Env.Chg.word v R.chg (by simp only [fUsed, hdr]; omega) (fun o ho => by
+    rw [Env.Chg.word v R.chg (by simp only [fUsed, hdr]; omega_arith) (fun o ho => by
       have lay' := lay
       simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
       rcases ho with rfl | rfl <;>
-        simp only [sPP, ppWords, fUsed, fUsedOut, hdr] at lay' ⊢ <;> omega), hU]
-  refine WP.seq (st_ok hsU (by simp only [fRes, hdr]; omega) fun x₁ M₁ => wp_cmpi fun x₂ F₂ _ z₂ => WP.block_nil ?_)
+        simp only [sPP, ppWords, fUsed, fUsedOut, hdr] at lay' ⊢ <;> omega_arith), hU]
+  refine WP.seq (st_ok hsU (by simp only [fRes, hdr]; omega_arith) fun x₁ M₁ => wp_cmpi fun x₂ F₂ _ z₂ => WP.block_nil ?_)
   have m₂' : x₂.mem = u.mem.writeW (off E.base fRes) (u.gpr .eax) := by rw [F₂.mem, M₁.mem]
   have g₂ : x₂.gpr = u.gpr := by rw [F₂.gpr, M₁.gpr]
   have hsX : Scr x₂ E.base E.size := Scr.of_eq hsU (by rw [g₂]) (by rw [g₂]) (by rw [F₂.wr, M₁.wr])
   have resX : x₂.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res) := by
     rw [m₂', Mem.readW_writeW_self32, uax]
   have usedX : x₂.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used := by
-    rw [m₂', word_store_other v _ (by simp only [fUsed, hdr]; omega) (by simp only [fRes, hdr]; omega)
-      (by simp only [fUsed, fRes, hdr]; omega), usedU]
+    rw [m₂', word_store_other v _ (by simp only [fUsed, hdr]; omega_arith) (by simp only [fRes, hdr]; omega_arith)
+      (by simp only [fUsed, fRes, hdr]; omega_arith), usedU]
   have CHX : E.Chg [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
       (fRes, 4), (fUsed, 4), (fUsedOut, 8)] s.mem x₂.mem := by
     rw [m₂']; exact CH'.store (d := fRes) (n := 4) (.tail _ (.head _)) (by decide) _
@@ -353,21 +353,21 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
     have wl : E.witT.length = E.witLen := by rw [← B.wit]; simp [Spec.Rsa.bytesAt]
     have restLe : rest.length ≤ E.witLen - used := by
       have := (VG.Proof.Dsa.Generation.probablePrime_suffix hres).length_le
-      simp only [List.length_drop, wl] at this; omega
+      simp only [List.length_drop, wl] at this; omega_arith
     have uo : x₂.mem.readW (off E.base fUsedOut) 32 = BitVec.ofNat 32 (E.witLen - used - rest.length) := by
-      rw [m₂', word_store_other v _ (by simp only [fUsedOut, hdr]; omega) (by simp only [fRes, hdr]; omega)
-        (by simp only [fUsedOut, fRes, hdr]; omega), R.usedOut b rest hres]
-    refine ld_ok hsX (by simp only [fUsedOut, hdr]; omega) fun x₃ u₃ => addm_ok (Scr.of_eq hsX
-      (u₃.other _ (by decide)) (u₃.other _ (by decide)) u₃.wr) (by simp only [fUsed, hdr]; omega) fun x₄ u₄ =>
+      rw [m₂', word_store_other v _ (by simp only [fUsedOut, hdr]; omega_arith) (by simp only [fRes, hdr]; omega_arith)
+        (by simp only [fUsedOut, fRes, hdr]; omega_arith), R.usedOut b rest hres]
+    refine ld_ok hsX (by simp only [fUsedOut, hdr]; omega_arith) fun x₃ u₃ => addm_ok (Scr.of_eq hsX
+      (u₃.other _ (by decide)) (u₃.other _ (by decide)) u₃.wr) (by simp only [fUsed, hdr]; omega_arith) fun x₄ u₄ =>
         st_ok (Scr.of_eq hsX (by rw [u₄.other _ (by decide), u₃.other _ (by decide)])
           (by rw [u₄.other _ (by decide), u₃.other _ (by decide)]) (by rw [u₄.wr, u₃.wr]))
-          (by simp only [fUsed, hdr]; omega) fun x₅ M₅ => WP.block_nil ?_
+          (by simp only [fUsed, hdr]; omega_arith) fun x₅ M₅ => WP.block_nil ?_
     have val : x₅.mem = x₂.mem.writeW (off E.base fUsed)
         (BitVec.ofNat 32 (E.witLen - used - rest.length) + BitVec.ofNat 32 used) := by
       rw [M₅.mem, u₄.gpr, u₃.gpr, u₄.mem, u₃.mem, uo, usedX]
     have sum : BitVec.ofNat 32 (E.witLen - used - rest.length) + BitVec.ofNat 32 used =
         BitVec.ofNat 32 (E.witLen - rest.length) := by
-      rw [← BitVec.ofNat_add]; congr 1; omega
+      rw [← BitVec.ofNat_add]; congr 1; omega_arith
     rw [sum] at val
     have g₅ : ∀ r, r ≠ .eax → x₅.gpr r = u.gpr r := fun r h => by
       rw [M₅.gpr, u₄.other r h, u₃.other r h, g₂]
@@ -375,8 +375,8 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
       (by rw [g₅ _ (by decide), R.esi]) (by rw [M₅.rd, u₄.rd, u₃.rd, xrd]) (by rw [M₅.wr, u₄.wr, u₃.wr, xwr])
       (by rw [M₅.syms, u₄.syms, u₃.syms, xsy]) ?_ ?_ ?_
     · rw [val]; exact CHX.store (d := fUsed) (n := 4) (.tail _ (.tail _ (.head _))) (by decide) _
-    · rw [val, word_store_other v _ (by simp only [fRes, hdr]; omega) (by simp only [fUsed, hdr]; omega)
-        (by simp only [fUsed, fRes, hdr]; omega), resX]
+    · rw [val, word_store_other v _ (by simp only [fRes, hdr]; omega_arith) (by simp only [fUsed, hdr]; omega_arith)
+        (by simp only [fUsed, fRes, hdr]; omega_arith), resX]
     · rw [val, Mem.readW_writeW_self32]; rfl
 
 end VG.Proof.Dsa.X86.Generation

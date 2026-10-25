@@ -40,7 +40,7 @@ variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {
 /-- The tape's first `L` octets. -/
 theorem bytesAt_take (m : Mem) (p : Addr) {L n : Nat} (h : L ≤ n) :
     Spec.Rsa.bytesAt m p L = (Spec.Rsa.bytesAt m p n).take L := by
-  have := bytesAt_offset m p (a := 0) (b := L) (n := n) (by omega)
+  have := bytesAt_offset m p (a := 0) (b := L) (n := n) (by omega_arith)
   simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero, List.drop_zero] using this
 
 /-- p from the tape: `candidateOf bits x` for the integer `x` of its first `L` octets; the cursor
@@ -64,9 +64,9 @@ theorem shape_ok (h : In Ex base bytes len args s) {T : List Byte}
   have small := G.small
   unfold shape
   refine WP.seq (WP.mono (load_ok h (one_ok .wide) f9 (p := 2) (l := 3) (L := len) (by decide) (by decide) h3
-    (by omega) (by omega) (by omega)
+    (by omega_arith) (by omega_arith) (by omega_arith)
     (by simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
-      VG.CallLay.inRegions_sub (off := 0) (G.rd _ _ h.extra) (by omega : 0 + len ≤ T.length) (by omega))
+      VG.CallLay.inRegions_sub (off := 0) (G.rd _ _ h.extra) (by omega_arith : 0 + len ≤ T.length) (by omega_arith))
     (G.apart.sub_left (Region.sub_prefix hL))) fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
   rw [c1] at O₁
   rw [w1, bytesAt_take _ _ hL, hT] at V₁
@@ -84,24 +84,24 @@ theorem shape_ok (h : In Ex base bytes len args s) {T : List Byte}
       (k₃.mono.trans ((by rw [U₄.mem]; exact (Kept.refl _).mono : Kept base len [] [curOff, kOff] u₃.mem u₄.mem).trans
         k₅.mono))
   have kw₅ : w32 u₅.mem base kOff = bits := by
-    rw [W₅, U₄.gpr, k₃.word_eq, U₂.mem, k₁.word_eq, hb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [W₅, U₄.gpr, k₃.word_eq, U₂.mem, k₁.word_eq, hb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have cw₅ : w32 u₅.mem base curOff = len := by
-    rw [k₅.word_eq, U₄.mem, W₃, U₂.gpr, h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [k₅.word_eq, U₄.mem, W₃, U₂.gpr, h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   generalize hx : Spec.Rsa.os2ip (T.take len) = x at V₁
   have xl : x < 2 ^ (8 * len) := by
     have := VG.Proof.Bignum.os2ip_lt (T.take len)
     rw [List.length_take, Nat.min_eq_left hL, VG.Proof.Bignum.pow256_eq, hx] at this
     exact this
   have sv₅ : sv u₅.mem base len .wide 9 = x := by rw [k₂₅.slot_eq, ← V₁]
-  refine WP.seq (WP.mono (cut_ok S₂₅.inp (j := 9) (by decide) true (k := bits) kw₅ (by omega) (by omega)
-    (by rw [sv₅]; exact Nat.lt_of_lt_of_le xl (Nat.pow_le_pow_right (by decide) (by omega))))
+  refine WP.seq (WP.mono (cut_ok S₂₅.inp (j := 9) (by decide) true (k := bits) kw₅ (by omega_arith) (by omega_arith)
+    (by rw [sv₅]; exact Nat.lt_of_lt_of_le xl (Nat.pow_le_pow_right (by decide) (by omega_arith))))
     fun u₆ ⟨h₆, O₆, V₆, K₆⟩ => ?_)
   simp only [↓reduceIte] at V₆
   rw [sv₅] at V₆
   have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₂₅.inp (by decide) O₆ K₆
   rw [← List.append_nil (setLow _)]
   refine setLow_ok h₆ (j := 9) (by decide) fun u₇ h₇ O₇ V₇ K₇ => WP.block_nil ?_
-  have O₇' : Outside base (lo len (.slot .wide 9)) (bc len .wide) u₆.mem u₇.mem := O₇.mono (Nat.le_refl _) (by omega)
+  have O₇' : Outside base (lo len (.slot .wide 9)) (bc len .wide) u₆.mem u₇.mem := O₇.mono (Nat.le_refl _) (by omega_arith)
   have S₇ : Step Ex base bytes len args u₆ u₇ := Step.slot h₆ (by decide) O₇' K₇
   refine ⟨S₁.trans (S₂₅.trans (S₆.trans S₇)), ?_, ?_, ?_⟩
   · rw [V₇, V₆]; rfl
@@ -148,13 +148,13 @@ theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : 
   have h₂ := S₂.inp
   have p₂ : sv u₂.mem base len .wide 9 = p := by rw [m₂, hp]
   have k₂ : Kept base len [12, 16] [okOff] s.mem u₂.mem := by rw [m₂]; exact (Kept.refl _).mono
-  have gl : g < 2 ^ 32 := by omega
+  have gl : g < 2 ^ 32 := by omega_arith
   refine WP.ite (decide (g = 2)) (by
       show u₂.zf = _
       rw [z₂, U₁.gpr, hg, show (2 : BitVec 32) = BitVec.ofNat 32 2 from rfl, sub_beq gl (by decide)])
     (fun e => ?_) fun e => ?_
   · obtain rfl : g = 2 := by simpa using e
-    rw [gen2_eq hb hbl (by omega)]
+    rw [gen2_eq hb hbl (by omega_arith)]
     unfold gen2
     refine WP.seq (lowWord_ok h₂ (j := 9) (by decide) fun u₃ m₃ K₃ e₃ => wp_andi fun u₄ U₄ =>
       wp_cmpi fun u₅ F₅ _ z₅ => WP.block_nil ?_)
@@ -167,13 +167,13 @@ theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : 
       have e8 : p % 2 ^ 32 % 8 = p % 8 := Nat.mod_mod_of_dvd p (by decide)
       rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.mod_lt _ (by decide)),
         show (7 : BitVec 32).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, e8,
-        Nat.mod_eq_of_lt (by omega : p % 8 < 2 ^ 32)]
+        Nat.mod_eq_of_lt (by omega_arith : p % 8 < 2 ^ 32)]
     refine WP.ite (decide (p % 8 = 3)) (by
         show u₅.zf = _
-        rw [z₅, e₄, show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, sub_beq (by omega) (by decide)])
+        rw [z₅, e₄, show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, sub_beq (by omega_arith) (by decide)])
       (fun e₈ => ?_) fun e₈ => ?_
     · have p8 : p % 8 = 3 := by simpa using e₈
-      refine WP.seq (WP.mono (minus_ok S₅.inp (p := p) (t := 2) (by rw [m₅, hp]) (by omega) (by decide))
+      refine WP.seq (WP.mono (minus_ok S₅.inp (p := p) (t := 2) (by rw [m₅, hp]) (by omega_arith) (by decide))
         fun u₆ ⟨S₆, V₆, k₆⟩ => ?_)
       refine WP.mono (dividesS_ok S₆.inp (j := 12) (prime := 3) (inv := inv3) (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide)) fun t ⟨S, E, k⟩ => ⟨S₅.trans (S₆.trans S), ?_, ?_⟩
@@ -186,17 +186,17 @@ theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : 
       · rw [U.mem, m₅]; exact (Kept.refl _).mono
   · have g5 : g = 5 := by
       have : ¬ g = 2 := by simpa using e
-      omega
+      omega_arith
     subst g5
     rw [gen5_eq hb hbl hp3 hpo]
     unfold gen5
-    refine WP.seq (WP.mono (minus_ok h₂ (p := p) (t := 2) p₂ (by omega) (by decide)) fun u₃ ⟨S₃, V₃, k₃⟩ => ?_)
+    refine WP.seq (WP.mono (minus_ok h₂ (p := p) (t := 2) p₂ (by omega_arith) (by decide)) fun u₃ ⟨S₃, V₃, k₃⟩ => ?_)
     refine WP.seq (WP.mono (dividesS_ok S₃.inp (j := 12) (prime := 5) (inv := inv5) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)) fun u₄ ⟨S₄, E₄, k₄⟩ => ?_)
     rw [V₃] at E₄
     refine WP.seq (hdr_store S₄.inp hdr_ok fun u₅ S₅ W₅ k₅ _ g₅ _ _ => WP.block_nil ?_)
     have p₅ : sv u₅.mem base len .wide 9 = p := by rw [k₅.slot_eq, k₄.slot_eq, k₃.slot_eq, p₂]
-    refine WP.seq (WP.mono (minus_ok S₅.inp (p := p) (t := 3) p₅ (by omega) (by decide)) fun u₆ ⟨S₆, V₆, k₆⟩ => ?_)
+    refine WP.seq (WP.mono (minus_ok S₅.inp (p := p) (t := 3) p₅ (by omega_arith) (by decide)) fun u₆ ⟨S₆, V₆, k₆⟩ => ?_)
     refine WP.seq (WP.mono (dividesS_ok S₆.inp (j := 12) (prime := 5) (inv := inv5) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)) fun u₇ ⟨S₇, E₇, k₇⟩ => ?_)
     rw [V₆] at E₇
@@ -253,12 +253,12 @@ theorem Table.step {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s) {t : State}
     fun i hi => ?_, TT.fit, by rw [S.esp]; exact TT.far⟩
   rw [← TT.words i hi]
   refine S.frame.readW (r := ⟨Tb.setWidth 64, 8192⟩) (w := 64)
-    (Offset.contains_base _ (by omega : 8 * i + 8 ≤ 8192) (by omega)) (fun r hr => ?_) (by decide)
+    (Offset.contains_base _ (by omega_arith : 8 * i + 8 ≤ 8192) (by omega_arith)) (fun r hr => ?_) (by decide)
   rw [frameR, List.mem_cons, List.mem_map] at hr
   rcases hr with rfl | ⟨q, hq, rfl⟩
   · exact TT.far
   · have := fit q hq
-    exact TA.sub_right (Offset.sub_base _ (by omega))
+    exact TA.sub_right (Offset.sub_base _ (by omega_arith))
 
 /-- `q = p >> 1` into slot 10. -/
 theorem half_ok (h : In Ex base bytes len args s) {p : Nat} (hp : sv s.mem base len .wide 9 = p) :
@@ -309,16 +309,16 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
       (Spec.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candUsed T (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candOut len (Spec.Ffdh.sievedParameterCandidate bits g T))) := by
-  have hL' : (bits + 7) / 8 ≤ T.length := by omega
+  have hL' : (bits + 7) / 8 ≤ T.length := by omega_arith
   -- The candidate and q.
   generalize hx : Spec.Rsa.os2ip (T.take len) = x
-  obtain ⟨hpo, hpl, hpu⟩ := ParameterCandidate.candidate_shape (bits := bits) (by omega) x
-  obtain ⟨hbp', hbp⟩ := ParameterCandidate.candidate_bitLength (bits := bits) (by omega) x
-  have hbq' := ParameterCandidate.half_bitLength (bits := bits) (by omega) x
+  obtain ⟨hpo, hpl, hpu⟩ := ParameterCandidate.candidate_shape (bits := bits) (by omega_arith) x
+  obtain ⟨hbp', hbp⟩ := ParameterCandidate.candidate_bitLength (bits := bits) (by omega_arith) x
+  have hbq' := ParameterCandidate.half_bitLength (bits := bits) (by omega_arith) x
   generalize hp : Spec.Ffdh.candidateOf bits x = p at hpo hpl hpu hbp' hbp hbq'
-  have big : 2 ^ 20 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-  have p8 : p < 2 ^ (8 * len) := Nat.lt_of_lt_of_le hpu (Nat.pow_le_pow_right (by decide) (by omega))
-  have screen := screen_eq (bits := bits) (g := g) (p := p) (by omega) hpo (by omega)
+  have big : 2 ^ 20 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  have p8 : p < 2 ^ (8 * len) := Nat.lt_of_lt_of_le hpu (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have screen := screen_eq (bits := bits) (g := g) (p := p) (by omega_arith) hpo (by omega_arith)
   -- A rejection, from a stage of `s` that keeps the cursor and `used`.
   have rej : ∀ u, Step Ex base bytes len args s u → w32 u.mem base curOff = len →
       w32 u.mem base usedOff = up.toNat →
@@ -335,14 +335,14 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
       (by rw [Su.esp]; exact U.keep rfl Su.keeps) hu' hc) fun t R => ?_
     have := R.after Su
     simp only [Spec.Ffdh.candidateStatus, candUsed, candOut, List.length_drop,
-      show T.length - (T.length - (bits + 7) / 8) = len by omega]
+      show T.length - (T.length - (bits + 7) / 8) = len by omega_arith]
     exact this
   unfold main
   -- p.
   refine WP.seq (WP.mono_syms (shape_ok h G hT h3 hL hb hbl hb1 hb2) fun u₁ ⟨S₁, P₁, C₁, k₁⟩ sy₁ => ?_)
   rw [hx, hp] at P₁
   -- Its congruences.
-  refine WP.seq (WP.mono_syms (congruences_ok S₁.inp P₁ (by omega) hpo hbp' ⟨hb1, hb2⟩ (by rw [k₁.word_eq, hg])
+  refine WP.seq (WP.mono_syms (congruences_ok S₁.inp P₁ (by omega_arith) hpo hbp' ⟨hb1, hb2⟩ (by rw [k₁.word_eq, hg])
     hg25) fun u₂ ⟨S₂, E₂, k₂⟩ sy₂ => ?_)
   refine WP.seq (WP.mono_syms (testEax_ok E₂) fun u₃ ⟨m₃, K₃, z₃⟩ sy₃ => ?_)
   have S₃ : Step Ex base bytes len args s u₃ := S₁.trans (S₂.trans (Step.regs S₂.inp m₃ K₃))
@@ -356,16 +356,16 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
   have gt : Spec.Ffdh.generationShape bits g p = true := by simpa using e
   -- q, odd.
   refine WP.seq (WP.mono_syms (half_ok S₃.inp p₃) fun u₄ ⟨S₄, Q₄, k₄⟩ sy₄ => ?_)
-  rw [show p / 2 = (p - 1) / 2 by omega] at Q₄
+  rw [show p / 2 = (p - 1) / 2 by omega_arith] at Q₄
   refine WP.seq (WP.mono_syms (oddQ_ok S₄.inp Q₄) fun u₅ ⟨S₅, m₅, z₅⟩ sy₅ => ?_)
   have S₀₅ : Step Ex base bytes len args s u₅ := S₃.trans (S₄.trans S₅)
   have cur₅ : w32 u₅.mem base curOff = len := by rw [m₅, k₄.word_eq, cur₃]
   have used₅ : w32 u₅.mem base usedOff = up.toNat := by rw [m₅, k₄.word_eq, used₃]
   refine WP.ite _ z₅ (fun e => rej u₅ S₀₅ cur₅ used₅ (by
-    have : ¬ (p - 1) / 2 % 2 = 1 := by simp at e; omega
+    have : ¬ (p - 1) / 2 % 2 = 1 := by simp at e; omega_arith
     simp [this])) fun e => ?_
-  have qo : (p - 1) / 2 % 2 = 1 := by simp at e; omega
-  have hbq := ParameterCandidate.half_pred_bitLength (bits := bits) (by omega) x (by rw [hp]; exact qo)
+  have qo : (p - 1) / 2 % 2 = 1 := by simp at e; omega_arith
+  have hbq := ParameterCandidate.half_pred_bitLength (bits := bits) (by omega_arith) x (by rw [hp]; exact qo)
   rw [hp] at hbq
   -- RSA's sieve on p.
   have sy₀₅ : u₅.syms = s.syms := sy₅.trans (sy₄.trans (sy₃.trans (sy₂.trans sy₁)))
@@ -410,7 +410,7 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
   refine WP.mono (tests_ok S₀₉.inp (by rw [S₀₉.esp]; exact G) (by rw [tape_keep G S₀₉, hT])
     (by rw [S₀₉.esp]; exact Ox.keep rfl S₀₉.keeps) (by rw [S₀₉.esp]; exact U.keep rfl S₀₉.keeps) used₉
     (by rw [k₀₉.word_eq, hb]) hb1 hb2 (by rw [m₉, k₈.slot_eq, m₇, k₆.slot_eq, m₅, k₄.slot_eq, p₃])
-    (by rw [m₉, k₈.slot_eq, m₇, k₆.slot_eq, m₅, Q₄]) (by omega) hpo (by omega) qo hbp hbp' hbq hbq' p8 cur₉ hL)
+    (by rw [m₉, k₈.slot_eq, m₇, k₆.slot_eq, m₅, Q₄]) (by omega_arith) hpo (by omega_arith) qo hbp hbp' hbq hbq' p8 cur₉ hL)
     fun t R => R.after S₀₉
 
 end VG.Proof.Ffdh.X86.Cand

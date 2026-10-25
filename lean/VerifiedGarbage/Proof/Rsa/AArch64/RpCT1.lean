@@ -188,7 +188,7 @@ theorem loadA_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen <
 /-- The three loads. -/
 theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Public.sN Public.sK ++
     (loadA aE Public.sE Public.sElen ++ loadA aD sD sDl))) (Two GA) := by
-  have k8 : ∀ {k : Nat}, k ≤ 8 * wk k := fun {k} => by unfold wk; omega
+  have k8 : ∀ {k : Nat}, k ≤ 8 * wk k := fun {k} => by unfold wk; omega_arith
   refine ct_app (by simp [loadA]) (by simp [loadA]) (loadA_ct (by decide) (by decide) (by decide) RpP.pN RpP.k
     (fun p s h => ?_) (by taint_decide) (by taint_decide) (by taint_decide)) (ct_app (by simp [loadA])
     (by simp [loadA]) (loadA_ct (by decide) (by decide) (by decide) RpP.pE RpP.el (fun p s h => ?_)
@@ -199,9 +199,9 @@ theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Public.sN Public.sK ++
     obtain ⟨I, m₀, rfl, h, L, -⟩ := h
     dsimp only [RpIn.pub]
     have := L.k1
-  · exact ⟨h.args.n, h.args.k, ⟨_, h.n, L.nbl⟩, by omega, k8⟩
-  · exact ⟨h.args.e, h.args.el, ⟨_, h.e, L.ebl⟩, L.el1, by have := L.el2; have := @k8 I.k; omega⟩
-  · exact ⟨h.args.d, h.args.dl, ⟨_, h.d, L.dbl⟩, L.dl1, by have := L.dl2; have := @k8 I.k; omega⟩
+  · exact ⟨h.args.n, h.args.k, ⟨_, h.n, L.nbl⟩, by omega_arith, k8⟩
+  · exact ⟨h.args.e, h.args.el, ⟨_, h.e, L.ebl⟩, L.el1, by have := L.el2; have := @k8 I.k; omega_arith⟩
+  · exact ⟨h.args.d, h.args.dl, ⟨_, h.d, L.dbl⟩, L.dl1, by have := L.dl2; have := @k8 I.k; omega_arith⟩
 
 /-! ## Values between the pieces -/
 
@@ -242,16 +242,16 @@ theorem minv_ct : RelCT isa (Two (GV FL)) (.block minvBlk) (Two (GV FM)) := by
   obtain ⟨I, m₀, eI, h', L, O, hv, vN, vE, vD⟩ := id h
   subst eI
   have hw := h'.ws
-  have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+  have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
   have hodd := (valid_lo hv).1
   have hw0 : (word s.mem I.B (slot (wk I.k) aN)).toNat % 2 = 1 := by
     rw [show (word s.mem I.B (slot (wk I.k) aN)).toNat % 2 = wv s.mem I.B (slot (wk I.k) aN) (wk I.k) % 2 by
-      rw [wv_low (by have := hw.w1; omega)]; omega, vN]; exact hodd
+      rw [wv_low (by have := hw.w1; omega_arith)]; omega_arith, vN]; exact hodd
   refine WP.mono (minvBlk_ok hw hw0) fun t ⟨hi, f, k⟩ => ⟨I, m₀, rfl, h'.step f (by simp) (by decide) k (by decide),
     L, O, hv, ⟨?_, ?_, ?_⟩, hi⟩
-  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega)]; exact vN
-  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega)]; exact vE
-  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega)]; exact vD
+  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega_arith)]; exact vN
+  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega_arith)]; exact vE
+  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega_arith)]; exact vD
 
 /-! ## `M = d e` and its check -/
 
@@ -269,29 +269,29 @@ theorem zeroM_ct : RelCT isa (Two (GV FM)) (zeroA aM) (Two (GV FZ1)) :=
   two_post (zeroAV_ct (by decide) (by taint_decide)) fun p s h => by
     obtain ⟨I, m₀, rfl, h', L, O, hv, ⟨vN, vE, vD⟩, hi⟩ := id h
     have hw := h'.ws
-    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
     refine WP.mono (zeroA_ok hw (j := aM) (by decide)) fun t ⟨z, o, _, _, _, k⟩ => ?_
     have f : Frm I.B (rg (wk I.k) [aM] []) s.mem t.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
     refine ⟨I, m₀, rfl, h'.step f (by decide) (by simp) k (by decide), L, O, hv, ⟨⟨?_, ?_, ?_⟩, ?_⟩, z⟩
-    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vN
-    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vE
-    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vD
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vN
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vE
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vD
     · rw [f.rg_word0 hZ16 (by simp) (by decide) (by decide), f.rg_word (by decide) (by simp)]; exact hi
 
 theorem zeroM1_ct : RelCT isa (Two (GV FZ1)) (zeroA (aM + 1)) (Two (GV FZ2)) :=
   two_post (zeroAV_ct (by decide) (by taint_decide)) fun p s h => by
     obtain ⟨I, m₀, rfl, h', L, O, hv, ⟨⟨vN, vE, vD⟩, hi⟩, z₁⟩ := id h
     have hw := h'.ws
-    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
     refine WP.mono (zeroA_ok hw (j := aM + 1) (by decide)) fun t ⟨z, o, _, _, _, k⟩ => ?_
     have f : Frm I.B (rg (wk I.k) [aM + 1] []) s.mem t.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
     refine ⟨I, m₀, rfl, h'.step f (by decide) (by simp) k (by decide), L, O, hv, ⟨⟨?_, ?_, ?_⟩, ?_⟩, ?_⟩
-    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vN
-    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vE
-    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vD
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vN
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vE
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vD
     · rw [f.rg_word0 hZ16 (by simp) (by decide) (by decide), f.rg_word (by decide) (by simp)]; exact hi
-    · rw [show 2 * (wk I.k + 2) = (wk I.k + 2) + (wk I.k + 2) by omega, wv_add, ← slot_aM1, z,
-        f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega), z₁, Nat.mul_zero]
+    · rw [show 2 * (wk I.k + 2) = (wk I.k + 2) + (wk I.k + 2) by omega_arith, wv_add, ← slot_aM1, z,
+        f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith), z₁, Nat.mul_zero]
 
 /-- The registers `prod`'s rows need pinned. -/
 def prodVal (p : RpP) : Reg → BitVec 64
@@ -308,7 +308,7 @@ theorem prodLoop_ct : RelCT isa (Two (GV FZ2)) (.seq (.block prodBlk) VG.Impl.Rs
   pin_ct [.x0] [.x0, .x11, .x9, .x8, .x12, .x13, .x7] prodVal pins_GV (by taint_decide)
     (fun p s h => by
       obtain ⟨I, m₀, rfl, h', L, O, hv, -⟩ := id h
-      exact WP.mono (prodBlk_ok h'.ws h'.args.el (by have := L.el2; have := L.k2; omega))
+      exact WP.mono (prodBlk_ok h'.ws h'.args.el (by have := L.el2; have := L.k2; omega_arith))
         fun t ⟨⟨h0, h11, h9, h8, h12, h13, h7, _⟩, _⟩ r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -322,18 +322,18 @@ theorem prodLoop_ct : RelCT isa (Two (GV FZ2)) (.seq (.block prodBlk) VG.Impl.Rs
     (by taint_decide) fun p s h => by
       obtain ⟨I, m₀, rfl, h', L, O, hv, ⟨⟨vN, vE, vD⟩, hi⟩, hz⟩ := id h
       have hw := h'.ws
-      have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+      have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
       have hEl : I.E < 2 ^ (64 * ((I.el + 7) / 8)) := by
         have := os2ip_lt I.eb; rw [L.ebl] at this; exact Nat.lt_of_lt_of_le this (pow256_le_wk I.el)
       have sM := hw.sl (j := aM + 1) (by decide)
-      refine WP.mono (prodLoop_ok hw h'.args.el L.el1 (by have := L.el2; unfold wk; omega)
+      refine WP.mono (prodLoop_ok hw h'.args.el L.el1 (by have := L.el2; unfold wk; omega_arith)
         (by rw [vE]; exact hEl) hz) fun t ⟨vM, o, k⟩ => ?_
       have f : Frm I.B (rg (wk I.k) [aM, aM + 1] []) s.mem t.mem :=
         Frm.rg_of_out2 o (Nat.le_refl _) _ _ (by decide) (by decide)
       refine ⟨I, m₀, rfl, h'.step f (by decide) (by simp) k (by decide), L, O, hv, ⟨⟨⟨?_, ?_, ?_⟩, ?_⟩, ?_⟩⟩
-      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vN
-      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vE
-      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vD
+      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vN
+      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vE
+      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact vD
       · rw [f.rg_word0 hZ16 (by simp) (by decide) (by decide), f.rg_word (by decide) (by simp)]; exact hi
       · rw [vM, vD, vE]
 
@@ -358,7 +358,7 @@ theorem skip_ct : RelCT isa (Two (GV FP)) (seqs [.block skipBlk, orLoop, .block 
     [.x0, .x16, .x14] skipVal (fun p s h => ?_) (by taint_decide) fun p s h => ?_)
   · rw [← e]
     obtain ⟨I, m₀, rfl, h', L, O, -⟩ := id h
-    exact WP.mono (skipBlk_ok h'.ws h'.args.el (by have := L.el2; have := L.k2; omega))
+    exact WP.mono (skipBlk_ok h'.ws h'.args.el (by have := L.el2; have := L.k2; omega_arith))
       fun t ⟨h16, _, h14, h0, _⟩ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
@@ -372,8 +372,8 @@ theorem skip_ct : RelCT isa (Two (GV FP)) (seqs [.block skipBlk, orLoop, .block 
     have hDl : I.D < 2 ^ (64 * wk I.k) := by
       have := os2ip_lt I.db; rw [L.dbl] at this
       exact Nat.lt_of_lt_of_le this (by
-        rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by have := L.dl2; unfold wk; omega))
-    have := skip_ok h'.ws h'.args.el L.el1 (by have := L.el2; unfold wk; omega)
+        rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by have := L.dl2; unfold wk; omega_arith))
+    have := skip_ok h'.ws h'.args.el L.el1 (by have := L.el2; unfold wk; omega_arith)
       (by rw [vM, Nat.mul_add, Nat.pow_add]; exact Nat.mul_lt_mul'' hDl hEl)
     simp only [seqs] at this
     exact WP.mono this fun _ _ => trivial

@@ -51,7 +51,7 @@ theorem Outs.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Out
   fun x hx => h x fun r hmem => by
     obtain ⟨r', h', h1, h2⟩ := hr r hmem
     have := hx r' h'
-    omega
+    omega_arith
 
 theorem Mut.of_outside {B : Addr} {w o : Nat} {m m' : Mem} (h : Outside B (slot w o) (8 * (w + 2)) m m')
     (ho : o = 2 ∨ o = 3 ∨ o = 5 ∨ o = 6) : Mut B w m m' :=
@@ -65,8 +65,8 @@ theorem Mut.of_entry {B : Addr} {w j : Nat} {m m' : Mem} (h : Outside B (slot w 
     subst hr
     refine ⟨(slot w 11, 16 * (8 * (w + 2))), by simp [roundRanges], ?_, ?_⟩ <;>
       simp only [slot] <;> rw [Nat.add_mul] <;>
-      have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 16 by omega) <;> rw [Nat.add_mul] at this <;>
-      omega
+      have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 16 by omega_arith) <;> rw [Nat.add_mul] at this <;>
+      omega_arith
 
 /-- What a Montgomery multiplication into array `o` writes. -/
 def montRanges (w o : Nat) : List (Nat × Nat) :=
@@ -76,13 +76,13 @@ theorem Mut.of_mont {B : Addr} {w o : Nat} {m m' : Mem} (h : Outs B (montRanges 
     (ho : o = 5 ∨ o = 6) : Mut B w m m' :=
   Outs.widen h fun r hr => ⟨r, by
     simp only [montRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases ho with rfl | rfl <;> rcases hr with rfl | rfl | rfl <;> simp [roundRanges], by omega, by omega⟩
+    rcases ho with rfl | rfl <;> rcases hr with rfl | rfl | rfl <;> simp [roundRanges], by omega_arith, by omega_arith⟩
 
 /-- An array apart from the ranges that changed keeps its value. -/
 theorem Outs.arrEq {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m') {j : Nat}
     (hj : j < 28) (hd : ∀ r ∈ rs, slot w j + 8 * (w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot w j)
     (hn : slot w 28 ≤ 2 ^ 64) : arr m' B w j = arr m B w j :=
-  h.val32 (fun r hr => by have := hd r hr; omega) (by have := slot_lt (w := w) hj; omega)
+  h.val32 (fun r hr => by have := hd r hr; omega_arith) (by have := slot_lt (w := w) hj; omega_arith)
 
 /-- An array apart from those of a Montgomery multiplication keeps its value. -/
 theorem Outs.arrEq_mont {B : Addr} {w o : Nat} {m m' : Mem} (h : Outs B (montRanges w o) m m') {j : Nat}
@@ -106,7 +106,7 @@ theorem Outside.w32_0 {B : Addr} {w o : Nat} {m m' : Mem} (h : Outside B (slot w
     (ho : o ≠ 0) (hn : slot w 28 ≤ 2 ^ 64) : w32 m' B (slot w 0) = w32 m B (slot w 0) := by
   have := slot_sep (w := w) ho
   have := slot_lt (w := w) (show 0 < 28 by decide)
-  exact h.w32 (by omega) (by omega)
+  exact h.w32 (by omega_arith) (by omega_arith)
 
 /-- The low digit of the candidate, below every range that changed. -/
 theorem Outs.w32_0 {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m')
@@ -115,17 +115,17 @@ theorem Outs.w32_0 {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h
   have := slot_lt (w := w) (show 0 < 28 by decide)
   exact congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ fun r hr => by
     have := hd r hr
-    rw [ofs_off B (by omega)]; omega)
+    rw [ofs_off B (by omega_arith)]; omega_arith)
 
 /-- An array the round does not write keeps its value. -/
 theorem Mut.arr {B : Addr} {w : Nat} {m m' : Mem} (h : Mut B w m m') {j : Nat}
     (hj : j = 0 ∨ j = 1 ∨ j = 4 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 27)
     (hn : slot w 28 ≤ 2 ^ 64) : arr m' B w j = arr m B w j := by
   refine h.val32 (fun r hr => ?_) (by
-    have := slot_lt (w := w) (show j < 28 by omega); omega)
+    have := slot_lt (w := w) (show j < 28 by omega_arith); omega_arith)
   simp only [roundRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>
-    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [slot] <;> omega
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [slot] <;> omega_arith
 
 /-! ## The constants -/
 
@@ -144,9 +144,9 @@ theorem Consts.of_mut {m m' : Mem} {B : Addr} {w c : Nat} (h : Consts m B w c) (
   rw [← h.l]
   refine Mem.readW_congr fun i hi => hm _ fun r hr => ?_
   have h27 := slot_lt (w := w) (show aE < 28 by decide)
-  rw [ofs_off B (by simp only [aE] at h27 ⊢; omega)]
+  rw [ofs_off B (by simp only [aE] at h27 ⊢; omega_arith)]
   simp only [roundRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, aE] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, aE] <;> omega_arith
 
 /-! ## Montgomery multiplications -/
 
@@ -170,14 +170,14 @@ theorem mont_ok {s : State} {B : Addr} {Z w : Nat} (h : MCtx s B Z w) {o a b : N
   have hw' := h.hw'
   have h8 := slot_lt (w := w) (show 8 < 28 by decide)
   have hZ := h.hZ
-  refine WP.mono (Pub.montOp_ok h.hs (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) h.h10 h.h29 h.h11 h.h12 h.inv hB) fun t ⟨⟨hlt, heq, hout⟩, k⟩ =>
+  refine WP.mono (Pub.montOp_ok h.hs (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) h.h10 h.h29 h.h11 h.h12 h.inv hB) fun t ⟨⟨hlt, heq, hout⟩, k⟩ =>
     ⟨⟨hlt, heq, hout, ?_⟩, k⟩
   refine congrArg BitVec.toNat (Mem.readW_congr fun i hi => hout _ fun r hr => ?_)
   have := h.hs.nowrap
   have h0 := slot_lt (w := w) (show 0 < 28 by decide)
-  rw [ofs_off B (by omega)]
+  rw [ofs_off B (by omega_arith)]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases ho with rfl | rfl <;> rcases hr with rfl | rfl | rfl <;> simp only [slot] <;> omega
+  rcases ho with rfl | rfl <;> rcases hr with rfl | rfl | rfl <;> simp only [slot] <;> omega_arith
 
 end VG.Proof.MillerRabin.PPC64LE

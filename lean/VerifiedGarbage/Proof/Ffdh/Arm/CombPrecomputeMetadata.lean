@@ -25,10 +25,7 @@ theorem combBitCountStep_ok (s : State) {h : Nat} (positive : 0<h) (bound : h≤
       t.z = decide (h=1) ∧ t.mem=s.mem) ∧ Rest [.r1,.r3] s t := by
   have cases : h=1 ∨ h=2 ∨ h=3 ∨ h=4 ∨ h=5 ∨ h=6 ∨ h=7 ∨ h=8 := by omega
   rcases cases with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
-    (refine withRest (c := .block bitCountStep) [.r1,.r3] ?_ (by
-      intro r hr i hi
-      simp only [instrs,bitCountStep,List.mem_cons,List.not_mem_nil,or_false] at hi
-      rcases hi with rfl|rfl|rfl <;> simp [clobbers,dstOf] at * <;> grind) rfl
+    (refine withRest_all (c := .block bitCountStep) [.r1,.r3] ?_ (by rfl) rfl
      unfold bitCountStep
      ffrun [mask,combLowMask]
      decide)

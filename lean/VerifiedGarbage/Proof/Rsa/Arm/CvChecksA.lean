@@ -56,7 +56,7 @@ structure StI (s0 : State) (X₁ X₂ : Nat) (s : State) : Prop where
   zero : num s.mem (cvB s0) (cvW s0) aZero = 0
   one : num s.mem (cvB s0) (cvW s0) aOne = 1
 
-theorem cvM_pos (s0 : State) : 0 < cvM s0 := by simp only [cvM]; omega
+theorem cvM_pos (s0 : State) : 0 < cvM s0 := by simp only [cvM]; omega_arith
 
 theorem checksA_ok {s0 s : State} (h : StC s0 s) :
     WP isa (seqs checksA) s (StI s0 (num s.mem (cvB s0) (cvW s0) aDQ) (num s.mem (cvB s0) (cvW s0) aDR)) := by
@@ -127,7 +127,7 @@ theorem checksA_ok {s0 s : State} (h : StC s0 s) :
   · rw [K1 _ (by decide) (by decide), h.p]
   · rw [K1 _ (by decide) (by decide), h.q]
   · rw [K1 _ (by decide) (by decide), h.d]
-  · rw [K.word (by simp only [S]; omega) (by decide) (by decide) (fit _ (by decide)), m1, h.ddTop]
+  · rw [K.word (by simp only [S]; omega_arith) (by decide) (by decide) (fit _ (by decide)), m1, h.ddTop]
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), k8.num (by decide) (by simp) (fit _ (by decide)),
       k8'.num (by decide) (by simp) (fit _ (by decide)), k7.num (by decide) (by simp) (fit _ (by decide)),
       k6.num (by decide) (by simp) (fit _ (by decide)), k5.num (by decide) (by simp) (fit _ (by decide)), e4,
@@ -145,7 +145,7 @@ theorem checksA_ok {s0 s : State} (h : StC s0 s) :
   · rw [Z8, M8] at e9
     have := cvM_pos s0
     have l := val32_lt t.mem (State.addr (cvB s0)) (arr (cvW s0) aNM) (cvW s0)
-    rcases (by omega : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1) with e | e <;> rw [e] at e9 <;> omega
+    rcases (by omega_arith : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1) with e | e <;> rw [e] at e9 <;> omega_arith
   · rw [K1 _ (by decide) (by decide)]; rw [← m1]; exact z0 _ (by decide)
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), e8, k8'.num (by decide) (by simp) (fit _ (by decide)),
       k7.num (by decide) (by simp) (fit _ (by decide)), k6.num (by decide) (by simp) (fit _ (by decide)),

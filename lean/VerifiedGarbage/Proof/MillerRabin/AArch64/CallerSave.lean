@@ -70,6 +70,6 @@ theorem save_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   change (word (savedMem s B w) B (8 * sW) + 2#64) * 28#64 + 32#64 =
     BitVec.ofNat 64 (32 + 28 * (w + 2))
   rw [hSaved]
-  bv_omega
+  bv_omega_arith
 
 end VG.Proof.MillerRabin.AArch64.Caller

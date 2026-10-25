@@ -68,8 +68,8 @@ theorem prodSparse_ok (s : State) {t0 : Reg} (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx �
         c.toNat := by
       intro c; cases c <;> rfl
     rw [hc0, hc1]
-    have l0 : 0xffffffff00000001 * u.toNat / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega)
-    have l1 : 0xffffffff * u.toNat / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega)
+    have l0 : 0xffffffff00000001 * u.toNat / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega_arith)
+    have l1 : 0xffffffff * u.toNat / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega_arith)
     have e0 : (BitVec.ofNat 64 (0xffffffff00000001 * u.toNat / 2 ^ 64)).toNat =
         0xffffffff00000001 * u.toNat / 2 ^ 64 := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt l0]
     have e1 : (BitVec.ofNat 64 (0xffffffff * u.toNat / 2 ^ 64)).toNat = 0xffffffff * u.toNat / 2 ^ 64 := by
@@ -89,7 +89,7 @@ theorem prodSparse_ok (s : State) {t0 : Reg} (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx �
     rw [e0, e2] at a1
     rw [e1] at a2
     have hc2 := Bool.toNat_le c₂
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1,
       hr.2.2.2, ite_false]
@@ -360,7 +360,7 @@ theorem roundM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hm' : m < 2 ^ (64 * M.n) := hm.lt hok
   have hA := (word s.mem base (a + 8 * i)).isLt
   have hAB : (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n ≤ (2 ^ 64 - 1) * m :=
-    Nat.mul_le_mul (by omega) (by omega)
+    Nat.mul_le_mul (by omega_arith) (by omega_arith)
   rw [show roundM M a b i = (([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++
       (mulRowB (lateRow M) ((List.range M.n).map (win M.n i)) b ++ carryUp (win M.n i M.n) (win M.n i (M.n + 1)))) ++
         redRound M i by simp only [roundM, List.append_assoc], WP.block_append_iff]
@@ -373,27 +373,27 @@ theorem roundM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
         (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n + u * m) ∧
       regsVal s' (wins M.n (i + 1)) < 2 * m := fun u hu e => by
     rw [e₂] at e
-    have hum : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
+    have hum : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega_arith) (Nat.le_refl _)
     refine ⟨⟨u, e⟩, Nat.lt_of_mul_lt_mul_left (a := 2 ^ 64) ?_⟩
-    rw [e]; omega
+    rw [e]; omega_arith
   unfold redRound
   dsimp only
   split
   · rename_i hsp
     obtain ⟨hn6, hm6⟩ := Mod.ok_sparse hok hsp
-    refine WP.mono (redS_ok hn6 hm6 (by rw [e₂]; omega))
+    refine WP.mono (redS_ok hn6 hm6 (by rw [e₂]; omega_arith))
       fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₂.trans k⟩
   rename_i hsp
   have hred := Mod.ok_red hok
   split
   · rename_i hg
-    refine WP.mono (redGen_ok hs₂ hn hmo (by rw [hmem, hm (Bool.eq_false_iff.mpr hsp)]) hinv (by rw [e₂]; omega))
+    refine WP.mono (redGen_ok hs₂ hn hmo (by rw [hmem, hm (Bool.eq_false_iff.mpr hsp)]) hinv (by rw [e₂]; omega_arith))
       fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₂.trans k⟩
   · rename_i ws hf
     rw [hf] at hred
     have ht0 := (s₂.gpr (win M.n i 0)).isLt
-    have hum : (s₂.gpr (win M.n i 0)).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
-    refine WP.mono (redF_ok false hn hred hm' (by rw [e₂]; omega)) fun s' ⟨e, k⟩ =>
+    have hum : (s₂.gpr (win M.n i 0)).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega_arith) (Nat.le_refl _)
+    refine WP.mono (redF_ok false hn hred hm' (by rw [e₂]; omega_arith)) fun s' ⟨e, k⟩ =>
       ⟨(fin _ ht0 e).1, (fin _ ht0 e).2, k₂.trans (k.mono (by sub_regs))⟩
 
 end VG.Proof.Mont.X86_64

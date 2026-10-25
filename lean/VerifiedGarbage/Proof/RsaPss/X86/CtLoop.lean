@@ -53,7 +53,7 @@ variable {L : Lay} {scr : BitVec 32} (h : PssHash)
 /-- A hash value kept by writes elsewhere. -/
 theorem stateAt_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {o : Nat}
     (hd : ∀ r ∈ rs, Region.Disjoint (sR scr o h.N) r) : h.md.stateAt m' (sa scr o) = h.md.stateAt m (sa scr o) :=
-  h.md.stateAt_congr fun _ hi => hf.bytes (R := sR scr o h.N) hd (by show h.N ≤ 2 ^ 64; have := h.N_le; omega) hi
+  h.md.stateAt_congr fun _ hi => hf.bytes (R := sR scr o h.N) hd (by show h.N ≤ 2 ^ 64; have := h.N_le; omega_arith) hi
 
 /-- What the compression loop writes. -/
 abbrev loopW (L : Lay) (scr : BitVec 32) : List Region :=
@@ -104,12 +104,12 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
   have fit := hg.fit
   unfold oRsa at fit
   obtain ⟨σ', ok⟩ := hg.ok
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega
-  have nbB : nbm ≤ nbm * h.B := Nat.le_mul_of_pos_right nbm (by omega)
+  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
+  have nbB : nbm ≤ nbm * h.B := Nat.le_mul_of_pos_right nbm (by omega_arith)
   generalize hT : nbm * h.B = T at hnb nbB ⊢
   -- What the pieces write, against what they keep.
   have sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
-    fun d hd o n h => hg.slot ok h (by rw [hg.F]; omega)
+    fun d hd o n h => hg.slot ok h (by rw [hg.F]; omega_arith)
   have slow : ∀ d, d + 4 ≤ frameBytes → (slotR L d).Disjoint L.LOW := fun d hd => Lay.fr_low (by omega_arith) hC
   have inL : ∀ r ∈ [sR scr oSel h.N], ∃ R ∈ loopW h L scr, Region.Sub r R := by
     simp only [List.mem_singleton]; rintro r rfl; exact ⟨sR scr oSel h.N, by simp [loopW], fun _ h => h⟩
@@ -135,13 +135,13 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
       hst, Md.compressList_zero]
   -- The loop.
   refine (VP.loop (I := fun n σ s => n ≤ nbm ∧ CS (nbm - n) σ s) (fun n => ?_) (nbm - 1)).mono
-    (fun σ s hs => ⟨by omega, by rw [show nbm - (nbm - 1 + 1) = 0 by omega]; exact hs⟩) fun _ _ h => h
+    (fun σ s hs => ⟨by omega_arith, by rw [show nbm - (nbm - 1 + 1) = 0 by omega_arith]; exact hs⟩) fun _ _ h => h
   by_cases hn : n + 1 ≤ nbm
   swap
   · exact VP.empty fun σ s ⟨h, _⟩ => hn h
   generalize hb : nbm - (n + 1) = b
-  have hbn : b < nbm := by omega
-  have hbB : b * h.B + h.B ≤ T := by rw [← hT, ← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega)
+  have hbn : b < nbm := by omega_arith
+  have hbB : b * h.B + h.B ≤ T := by rw [← hT, ← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega_arith)
   -- What each stage keeps of memory.
   let X1 : State → Mem → Prop := fun σ m => Inv σ m ∧ CM h L scr T (yv σ) (lb σ) b m
   let X3 : State → Mem → Prop := fun σ m => Inv σ m ∧ (∀ i < T, m (sa scr (oY + i)) = yv σ i) ∧
@@ -172,7 +172,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     refine VP.taint [.esp, .ebp] h.certs.blkSet (sp_bp fun _ _ h => h.2.1) fun σ s ⟨hn', hc, hi, hm⟩ => ?_
     simp only [blkSet, atS, ld, mi, addi, List.cons_append, List.nil_append, List.append_assoc]
     refine hc.wp_slot hg (by decide) (by decide) (by decide) fun t1 c1 u1 => ?_
-    refine wp_shl (lgB h.H) (n := b) (by rw [h.pow_lg]; omega) (by rw [u1.gpr, hm.bi]) fun t2 u2 => ?_
+    refine wp_shl (lgB h.H) (n := b) (by rw [h.pow_lg]; omega_arith) (by rw [u1.gpr, hm.bi]) fun t2 u2 => ?_
     refine wp_add fun t3 u3 _ => wp_addi fun t4 u4 => wp_mov fun t5 u5 => wp_addi fun t6 u6 =>
       wp_movi fun t7 u7 => WP.block_nil ?_
     have m7 : t7.mem = s.mem := by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
@@ -185,9 +185,9 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     · simp (disch := decide) only [u7.other, u6.gpr, u5.gpr, u4.other, u3.other, u2.other, u1.other, hc.ebp]
     · rw [u7.gpr]
   · -- The block copied after the hash value.
-    refine (copy_vp (hg.wbuf (o := oSt + h.N) (n := h.B) (by omega_arith) (by omega))
-      (hg.rbuf (o := oY + b * h.B) (n := h.B) (by omega_arith) (by omega))
-      (by rw [aS, aD]; exact Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)) (by omega) (Inv := X1)
+    refine (copy_vp (hg.wbuf (o := oSt + h.N) (n := h.B) (by omega_arith) (by omega_arith))
+      (hg.rbuf (o := oY + b * h.B) (n := h.B) (by omega_arith) (by omega_arith))
+      (by rw [aS, aD]; exact Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith) (Inv := X1)
       (f := fun σ i => yv σ (b * h.B + i)) ?_).mono
       (fun σ s ⟨⟨hc, hi, hm⟩, si, bx, cx⟩ => ⟨hc, ⟨hi, hm⟩, bx, si, cx, fun i hi' => ?_⟩)
       fun σ s ⟨hc, hx, hb'⟩ => ⟨hc, hx, fun i hi' => ?_⟩
@@ -195,11 +195,11 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
       rw [aD] at fr
       have one : ∀ {P : Region → Prop}, P (sR scr (oSt + h.N) h.B) → ∀ r ∈ [sR scr (oSt + h.N) h.B], P r := by
         intro P hP r hr; simp only [List.mem_singleton] at hr; subst hr; exact hP
-      exact ⟨hI σ _ _ hi (fr.sub (one ⟨sR scr oSt (h.N + h.B), by simp [loopW], Offset.sub _ (by omega) (by omega)⟩)),
+      exact ⟨hI σ _ _ hi (fr.sub (one ⟨sR scr oSt (h.N + h.B), by simp [loopW], Offset.sub _ (by omega_arith) (by omega_arith)⟩)),
         hm.keep h fr (by omega_arith) (one (Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)))
           (one (sl sBi (by decide) (by omega_arith))) (one (Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)))
           (one (Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)))⟩
-    · rw [hg.byteAt_scr (by omega_arith), Nat.add_assoc]; exact hm.y _ (by omega)
+    · rw [hg.byteAt_scr (by omega_arith), Nat.add_assoc]; exact hm.y _ (by omega_arith)
     · rw [← hg.byteAt_scr (by omega_arith)]; exact hb' i hi'
   · -- The compression's registers.
     refine VP.taint [.esp, .ebp] h.certs.cmpSet (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hx, hblk⟩ => ?_
@@ -217,7 +217,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
       fun σ s ⟨hc, m₀, ⟨⟨hi, hm⟩, hblk⟩, fr, e⟩ => ⟨hc, hI σ _ _ hi (fr.sub fun r hr => ?_), ?_, ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨sR scr oSt (h.N + h.B), by simp [loopW], Offset.sub _ (by omega) (by omega)⟩
+      · exact ⟨sR scr oSt (h.N + h.B), by simp [loopW], Offset.sub _ (by omega_arith) (by omega_arith)⟩
       · exact ⟨sR scr oCW h.H.so, by simp [loopW], fun _ h => h⟩
       · exact ⟨L.LOW, by simp [loopW], fun _ h => h⟩
     · refine sbytes_keep fr (fun r hr => ?_) (by omega_arith) hm.y
@@ -235,7 +235,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     · rw [e, hm.st, Md.compressList_succ]
       refine congrArg _ (h.md.parse_congr fun k hk => ?_)
       rw [sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat, ← sa, hblk k hk,
-        ylist_getD (by have := Nat.mul_comm b h.B; omega), Nat.mul_comm]
+        ylist_getD (by have := Nat.mul_comm b h.B; omega_arith), Nat.mul_comm]
     · intro hl
       rw [stateAt_keep h fr (fun r hr => ?_), hm.sel hl]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -261,8 +261,8 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     · simp (disch := decide) only [u9.other, u8.other, u7.other, u6.other, u5.other, u4.gpr, u3.gpr, hc.ebp,
         u2.other, u1.other]
     · rw [u9.gpr]
-    · have hb32 : b < 2 ^ 32 := by omega
-      have hl32 : lb σ < 2 ^ 32 := by have := hlb σ; omega
+    · have hb32 : b < 2 ^ 32 := by omega_arith
+      have hl32 : lb σ < 2 ^ 32 := by have := hlb σ; omega_arith
       rw [u9.other _ (by decide), u8.gpr, ifz, u6.gpr, u5.gpr, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, hx.2.2.1, hg.aFr ok sLb (by decide), hslb σ _ hx.1, zmask_xor hb32 hl32]
       rfl
   · -- The selection.
@@ -282,7 +282,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
         refine h.ok.reloc _ _ _ _ fun i hi' => ?_
         rw [sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat, ← sa, hb' i hi', ite_eq_left e]
         simp only [sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      · have hl' : lb σ < b := by omega
+      · have hl' : lb σ < b := by omega_arith
         rw [← hsel hl']
         refine h.md.stateAt_congr fun i hi' => ?_
         rw [sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat, ← sa, hb' i hi', ite_eq_right e]
@@ -307,15 +307,15 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
         simp only [List.mem_singleton] at hr; subst hr; exact (sl sBi (by decide) (by omega_arith)).symm), hsel hl]
     rw [u3.gpr, u3.mem, e2, u2.mem, u1.mem, hg.aFr ok sNb (by decide),
       Lay.readW_fr_other (d := sNb) (e := sBi) L _ _ (by decide) (by decide) (by decide), hsn σ _ hi,
-      sub_beq (a := b + 1) (b := nbm) (by omega) (by omega)] at z
-    refine ⟨?_, fun h0 => ⟨hc', hi', hsel' (by have := hlb σ; omega)⟩, fun hp => ⟨by omega, ?_⟩⟩
+      sub_beq (a := b + 1) (b := nbm) (by omega_arith) (by omega_arith)] at z
+    refine ⟨?_, fun h0 => ⟨hc', hi', hsel' (by have := hlb σ; omega_arith)⟩, fun hp => ⟨by omega_arith, ?_⟩⟩
     · show eval .ne t4 = _
       simp only [eval, z]
       by_cases h0 : n = 0
-      · simp [h0]; omega
+      · simp [h0]; omega_arith
       · have h1 : 0 < n := Nat.pos_of_ne_zero h0
-        simp [h1]; omega
-    rw [show nbm - n = b + 1 by omega]
+        simp [h1]; omega_arith
+    rw [show nbm - n = b + 1 by omega_arith]
     refine ⟨hc', hi', ⟨sbytes_keep fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (sl sBi (by decide) (by omega_arith)).symm) (by omega_arith) hy,
       by rw [m4, Mem.readW_writeW_self32], ?_, hsel'⟩⟩

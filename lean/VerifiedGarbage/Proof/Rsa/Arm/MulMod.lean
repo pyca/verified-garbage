@@ -67,7 +67,7 @@ theorem mulHead_ok {s : State} {B : BitVec 32} {Z w N z y x t : Nat} (h : Ws s B
   rw [mulHead, WP.seq_iff, ← List.append_nil (bitOf sB y)]
   refine bitOf_ok h hy hN hsB fun t1 h1 k1 e1 r1 => WP.block_nil ?_
   refine WP.mono (sel_ok h1 (o := t) (a := z) (b := x) (sl := sB) ht hz hx hN htz htx hsB
-    (by rw [e1]; omega)) fun u ⟨hu, k2, e2, r2⟩ => ⟨hu, k1.mono.trans k2.mono, r1.trans r2, ?_⟩
+    (by rw [e1]; omega_arith)) fun u ⟨hu, k2, e2, r2⟩ => ⟨hu, k1.mono.trans k2.mono, r1.trans r2, ?_⟩
   rw [e2, e1, k1.num nm0 (by decide) (h.fit64 hz), k1.num nm0 (by decide) (h.fit64 hx)]
 
 /-- `mulTail`: `[y]` halved, `r6` decremented. -/
@@ -101,38 +101,38 @@ theorem mulModStep_ok {s : State} {B : BitVec 32} {Z w N z y x a m t : Nat} (h :
         num u.mem B w x = (num s.mem B w x + num s.mem B w x) % num s.mem B w m) := by
   obtain ⟨ht, hz, hy, hx, ha, hm, hzy, hzx, hza, hzm, hyx, hya, hym, hxa, hxm, ham⟩ := hi
   -- The indices' facts, while the context is small.
-  have zN : z < N := by omega
-  have yN : y < N := by omega
-  have xN : x < N := by omega
-  have aN : a < N := by omega
-  have mN : m < N := by omega
-  have tN : t < N := by omega
-  have t1N : t + 1 + 2 < N := by omega
-  have tz : t ≠ z := by omega
-  have tx : t ≠ x := by omega
-  have t1z : t + 1 ≠ z := by omega
-  have t1t : t + 1 ≠ t := by omega
-  have at0 : a ≠ t := by omega
-  have at1 : a ≠ t + 1 := by omega
-  have at2 : a ≠ t + 1 + 1 := by omega
-  have at3 : a ≠ t + 1 + 2 := by omega
-  have xt1 : x ≠ t + 1 := by omega
-  have xt2 : x ≠ t + 1 + 1 := by omega
-  have xt3 : x ≠ t + 1 + 2 := by omega
-  have mt1 : m ≠ t + 1 := by omega
-  have mt2 : m ≠ t + 1 + 1 := by omega
-  have mt3 : m ≠ t + 1 + 2 := by omega
-  have t1x : t + 1 ≠ x := by omega
-  have yt0 : y ≠ t := by omega
-  have yt1 : y ≠ t + 1 := by omega
-  have yt2 : y ≠ t + 1 + 1 := by omega
-  have yt3 : y ≠ t + 1 + 2 := by omega
-  have zt1 : z ≠ t + 1 := by omega
-  have zt2 : z ≠ t + 1 + 1 := by omega
-  have zt3 : z ≠ t + 1 + 2 := by omega
-  have mt0 : m ≠ t := by omega
-  have xt0 : x ≠ t := by omega
-  have zt0 : z ≠ t := by omega
+  have zN : z < N := by omega_arith
+  have yN : y < N := by omega_arith
+  have xN : x < N := by omega_arith
+  have aN : a < N := by omega_arith
+  have mN : m < N := by omega_arith
+  have tN : t < N := by omega_arith
+  have t1N : t + 1 + 2 < N := by omega_arith
+  have tz : t ≠ z := by omega_arith
+  have tx : t ≠ x := by omega_arith
+  have t1z : t + 1 ≠ z := by omega_arith
+  have t1t : t + 1 ≠ t := by omega_arith
+  have at0 : a ≠ t := by omega_arith
+  have at1 : a ≠ t + 1 := by omega_arith
+  have at2 : a ≠ t + 1 + 1 := by omega_arith
+  have at3 : a ≠ t + 1 + 2 := by omega_arith
+  have xt1 : x ≠ t + 1 := by omega_arith
+  have xt2 : x ≠ t + 1 + 1 := by omega_arith
+  have xt3 : x ≠ t + 1 + 2 := by omega_arith
+  have mt1 : m ≠ t + 1 := by omega_arith
+  have mt2 : m ≠ t + 1 + 1 := by omega_arith
+  have mt3 : m ≠ t + 1 + 2 := by omega_arith
+  have t1x : t + 1 ≠ x := by omega_arith
+  have yt0 : y ≠ t := by omega_arith
+  have yt1 : y ≠ t + 1 := by omega_arith
+  have yt2 : y ≠ t + 1 + 1 := by omega_arith
+  have yt3 : y ≠ t + 1 + 2 := by omega_arith
+  have zt1 : z ≠ t + 1 := by omega_arith
+  have zt2 : z ≠ t + 1 + 1 := by omega_arith
+  have zt3 : z ≠ t + 1 + 2 := by omega_arith
+  have mt0 : m ≠ t := by omega_arith
+  have xt0 : x ≠ t := by omega_arith
+  have zt0 : z ≠ t := by omega_arith
   have fz := h.fit64 zN
   have fy := h.fit64 yN
   have fx := h.fit64 xN
@@ -163,7 +163,7 @@ theorem mulModStep_ok {s : State} {B : BitVec 32} {Z w N z y x a m t : Nat} (h :
       rw [e2, hZ]
       rcases Nat.mod_two_eq_zero_or_one (num s.mem B w y) with e | e <;> simp [e]
     have dlt : num t2.mem B w t < num s.mem B w m := by
-      rw [d2]; rcases Nat.mod_two_eq_zero_or_one (num s.mem B w y) with e | e <;> simp [e] <;> omega
+      rw [d2]; rcases Nat.mod_two_eq_zero_or_one (num s.mem B w y) with e | e <;> simp [e] <;> omega_arith
     have A3 := e3 z2 (by rw [a2, mm2]; exact hA) (by rw [mm2]; exact dlt) (by rw [mm2]; exact hM)
     rw [a2, mm2, d2] at A3
     have z3 : num t3.mem B w z = 0 := by rw [k3.num (nm4 zt1 zt2 zt3 hza) (by decide) fz, z2]
@@ -200,27 +200,27 @@ theorem mulModBody_ok {s0 u : State} {B : BitVec 32} {Z w N z y x a m t k i : Na
   have h := inv.ws
   have hi' := hi
   obtain ⟨ht, hz, hy, hx, ha, hm, hzy, hzx, hza, hzm, hyx, hya, hym, hxa, hxm, ham⟩ := hi'
-  have fz := h.fit64 (j := z) (by omega)
-  have fm := h.fit64 (j := m) (by omega)
-  have zk : num u.mem B w z = num s0.mem B w z := inv.keep.num (by simp; omega) (by decide) fz
-  have mk : num u.mem B w m = num s0.mem B w m := inv.keep.num (by simp; omega) (by decide) fm
+  have fz := h.fit64 (j := z) (by omega_arith)
+  have fm := h.fit64 (j := m) (by omega_arith)
+  have zk : num u.mem B w z = num s0.mem B w z := inv.keep.num (by simp; omega_arith) (by decide) fz
+  have mk : num u.mem B w m = num s0.mem B w m := inv.keep.num (by simp; omega_arith) (by decide) fm
   refine WP.mono (mulModStep_ok h hN hi) fun u' ⟨h', k', r', c', z', y', v'⟩ => ?_
   have cnt : u.gpr .r6 - 1 = BitVec.ofNat 32 (k - (i + 1)) := by
     rw [inv.count]
     change BitVec.ofNat 32 (k - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
     congr 1
   refine ⟨⟨h', inv.keep.trans k', inv.rest.trans r', by rw [c', cnt], ?_, fun hZ hA hX hM => ?_⟩, ?_⟩
   · rw [y', inv.yv, Nat.div_div_eq_div_mul, Nat.pow_succ]
   · obtain ⟨va, vx⟩ := inv.value hZ hA hX hM
-    have M0 : 0 < num s0.mem B w m := by omega
+    have M0 : 0 < num s0.mem B w m := by omega_arith
     have aLt : num u.mem B w a < num u.mem B w m := by rw [va, mk]; exact Nat.mod_lt _ M0
     have xLt : num u.mem B w x < num u.mem B w m := by rw [vx, mk]; exact Nat.mod_lt _ M0
     obtain ⟨va', vx'⟩ := v' (by rw [zk, hZ]) aLt xLt (by rw [mk]; exact hM)
     rw [va', vx', va, vx, inv.yv, mk]
     exact ⟨mulMod_arith, double_arith⟩
-  · rw [z', cnt, ofNat_beq_zero (by omega)]
-    simp only [show k - (i + 1) = 0 ↔ i + 1 = k by omega]
+  · rw [z', cnt, ofNat_beq_zero (by omega_arith)]
+    simp only [show k - (i + 1) = 0 ↔ i + 1 = k by omega_arith]
 
 /-- `mulMod z y x a m t` with `r6 = k > 0`. -/
 theorem mulMod_ok {s : State} {B : BitVec 32} {Z w N z y x a m t k : Nat} (h : Ws s B Z w N)
@@ -236,9 +236,9 @@ theorem mulMod_ok {s : State} {B : BitVec 32} {Z w N z y x a m t k : Nat} (h : W
       fun _ hA hX _ => ⟨by rw [Nat.pow_zero, Nat.mod_one, Nat.zero_mul, Nat.add_zero, Nat.mod_eq_of_lt hA],
         by rw [Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt hX]⟩⟩
   refine WP.loop (M := isa) (fun j u => ∃ i, i + j = k ∧ 0 < j ∧ MulI s B Z w N z y x a m t k i u) ?_ k s
-    ⟨0, by omega, hk, start⟩
+    ⟨0, by omega_arith, hk, start⟩
   intro j u ⟨i, hij, hj, inv⟩
-  refine WP.mono (mulModBody_ok hN hi hk' inv (by omega)) fun u' ⟨iu, hz⟩ => ?_
+  refine WP.mono (mulModBody_ok hN hi hk' inv (by omega_arith)) fun u' ⟨iu, hz⟩ => ?_
   by_cases e : i + 1 = k
   · left
     refine ⟨by change some (!u'.z) = some false; simp [hz, e], iu.ws, iu.keep, iu.rest, fun hZ hA hX hM => ?_⟩
@@ -246,6 +246,6 @@ theorem mulMod_ok {s : State} {B : BitVec 32} {Z w N z y x a m t k : Nat} (h : W
     rw [e] at v
     exact v
   · right
-    exact ⟨by change some (!u'.z) = some true; simp [hz, e], j - 1, by omega, i + 1, by omega, by omega, iu⟩
+    exact ⟨by change some (!u'.z) = some true; simp [hz, e], j - 1, by omega_arith, i + 1, by omega_arith, by omega_arith, iu⟩
 
 end VG.Proof.Rsa.Arm.Keys

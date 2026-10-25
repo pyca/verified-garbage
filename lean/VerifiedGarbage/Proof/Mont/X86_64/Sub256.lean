@@ -63,7 +63,7 @@ theorem p256SubAdd_ok (s : State) :
       (decide (2 ^ 64 ≤ (s.gpr .r10).toNat + (BitVec.signExtend 64 (0#32)).toNat + c₂.toNat))
     generalize decide (2 ^ 64 ≤ (s.gpr .r10).toNat + (BitVec.signExtend 64 (0#32)).toNat + c₂.toNat) = c₃ at e3 e4 ⊢
     have hz : (BitVec.signExtend 64 (0#32)).toNat = 0 := rfl
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
@@ -125,13 +125,13 @@ theorem sub256_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero,
       Nat.mul_one, Nat.add_zero, Bool.false_eq_true, ite_false, ite_true] at e₂ e₅
     · rw [show wordsVal s.mem base a 4 + m - wordsVal s.mem base b 4 =
-        (wordsVal s.mem base a 4 - wordsVal s.mem base b 4) + m by omega, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)]
-      omega
-    · omega
-    · omega
-    · rw [Nat.mod_eq_of_lt (by omega)]
-      omega
+        (wordsVal s.mem base a 4 - wordsVal s.mem base b 4) + m by omega_arith, Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
+    · omega_arith
+    · omega_arith
+    · rw [Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
 
 /-- The friendly reduction's words determine P-256's field modulus. -/
 theorem p256_of_red {M : Mod} {m : Nat} (hred : M.red = .friendly p256Ws) (h : M.ok m = true) :
@@ -140,10 +140,10 @@ theorem p256_of_red {M : Mod} {m : Nat} (hred : M.red = .friendly p256Ws) (h : M
   rw [hred] at h'
   simp only [Red.ok, Bool.and_eq_true, beq_iff_eq] at h'
   obtain ⟨⟨⟨hn, hm⟩, hw⟩, -⟩ := h'
-  have h1 : (m + 1) % 2 ^ 64 = 0 := by omega
+  have h1 : (m + 1) % 2 ^ 64 = 0 := by omega_arith
   have hw' : mwVal p256Ws = 0xffffffff0000000100000000000000000000000100000000 := by rfl
   have h2 := Nat.div_add_mod (m + 1) (2 ^ 64)
   rw [← hw, hw', h1, Nat.add_zero] at h2
   refine ⟨by rw [← hn]; rfl, ?_⟩
-  omega
+  omega_arith
 end VG.Proof.Mont.X86_64

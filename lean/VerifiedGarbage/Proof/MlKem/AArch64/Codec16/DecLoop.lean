@@ -40,11 +40,11 @@ theorem dec_step {s0 : State} (hp : Decode12.Pre s0) {k : Nat} (hk : k<32)
       t.gpr .x10=(s.mem.readW (s.gpr .x0+8) 32).setWidth 64 := by
     refine wp_ldrx (a:=s.gpr .x0) (by decide) (by simp) ?_ fun s1 h1 e1 => ?_
     · rw [h.rd,h.wr,hp.rd,hp.wr,h.x0]
-      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_arith) (by decide)))
     refine wp_ldrw (a:=s.gpr .x0+8) (by decide) (by rw [h1.get .x0]; rfl) ?_ fun s2 h2 e2 => wp_nil ?_
     · rw [h1.rd,h1.wr,h.rd,h.wr,hp.rd,hp.wr,h.x0,
         show (8:BitVec 64)=BitVec.ofNat 64 8 from rfl,ptr_add]
-      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_arith) (by decide)))
     refine ⟨h1.trans h2,by rw [h2.get .x9,e1],?_⟩
     rw [e2,h1.mem]
   unfold decBody
@@ -59,7 +59,7 @@ theorem dec_step {s0 : State} (hp : Decode12.Pre s0) {k : Nat} (hk : k<32)
     intro j hj
     rw [show x=ofVDwords (s.mem.readW (s.gpr .x0) 64)
       ((s.mem.readW (s.gpr .x0+8) 32).setWidth 64) by dsimp only [x]; rw [x9,x10],input_byte _ _ hj,
-      h.x0,ptr_add,hp.byte_eq h.frame (by omega)]
+      h.x0,ptr_add,hp.byte_eq h.frame (by omega_arith)]
   have vals : ∀ e<4, vword (s3.v .v0) e=Decode12.G s0 (8*k+e) ∧
       vword (s3.v .v1) e=Decode12.G s0 (8*k+4+e) := by
     intro e he; rw [v0,v1]; exact decoded_spec s0 hk xb he
@@ -68,11 +68,11 @@ theorem dec_step {s0 : State} (hp : Decode12.Pre s0) {k : Nat} (hk : k<32)
   refine wp_strq (a:=coeffAddr (Decode12.fP s0) (8*k)) (by decide)
     (by rw [gp .x1 (by decide),h.x1,ptr_zero]) ?_ fun s4 h4 => ?_
   · rw [wr3,hl.wr,h.wr,hp.wr]
-    exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))
+    exact in_regions (List.mem_singleton_self _) (contains_off (by omega_arith) (by decide))
   refine wp_strq (a:=coeffAddr (Decode12.fP s0) (8*k+4)) (by decide)
     (by rw [h4.gpr,gp .x1 (by decide),h.x1]; exact coeffAddr_step _ _) ?_ fun s5 h5 => ?_
   · rw [h4.wr,wr3,hl.wr,h.wr,hp.wr]
-    exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))
+    exact in_regions (List.mem_singleton_self _) (contains_off (by omega_arith) (by decide))
   have scalar : WP isa (.block [.addImm .x .x0 .x0 12,.addImm .x .x1 .x1 32,.subImm .x .x11 .x11 1]) s5
       fun t => Only [.x0,.x1,.x11] s5 t ∧ t.gpr .x0=s5.gpr .x0+12 ∧
         t.gpr .x1=s5.gpr .x1+32 ∧ (t.gpr .x11).toNat=32-(k+1) := by
@@ -83,7 +83,7 @@ theorem dec_step {s0 : State} (hp : Decode12.Pre s0) {k : Nat} (hk : k<32)
     · rw [h8.get .x1,e7,h6.get .x1]; rfl
     · have cnt : (s7.gpr .x11).toNat=32-k := by
         rw [h7.get .x11,h6.get .x11,h5.gpr,h4.gpr,gp .x11 (by decide),h.count]
-      rw [e8,toNat_sub_n (by rw [cnt]; simp; omega),cnt]; simp; omega
+      rw [e8,toNat_sub_n (by rw [cnt]; simp; omega_arith),cnt]; simp; omega_arith
   refine WP.mono (WP.keepV (by decide) scalar) ?_
   intro t ⟨⟨ht,p0,p1,cnt⟩,vt⟩
   have mt : t.mem=(s.mem.write (coeffAddr (Decode12.fP s0) (8*k)) 16 (s3.v .v0)).write
@@ -92,7 +92,7 @@ theorem dec_step {s0 : State} (hp : Decode12.Pre s0) {k : Nat} (hk : k<32)
   have keepv (r : VReg) (r0 : r ≠ .v0) (r1 : r ≠ .v1) (r2 : r ≠ .v2)
       (r3 : r ≠ .v3) (r4 : r ≠ .v4) : t.v r=s.v r := by
     rw [vt,h5.v,h4.v,hv3 r r0 r1 r2 r3 r4,vl]
-  refine ⟨⟨?_,?_,?_,?_,?_,cnt,?_,?_,?_,?_,?_⟩,by rw [cnt]; omega⟩
+  refine ⟨⟨?_,?_,?_,?_,?_,cnt,?_,?_,?_,?_,?_⟩,by rw [cnt]; omega_arith⟩
   · rw [ht.rd,h5.rd,h4.rd,rd3,hl.rd,h.rd]
   · rw [ht.wr,h5.wr,h4.wr,wr3,hl.wr,h.wr]
   · rw [ht.sp,h5.sp,h4.sp,sp3,hl.sp,h.sp]
@@ -103,10 +103,10 @@ theorem dec_step {s0 : State} (hp : Decode12.Pre s0) {k : Nat} (hk : k<32)
   · rw [keepv .v16 (by decide) (by decide) (by decide) (by decide) (by decide),h.mask]
   · rw [keepv .v17 (by decide) (by decide) (by decide) (by decide) (by decide),h.bits]
   · rw [keepv .v18 (by decide) (by decide) (by decide) (by decide) (by decide),h.q]
-  · rw [mt,show 8*(k+1)=8*k+4+4 by omega]
-    exact (h.out.write16 (by omega) (fun e he => (vals e he).1)).write16 (by omega)
+  · rw [mt,show 8*(k+1)=8*k+4+4 by omega_arith]
+    exact (h.out.write16 (by omega_arith) (fun e he => (vals e he).1)).write16 (by omega_arith)
       (fun e he => (vals e he).2)
-  · rw [mt]; exact frame16 (frame16 h.frame (by omega) _) (by omega) _
+  · rw [mt]; exact frame16 (frame16 h.frame (by omega_arith) _) (by omega_arith) _
 
 
 theorem decMask_value : decMask = 0xff0b0a09ff080706ff050403ff020100#128 := by

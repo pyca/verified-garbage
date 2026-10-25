@@ -147,18 +147,18 @@ theorem reg5_eq (m : Mem) (A : Addr) :
       Nat.reducePow, BitVec.ofNat_eq_ofNat, BitVec.toNat_zero, Nat.zero_mod, Nat.zero_mul, Nat.zero_add, Nat.add_zero]
     have := r.isLt
     have := b.isLt
-    omega
+    omega_arith
   rw [hx, VG.Proof.Gcm.X86_64.pshufb_rev, show bytesAt m A 5 ++ zeros 11 = (List.range 16).map fun i =>
       if i < 5 then m (A + BitVec.ofNat 64 i) else 0 from rfl, VG.Proof.Gcm.X86_64.gcmOfBytes_eq]
   refine congrArg X86_64.ofBytes (funext fun i => ?_)
-  rw [VG.Proof.Gcm.X86_64.byte_ofBytes _ (by omega)]
+  rw [VG.Proof.Gcm.X86_64.byte_ofBytes _ (by omega_arith)]
   generalize 15 - i = k
   by_cases h4 : k < 4
-  · rw [ite_eq_left h4, ite_eq_left (by omega)]; exact (Mem.readW_byte m A h4).symm
+  · rw [ite_eq_left h4, ite_eq_left (by omega_arith)]; exact (Mem.readW_byte m A h4).symm
   · rw [ite_eq_right h4]
     by_cases h5 : k = 4
     · subst h5; rfl
-    · rw [ite_eq_right h5, ite_eq_right (by omega)]
+    · rw [ite_eq_right h5, ite_eq_right (by omega_arith)]
 
 /-- `aadReg`: the five bytes at `rsi` in `xmm7`, whose `pshufb` by the
 reversal mask is the block of the bytes padded with zeros. -/
@@ -304,10 +304,10 @@ theorem aadPadHead_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVe
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide)) hrd₂ hwr₂
   have hlt := hAd.lt
   have lp : LoopPre s₂ A (W + BitVec.ofNat 64 96) al := by
-    refine ⟨hsi, hdi, hcx₂, h1, by omega, ?_, ?_, ?_⟩
+    refine ⟨hsi, hdi, hcx₂, h1, by omega_arith, ?_, ?_, ?_⟩
     · rw [hrd₂, hwr₂]; exact hAd.rd
-    · exact he₂.perm.wC (by omega)
-    · exact hAd.w.sub_right (Lay.wSub (by omega))
+    · exact he₂.perm.wC (by omega_arith)
+    · exact hAd.w.sub_right (Lay.wSub (by omega_arith))
   exact WP.of_runBlock ⟨s₂, run₂, he₂, hrd₂, hwr₂, hm₂, lp⟩
 
 /-- `aadPad`: the `al` (1 to 16) bytes at `A` padded with zeros in `T`. -/
@@ -326,22 +326,22 @@ theorem aadPad_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.of
   have fz : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s₂.mem := by rw [hm₂]; exact zeroT_frame _ _
   have hA₂ : bytesAt s₂.mem A al = bytesAt s.mem A al :=
     bytesAt_frame fz (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hAd.w.sub_right (Lay.wSub (by decide))) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hAd.w.sub_right (Lay.wSub (by decide))) (by omega_arith)
   have hlen := length_bytesAt s₂.mem A al
   have fc : Frame [⟨W + BitVec.ofNat 64 96, al⟩] s₂.mem s₃.mem := by
     rw [hm₃]; exact writeBytes_frame' _ hlen
   have f₃ : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s₃.mem :=
     fz.trans (fc.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
   have hT : bytesAt s₃.mem (W + BitVec.ofNat 64 96) 16 = bytesAt s.mem A al ++ zeros (16 - al) := by
-    rw [hm₃, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by decide), hlen, hA₂]
+    rw [hm₃, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by decide), hlen, hA₂]
     refine congrArg (_ ++ ·) ?_
     have := zeroT_bytes s.mem (W + BitVec.ofNat 64 96)
-    rw [← hm₂, show (16 : Nat) = al + (16 - al) by omega, bytesAt_add] at this
+    rw [← hm₂, show (16 : Nat) = al + (16 - al) by omega_arith, bytesAt_add] at this
     have e := congrArg (List.drop al) this
     rw [List.drop_left' (length_bytesAt _ _ _)] at e
-    rw [e, show al + (16 - al) = 16 by omega, Spec.Gcm.zeros, List.drop_replicate]
+    rw [e, show al + (16 - al) = 16 by omega_arith, Spec.Gcm.zeros, List.drop_replicate]
     rfl
   exact ⟨he₃, by rw [hrd₃, hrd₂], by rw [hwr₃, hwr₂], hT, f₃⟩
 
@@ -382,7 +382,7 @@ theorem aadSome_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.o
       · simp only [List.mem_singleton] at hr; subst hr; exact st_wFrame (d := 16) (k := 16) (by decide)
     · rw [blockAt_frame fy fun r hr => ?_, blockAt_frame fT fun r hr => ?_]
       · simp only [List.mem_singleton] at hr; subst hr; exact L.st_w ha (.inr ⟨by decide, by decide⟩)
-      · simp only [List.mem_singleton] at hr; subst hr; exact L.st_st (by omega) ha (by decide)
+      · simp only [List.mem_singleton] at hr; subst hr; exact L.st_st (by omega_arith) ha (by decide)
   have hlt := hAd.lt
   have outY : ∀ {s' : State}, Env Ctx (W + BitVec.ofNat 64 16) W SP s' →
       InRegions s'.wr (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) 16 := fun h =>
@@ -505,11 +505,11 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
     f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact L.w_w (d := 16) (k := 80) (by omega) (by omega) (by decide)
-      · exact L.w_w (by omega) (by omega) (by decide)
-      · exact L.w_w (by omega) (by omega) (by decide)
-      · exact L.w_w (by omega) (by omega) (by decide)
-      · exact (L.stk_w (by omega)).symm) (by decide)
+      · exact L.w_w (d := 16) (k := 80) (by omega_arith) (by omega_arith) (by decide)
+      · exact L.w_w (by omega_arith) (by omega_arith) (by decide)
+      · exact L.w_w (by omega_arith) (by omega_arith) (by decide)
+      · exact L.w_w (by omega_arith) (by omega_arith) (by decide)
+      · exact (L.stk_w (by omega_arith)).symm) (by decide)
   have dCj : ∀ {a k : Nat}, a + k ≤ 256 → ∀ r ∈ j0Frame (W + BitVec.ofNat 64 16) W SP,
       (⟨Ctx + BitVec.ofNat 64 a, k⟩ : Region).Disjoint r := fun hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -539,7 +539,7 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
       (∀ r, r ≠ .rcx → s₃.gpr r = s₂.gpr r) ∧ s₃.mem = s₂.mem ∧ s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
     refine ⟨_, by xrun [h15₂, q₂], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp [gpr_setReg, hal₂]
-    · simp only [zf_arithFlags, gpr_setReg, ite_true, hal₂]; rw [and_self_beq (by omega)]
+    · simp only [zf_arithFlags, gpr_setReg, ite_true, hal₂]; rw [and_self_beq (by omega_arith)]
     · intro r h; simp [gpr_setReg, h]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
@@ -555,7 +555,7 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
     rw [hm₃]
     simpa [bytesAt, padLen, zeros] using Proof.Gcm.absorbed_nil (b := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H j₂.y
   · have h0 : al ≠ 0 := by simpa using hf
-    have hA₃ : bytesAt s₃.mem A al = bytesAt s.mem A al := by rw [hm₃]; exact bytesAt_frame f₂ dAj (by omega)
+    have hA₃ : bytesAt s₃.mem A al = bytesAt s.mem A al := by rw [hm₃]; exact bytesAt_frame f₂ dAj (by omega_arith)
     have haad₃ : s₃.mem.readW (W + BitVec.ofNat 64 232) 64 = A := by
       rw [hm₃, kW 232 (.inr ⟨by decide, by decide⟩), haad]
     have fs₃ : Frame (wFrame W SP) s.mem s₃.mem := by rw [hm₃]; exact j0Frame_one f₂
@@ -572,7 +572,7 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
     have inH₃ : InRegions (s₃.rd ++ s₃.wr) (Ctx + BitVec.ofNat 64 272) 16 := by
       rw [hrd₃, hwr₃, hrd₂, hwr₂, hrd₁, hwr₁]; exact inH
     refine WP.mono (aadSome_ok L he₃ (hAd.of_eq (by rw [hrd₃, hrd₂, hrd₁]) (by rw [hwr₃, hwr₂, hwr₁]))
-      (by omega) h16 haad₃ hcx₃ inH₃ cw) fun t ⟨he₅, rd₅, wr₅, b₅, f₅, keep'⟩ => ?_
+      (by omega_arith) h16 haad₃ hcx₃ inH₃ cw) fun t ⟨he₅, rd₅, wr₅, b₅, f₅, keep'⟩ => ?_
     have keep : ∀ {a : Nat}, a + 16 ≤ 80 → (a + 16 ≤ 16 ∨ 32 ≤ a) →
         blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a) =
           blockAt s₂.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a) := fun ha ho => by
@@ -595,9 +595,9 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
       refine Proof.Gcm.absorb_complete (x := []) (Proof.Gcm.absorbed_nil (m := s₂.mem)
         (b := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H j₂.y) ?_ rfl ?_
       · simp only [List.length_nil, Nat.zero_mod, List.append_eq, List.length_append, hA₄, Proof.Gcm.length_zeros, padLen]
-        omega
+        omega_arith
       · rw [j₂.y, b₅, aadMul_ghash hP₃, hA₃, List.drop_nil, List.nil_append,
-          show padLen al = 16 - al by simp only [padLen]; omega, List.append_eq]
+          show padLen al = 16 - al by simp only [padLen]; omega_arith, List.append_eq]
     · rw [keep (by decide) (.inr (by decide))]; exact j₂.cb
 end
 

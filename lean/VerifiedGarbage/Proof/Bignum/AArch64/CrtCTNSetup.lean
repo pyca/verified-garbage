@@ -40,7 +40,7 @@ def NS2 (p : CrtPub) (t : State) : Prop := ∃ minv : BitVec 64, R2Pre ⟨⟨p.B
 theorem stage0_pcl {p : CrtPub} {s : State} (h : Stage R0 p s) : PcL ⟨p.B, p.Z, p.k, p.op, p.np, p.nb⟩ s := by
   obtain ⟨σ, xb, _, _, _, _, _, h, hv, rfl⟩ := h
   have hZq := h.z
-  exact ⟨h.scr, h.x0, show slot ((p.k + 7) / 8) 8 ≤ p.Z by unfold offQ at hZq; omega, h.k1, h.k2, h.hK, h.hN,
+  exact ⟨h.scr, h.x0, show slot ((p.k + 7) / 8) 8 ≤ p.Z by unfold offQ at hZq; omega_arith, h.k1, h.k2, h.hK, h.hN,
     h.n, h.nl, hv⟩
 
 theorem ns1_ok {p : CrtPub} {s : State} (h : Stage R0 p s) : WP isa (seqs pcLoad) s (NS1 p) := by
@@ -50,10 +50,10 @@ theorem ns1_ok {p : CrtPub} {s : State} (h : Stage R0 p s) : WP isa (seqs pcLoad
   have hk2 := h.k2
   have hZq := h.z
   have hn := h.scr.nowrap
-  have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega
+  have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega_arith
   have hZs : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r.1 + r.2 ≤ slot ((p.k + 7) / 8) 8) → ∀ r ∈ rs, r.1 + r.2 ≤ p.Z :=
     fun h' r hr => (h' r hr).trans hZ
-  refine WP.mono (pcLoad_ok h.scr h.x0 hZ (by omega) (by omega) h.hK h.hN h.n h.nl hodd)
+  refine WP.mono (pcLoad_ok h.scr h.x0 hZ (by omega_arith) (by omega_arith) h.hK h.hN h.n h.nl hodd)
     fun t₁ ⟨minv, hg₁, hn₁, hi₁, f₁, k₁⟩ => ?_
   have f₁' : Frm p.B (setupRanges p.w) s.mem t₁.mem := f₁.mono (by simp [pcLoadRanges, setupRanges, loadRanges])
   have hh₁ := HFix.of_frm f₁' (keepsHdr_setupRanges _)
@@ -74,8 +74,8 @@ theorem ns2_ok {p : CrtPub} {s : State} (h : NS1 p s) : WP isa (seqs nInput) s (
       have := slot_sep (w := (p.k + 7) / 8) (show Public.aN ≠ Public.aX by decide)
       have := slot_sep (w := (p.k + 7) / 8) (show Public.aN ≠ Public.aOne by decide)
       have := hdr_lt_slot ((p.k + 7) / 8) Public.aN (show 31 < 32 by decide)
-      rcases hr with rfl | rfl | rfl <;> simp only [Public.sMask, sFn] <;> omega)
-      (by have := slot_le (w := (p.k + 7) / 8) (show Public.aN < 8 by decide); omega)]; exact hn
+      rcases hr with rfl | rfl | rfl <;> simp only [Public.sMask, sFn] <;> omega_arith)
+      (by have := slot_le (w := (p.k + 7) / 8) (show Public.aN < 8 by decide); omega_arith)]; exact hn
   have hI₂ : ((word t.mem p.B (slot ((p.k + 7) / 8) Public.aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [f₂.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -83,9 +83,9 @@ theorem ns2_ok {p : CrtPub} {s : State} (h : NS1 p s) : WP isa (seqs nInput) s (
       have := slot_sep (w := (p.k + 7) / 8) (show Public.aN ≠ Public.aX by decide)
       have := slot_sep (w := (p.k + 7) / 8) (show Public.aN ≠ Public.aOne by decide)
       have := hdr_lt_slot ((p.k + 7) / 8) Public.aN (show 31 < 32 by decide)
-      rcases hr with rfl | rfl | rfl <;> simp only [Public.sMask, sFn] <;> omega)
-      (by have := slot_le (w := (p.k + 7) / 8) (show Public.aN < 8 by decide); omega)]; exact hi
-  exact ⟨minv, ⟨hg₂, hZ⟩, by omega, by omega, hN₂, hI₂, hodd, hlo⟩
+      rcases hr with rfl | rfl | rfl <;> simp only [Public.sMask, sFn] <;> omega_arith)
+      (by have := slot_le (w := (p.k + 7) / 8) (show Public.aN < 8 by decide); omega_arith)]; exact hi
+  exact ⟨minv, ⟨hg₂, hZ⟩, by omega_arith, by omega_arith, hN₂, hI₂, hodd, hlo⟩
 
 /-- `-n⁻¹` is the same in runs that agree on `n`. -/
 theorem r2_minv {B : Addr} {Z w : Nat} {N : Nat} {m₁ m₂ : BitVec 64} {s₁ s₂ : State}
@@ -94,7 +94,7 @@ theorem r2_minv {B : Addr} {Z w : Nat} {N : Nat} {m₁ m₂ : BitVec 64} {s₁ s
   obtain ⟨-, -, -, n₂, i₂, -, -⟩ := h₂
   have e : ∀ {t : State}, wv t.mem B (slot w Public.aN) w = N →
       (word t.mem B (slot w Public.aN)).toNat = N % 2 ^ 64 := fun h => by
-    rw [← wv_mod64 _ _ _ (show 1 ≤ w by simp only at hw; omega), h]
+    rw [← wv_mod64 _ _ _ (show 1 ≤ w by simp only at hw; omega_arith), h]
   rw [e n₁] at i₁
   rw [e n₂] at i₂
   exact minv_unique (by rw [Nat.mod_mod_of_dvd _ (by decide)]; exact hodd) i₁ i₂

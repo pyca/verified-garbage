@@ -119,7 +119,7 @@ theorem loadKey_run (u : State) {T : Addr} (E : KeyEnv T u) {j : Nat} (hj : j < 
         Keep [.r12] u t := by
   refine WP.mono (WP.keep (c := .block (loadKey j)) [.r12] (Q := fun t =>
       (t.gpr .r12).setWidth 16 = (Spec.Rc2.scheduleAt u.mem T).getD j 0 ∧ t.mem = u.mem) ?_
-    (by unfold loadKey; split <;> simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl)
+    (by unfold loadKey; split <;> rfl) rfl)
     fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   unfold loadKey
   split

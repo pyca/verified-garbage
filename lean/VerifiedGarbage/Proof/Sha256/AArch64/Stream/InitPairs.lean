@@ -37,6 +37,6 @@ theorem initQ_writes (iv : HashValue) :
 theorem initQ_keepsV (iv : HashValue) :
     (initQ iv).allInstrs VG.AArch64.keepsV = true := by
   rw [Code.allInstrs_eq]
-  simp [initQ, instrs, VG.AArch64.keepsV, vdstOf]
+  rfl
 
 end VG.Proof.Sha256.AArch64.Stream

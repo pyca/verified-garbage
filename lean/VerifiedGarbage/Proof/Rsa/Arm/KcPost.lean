@@ -47,13 +47,13 @@ theorem prods {g : Geo} {v : Vals} {R₁ R₂ R₃ : Nat} (h : ProdsOk g v R₁ 
     (v.qI < v.p → R₃ = v.q * v.qI % v.p) := by
   obtain ⟨h1, h2, h3⟩ := h
   refine ⟨fun l => ?_, fun l => ?_, fun l => ?_⟩
-  · rw [h1 l (by omega), Nat.mod_eq_of_lt he]
-  · rw [h2 l (by omega), Nat.mod_eq_of_lt he]
+  · rw [h1 l (by omega_arith), Nat.mod_eq_of_lt he]
+  · rw [h2 l (by omega_arith), Nat.mod_eq_of_lt he]
   · rw [h3 l hp, Nat.mod_eq_of_lt hq]
 
 theorem pow_len {k K w : Nat} (hk : k < K) (hw : K ≤ 4 * w) : 2 * 256 ^ k ≤ 2 ^ (32 * w) := by
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, ← Nat.pow_succ']
-  exact Nat.pow_le_pow_right (by decide) (by omega)
+  exact Nat.pow_le_pow_right (by decide) (by omega_arith)
 
 theorem pow_len' {k K : Nat} (hk : k ≤ K - 1) : 256 ^ k ≤ 256 ^ (K - 1) :=
   Nat.pow_le_pow_right (by decide) hk
@@ -76,13 +76,13 @@ theorem crt_result {g : Geo} {nb eb pb qb dPb dQb qIb : List Byte} {c : Bool}
     simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he'
     have lp := VG.Proof.Rsa.lt_of_os2ip pb
     have lq := VG.Proof.Rsa.lt_of_os2ip qb
-    have hw : g.K ≤ 4 * g.w := by simp only [Geo.w]; omega
+    have hw : g.K ≤ 4 * g.w := by simp only [Geo.w]; omega_arith
     have pp := pow_len hp hw
     have pq := pow_len hq hw
-    have p1 : 256 ^ pb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega)
-    have q1 : 256 ^ qb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega)
-    obtain ⟨h1, h2, h3⟩ := prods hR he'.2 (by show 2 * Spec.Rsa.os2ip pb ≤ _; omega)
-      (by show Spec.Rsa.os2ip qb < _; omega) (by show 2 * Spec.Rsa.os2ip qb ≤ _; omega)
+    have p1 : 256 ^ pb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega_arith)
+    have q1 : 256 ^ qb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega_arith)
+    obtain ⟨h1, h2, h3⟩ := prods hR he'.2 (by show 2 * Spec.Rsa.os2ip pb ≤ _; omega_arith)
+      (by show Spec.Rsa.os2ip qb < _; omega_arith) (by show 2 * Spec.Rsa.os2ip qb ≤ _; omega_arith)
     rw [VG.Proof.Rsa.crtKeyValid_bits hm he (Nat.lt_of_lt_of_le lp p1) (Nat.lt_of_lt_of_le lq q1) (fun pos => ⟨(hX pos).2, (hX pos).1⟩) h1 h2 h3, hm, he]
     rfl
   · have : (Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) g.K && Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb)) = false := by
@@ -112,13 +112,13 @@ theorem key_result {g : Geo} {nb eb db pb qb dPb dQb qIb : List Byte} {c : Bool}
     simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he'
     have lp := VG.Proof.Rsa.lt_of_os2ip pb
     have lq := VG.Proof.Rsa.lt_of_os2ip qb
-    have hw : g.K ≤ 4 * g.w := by simp only [Geo.w]; omega
+    have hw : g.K ≤ 4 * g.w := by simp only [Geo.w]; omega_arith
     have pp := pow_len hp hw
     have pq := pow_len hq hw
-    have p1 : 256 ^ pb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega)
-    have q1 : 256 ^ qb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega)
-    obtain ⟨h1, h2, h3⟩ := prods hR he'.2 (by show 2 * Spec.Rsa.os2ip pb ≤ _; omega)
-      (by show Spec.Rsa.os2ip qb < _; omega) (by show 2 * Spec.Rsa.os2ip qb ≤ _; omega)
+    have p1 : 256 ^ pb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega_arith)
+    have q1 : 256 ^ qb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega_arith)
+    obtain ⟨h1, h2, h3⟩ := prods hR he'.2 (by show 2 * Spec.Rsa.os2ip pb ≤ _; omega_arith)
+      (by show Spec.Rsa.os2ip qb < _; omega_arith) (by show 2 * Spec.Rsa.os2ip qb ≤ _; omega_arith)
     rw [VG.Proof.Rsa.keyValid_bits hm he (Nat.lt_of_lt_of_le lp p1) (Nat.lt_of_lt_of_le lq q1) (fun pos => ⟨(hX pos).2, (hX pos).1⟩) h1 h2 h3 hY₁ hY₂, hm, he]
     rfl
   · have : (Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) g.K && Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb)) = false := by
@@ -142,7 +142,7 @@ theorem vals_lt {v : Vals} {P : Nat} (h0 : 0 < P) (hn : v.n < P) (he : v.e < P) 
 theorem os2ip_lt_words {bs : List Byte} {w : Nat} (h : bs.length ≤ 4 * w) :
     Spec.Rsa.os2ip bs < 2 ^ (32 * w) :=
   Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs)
-    (by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))
+    (by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_arith))
 
 theorem bytesV_lt {σ : State} {src : BitVec 32} {k w : Nat} (h : k ≤ 4 * w) : bytesV σ src k < 2 ^ (32 * w) :=
   os2ip_lt_words (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact h)

@@ -103,8 +103,8 @@ theorem endAddr_ok {s : State} {b : BitVec 32} {g : Nat} (hk : AtEntry s b (8 * 
   · simp only [endAddr, runBlock_cons, exec, Op2.eval, show encodable 128 = true by decide, ↓reduceIte,
       Option.map_some, runStep_some, runBlock_nil]
   · rw [RegUpd.gpr_setReg_self, hk, show (128 : BitVec 32) = BitVec.ofNat 32 128 from rfl, BitVec.sub_eq_add_neg,
-      BitVec.add_assoc, ← BitVec.sub_eq_add_neg, VG.Offset.ofNat_sub_ofNat (by rw [keySlot_eq]; omega),
-      show 4 * keySlot + 64 * (8 * g + 2) - 128 = 4 * keySlot + 512 * g by rw [keySlot_eq]; omega]
+      BitVec.add_assoc, ← BitVec.sub_eq_add_neg, VG.Offset.ofNat_sub_ofNat (by rw [keySlot_eq]; omega_arith),
+      show 4 * keySlot + 64 * (8 * g + 2) - 128 = 4 * keySlot + 512 * g by rw [keySlot_eq]; omega_arith]
 
 theorem keys_wp (dir : Dir) {s₀ : State} {b sched : BitVec 32} {g : Nat} (hg : g = 3 ∨ g = 4)
     (hz : isa.eval .eq s₀ = some (decide (g = 3))) (hk : KeyPre s₀ b sched) (hr : s₀.gpr u7 = sched) :
@@ -120,7 +120,7 @@ theorem keys_wp (dir : Dir) {s₀ : State} {b sched : BitVec 32} {g : Nat} (hg :
   · obtain rfl : g = 3 := by simpa using h
     obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
     exact WP.of_runBlock ⟨s', e', h'⟩
-  · obtain rfl : g = 4 := by simp at h; omega
+  · obtain rfl : g = 4 := by simp at h; omega_arith
     obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
     exact WP.of_runBlock ⟨s', e', h'⟩
   obtain ⟨l₁, r₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := h₁
@@ -134,20 +134,20 @@ theorem keys_wp (dir : Dir) {s₀ : State} {b sched : BitVec 32} {g : Nat} (hg :
     exact WP.of_runBlock ⟨s', e', s₂, h.of_consts m₁ rd₁ wr₁ o₁, l', m', g', rd', wr', sp'.trans (sp₂.trans sp₁)⟩
   cases dir
   · exact WP.seq (WP.mono (WP.sp (encKeys_wp hg hk₁ (by rw [r₁, hr]; simp [r12Of]) l₁)) fun s h => post s h.1 h.2)
-  · exact WP.seq (WP.mono (WP.sp (decKeys_wp hg hk₁ (by rw [r₁, hr]; simp only [r12Of]; congr 2; omega) l₁))
+  · exact WP.seq (WP.mono (WP.sp (decKeys_wp hg hk₁ (by rw [r₁, hr]; simp only [r12Of]; congr 2; omega_arith) l₁))
       fun s h => post s h.1 h.2)
 
 theorem dataLoop_wp {s₀ : State} {b D : BitVec 32} {n g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n)
     (hg : g = 3 ∨ g = 4) {s : State} (hi : GInv s₀ b D n g E 0 s) :
     WP isa (.loop Impl.Camellia.Arm.group .ne) s (GDone s₀ b D n g E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 8 * k ∧ GInv s₀ b D n g E k s) (fun m s hs => ?_) n s
-    ⟨0, by omega, hi⟩
+    ⟨0, by omega_arith, hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
   refine WP.mono (dataGroup_wp hp hg hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨(eval_ne s').trans (by rw [z]; rfl), d⟩
   · exact .inr ⟨(eval_ne s').trans (by rw [z]; rfl), n - 8 * (k + 1),
-      by have := d.lt; have := hk.lt; omega, k + 1, rfl, d⟩
+      by have := d.lt; have := hk.lt; omega_arith, k + 1, rfl, d⟩
 
 /-- The prologue: the scratch buffer's address from the stack to `sb`, the
 registers saved, the schedule's pointer in `r12`, `rounds` compared with 18,
@@ -223,15 +223,15 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
     ⟨b₁, ⟨by rw [wr₁]; exact hwS.mem, fitB⟩, List.mem_append_left _ (by rw [rd₁]; exact hrK), fitK, dSS⟩
   have hz₁ : s₁.z = decide (R = 18) := by
     rw [z₁, show s₀.gpr .r1 = BitVec.ofNat 32 R by simp [R],
-      show (18 : BitVec 32) = BitVec.ofNat 32 18 from rfl, ofNat32_sub_beq (by omega) (by decide)]
+      show (18 : BitVec 32) = BitVec.ofNat 32 18 from rfl, ofNat32_sub_beq (by omega_arith) (by decide)]
   -- The table.
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
-  have hg : g = 3 ∨ g = 4 := by omega
+  have hg : g = 3 ∨ g = 4 := by omega_arith
   let KQ : State → Prop := fun s => ∃ s', KeysPost s₁ b sched g (permOf dir g) s' ∧
       s.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) ∧ s.mem = s'.mem ∧
       (∀ r, r ≠ .lr → s.gpr r = s'.gpr r) ∧ s.rd = s'.rd ∧ s.wr = s'.wr ∧ s.sp = s₁.sp
   refine WP.seq (WP.mono (M := isa) (Q := KQ) (keys_wp dir hg ((eval_eq s₁).trans (by
-      rw [hz₁]; exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩))) hk₁ r12₁)
+      rw [hz₁]; exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega_arith, fun h => by omega_arith⟩))) hk₁ r12₁)
     fun s₂ ⟨s₂', k₂, lr₂, m₂, g₂, rd₂', wr₂', sp₂⟩ => ?_)
   -- The scratch buffer and the data before the groups.
   let E : Nat → BitVec 64 := fun i => (schedWords s₀.mem (State.addr sched) R).getD (permOf dir g i) 0
@@ -245,21 +245,21 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
     fun i hi => by
       have hp : permOf dir g i < 8 * g + 2 := dirPerm_lt (specDir dir) hi
       rw [show E i = _ from schedWords_getD s₀.mem (State.addr sched) (R := R)
-        (by simp only [Spec.Camellia.scheduleLength]; omega)]
-      exact hk₁.wordAt_eq f₁ (by omega)
+        (by simp only [Spec.Camellia.scheduleLength]; omega_arith)]
+      exact hk₁.wordAt_eq f₁ (by omega_arith)
   have sc₂ : ScrOk s₀ b g E s₂.mem := by
     refine ⟨fun i hi => by rw [m₂]; exact hE i hi ▸ k₂.ent i hi, fun i hi => ?_⟩
     rw [← sv₁ i hi, m₂]
     refine slot_keep fitB (lo := savedSlot) (hi := slots) (Nat.le_refl _) k₂.frame (fun r hr => ?_)
-      (Nat.le_add_right _ _) (by rw [savedSlot_eq, slots_eq]; omega)
+      (Nat.le_add_right _ _) (by rw [savedSlot_eq, slots_eq]; omega_arith)
     simp only [List.mem_singleton] at hr; subst hr
     simp only [tableRegion]
-    rw [VG.Arm.addr_add (by rw [keySlot_eq]; omega)]
-    exact VG.Offset.disjoint _ (by rw [savedSlot_eq, keySlot_eq]; omega) (by rw [savedSlot_eq, slots_eq]; omega)
-      (by rw [keySlot_eq]; omega)
+    rw [VG.Arm.addr_add (by rw [keySlot_eq]; omega_arith)]
+    exact VG.Offset.disjoint _ (by rw [savedSlot_eq, keySlot_eq]; omega_arith) (by rw [savedSlot_eq, slots_eq]; omega_arith)
+      (by rw [keySlot_eq]; omega_arith)
   have data₂ : ∀ i < 16 * n, s₂.mem (State.addr D + BitVec.ofNat 64 i) = s₀.mem (State.addr D + BitVec.ofNat 64 i) :=
     fun i hi => f₀₂.bytes (R := ⟨State.addr D, 16 * n⟩)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega) hi
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega_arith) hi
   have fr₂ : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s₀.mem s₂.mem :=
     f₀₂.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
   have rd₂ : s₂.rd = s₀.rd := by rw [rd₂', k₂.rd, rd₁]
@@ -291,12 +291,12 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
     (WP.ite (decide (n = 0)) ((eval_eq s₄).trans (by rw [hz₄])) (fun h0 => ?_) (fun h0 => ?_))
     fun s₅ d₅ => ?_)
   · have hn0 : n = 0 := by simpa using h0
-    exact WP.block_nil ⟨base₄, mem₄ ▸ sc₂, fun i hi => by omega, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
+    exact WP.block_nil ⟨base₄, mem₄ ▸ sc₂, fun i hi => by omega_arith, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ hg ⟨base₄, by show s₂.gpr .r1 = _; rw [r1₂]; simp,
-      by show s₂.gpr .r2 = _; rw [r2₂, Nat.mul_zero, Nat.sub_zero], by omega, lr₂,
+      by show s₂.gpr .r2 = _; rw [r2₂, Nat.mul_zero, Nat.sub_zero], by omega_arith, lr₂,
       mem₄ ▸ sc₂, fun i hi => ?_, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
-    rw [mem₄, data₂ i hi, ite_eq_right (by omega)]
+    rw [mem₄, data₂ i hi, ite_eq_right (by omega_arith)]
   -- The epilogue.
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆, sp₆⟩ := movR_ok s₅ .r12 sb
   obtain ⟨s₇, e₇, rg₇, -, m₇, -, -, -⟩ := restore_ok (s₀ := s₀) (b := b) (by rw [wr₆, d₅.wr]; exact hwS)

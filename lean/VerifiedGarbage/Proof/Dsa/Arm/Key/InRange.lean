@@ -39,8 +39,8 @@ theorem shr31 (y : BitVec 32) : (y >>> 31).toNat = if y.msb then 1 else 0 := by
   rw [toNat_shr, BitVec.msb_eq_decide]
   have := y.isLt
   by_cases h : 2 ^ 31 ≤ y.toNat
-  · simp only [h, decide_true, ↓reduceIte]; omega
-  · simp only [h, decide_false]; simp; omega
+  · simp only [h, decide_true, ↓reduceIte]; omega_arith
+  · simp only [h, decide_false]; simp; omega_arith
 
 /-- The sign bit of `-x ∣ x`: whether `x` is nonzero. -/
 theorem nz_bit (x : BitVec 32) (h : x.toNat < 256) :
@@ -51,12 +51,12 @@ theorem nz_bit (x : BitVec 32) (h : x.toNat < 256) :
   · subst hx; rfl
   · have : x.toNat ≠ 0 := fun e => hx (BitVec.eq_of_toNat_eq e)
     simp only [hx, ↓reduceIte, show (0 : BitVec 32).toNat = 0 from rfl]
-    have e : decide (2 ^ (32 - 1) ≤ (2 ^ 32 - x.toNat + 0) % 2 ^ 32) = true := decide_eq_true (by omega)
+    have e : decide (2 ^ (32 - 1) ≤ (2 ^ 32 - x.toNat + 0) % 2 ^ 32) = true := decide_eq_true (by omega_arith)
     rw [e, Bool.true_or]; rfl
 
 theorem ofNat_add_one_sub {x : BitVec 32} {c : Nat} (hc : c + 1 < 2 ^ 32) :
     x + BitVec.ofNat 32 (c + 1) - 1 = x + BitVec.ofNat 32 c := by
-  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, add_ofNat_sub32 _ (by omega) hc]; rfl
+  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, add_ofNat_sub32 _ (by omega_arith) hc]; rfl
 
 abbrev rangeRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6]
 
@@ -92,31 +92,31 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : KeyABI s₀) {cs : List Byte} {k
   have e₂ : t₂.gpr .r4 = t.gpr .r11 + BitVec.ofNat 32 (drawPlace s₀ + k) := by
     rw [u₂.other _ (by decide), u₁.gpr]
     show t.gpr .r4 - 1 = _
-    rw [I.r4, show drawPlace s₀ + (k + 1) = drawPlace s₀ + k + 1 from rfl, ofNat_add_one_sub (by omega)]
+    rw [I.r4, show drawPlace s₀ + (k + 1) = drawPlace s₀ + k + 1 from rfl, ofNat_add_one_sub (by omega_arith)]
   have s₂ : t₂.gpr .r1 = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀ + k) := by
     rw [u₂.gpr, u₁.other _ (by decide)]
     show t.gpr .r1 - 1 = _
     rw [I.r1, show (rQBytes s₀).length - rWidth s₀ + (k + 1) = (rQBytes s₀).length - rWidth s₀ + k + 1 from rfl,
-      ofNat_add_one_sub (by omega)]
+      ofNat_add_one_sub (by omega_arith)]
   have r11₂ : t₂.gpr .r11 = t.gpr .r11 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
   have hn := hnonce k hk
   rw [← I.mem] at hn
   refine wp_ldrb (a := off (rBase s₀) (drawPlace s₀ + k)) (by decide)
-    (by rw [BitVec.add_zero, e₂]; exact hrf.ea (by omega))
-    (by rw [u₂.rd, u₁.rd, u₂.wr, u₁.wr]; exact hrf.read (d := drawPlace s₀ + k) (n := 1) (by omega)) fun t₃ u₃ => ?_
+    (by rw [BitVec.add_zero, e₂]; exact hrf.ea (by omega_arith))
+    (by rw [u₂.rd, u₁.rd, u₂.wr, u₁.wr]; exact hrf.read (d := drawPlace s₀ + k) (n := 1) (by omega_arith)) fun t₃ u₃ => ?_
   rw [u₂.mem, u₁.mem, hn] at u₃
   refine wp_dp (op2_reg _ _) fun t₄ u₄ => ?_
-  have hqi : (rQBytes s₀).length - rWidth s₀ + k < (rQBytes s₀).length := by omega
+  have hqi : (rQBytes s₀).length - rWidth s₀ + k < (rQBytes s₀).length := by omega_arith
   refine wp_ldrb (a := State.addr (rQ s₀) + BitVec.ofNat 64 ((rQBytes s₀).length - rWidth s₀ + k)) (by decide)
-    (by rw [BitVec.add_zero, u₄.other _ (by decide), u₃.other _ (by decide), s₂, VG.Arm.addr_add (by omega)])
+    (by rw [BitVec.add_zero, u₄.other _ (by decide), u₃.other _ (by decide), s₂, VG.Arm.addr_add (by omega_arith)])
     (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hq.rd _ hqi) fun t₅ u₅ => ?_
   rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem, hq.val _ hqi] at u₅
   refine wp_dp (op2_reg _ _) fun t₆ u₆ => wp_dp (op2_reg _ _) fun t₇ u₇ => wp_mov (op2_lsr (by decide)) fun t₈ u₈ =>
     wp_mov (op2_reg _ _) fun t₉ u₉ => wp_dec fun t₁₀ u₁₀ z₁₀ => WP.block_nil ?_
   -- The values.
   have hc := VG.Proof.Dsa.randomBorrow_le (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))
-  have hcs' : k < cs.length := by omega
-  have hqs' : k < (qSig s₀).length := by rw [qSig_length]; omega
+  have hcs' : k < cs.length := by omega_arith
+  have hqs' : k < (qSig s₀).length := by rw [qSig_length]; omega_arith
   have hqk : (qSig s₀)[k] = (rQBytes s₀)[(rQBytes s₀).length - rWidth s₀ + k] := by
     simp only [qSig, qSigOf, List.getElem_drop]
   have hdrop : ∀ (l : List Byte) (h : k < l.length), l.drop k = l[k] :: l.drop (k + 1) := fun l h => by
@@ -156,8 +156,8 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : KeyABI s₀) {cs : List Byte} {k
       u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), s₂]
   · rw [u₁₀.gpr, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), I.r2, ofNat_sub_one (by omega), Nat.add_sub_cancel]
-  · rw [u₁₀.other _ (by decide), u₉.gpr, u₈.gpr, r0₇, borrow_bit (BitVec.isLt _) (by omega), hb]
+      u₂.other _ (by decide), u₁.other _ (by decide), I.r2, ofNat_sub_one (by omega_arith), Nat.add_sub_cancel]
+  · rw [u₁₀.other _ (by decide), u₉.gpr, u₈.gpr, r0₇, borrow_bit (BitVec.isLt _) (by omega_arith), hb]
   · rw [r6₁₀, BitVec.toNat_or]
     exact Nat.or_lt_two_pow (n := 8) I.r6 (by rw [toNat_setWidth8]; exact BitVec.isLt _)
   · have key : ∀ x y : BitVec 32, (x ||| y = 0) ↔ (x = 0 ∧ y = 0) := fun x y => BitVec.or_eq_zero_iff
@@ -172,8 +172,8 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : KeyABI s₀) {cs : List Byte} {k
       exact ⟨h₂, by rw [h₁]; rfl⟩
   · rw [z₁₀, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), I.r2, ofNat_sub_one (by omega), Nat.add_sub_cancel,
-      ofNat_beq_zero (by omega)]
+      u₂.other _ (by decide), u₁.other _ (by decide), I.r2, ofNat_sub_one (by omega_arith), Nat.add_sub_cancel,
+      ofNat_beq_zero (by omega_arith)]
 
 theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length = rWidth s₀)
     (I : RangeInv s₀ t₀ cs 0 t) :
@@ -200,7 +200,7 @@ theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length =
     simp only [List.drop_zero, hb, show (t.gpr .r6 = 0) = (Spec.Dsa.decodeBE cs = 0) from propext hz]
     unfold accepts acceptsOf
     by_cases hp : Spec.Dsa.decodeBE cs = 0 <;> by_cases hl : Spec.Dsa.decodeBE cs < Spec.Dsa.decodeBE (qSig s₀) <;>
-      simp [hp, hl] <;> first | decide | omega
+      simp [hp, hl] <;> first | decide | omega_arith
   have R : Rest rangeRegs t t₆ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
     ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans (f₆.rest _)))))
   have hm : t₆.mem = t.mem := by rw [f₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
@@ -227,7 +227,7 @@ theorem rangeInit_ok {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {cs 
     (u₈.rest (by decide))))))))
   have m₈ : t₈.mem = t.mem := by
     rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have hcsd : cs.drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by omega)
+  have hcsd : cs.drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by omega_arith)
   have hqd : (qSig s₀).drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by rw [qSig_length])
   refine ⟨⟨h.congr R (by rw [m₈]; exact Frame.refl _ _), m₈, ?_, ?_, ?_, ?_, ?_, ?_, R⟩, m₈⟩
   · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
@@ -237,7 +237,7 @@ theorem rangeInit_ok {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {cs 
     show t.gpr .r11 + BitVec.ofNat 32 oNonce + stackArg s₀ 2 = _
     rw [show stackArg s₀ 2 = BitVec.ofNat 32 (rQBytes s₀).length by rw [hqn, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       Offset.add_add]
-    unfold drawPlace; congr 2; omega
+    unfold drawPlace; congr 2; omega_arith
   · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr]
     show t₅.gpr .r1 + t₅.gpr .r2 = _
     rw [u₅.gpr, u₅.other _ (by decide), u₄.gpr, u₄.mem, u₃.mem, u₂.mem, u₁.mem, hq, hw, Offset.add_add]
@@ -259,13 +259,13 @@ theorem inRange_ok {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {cs : 
   refine WP.seq (WP.loop (M := isa) (fun (n : Nat) (u : State) => ∃ k, n = k ∧ 1 ≤ k ∧ k ≤ rWidth s₀ ∧
       RangeInv s₀ t cs k u) (fun n u hu => ?_) (rWidth s₀) t₈ ⟨_, rfl, hw1, Nat.le_refl _, I₀⟩)
   obtain ⟨k, hn, hk1, hk, J⟩ := hu
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-  refine WP.mono (rangeByte_ok A hcs (by omega) hnonce J) fun v ⟨J', z⟩ => ?_
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega_arith⟩
+  refine WP.mono (rangeByte_ok A hcs (by omega_arith) hnonce J) fun v ⟨J', z⟩ => ?_
   by_cases hj : j = 0
   · left
     subst hj
     exact ⟨by rw [eval_ne, z]; rfl, WP.mono (rangeFinish_ok hcs J') fun u ⟨a, b, c, d, e⟩ => ⟨a, b, c, d, e⟩⟩
   · right
-    exact ⟨by rw [eval_ne, z, decide_eq_false hj]; rfl, j, by omega, j, rfl, by omega, by omega, J'⟩
+    exact ⟨by rw [eval_ne, z, decide_eq_false hj]; rfl, j, by omega_arith, j, rfl, by omega_arith, by omega_arith, J'⟩
 
 end VG.Proof.Dsa.Arm.Key

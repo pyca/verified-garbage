@@ -49,7 +49,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
   have := hc.n0
   have hsz : size = 8192 := rfl
   rw [vfinish_eq]
-  refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega_arith)) fun s₁ u₁ _ => ?_
   refine WP.mono (tail_ok (hs.of_keeps u₁.keeps (by decide)) (fun rd hrd => by rw [u₁.mem]; exact hsv rd hrd) b
     (by rw [u₁.gpr, ← flagW, hf])) fun s' ⟨hm, eax, saved, others⟩ =>
       ⟨by rw [hm, u₁.mem], eax, saved, by rw [others _ (by decide), u₁.other _ (by decide)]⟩
@@ -97,10 +97,10 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have hp3 := hc.p_ge
   have hn3 := hc.n_ge
   have F := hP.fixed
-  have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   -- `Z^(p-2)`.
   refine WP.seq (hP.keep.withSp hsp₁ (WP.mono (pPow_ok hc hP.scr
-    (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega))
+    (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith))
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ f₁ => ?_))
   have hs₁ := hP.scr.of_keeps K₁ (by decide)
   have F₁ := F.unch h7 hn fixedOk_pwW U₁
@@ -121,7 +121,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide) (by decide)).trans F₁.one
   refine WP.seq (WP.mono (slMul_ok (MP'_n c) hc.fp h7 hs₂ (o := X) (a := XM) (b := ONE)
-    (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+    (by decide) (by decide) (by decide) (by rw [one₂]; omega_arith)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have v₃ : ∀ {i}, i < 45 → i ≠ X → i ≠ TMP → sv c base s₃ i = sv c base s₂ i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₃ hi h₁ h₂
@@ -140,7 +140,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
   refine WP.seq (WP.mono (slMul_ok (MN'_n c) hc.fn h7 hs₃ (o := XN) (a := X) (b := R2N)
-    (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega)))
+    (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega_arith)))
     fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
   have M₄ := hMN₃.keepX86 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide)
@@ -155,8 +155,8 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have v₅ : ∀ {i}, i < 45 → i ≠ W → i ≠ TMP → sv c base s₅ i = sv c base s₄ i := fun hi h₁ h₂ =>
     sv_keep (MN'_n c) rfl h7 hn k₅ hi h₁ h₂
   have w₅ : sv c base s₅ W = 0 ↔ Fin.ofNat c.C.n (sv c base s₃ X) = Fin.ofNat c.C.n (sigR c s₀) := by
-    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega)
-    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega), rm₄, hP.rm,
+    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega_arith)
+    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega_arith), rm₄, hP.rm,
       toM_r2 hnR (by rw [e₄, r2₃])]
     constructor <;> intro h <;> grind
   -- What changed: `finW` and the accumulator.

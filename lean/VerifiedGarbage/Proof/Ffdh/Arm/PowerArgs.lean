@@ -34,14 +34,7 @@ theorem powerArgs_ok (s : State) {p : Inputs} {slots : List Nat} (bs es ec : Nat
   have vc := h.saved ec hc
   have vk := h.saved 32 hk
   change s.mem.readW (off (State.addr s.sp) 32) 32 = BitVec.ofNat 32 p.k at vk
-  refine withRest [.r1, .r2, .r4, .r6] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.Domain.powerArgs bs es ec) : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hi' : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r2, .r4, .r6] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.powerArgs
   ffrun [small bs hb, small es he, small ec hc, addr bs hb, addr es he, addr ec hc, addr 32 hk,
     rb, re, rc, rk, vb, ve, vc, vk, off]

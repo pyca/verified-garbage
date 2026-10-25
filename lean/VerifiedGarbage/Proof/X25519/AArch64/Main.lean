@@ -71,7 +71,7 @@ theorem initSlots_ok {b : Addr} {s : State} {vals : Nat → Fe} {bnds : Nat → 
   split at hj
   · cases hj
     rename_i h5
-    rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 ∨ n = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_arith : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 ∨ n = 4) with rfl | rfl | rfl | rfl | rfl <;>
       simp [lvals, init, h0, h3, hb0, hb3]
   · cases hj
 
@@ -84,19 +84,19 @@ theorem packN_ok {o : Addr} : ∀ n ≤ 4, ∀ s : State, s.gpr .x0 = o → outR
   | 0, _, s, _, _ => WP.block_nil ⟨fun j hj => absurd hj (Nat.not_lt_zero _), Frame.refl _ _, Kp.refl _ _⟩
   | n + 1, hn, s, hx0, hw => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append (WP.mono (packN_ok n (by omega) s hx0 hw) fun s₁ ⟨e₁, f₁, k₁⟩ => ?_)
+    refine WP.block_append (WP.mono (packN_ok n (by omega_arith) s hx0 hw) fun s₁ ⟨e₁, f₁, k₁⟩ => ?_)
     have r₁ : regs s₁ = regs s := regs_kp k₁ fun k hk => by
       obtain ⟨d17, d19, -⟩ := dreg_facts k hk; simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨d17, d19⟩
-    refine WP.mono (packWord_ok (o := o) (by rw [k₁.gpr _ (by decide), hx0]) (by rw [k₁.wr]; exact hw) (j := n) (by omega))
+    refine WP.mono (packWord_ok (o := o) (by rw [k₁.gpr _ (by decide), hx0]) (by rw [k₁.wr]; exact hw) (j := n) (by omega_arith))
       fun s₂ ⟨x, hx, m₂, k₂⟩ => ⟨fun j hj => ?_, ?_, (k₁.trans k₂).sub (by sub_regs)⟩
     · rw [m₂]
       by_cases hjn : j = n
       · subst hjn; rw [Mem.readW_writeW_self64, hx, r₁]
-      · rw [Mem.readW_writeW_sep (Offset.sep o (by omega) (by omega) (by omega)) (by decide)]
-        exact e₁ j (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep o (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+        exact e₁ j (by omega_arith)
     · rw [m₂]
-      exact f₁.writeW (List.mem_singleton_self _) _ (Offset.contains_base o (by omega) (by omega))
+      exact f₁.writeW (List.mem_singleton_self _) _ (Offset.contains_base o (by omega_arith) (by omega_arith))
 
 theorem saved_mem : ∀ n < 6, saved.getD n .x19 ∈ saved := by decide
 
@@ -109,16 +109,16 @@ theorem restoreN_ok {b : Addr} : ∀ n ≤ 6, ∀ s : State, Sc b s →
   | 0, _, s, _ => WP.block_nil ⟨fun k hk => absurd hk (Nat.not_lt_zero _), Kp.refl _ _, rfl⟩
   | n + 1, hn, s, hs => by
     rw [List.range_succ, List.map_append, List.map_singleton]
-    refine WP.block_append (WP.mono (restoreN_ok n (by omega) s hs) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_)
+    refine WP.block_append (WP.mono (restoreN_ok n (by omega_arith) s hs) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_)
     have hs₁ := hs.of_kp k₁ (by decide)
-    have ho : Off (SAVE + 8 * n) := ⟨by simp only [SAVE]; omega, by simp only [SAVE]; omega⟩
+    have ho : Off (SAVE + 8 * n) := ⟨by simp only [SAVE]; omega_arith, by simp only [SAVE]; omega_arith⟩
     refine WP.block_cons_iff.mpr ⟨_, exec_ld hs₁ _ ho, WP.block_nil ⟨fun k hk => ?_,
       (k₁.trans (kp_wx _ _ _)).sub (List.append_subset.mpr ⟨List.Subset.refl _, by
-        simp only [List.cons_subset, List.nil_subset, and_true]; exact saved_mem n (by omega)⟩),
+        simp only [List.cons_subset, List.nil_subset, and_true]; exact saved_mem n (by omega_arith)⟩),
         by rw [mem_wx, m₁]⟩⟩
     by_cases hkn : k = n
     · subst hkn; rw [gpr_wx_self, m₁]
-    · rw [gpr_wx_ne _ _ (saved_ne k (by omega) n (by omega) hkn)]; exact e₁ k (by omega)
+    · rw [gpr_wx_ne _ _ (saved_ne k (by omega_arith) n (by omega_arith) hkn)]; exact e₁ k (by omega_arith)
 
 /-! ## The end -/
 
@@ -162,7 +162,7 @@ theorem finish_ok {b o : Addr} {s : State} (hs : Sc b s) {vals : Nat → Fe} {bn
     · have := e₄ 3 (by decide); rw [hp 3 (by decide)] at this; exact this
   · -- the saved registers
     have hc : (saveR b).Contains (b + BitVec.ofNat 64 (SAVE + 8 * k)) (64 / 8) :=
-      Offset.contains_base b (by simp only [SAVE]; omega) (by simp only [SAVE]; omega)
+      Offset.contains_base b (by simp only [SAVE]; omega_arith) (by simp only [SAVE]; omega_arith)
     rw [e₅ k hk, f₄.readW hc (by simpa using hdo) (by decide), m₃, m₂,
       h₁.fr.readW hc (by simpa using Offset.base_disjoint b (k := 48) (e := 64) (n := 1920) (by decide) (by decide))
         (by decide)]

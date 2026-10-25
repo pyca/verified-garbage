@@ -37,7 +37,7 @@ theorem getD_shiftLeft1 {L : List Byte} (hL : L.length = 16) {k : Nat} (hk : k <
 theorem next_getD {L : List Byte} (hL : L.length = 16) {k : Nat} (hk : k < 15) :
     (L.drop 1 ++ [0]).getD k 0 = L.getD (k + 1) 0 := by
   simp [List.getD_eq_getElem?_getD, List.getElem?_append, hL, hk,
-    List.getElem?_eq_getElem (show k + 1 < L.length by omega)]
+    List.getElem?_eq_getElem (show k + 1 < L.length by omega_arith)]
 
 theorem next_getD15 {L : List Byte} (hL : L.length = 16) : (L.drop 1 ++ [0]).getD 15 0 = 0 := by
   simp [List.getD_eq_getElem?_getD, hL]
@@ -84,26 +84,26 @@ theorem dbl_eq {L : List Byte} (hL : L.length = 16) :
     · simp
   rcases Nat.lt_or_ge k 15 with hk15 | hk15
   · have hm0 : (if msb1 L = true then (if k = 15 then (135 : Byte) else 0) else 0).getLsbD j = false := by
-      simp [show k ≠ 15 by omega]
-    rw [hm0, hm _ (by omega), Bool.xor_false, Bool.xor_false, next_getD hL hk15]
+      simp [show k ≠ 15 by omega_arith]
+    rw [hm0, hm _ (by omega_arith), Bool.xor_false, Bool.xor_false, next_getD hL hk15]
     rcases Nat.eq_zero_or_pos j with rfl | hj0
-    · rw [show 8 * (15 - k) + 0 - 1 = 8 * (15 - (k + 1)) + 7 by omega, ofBytes_bit hL (by omega) (by decide)]
-      simp [show ¬ 8 * (15 - k) < 1 by omega, show 8 * (15 - k) < 128 by omega]
-    · rw [show 8 * (15 - k) + j - 1 = 8 * (15 - k) + (j - 1) by omega, ofBytes_bit hL hk (by omega),
-        BitVec.getLsbD_of_ge _ (7 + j) (by omega)]
-      simp [show ¬ j < 1 by omega, show ¬ 8 * (15 - k) + j < 1 by omega, show 8 * (15 - k) + j < 128 by omega]
-  · have hk' : k = 15 := by omega
+    · rw [show 8 * (15 - k) + 0 - 1 = 8 * (15 - (k + 1)) + 7 by omega_arith, ofBytes_bit hL (by omega_arith) (by decide)]
+      simp [show ¬ 8 * (15 - k) < 1 by omega_arith, show 8 * (15 - k) < 128 by omega_arith]
+    · rw [show 8 * (15 - k) + j - 1 = 8 * (15 - k) + (j - 1) by omega_arith, ofBytes_bit hL hk (by omega_arith),
+        BitVec.getLsbD_of_ge _ (7 + j) (by omega_arith)]
+      simp [show ¬ j < 1 by omega_arith, show ¬ 8 * (15 - k) + j < 1 by omega_arith, show 8 * (15 - k) + j < 128 by omega_arith]
+  · have hk' : k = 15 := by omega_arith
     subst hk'
     rw [next_getD15 hL]
     rcases Nat.eq_zero_or_pos j with rfl | hj0
     · cases hb : msb1 L
       · simp
       · simp
-    · rw [show 8 * (15 - 15) + j - 1 = 8 * (15 - 15) + (j - 1) by omega,
-        ofBytes_bit hL (i := 15) (by decide) (by omega)]
+    · rw [show 8 * (15 - 15) + j - 1 = 8 * (15 - 15) + (j - 1) by omega_arith,
+        ofBytes_bit hL (i := 15) (by decide) (by omega_arith)]
       cases hb : msb1 L
-      · simp [show ¬ j < 1 by omega, show j < 128 by omega]
-      · simp [show ¬ j < 1 by omega, show j < 128 by omega]
+      · simp [show ¬ j < 1 by omega_arith, show j < 128 by omega_arith]
+      · simp [show ¬ j < 1 by omega_arith, show j < 128 by omega_arith]
         rw [← BitVec.getLsbD_eq_getElem]; exact (bit_0x87 j hj).symm
 
 end VG.Proof.Cmac

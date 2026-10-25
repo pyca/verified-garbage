@@ -36,13 +36,13 @@ open VG.Proof.Cmac (le8)
 theorem shr3_ofNat {a : Nat} (ha : a < 2 ^ 64) : BitVec.ofNat 64 a >>> 3 = BitVec.ofNat 64 (a / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem shl3_ofNat {n : Nat} (hn : 8 * n < 2 ^ 64) : BitVec.ofNat 64 n <<< 3 = BitVec.ofNat 64 (8 * n) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt hn]
-  omega
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt hn]
+  omega_arith
 
 /-- The whole blocks the path chains after the block held back. -/
 abbrev nbOf (len f : Nat) : Nat := (len - f - 1) / 8
@@ -70,19 +70,19 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
   have hD := he.dataFit
   have hWf := he.scrFit
   generalize hf : 8 - h = f at hc ⊢
-  have hnb8 : 8 * nbOf len f ≤ len - f - 1 := by show 8 * ((len - f - 1) / 8) ≤ _; omega
+  have hnb8 : 8 * nbOf len f ≤ len - f - 1 := by show 8 * ((len - f - 1) / 8) ≤ _; omega_arith
   have hnbe : nbOf len f = (len - f - 1) / 8 := rfl
   have hrest : 1 ≤ restOf len f ∧ restOf len f ≤ 8 := by
-    show 1 ≤ len - f - 8 * ((len - f - 1) / 8) ∧ len - f - 8 * ((len - f - 1) / 8) ≤ 8; omega
+    show 1 ≤ len - f - 8 * ((len - f - 1) / 8) ∧ len - f - 8 * ((len - f - 1) / 8) ≤ 8; omega_arith
   have hreste : restOf len f = len - f - 8 * nbOf len f := rfl
   generalize hnb : nbOf len f = nb at hnb8 hnbe hreste ⊢
   generalize hr : restOf len f = rest at hrest hreste ⊢
   -- Regions.
   have hWu : (⟨W, 688⟩ : Region) ∈ u.wr := he.scr
   have dataIn : ∀ a n, a + n ≤ len → InRegions (u.rd ++ u.wr) (D + BitVec.ofNat 64 a) n := fun a n h =>
-    ⟨_, List.mem_append_left _ he.data, VG.Offset.contains_base _ h (by omega)⟩
+    ⟨_, List.mem_append_left _ he.data, VG.Offset.contains_base _ h (by omega_arith)⟩
   have stIn : ∀ a n, a + n ≤ 416 → InRegions u.wr (S + BitVec.ofNat 64 a) n := fun a n h =>
-    ⟨_, he.state, VG.Offset.contains_base _ h (by omega)⟩
+    ⟨_, he.state, VG.Offset.contains_base _ h (by omega_arith)⟩
   have dataW : ∀ a n, a + n ≤ len → ∀ r ∈ [(⟨W, 520⟩ : Region)], Region.Disjoint ⟨D + BitVec.ofNat 64 a, n⟩ r :=
     fun a n h r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -94,24 +94,24 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
     exact (he.stateScr.sub_right (Region.sub_prefix (by decide))).sub_left (Region.sub_prefix (by decide))
   have keyS : ∀ r ∈ [(⟨S + BitVec.ofNat 64 400, 16⟩ : Region)], (⟨S, 384⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact VG.Offset.base_disjoint _ (by decide) (by omega)
+    exact VG.Offset.base_disjoint _ (by decide) (by omega_arith)
   unfold chainPath
   -- The block held back, completed.
-  refine WP.seq_seq (toHeld_copy_wp he (by decide) (by decide) (cnt := f) (by rw [he.r9, hf]) (by omega) (by omega)
+  refine WP.seq_seq (toHeld_copy_wp he (by decide) (by decide) (cnt := f) (by rw [he.r9, hf]) (by omega_arith) (by omega_arith)
     fun v₁ r10₁ g₁ rd₁ wr₁ cp₁ => ?_)
   have m₁S : Frame [⟨S + BitVec.ofNat 64 400, 16⟩] u.mem v₁.mem := fun x hx =>
     cp₁.rest x fun i hi e => hx _ List.mem_cons_self (by
       rw [e, VG.Offset.add_add]
-      exact VG.Offset.contains _ (show 400 ≤ 408 + h + i by omega) (show 408 + h + i + 1 ≤ 400 + 16 by omega)
-        (by omega))
+      exact VG.Offset.contains _ (show 400 ≤ 408 + h + i by omega_arith) (show 408 + h + i + 1 ≤ 400 + 16 by omega_arith)
+        (by omega_arith))
   have heldB : Spec.Aes.bytesAt v₁.mem (S + BitVec.ofNat 64 408) 8 =
       Spec.Aes.bytesAt u.mem (S + BitVec.ofNat 64 408) h ++ Spec.Aes.bytesAt u.mem D f := by
-    rw [show 8 = h + f by omega, Proof.Cmac.Stream.bytesAt_append, VG.Offset.add_add]
+    rw [show 8 = h + f by omega_arith, Proof.Cmac.Stream.bytesAt_append, VG.Offset.add_add]
     congr 1
     · refine Proof.CmacTripleDes.Stream.bytesAt_congr fun i hi => ?_
       rw [VG.Offset.add_add]
       exact cp₁.rest _ fun i' hi' => by
-        rw [VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+        rw [VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)
     · exact List.map_congr_left fun i hi => cp₁.copied i (List.mem_range.mp hi)
   have v3 : v₁.gpr .r3 = S := by rw [g₁ _ (by decide) (by decide) (by decide) (by decide), he.r3]
   have v5 : v₁.gpr .r5 = W := by rw [g₁ _ (by decide) (by decide) (by decide) (by decide), he.r5]
@@ -120,9 +120,9 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
     rw [g₁ _ (by decide) (by decide) (by decide) (by decide), he.r9, hf]
   have stRd : ∀ (t : State), t.rd = u.rd → t.wr = u.wr → ∀ a n, a + n ≤ 416 →
       InRegions (t.rd ++ t.wr) (S + BitVec.ofNat 64 a) n := fun t hrd hwr a n h => by
-    rw [hrd, hwr]; exact ⟨_, List.mem_append_right _ he.state, VG.Offset.contains_base _ h (by omega)⟩
+    rw [hrd, hwr]; exact ⟨_, List.mem_append_right _ he.state, VG.Offset.contains_base _ h (by omega_arith)⟩
   have bufW : ∀ (t : State), t.wr = u.wr → InRegions t.wr (W + BitVec.ofNat 64 512) 8 := fun t hwr => by
-    rw [hwr]; exact ⟨_, hWu, VG.Offset.contains_base _ (show 512 + 8 ≤ 688 by decide) (by omega)⟩
+    rw [hwr]; exact ⟨_, hWu, VG.Offset.contains_base _ (show 512 + 8 ≤ 688 by decide) (by omega_arith)⟩
   -- The counts, and the block held back XORed into the chaining value.
   refine WP.seq ?_
   simp only [chainSetup, mr]
@@ -133,7 +133,7 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
       x₁.other r h29]
   have r30₄ : w₄.gpr .r30 = BitVec.ofNat 64 nb := by
     rw [x₄.gpr, x₃.gpr, x₂.gpr, x₁.other _ (by decide), x₁.other _ (by decide), v6, v9,
-      VG.Offset.ofNat_sub_ofNat (by omega), VG.Offset.ofNat_sub_ofNat (by omega), shr3_ofNat (by omega), hnbe]
+      VG.Offset.ofNat_sub_ofNat (by omega_arith), VG.Offset.ofNat_sub_ofNat (by omega_arith), shr3_ofNat (by omega_arith), hnbe]
   have r29₇ : w₇.gpr .r29 = D + BitVec.ofNat 64 f := by
     rw [x₇.other _ (by decide), x₆.other _ (by decide), x₅.other _ (by decide), x₄.other _ (by decide),
       x₃.other _ (by decide), x₂.other _ (by decide), x₁.gpr, r10₁]
@@ -145,7 +145,7 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
     rw [x₄.other _ (by decide), x₃.other _ (by decide), x₂.other _ (by decide), x₁.other _ (by decide), v9]
   have r31₇ : w₇.gpr .r31 = BitVec.ofNat 64 rest := by
     rw [x₇.gpr, x₆.other _ (by decide), x₆.gpr, x₅.gpr, x₅.other _ (by decide), r30₄, a6, a9,
-      VG.Offset.ofNat_sub_ofNat (by omega), shl3_ofNat (by omega), VG.Offset.ofNat_sub_ofNat (by omega), hreste]
+      VG.Offset.ofNat_sub_ofNat (by omega_arith), shl3_ofNat (by omega_arith), VG.Offset.ofNat_sub_ofNat (by omega_arith), hreste]
   have rd₇ : w₇.rd = u.rd := by rw [x₇.rd, x₆.rd, x₅.rd, x₄.rd, x₃.rd, x₂.rd, x₁.rd, rd₁]
   have wr₇ : w₇.wr = u.wr := by rw [x₇.wr, x₆.wr, x₅.wr, x₄.wr, x₃.wr, x₂.wr, x₁.wr, wr₁]
   have m₇ : w₇.mem = v₁.mem := by rw [x₇.mem, x₆.mem, x₅.mem, x₄.mem, x₃.mem, x₂.mem, x₁.mem]
@@ -191,12 +191,12 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
   have c'R : ∀ r, r = .r29 ∨ r = .r30 ∨ r = .r31 → c'.gpr r = w₇.gpr r := by
     rintro r (rfl | rfl | rfl) <;> rw [cc' _ (by decide), cR _ (by simp)]
   have env : LoopEnv c' S W (D + BitVec.ofNat 64 f) nb :=
-    ⟨keyIn _ rdc'' wrc'', ⟨688, by decide, by rw [wrc'']; exact hWu⟩, keyScr, by omega,
+    ⟨keyIn _ rdc'' wrc'', ⟨688, by decide, by rw [wrc'']; exact hWu⟩, keyScr, by omega_arith,
       fun j hj => by
-        rw [VG.Offset.add_add, rdc'', wrc'']; exact dataIn _ _ (by omega),
+        rw [VG.Offset.add_add, rdc'', wrc'']; exact dataIn _ _ (by omega_arith),
       fun j hj => by
-        rw [VG.Offset.add_add]; exact dataW _ _ (by omega) _ (List.mem_singleton_self _),
-      by omega⟩
+        rw [VG.Offset.add_add]; exact dataW _ _ (by omega_arith) _ (List.mem_singleton_self _),
+      by omega_arith⟩
   have h0 : LoopInv c' S W (D + BitVec.ofNat 64 f) nb 0 c' :=
     ⟨c'3, c'4, c'5, by rw [c'R _ (by simp), r29₇, Nat.mul_zero]; exact (BitVec.add_zero _).symm,
       by rw [c'R _ (by simp), r30₇, Nat.sub_zero], fun _ _ _ _ => rfl, rfl, rfl, Frame.refl _ _, (rfl)⟩
@@ -210,7 +210,7 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
     rw [tR _ (by decide) (by decide) (by decide), cR _ (by simp), r31₇]
   refine wp_ld (a := W + BitVec.ofNat 64 512) (by decide) (by decide) (by rw [ht.r5]; rfl)
     (by rw [ht.rd, ht.wr, rdc'', wrc'']
-        exact ⟨_, List.mem_append_right _ hWu, VG.Offset.contains_base _ (show 512 + 8 ≤ 688 by decide) (by omega)⟩)
+        exact ⟨_, List.mem_append_right _ hWu, VG.Offset.contains_base _ (show 512 + 8 ≤ 688 by decide) (by omega_arith)⟩)
     fun t₁ y₁ => ?_
   refine wp_std (a := S + BitVec.ofNat 64 400) (by decide) (by decide) (by rw [y₁.other _ (by decide), ht.r3])
     (by rw [y₁.wr, ht.wr, wrc'']; exact stIn 400 8 (by decide)) fun t₂ y₂ => ?_
@@ -222,15 +222,15 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
   have m₅ : t₅.mem = t.mem.writeW (S + BitVec.ofNat 64 400) (t.mem.readW (W + BitVec.ofNat 64 512) 64) := by
     rw [y₅.mem, y₄.mem, y₃.mem, y₂.mem, y₁.gpr, y₁.mem]
   refine copyLoop_wp (src := D + BitVec.ofNat 64 (f + 8 * nb)) (dst := S + BitVec.ofNat 64 408) (n := rest)
-    (by omega)
+    (by omega_arith)
     (by rw [y₅.other _ (by decide), y₄.gpr, y₃.other _ (by decide), y₂.gpr, y₁.other _ (by decide), ht.r29,
       VG.Offset.add_add])
     (by rw [y₅.other _ (by decide), y₄.other _ (by decide), y₃.gpr, y₂.gpr, y₁.other _ (by decide), ht.r3])
     (by rw [y₅.gpr, y₄.other _ (by decide), y₃.other _ (by decide), y₂.gpr, y₁.other _ (by decide), t31])
-    (fun i hi => by rw [rd₅, wr₅, VG.Offset.add_add]; exact dataIn _ _ (by omega))
-    (fun i hi => by rw [wr₅, VG.Offset.add_add]; exact stIn _ _ (by omega))
+    (fun i hi => by rw [rd₅, wr₅, VG.Offset.add_add]; exact dataIn _ _ (by omega_arith))
+    (fun i hi => by rw [wr₅, VG.Offset.add_add]; exact stIn _ _ (by omega_arith))
     (fun i hi i' hi' => by
-      rw [VG.Offset.add_add, VG.Offset.add_add]; exact state_ne_data he.dataState hD (by omega) (by omega))
+      rw [VG.Offset.add_add, VG.Offset.add_add]; exact state_ne_data he.dataState hD (by omega_arith) (by omega_arith))
     fun v hv => ?_
   -- The memory.
   have FR : ∀ r ∈ [(⟨S + BitVec.ofNat 64 400, 16⟩ : Region)],
@@ -243,7 +243,7 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
   have Fc : Frame [⟨W, 520⟩] v₁.mem c.mem := by
     rw [mc]
     exact (Frame.refl _ _).writeW List.mem_cons_self _
-      (VG.Offset.contains_base _ (show 512 + 64 / 8 ≤ 520 by decide) (by omega))
+      (VG.Offset.contains_base _ (show 512 + 64 / 8 ≤ 520 by decide) (by omega_arith))
   have Fc' : Frame [⟨S + BitVec.ofNat 64 400, 16⟩, ⟨W, 520⟩] u.mem c'.mem :=
     ((m₁S.mono FR).trans (Fc.mono FW)).trans (fc'.mono FW)
   have Ft : Frame [⟨S + BitVec.ofNat 64 400, 16⟩, ⟨W, 520⟩] u.mem t.mem := Fc'.trans (ht.frame.mono FW)
@@ -252,7 +252,7 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
   have Fv : Frame [⟨S + BitVec.ofNat 64 400, 16⟩, ⟨W, 520⟩] u.mem v.mem := F₅.trans fun x hx =>
     hv.rest x fun i hi e => hx _ List.mem_cons_self (by
       rw [e, VG.Offset.add_add]
-      exact VG.Offset.contains _ (show 400 ≤ 408 + i by omega) (show 408 + i + 1 ≤ 400 + 16 by omega) (by omega))
+      exact VG.Offset.contains _ (show 400 ≤ 408 + i by omega_arith) (show 408 + i + 1 ≤ 400 + 16 by omega_arith) (by omega_arith))
   have dataD : ∀ a n, a + n ≤ len → ∀ r ∈ [(⟨S + BitVec.ofNat 64 400, 16⟩ : Region), ⟨W, 520⟩],
       Region.Disjoint ⟨D + BitVec.ofNat 64 a, n⟩ r := fun a n h r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -268,7 +268,7 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
   have dataEq : ∀ {m : Mem}, Frame [⟨S + BitVec.ofNat 64 400, 16⟩, ⟨W, 520⟩] u.mem m → ∀ a n, a + n ≤ len →
       Spec.Aes.bytesAt m (D + BitVec.ofNat 64 a) n = Spec.Aes.bytesAt u.mem (D + BitVec.ofNat 64 a) n :=
     fun hF a n h => List.map_congr_left fun i hi => hF.bytes (R := ⟨D + BitVec.ofNat 64 a, n⟩) (dataD a n h)
-      (by show n ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+      (by show n ≤ 2 ^ 64; omega_arith) (List.mem_range.mp hi)
   refine ⟨⟨fun r hr h29 h30 h31 => ?_, ?_, by rw [hv.rd, rd₅], by rw [hv.wr, wr₅], ?_⟩, ⟨fun i hi => ?_, ?_, ?_⟩⟩
   · obtain ⟨h0, -, h4, -, -, h7, -, h9, h10, h11, h12⟩ := preserved_ne r hr
     rw [hv.regs r h0 h10 h11 h12, g₅ r h7 h10 h11 h12, tR r hr h29 h30, gc r h4 h7 h9 h12 h29 h30 h31,
@@ -283,14 +283,14 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
   · exact Fv.bytes (R := ⟨S, 400⟩) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact VG.Offset.base_disjoint _ (by decide) (by omega)
+      · exact VG.Offset.base_disjoint _ (by decide) (by omega_arith)
       · exact (he.stateScr.sub_right (Region.sub_prefix (by decide))).sub_left (Region.sub_prefix (by decide)))
       (by show 400 ≤ 2 ^ 64; decide) hi
   · -- The chaining value.
     rw [hf, hnb]
     have e400 : Spec.Aes.bytesAt v.mem (S + BitVec.ofNat 64 400) 8 = Spec.Aes.bytesAt t₅.mem (S + BitVec.ofNat 64 400) 8 :=
       Proof.CmacTripleDes.Stream.bytesAt_congr fun i hi => hv.rest _ fun i' hi' => by
-        rw [VG.Offset.add_add, VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+        rw [VG.Offset.add_add, VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)
     have kc : Spec.TripleDes.scheduleAt c.mem S = Spec.TripleDes.scheduleAt u.mem S :=
       Proof.TripleDes.scheduleAt_eq_of_frame _ ((m₁S.mono FR).trans (Fc.mono FW)) keyD
     have kc' : Spec.TripleDes.scheduleAt c'.mem S = Spec.TripleDes.scheduleAt u.mem S :=
@@ -299,10 +299,10 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
         Spec.Cmac.blocksAt u.mem (D + BitVec.ofNat 64 f) 8 nb :=
       List.map_congr_left fun j hj => by
         have hj := List.mem_range.mp hj
-        rw [VG.Offset.add_add]; exact dataEq Fc' _ _ (by omega)
+        rw [VG.Offset.add_add]; exact dataEq Fc' _ _ (by omega_arith)
     have c400 : Spec.Aes.bytesAt v₁.mem (S + BitVec.ofNat 64 400) 8 = Spec.Aes.bytesAt u.mem (S + BitVec.ofNat 64 400) 8 :=
       Proof.CmacTripleDes.Stream.bytesAt_congr fun i hi => cp₁.rest _ fun i' hi' => by
-        rw [VG.Offset.add_add, VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+        rw [VG.Offset.add_add, VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)
     rw [e400, m₅, ← Proof.Cmac.le8_readW, Mem.readW_writeW_self64, Proof.Cmac.le8_readW, ht.buf, enc_bytes outc', kc',
       kc, bl, mc, ← Proof.Cmac.le8_readW, Mem.readW_writeW_self64, Proof.Cmac.le8_xor, Proof.Cmac.le8_readW,
       Proof.Cmac.le8_readW, c400, heldB, Proof.Cmac.chain_append, Proof.Cmac.chain_single]
@@ -311,6 +311,6 @@ theorem chain_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W 
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
     rw [hv.copied i hi]
-    exact F₅.bytes (R := ⟨D + BitVec.ofNat 64 (f + 8 * nb), rest⟩) (dataD _ _ (by omega)) (by show rest ≤ 2 ^ 64; omega) hi
+    exact F₅.bytes (R := ⟨D + BitVec.ofNat 64 (f + 8 * nb), rest⟩) (dataD _ _ (by omega_arith)) (by show rest ≤ 2 ^ 64; omega_arith) hi
 
 end VG.Proof.CmacTripleDes.Stream.PPC64LE

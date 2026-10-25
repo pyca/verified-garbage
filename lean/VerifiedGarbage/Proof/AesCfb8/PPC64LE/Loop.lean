@@ -130,12 +130,12 @@ theorem UPre.scr_sub {d n : Nat} (h : d + n ≤ 2176) : Region.Sub ⟨S s₀ + B
   Offset.sub_base _ h
 
 theorem UPre.data_sub {k : Nat} (hk : k < N s₀) : Region.Sub ⟨byt s₀ k, 1⟩ (dataR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_arith)
 
 theorem UPre.byt_disjoint (hp : UPre s₀) {j k : Nat} (hj : j < N s₀) (hk : k < N s₀) (hjk : j ≠ k) :
     (⟨byt s₀ j, 1⟩ : Region).Disjoint ⟨byt s₀ k, 1⟩ := by
   have := hp.data_wrap
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 end
 
@@ -148,8 +148,8 @@ include hp
 
 theorem UPre.sched_bytes {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
     bytesAt m (W s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)) := by
-  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_arith
+  refine bytesAt_frame hf (fun r hr => ?_) (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.sch_iv.sub_left (Region.sub_prefix hR)
@@ -192,9 +192,9 @@ theorem length_bs (s₀ : State) : (bs s₀).length = N s₀ := by simp [bytesAt
 theorem LInv.byte {enc : Bool} {s₀ : State} {k : Nat} {s : State} (h : LInv enc s₀ k s) (hk : k < N s₀) :
     s.mem (byt s₀ k) = (bs s₀)[k]'(by rw [length_bs]; exact hk) := by
   have hl : (outK s₀ enc k).length = k := by
-    rw [outK, length_cfb8, List.length_take, length_bs]; omega
+    rw [outK, length_cfb8, List.length_take, length_bs]; omega_arith
   have := congrArg (·[k]?) h.data
-  simp only [List.getElem?_append_right (show (outK s₀ enc k).length ≤ k by omega), hl, Nat.sub_self,
+  simp only [List.getElem?_append_right (show (outK s₀ enc k).length ≤ k by omega_arith), hl, Nat.sub_self,
     List.getElem?_drop, Nat.add_zero] at this
   rw [List.getElem?_eq_getElem (by simp [bytesAt]; exact hk),
     List.getElem?_eq_getElem (by rw [length_bs]; exact hk)] at this
@@ -216,8 +216,8 @@ theorem advance_regs {s₀ : State} {k : Nat} (hk : k < N s₀) {s : State} {Φ 
   unfold Impl.AesCfb8.PPC64LE.advance
   refine wp_addi (by decide) (by decide) fun s₁ u₁ => wp_subi (by decide) (by decide) fun s₂ u₂ => wp_nil ?_
   refine h s₂ ?_ ?_ (fun r h₁ h₂ => ?_) ?_ ?_ ?_
-  · rw [u₂.other _ (by decide), u₁.gpr, h17, Offset.add_add_eq _ (c := k + 1) (by omega)]
-  · rw [u₂.gpr, u₁.other _ (by decide), h18, Offset.ofNat_sub_ofNat (by omega)]; rfl
+  · rw [u₂.other _ (by decide), u₁.gpr, h17, Offset.add_add_eq _ (c := k + 1) (by omega_arith)]
+  · rw [u₂.gpr, u₁.other _ (by decide), h18, Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
   · rw [u₂.other _ h₂, u₁.other _ h₁]
   · rw [u₂.mem, u₁.mem]
   · rw [u₂.rd, u₁.rd]
@@ -243,9 +243,9 @@ theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : St
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_arith]
   · right
-    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, h'⟩
 
 /-! ## Saving and restoring the registers -/
 
@@ -257,7 +257,7 @@ theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
   · have := saved_bound p hp'
     show InRegions s₀.wr (S s₀ + BitVec.ofNat 64 p.2) 8
     rw [hp.wr]
-    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega))
+    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith))
   unfold setup mov
   refine wp_mr fun s₁ u₁ => wp_mr fun s₂ u₂ => wp_mr fun s₃ u₃ => wp_mr fun s₄ u₄ =>
     wp_mr fun s₅ u₅ => wp_mr fun s₆ u₆ => wp_nil ?_
@@ -273,7 +273,7 @@ theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
   have ivS : bytesAt (savedMem s₀) (Iv s₀) 16 = iv0 s₀ :=
     bytesAt_frame f₀ (disj _ (by simp)) (by decide)
   have dataS : bytesAt (savedMem s₀) (Dp s₀) (N s₀) = bs s₀ :=
-    bytesAt_frame f₀ (disj _ (by simp)) (by simp only [N]; omega)
+    bytesAt_frame f₀ (disj _ (by simp)) (by simp only [N]; omega_arith)
   have m₆ : s₆.mem = savedMem s₀ := by
     rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]; rfl
   have g₀ (r : Reg) (hr : r ≠ .r0) : (s₀.write .r0 s₀.lr).gpr r = s₀.gpr r := by
@@ -313,25 +313,25 @@ theorem ends_mid_wp {enc : Bool} {mid : Prog isa} {s₀ : State} {s₁ : State}
     (hm : 0 < N s₀ → WP isa mid s₁ (LInv enc s₀ (N s₀))) (h : LInv enc s₀ 0 s₁) :
     WP isa (.ite (.zero .d .r18) (.block []) mid) s₁ (LInv enc s₀ (N s₀)) := by
   have hN := (s₀.gpr .r7).isLt
-  have ev := eval_zero_ofNat s₁ .r18 (k := N s₀ - 0) (by omega) h.r18
+  have ev := eval_zero_ofNat s₁ .r18 (k := N s₀ - 0) (by omega_arith) h.r18
   rw [Nat.sub_zero] at ev
   by_cases hn : N s₀ = 0
   · refine WP.ite true (by rw [ev, hn]; rfl) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact hm (by omega)
+    exact hm (by omega_arith)
 
 theorem slots_disj {s₀ : State} (hp : UPre s₀) :
     ∀ p ∈ saveL, ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩],
       Region.Disjoint ⟨S s₀ + BitVec.ofNat 64 p.2, 8⟩ r := by
   intro p hp' r hr
   have hb := saved_bound p hp'
-  have hsub : Region.Sub ⟨S s₀ + BitVec.ofNat 64 p.2, 8⟩ (scrR s₀) := UPre.scr_sub (by omega)
+  have hsub : Region.Sub ⟨S s₀ + BitVec.ofNat 64 p.2, 8⟩ (scrR s₀) := UPre.scr_sub (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.iv_scr.symm.sub_left hsub
   · exact hp.data_scr.symm.sub_left hsub
-  · exact Offset.disjoint_base _ (by omega) (by have := hp.scr_wrap; omega)
+  · exact Offset.disjoint_base _ (by omega_arith) (by have := hp.scr_wrap; omega_arith)
 
 /-- The postcondition of the whole function, but for the stack pointer. -/
 def Done (enc : Bool) (s₀ s' : State) : Prop :=
@@ -349,7 +349,7 @@ theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s₂ : State} 
     (fun p hp' => ?_) hsv fun s₃ r₃ => ?_
   · have := saved_bound p hp'
     rw [rdwr, hp.rd, hp.wr]
-    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by have := hp.scr_wrap; omega))
+    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_arith) (by have := hp.scr_wrap; omega_arith))
   refine WP.cons exec_mtlr (wp_nil ⟨fun r hr => ?_, ?_, ?_, ?_⟩)
   · show s₃.gpr r = _
     have h0 : saveG s₀ r = s₀.gpr r := ite_eq_right_iff.mpr fun h => absurd h (preserved_ne_r0 r hr)

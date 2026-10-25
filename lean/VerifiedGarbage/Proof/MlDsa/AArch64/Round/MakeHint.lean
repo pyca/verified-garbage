@@ -69,9 +69,9 @@ theorem hbit_toNat {g : Nat} (hg : IsG g) {a b : BitVec 32} (ha : a.toNat < q) (
   have hq : q = 8380417 := rfl
   have ha' : (a.setWidth 64).toNat < q := by rw [toNat_setWidth64]; exact ha
   have e : (a.setWidth 64 + b.setWidth 64).toNat = a.toNat + b.toNat := by
-    rw [BitVec.toNat_add, toNat_setWidth64, toNat_setWidth64]; omega
+    rw [BitVec.toNat_add, toNat_setWidth64, toNat_setWidth64]; omega_arith
   have hc : (csubX (a.setWidth 64 + b.setWidth 64)).toNat = (a.toNat + b.toNat) % q := by
-    rw [csubX_toNat (by rw [e]; omega), e, VG.Proof.MlDsa.Arith.condSub_eq (by omega)]
+    rw [csubX_toNat (by rw [e]; omega_arith), e, VG.Proof.MlDsa.Arith.condSub_eq (by omega_arith)]
   have hc' : (csubX (a.setWidth 64 + b.setWidth 64)).toNat < q := by rw [hc]; exact Nat.mod_lt _ (by decide)
   have hm44 : hbM g ≤ 44 := by rcases hg with rfl | rfl <;> decide
   have l1 := r1X_lt hg hc'
@@ -81,7 +81,7 @@ theorem hbit_toNat {g : Nat} (hg : IsG g) {a b : BitVec 32} (ha : a.toNat < q) (
   rw [hc] at v1
   rw [toNat_setWidth64] at v2
   have hx := xor_lt64 (x := r1X g (csubX (a.setWidth 64 + b.setWidth 64))) (y := r1X g (a.setWidth 64))
-    (by omega) (by omega)
+    (by omega_arith) (by omega_arith)
   have hxz : (r1X g (csubX (a.setWidth 64 + b.setWidth 64)) ^^^ r1X g (a.setWidth 64)).toNat = 0 ↔
       hbF g a.toNat % hbM g = hbF g ((a.toNat + b.toNat) % q) % hbM g := by
     rw [← v1, ← v2]
@@ -103,7 +103,7 @@ theorem hbit_toNat {g : Nat} (hg : IsG g) {a b : BitVec 32} (ha : a.toNat < q) (
   · rw [decide_eq_true h]
     have := mt hxz.mp h
     simp only [Bool.toNat_true]
-    omega
+    omega_arith
 
 /-! ## The function -/
 
@@ -166,7 +166,7 @@ theorem makeHint_body (s₀ : State) (hr0 : Reduced s₀.mem (s₀.gpr .x0)) (hr
     show (s'.gpr .x8).toNat = _
     rw [h8, e0, e1, BitVec.toNat_add, hbit1, hJ, onesTo_succ]
     have : ((hintOf s₀ g)[i]!).toNat ≤ 1 := Bool.toNat_le _
-    omega
+    omega_arith
 
 theorem makeHint_correct (s₀ : State) (hp : makeHintK.pre s₀) :
     ∃ t s', Exec isa Impl.MlDsa.AArch64.Round.makeHint s₀ t s' ∧ abiPreserved s₀ s' ∧ makeHintK.post s₀ s' := by
@@ -206,7 +206,7 @@ theorem makeHint_correct (s₀ : State) (hp : makeHintK.pre s₀) :
       have hle : onesTo (hintOf s₀ (arg32 s₀ .x2)) 256 ≤ 256 := by
         unfold onesTo; exact Nat.le_trans (List.length_filter_le _ _) (by simp)
       show ((s3.gpr .x0).setWidth 32).toNat = hintOnes [hintOf s₀ (arg32 s₀ .x2)]
-      rw [h0, BitVec.toNat_setWidth, hJ, hintOnes_onesTo, Nat.mod_eq_of_lt (by omega)]
+      rw [h0, BitVec.toNat_setWidth, hJ, hintOnes_onesTo, Nat.mod_eq_of_lt (by omega_arith)]
   obtain ⟨t, s', he, hpost⟩ := hW
   exact ⟨t, s', he, VG.Proof.MlKem.AArch64.abi_of rfl (by decide +kernel) he, hpost⟩
 

@@ -84,7 +84,7 @@ theorem checkPoly_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
       · exact hy
       · show sv c base s R2P < _
         rw [hr2]
-        exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_arith)
       · exact hr
   rw [checkOps_eq]
   refine WP.mono (fprogB_ok hL hAl (unitMod_pow_two hc.p_odd (64 * c.n)) _ I
@@ -165,7 +165,7 @@ theorem checkRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     rw [← toM_eq_zero_iff (unitMod_pow_two hc.p_odd (64 * c.n)) I.lt, I.val]
     constructor <;> intro h <;> grind
   rw [Impl.EcKey.Compressed.AArch64.checkRootChecks, WP.block_append_iff]
-  refine WP.mono (checkZero_ok c I.scr h0 hW (by omega) (sl_mod8 c W3) (sl_mod8 c FLAG)) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
+  refine WP.mono (checkZero_ok c I.scr h0 hW (by omega_arith) (sl_mod8 c W3) (sl_mod8 c FLAG)) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
   have hs₂ := I.scr.of_keepRegs k₂ (by decide)
   have flag₂ : word s₂.mem base (c.sl FLAG) = mask
       (P ∧ Fin.ofNat c.C.p (sv c base s QY) * Fin.ofNat c.C.p (sv c base s QY) =
@@ -176,17 +176,17 @@ theorem checkRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     rw [sv, sv_flag O₂ h0 h7 hn (by decide) (by decide)]
     exact sv_unch I.unch h7 hn (by decide) (apart_slW (by decide))
   have tag₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) := by
-    rw [O₂.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega) (by omega)]
+    rw [O₂.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_arith) (by omega_arith)]
     exact I.unch.word (fun w hw => by
       have := (apart_slW (c := c) (by decide : D ∉ [QYM, W1, W3, TMP])) w hw
-      omega) (by omega)
+      omega_arith) (by omega_arith)
   rw [WP.block_append_iff]
-  refine WP.mono (parityMask_ok hs₂ h0 (by omega) (by omega)) fun s₃ ⟨mask₃, k₃⟩ => ?_
+  refine WP.mono (parityMask_ok hs₂ h0 (by omega_arith) (by omega_arith)) fun s₃ ⟨mask₃, k₃⟩ => ?_
   rw [y₂, tag₂] at mask₃
   rw [WP.block_append_iff]
   refine WP.mono (invertMask_ok s₃ _ mask₃) fun s₄ ⟨mask₄, k₄⟩ => ?_
   have hs₄ := (hs₂.of_keeps k₃ (by decide)).of_keeps k₄ (by decide)
-  refine WP.mono (andFlag_ok c hs₄ (by omega) (sl_mod8 c FLAG)) fun s₅ ⟨flag₅, k₅, O₅⟩ => ?_
+  refine WP.mono (andFlag_ok c hs₄ (by omega_arith) (sl_mod8 c FLAG)) fun s₅ ⟨flag₅, k₅, O₅⟩ => ?_
   refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, ?_, ?_⟩
   · exact (((I.keep.trans (k₂.mono (by simp [clob]))).trans
       ((Keeps.regs k₃).mono (by simp [clob]))).trans
@@ -197,8 +197,8 @@ theorem checkRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
       exact List.mem_map_of_mem (List.mem_append_left [FLAG] hi))
     have U₂ : Unch base (slW c [QYM, W1, W3, TMP, FLAG]) s₁.mem s₄.mem := by
       rw [k₄.mem, k₃.mem]
-      exact slot_frame (by simp) (by omega) O₂
-    exact unch_same (unch_same U₁ U₂) (slot_frame (by simp) (by omega) O₅)
+      exact slot_frame (by simp) (by omega_arith) O₂
+    exact unch_same (unch_same U₁ U₂) (slot_frame (by simp) (by omega_arith) O₅)
   · rw [flag₅, k₄.mem, k₃.mem, flag₂, mask₄]
     simp only [not_not]
     exact mask_and _ _
