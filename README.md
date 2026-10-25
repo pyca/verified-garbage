@@ -823,7 +823,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans reusing combined byte masks across planes</td>
 
 <td>✅</td>
 
@@ -843,7 +843,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans reusing combined byte masks across planes</td>
 
 <td>✅</td>
 
@@ -863,7 +863,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans reusing combined byte masks across planes</td>
 
 <td>✅</td>
 
@@ -883,7 +883,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans reusing combined byte masks across planes</td>
 
 <td>✅</td>
 

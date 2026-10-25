@@ -78,7 +78,8 @@ theorem reduce_run (t : State) {b : Nat} (hb : b < 4) :
   have ne := (accReg_ne b hb).1
   let ops : List XOp := [.pshufd tmp (accReg b) 0x4E, .bin .por (accReg b) tmp, .pshufd tmp (accReg b) 0xB1,
     .bin .por (accReg b) tmp, .bin .movdqa tmp (accReg b), .shift .psrld tmp (BitVec.ofNat 8 16),
-    .bin .por (accReg b) tmp, .shift .pslld (accReg b) (BitVec.ofNat 8 16), .shift .psrld (accReg b) (BitVec.ofNat 8 16)]
+    .bin .por (accReg b) tmp, .bin .movdqa tmp (accReg b), .shift .psrld tmp (BitVec.ofNat 8 8),
+    .bin .por (accReg b) tmp, .shift .pslld (accReg b) (BitVec.ofNat 8 24), .shift .psrld (accReg b) (BitVec.ofNat 8 24)]
   refine ⟨ops.foldl (fun t op => op.exec t) t, by rw [show reduce b = ops.map .xop from rfl]; exact runXops ops t,
     ?_, fun d h1 h2 => ?_, ?_⟩
   · simp only [ops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne _ _ ne, xmm_setXmm_of_ne _ _ ne.symm,

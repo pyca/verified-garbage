@@ -3,3 +3,4 @@ family = "Ciphers"
 specs = ["Blowfish"]
 modules = ["src/blowfish_ecb.rs"]
 asm = ["blowfish"]
+optimized = { x86_64 = "SSE2 scans reusing combined byte masks across planes" }

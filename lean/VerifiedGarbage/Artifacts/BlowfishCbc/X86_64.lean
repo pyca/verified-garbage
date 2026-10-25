@@ -13,7 +13,7 @@ namespace VG.Artifacts.BlowfishCbc.X86_64
 /-- How the functions compute Blowfish, and the mode. -/
 def note : String :=
   "Baseline x86-64: one block at a time, through `vg_blowfish_ecb_encrypt`'s block code (inlined): \
-  each S-box lookup scans every entry of the box in SSE2 registers, so no address depends on the key or \
+  each S-box lookup scans every entry of the box in SSE2 registers, reusing one combined byte mask across its four planes, so no address depends on the key or \
   the data; the schedule is read where it is. The mode is the generic CBC of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [

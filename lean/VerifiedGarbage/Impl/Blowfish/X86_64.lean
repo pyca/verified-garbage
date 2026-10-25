@@ -9,16 +9,17 @@ public import VerifiedGarbage.Impl.Blowfish.Table
 One block at a time, its halves in the low doublewords of `xmm0` (xL) and
 `xmm1` (xR). An S-box lookup scans every entry of the S-box's four byte
 planes in SSE2 registers, 16 entries (a row of each plane) at a time:
-each row's bytes go to 16-bit lanes (the even entries and the odd ones),
-and the lanes whose entry is the index are kept, by a mask that `x XOR k`
-minus one is negative exactly when `x = k` (RC2's scans). Every address and
+the equality masks of the even and odd entries are combined into one byte
+mask, reused by all four planes. The selected byte stays in its original
+lane until the final OR reduction. The mask uses that `x XOR k` minus one
+is negative exactly when `x = k` (RC2's scans). Every address and
 branch is a public counter or pointer; the index is only ever an operand
 of the mask's arithmetic. ORing the lanes of each plane gives the entry's
 bytes.
 
 Registers: `xmm0`, `xmm1` the halves, `xmm2` F, `xmm3` the index in every
-lane, `xmm4` the even entries' numbers in the current row, `xmm6` and
-`xmm7` the even and odd masks, `xmm8`–`xmm11` the planes' accumulators,
+lane, `xmm4` the even entries' numbers in the current row, `xmm6` the combined byte mask and
+`xmm7` the shifted odd mask, `xmm8`–`xmm11` the planes' accumulators,
 `xmm5` and `xmm12` temporaries, and the constants 1, 16 and `0x00FF` in
 every word in `xmm13`–`xmm15`. The schedule is at `sch`; `rax` holds the
 offset of the next P-array entry, `r8` the row's offset and `r9` the rows
@@ -82,33 +83,35 @@ def index (k : Nat) : List Instr :=
 
 /-- The masks of the row in `kReg`: all ones in the lanes of the even
 (`mEven`) and odd (`mOdd`) entries that are the index. -/
-def masks : List Instr :=
+def wordMasks : List Instr :=
   [bin .movdqa mEven kReg, bin .pxor mEven idxReg, bin .psubw mEven onesReg,
    shift .psraw mEven 15,
    bin .movdqa mOdd kReg, bin .paddw mOdd onesReg, bin .pxor mOdd idxReg,
    bin .psubw mOdd onesReg, shift .psraw mOdd 15]
+
+/-- Combine the word equality masks into one byte mask per row. -/
+def masks : List Instr :=
+  wordMasks ++ [bin .pand mEven lowReg, shift .psllw mOdd 8, bin .por mEven mOdd]
 
 /-- The row at `r8` of plane `b` of S-box `j`. -/
 def rowMem (sch : Reg) (j b : Nat) : MemOp := { base := sch, index := some .r8, disp := Int.ofNat (planeOff j b) }
 
 /-- The row of plane `b` of S-box `j` at `sch + r8`, masked into `accReg b`. -/
 def plane (sch : Reg) (j b : Nat) : List Instr :=
-  [.movdquLoad tmp (rowMem sch j b),
-   bin .movdqa tmp2 tmp, bin .pand tmp lowReg, shift .psrlw tmp2 8,
-   bin .pand tmp mEven, bin .pand tmp2 mOdd, bin .por (accReg b) tmp, bin .por (accReg b) tmp2]
+  [.movdquLoad tmp (rowMem sch j b), bin .pand tmp mEven, bin .por (accReg b) tmp]
 
 /-- One row of the four planes; the next row. -/
 def row (sch : Reg) (j : Nat) : List Instr :=
   masks ++ (List.range 4).flatMap (plane sch j) ++
     [bin .paddw kReg sixteenReg, .alu .add .r8 (.imm 16), .alu .sub .r9 (.imm 1)]
 
-/-- The OR of the lanes of `accReg b`, in its low doubleword (and nothing
-else in it). -/
+/-- The OR of the byte lanes of `accReg b`, in each doubleword's low byte. -/
 def reduce (b : Nat) : List Instr :=
   [.xop (.pshufd tmp (accReg b) 0x4E), bin .por (accReg b) tmp,
    .xop (.pshufd tmp (accReg b) 0xB1), bin .por (accReg b) tmp,
    bin .movdqa tmp (accReg b), shift .psrld tmp 16, bin .por (accReg b) tmp,
-   shift .pslld (accReg b) 16, shift .psrld (accReg b) 16]
+   bin .movdqa tmp (accReg b), shift .psrld tmp 8, bin .por (accReg b) tmp,
+   shift .pslld (accReg b) 24, shift .psrld (accReg b) 24]
 
 /-- S-box `j` at byte `3 - j` of xL, in the low doubleword of `accReg 0`. -/
 def lookup (sch : Reg) (j : Nat) : Prog isa :=

@@ -22,16 +22,14 @@ def artifacts : List Artifact := [
     verified := Proof.Blowfish.X86_64.expandKey_framed },
   Spec.Blowfish.ecbEncryptApi.artifact X86_64.target {
     notes := ["One block at a time with SSE2: each S-box lookup scans the 256 entries of its four \
-        byte planes, 16 at a time, keeping the bytes of the entry that is the index under masks \
-        computed from it, so no address depends on the data or the schedule. Each output block \
+        byte planes, 16 at a time, reusing one combined byte mask across the four planes, so no address depends on the data or the schedule. Each output block \
         goes through 16 bytes of working space on the stack, zeroed before returning."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.encrypt
     stack := 264
     verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified },
   Spec.Blowfish.ecbDecryptApi.artifact X86_64.target {
     notes := ["One block at a time with SSE2: each S-box lookup scans the 256 entries of its four \
-        byte planes, 16 at a time, keeping the bytes of the entry that is the index under masks \
-        computed from it, so no address depends on the data or the schedule. Each output block \
+        byte planes, 16 at a time, reusing one combined byte mask across the four planes, so no address depends on the data or the schedule. Each output block \
         goes through 16 bytes of working space on the stack, zeroed before returning."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.decrypt
     stack := 264
