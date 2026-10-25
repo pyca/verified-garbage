@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Save
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
 import VerifiedGarbage.Proof.MillerRabin.Representation
-import VerifiedGarbage.Proof.Bignum.Fios32
+import VerifiedGarbage.Proof.Bignum.Minv32
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
@@ -166,7 +166,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
       rw [w32_eq_mod, w32_eq_mod]
       simp only [VG.Proof.Bignum.word]
       rw [wd₁ (by omega), wd₁ (by omega)]
-      exact VG.Proof.Bignum.Fios32.minv_low hinv)) fun s₂ ⟨⟨hm2, m2⟩, k2⟩ => ?_
+      exact VG.Proof.Bignum.Minv32.minv_low hinv)) fun s₂ ⟨⟨hm2, m2⟩, k2⟩ => ?_
   have hc2 : Consts s₂.mem B w c := by
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
     · rw [m2, show arr s₁.mem B w 0 = val32 s₁.mem B (slot w 0) (2 * w) from rfl, v₁ (by decide), ← numAt_eq,

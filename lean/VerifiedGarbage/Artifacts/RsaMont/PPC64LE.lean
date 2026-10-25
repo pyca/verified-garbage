@@ -11,10 +11,11 @@ namespace VG.Artifacts.RsaMont.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Rsa.Mont.mulApi.artifact PPC64LE.target {
-    notes := ["The model has no carry bit, so the numbers are read as 32-bit digits, whose products \
-        plus two digits fit in a 64-bit register: finely integrated operand scanning in radix 2^32, \
-        then the subtraction of `m` with the borrow in the sign bit of each difference, selected \
-        with a mask. The nonvolatile registers it uses are saved in a 112-byte stack frame."]
+    notes := ["Coarsely integrated operand scanning in radix 2^64, the carries through XER's CA \
+        (`addc`, `addze`), with `-m⁻¹ mod 2^64` computed from the header's `-m⁻¹ mod 2^32` by a step \
+        of Newton's iteration; then the subtraction of `m`, on 32-bit digits with the borrow in the \
+        sign bit of each difference, selected with a mask. The nonvolatile registers it uses are \
+        saved in a 112-byte stack frame."]
     code := Impl.StackScratch.PPC64LE.withStackScratch 112 .r8 Impl.Bignum.PPC64LE.mul
     stack := 112
     verified := Proof.Bignum.PPC64LE.mul_verified }]

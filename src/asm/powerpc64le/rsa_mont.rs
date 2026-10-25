@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
 ///
-/// The model has no carry bit, so the numbers are read as 32-bit digits, whose products plus two digits fit in a 64-bit register: finely integrated operand scanning in radix 2^32, then the subtraction of `m` with the borrow in the sign bit of each difference, selected with a mask. The nonvolatile registers it uses are saved in a 112-byte stack frame.
+/// Coarsely integrated operand scanning in radix 2^64, the carries through XER's CA (`addc`, `addze`), with `-m⁻¹ mod 2^64` computed from the header's `-m⁻¹ mod 2^32` by a step of Newton's iteration; then the subtraction of `m`, on 32-bit digits with the borrow in the sign bit of each difference, selected with a mask. The nonvolatile registers it uses are saved in a 112-byte stack frame.
 ///
 /// # Safety
 ///
@@ -52,64 +52,80 @@ ld %r11, 48(%r3)
 rldicr %r11, %r11, 1, 62
 lwz %r12, 56(%r3)
 addi %r4, %r11, 0
+ld %r3, 0(%r10)
+mulld %r3, %r3, %r12
+addi %r3, %r3, 2
+mulld %r0, %r3, %r12
+rldicl %r3, %r11, 63, 1
+addi %r4, %r3, 0
 addi %r14, %r8, 0
-rldicl %r17, %r11, 63, 1
-addi %r17, %r17, 1
-li %r0, 0
+addi %r17, %r3, 1
+li %r22, 0
 20:
-std %r0, 0(%r14)
+std %r22, 0(%r14)
 addi %r14, %r14, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 20b
 21:
-lwz %r18, 0(%r6)
-addi %r6, %r6, 4
-lwz %r0, 0(%r8)
-lwz %r3, 0(%r7)
-mulld %r3, %r18, %r3
-add %r0, %r0, %r3
-rldicl %r20, %r0, 32, 32
-rlwinm %r0, %r0, 0, 0, 31
-mulld %r19, %r0, %r12
-rlwinm %r19, %r19, 0, 0, 31
-lwz %r3, 0(%r10)
-mulld %r3, %r19, %r3
-add %r0, %r0, %r3
-rldicl %r22, %r0, 32, 32
+ld %r17, 0(%r6)
+addi %r6, %r6, 8
 addi %r14, %r8, 0
 addi %r15, %r7, 0
-addi %r16, %r10, 0
-addi %r17, %r11, -1
+addi %r16, %r3, 0
+li %r18, 0
 22:
-lwz %r0, 4(%r14)
-lwz %r3, 4(%r15)
-mulld %r3, %r18, %r3
-add %r0, %r0, %r3
-add %r0, %r0, %r20
-rldicl %r20, %r0, 32, 32
-rlwinm %r0, %r0, 0, 0, 31
-lwz %r3, 4(%r16)
-mulld %r3, %r19, %r3
-add %r0, %r0, %r3
-add %r0, %r0, %r22
-rldicl %r22, %r0, 32, 32
-stw %r0, 0(%r14)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
-addi %r17, %r17, -1
-cmpldi %cr0, %r17, 0
+ld %r19, 0(%r15)
+mulhdu %r20, %r17, %r19
+mulld %r19, %r17, %r19
+addc %r19, %r19, %r18
+addze %r20, %r20
+ld %r22, 0(%r14)
+addc %r22, %r22, %r19
+addze %r18, %r20
+std %r22, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, -1
+cmpldi %cr0, %r16, 0
 bne %cr0, 22b
-lwz %r0, 4(%r14)
-add %r0, %r0, %r20
-rldicl %r20, %r0, 32, 32
-rlwinm %r0, %r0, 0, 0, 31
-add %r0, %r0, %r22
-stw %r0, 0(%r14)
-rldicl %r0, %r0, 32, 32
-add %r0, %r0, %r20
-stw %r0, 4(%r14)
+ld %r22, 0(%r14)
+addc %r22, %r22, %r18
+std %r22, 0(%r14)
+li %r22, 0
+addze %r22, %r22
+std %r22, 8(%r14)
+ld %r22, 0(%r8)
+mulld %r17, %r22, %r0
+ld %r19, 0(%r10)
+mulhdu %r20, %r17, %r19
+mulld %r19, %r17, %r19
+addc %r19, %r19, %r22
+addze %r18, %r20
+addi %r14, %r8, 0
+addi %r15, %r10, 0
+addi %r16, %r3, -1
+23:
+ld %r19, 8(%r15)
+mulhdu %r20, %r17, %r19
+mulld %r19, %r17, %r19
+addc %r19, %r19, %r18
+addze %r20, %r20
+ld %r22, 8(%r14)
+addc %r22, %r22, %r19
+addze %r18, %r20
+std %r22, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, -1
+cmpldi %cr0, %r16, 0
+bne %cr0, 23b
+ld %r22, 8(%r14)
+addc %r22, %r22, %r18
+std %r22, 0(%r14)
+ld %r22, 16(%r14)
+addze %r22, %r22
+std %r22, 8(%r14)
 addi %r4, %r4, -1
 cmpldi %cr0, %r4, 0
 bne %cr0, 21b
@@ -118,7 +134,7 @@ addi %r15, %r9, 0
 addi %r16, %r10, 0
 addi %r17, %r11, 0
 li %r20, 0
-23:
+24:
 lwz %r0, 0(%r14)
 lwz %r3, 0(%r16)
 subf %r0, %r3, %r0
@@ -130,7 +146,7 @@ addi %r15, %r15, 4
 addi %r16, %r16, 4
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
-bne %cr0, 23b
+bne %cr0, 24b
 lwz %r0, 0(%r14)
 subf %r0, %r20, %r0
 rldicl %r0, %r0, 1, 63
@@ -140,7 +156,7 @@ addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
 addi %r17, %r11, 0
-24:
+25:
 lwz %r0, 0(%r15)
 lwz %r3, 0(%r14)
 xor %r3, %r3, %r0
@@ -152,7 +168,7 @@ addi %r15, %r15, 4
 addi %r16, %r16, 4
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
-bne %cr0, 24b
+bne %cr0, 25b
 ld %r14, 0(%r21)
 ld %r15, 8(%r21)
 ld %r16, 16(%r21)

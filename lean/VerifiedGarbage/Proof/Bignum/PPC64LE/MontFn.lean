@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontSave
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Bignum.Fios32
+import VerifiedGarbage.Proof.Bignum.Minv32
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.Words32
 
@@ -66,11 +66,6 @@ theorem slot_eq (w j : Nat) : arrAt w j = slot w j := rfl
 /-- A number of the working space is its `2 w` digits. -/
 theorem numAt_eq (m : Mem) (B : Addr) (w j : Nat) : numAt m B w j = val32 m B (slot w j) (2 * w) := by
   rw [← wordsVal_eq_val32, ← read_eq_wordsVal]; rfl
-
-/-- A digit is the low half of the word there. -/
-theorem w32_eq_mod (m : Mem) (B : Addr) (d : Nat) : w32 m B d = (word m B d).toNat % 2 ^ 32 := by
-  have h2 : w32 m B d < 2 ^ 32 := (m.readW (off B d) 32).isLt
-  rw [word_eq_w32, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt h2]
 
 /-- A store to the scratch buffer leaves the working space. -/
 theorem frame_outside {m m' : Mem} {B S : Addr} {Z : Nat} (hf : Frame [savR S] m m')
@@ -187,7 +182,7 @@ theorem pre_saved {s₀ s₁ : State} (h : fnContract.pre s₀) (hS : Saved s₀
     rw [← hwd, ← hBd]
     simp only [wOf, wordAt, Spec.Rsa.Mont.wWord, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [w₁ (d := slot w 0) (by omega), w₁ (d := 56) (by omega), w32_eq_mod, w32_eq_mod]
-    exact Fios32.minv_low hinv
+    exact Minv32.minv_low hinv
   · rw [v₁ hb, v₁ (by decide)]; rw [numAt_eq, numAt_eq] at hB; exact hB
 
 theorem args_P {d : FnData} {s : State} (h : P1 d s) :
