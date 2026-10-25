@@ -31,25 +31,46 @@ def shlBody : List Instr :=
   [.load .w .r0 .r5 0, .lsl .r3 .r0 1, .logic .or .r3 .r3 .r9, .store .w .r3 .r5 0,
     .lsr .d .r9 .r0 31, .addi .r5 .r5 4]
 
-/-- The quotient (`w` digits) and the remainder (`w + 1`) shifted left together. -/
-def shift (q r : Nat) : Prog isa :=
-  .seq (.block (ptr .r5 q ++ [.addi .r8 .r29 0, .li .r9 0]))
-    (.seq (countLoop .r8 shlBody)
-      (.seq (.block (ptr .r5 r ++ [.addi .r8 .r29 1])) (countLoop .r8 shlBody)))
+/-- One word of a left shift at `r5`, the carry in and out in `r9`. -/
+def shlWBody : List Instr :=
+  [.load .d .r0 .r5 0, .lsl .r3 .r0 1, .logic .or .r3 .r3 .r9, .store .d .r3 .r5 0,
+    .lsr .d .r9 .r0 63, .addi .r5 .r5 8]
 
-/-- `[t] := [r] - [d]` over `w + 1` digits, the borrow in `r9`. -/
+/-- The quotient (`w` digits) and the remainder (`w + 1`) shifted left
+together: `w / 2` words each, and the remainder's top digit. -/
+def shift (q r : Nat) : Prog isa :=
+  .seq (.block (ptr .r5 q ++ [.li .r9 0]))
+    (.seq (evenW (.seq (.block [.lsr .d .r8 .r29 1]) (countLoop .r8 shlWBody))
+        (.seq (.block [.addi .r8 .r29 0]) (countLoop .r8 shlBody)))
+      (.seq (.block (ptr .r5 r))
+        (evenW (.seq (.block [.lsr .d .r8 .r29 1]) (.seq (countLoop .r8 shlWBody) (.block shlBody)))
+          (.seq (.block [.addi .r8 .r29 1]) (countLoop .r8 shlBody)))))
+
+/-- `[t] := [r] - [d]` over `w + 1` digits, the borrow in `r9`: `w / 2`
+words with the carry bit, then the top digit, whose difference in 64 bits
+has the borrow in its sign bit. -/
 def subtract (r d t : Nat) : Prog isa :=
-  .seq (.block (ptr .r5 t ++ ptr .r6 r ++ ptr .r7 d ++ [.addi .r8 .r29 1, .li .r9 0]))
-    (countLoop .r8 subBody)
+  .seq (.block (ptr .r5 t ++ ptr .r6 r ++ ptr .r7 d))
+    (evenW (.seq (.block [.lsr .d .r8 .r29 1, .subc .r0 .r8 .r8]) (.seq (countLoop .r8 subWBody)
+        (.block [.load .w .r0 .r6 0, .load .w .r3 .r7 0, .sube .r0 .r0 .r3, .store .w .r0 .r5 0,
+          .lsr .d .r9 .r0 63])))
+      (.seq (.block [.addi .r8 .r29 1, .li .r9 0]) (countLoop .r8 subBody)))
 
 /-- The new quotient bit `1 - borrow` into `r10`, and the mask `0 - r10`
 into `r9`. -/
 def bit : List Instr := [.li .r10 1, .logic .xor .r10 .r10 .r9, .li .r0 0, .sub .r9 .r0 .r10]
 
-/-- `[r] := mask ? [t] : [r]` over `w + 1` digits. -/
+/-- The top digit of `mask ? [t] : [r]` into `[r]`. -/
+def selTop : List Instr :=
+  [.load .w .r0 .r6 0, .load .w .r3 .r7 0, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9,
+    .logic .xor .r3 .r3 .r0, .store .w .r3 .r5 0]
+
+/-- `[r] := mask ? [t] : [r]` over `w + 1` digits: `w / 2` words and the top
+digit for an even `w`, else digits. -/
 def keep (r t : Nat) : Prog isa :=
-  .seq (.block (ptr .r5 r ++ ptr .r6 r ++ ptr .r7 t ++ [.addi .r8 .r29 1]))
-    (countLoop .r8 selBody)
+  .seq (.block (ptr .r5 r ++ ptr .r6 r ++ ptr .r7 t))
+    (evenW (.seq (.block [.lsr .d .r8 .r29 1]) (.seq (countLoop .r8 selWBody) (.block selTop)))
+      (.seq (.block [.addi .r8 .r29 1]) (countLoop .r8 selBody)))
 
 /-- The quotient bit or'ed into the quotient's low digit, and one step less. -/
 def setBit (q : Nat) : List Instr :=

@@ -55,6 +55,11 @@ def countLoop (cnt : Reg) (body : List Instr) : Prog isa :=
 def ptr (r : Reg) (j : Nat) : List Instr :=
   [.li r j, .mul r r .r30, .add r r .r31, .addi r r hdr]
 
+/-- `even` if `w` (`r29`) is even, else `odd`: for an even `w` the
+operations work on `w / 2` words of 64 bits, for an odd one on digits. -/
+def evenW (even odd : Prog isa) : Prog isa :=
+  .seq (.block [.li .r0 1, .logic .and .r0 .r29 .r0]) (.ite (.zero .d .r0) even odd)
+
 /-- `r30 := 4 (r29 + 2)`, the stride. -/
 def stride : List Instr := [.addi .r30 .r29 2, .lsl .r30 .r30 2]
 
@@ -64,10 +69,18 @@ def subBody : List Instr :=
     .store .w .r0 .r5 0, .lsr .d .r9 .r0 63, .addi .r5 .r5 4, .addi .r6 .r6 4,
     .addi .r7 .r7 4]
 
-/-- `[o] := [a] - [b]`, the borrow out in `r9`. -/
+/-- One word of `[a] - [b]`, the borrow in the carry bit (clear for a borrow). -/
+def subWBody : List Instr :=
+  [.load .d .r0 .r6 0, .load .d .r3 .r7 0, .sube .r0 .r0 .r3, .store .d .r0 .r5 0,
+    .addi .r5 .r5 8, .addi .r6 .r6 8, .addi .r7 .r7 8]
+
+/-- `[o] := [a] - [b]`, the borrow out in `r9`: `w / 2` words with the carry
+bit, set first (`0 - 0` does not borrow). -/
 def sub3 (o a b : Nat) : Prog isa :=
-  .seq (.block (ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ [.addi .r8 .r29 0, .li .r9 0]))
-    (countLoop .r8 subBody)
+  .seq (.block (ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b))
+    (evenW (.seq (.block [.lsr .d .r8 .r29 1, .subc .r0 .r8 .r8])
+        (.seq (countLoop .r8 subWBody) (.block [.li .r9 0, .adde .r9 .r9 .r9, .li .r0 1, .logic .xor .r9 .r9 .r0])))
+      (.seq (.block [.addi .r8 .r29 0, .li .r9 0]) (countLoop .r8 subBody)))
 
 /-- One digit of `mask ? [b] : [a]`, the mask in `r9`, to `[o]`. -/
 def selBody : List Instr :=
@@ -75,19 +88,31 @@ def selBody : List Instr :=
     .logic .xor .r3 .r3 .r0, .store .w .r3 .r5 0, .addi .r5 .r5 4, .addi .r6 .r6 4,
     .addi .r7 .r7 4]
 
+/-- One word of `mask ? [b] : [a]`, the mask in `r9`, to `[o]`. -/
+def selWBody : List Instr :=
+  [.load .d .r0 .r6 0, .load .d .r3 .r7 0, .logic .xor .r3 .r3 .r0, .logic .and .r3 .r3 .r9,
+    .logic .xor .r3 .r3 .r0, .store .d .r3 .r5 0, .addi .r5 .r5 8, .addi .r6 .r6 8,
+    .addi .r7 .r7 8]
+
 /-- `[o] := [b]` if the slot `sl` holds 1, else `[a]`. -/
 def sel (o a b sl : Nat) : Prog isa :=
-  .seq (.block (ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++
-      [.addi .r8 .r29 0, .load .w .r9 .r31 sl, .li .r0 0, .sub .r9 .r0 .r9]))
-    (countLoop .r8 selBody)
+  .seq (.block (ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ [.load .w .r9 .r31 sl, .li .r0 0, .sub .r9 .r0 .r9]))
+    (evenW (.seq (.block [.lsr .d .r8 .r29 1]) (countLoop .r8 selWBody))
+      (.seq (.block [.addi .r8 .r29 0]) (countLoop .r8 selBody)))
 
 /-- One digit of `[a]` to `[o]`. -/
 def copyBody : List Instr :=
   [.load .w .r0 .r6 0, .store .w .r0 .r5 0, .addi .r5 .r5 4, .addi .r6 .r6 4]
 
+/-- One word of `[a]` to `[o]`. -/
+def copyWBody : List Instr :=
+  [.load .d .r0 .r6 0, .store .d .r0 .r5 0, .addi .r5 .r5 8, .addi .r6 .r6 8]
+
 /-- `[o] := [a]`. -/
 def copy (o a : Nat) : Prog isa :=
-  .seq (.block (ptr .r5 o ++ ptr .r6 a ++ [.addi .r8 .r29 0])) (countLoop .r8 copyBody)
+  .seq (.block (ptr .r5 o ++ ptr .r6 a))
+    (evenW (.seq (.block [.lsr .d .r8 .r29 1]) (countLoop .r8 copyWBody))
+      (.seq (.block [.addi .r8 .r29 0]) (countLoop .r8 copyBody)))
 
 /-- One digit of the halving: the digit at `r5` := its upper 31 bits and the
 low bit of the next digit. -/
@@ -95,11 +120,17 @@ def halfBody : List Instr :=
   [.load .w .r0 .r5 0, .load .w .r3 .r5 4, .lsl .r3 .r3 31, .lsr .d .r0 .r0 1,
     .logic .or .r0 .r0 .r3, .store .w .r0 .r5 0, .addi .r5 .r5 4]
 
+/-- One word of the halving: the word at `r5` := its upper 63 bits and the
+low bit of the next digit. -/
+def halfWBody : List Instr :=
+  [.load .d .r0 .r5 0, .load .w .r3 .r5 8, .lsl .r3 .r3 63, .lsr .d .r0 .r0 1,
+    .logic .or .r0 .r0 .r3, .store .d .r0 .r5 0, .addi .r5 .r5 8]
+
 /-- `[j] := ([j] + r9 · 2^(32 w)) / 2`: `r9` stored as digit `w`, then the shift. -/
 def half (j : Nat) : Prog isa :=
-  .seq (.block (ptr .r5 j ++ [.lsl .r6 .r29 2, .add .r6 .r5 .r6, .store .w .r9 .r6 0,
-      .addi .r8 .r29 0]))
-    (countLoop .r8 halfBody)
+  .seq (.block (ptr .r5 j ++ [.lsl .r6 .r29 2, .add .r6 .r5 .r6, .store .w .r9 .r6 0]))
+    (evenW (.seq (.block [.lsr .d .r8 .r29 1]) (countLoop .r8 halfWBody))
+      (.seq (.block [.addi .r8 .r29 0]) (countLoop .r8 halfBody)))
 
 /-- The slot `sl` := the low bit of `[j]`. -/
 def bitOf (sl j : Nat) : List Instr :=
@@ -128,13 +159,23 @@ def eqBody : List Instr :=
   [.load .w .r0 .r6 0, .load .w .r3 .r7 0, .logic .xor .r0 .r0 .r3, .logic .or .r9 .r9 .r0,
     .addi .r6 .r6 4, .addi .r7 .r7 4]
 
-/-- The slot `d` := 1 if `[a] = [b]`, else 0: the digits' differences or'ed
-into `r9`, which is 0 exactly when they are equal, then `1 - (0 - r9) >> 63`. -/
+/-- One word of the comparison: `r9 |= [a] ^ [b]`. -/
+def eqWBody : List Instr :=
+  [.load .d .r0 .r6 0, .load .d .r3 .r7 0, .logic .xor .r0 .r0 .r3, .logic .or .r9 .r9 .r0,
+    .addi .r6 .r6 8, .addi .r7 .r7 8]
+
+/-- The slot `d` := 1 if `[a] = [b]`, else 0: the digits' (or words')
+differences or'ed into `r9`, which is 0 exactly when they are equal, then
+`1 - (0 - r9) >> 63` (`1 - (r9 | (0 - r9)) >> 63` for words). -/
 def eqS (d a b : Nat) : Prog isa :=
-  .seq (.block (ptr .r6 a ++ ptr .r7 b ++ [.addi .r8 .r29 0, .li .r9 0]))
-    (.seq (countLoop .r8 eqBody)
-      (.block [.li .r0 0, .sub .r0 .r0 .r9, .lsr .d .r0 .r0 63, .li .r3 1,
-        .logic .xor .r0 .r0 .r3, .store .w .r0 .r31 d]))
+  .seq (.block (ptr .r6 a ++ ptr .r7 b ++ [.li .r9 0]))
+    (evenW
+      (.seq (.block [.lsr .d .r8 .r29 1]) (.seq (countLoop .r8 eqWBody)
+        (.block [.li .r0 0, .sub .r0 .r0 .r9, .logic .or .r0 .r0 .r9, .lsr .d .r0 .r0 63, .li .r3 1,
+          .logic .xor .r0 .r0 .r3, .store .w .r0 .r31 d])))
+      (.seq (.block [.addi .r8 .r29 0]) (.seq (countLoop .r8 eqBody)
+        (.block [.li .r0 0, .sub .r0 .r0 .r9, .lsr .d .r0 .r0 63, .li .r3 1,
+          .logic .xor .r0 .r0 .r3, .store .w .r0 .r31 d]))))
 
 /-- The `c` digits from array 0 on (at `B + hdr`) := 0. -/
 def zeroArrays (c : Reg) : Prog isa :=
