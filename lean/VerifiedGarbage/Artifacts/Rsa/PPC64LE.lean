@@ -44,7 +44,8 @@ def artifacts : List Artifact := [
         numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a \
         bit at a time, and the exponent is scanned in four-bit windows from the top, four \
         Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry \
-        selected by a masked scan of the whole 16-entry table, so that no address depends on the \
+        selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address \
+        depends on the \
         exponent. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The \
         nonvolatile registers it uses are saved in the working space's header."]
     code := Impl.Bignum.PPC64LE.Crt.crt

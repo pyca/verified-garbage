@@ -2127,7 +2127,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
 ///
-/// Montgomery multiplication in radix `2^64` with the carry bit. The checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a Montgomery product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space of 24 numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a bit at a time, and the exponent is scanned in four-bit windows from the top, four Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry selected by a masked scan of the whole 16-entry table, so that no address depends on the exponent. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the working space's header.
+/// Montgomery multiplication in radix `2^64` with the carry bit. The checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a Montgomery product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space of 24 numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a bit at a time, and the exponent is scanned in four-bit windows from the top, four Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address depends on the exponent. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the working space's header.
 ///
 /// # Safety
 ///
@@ -3618,17 +3618,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 266:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 266b
@@ -3880,17 +3880,17 @@ add %r9, %r9, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 278:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 278b
@@ -3928,17 +3928,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 279:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 279b
@@ -4846,17 +4846,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2122:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2122b
@@ -4882,17 +4882,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2123:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2123b
@@ -6019,17 +6019,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2175:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2175b
@@ -6055,17 +6055,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2176:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2176b
@@ -7244,17 +7244,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2231:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2231b
@@ -7506,17 +7506,17 @@ add %r9, %r9, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2243:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2243b
@@ -7554,17 +7554,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2244:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2244b
@@ -8472,17 +8472,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2287:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2287b
@@ -8508,17 +8508,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2288:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2288b
@@ -9645,17 +9645,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2340:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2340b
@@ -9681,17 +9681,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2341:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2341b
