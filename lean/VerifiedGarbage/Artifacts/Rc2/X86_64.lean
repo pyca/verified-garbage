@@ -39,17 +39,17 @@ def artifacts : List Artifact := [
     stack := 8
     verified := Proof.Rc2.X86_64.Cbc.decrypt_verified },
   Spec.Rc2.expandKeyApi.artifact X86_64.target {
-    notes := ["Baseline x86-64 SSE2. PITABLE selection scans all 256 candidates in a fixed order, eight candidates per vector."]
+    notes := ["Baseline x86-64 SSE2. PITABLE selection scans all 256 candidates in a fixed order, eight candidates per vector, returning the selected word directly from SSE2 registers."]
     code := Impl.Rc2.X86_64.expandKey
     stack := 0
     verified := Proof.Rc2.X86_64.key_verified },
   Spec.Rc2.encryptBlockApi.artifact X86_64.target {
-    notes := ["Baseline x86-64 SSE2. Mashing scans all 64 schedule words in a fixed order, eight words per vector."]
+    notes := ["Baseline x86-64 SSE2. Mashing scans all 64 schedule words in a fixed order, eight words per vector, returning the selected word directly from SSE2 registers."]
     code := Impl.Rc2.X86_64.encryptBlock
     stack := 0
     verified := Proof.Rc2.X86_64.encrypt_verified },
   Spec.Rc2.decryptBlockApi.artifact X86_64.target {
-    notes := ["Baseline x86-64 SSE2. Reverse mashing scans all 64 schedule words in a fixed order, eight words per vector."]
+    notes := ["Baseline x86-64 SSE2. Reverse mashing scans all 64 schedule words in a fixed order, eight words per vector, returning the selected word directly from SSE2 registers."]
     code := Impl.Rc2.X86_64.decryptBlock
     stack := 0
     verified := Proof.Rc2.X86_64.decrypt_verified }]

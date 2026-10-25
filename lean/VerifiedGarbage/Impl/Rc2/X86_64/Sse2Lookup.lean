@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Rc2.X86_64.Lookup
 SSE2 is part of the target baseline. Each word-sized XOR is at most 255;
 subtracting one and shifting arithmetically produces a full equality mask.
 The scans visit every candidate in order, eight candidates per vector.
-The temporary vector store is restored before returning.
+The reduced result moves straight from its SSE2 register to `rax`.
 -/
 
 @[expose] public section
@@ -27,8 +27,8 @@ def eights : BitVec 128 := ofWords fun _ => 8
 def piValues (n : Nat) : BitVec 128 :=
   ofWords fun j => (VG.Spec.Rc2.piTable.getD (8 * n + j) 0).setWidth 16
 
-def start (scratch : Reg) (mask : Nat) : List Instr :=
-  ([.movdquLoad .xmm8 (memOp scratch 64), .alu .and .rax (.imm (BitVec.ofNat 32 mask)),
+def start (mask : Nat) : List Instr :=
+  ([.alu .and .rax (.imm (BitVec.ofNat 32 mask)),
    .xop (.movq .xmm0 .rax), .xop (.bin .punpcklwd .xmm0 .xmm0),
    .xop (.pshufd .xmm0 .xmm0 0), .xop (.bin .pxor .xmm1 .xmm1)] : List Instr) ++
    loadConst .xmm2 (indices 0) ++ loadConst .xmm6 ones ++ loadConst .xmm7 eights
@@ -46,11 +46,10 @@ def reduceOr : List Instr :=
     [.xop (.bin .movdqa .xmm3 .xmm1), .xop (.shift .psrldq .xmm3 (BitVec.ofNat 8 n)),
      .xop (.bin .por .xmm1 .xmm3)]
 
-def finish (scratch : Reg) : List Instr := reduceOr ++
-  ([.movdquStore (memOp scratch 64) .xmm1, .mov .rax (.mem (memOp scratch 64)),
-   .alu .and .rax (.imm 65535), .movdquStore (memOp scratch 64) .xmm8] : List Instr)
+def finish : List Instr := reduceOr ++
+  [.movqR .rax .xmm1, .alu .and .rax (.imm 65535)]
 
 def piLookup : List Instr :=
-  start .r8 255 ++ (List.range 32).flatMap piStep ++ finish .r8
+  start 255 ++ (List.range 32).flatMap piStep ++ finish
 
 end VG.Impl.Rc2.X86_64.Sse2

@@ -1183,7 +1183,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans returning results directly from registers</td>
 
 <td>✅</td>
 

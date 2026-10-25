@@ -23,23 +23,21 @@ namespace VG.Proof.Rc2.X86_64.Sse2
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64
 
-theorem start_ok (s : State) (scratch : Reg)
-    (hread : InRegions (s.rd ++ s.wr) (s.gpr scratch + BitVec.ofNat 64 64) 16) :
-    ∃ s', runBlock isa (Sse2.start scratch 255) s = some s' ∧
+theorem start_ok (s : State) :
+    ∃ s', runBlock isa (Sse2.start 255) s = some s' ∧
       s'.xmm .xmm0 = broadcast ((s.gpr .rax).setWidth 8) ∧
       s'.xmm .xmm1 = 0#128 ∧ s'.xmm .xmm2 = Sse2.indices 0 ∧
       s'.xmm .xmm6 = Sse2.ones ∧ s'.xmm .xmm7 = Sse2.eights ∧
-      s'.xmm .xmm8 = s.mem.readW (s.gpr scratch + BitVec.ofNat 64 64) 128 ∧
       Keep [.rax, .r10] s s' := by
   refine ⟨_, by
     simp (config := {decide := true}) only [Sse2.start, Sse2.loadConst,
       List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, XOp.exec,
-      State.load128, State.ea, memOp, offset_nat, hread, ite_true, Option.bind_some,
-      Option.map_some, gpr_setReg, gpr_setXmm, gpr_arithFlags,
+      ite_true, Option.bind_some,
+      gpr_setReg, gpr_setXmm, gpr_arithFlags,
       xmm_setReg, xmm_setXmm_self, xmm_setXmm_of_ne]
     rfl, ?_⟩
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp (config := {decide := true}) only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg]
     rw [show (255#32).signExtend 64 = (255 : BitVec 64) by decide, maskByte]
     apply ext_word
@@ -52,8 +50,6 @@ theorem start_ok (s : State) (scratch : Reg)
   · simp (config := {decide := true}) only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg]
   · simp only [xmm_setXmm_self]
     exact movq_const _
-  · simp (config := {decide := true}) only [xmm_setXmm_of_ne, xmm_setReg,
-      xmm_arithFlags, xmm_setXmm_self]
   · constructor
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -143,15 +139,12 @@ namespace VG.Proof.Rc2.X86_64.Sse2
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
 theorem piLookup_ok (s : State)
-    (hwrite : InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 64) 16) :
+    (_hwrite : InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 64) 16) :
     WP isa (.block Impl.Rc2.X86_64.Sse2.piLookup) s (fun s' =>
       s'.gpr .rax = (Spec.Rc2.pi ((s.gpr .rax).setWidth 8)).setWidth 64 ∧
       Keep [.rax, .rcx, .r10, .r11] s s') := by
-  have hread : InRegions (s.rd ++ s.wr) (s.gpr .r8 + BitVec.ofNat 64 64) 16 := by
-    obtain ⟨r, hr, hc⟩ := hwrite
-    exact ⟨r, List.mem_append_right _ hr, hc⟩
   rw [Impl.Rc2.X86_64.Sse2.piLookup, List.append_assoc, WP.block_append_iff]
-  obtain ⟨s₁, run₁, input₁, zero₁, idx₁, ones₁, eights₁, saved₁, keep₁⟩ := start_ok s .r8 hread
+  obtain ⟨s₁, run₁, input₁, zero₁, idx₁, ones₁, eights₁, keep₁⟩ := start_ok s
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff, List.range_eq_range']
   have inv₁ : ScanInv ((s.gpr .rax).setWidth 8) 0 s₁ :=
@@ -164,16 +157,7 @@ theorem piLookup_ok (s : State)
   have keep₂ : Keep [.rax, .r10] s₁ s₂ := h₂.2.1.weaken (by simp)
   have keep₃' : Keep [.rax, .r10] s₂ s₃ := keep₃.keep.weaken (by simp)
   have kept : Keep [.rax, .r10] s s₃ := (keep₁.trans keep₂).trans keep₃'
-  have ptr : s₃.gpr .r8 = s.gpr .r8 := kept.reg .r8 (by decide)
-  have wr₃ : InRegions s₃.wr (s₃.gpr .r8 + BitVec.ofNat 64 64) 16 := by
-    rw [kept.wr, ptr]; exact hwrite
-  have rd₃ : InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .r8 + BitVec.ofNat 64 64) 8 := by
-    rw [kept.rd, kept.wr, ptr]
-    obtain ⟨r, hr, hc⟩ := hread
-    exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega⟩
-  have saved₃ : s₃.xmm .xmm8 = s₃.mem.readW (s₃.gpr .r8 + BitVec.ofNat 64 64) 128 := by
-    rw [keep₃.xmm .xmm8 (by decide), h₂.2.2, saved₁, kept.mem, ptr]
-  obtain ⟨s₄, run₄, out₄, keep₄⟩ := finishTail_ok s₃ .r8 (by decide) rd₃ wr₃ saved₃
+  obtain ⟨s₄, run₄, out₄, keep₄⟩ := finishTail_ok s₃
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
   constructor
   · rw [out₄, reduced₃, h₂.1.acc, reduce_acc, ite_eq_left ((s.gpr .rax).setWidth 8).isLt]
